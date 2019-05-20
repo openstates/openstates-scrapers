@@ -379,31 +379,32 @@ class ALBillScraper(Scraper):
                 except AttributeError:
                     action_committee = ''
 
-                act = bill.add_action(
-                    action_text,
-                    TIMEZONE.localize(action_date),
-                    chamber=actor,
-                    classification=action_type,
-                )
-                if action_committee:
-                    act.add_related_entity(action_committee, entity_type='organization')
-
-                try:
-                    vote_button = action.xpath('td[9]//text()')[0].strip()
-                except IndexError:
-                    vote_button = ''
-
-                if vote_button.startswith("Roll "):
-                    vote_id = vote_button.split(" ")[-1]
-
-                    yield from self.scrape_vote(
-                        bill=bill,
-                        vote_chamber=action_chamber,
-                        bill_id=bill_id,
-                        vote_id=vote_id,
-                        vote_date=TIMEZONE.localize(action_date),
-                        action_text=action_text
+                if action_date is not None:
+                    act = bill.add_action(
+                        action_text,
+                        TIMEZONE.localize(action_date),
+                        chamber=actor,
+                        classification=action_type,
                     )
+                    if action_committee:
+                        act.add_related_entity(action_committee, entity_type='organization')
+
+                    try:
+                        vote_button = action.xpath('td[9]//text()')[0].strip()
+                    except IndexError:
+                        vote_button = ''
+
+                    if vote_button.startswith("Roll "):
+                        vote_id = vote_button.split(" ")[-1]
+
+                        yield from self.scrape_vote(
+                            bill=bill,
+                            vote_chamber=action_chamber,
+                            bill_id=bill_id,
+                            vote_id=vote_id,
+                            vote_date=TIMEZONE.localize(action_date),
+                            action_text=action_text
+                        )
 
                 if amendment:
                     amend_url = (
