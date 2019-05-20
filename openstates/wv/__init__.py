@@ -113,6 +113,13 @@ class WestVirginia(Jurisdiction):
             "start_date": "2019-01-14",
             "end_date": "2019-03-09",
         },
+        {
+            "_scraped_name": "2019",
+            "classification": "special",
+            "identifier": "20191S",
+            "name": "2019 First Special Session",
+            "start_date": "2019-05-20",
+        },
     ]
     ignored_scraped_sessions = [
         "2010",
