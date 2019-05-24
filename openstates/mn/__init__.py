@@ -111,18 +111,18 @@ class Minnesota(Jurisdiction):
             '_scraped_name': '91st Legislature, 2019-2020',
             'classification': 'primary',
             'identifier': '2019-2020',
-            'name': '2019-2020Regular Session',
+            'name': '2019-2020 Regular Session',
             'start_date': '2019-01-08',
             'end_date': '2019-06-20'
         },
-        # NOTE: As of 2019-05-21 this is on the site but hasn't started yet.
-        # {
-        #     '_scraped_name': '91st Legislature, 2019 1st Special Session',
-        #     'classification': 'primary',
-        #     'identifier': '2019s1',
-        #     'name': '2019, First Special Session',
-        #     'start_date': '2019-05-22',
-        # },
+        {
+            '_scraped_name': '91st Legislature, 2019 1st Special Session',
+            'classification': 'primary',
+            'identifier': '2019s1',
+            'name': '2019, First Special Session',
+            'start_date': '2019-05-24',
+            'end_date': '2019-05-29'
+        },
     ]
     ignored_scraped_sessions = [
         '85th Legislature, 2007-2008',
@@ -142,7 +142,6 @@ class Minnesota(Jurisdiction):
         '80th Legislature, 1997 1st Special Session',
         '79th Legislature, 1995-1996',
         '79th Legislature, 1995 1st Special Session',
-        '91st Legislature, 2019 1st Special Session',
     ]
 
     def get_organizations(self):
