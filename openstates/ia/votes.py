@@ -130,7 +130,7 @@ class IAVoteScraper(Scraper):
                     ^On\sthe\squestion\s  # Precedes any motion
                     "+  # Motion is preceded by a quote mark (or two)
                     (Shall\s.+?\??)  # The motion text begins with "Shall"
-                    \s*(?:\?"?|")\s+  # Motion is followed by a question mark and/or a quote mark
+                    \s*(?:\?"?|"|’)\s+  # Motion is followed by a question mark and/or a quote mark
                     (?:{})?  # If the vote regards a bill, its number is listed
                     {}  # Senate has trailing text
                     \s*$
