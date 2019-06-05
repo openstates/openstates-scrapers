@@ -36,7 +36,7 @@ _categorizer_rules = (
     Rule(r'refused to concur in Assembly amendments', 'amendment-failure'),
 
     Rule(r'Failed passage in committee', 'committee-failure'),
-    Rule(r'(?i)From committee', 'committee-passage'),
+    Rule(r'(?i)From committee: ((?!Without further action))', 'committee-passage'),
     Rule(r'(?i)From committee: Do pass', 'committee-passage-favorable'),
     Rule(r'From committee with author\'s amendments', 'committee-passage'),
 
