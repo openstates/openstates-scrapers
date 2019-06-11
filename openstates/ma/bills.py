@@ -275,32 +275,37 @@ class MABillScraper(Scraper):
                 actor = "upper"
                 # placeholder
                 vote_action = action_name.split(' -')[0]
-                try:
-                    y, n = re.search(r'(\d+) yeas .*? (\d+) nays', action_name.lower()).groups()
-                    y = int(y)
-                    n = int(n)
-                except AttributeError:
-                    y = int(re.search(r"yeas\s+(\d+)", action_name.lower()).group(1))
-                    n = int(re.search(r"nays\s+(\d+)", action_name.lower()).group(1))
+                # 2019 H86 Breaks our regex,
+                # Ordered to a third reading --
+                # see Senate   Roll Call #25 and House Roll Call 56
+                if 'yeas' in action_name and 'nays' in action_name:
+                    try:
+                        y, n = re.search(r'(\d+) yeas .*? (\d+) nays',
+                                         action_name.lower()).groups()
+                        y = int(y)
+                        n = int(n)
+                    except AttributeError:
+                        y = int(re.search(r"yeas\s+(\d+)", action_name.lower()).group(1))
+                        n = int(re.search(r"nays\s+(\d+)", action_name.lower()).group(1))
 
-                # TODO: other count isn't included, set later
-                cached_vote = VoteEvent(
-                    chamber=actor,
-                    start_date=action_date,
-                    motion_text=vote_action,
-                    result='pass' if y > n else 'fail',
-                    classification='passage',
-                    bill=bill,
-                )
-                cached_vote.set_count('yes', y)
-                cached_vote.set_count('no', n)
+                    # TODO: other count isn't included, set later
+                    cached_vote = VoteEvent(
+                        chamber=actor,
+                        start_date=action_date,
+                        motion_text=vote_action,
+                        result='pass' if y > n else 'fail',
+                        classification='passage',
+                        bill=bill,
+                    )
+                    cached_vote.set_count('yes', y)
+                    cached_vote.set_count('no', n)
 
-                rollcall_pdf = 'http://malegislature.gov' + row.xpath('string(td[3]/a/@href)')
-                self.scrape_senate_vote(cached_vote, rollcall_pdf)
-                cached_vote.add_source(rollcall_pdf)
-                cached_vote.pupa_id = rollcall_pdf
-                # XXX: also disabled, see above note
-                # yield cached_vote
+                    rollcall_pdf = 'http://malegislature.gov' + row.xpath('string(td[3]/a/@href)')
+                    self.scrape_senate_vote(cached_vote, rollcall_pdf)
+                    cached_vote.add_source(rollcall_pdf)
+                    cached_vote.pupa_id = rollcall_pdf
+                    # XXX: also disabled, see above note
+                    # yield cached_vote
 
             attrs = self.categorizer.categorize(action_name)
             action = bill.add_action(
