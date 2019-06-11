@@ -276,11 +276,12 @@ class MABillScraper(Scraper):
                 # placeholder
                 vote_action = action_name.split(' -')[0]
                 # 2019 H86 Breaks our regex,
-                # Ordered to a third reading -- 
+                # Ordered to a third reading --
                 # see Senate   Roll Call #25 and House Roll Call 56
                 if 'yeas' in action_name and 'nays' in action_name:
                     try:
-                        y, n = re.search(r'(\d+) yeas .*? (\d+) nays', action_name.lower()).groups()
+                        y, n = re.search(r'(\d+) yeas .*? (\d+) nays',
+                                         action_name.lower()).groups()
                         y = int(y)
                         n = int(n)
                     except AttributeError:
