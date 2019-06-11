@@ -108,6 +108,7 @@ class Oregon(Jurisdiction):
     ]
     ignored_scraped_sessions = [
         "Today",
+        "2019-2020 Interim",
         "2017-2018 Interim",
         "2015-2016 Interim",
         "2013 1st Special Session",
