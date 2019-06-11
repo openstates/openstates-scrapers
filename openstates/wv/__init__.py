@@ -115,6 +115,7 @@ class WestVirginia(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = [
+        "2020",
         "2010",
         "2009",
         "2008",
