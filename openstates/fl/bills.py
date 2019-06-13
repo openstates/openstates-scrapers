@@ -73,11 +73,12 @@ class BillList(Page):
 class BillDetail(Page):
 
     def handle_page(self):
-        self.process_history()
-        self.process_versions()
-        self.process_analysis()
-        yield from self.process_votes()
-        yield from self.scrape_page_items(HousePage, bill=self.obj)
+        if self.doc.xpath("//div[@id = 'tabBodyBillHistory']//table"):
+            self.process_history()
+            self.process_versions()
+            self.process_analysis()
+            yield from self.process_votes()
+            yield from self.scrape_page_items(HousePage, bill=self.obj)
 
     def process_versions(self):
         try:
@@ -515,6 +516,11 @@ class SubjectPDF(PDF):
 class FlBillScraper(Scraper, Spatula):
 
     def scrape(self, session=None):
+        # FL published a bad bill in 2019, #143
+        self.raise_errors = False
+        self.retry_attempts = 1
+        self.retry_wait_seconds = 3
+
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
