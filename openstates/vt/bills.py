@@ -202,6 +202,10 @@ class VTBillScraper(Scraper, LXMLMixin):
                 else:
                     action_type = None
 
+                # Manual fix for data error in
+                # https://legislature.vermont.gov/bill/status/2020/H.511
+                action['StatusDate'] = action['StatusDate'].replace("/0209", "/2019")
+
                 bill.add_action(
                     description=re.sub(HTML_TAGS_RE, "", action['FullStatus']),
                     date=datetime.datetime.strftime(

@@ -78,7 +78,7 @@ class Massachusetts(Jurisdiction):
 
     def get_session_list(self):
         doc = lxml.html.fromstring(requests.get(
-            'https://malegislature.gov/Bills/Search').text)
+            'https://malegislature.gov/Bills/Search', verify=False).text)
         sessions = doc.xpath("//div[@data-refinername='lawsgeneralcourt']/div/label/text()")
 
         # Remove all text between parens, like (Current) (7364)

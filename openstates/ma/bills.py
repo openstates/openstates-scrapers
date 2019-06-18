@@ -10,6 +10,8 @@ from .actions import Categorizer
 
 
 class MABillScraper(Scraper):
+    verify = False
+
     categorizer = Categorizer()
     session_filters = {}
     chamber_filters = {}
@@ -23,6 +25,7 @@ class MABillScraper(Scraper):
         super().__init__(*args, **kwargs)
         # forcing these values so that 500s come back as skipped bills
         self.raise_errors = False
+        self.verify = False
 
     def format_bill_number(self, raw):
         return raw.replace('Bill ', '').replace('.', ' ').strip()
@@ -85,7 +88,7 @@ class MABillScraper(Scraper):
                           pageNumber, session_filter, chamber_filter)
                       )
 
-        page = lxml.html.fromstring(requests.get(search_url).text)
+        page = lxml.html.fromstring(self.get(search_url).text)
         resultRows = page.xpath('//table[@id="searchTable"]/tbody/tr/td[2]/a/text()')
         return resultRows
 
@@ -102,7 +105,7 @@ class MABillScraper(Scraper):
                       'Refinements%5Blawsbranchname%5D={}'.format(
                           session_filter, chamber_filter)
                       )
-        page = lxml.html.fromstring(requests.get(search_url).text)
+        page = lxml.html.fromstring(self.get(search_url).text)
 
         if page.xpath('//ul[contains(@class,"pagination-sm")]/li[last()]/a/@onclick'):
             maxPage = page.xpath('//ul[contains(@class,"pagination-sm")]/li[last()]/a/@onclick')[0]
@@ -118,7 +121,7 @@ class MABillScraper(Scraper):
         bill_url = 'https://malegislature.gov/Bills/{}/{}'.format(session_for_url, bill_id)
 
         try:
-            response = requests.get(bill_url)
+            response = self.get(bill_url)
             self.info("GET (with `requests`) - {}".format(bill_url))
         except requests.exceptions.RequestException:
             self.warning(u'Server Error on {}'.format(bill_url))
@@ -272,32 +275,37 @@ class MABillScraper(Scraper):
                 actor = "upper"
                 # placeholder
                 vote_action = action_name.split(' -')[0]
-                try:
-                    y, n = re.search(r'(\d+) yeas .*? (\d+) nays', action_name.lower()).groups()
-                    y = int(y)
-                    n = int(n)
-                except AttributeError:
-                    y = int(re.search(r"yeas\s+(\d+)", action_name.lower()).group(1))
-                    n = int(re.search(r"nays\s+(\d+)", action_name.lower()).group(1))
+                # 2019 H86 Breaks our regex,
+                # Ordered to a third reading --
+                # see Senate   Roll Call #25 and House Roll Call 56
+                if 'yeas' in action_name and 'nays' in action_name:
+                    try:
+                        y, n = re.search(r'(\d+) yeas .*? (\d+) nays',
+                                         action_name.lower()).groups()
+                        y = int(y)
+                        n = int(n)
+                    except AttributeError:
+                        y = int(re.search(r"yeas\s+(\d+)", action_name.lower()).group(1))
+                        n = int(re.search(r"nays\s+(\d+)", action_name.lower()).group(1))
 
-                # TODO: other count isn't included, set later
-                cached_vote = VoteEvent(
-                    chamber=actor,
-                    start_date=action_date,
-                    motion_text=vote_action,
-                    result='pass' if y > n else 'fail',
-                    classification='passage',
-                    bill=bill,
-                )
-                cached_vote.set_count('yes', y)
-                cached_vote.set_count('no', n)
+                    # TODO: other count isn't included, set later
+                    cached_vote = VoteEvent(
+                        chamber=actor,
+                        start_date=action_date,
+                        motion_text=vote_action,
+                        result='pass' if y > n else 'fail',
+                        classification='passage',
+                        bill=bill,
+                    )
+                    cached_vote.set_count('yes', y)
+                    cached_vote.set_count('no', n)
 
-                rollcall_pdf = 'http://malegislature.gov' + row.xpath('string(td[3]/a/@href)')
-                self.scrape_senate_vote(cached_vote, rollcall_pdf)
-                cached_vote.add_source(rollcall_pdf)
-                cached_vote.pupa_id = rollcall_pdf
-                # XXX: also disabled, see above note
-                # yield cached_vote
+                    rollcall_pdf = 'http://malegislature.gov' + row.xpath('string(td[3]/a/@href)')
+                    self.scrape_senate_vote(cached_vote, rollcall_pdf)
+                    cached_vote.add_source(rollcall_pdf)
+                    cached_vote.pupa_id = rollcall_pdf
+                    # XXX: also disabled, see above note
+                    # yield cached_vote
 
             attrs = self.categorizer.categorize(action_name)
             action = bill.add_action(
@@ -419,6 +427,7 @@ class MABillScraper(Scraper):
     def get_as_ajax(self, url):
         # set the X-Requested-With:XMLHttpRequest so the server only sends along the bits we want
         s = requests.Session()
+        s.verify = False
         s.headers.update({'X-Requested-With': 'XMLHttpRequest'})
         return s.get(url)
 
