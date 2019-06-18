@@ -1,4 +1,4 @@
-FROM  alpine:3.8
+FROM  alpine:3.9
 LABEL maintainer="James Turk <james@openstates.org>"
 
 ENV PYTHONIOENCODING 'utf-8'
