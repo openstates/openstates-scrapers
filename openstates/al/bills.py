@@ -357,8 +357,9 @@ class ALBillScraper(Scraper):
 
                 (action_chamber, ) = action.xpath('td[2]/font/text()')
 
-                if action.xpath('td[3]/font/u/text()'):
-                    (amendment, ) = action.xpath('td[3]/font/u/text()')
+                possible_amendment = action.xpath('td[3]/font/u/text()')
+                if len(possible_amendment) > 0 and not possible_amendment[0].strip() == '':
+                    (amendment, ) = possible_amendment
                 else:
                     amendment = None
 
