@@ -148,6 +148,7 @@ class Alabama(Jurisdiction):
         "First Special Session 2010",
         "Regular Session 2016",
         "Organizational Session 2019",
+        "Regular Session 2020",
     ]
 
     def get_organizations(self):
