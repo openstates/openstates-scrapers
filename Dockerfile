@@ -40,9 +40,9 @@ RUN apk add --no-cache --virtual .build-dependencies \
     libcrypto1.1 && \
   apk add --no-cache \
     --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing \
-    aws-cli \
     gdal-dev \
     geos-dev && \
+  pip3 install awscli && \
   cd /tmp && \
     wget "https://github.com/brianb/mdbtools/archive/0.7.1.zip" && \
     unzip 0.7.1.zip && rm 0.7.1.zip && \
