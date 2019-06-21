@@ -389,8 +389,8 @@ class IlBillScraper(Scraper):
             if 'print=true' not in url:
                 if name in VERSION_TYPES:
                     if pdf_only:
-                        # we actually need to visit the version's page, and get the PDF link from there
-                        # otherwise we'll be grabbing the aforementioned "latest version"/"LV" alias/duplicate
+                        # eed to visit the version's page, and get PDF link from there
+                        # otherwise get a faulty "latest version"/"LV" alias/duplicate
                         version_page_html = self.get(url).text
                         version_page_doc = lxml.html.fromstring(version_page_html)
                         version_page_doc.make_links_absolute(url)
