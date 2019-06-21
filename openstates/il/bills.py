@@ -383,22 +383,32 @@ class IlBillScraper(Scraper):
         for link in doc.xpath('//a[contains(@href, "fulltext")]'):
             name = link.text
             url = link.get('href')
-            url = '{}&print=true'.format(url)
-            mimetype = 'text/html'
-            if name in VERSION_TYPES:
-                if pdf_only:
-                    pdf_link = doc.xpath('//a[text()="PDF"]')[0]
-                    url = pdf_link.get('href')
-                    mimetype = 'application/pdf'
 
-                bill.add_version_link(name, url, media_type=mimetype)
-            elif 'Amendment' in name or name in FULLTEXT_DOCUMENT_TYPES:
-                bill.add_document_link(name, url)
-            elif 'Printer-Friendly' in name:
-                pass
-            else:
-                self.warning('unknown document type %s - adding as document' % name)
-                bill.add_document_link(name, url)
+            # Ignore the "Printer-friendly version" link
+            # That link is a "latest version" alias for an actual, distinct version
+            if 'print=true' not in url:
+                if name in VERSION_TYPES:
+                    if pdf_only:
+                        # we actually need to visit the version's page, and get the PDF link from there
+                        # otherwise we'll be grabbing the aforementioned "latest version"/"LV" alias/duplicate
+                        version_page_html = self.get(url).text
+                        version_page_doc = lxml.html.fromstring(version_page_html)
+                        version_page_doc.make_links_absolute(url)
+                        pdf_link = version_page_doc.xpath('//a[text()="PDF"]')[0]
+                        url = pdf_link.get('href')
+                        mimetype = 'application/pdf'
+                    else:
+                        url = '{}&print=true'.format(url)
+                        mimetype = 'text/html'
+
+                    bill.add_version_link(name, url, media_type=mimetype)
+                elif 'Amendment' in name or name in FULLTEXT_DOCUMENT_TYPES:
+                    bill.add_document_link(name, url)
+                elif 'Printer-Friendly' in name:
+                    pass
+                else:
+                    self.warning('unknown document type %s - adding as document' % name)
+                    bill.add_document_link(name, url)
 
     def scrape_votes(self, session, bill, votes_url, committee_actors):
         html = self.get(votes_url).text
