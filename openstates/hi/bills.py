@@ -89,19 +89,25 @@ class HIBillScraper(Scraper):
             ret[key] = value
         return ret
 
+    _vote_type_map = {
+        "S": "upper",
+        "H": "lower",
+        "D": "legislature",  # "Data Systems",
+        "$": "Appropriation measure",
+        "CONAM": "Constitutional Amendment"
+    }
+
     def parse_bill_actions_table(self, bill, action_table, bill_id, session, url, bill_chamber):
+
+        # vote types that have been reconsidered since last vote of that type
+        reconsiderations = set()
+
         for action in action_table.xpath('*')[1:]:
             date = action[0].text_content()
             date = dt.datetime.strptime(date, "%m/%d/%Y").strftime('%Y-%m-%d')
-            actor = action[1].text_content().upper()
+            actor_code = action[1].text_content().upper()
             string = action[2].text_content()
-            actor = {
-                "S": "upper",
-                "H": "lower",
-                "D": "legislature",  # "Data Systems",
-                "$": "Appropriation measure",
-                "CONAM": "Constitutional Amendment"
-            }[actor]
+            actor = self._vote_type_map[actor_code]
             act_type, committees = categorize_action(string)
             # XXX: Translate short-code to full committee name for the
             #      matcher.
@@ -117,19 +123,23 @@ class HIBillScraper(Scraper):
                         pass
             act = bill.add_action(string, date, chamber=actor,
                                   classification=act_type)
+
             for committee in real_committees:
                 act.add_related_entity(name=committee, entity_type="organization")
             vote = self.parse_vote(string)
+
             if vote:
                 v, motion = vote
+                motion_text = ("Reconsider: " + motion) if actor in reconsiderations else motion
                 vote = VoteEvent(start_date=date,
                                  chamber=actor,
                                  bill=bill_id,
                                  bill_chamber=bill_chamber,
                                  legislative_session=session,
-                                 motion_text=motion,
+                                 motion_text=motion_text,
                                  result='pass' if 'passed' in string.lower() else 'fail',
                                  classification='passage')
+                reconsiderations.discard(actor)
                 vote.add_source(url)
                 vote.set_count('yes', int(v['n_yes'] or 0))
                 vote.set_count('no', int(v['n_no'] or 0))
@@ -144,6 +154,9 @@ class HIBillScraper(Scraper):
                     vote.vote('not voting', voter)
 
                 yield vote
+
+            elif re.search('reconsider', string, re.IGNORECASE):
+                reconsiderations.add(actor)
 
     def parse_bill_versions_table(self, bill, versions):
         versions = versions.xpath("./*")
