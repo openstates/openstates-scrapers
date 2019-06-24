@@ -26,12 +26,18 @@ def chamber_name(chamber):
 class MDBMixin(object):
 
     def _init_mdb(self, year):
-        self.mdbfile = 'DB%s.mdb' % year
-        url = 'ftp://www.njleg.state.nj.us/ag/%sdata/DB%s.zip' % (year, year)
-        fname, resp = self.urlretrieve(url)
-        zf = zipfile.ZipFile(fname)
-        zf.extract(self.mdbfile)
-        os.remove(fname)
+        if year < 2018:
+            self.mdbfile = 'DB%s.mdb' % year
+            url = 'ftp://www.njleg.state.nj.us/ag/%sdata/DB%s.zip' % (year, year)
+            fname, resp = self.urlretrieve(url)
+            zf = zipfile.ZipFile(fname)
+            zf.extract(self.mdbfile)
+            os.remove(fname)
+        else:
+            url = 'ftp://www.njleg.state.nj.us/ag/%sdata/DB%s.mdb' % (year, year)
+            fname, resp = self.urlretrieve(url)
+            self.mdbfile = fname
+            self.info("mdb filename = " + fname)
 
     # stolen from nm/bills.py
     def access_to_csv(self, table):
