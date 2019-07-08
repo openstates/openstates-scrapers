@@ -241,6 +241,6 @@ class Utah(Jurisdiction):
     def get_session_list(self):
         sessions = url_xpath(
                 'http://le.utah.gov/Documents/bills.htm',
-                '//p/a[contains(@href, "session")]/text()'
+                '//ul[contains(@class,"bills-alternate")]/li/a[contains(@href, "BillList")]/text()'
                 )
         return [re.sub(r'\s+', ' ', session.strip()) for session in sessions]
