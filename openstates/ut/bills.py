@@ -44,7 +44,7 @@ class UTBillScraper(Scraper, LXMLMixin):
             session_search_text += "GS"
 
         sessions = sessions.xpath(
-            '//p/a[contains(@href, "{}")]'.format(session_search_text))
+            '//li/a[contains(@href, "{}")]'.format(session_search_text))
 
         session_url = ''
         S = [i for i, _ in enumerate(self.jurisdiction.legislative_sessions)
