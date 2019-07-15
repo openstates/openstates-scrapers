@@ -56,7 +56,7 @@ class Florida(Jurisdiction):
          'start_date': '2019-03-05', 'end_date': '2019-05-03'},
         # TODO: uncomment when FL bills start getting filed
         # {'name': '2020 Regular Session', 'identifier': '2020', 'classification': 'primary',
-        #  'start_date': '2020-03-05', 'end_date': '2020-05-03'}, 
+        #  'start_date': '2020-03-05', 'end_date': '2020-05-03'},
     ]
     ignored_scraped_sessions = [
         *(str(each) for each in range(1997, 2010)),
