@@ -123,8 +123,16 @@ class Kentucky(Jurisdiction):
             "name": "2019 Regular Session",
             "start_date": "2019-01-08"
         },
+        {
+            "_scraped_name": "2019 Special Session",
+            "classification": "special",
+            "identifier": "2019SS",
+            "name": "2019 Special Session",
+            "start_date": "2019-07-19"
+        },
     ]
     ignored_scraped_sessions = [
+        '2020 Regualr Session Prefiled',
         '2019 Regular Session Prefiled Bills',
         '2011 Special Session',
         '2011 Regular Session',
