@@ -117,19 +117,27 @@ class Kentucky(Jurisdiction):
             "start_date": "2018-12-19"
         },
         {
-            "_scraped_name": "2019 Regular Session",
-            "classification": "primary",
-            "identifier": "2019RS",
-            "name": "2019 Regular Session",
-            "start_date": "2019-01-08"
-        },
-        {
             "_scraped_name": "2019 Special Session",
             "classification": "special",
             "identifier": "2019SS",
             "name": "2019 Special Session",
             "start_date": "2019-07-19"
         },
+        {
+            "_scraped_name": "2020 Regular Session",
+            "classification": "primary",
+            "identifier": "2020RS",
+            "name": "2020 Regular Session",
+            "start_date": "2020-01-08"
+        },
+        {
+            "_scraped_name": "2019 Regular Session",
+            "classification": "primary",
+            "identifier": "2019RS",
+            "name": "2019 Regular Session",
+            "start_date": "2019-01-08"
+        },
+
     ]
     ignored_scraped_sessions = [
         '2020 Regualr Session Prefiled',
