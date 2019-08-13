@@ -79,8 +79,18 @@ class Wyoming(Jurisdiction):
             "start_date": "2019-02-12",
             "end_date": "2019-03-05",
         },
+        # TODO: Uncomment when WY starts posting
+        # {
+        #     "_scraped_name": "2020",
+        #     "classification": "primary",
+        #     "identifier": "2020",
+        #     "name": "2020 General Session",
+        #     "start_date": "2020-02-12",
+        #     "end_date": "2020-03-05",
+        # },
     ]
     ignored_scraped_sessions = [
+        "2020",
         "2019",
         "2016",
         "2014",
