@@ -224,6 +224,8 @@ class TXBillScraper(Scraper, LXMLMixin):
                 atype = 'executive-receipt'
             elif desc.startswith('Signed by the Governor'):
                 atype = 'executive-signature'
+            elif desc.startswith('Effective on'):
+                atype = 'became-law'
             elif desc == 'Vetoed by the Governor':
                 atype = 'executive-veto'
             elif desc == 'Read first time':
