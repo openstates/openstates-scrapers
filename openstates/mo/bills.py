@@ -30,7 +30,6 @@ class MOBillScraper(Scraper, LXMLMixin):
     _bad_urls = []
     _subjects = defaultdict(list)
     _session_id = ''
-    _user_agent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'
 
     def custom_header_func(self, url):
         return {'user-agent': 'openstates.org'}
