@@ -31,8 +31,12 @@ class MOBillScraper(Scraper, LXMLMixin):
     _subjects = defaultdict(list)
     _session_id = ''
 
+    def custom_header_func(self, url):
+        return {'user-agent': 'openstates.org'}
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        super(Scraper, self).__init__(header_func=self.custom_header_func)
         self._scrape_subjects(self.latest_session())
 
     def _get_action(self, actor, action):
