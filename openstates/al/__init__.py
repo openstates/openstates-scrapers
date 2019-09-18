@@ -113,6 +113,13 @@ class Alabama(Jurisdiction):
             "name": "2019 Regular Session",
             "start_date": "2019-03-05"
         },
+        {
+            "_scraped_name": "Regular Session 2020",
+            "classification": "primary",
+            "identifier": "2020rs",
+            "name": "2020 Regular Session",
+            "start_date": "2020-02-06"
+        },
     ]
     ignored_scraped_sessions = [
         "Regular Session 1998",
@@ -148,7 +155,6 @@ class Alabama(Jurisdiction):
         "First Special Session 2010",
         "Regular Session 2016",
         "Organizational Session 2019",
-        "Regular Session 2020",
     ]
 
     def get_organizations(self):
