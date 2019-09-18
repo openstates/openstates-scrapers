@@ -118,7 +118,7 @@ class Alabama(Jurisdiction):
             "classification": "primary",
             "identifier": "2020rs",
             "name": "2020 Regular Session",
-            "start_date": "2020-02-06"
+            "start_date": "2020-02-03"
         },
     ]
     ignored_scraped_sessions = [
