@@ -63,6 +63,7 @@ class BillList(Page):
 
         sponsor = re.sub(r'^(?:Rep|Sen)\.\s', "", sponsor)
         for sp in sponsor.split(', '):
+            sp = sp.strip()
             bill.add_sponsorship(sp, 'primary', 'person', True)
 
         yield from self.scrape_page_items(BillDetail, url=bill_url, obj=bill)
@@ -399,6 +400,7 @@ class HousePage(Page):
         # Keep the digits and all following characters in the bill's ID
         bill_number = re.search(r'^\w+\s(\d+\w*)$', self.kwargs['bill'].identifier).group(1)
         session_number = {
+            '2020': '89',
             '2019': '87',
             '2018': '86',
             '2017A': '85',
