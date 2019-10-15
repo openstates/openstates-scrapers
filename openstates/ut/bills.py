@@ -179,8 +179,9 @@ class UTBillScraper(Scraper, LXMLMixin):
             subjects.append(link.text.strip())
         bill.subject = subjects
 
-        status_table = page.xpath('//div[@id="billStatus"]//table')[0]
-        yield from self.parse_status(bill, status_table, chamber)
+        if page.xpath('//div[@id="billStatus"]//table'):
+            status_table = page.xpath('//div[@id="billStatus"]//table')[0]
+            yield from self.parse_status(bill, status_table, chamber)
 
         yield bill
 
