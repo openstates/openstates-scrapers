@@ -88,12 +88,10 @@ class BillDetail(Page):
                 version_url = tr.xpath("td/a[1]")[0].attrib['href']
                 if version_url.endswith('PDF'):
                     mimetype = 'application/pdf'
-                    text = self.scrape_page(BillVersionPDF, url=version_url)
                 elif version_url.endswith('HTML'):
                     mimetype = 'text/html'
-                    text = self.scrape_page(BillVersionHTML, url=version_url)
 
-                self.obj.add_version_link(name, version_url, media_type=mimetype, text=text)
+                self.obj.add_version_link(name, version_url, media_type=mimetype)
         except IndexError:
             self.obj.extras['places'] = []   # set places to something no matter what
             self.scraper.warning("No version table for {}".format(self.obj.identifier))
@@ -193,25 +191,6 @@ class BillDetail(Page):
                                                       date=vote_date, bill=self.obj)
         else:
             self.scraper.warning("No vote table for {}".format(self.obj.identifier))
-
-
-class BillVersionHTML(Page):
-    def handle_page(self):
-        text = self.doc.xpath('//pre')[0].text_content()
-        text = re.sub(r'\n\s*\d+\s*', ' ', text)
-        text = re.sub(r'\s+', ' ', text)
-        return text
-
-
-class BillVersionPDF(PDF):
-    def handle_page(self):
-        # newlines followed by numbers and lots of spaces
-        text = re.sub(r'\n\s*\d+\s*', ' ', self.text)
-        flhor_re = r'\s+'.join('FLORIDA HOUSE OF REPRESENTATIVES')
-        text = re.sub(flhor_re, ' ', text)
-        # collapse spaces
-        text = re.sub(r'\s+', ' ', text)
-        return text
 
 
 class FloorVote(PDF):
