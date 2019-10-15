@@ -59,6 +59,7 @@ class Florida(Jurisdiction):
     ]
     ignored_scraped_sessions = [
         *(str(each) for each in range(1997, 2010)),
+        '2019 I',  # Empty, maybe informational session
         '2010', '2010A', '2010O',
         '2012O',
         '2014O',
