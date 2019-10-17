@@ -68,9 +68,8 @@ class BillList(Page):
             sp = sp.strip()
             bill.add_sponsorship(sp, 'primary', 'person', True)
 
-        test_url = 'http://flsenate.gov/Session/Bill/2020/230'
-        # yield from self.scrape_page_items(BillDetail, url=bill_url, obj=bill)
-        yield from self.scrape_page_items(BillDetail, url=test_url, obj=bill, download_text=self.kwargs['download_text'])
+        yield from self.scrape_page_items(BillDetail, url=bill_url, obj=bill,
+                                          download_text=self.kwargs['download_text'])
 
         yield bill
 
