@@ -238,25 +238,6 @@ class BillDetail(Page):
             self.scraper.warning("No vote table for {}".format(self.obj.identifier))
 
 
-class BillVersionHTML(Page):
-    def handle_page(self):
-        text = self.doc.xpath('//pre')[0].text_content()
-        text = re.sub(r'\n\s*\d+\s*', ' ', text)
-        text = re.sub(r'\s+', ' ', text)
-        return text
-
-
-class BillVersionPDF(PDF):
-    def handle_page(self):
-        # newlines followed by numbers and lots of spaces
-        text = re.sub(r'\n\s*\d+\s*', ' ', self.text)
-        flhor_re = r'\s+'.join('FLORIDA HOUSE OF REPRESENTATIVES')
-        text = re.sub(flhor_re, ' ', text)
-        # collapse spaces
-        text = re.sub(r'\s+', ' ', text)
-        return text
-
-
 class FloorVote(PDF):
     def handle_page(self):
         MOTION_INDEX = 4
