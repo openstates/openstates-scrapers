@@ -120,7 +120,6 @@ class BillDetail(Page):
                 # Amendment titles don't show which version they're amending, so add that
                 name = '{} to {}'.format(name, version_to_amend)
 
-                # version_url = tr.xpath("td[5]/a[1]")[0].attrib['href']
                 for link in tr.xpath("td[5]/a"):
                     version_url = link.attrib['href']
                     if version_url.endswith('PDF'):
