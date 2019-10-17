@@ -2,6 +2,7 @@ import re
 import datetime
 from urllib.parse import urlencode
 from collections import defaultdict
+from distutils.util import strtobool
 from pupa.scrape import Scraper, Bill, VoteEvent
 from pupa.utils import format_datetime
 from spatula import Page, PDF, Spatula
@@ -27,6 +28,7 @@ class StartPage(Page):
             yield from self.scrape_page_items(BillList, url=page_url,
                                               session=self.kwargs['session'],
                                               subjects=self.kwargs['subjects'],
+                                              download_text=self.kwargs['download_text']
                                               )
 
 
@@ -66,7 +68,9 @@ class BillList(Page):
             sp = sp.strip()
             bill.add_sponsorship(sp, 'primary', 'person', True)
 
-        yield from self.scrape_page_items(BillDetail, url=bill_url, obj=bill)
+        test_url = 'http://flsenate.gov/Session/Bill/2020/230'
+        # yield from self.scrape_page_items(BillDetail, url=bill_url, obj=bill)
+        yield from self.scrape_page_items(BillDetail, url=test_url, obj=bill, download_text=self.kwargs['download_text'])
 
         yield bill
 
@@ -76,28 +80,67 @@ class BillDetail(Page):
     def handle_page(self):
         if self.doc.xpath("//div[@id = 'tabBodyBillHistory']//table"):
             self.process_history()
-            self.process_versions()
+            self.process_versions(download_text=self.kwargs['download_text'])
+            self.process_amendments(download_text=self.kwargs['download_text'])
             self.process_analysis()
             yield from self.process_votes()
             yield from self.scrape_page_items(HousePage, bill=self.obj)
 
-    def process_versions(self):
+    def process_versions(self, download_text=True):
         try:
             version_table = self.doc.xpath("//div[@id = 'tabBodyBillText']/table")[0]
             for tr in version_table.xpath("tbody/tr"):
+                text = ''
                 name = tr.xpath("string(td[1])").strip()
                 version_url = tr.xpath("td/a[1]")[0].attrib['href']
                 if version_url.endswith('PDF'):
                     mimetype = 'application/pdf'
-                    text = self.scrape_page(BillVersionPDF, url=version_url)
+                    if download_text:
+                        text = self.scrape_page(BillVersionPDF, url=version_url)
                 elif version_url.endswith('HTML'):
                     mimetype = 'text/html'
-                    text = self.scrape_page(BillVersionHTML, url=version_url)
+                    if download_text:
+                        text = self.scrape_page(BillVersionHTML, url=version_url)
 
                 self.obj.add_version_link(name, version_url, media_type=mimetype, text=text)
         except IndexError:
             self.obj.extras['places'] = []   # set places to something no matter what
             self.scraper.warning("No version table for {}".format(self.obj.identifier))
+
+    # 2020 SB 230 is a Bill with populated amendments:
+    # http://flsenate.gov/Session/Bill/2020/230/?Tab=Amendments
+    def process_amendments(self, download_text=True):
+        commmittee_amend_table = self.doc.xpath("//div[@id = 'tabBodyAmendments']"
+                                                "//div[@id='CommitteeAmendment']//table")
+        if commmittee_amend_table:
+            self.process_amendments_table(commmittee_amend_table, 'Committee')
+
+        floor_amend_table = self.doc.xpath("//div[@id = 'tabBodyAmendments']"
+                                           "//div[@id='FloorAmendment']//table")
+        if floor_amend_table:
+            self.process_amendments_table(floor_amend_table, 'Floor')
+
+    def process_amendments_table(self, table, amend_type, download_text=True):
+        try:
+            for tr in table[0].xpath("tbody/tr"):
+                name = tr.xpath("string(td[1])").strip().split("\n")[0].strip()
+                # version_url = tr.xpath("td[5]/a[1]")[0].attrib['href']
+                for link in tr.xpath("td[5]/a"):
+                    text = ''
+                    version_url = link.attrib['href']
+                    if version_url.endswith('PDF'):
+                        mimetype = 'application/pdf'
+                        if download_text:
+                            text = self.scrape_page(BillVersionHTML, url=version_url)
+                    elif version_url.endswith('HTML'):
+                        mimetype = 'text/html'
+                        if download_text:
+                            text = self.scrape_page(BillVersionHTML, url=version_url)
+
+                    self.obj.add_version_link(name, version_url, media_type=mimetype, text=text)
+        except IndexError:
+            self.scraper.info("No {} amendments table for {}".format(
+                amend_type, self.obj.identifier))
 
     def process_analysis(self):
         try:
@@ -517,11 +560,18 @@ class SubjectPDF(PDF):
 
 class FlBillScraper(Scraper, Spatula):
 
-    def scrape(self, session=None):
+    def scrape(self, session=None, download_text=None):
         # FL published a bad bill in 2019, #143
         self.raise_errors = False
         self.retry_attempts = 1
         self.retry_wait_seconds = 3
+
+        # optionaly disable downloading of text
+        # to speed up scrape
+        if download_text is None:
+            download_text = True
+        else:
+            download_text = strtobool(download_text)
 
         if not session:
             session = self.latest_session()
@@ -532,4 +582,5 @@ class FlBillScraper(Scraper, Spatula):
         subjects = self.scrape_page(SubjectPDF, subject_url)
 
         url = "http://flsenate.gov/Session/Bills/{}?chamber=both".format(session)
-        yield from self.scrape_page_items(StartPage, url, session=session, subjects=subjects)
+        yield from self.scrape_page_items(StartPage, url, session=session, subjects=subjects,
+                                          download_text=download_text)
