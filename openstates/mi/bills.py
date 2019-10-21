@@ -146,40 +146,42 @@ class MIBillScraper(Scraper):
                     vote_url = BASE_URL + '/documents/%s/Journal/%s/htm/%s.htm' % (
                         session, chamber_name, objectname)
                     results = self.parse_roll_call(vote_url, rc_num)
-                    vote = VoteEvent(
-                        start_date=date,
-                        chamber=actor,
-                        bill=bill,
-                        motion_text=action,
-                        result='pass' if len(results['yes']) > len(results['no']) else 'fail',
-                        classification='passage',
-                    )
 
-                    # check the expected counts vs actual
-                    count = re.search(r'YEAS (\d+)', action, re.IGNORECASE)
-                    count = int(count.groups()[0]) if count else 0
-                    if count != len(results['yes']):
-                        self.warning('vote count mismatch for %s %s, %d != %d' %
-                                     (bill_id, action, count, len(results['yes'])))
-                    count = re.search(r'NAYS (\d+)', action, re.IGNORECASE)
-                    count = int(count.groups()[0]) if count else 0
-                    if count != len(results['no']):
-                        self.warning('vote count mismatch for %s %s, %d != %d' %
-                                     (bill_id, action, count, len(results['no'])))
+                    if results is not None:
+                        vote = VoteEvent(
+                            start_date=date,
+                            chamber=actor,
+                            bill=bill,
+                            motion_text=action,
+                            result='pass' if results and len(results['yes']) > len(results['no']) else 'fail',
+                            classification='passage',
+                        )
 
-                    vote.set_count('yes', len(results['yes']))
-                    vote.set_count('no', len(results['no']))
-                    vote.set_count('other', len(results['other']))
+                        # check the expected counts vs actual
+                        count = re.search(r'YEAS (\d+)', action, re.IGNORECASE)
+                        count = int(count.groups()[0]) if count else 0
+                        if count != len(results['yes']):
+                            self.warning('vote count mismatch for %s %s, %d != %d' %
+                                         (bill_id, action, count, len(results['yes'])))
+                        count = re.search(r'NAYS (\d+)', action, re.IGNORECASE)
+                        count = int(count.groups()[0]) if count else 0
+                        if count != len(results['no']):
+                            self.warning('vote count mismatch for %s %s, %d != %d' %
+                                         (bill_id, action, count, len(results['no'])))
 
-                    for name in results['yes']:
-                        vote.yes(name)
-                    for name in results['no']:
-                        vote.no(name)
-                    for name in results['other']:
-                        vote.vote('other', name)
+                        vote.set_count('yes', len(results['yes']))
+                        vote.set_count('no', len(results['no']))
+                        vote.set_count('other', len(results['other']))
 
-                    vote.add_source(vote_url)
-                    yield vote
+                        for name in results['yes']:
+                            vote.yes(name)
+                        for name in results['no']:
+                            vote.no(name)
+                        for name in results['other']:
+                            vote.vote('other', name)
+
+                        vote.add_source(vote_url)
+                        yield vote
                 else:
                     self.warning("missing journal link for %s %s" %
                                  (bill_id, journal))
@@ -245,10 +247,11 @@ class MIBillScraper(Scraper):
 
     def parse_roll_call(self, url, rc_num):
         html = self.get(url).text
-        if 'In The Chair' not in html:
+        vote_doc = lxml.html.fromstring(html)
+        vote_doc_textonly = vote_doc.text_content()
+        if re.search('In\\s+The\\s+Chair', vote_doc_textonly) is None:
             self.warning('"In The Chair" indicator not found, unable to extract vote')
             return
-        vote_doc = lxml.html.fromstring(html)
 
         # split the file into lines using the <p> tags
         pieces = [p.text_content().replace(u'\xa0', ' ')
