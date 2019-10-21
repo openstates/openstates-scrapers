@@ -4,6 +4,7 @@ from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 import requests
 
+
 class NHPersonScraper(Scraper, LXMLMixin):
     members_url = 'http://www.gencourt.state.nh.us/downloads/Members.csv'
     lookup_url = 'http://www.gencourt.state.nh.us/house/members/memberlookup.aspx'
