@@ -1,11 +1,11 @@
 import re
-
+import csv
 from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
-
+import requests
 
 class NHPersonScraper(Scraper, LXMLMixin):
-    members_url = 'http://www.gencourt.state.nh.us/downloads/Members.txt'
+    members_url = 'http://www.gencourt.state.nh.us/downloads/Members.csv'
     lookup_url = 'http://www.gencourt.state.nh.us/house/members/memberlookup.aspx'
     house_profile_url = 'http://www.gencourt.state.nh.us/house/members/member.aspx?member={}'
     senate_profile_url = 'http://www.gencourt.state.nh.us/Senate/members/webpages/district{}.aspx'
@@ -59,17 +59,6 @@ class NHPersonScraper(Scraper, LXMLMixin):
             self.warning('Skipping {}, district is set to 0'.format(full_name))
             return
 
-        # Temporary fix for Kari Lerner
-        if district == 'Rockingham 0' and last_name == 'Lerner':
-            district = 'Rockingham 4'
-
-        # Temporary fix for Casey Conley
-        if last_name == 'Conley':
-            if district == '13':
-                district = 'Strafford 13'
-            elif district == 'Strafford 13':
-                self.info('"Temporary fix for Casey Conley" can be removed')
-
         person = Person(primary_org=chamber,
                         district=district,
                         name=full_name,
@@ -122,12 +111,13 @@ class NHPersonScraper(Scraper, LXMLMixin):
         return person
 
     def _parse_members_txt(self):
-        lines = self.get(self.members_url).text.splitlines()
+        response = requests.get(self.members_url)
+        lines = csv.reader(response.text.strip().split('\n'), delimiter=',')
 
-        header = lines[0].split('\t')
+        header = next(lines)
 
-        for line in lines[1:]:
-            yield dict(zip(header, line.split('\t')))
+        for line in lines:
+            yield dict(zip(header, line))
 
     def _parse_seat_map(self):
         """Get mapping between seat numbers and legislator identifiers."""
