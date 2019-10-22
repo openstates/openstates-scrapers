@@ -148,12 +148,13 @@ class MIBillScraper(Scraper):
                     results = self.parse_roll_call(vote_url, rc_num)
 
                     if results is not None:
+                        vote_passed = len(results['yes']) > len(results['no'])
                         vote = VoteEvent(
                             start_date=date,
                             chamber=actor,
                             bill=bill,
                             motion_text=action,
-                            result='pass' if results and len(results['yes']) > len(results['no']) else 'fail',
+                            result='pass' if vote_passed else 'fail',
                             classification='passage',
                         )
 
