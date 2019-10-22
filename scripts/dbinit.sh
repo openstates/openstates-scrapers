@@ -6,6 +6,7 @@ parties="
 Democratic
 Republican
 Independent
+Libertarian
 Progressive
 Progressive/Democratic
 Democratic/Progressive
