@@ -6,7 +6,7 @@ import collections
 
 import lxml.html
 from pupa.scrape import Scraper, Bill, VoteEvent
-
+import scrapelib
 
 BASE_URL = 'http://www.legislature.mi.gov'
 TIMEZONE = pytz.timezone('US/Eastern')
@@ -247,7 +247,12 @@ class MIBillScraper(Scraper):
             return name, url
 
     def parse_roll_call(self, url, rc_num):
-        html = self.get(url).text
+        try:
+            resp = self.get(url)
+        except scrapelib.HTTPError:
+            self.warning("Could not fetch roll call document at %s, unable to extract vote" % url)
+            return
+        html = resp.text
         vote_doc = lxml.html.fromstring(html)
         vote_doc_textonly = vote_doc.text_content()
         if re.search('In\\s+The\\s+Chair', vote_doc_textonly) is None:
