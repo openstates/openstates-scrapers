@@ -78,6 +78,7 @@ class BillDetail(Page):
             self.process_history()
             self.process_versions()
             self.process_analysis()
+            self.process_amendments()
             yield from self.process_votes()
             yield from self.scrape_page_items(HousePage, bill=self.obj)
 
@@ -96,6 +97,41 @@ class BillDetail(Page):
         except IndexError:
             self.obj.extras['places'] = []   # set places to something no matter what
             self.scraper.warning("No version table for {}".format(self.obj.identifier))
+
+    # 2020 SB 230 is a Bill with populated amendments:
+    # http://flsenate.gov/Session/Bill/2020/230/?Tab=Amendments
+    def process_amendments(self):
+        commmittee_amend_table = self.doc.xpath("//div[@id = 'tabBodyAmendments']"
+                                                "//div[@id='CommitteeAmendment']//table")
+        if commmittee_amend_table:
+            self.process_amendments_table(commmittee_amend_table, 'Committee')
+
+        floor_amend_table = self.doc.xpath("//div[@id = 'tabBodyAmendments']"
+                                           "//div[@id='FloorAmendment']//table")
+        if floor_amend_table:
+            self.process_amendments_table(floor_amend_table, 'Floor')
+
+    def process_amendments_table(self, table, amend_type):
+        try:
+            version_to_amend = table[0].xpath('string(caption)').strip()
+            for tr in table[0].xpath("tbody/tr"):
+                name = tr.xpath("string(td[1])").strip().split("\n")[0].strip()
+
+                # Amendment titles don't show which version they're amending, so add that
+                name = '{} to {}'.format(name, version_to_amend)
+
+                for link in tr.xpath("td[5]/a"):
+                    version_url = link.attrib['href']
+                    if version_url.endswith('PDF'):
+                        mimetype = 'application/pdf'
+
+                    elif version_url.endswith('HTML'):
+                        mimetype = 'text/html'
+
+                    self.obj.add_version_link(name, version_url, media_type=mimetype)
+        except IndexError:
+            self.scraper.warning("No {} amendments table for {}".format(
+                amend_type, self.obj.identifier))
 
     def process_analysis(self):
         try:
