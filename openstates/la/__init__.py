@@ -170,6 +170,7 @@ class Louisiana(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = [
+        "2020 Organizational Session",
         "2016 Organizational Session",
         "2015 Regular Session",
         "2014 Regular Session",
