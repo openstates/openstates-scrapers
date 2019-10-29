@@ -6,4 +6,5 @@ aws s3 cp openstatesorg.pgdump s3://${S3_BUCKET}/ocd/`date +%Y-%m-%d`-openstates
 
 
 pg_dump -Fc openstatesorg --exclude-table-data 'auth*' --exclude-table-data 'boundaries*' --exclude-table-data 'django_admin*' --exclude-table-data "geo*" --exclude-table-data "simplekeys*" > public.pgdump
-aws s3 cp public.pgdump s3://${S3_BUCKET}/public/`date +%Y-%m-%d`-public.pgdump
+aws s3 cp --acl public-read public.pgdump s3://${S3_BUCKET}/public/daily/`date +%Y-%m-%d`-public.pgdump
+aws s3 cp --acl public-read public.pgdump s3://${S3_BUCKET}/public/monthly/`date +%Y-%m`-public.pgdump
