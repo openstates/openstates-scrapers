@@ -140,6 +140,13 @@ class Wisconsin(Jurisdiction):
             "name": "2019 Regular Session",
             "start_date": "2019-01-07"
         },
+        {
+            'identifier': '2019S1',
+            'start_date': "2019-11-07",
+            'classification': 'special',
+            'name': 'November 2019 Special Session',
+            '_scraped_name': 'November 2019 Special Session',
+        },
     ]
     ignored_scraped_sessions = [
         "February 2015 Extraordinary Session",
