@@ -1,61 +1,42 @@
-FROM  alpine:3.9
+FROM python:3.7-slim
 LABEL maintainer="James Turk <james@openstates.org>"
 
 ENV PYTHONIOENCODING 'utf-8'
-ENV LANG 'en_US.UTF-8'
+ENV LANG 'C.UTF-8'
 ENV PUPA_ENV /opt/openstates/venv-pupa/
+
+RUN apt update && apt install -y --no-install-recommends \
+      git \
+      build-essential \
+      curl \
+      unzip \
+      libssl-dev \
+      libffi-dev \
+      freetds-dev \
+      python3-virtualenv \
+      libxml2-dev \
+      libxslt-dev \
+      libyaml-dev \
+      poppler-utils \
+      libpq-dev \
+      postgresql-client \ 
+      libgdal-dev \
+      libgeos-dev \
+      awscli \
+      libmariadb-dev \
+#     mariadb \
+#     mariadb-client \
+#     libcrypto1.1 \
+      mdbtools && \
+      rm -rf /var/lib/apt/lists/*
 
 ADD . /opt/openstates/openstates
 
-RUN apk add --no-cache --virtual .build-dependencies \
-    wget \
-    build-base \
-    autoconf \
-    automake \
-    libtool && \
-  apk add --no-cache \
-    git \
-    curl \
-    unzip \
-    gcc \
-    glib \
-    glib-dev \
-    libressl-dev \
-    libffi-dev \
-    freetds-dev \
-    python3 \
-    python3-dev \
-    py-virtualenv \
-    libxml2-dev \
-    libxslt-dev \
-    yaml-dev \
-    poppler-utils \
-    postgresql-dev \
-    postgresql-client \
-    mariadb \
-    mariadb-dev \
-    mariadb-client && \
-  apk add --no-cache \
-    --repository http://dl-cdn.alpinelinux.org/alpine/edge/main \
-    libcrypto1.1 && \
-  apk add --no-cache \
-    --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing \
-    gdal-dev \
-    geos-dev && \
-  pip3 install awscli && \
-  cd /tmp && \
-    wget "https://github.com/brianb/mdbtools/archive/0.7.1.zip" && \
-    unzip 0.7.1.zip && rm 0.7.1.zip && \
-    cd mdbtools-0.7.1 && \
-    autoreconf -i -f && \
-    ./configure --disable-man && make && make install && \
-    cd /tmp && \
-    rm -rf mdbtools-0.7.1 && \
-  virtualenv -p $(which python3) /opt/openstates/venv-pupa/ && \
-    /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata-django.git#egg=opencivicdata && \
-    /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/pupa.git#egg=pupa && \
-    /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements.txt && \
-  apk del .build-dependencies
+RUN python3 -m venv /opt/openstates/venv-pupa/ && \
+      /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata-django.git#egg=opencivicdata && \
+      /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/pupa.git#egg=pupa && \
+      /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements.txt
+
 
 WORKDIR /opt/openstates/openstates/
 ENTRYPOINT ["/opt/openstates/openstates/pupa-scrape.sh"]
