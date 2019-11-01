@@ -38,8 +38,8 @@ WORKDIR /opt/openstates/openstates/
 ENTRYPOINT ["/opt/openstates/openstates/pupa-scrape.sh"]
 
 FROM base AS california
-RUN apt install -y --no-install-recommends \
-      mariadb \
+RUN apt update && apt install -y --no-install-recommends \
+      mariadb-server \
       mariadb-client \
       libmariadb-dev
 RUN /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements.ca.txt
