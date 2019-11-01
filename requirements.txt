@@ -9,10 +9,6 @@ python-dateutil
 # development
 ipdb>=0.11
 
-# California
-SQLAlchemy>=1.2,<2
-mysqlclient>=1.4,<2
-
 # Connecticut
 chardet>=3,<4
 

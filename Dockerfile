@@ -1,4 +1,4 @@
-FROM python:3.7-slim
+FROM python:3.7-slim AS base
 LABEL maintainer="James Turk <james@openstates.org>"
 
 ENV PYTHONIOENCODING 'utf-8'
@@ -23,10 +23,6 @@ RUN apt update && apt install -y --no-install-recommends \
       libgdal-dev \
       libgeos-dev \
       awscli \
-      libmariadb-dev \
-#     mariadb \
-#     mariadb-client \
-#     libcrypto1.1 \
       mdbtools && \
       rm -rf /var/lib/apt/lists/*
 
@@ -40,3 +36,10 @@ RUN python3 -m venv /opt/openstates/venv-pupa/ && \
 
 WORKDIR /opt/openstates/openstates/
 ENTRYPOINT ["/opt/openstates/openstates/pupa-scrape.sh"]
+
+FROM base AS california
+RUN apt install -y --no-install-recommends \
+      mariadb \
+      mariadb-client \
+      libmariadb-dev
+RUN /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements.ca.txt
