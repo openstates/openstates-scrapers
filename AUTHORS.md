@@ -3,13 +3,14 @@ https://github.com/openstates/openstates/graphs/contributors
 
 Current core developers:
 * James Turk
+* Dan Schneiderman
 * Miles Watkins
 * Tim Showers
 * Josh Carp
 
+
 Emeritus core developers:
 * Michael Stephens
-* Dan Schneiderman
 * Thom Neale
 * Andy Lo
 * Rachel Shorey
