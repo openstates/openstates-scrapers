@@ -12,4 +12,4 @@ setup(name='openstates',
       description='Open States',
       long_description=long_description,
       platforms=['any'],
-)
+      )

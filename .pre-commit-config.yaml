@@ -1,0 +1,14 @@
+default_language_version:
+    python: python3.7
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.2.3  # Use the ref you want to point at
+    hooks:
+      - id: check-merge-conflict
+      - id: debug-statements
+      - id: flake8
+        exclude: openstates/il/tests/
+# -   repo: https://github.com/ambv/black
+#     rev: stable
+#     hooks:
+#       - id: black
