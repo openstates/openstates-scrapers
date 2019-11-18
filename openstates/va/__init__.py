@@ -137,6 +137,7 @@ class Virginia(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = [
+        '2020 Session',
         '2015 Special Session I',
         '2015 Session',
         '2014 Special Session I',
