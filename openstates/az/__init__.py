@@ -228,6 +228,13 @@ class Arizona(Jurisdiction):
             "start_date": "2019-01-14",
             "end_date": "2019-03-29",
         },
+        {
+            "_scraped_name": "2020 - Fifty-fourth Legislature - Second Regular Session",
+            "classification": "primary",
+            "identifier": "54th-2nd-regular",
+            "name": "54th Legislature - 2nd Regular Session",
+            "start_date": "2020-01-13",
+        },
     ]
     ignored_scraped_sessions = [
         "2008 - Forty-eighth Legislature - Second Regular Session",
