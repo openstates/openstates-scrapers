@@ -14,6 +14,8 @@ class OKBillScraper(Scraper):
 
     categorizer = Categorizer()
 
+    # Can be found in the session select dropdown at
+    # http://www.oklegislature.gov/TextOfMeasures.aspx
     meta_session_id = {
         '2011-2012': '1200',
         '2012SS1': '121X',
@@ -24,6 +26,7 @@ class OKBillScraper(Scraper):
         '2017SS2': '172X',
         '2017-2018': '1800',
         '2019-2020': '1900',
+        '2020': '2000',
     }
 
     def scrape(self, chamber=None, session=None, only_bills=None):
