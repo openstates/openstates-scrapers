@@ -19,10 +19,8 @@ RUN apt update && apt install -y --no-install-recommends \
       libyaml-dev \
       poppler-utils \
       libpq-dev \
-      postgresql-client \ 
       libgdal-dev \
       libgeos-dev \
-      awscli \
       libmariadb-dev \
 #     mariadb \
 #     mariadb-client \
