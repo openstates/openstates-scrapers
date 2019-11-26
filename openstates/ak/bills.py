@@ -76,6 +76,9 @@ class AKBillScraper(Scraper):
             yield from self.scrape_chamber(chamber, session)
 
     def scrape_chamber(self, chamber, session):
+        
+        chamber = 'lower'
+
         if chamber == 'upper':
             bill_abbrs = ('SB', 'SR', 'SCR', 'SJR')
         elif chamber == 'lower':
@@ -83,17 +86,18 @@ class AKBillScraper(Scraper):
         bill_types = {'B': 'bill', 'R': 'resolution', 'JR': 'joint resolution',
                       'CR': 'concurrent resolution'}
 
+        
         for abbr in bill_abbrs:
             bill_type = bill_types[abbr[1:]]
             bill_list_url = (
-                'http://www.legis.state.ak.us/basis/range_multi'
-                '.asp?session=%s&bill1=%s1&bill2=%s9999'
-            ) % (session, abbr, abbr)
+                'https://www.akleg.gov/basis/Bill/Range/%s'
+            ) % (session)
             doc = lxml.html.fromstring(self.get(bill_list_url).text)
             doc.make_links_absolute(bill_list_url)
-            for bill_link in doc.xpath('//table[@align="center"]//tr/td[1]//a'):
-                bill_url = bill_link.get('href')
+            for bill_link in doc.xpath('//tr//td[1]//nobr[1]//a[1]'):
                 bill_id = bill_link.text.replace(' ', '')
+                bill_url = bill_link.get('href').replace(' ', '')
+                print(bill_id, ' ', bill_url)
                 yield from self.scrape_bill(chamber, session, bill_id, bill_type,
                                             bill_url)
 
