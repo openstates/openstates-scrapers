@@ -99,8 +99,8 @@ class AKBillScraper(Scraper):
             else:
                 chamber = 'lower'
 
-            # yield from self.scrape_bill(chamber, session, bill_id, bill_type,
-                                        # bill_url)
+            yield from self.scrape_bill(chamber, session, bill_id, bill_type,
+                                        bill_url)
 
     # def scrape_chamber(self, chamber, session):
         
@@ -135,10 +135,13 @@ class AKBillScraper(Scraper):
     def scrape_bill(self, chamber, session, bill_id, bill_type, url):
         doc = lxml.html.fromstring(self.get(url).text)
         doc.make_links_absolute(url)
+        print("Within scrape_bill")
 
-        title = doc.xpath('//b[text()="TITLE:"]')
+        title = doc.xpath('//span[text()="Title"]')[0].getparent()
+        print (len(title))
         if title:
-            title = title[0].tail.strip().strip('"')
+            title = title[1].text.strip().strip('"')
+            print("Title: ", title)
         else:
             self.warning("skipping bill %s, no information" % url)
             return
