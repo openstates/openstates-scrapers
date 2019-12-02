@@ -135,13 +135,10 @@ class AKBillScraper(Scraper):
     def scrape_bill(self, chamber, session, bill_id, bill_type, url):
         doc = lxml.html.fromstring(self.get(url).text)
         doc.make_links_absolute(url)
-        print("Within scrape_bill")
 
         title = doc.xpath('//span[text()="Title"]')[0].getparent()
-        print (len(title))
         if title:
             title = title[1].text.strip().strip('"')
-            print("Title: ", title)
         else:
             self.warning("skipping bill %s, no information" % url)
             return
@@ -156,21 +153,23 @@ class AKBillScraper(Scraper):
         bill.add_source(url)
 
         # Get sponsors
-        spons_str = doc.xpath('//b[contains(text(), "SPONSOR")]')[0].tail.strip()
+        spons_str = doc.xpath('//span[contains(text(), "Sponsor(S)")]')[0].getparent()[1].text
         sponsors_match = re.match(
-            r'(SENATOR|REPRESENTATIVE)\([Ss]\) ([^,]+(,[^,]+){0,})',
+            r'(SENATOR|REPRESENTATIVE)',
             spons_str)
+        
         if sponsors_match:
-            sponsors = sponsors_match.group(2).split(',')
+            sponsors = spons_str.split(',')
             sponsor = sponsors[0].strip()
 
             if sponsor:
                 bill.add_sponsorship(
-                    sponsors[0],
+                    sponsors[0].split()[1],
                     entity_type='person',
                     classification='primary',
                     primary=True,
                 )
+                
 
             for sponsor in sponsors[1:]:
                 sponsor = sponsor.strip()
@@ -181,6 +180,7 @@ class AKBillScraper(Scraper):
                         classification='cosponsor',
                         primary=False,
                     )
+                    
         else:
             # Committee sponsorship
             spons_str = spons_str.strip()
@@ -190,6 +190,7 @@ class AKBillScraper(Scraper):
                                    '', spons_str).title()
                 spons_str = (spons_str +
                              " Committee (by request of the governor)")
+                print("Added Sponsor", spons_str)
 
             if spons_str:
                 bill.add_sponsorship(
