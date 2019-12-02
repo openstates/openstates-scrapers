@@ -190,7 +190,6 @@ class AKBillScraper(Scraper):
                                    '', spons_str).title()
                 spons_str = (spons_str +
                              " Committee (by request of the governor)")
-                print("Added Sponsor", spons_str)
 
             if spons_str:
                 bill.add_sponsorship(
@@ -202,29 +201,28 @@ class AKBillScraper(Scraper):
 
         # Get actions from second myth table
         self._current_comm = None
-        act_rows = doc.xpath('(//table[@class="myth"])[2]//tr')[1:]
+        act_rows = doc.xpath("//div[@id='tab6_4']//tr")[1:]
         for row in act_rows:
-            date, journal, raw_chamber, action = row.xpath('td')
-
-            act_date = datetime.datetime.strptime(date.text_content().strip(),
-                                                  '%m/%d/%y')
-            raw_chamber = raw_chamber.text_content().strip()
+            date, journal, action = row.xpath('td')
             action = action.text_content().strip()
+            raw_chamber = action[0:3]
+            act_date = datetime.datetime.strptime(date.text_content().strip(), '%m/%d/%Y')
+            
 
             if raw_chamber == "(H)":
                 act_chamber = "lower"
             elif raw_chamber == "(S)":
                 act_chamber = "upper"
 
-            if re.match(r"\w+ Y(\d+)", action):
+            # Votes
+            if re.search(r"\w+ Y(\d+)", action):
                 vote_href = journal.xpath('.//a/@href')
                 if vote_href:
-                    yield from self.parse_vote(bill, action, act_chamber, act_date,
-                                               vote_href[0])
+                    yield from self.parse_vote(bill, action, act_chamber, act_date, vote_href[0])
 
             action, atype = self.clean_action(action)
 
-            match = re.match(r'^Prefile released (\d+/\d+/\d+)$', action)
+            match = re.search(r'^Prefile released (\d+/\d+/\d+)$', action)
             if match:
                 action = 'Prefile released'
                 act_date = datetime.datetime.strptime(match.group(1), '%m/%d/%y')
@@ -268,6 +266,7 @@ class AKBillScraper(Scraper):
         yield bill
 
     def parse_vote(self, bill, action, act_chamber, act_date, url):
+        print("Within parse_vote")
         re_vote_text = re.compile(r'The question (?:being|to be reconsidered):\s*"(.*?\?)"', re.S)
         re_header = re.compile(r'\d{2}-\d{2}-\d{4}\s{10,}\w{,20} Journal\s{10,}\d{,6}\s{,4}')
 
