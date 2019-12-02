@@ -71,12 +71,10 @@ class AKBillScraper(Scraper):
             session = self.latest_session()
             self.info('no session specified, using %s', session)
 
-        chambers = [chamber] if chamber is not None else ['upper', 'lower']
-        for chamber in chambers:
-            yield from self.scrape_chamber(chamber, session)
+        # chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        # for chamber in chambers:
+        #     yield from self.scrape_chamber(chamber, session)
 
-    def scrape_chamber(self, chamber, session):
-        
         bill_types = {'B': 'bill', 'R': 'resolution', 'JR': 'joint resolution',
                       'CR': 'concurrent resolution'}
 
@@ -96,13 +94,39 @@ class AKBillScraper(Scraper):
             bill_id = bill_link.text.replace(' ', '')
             bill_type = bill_types[bill_abbr[1:]]
             bill_url = bill_link.get('href').replace(' ', '')
-            print(bill_type, ' ', bill_url)
-
             if bill_abbr in ['SB', 'SR', 'SCR', 'SJR']:
                 chamber = 'upper'
             else:
                 chamber = 'lower'
 
+            # yield from self.scrape_bill(chamber, session, bill_id, bill_type,
+                                        # bill_url)
+
+    # def scrape_chamber(self, chamber, session):
+        
+    #     bill_types = {'B': 'bill', 'R': 'resolution', 'JR': 'joint resolution',
+    #                   'CR': 'concurrent resolution'}
+
+    #     bill_list_url = (
+    #         'https://www.akleg.gov/basis/Bill/Range/%s'
+    #     ) % (session)
+    #     doc = lxml.html.fromstring(self.get(bill_list_url).text)
+    #     doc.make_links_absolute(bill_list_url)
+    #     for bill_link in doc.xpath('//tr//td[1]//nobr[1]//a[1]'):
+    #         bill_abbr = bill_link.text
+    #         if ' ' in bill_abbr:
+    #             bill_abbr = bill_abbr.split(' ')[0]
+    #         elif 'HCR' in bill_abbr:
+    #             bill_abbr = bill_abbr[:3]
+    #         else:
+    #             bill_abbr = bill_abbr[:2]
+    #         bill_id = bill_link.text.replace(' ', '')
+    #         bill_type = bill_types[bill_abbr[1:]]
+    #         bill_url = bill_link.get('href').replace(' ', '')
+    #         if bill_abbr in ['SB', 'SR', 'SCR', 'SJR']:
+    #             chamber = 'upper'
+    #         else:
+    #             chamber = 'lower'
             
 
             # yield from self.scrape_bill(chamber, session, bill_id, bill_type,
