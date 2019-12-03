@@ -199,13 +199,14 @@ class AKBillScraper(Scraper):
                     primary=True,
                 )
 
-        # Get actions from second myth table
+        # Get actions
         self._current_comm = None
         act_rows = doc.xpath("//div[@id='tab6_4']//tr")[1:]
         for row in act_rows:
             date, journal, action = row.xpath('td')
             action = action.text_content().strip()
             raw_chamber = action[0:3]
+            journal_entry_number = journal.text_content()
             act_date = datetime.datetime.strptime(date.text_content().strip(), '%m/%d/%Y')
             
 
@@ -215,10 +216,12 @@ class AKBillScraper(Scraper):
                 act_chamber = "upper"
 
             # Votes
-            if re.search(r"\w+ Y(\d+)", action):
+            if re.search(r"Y(\d+)", action):
                 vote_href = journal.xpath('.//a/@href')
                 if vote_href:
-                    yield from self.parse_vote(bill, action, act_chamber, act_date, vote_href[0])
+                    vote_href = vote_href[0].replace(' ', '')
+                    yield from self.parse_vote(bill, journal_entry_number, action, act_chamber, act_date, vote_href)
+
 
             action, atype = self.clean_action(action)
 
@@ -235,110 +238,160 @@ class AKBillScraper(Scraper):
         for subj in doc.xpath('//a[contains(@href, "subject")]/text()'):
             bill.add_subject(subj.strip())
 
-        # Get versions
-        text_list_url = (
-            "http://www.legis.state.ak.us/"
-            "basis/get_fulltext.asp?session=%s&bill=%s"
-        ) % (session, bill_id)
-        bill.add_source(text_list_url)
+        # Get versions - to do
+        # text_list_url = (
+        #     "http://www.legis.state.ak.us/"
+        #     "basis/get_fulltext.asp?session=%s&bill=%s"
+        # ) % (session, bill_id)
+        # bill.add_source(text_list_url)
 
-        text_doc = lxml.html.fromstring(self.get(text_list_url).text)
-        text_doc.make_links_absolute(text_list_url)
-        for link in text_doc.xpath('//a[contains(@href, "get_bill_text")]'):
-            name = link.xpath('../preceding-sibling::td/text()')[0].strip()
-            text_url = link.get('href')
-            bill.add_version_link(name, text_url, media_type="text/html")
+        # text_doc = lxml.html.fromstring(self.get(text_list_url).text)
+        # text_doc.make_links_absolute(text_list_url)
+        # for link in text_doc.xpath('//a[contains(@href, "get_bill_text")]'):
+        #     name = link.xpath('../preceding-sibling::td/text()')[0].strip()
+        #     text_url = link.get('href')
+        #     bill.add_version_link(name, text_url, media_type="text/html")
 
-        # Get documents
-        doc_list_url = (
-            "http://www.legis.state.ak.us/"
-            "basis/get_documents.asp?session=%s&bill=%s"
-        ) % (session, bill_id)
-        doc_list = lxml.html.fromstring(self.get(doc_list_url).text)
-        doc_list.make_links_absolute(doc_list_url)
-        bill.add_source(doc_list_url)
-        for href in doc_list.xpath('//a[contains(@href, "get_documents")][@onclick]'):
-            h_name = href.text_content()
-            h_href = href.attrib['href']
-            if h_name.strip():
-                bill.add_document_link(h_name, h_href)
+        # Get documents - to do
+        # doc_list_url = (
+        #     "http://www.legis.state.ak.us/"
+        #     "basis/get_documents.asp?session=%s&bill=%s"
+        # ) % (session, bill_id)
+        # doc_list = lxml.html.fromstring(self.get(doc_list_url).text)
+        # doc_list.make_links_absolute(doc_list_url)
+        # bill.add_source(doc_list_url)
+        # for href in doc_list.xpath('//a[contains(@href, "get_documents")][@onclick]'):
+        #     h_name = href.text_content()
+        #     h_href = href.attrib['href']
+        #     if h_name.strip():
+        #         bill.add_document_link(h_name, h_href)
 
         yield bill
 
-    def parse_vote(self, bill, action, act_chamber, act_date, url):
-        print("Within parse_vote")
-        re_vote_text = re.compile(r'The question (?:being|to be reconsidered):\s*"(.*?\?)"', re.S)
-        re_header = re.compile(r'\d{2}-\d{2}-\d{4}\s{10,}\w{,20} Journal\s{10,}\d{,6}\s{,4}')
-
+    def parse_vote(self, bill, journal_entry_number, action, act_chamber, act_date, url):
+        
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
+        yes = no = other = 0
+        vote_counts = action.split()
+        for vote_count in vote_counts:
+            if re.match(r'[\D][\d]', vote_count):
+                if "Y" in vote_count:
+                    yes = int(vote_count[1:])
+                elif "N" in vote_count:
+                    no = int(vote_count[1:])
+                elif "E" in vote_count or "A" in vote_count:
+                    other += int(vote_count[1:])
 
-        if len(doc.xpath('//pre')) < 2:
-            return
 
-        # Find all chunks of text representing voting reports.
-        votes_text = doc.xpath('//pre')[1].text_content()
-        votes_text = re_vote_text.split(votes_text)
-        votes_data = zip(votes_text[1::2], votes_text[2::2])
-
-        iVoteOnPage = 0
-
-        # Process each.
-        for motion, text in votes_data:
-
-            iVoteOnPage += 1
-            yes = no = other = 0
-
-            tally = re.findall(r'\b([YNEA])[A-Z]+:\s{,3}(\d{,3})', text)
-            for vtype, vcount in tally:
-                vcount = int(vcount) if vcount != '-' else 0
-                if vtype == 'Y':
-                    yes = vcount
-                elif vtype == 'N':
-                    no = vcount
-                else:
-                    other += vcount
-
-            vote = VoteEvent(
+        vote = VoteEvent(
                 bill=bill,
                 start_date=act_date.strftime('%Y-%m-%d'),
                 chamber=act_chamber,
-                motion_text=motion,
+                motion_text=action,
                 result='pass' if yes > no else 'fail',
                 classification='passage',
-            )
-            vote.set_count('yes', yes)
-            vote.set_count('no', no)
-            vote.set_count('other', other)
+                )
 
-            vote.pupa_id = (url + ' ' + str(iVoteOnPage)) if iVoteOnPage > 1 else url
+        vote.set_count('yes', yes)
+        vote.set_count('no', no)
+        vote.set_count('other', other)
+        vote.add_source(url)
 
-            # In lengthy documents, the "header" can be repeated in the middle
-            # of content. This regex gets rid of it.
-            vote_lines = re_header.sub('', text)
-            vote_lines = vote_lines.split('\r\n')
+        yield vote
 
-            vote_type = None
-            for vote_list in vote_lines:
-                if vote_list.startswith('Yeas: '):
-                    vote_list, vote_type = vote_list[6:], 'yes'
-                elif vote_list.startswith('Nays: '):
-                    vote_list, vote_type = vote_list[6:], 'no'
-                elif vote_list.startswith('Excused: '):
-                    vote_list, vote_type = vote_list[9:], 'other'
-                elif vote_list.startswith('Absent: '):
-                    vote_list, vote_type = vote_list[9:], 'other'
-                elif vote_list.strip() == '':
-                    vote_type = None
-                if vote_type:
-                    for name in vote_list.split(','):
-                        name = name.strip()
-                        if name:
-                            vote.vote(vote_type, name)
+        
+        # print(action)
 
-            vote.add_source(url)
+        # Dan attempt at pulling out the vote information
+        # Xpath to grab journal entry information
+        # xpath_search = "//b[text()[contains(.,'%s')]]" % journal_entry_number
+        # xpath_search = "//body//pre[1]"
+        # vote_counts = doc.xpath(xpath_search)
+        # print(vote_counts[0].text_content().split("\n"))
+        # vote_counts = doc.xpath('//body//b[contains(text(), "YEAS")]')
+        # for votes in vote_counts:
+        #     print(votes.text_content())
 
-            yield vote
+
+        # yield vote
+
+        # old code
+        # re_vote_text = re.compile(r'The question (?:being|to be reconsidered):\s*"(.*?\?)"', re.S)
+        # re_header = re.compile(r'\d{2}-\d{2}-\d{4}\s{10,}\w{,20} Journal\s{10,}\d{,6}\s{,4}')
+
+        # if len(doc.xpath('//pre')) < 2:
+        #     return
+
+        # Find all chunks of text representing voting reports.
+        # votes_text = doc.xpath('//pre')[1].text_content()
+        # votes_text = re_vote_text.split(votes_text)
+        # votes_data = zip(votes_text[1::2], votes_text[2::2])
+        # votes_data = []
+        
+
+        # iVoteOnPage = 0
+
+        # # Process each.
+        # votes_data = []
+        # for motion, text in votes_data:
+
+        #     iVoteOnPage += 1
+        #     yes = no = other = 0
+
+        #     tally = re.findall(r'\b([YNEA])[A-Z]+:\s{,3}(\d{,3})', text)
+        #     for vtype, vcount in tally:
+        #         vcount = int(vcount) if vcount != '-' else 0
+        #         if vtype == 'Y':
+        #             yes = vcount
+        #         elif vtype == 'N':
+        #             no = vcount
+        #         else:
+        #             other += vcount
+
+        #     vote = VoteEvent(
+        #         bill=bill,
+        #         start_date=act_date.strftime('%Y-%m-%d'),
+        #         chamber=act_chamber,
+        #         motion_text=motion,
+        #         result='pass' if yes > no else 'fail',
+        #         classification='passage',
+        #     )
+        #     vote.set_count('yes', yes)
+        #     vote.set_count('no', no)
+        #     vote.set_count('other', other)
+        #     print("Yes votes:", yes, "No votes", no, "Other", other)
+
+        #     vote.pupa_id = (url + ' ' + str(iVoteOnPage)) if iVoteOnPage > 1 else url
+
+        #     # In lengthy documents, the "header" can be repeated in the middle
+        #     # of content. This regex gets rid of it.
+        #     vote_lines = re_header.sub('', text)
+        #     vote_lines = vote_lines.split('\r\n')
+
+        #     vote_type = None
+        #     for vote_list in vote_lines:
+        #         if vote_list.startswith('Yeas: '):
+        #             vote_list, vote_type = vote_list[6:], 'yes'
+        #         elif vote_list.startswith('Nays: '):
+        #             vote_list, vote_type = vote_list[6:], 'no'
+        #         elif vote_list.startswith('Excused: '):
+        #             vote_list, vote_type = vote_list[9:], 'other'
+        #         elif vote_list.startswith('Absent: '):
+        #             vote_list, vote_type = vote_list[9:], 'other'
+        #         elif vote_list.strip() == '':
+        #             vote_type = None
+        #         if vote_type:
+        #             for name in vote_list.split(','):
+        #                 name = name.strip()
+        #                 if name:
+        #                     vote.vote(vote_type, name)
+
+        #     vote.add_source(url)
+
+            # yield vote
+
+
 
     def clean_action(self, action):
         # Clean up some acronyms
