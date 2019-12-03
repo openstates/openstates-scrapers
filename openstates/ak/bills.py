@@ -251,18 +251,19 @@ class AKBillScraper(Scraper):
             bill.add_version_link(name, text_url, media_type="text/html")
 
         # Get documents - to do
-        # doc_list_url = (
-        #     "http://www.legis.state.ak.us/"
-        #     "basis/get_documents.asp?session=%s&bill=%s"
-        # ) % (session, bill_id)
-        # doc_list = lxml.html.fromstring(self.get(doc_list_url).text)
-        # doc_list.make_links_absolute(doc_list_url)
-        # bill.add_source(doc_list_url)
-        # for href in doc_list.xpath('//a[contains(@href, "get_documents")][@onclick]'):
-        #     h_name = href.text_content()
-        #     h_href = href.attrib['href']
-        #     if h_name.strip():
-        #         bill.add_document_link(h_name, h_href)
+        doc_list_url = (
+            "https://www.akleg.gov/basis/Bill/Detail/%s?Root=%s#tab5_4") % (session, bill_id)
+        doc_list = lxml.html.fromstring(self.get(doc_list_url).text)
+        doc_list.make_links_absolute(doc_list_url)
+        bill.add_source(doc_list_url)
+        for href in doc_list.xpath('//a[contains(@href, "get_documents")][@onclick]'):
+            h_name = href.text_content()
+            h_href = href.attrib['href']
+            if h_name.strip():
+                try:
+                    bill.add_document_link(h_name, h_href)
+                except:
+                    print("Duplicate found")
 
         yield bill
 
