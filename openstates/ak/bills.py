@@ -235,22 +235,20 @@ class AKBillScraper(Scraper):
                 classification=atype)
 
         # Get subjects
-        for subj in doc.xpath('//a[contains(@href, "subject")]/text()'):
-            bill.add_subject(subj.strip())
+        # for subj in doc.xpath('//a[contains(@href, "subject")]/text()'):
+        #     bill.add_subject(subj.strip())
 
         # Get versions - to do
-        # text_list_url = (
-        #     "http://www.legis.state.ak.us/"
-        #     "basis/get_fulltext.asp?session=%s&bill=%s"
-        # ) % (session, bill_id)
-        # bill.add_source(text_list_url)
+        text_list_url = (
+            "https://www.akleg.gov/basis/Bill/Detail/%s?Root=%s#tab1_4") % (session, bill_id)
+        bill.add_source(text_list_url)
 
-        # text_doc = lxml.html.fromstring(self.get(text_list_url).text)
-        # text_doc.make_links_absolute(text_list_url)
-        # for link in text_doc.xpath('//a[contains(@href, "get_bill_text")]'):
-        #     name = link.xpath('../preceding-sibling::td/text()')[0].strip()
-        #     text_url = link.get('href')
-        #     bill.add_version_link(name, text_url, media_type="text/html")
+        text_doc = lxml.html.fromstring(self.get(text_list_url).text)
+        text_doc.make_links_absolute(text_list_url)
+        for link in text_doc.xpath('//a[contains(@href, "/Text/")]'):
+            name = link.text_content()
+            text_url = link.get('href')
+            bill.add_version_link(name, text_url, media_type="text/html")
 
         # Get documents - to do
         # doc_list_url = (
