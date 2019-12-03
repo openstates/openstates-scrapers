@@ -235,8 +235,8 @@ class AKBillScraper(Scraper):
                 classification=atype)
 
         # Get subjects
-        # for subj in doc.xpath('//a[contains(@href, "subject")]/text()'):
-        #     bill.add_subject(subj.strip())
+        for subj in doc.xpath('//a[contains(@href, "subject")]/text()'):
+            bill.add_subject(subj.strip())
 
         # Get versions - to do
         text_list_url = (
