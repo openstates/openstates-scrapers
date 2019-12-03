@@ -82,7 +82,6 @@ class Idaho(Jurisdiction):
             "name": "64th Legislature, 2nd Regular Session (2018)",
             "start_date": "2018-01-08"
         },
-        # TODO: Uncomment and remove from ignore_scraped when filing begins
         {
             "_scraped_name": "2019 Session",
             "classification": "primary",
@@ -93,7 +92,7 @@ class Idaho(Jurisdiction):
         }
     ]
     ignored_scraped_sessions = [
-        "2019 Session",
+        "2020 Session",
         "2010 Session",
         "2009 Session",
         "2008 Session",
