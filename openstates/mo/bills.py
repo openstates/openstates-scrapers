@@ -182,7 +182,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         # Get the primary sponsor
         try:
             sponsor = bill_page.xpath('//a[@id="hlSponsor"]')[0]
-        except IndexError as e:
+        except IndexError:
             sponsor = bill_page.xpath('//span[@id="lSponsor"]')[0]
 
         bill_sponsor = sponsor.text_content()
