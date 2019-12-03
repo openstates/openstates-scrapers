@@ -180,7 +180,11 @@ class MOBillScraper(Scraper, LXMLMixin):
             bill.add_title(bill_title)
 
         # Get the primary sponsor
-        sponsor = bill_page.xpath('//a[@id="hlSponsor"]')[0]
+        try:
+            sponsor = bill_page.xpath('//a[@id="hlSponsor"]')[0]
+        except IndexError as e:
+            sponsor = bill_page.xpath('//span[@id="lSponsor"]')[0]
+
         bill_sponsor = sponsor.text_content()
         # bill_sponsor_link = sponsor.attrib.get('href')
         bill.add_sponsorship(
