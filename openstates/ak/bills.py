@@ -74,7 +74,7 @@ class AKBillScraper(Scraper):
         bill_types = {'B': 'bill', 'R': 'resolution', 'JR': 'joint resolution',
                       'CR': 'concurrent resolution'}
 
-        bill_list_url = ('https://www.akleg.gov/basis/Bill/Range/{session}')
+        bill_list_url = (f'https://www.akleg.gov/basis/Bill/Range/{session}')
         doc = lxml.html.fromstring(self.get(bill_list_url).text)
         doc.make_links_absolute(bill_list_url)
         for bill_link in doc.xpath('//tr//td[1]//nobr[1]//a[1]'):
@@ -228,7 +228,8 @@ class AKBillScraper(Scraper):
                 try:
                     bill.add_document_link(h_name, h_href)
                 except:
-                    print("Duplicate found")
+                    self.warning("Duplicate found")
+                    return
 
         yield bill
 
