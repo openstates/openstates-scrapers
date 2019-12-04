@@ -238,6 +238,7 @@ class AKBillScraper(Scraper):
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         yes = no = other = 0
+        result = ""
         vote_counts = action.split()
         for vote_count in vote_counts:
             if re.match(r'[\D][\d]', vote_count):
@@ -248,13 +249,20 @@ class AKBillScraper(Scraper):
                 elif "E" in vote_count or "A" in vote_count:
                     other += int(vote_count[1:])
 
+        if 'PASSED' in action:
+            result = 'pass'
+        elif 'FAILED' in action:
+            result = 'fail'
+        else:
+            result = 'pass' if yes > no else 'fail'
+
 
         vote = VoteEvent(
                 bill=bill,
                 start_date=act_date.strftime('%Y-%m-%d'),
                 chamber=act_chamber,
                 motion_text=action,
-                result='pass' if yes > no else 'fail',
+                result=result,
                 classification='passage',
                 )
 
