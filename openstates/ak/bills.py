@@ -69,14 +69,12 @@ class AKBillScraper(Scraper):
     def scrape(self, chamber=None, session=None):
         if session is None:
             session = self.latest_session()
-            self.info('no session specified, using %s', session)
+            self.info(f'no session specified, using {session}')
 
         bill_types = {'B': 'bill', 'R': 'resolution', 'JR': 'joint resolution',
                       'CR': 'concurrent resolution'}
 
-        bill_list_url = (
-            'https://www.akleg.gov/basis/Bill/Range/%s'
-        ) % (session)
+        bill_list_url = ('https://www.akleg.gov/basis/Bill/Range/{session}')
         doc = lxml.html.fromstring(self.get(bill_list_url).text)
         doc.make_links_absolute(bill_list_url)
         for bill_link in doc.xpath('//tr//td[1]//nobr[1]//a[1]'):
@@ -107,7 +105,7 @@ class AKBillScraper(Scraper):
         if title:
             title = title[1].text.strip().strip('"')
         else:
-            self.warning("skipping bill %s, no information" % url)
+            self.warning(f'skipping bill {url}, no information')
             return
 
         bill = Bill(
@@ -207,7 +205,7 @@ class AKBillScraper(Scraper):
 
         # Get versions - to do
         text_list_url = (
-            "https://www.akleg.gov/basis/Bill/Detail/%s?Root=%s#tab1_4") % (session, bill_id)
+            f'https://www.akleg.gov/basis/Bill/Detail/{session}?Root={bill_id}#tab1_4')
         bill.add_source(text_list_url)
 
         text_doc = lxml.html.fromstring(self.get(text_list_url).text)
@@ -219,7 +217,7 @@ class AKBillScraper(Scraper):
 
         # Get documents - to do
         doc_list_url = (
-            "https://www.akleg.gov/basis/Bill/Detail/%s?Root=%s#tab5_4") % (session, bill_id)
+            f'https://www.akleg.gov/basis/Bill/Detail/{session}?Root={bill_id}#tab5_4')
         doc_list = lxml.html.fromstring(self.get(doc_list_url).text)
         doc_list.make_links_absolute(doc_list_url)
         bill.add_source(doc_list_url)
@@ -375,7 +373,7 @@ class AKBillScraper(Scraper):
             dept = match.group(3)
             dept = self._fiscal_dept_mapping.get(dept, dept)
 
-            action = "Fiscal Note %s: %s (%s)" % (num, impact, dept)
+            action = f'Fiscal Note {num}: {impact} ({dept})'
 
         match = self._comm_re.match(action)
         if match:
@@ -385,27 +383,24 @@ class AKBillScraper(Scraper):
         if match:
             vtype = self._comm_vote_type[match.group(1)]
 
-            action = "%s %s: %s" % (self._current_comm, vtype,
-                                    match.group(2))
+            action = f'{self._current_comm} {vtype}: {match.group(2)}'
 
         match = re.match(r'^COSPONSOR\(S\): (.*)$', action)
         if match:
-            action = "Cosponsors added: %s" % match.group(1)
+            action = f'Cosponsors added: {match.group(1)}'
 
         match = re.match('^([A-Z]{3,3}), ([A-Z]{3,3})$', action)
         if match:
-            action = "REFERRED TO %s and %s" % (
-                self._comm_mapping[match.group(1)],
-                self._comm_mapping[match.group(2)])
+            action = f'REFERRED TO {self._comm_mapping[match.group(1)]} and {self._comm_mapping[match.group(2)]}'
 
         match = re.match('^([A-Z]{3,3})$', action)
         if match:
-            action = 'REFERRED TO %s' % self._comm_mapping[action]
+            action = f'REFERRED TO {self._comm_mapping[action]}'
 
         match = re.match('^REFERRED TO (.*)$', action)
         if match:
             comms = match.group(1).title().replace(' And ', ' and ')
-            action = "REFERRED TO %s" % comms
+            action = "REFERRED TO {comms}"
 
         action = re.sub(r'\s+', ' ', action)
 
