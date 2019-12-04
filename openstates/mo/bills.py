@@ -522,9 +522,9 @@ class MOBillScraper(Scraper, LXMLMixin):
                                       on_duplicate='ignore')
 
         # house bill versions
-        # everything between the row containing "Bill Text"" and the next div.DocHeaderRow
+        # everything between the row containing "Bill Text" in an h2 and the next div.DocHeaderRow
         version_rows = bill_page.xpath(
-            '//div[contains(text(),"Bill Text")]/'
+            '//div[h2[contains(text(),"Bill Text")]]/'
             'following-sibling::div[contains(@class,"DocRow") '
             'and count(preceding-sibling::div[contains(@class,"DocHeaderRow")])=1]')
         for row in version_rows:
@@ -540,16 +540,17 @@ class MOBillScraper(Scraper, LXMLMixin):
                                       on_duplicate='ignore')
 
         # house bill summaries
-        # everything between the row containing "Bill Summary"" and the next div.DocHeaderRow
+        # everything between the row containing "Bill Summary" in an h2
+        # and the next div.DocHeaderRow
         summary_rows = bill_page.xpath(
-            '//div[contains(text(),"Bill Summary")]/'
+            '//div[h2[contains(text(),"Bill Summary")]]/'
             'following-sibling::div[contains(@class,"DocRow") '
             'and count(following-sibling::div[contains(@class,"DocHeaderRow")])=1]')
 
         # if there are no amedments, we need a different xpath for summaries
         if not summary_rows:
             summary_rows = bill_page.xpath(
-                '//div[contains(text(),"Bill Summary")]/'
+                '//div[h2[contains(text(),"Bill Summary")]]/'
                 'following-sibling::div[contains(@class,"DocRow")]')
 
         for row in reversed(summary_rows):
@@ -565,7 +566,7 @@ class MOBillScraper(Scraper, LXMLMixin):
                                        on_duplicate='ignore')
 
         # house bill amendments
-        amendment_rows = bill_page.xpath('//div[contains(text(),"Amendment")]/'
+        amendment_rows = bill_page.xpath('//div[h2[contains(text(),"Amendment")]]/'
                                          'following-sibling::div[contains(@class,"DocRow")]')
 
         for row in reversed(amendment_rows):
@@ -642,6 +643,10 @@ class MOBillScraper(Scraper, LXMLMixin):
         # special sessions and other year manipulation messes up the session variable
         # but we need it for correct output
         self._session_id = session
+
+        # if you need to scrape an individual bill for testing:
+        # yield from self._parse_house_bill('BillContent.aspx?bill=HB397&year=2019&code=R',
+        #                                   session)
 
         if chamber in ['upper', None]:
             yield from self._scrape_upper_chamber(session)
