@@ -169,7 +169,6 @@ class NCBillScraper(Scraper):
             '//div[contains(@class, "card-body")]'
             '//div[@class="row"]'
         )
-        print("Within Vote for Bill", bill)
 
         for vote_row in doc.xpath(vote_tr_path):
             entries = [each.text_content() for each in vote_row.xpath('div')[1:-1:2]]
@@ -201,24 +200,19 @@ class NCBillScraper(Scraper):
             ve.set_count('excused', int(exc))
             ve.add_source(result_link)
 
-            if int(exc) > 0:
-                print("Excused:", exc)
-
             data = self.get(result_link).text
             vdoc = lxml.html.fromstring(data)
 
             # only one table that looks like this
             vote_table = vdoc.xpath("//div[@class='row ncga-row-no-gutters']")
 
-            # # skip party row
+            # Grabs names for how people voted
             for row in vote_table:
                 votes_names = []
                 row = row.text_content()
                 if 'None' in row:
                     vote_type = "Nope"
-                    # print(row)
                 elif 'Ayes (' in row:
-                    # votes_names = row.replace('\n', ';').replace(' ', '').split(';')
                     row = row.replace('\n', ';')
                     votes_names_list = re.sub('\s+', '', row).strip().split(';')[2:-1]
                     vote_type = "yes"
@@ -230,6 +224,10 @@ class NCBillScraper(Scraper):
                     row = row.replace('\n', ';')
                     votes_names = re.sub('\s+', '', row).strip().split(';')[2:-1]
                     vote_type = 'absent'
+                elif 'Not Voting (' in row:
+                    row = row.replace('\n', ';')
+                    votes_names = re.sub('\s+', '', row).strip().split(';')[2:-1]
+                    vote_type = 'abstain'
                 else:
                     vote_type = "Not a vote"
                 if votes_names:
