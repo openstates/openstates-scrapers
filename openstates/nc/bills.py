@@ -1,6 +1,7 @@
 import pytz
 import datetime as dt
 import lxml.html
+import re
 from pupa.scrape import Scraper, Bill, VoteEvent
 
 eastern = pytz.timezone('US/Eastern')
@@ -168,7 +169,7 @@ class NCBillScraper(Scraper):
             '//div[contains(@class, "card-body")]'
             '//div[@class="row"]'
         )
-        # print("Within Vote for Bill", bill)
+        print("Within Vote for Bill", bill)
 
         for vote_row in doc.xpath(vote_tr_path):
             entries = [each.text_content() for each in vote_row.xpath('div')[1:-1:2]]
@@ -186,7 +187,7 @@ class NCBillScraper(Scraper):
                 dt.datetime.strptime(date.replace('.', ''), "%m/%d/%Y %H:%M %p"))
             date = date.isoformat()
 
-            # ve = VoteEvent(chamber=chamber,
+            ve = VoteEvent(chamber=chamber,
                            start_date=date,
                            motion_text=subject,
                            result='pass' if 'PASS' in result_text else 'fail',
@@ -199,36 +200,41 @@ class NCBillScraper(Scraper):
             ve.set_count('absent', int(abs))
             ve.set_count('excused', int(exc))
             ve.add_source(result_link)
-            # print(ve)
-            # print("Ayes:", aye, "No:", no, "Result:", result_text)
+
+            if int(exc) > 0:
+                print("Excused:", exc)
 
             data = self.get(result_link).text
             vdoc = lxml.html.fromstring(data)
 
             # only one table that looks like this
-            # vote_table, = vdoc.xpath('//table[@cellpadding="5"]')
+            vote_table = vdoc.xpath("//div[@class='row ncga-row-no-gutters']")
 
             # # skip party row
-            # for row in vote_table.xpath('tr')[1:]:
-            #     vote_type, dems, reps = row.xpath('td')
-
-            #     vote_type = vote_type.text_content()
-            #     if 'Ayes' in vote_type:
-            #         vote_type = 'yes'
-            #     elif 'Noes' in vote_type:
-            #         vote_type = 'no'
-            #     elif 'Not Voting' in vote_type:
-            #         vote_type = 'not voting'
-            #     elif 'Exc. Absence' in vote_type:
-            #         vote_type = 'absent'
-            #     elif 'Exc. Vote' in vote_type:
-            #         vote_type = 'excused'
-            #     else:
-            #         raise ValueError('unknown vote type: ' + vote_type)
-
-            #     for name in (vote_list_to_names(dems.text_content()) +
-            #                  vote_list_to_names(reps.text_content())):
-            #         ve.vote(vote_type, name)
+            for row in vote_table:
+                votes_names = []
+                row = row.text_content()
+                if 'None' in row:
+                    vote_type = "Nope"
+                    # print(row)
+                elif 'Ayes (' in row:
+                    # votes_names = row.replace('\n', ';').replace(' ', '').split(';')
+                    row = row.replace('\n', ';')
+                    votes_names_list = re.sub('\s+', '', row).strip().split(';')[2:-1]
+                    vote_type = "yes"
+                elif 'Noes (' in row:
+                    row = row.replace('\n', ';')
+                    votes_names = re.sub('\s+', '', row).strip().split(';')[2:-1]
+                    vote_type = "no"
+                elif 'Excused Absence (' in row:
+                    row = row.replace('\n', ';')
+                    votes_names = re.sub('\s+', '', row).strip().split(';')[2:-1]
+                    vote_type = 'absent'
+                else:
+                    vote_type = "Not a vote"
+                if votes_names:
+                    for name in votes_names:
+                        ve.vote(vote_type, name)
 
             yield ve
 
