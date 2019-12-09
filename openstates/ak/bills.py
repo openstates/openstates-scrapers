@@ -69,12 +69,12 @@ class AKBillScraper(Scraper):
     def scrape(self, chamber=None, session=None):
         if session is None:
             session = self.latest_session()
-            self.info(f'no session specified, using {session}')
+            self.info('no session specified')
 
         bill_types = {'B': 'bill', 'R': 'resolution', 'JR': 'joint resolution',
                       'CR': 'concurrent resolution'}
 
-        bill_list_url = (f'https://www.akleg.gov/basis/Bill/Range/{session}')
+        bill_list_url = ("https://www.akleg.gov/basis/Bill/Range/{session}")
         doc = lxml.html.fromstring(self.get(bill_list_url).text)
         doc.make_links_absolute(bill_list_url)
         for bill_link in doc.xpath('//tr//td[1]//nobr[1]//a[1]'):
@@ -93,8 +93,12 @@ class AKBillScraper(Scraper):
             else:
                 chamber = 'lower'
 
-            yield from self.scrape_bill(chamber, session, bill_id, bill_type,
-                                        bill_url)
+            yield from self.scrape_bill(
+                chamber,
+                session,
+                bill_id,
+                bill_type,
+                bill_url)
 
     def scrape_bill(self, chamber, session, bill_id, bill_type, url):
         doc = lxml.html.fromstring(self.get(url).text)
@@ -104,7 +108,7 @@ class AKBillScraper(Scraper):
         if title:
             title = title[1].text.strip().strip('"')
         else:
-            self.warning(f'skipping bill {url}, no information')
+            self.warning("skipping bill {url}, no information")
             return
 
         bill = Bill(
@@ -180,7 +184,14 @@ class AKBillScraper(Scraper):
                 vote_href = journal.xpath('.//a/@href')
                 if vote_href:
                     vote_href = vote_href[0].replace(' ', '')
-                    yield from self.parse_vote(bill, journal_entry_number, action, act_chamber, act_date, vote_href)
+                    yield from self.parse_vote(
+                        bill,
+                        journal_entry_number,
+                        action,
+                        act_chamber,
+                        act_date,
+                        vote_href
+                    )
 
             action, atype = self.clean_action(action)
 
@@ -199,7 +210,7 @@ class AKBillScraper(Scraper):
 
         # Get versions - to do
         text_list_url = (
-            f'https://www.akleg.gov/basis/Bill/Detail/{session}?Root={bill_id}#tab1_4')
+            "https://www.akleg.gov/basis/Bill/Detail/{session}?Root={bill_id}#tab1_4")
         bill.add_source(text_list_url)
 
         text_doc = lxml.html.fromstring(self.get(text_list_url).text)
@@ -211,7 +222,7 @@ class AKBillScraper(Scraper):
 
         # Get documents - to do
         doc_list_url = (
-            f'https://www.akleg.gov/basis/Bill/Detail/{session}?Root={bill_id}#tab5_4')
+            "https://www.akleg.gov/basis/Bill/Detail/{session}?Root={bill_id}#tab5_4")
         doc_list = lxml.html.fromstring(self.get(doc_list_url).text)
         doc_list.make_links_absolute(doc_list_url)
         bill.add_source(doc_list_url)
@@ -221,7 +232,7 @@ class AKBillScraper(Scraper):
             if h_name.strip():
                 try:
                     bill.add_document_link(h_name, h_href)
-                except:
+                except KeyError:
                     self.warning("Duplicate found")
                     return
 
@@ -229,7 +240,7 @@ class AKBillScraper(Scraper):
 
     def parse_vote(self, bill, journal_entry_number, action, act_chamber, act_date, url):
         html = self.get(url).text
-        doc = lxml.html.fromstring(html)
+        # doc = lxml.html.fromstring(html)
         yes = no = other = 0
         result = ""
         vote_counts = action.split()
@@ -369,7 +380,7 @@ class AKBillScraper(Scraper):
             dept = match.group(3)
             dept = self._fiscal_dept_mapping.get(dept, dept)
 
-            action = f'Fiscal Note {num}: {impact} ({dept})'
+            action = "Fiscal Note {num}: {impact} ({dept})"
 
         match = self._comm_re.match(action)
         if match:
