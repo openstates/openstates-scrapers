@@ -280,7 +280,8 @@ class AKBillScraper(Scraper):
         # yield vote
 
         # old code
-        # re_vote_text = re.compile(r'The question (?:being|to be reconsidered):\s*"(.*?\?)"', re.S)
+        # re_vote_text = re.compile(r'The question (?:being|to be '
+        #   'reconsidered):\s*"(.*?\?)"', re.S)
         # re_header = re.compile(r'\d{2}-\d{2}-\d{4}\s{10,}\w{,20} Journal\s{10,}\d{,6}\s{,4}')
 
         # if len(doc.xpath('//pre')) < 2:
@@ -396,7 +397,7 @@ class AKBillScraper(Scraper):
         match = re.match('^REFERRED TO (.*)$', action)
         if match:
             comms = match.group(1).title().replace(' And ', ' and ')
-            action = "REFERRED TO {comms}"
+            action = f'REFERRED TO {comms}'
 
         action = re.sub(r'\s+', ' ', action)
 
