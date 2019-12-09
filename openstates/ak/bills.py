@@ -239,7 +239,7 @@ class AKBillScraper(Scraper):
         yield bill
 
     def parse_vote(self, bill, journal_entry_number, action, act_chamber, act_date, url):
-        html = self.get(url).text
+        # html = self.get(url).text
         # doc = lxml.html.fromstring(html)
         yes = no = other = 0
         result = ""
@@ -380,7 +380,10 @@ class AKBillScraper(Scraper):
             dept = match.group(3)
             dept = self._fiscal_dept_mapping.get(dept, dept)
 
-            action = "Fiscal Note {num}: {impact} ({dept})"
+            action = "Fiscal Note {num}: {impact} ({dept})".format(
+                num=num,
+                impact=impact,
+                dept=dept)
 
         match = self._comm_re.match(action)
         if match:
@@ -390,7 +393,7 @@ class AKBillScraper(Scraper):
         if match:
             vtype = self._comm_vote_type[match.group(1)]
 
-            action = f'{self._current_comm} {vtype}: {match.group(2)}'
+            action = f"{self._current_comm} {vtype}: {match.group(2)}"
 
         match = re.match(r'^COSPONSOR\(S\): (.*)$', action)
         if match:
