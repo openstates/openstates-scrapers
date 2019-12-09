@@ -237,7 +237,6 @@ class NCBillScraper(Scraper):
                     vote_type = "Not a vote"
                 if votes_names:
                     for name in votes_names:
-                        print(vote_type, name)
                         ve.vote(vote_type, name)
 
             yield ve
