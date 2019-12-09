@@ -1,8 +1,13 @@
-import pytz
+
 import datetime as dt
-import lxml.html
+
 import re
-from pupa.scrape import Scraper, Bill, VoteEvent
+
+import lxml.html
+
+from pupa.scrape import Bill, Scraper, VoteEvent
+
+import pytz
 
 eastern = pytz.timezone('US/Eastern')
 
@@ -247,7 +252,6 @@ class NCBillScraper(Scraper):
 
     def scrape_chamber(self, chamber, session):
         chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
-
         url = 'https://www3.ncleg.gov/gascripts/SimpleBillInquiry/displaybills.pl'
         post_data = {
             'Session': session,
