@@ -219,24 +219,25 @@ class NCBillScraper(Scraper):
                     vote_type = "Nope"
                 elif 'Ayes (' in row:
                     row = row.replace('\n', ';')
-                    votes_names = re.sub('\s+', '', row).strip().split(';')[2:-1]
+                    votes_names = row.replace(" ", "").strip().split(';')[2:-1]
                     vote_type = "yes"
                 elif 'Noes (' in row:
                     row = row.replace('\n', ';')
-                    votes_names = re.sub('\s+', '', row).strip().split(';')[2:-1]
+                    votes_names = row.replace(" ", "").strip().split(';')[2:-1]
                     vote_type = "no"
                 elif 'Excused Absence (' in row:
                     row = row.replace('\n', ';')
-                    votes_names = re.sub('\s+', '', row).strip().split(';')[2:-1]
+                    votes_names = row.replace(" ", "").strip().split(';')[2:-1]
                     vote_type = 'absent'
                 elif 'Not Voting (' in row:
                     row = row.replace('\n', ';')
-                    votes_names = re.sub('\s+', '', row).strip().split(';')[2:-1]
+                    votes_names = row.replace(" ", "").strip().split(';')[2:-1]
                     vote_type = 'abstain'
                 else:
                     vote_type = "Not a vote"
                 if votes_names:
                     for name in votes_names:
+                        print(vote_type, name)
                         ve.vote(vote_type, name)
 
             yield ve
