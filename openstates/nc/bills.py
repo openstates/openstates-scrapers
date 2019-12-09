@@ -219,7 +219,7 @@ class NCBillScraper(Scraper):
                     vote_type = "Nope"
                 elif 'Ayes (' in row:
                     row = row.replace('\n', ';')
-                    votes_names_list = re.sub('\s+', '', row).strip().split(';')[2:-1]
+                    votes_names = re.sub('\s+', '', row).strip().split(';')[2:-1]
                     vote_type = "yes"
                 elif 'Noes (' in row:
                     row = row.replace('\n', ';')
