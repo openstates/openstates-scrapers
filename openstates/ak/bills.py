@@ -96,7 +96,6 @@ class AKBillScraper(Scraper):
             yield from self.scrape_bill(chamber, session, bill_id, bill_type,
                                         bill_url)
 
-
     def scrape_bill(self, chamber, session, bill_id, bill_type, url):
         doc = lxml.html.fromstring(self.get(url).text)
         doc.make_links_absolute(url)
@@ -122,7 +121,6 @@ class AKBillScraper(Scraper):
         sponsors_match = re.match(
             r'(SENATOR|REPRESENTATIVE)',
             spons_str)
-        
         if sponsors_match:
             sponsors = spons_str.split(',')
             sponsor = sponsors[0].strip()
@@ -134,7 +132,6 @@ class AKBillScraper(Scraper):
                     classification='primary',
                     primary=True,
                 )
-                
 
             for sponsor in sponsors[1:]:
                 sponsor = sponsor.strip()
@@ -145,7 +142,7 @@ class AKBillScraper(Scraper):
                         classification='cosponsor',
                         primary=False,
                     )
-                    
+
         else:
             # Committee sponsorship
             spons_str = spons_str.strip()
@@ -173,8 +170,6 @@ class AKBillScraper(Scraper):
             raw_chamber = action[0:3]
             journal_entry_number = journal.text_content()
             act_date = datetime.datetime.strptime(date.text_content().strip(), '%m/%d/%Y')
-            
-
             if raw_chamber == "(H)":
                 act_chamber = "lower"
             elif raw_chamber == "(S)":
@@ -186,7 +181,6 @@ class AKBillScraper(Scraper):
                 if vote_href:
                     vote_href = vote_href[0].replace(' ', '')
                     yield from self.parse_vote(bill, journal_entry_number, action, act_chamber, act_date, vote_href)
-
 
             action, atype = self.clean_action(action)
 
@@ -234,7 +228,6 @@ class AKBillScraper(Scraper):
         yield bill
 
     def parse_vote(self, bill, journal_entry_number, action, act_chamber, act_date, url):
-        
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         yes = no = other = 0
@@ -256,15 +249,14 @@ class AKBillScraper(Scraper):
         else:
             result = 'pass' if yes > no else 'fail'
 
-
         vote = VoteEvent(
-                bill=bill,
-                start_date=act_date.strftime('%Y-%m-%d'),
-                chamber=act_chamber,
-                motion_text=action,
-                result=result,
-                classification='passage',
-                )
+            bill=bill,
+            start_date=act_date.strftime('%Y-%m-%d'),
+            chamber=act_chamber,
+            motion_text=action,
+            result=result,
+            classification='passage',
+        )
 
         vote.set_count('yes', yes)
         vote.set_count('no', no)
@@ -273,7 +265,6 @@ class AKBillScraper(Scraper):
 
         yield vote
 
-        
         # print(action)
 
         # Dan attempt at pulling out the vote information
@@ -285,7 +276,6 @@ class AKBillScraper(Scraper):
         # vote_counts = doc.xpath('//body//b[contains(text(), "YEAS")]')
         # for votes in vote_counts:
         #     print(votes.text_content())
-
 
         # yield vote
 
@@ -301,7 +291,6 @@ class AKBillScraper(Scraper):
         # votes_text = re_vote_text.split(votes_text)
         # votes_data = zip(votes_text[1::2], votes_text[2::2])
         # votes_data = []
-        
 
         # iVoteOnPage = 0
 
@@ -361,10 +350,7 @@ class AKBillScraper(Scraper):
         #                     vote.vote(vote_type, name)
 
         #     vote.add_source(url)
-
-            # yield vote
-
-
+        # yield vote
 
     def clean_action(self, action):
         # Clean up some acronyms
@@ -400,7 +386,8 @@ class AKBillScraper(Scraper):
 
         match = re.match('^([A-Z]{3,3}), ([A-Z]{3,3})$', action)
         if match:
-            action = f'REFERRED TO {self._comm_mapping[match.group(1)]} and {self._comm_mapping[match.group(2)]}'
+            action = f'REFERRED TO {self._comm_mapping[match.group(1)]} and'
+            '{self._comm_mapping[match.group(2)]}'
 
         match = re.match('^([A-Z]{3,3})$', action)
         if match:
