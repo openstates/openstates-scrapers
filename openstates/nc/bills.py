@@ -1,8 +1,6 @@
 
 import datetime as dt
 
-import re
-
 import lxml.html
 
 from pupa.scrape import Bill, Scraper, VoteEvent
