@@ -21,6 +21,8 @@ class WABillScraper(Scraper, LXMLMixin):
     categorizer = Categorizer()
     _subjects = defaultdict(list)
 
+    _chamber_map = {'House': 'lower', 'Senate': 'upper', 'Joint': 'joint'}
+
     _TZ = pytz.timezone('US/Eastern')
 
     ORDINALS = {
@@ -187,6 +189,9 @@ class WABillScraper(Scraper, LXMLMixin):
         self._load_versions(chamber)
         self._load_documents(chamber)
 
+        # to test a specific bill...
+        # yield from self.scrape_bill('lower', '2019-2020', 'HB 2217')
+
         bill_id_list = []
         year = int(session[0:4])
 
@@ -206,18 +211,16 @@ class WABillScraper(Scraper, LXMLMixin):
             page = lxml.etree.fromstring(page.content)
             for leg_info in xpath(page, "//wa:LegislationInfo"):
                 bill_id = xpath(leg_info, "string(wa:BillId)")
-                bill_num = int(bill_id.split()[1])
+                bill_num = xpath(leg_info, "number(wa:BillNumber)")
+                bill_chamber = xpath(leg_info, "string(wa:OriginalAgency)")
+                bill_chamber = self._chamber_map[bill_chamber]
 
                 # Skip gubernatorial appointments
                 if bill_num >= 9000:
                     continue
-
-                # Senate bills are numbered starting at 5000,
-                # House at 1000
-                if bill_num >= 5000:
-                    bill_chamber = 'upper'
-                else:
-                    bill_chamber = 'lower'
+                # skip ballot initiatives
+                if bill_id.startswith('SI') or bill_id.startswith('HI'):
+                    continue
 
                 if bill_chamber != chamber:
                     continue
@@ -244,6 +247,9 @@ class WABillScraper(Scraper, LXMLMixin):
         page = self.get(url)
         page = lxml.etree.fromstring(page.content)
         page = xpath(page, "//wa:Legislation")[0]
+
+        xml_chamber = xpath(page, 'string(wa:OriginalAgency)')
+        chamber = self._chamber_map[xml_chamber]
 
         title = xpath(page, "string(wa:LongDescription)")
 

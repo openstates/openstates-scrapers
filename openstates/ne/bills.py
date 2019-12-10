@@ -19,7 +19,6 @@ class NEBillScraper(Scraper, LXMLMixin):
         if session is None:
             session = self.jurisdiction.legislative_sessions[-1]
             self.info('no session specified, using %s', session['identifier'])
-
         start_year = datetime.strptime(session['start_date'], '%Y-%m-%d').year
         end_year = datetime.strptime(session['end_date'], '%Y-%m-%d').year
         yield from self.scrape_year(session['identifier'], start_year)
@@ -27,7 +26,8 @@ class NEBillScraper(Scraper, LXMLMixin):
             yield from self.scrape_year(session['identifier'], end_year)
 
     def scrape_year(self, session, year):
-        main_url = 'http://nebraskalegislature.gov/bills/search_by_date.php?'\
+
+        main_url = 'https://nebraskalegislature.gov/bills/search_by_date.php?'\
             'SessionDay={}'.format(year)
         page = self.lxmlize(main_url)
 
