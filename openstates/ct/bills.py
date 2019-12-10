@@ -92,7 +92,7 @@ class CTBillScraper(Scraper):
         url = ("https://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill"
                "&bill_num=%s&which_year=%s" % (bill_number, bill.legislative_session))
 
-        page = self.get(url).text
+        page = self.get(url, verify=False).text
         if 'not found in Database' in page:
             raise SkipBill()
         page = lxml.html.fromstring(page)
@@ -144,7 +144,7 @@ class CTBillScraper(Scraper):
             yes_offset = 1
             no_offset = 2
 
-        page = self.get(url).text
+        page = self.get(url, verify=False).text
 
         if 'BUDGET ADDRESS' in page:
             return
@@ -337,7 +337,7 @@ class CTBillScraper(Scraper):
         chamber_letter = {'upper': 's', 'lower': 'h'}[chamber]
         url = "https://www.cga.ct.gov/asp/menu/%slist.asp" % chamber_letter
 
-        page = self.get(url).text
+        page = self.get(url, verify=False).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -349,7 +349,7 @@ class CTBillScraper(Scraper):
             self.scrape_introducer(name, url)
 
     def scrape_introducer(self, name, url):
-        page = self.get(url).text
+        page = self.get(url, verify=False).text
         page = lxml.html.fromstring(page)
 
         for link in page.xpath("//a[contains(@href, 'billstatus')]"):
