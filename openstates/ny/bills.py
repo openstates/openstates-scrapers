@@ -317,7 +317,7 @@ class NYBillScraper(Scraper):
 
             html_version = version + ' HTML'
             html_url = 'http://assembly.state.ny.us/leg/?sh=printbill&bn='\
-                '{}&term={}'.format(bill_id, self.term_start_year)
+                '{}&term={}&Text=Y'.format(bill_id, self.term_start_year)
             bill.add_version_link(
                 html_version,
                 html_url,

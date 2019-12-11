@@ -185,7 +185,7 @@ class WIBillScraper(Scraper):
                 bill.add_version_link(a.text, pdf, media_type='application/pdf',
                                       on_duplicate='ignore')
 
-            elif a.text in ('Amendments', 'Fiscal Estimates',
+            elif a.text in ('Amendments', 'Fiscal Estimates', 'Fiscal Estimates and Reports'
                             'Record of Committee Proceedings'):
                 extra_doc_url = a.get('href')
                 extra_doc = lxml.html.fromstring(self.get(extra_doc_url).text)
@@ -347,7 +347,12 @@ class WIBillScraper(Scraper):
         doc = lxml.html.fromstring(html)
         trs = doc.xpath('//table[@class="senate"]/tbody/tr[./td[@class="vote-count"]]')
 
-        motion = doc.xpath('//div/p/b/text()')[1]
+        try:
+            motion = doc.xpath('//div/p/b/text()')[1]
+        except IndexError:
+            # http://docs.legis.wisconsin.gov/2019/related/votes/senate/sv0082
+            # breaks the normal header pattern
+            motion = doc.xpath('string(//div/p/font/text())').strip()
         vote.motion_text = motion
 
         vote_types = ['yes', 'no', 'not voting']
