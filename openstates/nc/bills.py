@@ -161,7 +161,7 @@ class NCBillScraper(Scraper):
 
         # TODO: Fix vote scraper
         for row in doc.xpath("//h6[@id='vote-header']"):
-            yield self.scrape_votes(bill, doc)
+            yield from self.scrape_votes(bill, doc)
 
         yield bill
 
