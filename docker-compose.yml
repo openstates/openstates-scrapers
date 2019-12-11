@@ -1,29 +1,23 @@
-version: "3.4"
+version: "3.5"
 
-volumes:
-  openstates-postgres:
-    name: openstates-postgres
+networks:
+  openstates-network:
+      name: openstates-network
 
 services:
   scrape:
     image: openstates/openstates
     environment:
     - MYSQL_HOST=mysql
-    - DATABASE_URL=postgres://openstates:openstates@postgres:5432/openstatesorg
+    - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
     - NEW_YORK_API_KEY
     - INDIANA_API_KEY
     - PUPA_ARGS
     volumes:
     - .:/opt/openstates/openstates/
     entrypoint: /opt/openstates/openstates/pupa-scrape.sh
-  postgres:
-    image: mdillon/postgis:11-alpine
-    environment:
-      POSTGRES_PASSWORD: openstates
-      POSTGRES_USER: openstates
-      POSTGRES_DB: openstatesorg
-    volumes:
-    - openstates-postgres:/var/lib/postgresql/data
+    networks:
+    - openstates-network
   mysql:
     image: mariadb:10.3
     command: mysqld_safe --max_allowed_packet=512M
@@ -32,6 +26,8 @@ services:
     environment:
     - MYSQL_DATABASE=capublic
     - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+    networks:
+    - openstates-network
   ca-download:
     image: openstates/openstates
     entrypoint: /opt/openstates/openstates/openstates/ca/download.sh
@@ -41,3 +37,5 @@ services:
     - .:/opt/openstates/openstates/
     depends_on:
     - mysql
+    networks:
+    - openstates-network
