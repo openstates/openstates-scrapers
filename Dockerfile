@@ -6,8 +6,6 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONIOENCODING 'utf-8'
 ENV LANG 'C.UTF-8'
 
-ENV PUPA_ENV /root/.cache/pypoetry/virtualenvs/openstates-py3.7/
-
 RUN apt update && apt install -y --no-install-recommends \
       git \
       build-essential \
