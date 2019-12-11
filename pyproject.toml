@@ -17,7 +17,7 @@ suds-py3 = "^1.3"
 SQLAlchemy = "^1.3"
 opencivicdata = "^3.0"
 pupa = "^0.10.0"
-
+requests = {version = "^2.22", extras = ["security"]}
 [tool.poetry.dev-dependencies]
 
 [build-system]

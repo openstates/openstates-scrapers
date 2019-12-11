@@ -6,7 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONIOENCODING 'utf-8'
 ENV LANG 'C.UTF-8'
 
-ENV PUPA_ENV /venv/
+ENV PUPA_ENV /root/.cache/pypoetry/virtualenvs/openstates-py3.7/
 
 RUN apt update && apt install -y --no-install-recommends \
       git \
@@ -35,9 +35,7 @@ ADD . /opt/openstates/openstates
 WORKDIR /opt/openstates/openstates/
 
 RUN set -ex \
-    && python3.7 -m venv /venv \
-    && /venv/bin/pip install -U pip poetry \
-    && /venv/bin/poetry install
-
+    && pip install poetry \
+    && poetry install
 
 ENTRYPOINT ["/opt/openstates/openstates/pupa-scrape.sh"]
