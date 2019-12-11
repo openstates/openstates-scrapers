@@ -107,6 +107,7 @@ class Oregon(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = [
+        "Mock Session 2020",
         "Today",
         "2019-2020 Interim",
         "2017-2018 Interim",
