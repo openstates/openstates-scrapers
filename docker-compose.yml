@@ -6,7 +6,7 @@ networks:
 
 services:
   scrape:
-    image: openstates/openstates
+    build: .
     environment:
     - MYSQL_HOST=mysql
     - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
