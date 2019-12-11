@@ -10,6 +10,43 @@ import lxml.html
 import pytz
 import re
 
+action_dict = {
+    "ref_ctte_100": "referral-committee",
+    "intro_100": "introduction",
+    "intro_101": "introduction",
+    "pass_300": "passage",
+    "intro_110": "reading-1",
+    "refer_210": "referral-committee",
+    "crpt_301": None,
+    "crpt_317": None,
+    "concur_606": "passage",
+    "pass_301": "passage",
+    "refer_220": "referral-committee",
+    "intro_102": "introduction", #["introduction", "passage"],
+    "intro_105": "introduction", #["introduction", "passage"],
+    "intro_ref_ctte_100": "referral-committee",
+    "refer_209": None,
+    "intro_108": "introduction", #["introduction", "passage"],
+    "intro_103": "introduction", #["introduction", "passage"],
+    "msg_reso_503": "passage",
+    "intro_107": "introduction", #["introduction", "passage"],
+    "imm_consid_360": "passage",
+    "refer_213": None,
+    "adopt_reso_100": "passage",
+    "adopt_reso_110": "passage",
+    "msg_507": "amendment-passage",
+    "confer_713": None,
+    "concur_603": None,
+    "confer_712": None,
+    "msg_506": "amendment-failure",
+    "receive_message_100": "passage",
+    "motion_920": None,
+    "concur_611": None,
+    "confer_735": None,
+    "third_429": None,
+    "final_501": None,
+    "concur_608": None,
+    }
 
 class OHBillScraper(Scraper):
     _tz = pytz.timezone('US/Eastern')
@@ -46,43 +83,6 @@ class OHBillScraper(Scraper):
                             "failed": False,
                             True: True,
                             False: False}
-
-            action_dict = {"ref_ctte_100": "referral-committee",
-                           "intro_100": "introduction",
-                           "intro_101": "introduction",
-                           "pass_300": "passage",
-                           "intro_110": "reading-1",
-                           "refer_210": "referral-committee",
-                           "crpt_301": None,
-                           "crpt_317": None,
-                           "concur_606": "passage",
-                           "pass_301": "passage",
-                           "refer_220": "referral-committee",
-                           "intro_102": ["introduction", "passage"],
-                           "intro_105": ["introduction", "passage"],
-                           "intro_ref_ctte_100": "referral-committee",
-                           "refer_209": None,
-                           "intro_108": ["introduction", "passage"],
-                           "intro_103": ["introduction", "passage"],
-                           "msg_reso_503": "passage",
-                           "intro_107": ["introduction", "passage"],
-                           "imm_consid_360": "passage",
-                           "refer_213": None,
-                           "adopt_reso_100": "passage",
-                           "adopt_reso_110": "passage",
-                           "msg_507": "amendment-passage",
-                           "confer_713": None,
-                           "concur_603": None,
-                           "confer_712": None,
-                           "msg_506": "amendment-failure",
-                           "receive_message_100": "passage",
-                           "motion_920": None,
-                           "concur_611": None,
-                           "confer_735": None,
-                           "third_429": None,
-                           "final_501": None,
-                           "concur_608": None,
-                           }
 
             base_url = "http://search-prod.lis.state.oh.us"
             first_page = base_url
@@ -396,9 +396,11 @@ class OHBillScraper(Scraper):
                     self.logger.warning("No date found for vote, skipping")
                     continue
             try:
-                motion = v["action"]
+                motion = action_dict[v["action"]]
+                if motion == None:
+                    motion = v["action"]
             except KeyError:
-                motion = v["motiontype"]
+                motion = v["action"] #v["motiontype"]
 
             # Sometimes Ohio's SOLAR will only return part of the JSON, so in that case skip
             if (not motion and isinstance(v['yeas'], str)
