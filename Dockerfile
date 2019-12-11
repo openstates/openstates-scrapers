@@ -1,9 +1,12 @@
 FROM python:3.7-slim
 LABEL maintainer="James Turk <james@openstates.org>"
 
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONIOENCODING 'utf-8'
 ENV LANG 'C.UTF-8'
-ENV PUPA_ENV /opt/openstates/venv-pupa/
+
+ENV PUPA_ENV /venv/
 
 RUN apt update && apt install -y --no-install-recommends \
       git \
@@ -29,12 +32,12 @@ RUN apt update && apt install -y --no-install-recommends \
       rm -rf /var/lib/apt/lists/*
 
 ADD . /opt/openstates/openstates
-
-RUN python3 -m venv /opt/openstates/venv-pupa/ && \
-      /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata-django.git#egg=opencivicdata && \
-      /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/pupa.git#egg=pupa && \
-      /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements.txt
-
-
 WORKDIR /opt/openstates/openstates/
+
+RUN set -ex \
+    && python3.7 -m venv /venv \
+    && /venv/bin/pip install -U pip poetry \
+    && /venv/bin/poetry install
+
+
 ENTRYPOINT ["/opt/openstates/openstates/pupa-scrape.sh"]
