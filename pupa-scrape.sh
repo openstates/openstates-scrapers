@@ -8,4 +8,4 @@ shift
 
 export PYTHONPATH=./openstates
 
-$PUPA_ENV/bin/pupa ${PUPA_ARGS:-} update $state "$@"
+poetry run pupa ${PUPA_ARGS:-} update $state "$@"
