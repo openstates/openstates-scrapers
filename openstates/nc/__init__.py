@@ -17,6 +17,20 @@ class NorthCarolina(Jurisdiction):
     }
     legislative_sessions = [
         {
+            "_scraped_name": "1987-1988 Session",
+            "classification": "primary",
+            "identifier": "1987",
+            "name": "1987-1988 Session",
+            "start_date": "1987-02-09"
+        },
+        {
+            "_scraped_name": "1991-1992 Session",
+            "classification": "primary",
+            "identifier": "1991",
+            "name": "1991-1992 Session",
+            "start_date": "1991-01-30"
+        },
+        {
             "_scraped_name": "2009-2010 Session",
             "classification": "primary",
             "identifier": "2009",
