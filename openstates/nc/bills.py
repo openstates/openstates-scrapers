@@ -71,8 +71,9 @@ class NCBillScraper(Scraper):
             bill_id = bill_id[0] + 'B ' + bill_id[1:]
 
         bill_title = doc.xpath(
-            '/html/body/div/div/main/div[2]/div[contains(@class,"col-12")]/a')[0]
+            '/html[1]/body[1]/div[1]/div[1]/main[1]/div[2]/div[1]')[0]
         bill_title = bill_title.text_content().strip()
+        print(bill_title)
 
         bill = Bill(bill_id, legislative_session=session, title=bill_title, chamber=chamber,
                     classification=bill_type)
