@@ -73,6 +73,8 @@ class NCBillScraper(Scraper):
         bill_title = doc.xpath(
             '/html[1]/body[1]/div[1]/div[1]/main[1]/div[2]/div[1]')[0]
         bill_title = bill_title.text_content().strip()
+        if bill_title is '':
+            bill_title = bill_id.replace(" ", "")
 
         bill = Bill(bill_id, legislative_session=session, title=bill_title, chamber=chamber,
                     classification=bill_type)
