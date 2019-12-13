@@ -4,22 +4,10 @@ This repository contains the code responsible for scraping bills & votes for Ope
 
 ## Links
 
-* [Open States API](https://docs.openstates.org/en/latest/api/index.html)
+* [Contributor's Guide](https://docs.openstates.org/en/latest/contributing/getting-started.html)
+* [Documentation](https://docs.openstates.org/en/latest/contributing/scrapers.html)
 * [Open States Discourse](https://discourse.openstates.org)
-
-
-## Contributing
-
-If you're interested in contributing, please visit [Our Getting Started Guide](https://docs.openstates.org/en/latest/contributing/getting-started.html#start-contributing-to-open-states).
-
-
-## A Note About Testing
-
-Our scraping framework, pupa, has a strong test harness, and requires well-structured data when ingesting. Furthermore, Open States scrapers should be written to fail when they encounter unexpected data, rather than guessing at its format and possibly ingesting bad data. Together, this means that there aren't many benefits to writing unit tests for particular Open States scrapers, versus high upkeep costs.
-
-Occasionally, states *will* have unit tests, though, for specific structural cases. To run all tests::
-
-  docker-compose run --rm --entrypoint=nosetests scrape /srv/openstates-web/openstates
+* [Code of Conduct](https://docs.openstates.org/en/latest/contributing/code-of-conduct.html)
 
 
 ## State API Keys
