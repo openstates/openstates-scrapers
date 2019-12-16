@@ -104,10 +104,10 @@ class NewMexico(Jurisdiction):
         {
             "_scraped_name": "2020 Regular",
             "classification": "primary",
-            "end_date": "2019-02-20",
+            "end_date": "2020-02-20",
             "identifier": "2020",
             "name": "2020 Regular Session",
-            "start_date": "2019-01-21"
+            "start_date": "2020-01-21"
         },
     ]
     ignored_scraped_sessions = [
