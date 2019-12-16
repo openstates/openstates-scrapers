@@ -93,6 +93,13 @@ class NorthCarolina(Jurisdiction):
             "start_date": "1995-01-25"
         },
         {
+            "_scraped_name": "1996 First Extra Session",
+            "classification": "special",
+            "identifier": "1995E1",
+            "name": "1996 Extra Session 1",
+            "start_date": "1996-02-21"
+        },
+        {
             "_scraped_name": "2009-2010 Session",
             "classification": "primary",
             "identifier": "2009",
