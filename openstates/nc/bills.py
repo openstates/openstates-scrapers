@@ -140,7 +140,21 @@ class NCBillScraper(Scraper):
             # if text is blank, try diving in
             action = (cols[5].text or '').strip() or cols[5].text_content().strip()
 
-            act_date = dt.datetime.strptime(act_date, '%m/%d/%Y').strftime('%Y-%m-%d')
+            if act_date is None:
+                search_action_date = action.split()
+                for act in search_action_date:
+                    try:
+                        if '/' in act:
+                            # print(act)
+                            # try:
+                            act_date = dt.datetime.strptime(act, '%m/%d/%Y').strftime('%Y-%m-%d')
+                            #     print(type(act_date))
+                            # except KeyError:
+                            #     raise Exception("No Action Date Provided")
+                    except KeyError:
+                        raise Exception("No Action Date Provided")
+            else:
+                act_date = dt.datetime.strptime(act_date, '%m/%d/%Y').strftime('%Y-%m-%d')
 
             if actor == 'Senate':
                 actor = 'upper'
@@ -154,8 +168,8 @@ class NCBillScraper(Scraper):
                     break
             else:
                 atype = None
-
-            bill.add_action(action, act_date, chamber=actor, classification=atype)
+            if act_date is not None:
+                bill.add_action(action, act_date, chamber=actor, classification=atype)
 
         # TODO: Fix vote scraper
         # yield from self.scrape_votes(bill, doc)
