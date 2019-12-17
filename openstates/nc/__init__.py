@@ -128,6 +128,20 @@ class NorthCarolina(Jurisdiction):
             "start_date": "1999-01-27"
         },
         {
+            "_scraped_name": "1999 First Extra Session",
+            "classification": "special",
+            "identifier": "1999E1",
+            "name": "1999 Extra Session 1",
+            "start_date": "1999-12-15"
+        },
+        {
+            "_scraped_name": "2000 First Extra Session",
+            "classification": "special",
+            "identifier": "1999E2",
+            "name": "1999 Extra Session 1",
+            "start_date": "2000-04-05"
+        },
+        {
             "_scraped_name": "2009-2010 Session",
             "classification": "primary",
             "identifier": "2009",
