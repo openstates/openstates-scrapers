@@ -149,6 +149,13 @@ class NorthCarolina(Jurisdiction):
             "start_date": "2001-01-24"
         },
         {
+            "_scraped_name": "2002 Extra Session on Redistricting",
+            "classification": "special",
+            "identifier": "2001E1",
+            "name": "2002 Extra Session on Redistricting",
+            "start_date": "2002-05-14"
+        },
+        {
             "_scraped_name": "2009-2010 Session",
             "classification": "primary",
             "identifier": "2009",
