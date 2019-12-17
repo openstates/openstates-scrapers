@@ -163,6 +163,27 @@ class NorthCarolina(Jurisdiction):
             "start_date": "2003-01-29"
         },
         {
+            "_scraped_name": "2003 Extra Session on Redistricting",
+            "classification": "special",
+            "identifier": "2003E1",
+            "name": "2003 Extra Session on Redistricting",
+            "start_date": "2003-11-24"
+        },
+        {
+            "_scraped_name": "2003 Extra Session on Economic Development Issues",
+            "classification": "special",
+            "identifier": "2003E2",
+            "name": "2003 Extra Session on Economic Development Issues",
+            "start_date": "2003-12-09"
+        },
+        {
+            "_scraped_name": "2004 Extra Session on Economic Development Issues",
+            "classification": "special",
+            "identifier": "2003E3",
+            "name": "2004 Extra Session on Economic Development Issues",
+            "start_date": "2004-11-04"
+        },
+        {
             "_scraped_name": "2009-2010 Session",
             "classification": "primary",
             "identifier": "2009",
