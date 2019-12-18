@@ -191,6 +191,13 @@ class NorthCarolina(Jurisdiction):
             "start_date": "2005-01-26"
         },
         {
+            "_scraped_name": "2007-2008 Session",
+            "classification": "primary",
+            "identifier": "2007",
+            "name": "2007-2008 Session",
+            "start_date": "2007-01-24"
+        },
+        {
             "_scraped_name": "2009-2010 Session",
             "classification": "primary",
             "identifier": "2009",
