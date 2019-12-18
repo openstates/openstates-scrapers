@@ -180,8 +180,15 @@ class NorthCarolina(Jurisdiction):
             "_scraped_name": "2004 Extra Session on Economic Development Issues",
             "classification": "special",
             "identifier": "2003E3",
-            "name": "2004 Extra Session on Economic Development Issues",
+            "name": "2004 Extra Session on Eco  nomic Development Issues",
             "start_date": "2004-11-04"
+        },
+        {
+            "_scraped_name": "2005-2006 Session",
+            "classification": "primary",
+            "identifier": "2005",
+            "name": "2005-2006 Session",
+            "start_date": "2005-01-26"
         },
         {
             "_scraped_name": "2009-2010 Session",
