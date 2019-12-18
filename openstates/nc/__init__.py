@@ -198,6 +198,20 @@ class NorthCarolina(Jurisdiction):
             "start_date": "2007-01-24"
         },
         {
+            "_scraped_name": "2007 Extra Session",
+            "classification": "special",
+            "identifier": "2007E1",
+            "name": "2007 Extra Session",
+            "start_date": "2007-09-10"
+        },
+        {
+            "_scraped_name": "2008 Extra Session",
+            "classification": "special",
+            "identifier": "2007E2",
+            "name": "2008 Extra Session",
+            "start_date": "2008-03-20"
+        },
+        {
             "_scraped_name": "2009-2010 Session",
             "classification": "primary",
             "identifier": "2009",
