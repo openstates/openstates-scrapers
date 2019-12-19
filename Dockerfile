@@ -36,4 +36,4 @@ RUN set -ex \
     && pip install poetry \
     && poetry install
 
-ENTRYPOINT ["/opt/openstates/openstates/pupa-scrape.sh"]
+ENTRYPOINT ["poetry", "run", "pupa", "update"]

@@ -86,6 +86,12 @@ class Indiana(Jurisdiction):
             "name": "2019 Regular Session",
             "start_date": "2019-01-14"
         },
+        {
+            "_scraped_name": "Second Regular Session 121st General Assembly (2020)",
+            "identifier": "2020",
+            "name": "2020 Regular Session",
+            "start_date": "2020-01-06"
+        },
     ]
     ignored_scraped_sessions = [
         "First Regular Session 121st General Assembly (2019)",
