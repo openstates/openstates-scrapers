@@ -1,10 +1,6 @@
-
 import datetime as dt
-
 import lxml.html
-
 from pupa.scrape import Bill, Scraper, VoteEvent
-
 import pytz
 
 eastern = pytz.timezone('US/Eastern')
