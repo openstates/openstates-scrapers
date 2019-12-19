@@ -13,33 +13,34 @@ def normalize_time(time_string):
     :return:
     """
     time_string = time_string.lower().strip()
-    if re.search(r'adjourn', time_string):
-        time_string = '12:00 am'
-    if re.search(r' noon', time_string):
-        time_string = time_string.replace(' noon', ' pm')
+    if re.search(r"adjourn", time_string):
+        time_string = "12:00 am"
+    if re.search(r" noon", time_string):
+        time_string = time_string.replace(" noon", " pm")
     # remove extra spaces
-    if re.search('[^ ]+ ?- ?[0-9]', time_string):
-        start, end = re.search(r'([^ ]+) ?- ?([0-9])',
-                               time_string).groups()
-        time_string = re.sub(start + ' ?- ?' + end,
-                             start + '-' + end, time_string)
+    if re.search("[^ ]+ ?- ?[0-9]", time_string):
+        start, end = re.search(r"([^ ]+) ?- ?([0-9])", time_string).groups()
+        time_string = re.sub(start + " ?- ?" + end, start + "-" + end, time_string)
     # if it's a block of time, use the start time
     block_reg = re.compile(
-        r'^([0-9]{1,2}:[0-9]{2}( [ap]m)?)-[0-9]{1,2}:[0-9]{2} ([ap]m)')
+        r"^([0-9]{1,2}:[0-9]{2}( [ap]m)?)-[0-9]{1,2}:[0-9]{2} ([ap]m)"
+    )
 
     if re.search(block_reg, time_string):
         start_time, start_meridiem, end_meridiem = re.search(
-            block_reg, time_string).groups()
+            block_reg, time_string
+        ).groups()
 
-        start_hour = int(start_time.split(':')[0])
+        start_hour = int(start_time.split(":")[0])
         if start_meridiem:
-            time_string = re.search(
-                '^([0-9]{1,2}:[0-9]{2} [ap]m)', time_string).group(1)
+            time_string = re.search("^([0-9]{1,2}:[0-9]{2} [ap]m)", time_string).group(
+                1
+            )
         else:
-            if end_meridiem == 'pm' and start_hour < 12:
-                time_string = start_time + ' am'
+            if end_meridiem == "pm" and start_hour < 12:
+                time_string = start_time + " am"
             else:
-                time_string = start_time + ' ' + end_meridiem
+                time_string = start_time + " " + end_meridiem
     return time_string
 
 
@@ -48,8 +49,9 @@ class SCEventScraper(Scraper):
     Event scraper to pull down information regarding upcoming (or past) Events
     and associated metadata and any supporting material.
     """
-    jurisdiction = 'sc'
-    _tz = pytz.timezone('US/Eastern')
+
+    jurisdiction = "sc"
+    _tz = pytz.timezone("US/Eastern")
 
     def get_page_from_url(self, url):
         """
@@ -84,32 +86,31 @@ class SCEventScraper(Scraper):
         """
 
         chambers = {
-            'upper': {'name': 'Senate', 'title': 'Senator'},
-            'lower': {'name': 'House', 'title': 'Representative'},
+            "upper": {"name": "Senate", "title": "Senator"},
+            "lower": {"name": "House", "title": "Representative"},
         }
-        if chamber == 'other':
+        if chamber == "other":
             return
 
         if chamber is None:
-            self.info('no chamber specified, using Joint Committee Meeting Schedule')
-            events_url = 'http://www.scstatehouse.gov/meetings.php'
+            self.info("no chamber specified, using Joint Committee Meeting Schedule")
+            events_url = "http://www.scstatehouse.gov/meetings.php"
         else:
-            events_url = 'http://www.scstatehouse.gov/meetings.php?chamber=%s' % (
-                chambers[chamber]['name'].upper()[0]
+            events_url = "http://www.scstatehouse.gov/meetings.php?chamber=%s" % (
+                chambers[chamber]["name"].upper()[0]
             )
 
         page = self.get_page_from_url(events_url)
 
-        meeting_year = page.xpath(
-            '//h2[@class="barheader"]/span')[0].text_content()
+        meeting_year = page.xpath('//h2[@class="barheader"]/span')[0].text_content()
         meeting_year = re.search(
-            r'Week of [A-Z][a-z]+\s+[0-9]{1,2}, ([0-9]{4})',
-            meeting_year).group(1)
+            r"Week of [A-Z][a-z]+\s+[0-9]{1,2}, ([0-9]{4})", meeting_year
+        ).group(1)
 
         dates = page.xpath("//div[@id='contentsection']/ul")
 
         for date in dates:
-            date_string = date.xpath('span')
+            date_string = date.xpath("span")
 
             if len(date_string) == 1:
                 date_string = date_string[0].text_content()
@@ -124,55 +125,60 @@ class SCEventScraper(Scraper):
             elif date_string.count(",") == 1:
                 event_year = meeting_year
             else:
-                raise AssertionError("This is not a valid date: '{}'"). \
-                    format(date_string)
+                raise AssertionError("This is not a valid date: '{}'").format(
+                    date_string
+                )
 
-            for meeting in date.xpath('li'):
-                time_string = meeting.xpath('span')[0].text_content()
+            for meeting in date.xpath("li"):
+                time_string = meeting.xpath("span")[0].text_content()
 
-                if time_string == 'CANCELED' or len(
-                        meeting.xpath(
-                            './/span[contains(text(), "CANCELED")]')) > 0:
+                if (
+                    time_string == "CANCELED"
+                    or len(meeting.xpath('.//span[contains(text(), "CANCELED")]')) > 0
+                ):
                     continue
 
                 time_string = normalize_time(time_string)
                 date_time = datetime.datetime.strptime(
-                    event_year + ' ' + date_string
-                    + ' ' + time_string, "%Y %A, %B %d %I:%M %p")
+                    event_year + " " + date_string + " " + time_string,
+                    "%Y %A, %B %d %I:%M %p",
+                )
 
                 date_time = self._tz.localize(date_time)
-                meeting_info = meeting.xpath(
-                    'br[1]/preceding-sibling::node()')[1]
+                meeting_info = meeting.xpath("br[1]/preceding-sibling::node()")[1]
                 location, description = re.search(
-                    r'-- (.*?) -- (.*)', meeting_info).groups()
+                    r"-- (.*?) -- (.*)", meeting_info
+                ).groups()
 
                 # if re.search(r'committee', description, re.I):
                 #     meeting_type = 'committee:meeting'
                 # else:
                 #     meeting_type = 'other:meeting'
 
-                event = Event(name=description,  # Event Name
-                              start_date=date_time,  # When the event will take place
-                              location_name=location)  # Where the event will be
+                event = Event(
+                    name=description,  # Event Name
+                    start_date=date_time,  # When the event will take place
+                    location_name=location,
+                )  # Where the event will be
 
                 event.add_source(events_url)
 
                 agenda_url = meeting.xpath(".//a[contains(@href,'agendas')]")
 
                 if agenda_url:
-                    agenda_url = agenda_url[0].attrib['href']
+                    agenda_url = agenda_url[0].attrib["href"]
                     event.add_source(agenda_url)
-                    event.add_document(note="Agenda",
-                                       url=agenda_url,
-                                       media_type="application/pdf")
+                    event.add_document(
+                        note="Agenda", url=agenda_url, media_type="application/pdf"
+                    )
 
                     agenda_page = self.get_page_from_url(agenda_url)
 
                     for bill in agenda_page.xpath(
-                            ".//a[contains(@href,'billsearch.php')]"):
+                        ".//a[contains(@href,'billsearch.php')]"
+                    ):
                         # bill_url = bill.attrib['href']
-                        bill_id = bill.text_content().replace(
-                            '.', '').replace(' ', '')
+                        bill_id = bill.text_content().replace(".", "").replace(" ", "")
                         # bill_description = self.get_bill_description(bill_url)
 
                         event.add_bill(bill_id)

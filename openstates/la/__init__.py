@@ -1,6 +1,7 @@
 from openstates.utils import url_xpath
 from pupa.scrape import Jurisdiction, Organization
 from .people import LAPersonScraper
+
 # from .committees import LACommitteeScraper
 # from .events import LAEventScraper
 from .bills import LABillScraper
@@ -15,7 +16,7 @@ class Louisiana(Jurisdiction):
         "people": LAPersonScraper,
         # "committees": LACommitteeScraper,
         # 'events': LAEventScraper,
-        'bills': LABillScraper,
+        "bills": LABillScraper,
     }
     legislative_sessions = [
         {
@@ -24,7 +25,7 @@ class Louisiana(Jurisdiction):
             "end_date": "2010-06-24",
             "identifier": "2009",
             "name": "2009 Regular Session",
-            "start_date": "2010-04-27"
+            "start_date": "2010-04-27",
         },
         {
             "_scraped_name": "2010 Regular Session",
@@ -32,7 +33,7 @@ class Louisiana(Jurisdiction):
             "end_date": "2010-06-21",
             "identifier": "2010",
             "name": "2010 Regular Session",
-            "start_date": "2010-03-29"
+            "start_date": "2010-03-29",
         },
         {
             "_scraped_name": "2011 Regular Session",
@@ -40,7 +41,7 @@ class Louisiana(Jurisdiction):
             "end_date": "2011-06-23",
             "identifier": "2011",
             "name": "2011 Regular Session",
-            "start_date": "2011-04-25"
+            "start_date": "2011-04-25",
         },
         {
             "_scraped_name": "2011 First Extraordinary Session",
@@ -48,7 +49,7 @@ class Louisiana(Jurisdiction):
             "end_date": "2011-04-13",
             "identifier": "2011 1st Extraordinary Session",
             "name": "2011, 1st Extraordinary Session",
-            "start_date": "2011-03-20"
+            "start_date": "2011-03-20",
         },
         {
             "_scraped_name": "2012 Regular Session",
@@ -56,7 +57,7 @@ class Louisiana(Jurisdiction):
             "end_date": "2012-06-04",
             "identifier": "2012",
             "name": "2012 Regular Session",
-            "start_date": "2012-03-12"
+            "start_date": "2012-03-12",
         },
         {
             "_scraped_name": "2013 Regular Session",
@@ -64,7 +65,7 @@ class Louisiana(Jurisdiction):
             "end_date": "2013-06-06",
             "identifier": "2013",
             "name": "2013 Regular Session",
-            "start_date": "2013-04-08"
+            "start_date": "2013-04-08",
         },
         {
             "_scraped_name": "2014 Regular Session",
@@ -72,7 +73,7 @@ class Louisiana(Jurisdiction):
             "end_date": "2014-06-02",
             "identifier": "2014",
             "name": "2014 Regular Session",
-            "start_date": "2014-03-10"
+            "start_date": "2014-03-10",
         },
         {
             "_scraped_name": "2015 Regular Session",
@@ -80,7 +81,7 @@ class Louisiana(Jurisdiction):
             "end_date": "2015-06-11",
             "identifier": "2015",
             "name": "2015 Regular Session",
-            "start_date": "2015-04-13"
+            "start_date": "2015-04-13",
         },
         {
             "_scraped_name": "2016 Regular Session",
@@ -88,7 +89,7 @@ class Louisiana(Jurisdiction):
             "end_date": "2016-06-06",
             "identifier": "2016",
             "name": "2016 Regular Session",
-            "start_date": "2016-03-14"
+            "start_date": "2016-03-14",
         },
         {
             "_scraped_name": "2016 First Extraordinary Session",
@@ -96,7 +97,7 @@ class Louisiana(Jurisdiction):
             "end_date": "2016-03-09",
             "identifier": "2016 1st Extraordinary Session",
             "name": "2016, 1st Extraordinary Session",
-            "start_date": "2016-02-14"
+            "start_date": "2016-02-14",
         },
         {
             "_scraped_name": "2016 Second Extraordinary Session",
@@ -104,7 +105,7 @@ class Louisiana(Jurisdiction):
             "end_date": "2016-06-23",
             "identifier": "2016 2nd Extraordinary Session",
             "name": "2016, 2nd Extraordinary Session",
-            "start_date": "2016-06-06"
+            "start_date": "2016-06-06",
         },
         {
             "_scraped_name": "2017 Regular Session",
@@ -212,18 +213,17 @@ class Louisiana(Jurisdiction):
         "2004 Organizational Session",
         "Other Sessions",
         "Other Sessions",
-        "Sessions"
+        "Sessions",
     ]
 
     def get_organizations(self):
         legislature_name = "Louisiana Legislature"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
         yield legislature
         yield upper
@@ -231,6 +231,7 @@ class Louisiana(Jurisdiction):
 
     def get_session_list(self):
         return url_xpath(
-            'http://www.legis.la.gov/Legis/SessionInfo/SessionInfo.aspx',
+            "http://www.legis.la.gov/Legis/SessionInfo/SessionInfo.aspx",
             '//table[@id="ctl00_ctl00_PageBody_DataListSessions"]//a[contains'
-            '(text(), "Session")]/text()')
+            '(text(), "Session")]/text()',
+        )

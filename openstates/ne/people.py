@@ -8,7 +8,7 @@ from openstates.utils import LXMLMixin
 
 class NEPersonScraper(Scraper, LXMLMixin):
     def scrape(self):
-        base_url = 'http://news.legislature.ne.gov/dist'
+        base_url = "http://news.legislature.ne.gov/dist"
 
         # there are 49 districts
         for district in range(1, 50):
@@ -30,24 +30,22 @@ class NEPersonScraper(Scraper, LXMLMixin):
                     '/div[@class="block-box"]',
                 )
 
-                full_name = self.get_node(
-                    info_node,
-                    './h2/text()[normalize-space()]')
-                full_name = re.sub(r'^Sen\.[\s]+', '', full_name).strip()
-                if full_name == 'Seat Vacant':
+                full_name = self.get_node(info_node, "./h2/text()[normalize-space()]")
+                full_name = re.sub(r"^Sen\.[\s]+", "", full_name).strip()
+                if full_name == "Seat Vacant":
                     continue
 
                 address_node = self.get_node(
-                    info_node,
-                    './address[@class="feature-content"]')
+                    info_node, './address[@class="feature-content"]'
+                )
 
                 email = self.get_node(
-                    address_node,
-                    './a[starts-with(@href, "mailto:")]/text()')
+                    address_node, './a[starts-with(@href, "mailto:")]/text()'
+                )
 
                 contact_text_nodes = self.get_nodes(
-                    address_node,
-                    './text()[following-sibling::br]')
+                    address_node, "./text()[following-sibling::br]"
+                )
 
                 address_sections = []
                 for text in contact_text_nodes:
@@ -56,43 +54,43 @@ class NEPersonScraper(Scraper, LXMLMixin):
                     if not text:
                         continue
 
-                    phone_match = re.search(r'Phone:', text)
+                    phone_match = re.search(r"Phone:", text)
 
                     if phone_match:
-                        phone = re.sub(r'^Phone:[\s]+', '', text)
+                        phone = re.sub(r"^Phone:[\s]+", "", text)
                         continue
 
                     # If neither a phone number nor e-mail address.
                     address_sections.append(text)
 
-                address = '\n'.join(address_sections)
+                address = "\n".join(address_sections)
 
                 photo_url = (
-                    'http://www.nebraskalegislature.gov/media/images/blogs'
-                    '/dist{:2d}.jpg'
+                    "http://www.nebraskalegislature.gov/media/images/blogs"
+                    "/dist{:2d}.jpg"
                 ).format(district)
 
                 # Nebraska is offically nonpartisan.
-                party = 'Nonpartisan'
+                party = "Nonpartisan"
 
                 person = Person(
                     name=full_name,
                     district=str(district),
                     party=party,
                     image=photo_url,
-                    primary_org='legislature',
+                    primary_org="legislature",
                 )
 
                 person.add_link(rep_url)
                 person.add_source(rep_url)
 
-                note = 'Capitol Office'
-                person.add_contact_detail(type='address', value=address, note=note)
+                note = "Capitol Office"
+                person.add_contact_detail(type="address", value=address, note=note)
                 if phone:
-                    person.add_contact_detail(type='voice', value=phone, note=note)
+                    person.add_contact_detail(type="voice", value=phone, note=note)
                 if email:
-                    person.add_contact_detail(type='email', value=email, note=note)
+                    person.add_contact_detail(type="email", value=email, note=note)
 
                 yield person
             except scrapelib.HTTPError:
-                self.warning('could not retrieve %s' % rep_url)
+                self.warning("could not retrieve %s" % rep_url)

@@ -1,4 +1,4 @@
-NS = {'wa': "http://WSLWebServices.leg.wa.gov/"}
+NS = {"wa": "http://WSLWebServices.leg.wa.gov/"}
 
 
 def xpath(elem, path):

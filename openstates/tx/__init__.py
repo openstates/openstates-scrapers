@@ -2,6 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
 from .bills import TXBillScraper
+
 # from .committees import TXCommitteeScraper
 from .events import TXEventScraper
 from .people import TXPersonScraper
@@ -14,12 +15,12 @@ class Texas(Jurisdiction):
     name = "Texas"
     url = "https://capitol.texas.gov/"
     scrapers = {
-        'people': TXPersonScraper,
+        "people": TXPersonScraper,
         # 'committees': TXCommitteeScraper,
-        'bills': TXBillScraper,
+        "bills": TXBillScraper,
         # Re-enable vote scraper when adding next regular session
-        'votes': TXVoteScraper,
-        'events': TXEventScraper
+        "votes": TXVoteScraper,
+        "events": TXEventScraper,
     }
     legislative_sessions = [
         {
@@ -28,7 +29,7 @@ class Texas(Jurisdiction):
             "end_date": "2009-06-01",
             "identifier": "81",
             "name": "81st Legislature (2009)",
-            "start_date": "2009-01-13"
+            "start_date": "2009-01-13",
         },
         {
             "_scraped_name": "81(1) - 2009",
@@ -36,7 +37,7 @@ class Texas(Jurisdiction):
             "end_date": "2009-07-02",
             "identifier": "811",
             "name": "81st Legislature, 1st Called Session (2009)",
-            "start_date": "2009-07-01"
+            "start_date": "2009-07-01",
         },
         {
             "_scraped_name": "82(R) - 2011",
@@ -44,7 +45,7 @@ class Texas(Jurisdiction):
             "end_date": "2011-05-30",
             "identifier": "82",
             "name": "82nd Legislature (2011)",
-            "start_date": "2011-01-11"
+            "start_date": "2011-01-11",
         },
         {
             "_scraped_name": "82(1) - 2011",
@@ -52,7 +53,7 @@ class Texas(Jurisdiction):
             "end_date": "2011-06-29",
             "identifier": "821",
             "name": "82nd Legislature, 1st Called Session (2011)",
-            "start_date": "2011-05-31"
+            "start_date": "2011-05-31",
         },
         {
             "_scraped_name": "83(R) - 2013",
@@ -60,7 +61,7 @@ class Texas(Jurisdiction):
             "end_date": "2013-05-27",
             "identifier": "83",
             "name": "83rd Legislature (2013)",
-            "start_date": "2013-01-08"
+            "start_date": "2013-01-08",
         },
         {
             "_scraped_name": "83(1) - 2013",
@@ -68,7 +69,7 @@ class Texas(Jurisdiction):
             "end_date": "2013-06-25",
             "identifier": "831",
             "name": "83nd Legislature, 1st Called Session (2013)",
-            "start_date": "2013-05-27"
+            "start_date": "2013-05-27",
         },
         {
             "_scraped_name": "83(2) - 2013",
@@ -76,7 +77,7 @@ class Texas(Jurisdiction):
             "end_date": "2013-07-30",
             "identifier": "832",
             "name": "83nd Legislature, 2st Called Session (2013)",
-            "start_date": "2013-07-01"
+            "start_date": "2013-07-01",
         },
         {
             "_scraped_name": "83(3) - 2013",
@@ -84,7 +85,7 @@ class Texas(Jurisdiction):
             "end_date": "2013-08-05",
             "identifier": "833",
             "name": "83nd Legislature, 3rd Called Session (2013)",
-            "start_date": "2013-07-30"
+            "start_date": "2013-07-30",
         },
         {
             "_scraped_name": "84(R) - 2015",
@@ -92,7 +93,7 @@ class Texas(Jurisdiction):
             "end_date": "2015-06-01",
             "identifier": "84",
             "name": "84th Legislature (2015)",
-            "start_date": "2015-01-13"
+            "start_date": "2015-01-13",
         },
         {
             "_scraped_name": "85(R) - 2017",
@@ -100,7 +101,7 @@ class Texas(Jurisdiction):
             "end_date": "2017-06-01",
             "identifier": "85",
             "name": "85th Legislature (2017)",
-            "start_date": "2017-01-13"
+            "start_date": "2017-01-13",
         },
         {
             "_scraped_name": "85(1) - 2017",
@@ -108,7 +109,7 @@ class Texas(Jurisdiction):
             "end_date": "2017-08-19",
             "identifier": "851",
             "name": "85nd Legislature, 1st Called Session (2017)",
-            "start_date": "2017-07-10"
+            "start_date": "2017-07-10",
         },
         {
             "_scraped_name": "86(R) - 2019",
@@ -116,7 +117,7 @@ class Texas(Jurisdiction):
             "end_date": "2019-05-27",
             "identifier": "86",
             "name": "86th Legislature (2019)",
-            "start_date": "2019-01-08"
+            "start_date": "2019-01-08",
         },
         # TODO: Re-enable vote scraper when adding next regular session
     ]
@@ -147,24 +148,24 @@ class Texas(Jurisdiction):
         "71(3) - 1990",
         "71(2) - 1989",
         "71(1) - 1989",
-        "71(R) - 1989"
+        "71(R) - 1989",
     ]
 
     def get_session_list(self):
-        return url_xpath('https://capitol.texas.gov/',
-                         '//select[@name="cboLegSess"]/option/text()')
+        return url_xpath(
+            "https://capitol.texas.gov/", '//select[@name="cboLegSess"]/option/text()'
+        )
 
     def get_organizations(self):
         legislature_name = "Texas Legislature"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
-        yield Organization(name='Office of the Governor', classification='executive')
+        yield Organization(name="Office of the Governor", classification="executive")
         yield legislature
         yield upper
         yield lower

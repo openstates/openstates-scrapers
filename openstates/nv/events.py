@@ -7,8 +7,8 @@ from pupa.scrape import Scraper, Event
 
 
 class NVEventScraper(Scraper, LXMLMixin):
-    _TZ = pytz.timezone('PST8PDT')
-    URL = 'https://www.leg.state.nv.us/MeetingDisplay/CalendarOfMeetings/'
+    _TZ = pytz.timezone("PST8PDT")
+    URL = "https://www.leg.state.nv.us/MeetingDisplay/CalendarOfMeetings/"
 
     # Note: The NV Site has three different calendars.
     # https://www.leg.state.nv.us/MeetingDisplay/CalendarOfMeetings/
@@ -27,19 +27,18 @@ class NVEventScraper(Scraper, LXMLMixin):
             yield self.scrape_event(row)
 
     def scrape_event(self, row):
-        date_td = row.xpath('td[1]')[0]
-        info_td = row.xpath('td[2]')[0]
+        date_td = row.xpath("td[1]")[0]
+        info_td = row.xpath("td[2]")[0]
 
-        date = date_td.xpath('b')[0].text.strip()
-        time = date_td.xpath('b/following-sibling::text()')[0].strip()
+        date = date_td.xpath("b")[0].text.strip()
+        time = date_td.xpath("b/following-sibling::text()")[0].strip()
 
         date_and_time = "{} {}".format(date, time)
-        start_date = datetime.datetime.strptime(
-            date_and_time, '%m/%d/%y %I:%M %p')
+        start_date = datetime.datetime.strptime(date_and_time, "%m/%d/%y %I:%M %p")
 
-        title = info_td.xpath('font[1]/strong')[0].text.strip()
+        title = info_td.xpath("font[1]/strong")[0].text.strip()
 
-        all_text = info_td.xpath('descendant-or-self::*/text()')
+        all_text = info_td.xpath("descendant-or-self::*/text()")
         notes = (line.strip() for line in all_text if line.strip())
         notes = list(notes)
         # Skip the first line, which is the title
@@ -54,16 +53,13 @@ class NVEventScraper(Scraper, LXMLMixin):
             start_date=self._TZ.localize(start_date),
             name=title,
             location_name=address,
-            description=notes
+            description=notes,
         )
 
         event.add_source(self.URL)
 
         if info_td.xpath('a[contains(font/text(),"agenda")]'):
-            agenda_url = info_td.xpath('a/@href')[0]
-            event.add_document(
-                "Agenda",
-                url=agenda_url
-            )
+            agenda_url = info_td.xpath("a/@href")[0]
+            event.add_document("Agenda", url=agenda_url)
 
         yield event

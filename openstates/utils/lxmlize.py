@@ -23,8 +23,10 @@ class LXMLMixin(object):
             # which have a `get` method defined.
             response = self.get(url)
         except requests.exceptions.SSLError:
-            self.warning('`self.lxmlize()` failed due to SSL error, trying '
-                         'an unverified `self.get()` (i.e. `requests.get()`)')
+            self.warning(
+                "`self.lxmlize()` failed due to SSL error, trying "
+                "an unverified `self.get()` (i.e. `requests.get()`)"
+            )
             response = self.get(url, verify=False)
 
         if raise_exceptions:

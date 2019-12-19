@@ -1,5 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import OKPersonScraper
+
 # from .committees import OKCommitteeScraper
 # from .events import OKEventScraper
 from .bills import OKBillScraper
@@ -11,10 +12,10 @@ class Oklahoma(Jurisdiction):
     name = "Oklahoma"
     url = "http://www.oklegislature.gov/"
     scrapers = {
-        'people': OKPersonScraper,
+        "people": OKPersonScraper,
         # 'committees': OKCommitteeScraper,
         # 'events': OKEventScraper,
-        'bills': OKBillScraper,
+        "bills": OKBillScraper,
     }
     # Sessions are named on OK's website as "{odd year} regular session" until the even year,
     # when all data rolls over. For example, even year sessions include all odd-year-session bills.
@@ -28,27 +29,27 @@ class Oklahoma(Jurisdiction):
         {
             "_scraped_name": "2012 Regular Session",
             "identifier": "2011-2012",
-            "name": "2011-2012 Regular Session"
+            "name": "2011-2012 Regular Session",
         },
         {
             "_scraped_name": "2012 Special Session",
             "identifier": "2012SS1",
-            "name": "2012 Special Session"
+            "name": "2012 Special Session",
         },
         {
             "_scraped_name": "2014 Regular Session",
             "identifier": "2013-2014",
-            "name": "2013-2014 Regular Session"
+            "name": "2013-2014 Regular Session",
         },
         {
             "_scraped_name": "2013 Special Session",
             "identifier": "2013SS1",
-            "name": "2013 Special Session"
+            "name": "2013 Special Session",
         },
         {
             "_scraped_name": "2016 Regular Session",
             "identifier": "2015-2016",
-            "name": "2015-2016 Regular Session"
+            "name": "2015-2016 Regular Session",
         },
         {
             "_scraped_name": "2017 First Special Session",
@@ -56,7 +57,6 @@ class Oklahoma(Jurisdiction):
             "name": "2017 First Special Session",
             "start_date": "2017-09-25",
             "end_date": "2017-11-17",
-
         },
         {
             "_scraped_name": "2017 Second Special Session",
@@ -115,18 +115,17 @@ class Oklahoma(Jurisdiction):
         "1994 Second Special Session",
         "1994 First Special Session",
         "1994 Regular Session",
-        "1993 Regular Session"
+        "1993 Regular Session",
     ]
 
     def get_organizations(self):
         legislature_name = "Oklahoma Legislature"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
         yield legislature
         yield upper
@@ -134,8 +133,11 @@ class Oklahoma(Jurisdiction):
 
     def get_session_list(self):
         from openstates.utils import url_xpath
-        sessions = url_xpath('http://webserver1.lsb.state.ok.us/WebApplication2/WebForm1.aspx',
-                             "//select[@name='cbxSession']/option/text()")
+
+        sessions = url_xpath(
+            "http://webserver1.lsb.state.ok.us/WebApplication2/WebForm1.aspx",
+            "//select[@name='cbxSession']/option/text()",
+        )
         # OK Sometimes appends (Mainsys) to their session listings
-        sessions = [s.replace('(Mainsys)', '').strip() for s in sessions]
+        sessions = [s.replace("(Mainsys)", "").strip() for s in sessions]
         return sessions

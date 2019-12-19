@@ -1,4 +1,5 @@
 from pupa.scrape import Jurisdiction, Organization
+
 # from .committees import NDCommitteeScraper
 from .votes import NDVoteScraper
 from .people import NDPersonScraper
@@ -11,29 +12,29 @@ class NorthDakota(Jurisdiction):
     name = "North Dakota"
     url = "http://www.legis.nd.gov/"
     scrapers = {
-        'people': NDPersonScraper,
-        'votes': NDVoteScraper,
+        "people": NDPersonScraper,
+        "votes": NDVoteScraper,
         # 'committees': NDCommitteeScraper,
-        'bills': NDBillScraper,
+        "bills": NDBillScraper,
     }
     legislative_sessions = [
         {
             "_scraped_name": "62nd Legislative Assembly (2011-12)",
             "identifier": "62",
             "name": "62nd Legislative Assembly (2011-2012)",
-            "start_date": "2011-01-04"
+            "start_date": "2011-01-04",
         },
         {
             "_scraped_name": "63rd Legislative Assembly (2013-14)",
             "identifier": "63",
             "name": "63rd Legislative Assembly (2013-2014)",
-            "start_date": "2013-01-08"
+            "start_date": "2013-01-08",
         },
         {
             "_scraped_name": "64th Legislative Assembly (2015-16)",
             "identifier": "64",
             "name": "64th Legislative Assembly (2015-2016)",
-            "start_date": "2015-01-08"
+            "start_date": "2015-01-08",
         },
         {
             "_scraped_name": "65th Legislative Assembly (2017-18)",
@@ -47,7 +48,7 @@ class NorthDakota(Jurisdiction):
             "identifier": "66",
             "name": "66th Legislative Assembly (2019-2020)",
             "start_date": "2019-01-03",
-        }
+        },
     ]
     ignored_scraped_sessions = [
         "67th Legislative Assembly (2021-22)",
@@ -78,52 +79,50 @@ class NorthDakota(Jurisdiction):
         "37th Legislative Assembly (1961-62)",
         "36th Legislative Assembly (1959-60)",
         "35th Legislative Assembly (1957-58)",
-        '1st Legislative Assembly (1889-90)',
-        '2nd Legislative Assembly (1891-92)',
-        '3rd Legislative Assembly (1893-94)',
-        '4th Legislative Assembly (1895-96)',
-        '5th Legislative Assembly (1897-98)',
-        '6th Legislative Assembly (1899-1900)',
-        '7th Legislative Assembly (1901-02)',
-        '8th Legislative Assembly (1903-04)',
-        '9th Legislative Assembly (1905-06)',
-        '10th Legislative Assembly (1907-08)',
-        '11th Legislative Assembly (1909-10)',
-        '12th Legislative Assembly (1911-12)',
-        '13th Legislative Assembly (1913-14)',
-        '14th Legislative Assembly (1915-16)',
-        '15th Legislative Assembly (1917-18)',
-        '16th Legislative Assembly (1919-20)',
-        '17th Legislative Assembly (1921-22)',
-        '18th Legislative Assembly (1923-24)',
-        '19th Legislative Assembly (1925-26)',
-        '20th Legislative Assembly (1927-28)',
-        '21st Legislative Assembly (1929-30)',
-        '22nd Legislative Assembly (1931-32)',
-        '23rd Legislative Assembly (1933-34)',
-        '24th Legislative Assembly (1935-36)',
-        '25th Legislative Assembly (1937-38)',
-        '26th Legislative Assembly (1939-40)',
-        '27th Legislative Assembly (1941-42)',
-        '28th Legislative Assembly (1943-44)',
-        '29th Legislative Assembly (1945-46)',
-        '30th Legislative Assembly (1947-48)',
-        '31st Legislative Assembly (1949-50)',
-        '32nd Legislative Assembly (1951-52)',
-        '33rd Legislative Assembly (1953-54)',
-        '34th Legislative Assembly (1955-56)',
-
+        "1st Legislative Assembly (1889-90)",
+        "2nd Legislative Assembly (1891-92)",
+        "3rd Legislative Assembly (1893-94)",
+        "4th Legislative Assembly (1895-96)",
+        "5th Legislative Assembly (1897-98)",
+        "6th Legislative Assembly (1899-1900)",
+        "7th Legislative Assembly (1901-02)",
+        "8th Legislative Assembly (1903-04)",
+        "9th Legislative Assembly (1905-06)",
+        "10th Legislative Assembly (1907-08)",
+        "11th Legislative Assembly (1909-10)",
+        "12th Legislative Assembly (1911-12)",
+        "13th Legislative Assembly (1913-14)",
+        "14th Legislative Assembly (1915-16)",
+        "15th Legislative Assembly (1917-18)",
+        "16th Legislative Assembly (1919-20)",
+        "17th Legislative Assembly (1921-22)",
+        "18th Legislative Assembly (1923-24)",
+        "19th Legislative Assembly (1925-26)",
+        "20th Legislative Assembly (1927-28)",
+        "21st Legislative Assembly (1929-30)",
+        "22nd Legislative Assembly (1931-32)",
+        "23rd Legislative Assembly (1933-34)",
+        "24th Legislative Assembly (1935-36)",
+        "25th Legislative Assembly (1937-38)",
+        "26th Legislative Assembly (1939-40)",
+        "27th Legislative Assembly (1941-42)",
+        "28th Legislative Assembly (1943-44)",
+        "29th Legislative Assembly (1945-46)",
+        "30th Legislative Assembly (1947-48)",
+        "31st Legislative Assembly (1949-50)",
+        "32nd Legislative Assembly (1951-52)",
+        "33rd Legislative Assembly (1953-54)",
+        "34th Legislative Assembly (1955-56)",
     ]
 
     def get_organizations(self):
         legislature_name = "North Dakota Legislative Assembly"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
         yield legislature
         yield upper
@@ -133,10 +132,12 @@ class NorthDakota(Jurisdiction):
         import scrapelib
         import lxml.html
 
-        url = 'http://www.legis.nd.gov/assembly/'
+        url = "http://www.legis.nd.gov/assembly/"
         html = scrapelib.Scraper().get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         sessions = doc.xpath("//div[@class='view-content']//a/text()")
-        sessions = [session for session in sessions if 'Territorial Assembly' not in session]
+        sessions = [
+            session for session in sessions if "Territorial Assembly" not in session
+        ]
         return sessions

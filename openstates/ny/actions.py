@@ -1,15 +1,15 @@
-'''
+"""
 NY needs an @after_categorize function to expand committee names
 and help the importer figure out which committees are being mentioned.
-'''
+"""
 import re
 from functools import partial
 from collections import namedtuple, defaultdict
 from types import MethodType
 
 
-class Rule(namedtuple('Rule', 'regexes types stop attrs')):
-    '''If anyh of ``regexes`` matches the action text, the resulting
+class Rule(namedtuple("Rule", "regexes types stop attrs")):
+    """If anyh of ``regexes`` matches the action text, the resulting
     action's types should include ``types``.
 
     If stop is true, no other rules should be tested after this one;
@@ -19,9 +19,10 @@ class Rule(namedtuple('Rule', 'regexes types stop attrs')):
     The resulting action should contain ``attrs``, which basically
     enables overwriting certain attributes, like the chamber if
     the action was listed in the wrong column.
-    '''
+    """
+
     def __new__(_cls, regexes, types=None, stop=False, **kwargs):
-        'Create new instance of Rule(regex, types, attrs, stop)'
+        "Create new instance of Rule(regex, types, attrs, stop)"
 
         # Regexes can be a string or a sequence.
         if isinstance(regexes, str):
@@ -37,12 +38,13 @@ class Rule(namedtuple('Rule', 'regexes types stop attrs')):
 
 
 class BaseCategorizer(object):
-    '''A class that exposes a main categorizer function
+    """A class that exposes a main categorizer function
     and before and after hooks, in case a state requires specific
     steps that make use of action or category info. The return
     value is a 2-tuple of category types and a dictionary of
     attributes to overwrite on the target action object.
-    '''
+    """
+
     rules = []
 
     def __init__(self):
@@ -53,16 +55,16 @@ class BaseCategorizer(object):
             if isinstance(attr, MethodType):
                 # func = partial(attr, self)
                 func = attr
-                if getattr(attr, 'before', None):
+                if getattr(attr, "before", None):
                     before_funcs.append(func)
-                if getattr(attr, 'after', None):
+                if getattr(attr, "after", None):
                     after_funcs.append(func)
         self._before_funcs = before_funcs
         self._after_funcs = after_funcs
 
     def categorize(self, text):
 
-        whitespace = partial(re.sub, r'\s{1,4}', r'\\s{,4}')
+        whitespace = partial(re.sub, r"\s{1,4}", r"\\s{,4}")
 
         # Run the before hook.
         text = self.before_categorize(text)
@@ -101,24 +103,24 @@ class BaseCategorizer(object):
         return self.finalize(return_val)
 
     def before_categorize(self, text):
-        '''A precategorization hook. Takes/returns text.
-        '''
+        """A precategorization hook. Takes/returns text.
+        """
         return text
 
     def after_categorize(self, return_val):
-        '''A post-categorization hook. Takes, returns
+        """A post-categorization hook. Takes, returns
         a tuple like (types, attrs), where types is a sequence
         of categories (e.g., passage), and attrs is a
         dictionary of addition attributes that can be used to
         augment the action (or whatever).
-        '''
+        """
         return return_val
 
     def finalize(self, return_val):
-        '''Before the types and attrs get passed to the
+        """Before the types and attrs get passed to the
         importer they need to be altered by converting lists to
         sets, etc.
-        '''
+        """
         types, attrs = return_val
         _attrs = {}
 
@@ -136,7 +138,7 @@ class BaseCategorizer(object):
                 v = list(v)
 
             # Some vals should be strings, not seqs.
-            if k == 'actor' and len(v) == 1:
+            if k == "actor" and len(v) == 1:
                 v = v.pop()
 
             _attrs[k] = v
@@ -145,54 +147,51 @@ class BaseCategorizer(object):
 
 
 def after_categorize(f):
-    '''A decorator to mark a function to be run
+    """A decorator to mark a function to be run
     before categorization has happened.
-    '''
+    """
     f.after = True
     return f
 
 
 def before_categorize(f):
-    '''A decorator to mark a function to be run
+    """A decorator to mark a function to be run
     before categorization has happened.
-    '''
+    """
     f.before = True
     return f
 
 
 # These are regex patterns that map to action categories.
 _categorizer_rules = (
-
     # Senate passage.
-    Rule(r'(?i)^(RE)?PASSED', 'passage'),
-    Rule(r'(?i)^ADOPTED', 'passage'),
-
+    Rule(r"(?i)^(RE)?PASSED", "passage"),
+    Rule(r"(?i)^ADOPTED", "passage"),
     # Amended
-    Rule(r'(?i)AMENDED (?P<bill_id>\d+)', 'amendment-passage'),
-    Rule(r'(?i)AMEND AND RECOMMIT TO (?P<committees>.+)',
-         ['amendment-passage', 'referral-committee']),
-    Rule(r'(?i)amend .+? and recommit to (?P<committees>.+)',
-         ['amendment-passage', 'referral-committee']),
-    Rule(r'(?i)AMENDED ON THIRD READING (\(T\) )?(?P<bill_id>.+)',
-         'amendment-passage'),
-    Rule(r'(?i)print number (?P<bill_id>\d+)', 'amendment-passage'),
-    Rule(r'(?i)tabled', 'amendment-deferral'),
-
+    Rule(r"(?i)AMENDED (?P<bill_id>\d+)", "amendment-passage"),
+    Rule(
+        r"(?i)AMEND AND RECOMMIT TO (?P<committees>.+)",
+        ["amendment-passage", "referral-committee"],
+    ),
+    Rule(
+        r"(?i)amend .+? and recommit to (?P<committees>.+)",
+        ["amendment-passage", "referral-committee"],
+    ),
+    Rule(r"(?i)AMENDED ON THIRD READING (\(T\) )?(?P<bill_id>.+)", "amendment-passage"),
+    Rule(r"(?i)print number (?P<bill_id>\d+)", "amendment-passage"),
+    Rule(r"(?i)tabled", "amendment-deferral"),
     # Committees
-    Rule(r'(?i)held .+? in (?P<committees>.+)', 'failure'),
-    Rule(r'(?i)REFERRED TO (?P<committees>.+)', 'referral-committee'),
-    Rule(r'(?i)reference changed to (?P<committees>.+)',
-         'referral-committee'),
-    Rule(r'(?i) committed to (?P<committees>.+)', 'referral-committee'),
-    Rule(r'(?i)^reported$'),
-
+    Rule(r"(?i)held .+? in (?P<committees>.+)", "failure"),
+    Rule(r"(?i)REFERRED TO (?P<committees>.+)", "referral-committee"),
+    Rule(r"(?i)reference changed to (?P<committees>.+)", "referral-committee"),
+    Rule(r"(?i) committed to (?P<committees>.+)", "referral-committee"),
+    Rule(r"(?i)^reported$"),
     # Governor
-    Rule(r'(?i)signed chap.(?P<session_laws>\d+)', 'executive-signature'),
-    Rule(r'(?i)vetoed memo.(?P<veto_memo>.+)', 'executive-veto'),
-    Rule(r'(?i)DELIVERED TO GOVERNOR', 'executive-receipt'),
-
+    Rule(r"(?i)signed chap.(?P<session_laws>\d+)", "executive-signature"),
+    Rule(r"(?i)vetoed memo.(?P<veto_memo>.+)", "executive-veto"),
+    Rule(r"(?i)DELIVERED TO GOVERNOR", "executive-receipt"),
     # Random.
-    Rule(r'(?i)substituted by (?P<bill_id>\w\d+)')
+    Rule(r"(?i)substituted by (?P<bill_id>\w\d+)"),
 )
 
 

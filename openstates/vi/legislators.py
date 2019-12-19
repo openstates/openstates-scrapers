@@ -3,7 +3,6 @@ from openstates.utils import LXMLMixin
 
 
 class VIPersonScraper(Scraper, LXMLMixin):
-
     def scrape(self, chamber, term):
         pass
         yield Person()

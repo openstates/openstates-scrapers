@@ -2,7 +2,7 @@ import urllib
 
 
 def canonicalize_url(url):
-    url = url.replace('/../', '/')
+    url = url.replace("/../", "/")
     o = urllib.parse.urlparse(url)
     qs = urllib.parse.parse_qsl(o.query)
     qs = sorted((upperfirst(k), v) for k, v in qs)

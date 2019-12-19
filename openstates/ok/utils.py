@@ -14,9 +14,8 @@ class LXMLMixinOK(object):
             Element: Document node representing the page.
         """
 
-        self.info('GET via curl subprocess: ' + url)
-        response = subprocess.run(['curl', '--silent', url],
-                                  stdout=subprocess.PIPE)
+        self.info("GET via curl subprocess: " + url)
+        response = subprocess.run(["curl", "--silent", url], stdout=subprocess.PIPE)
         page = lxml.html.fromstring(response.stdout)
         page.make_links_absolute(url)
 

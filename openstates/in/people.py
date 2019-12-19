@@ -7,14 +7,14 @@ import scrapelib
 
 
 class INPersonScraper(Scraper):
-    jurisdiction = 'in'
+    jurisdiction = "in"
 
     def scrape(self, chamber=None):
         if chamber:
             yield from self.scrape_chamber(chamber)
         else:
-            yield from self.scrape_chamber('upper')
-            yield from self.scrape_chamber('lower')
+            yield from self.scrape_chamber("upper")
+            yield from self.scrape_chamber("lower")
 
     def scrape_chamber(self, chamber):
         client = ApiClient(self)
@@ -29,11 +29,14 @@ class INPersonScraper(Scraper):
             lastname = leg["lastName"]
             party = leg["party"]
             link = leg["link"]
-            api_link = api_base_url+link
-            html_link = base_url+link.replace("legislators/", "legislators/legislator_")
+            api_link = api_base_url + link
+            html_link = base_url + link.replace(
+                "legislators/", "legislators/legislator_"
+            )
             try:
-                html = get_with_increasing_timeout(self, html_link, fail=True,
-                                                   kwargs={"verify": False})
+                html = get_with_increasing_timeout(
+                    self, html_link, fail=True, kwargs={"verify": False}
+                )
             except scrapelib.HTTPError:
                 self.logger.warning("Legislator's page is not available.")
                 continue
@@ -44,19 +47,31 @@ class INPersonScraper(Scraper):
             address = "\n".join([l.strip() for l in address.split("\n")])
             phone = phone.text_content().strip()
             try:
-                district = doc.xpath("//span[@class='district-heading']"
-                                     )[0].text.lower().replace("district", "").strip()
+                district = (
+                    doc.xpath("//span[@class='district-heading']")[0]
+                    .text.lower()
+                    .replace("district", "")
+                    .strip()
+                )
             except IndexError:
                 self.warning("skipping legislator w/o district")
                 continue
-            image_link = base_url+link.replace("legislators/", "portraits/legislator_")
-            legislator = Person(primary_org=chamber,
-                                district=district,
-                                name=" ".join([firstname, lastname]),
-                                party=party,
-                                image=image_link)
-            legislator.add_contact_detail(type="address", note="Capitol Office", value=address)
-            legislator.add_contact_detail(type="voice", note="Capitol Office", value=phone)
+            image_link = base_url + link.replace(
+                "legislators/", "portraits/legislator_"
+            )
+            legislator = Person(
+                primary_org=chamber,
+                district=district,
+                name=" ".join([firstname, lastname]),
+                party=party,
+                image=image_link,
+            )
+            legislator.add_contact_detail(
+                type="address", note="Capitol Office", value=address
+            )
+            legislator.add_contact_detail(
+                type="voice", note="Capitol Office", value=phone
+            )
             legislator.add_link(html_link)
             legislator.add_source(html_link)
             legislator.add_source(api_link)

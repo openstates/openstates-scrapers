@@ -2,6 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
 from .people import MSLegislatorScraper
+
 # from .committees import MSCommitteeScraper
 from .bills import MSBillScraper
 
@@ -14,98 +15,98 @@ class Mississippi(Jurisdiction):
     scrapers = {
         "people": MSLegislatorScraper,
         # "committees": MSCommitteeScraper,
-        "bills": MSBillScraper
+        "bills": MSBillScraper,
     }
     legislative_sessions = [
         {
             "_scraped_name": "2008 Regular Session",
             "identifier": "2008",
-            "name": "2008 Regular Session"
+            "name": "2008 Regular Session",
         },
         {
             "_scraped_name": "2009 Regular Session",
             "identifier": "2009",
-            "name": "2009 Regular Session"
+            "name": "2009 Regular Session",
         },
         {
             "_scraped_name": "2009 First Extraordinary Session",
             "identifier": "20091E",
-            "name": "2009, 1st Extraordinary Session"
+            "name": "2009, 1st Extraordinary Session",
         },
         {
             "_scraped_name": "2009 Second Extraordinary Session",
             "identifier": "20092E",
-            "name": "2009, 2nd Extraordinary Session"
+            "name": "2009, 2nd Extraordinary Session",
         },
         {
             "_scraped_name": "2009 Third Extraordinary Session",
             "identifier": "20093E",
-            "name": "2009, 3rd Extraordinary Session"
+            "name": "2009, 3rd Extraordinary Session",
         },
         {
             "_scraped_name": "2010 Regular Session",
             "identifier": "2010",
-            "name": "2010 Regular Session"
+            "name": "2010 Regular Session",
         },
         {
             "_scraped_name": "2010 First Extraordinary Session",
             "identifier": "20101E",
-            "name": "2010, 1st Extraordinary Session"
+            "name": "2010, 1st Extraordinary Session",
         },
         {
             "_scraped_name": "2010 Second Extraordinary Session",
             "identifier": "20102E",
-            "name": "2010, 2nd Extraordinary Session"
+            "name": "2010, 2nd Extraordinary Session",
         },
         {
             "_scraped_name": "2011 Regular Session",
             "identifier": "2011",
-            "name": "2011 Regular Session"
+            "name": "2011 Regular Session",
         },
         {
             "_scraped_name": "2011 First Extraordinary Session",
             "identifier": "20111E",
-            "name": "2011, 1st Extraordinary Session"
+            "name": "2011, 1st Extraordinary Session",
         },
         {
             "_scraped_name": "2012 Regular Session",
             "identifier": "2012",
-            "name": "2012 Regular Session"
+            "name": "2012 Regular Session",
         },
         {
             "_scraped_name": "2013 Regular Session",
             "identifier": "2013",
-            "name": "2013 Regular Session"
+            "name": "2013 Regular Session",
         },
         {
             "_scraped_name": "2013 First Extraordinary Session",
             "identifier": "20131E",
-            "name": "2013 First Extraordinary Session"
+            "name": "2013 First Extraordinary Session",
         },
         {
             "_scraped_name": "2013 Second Extraordinary Session",
             "identifier": "20132E",
-            "name": "2013 Second Extraordinary Session"
+            "name": "2013 Second Extraordinary Session",
         },
         {
             "_scraped_name": "2014 Regular Session",
             "identifier": "2014",
-            "name": "2014 Regular Session"
+            "name": "2014 Regular Session",
         },
         {
             "_scraped_name": "2014 First Extraordinary Session",
             "identifier": "20141E",
-            "name": "2014 First Extraordinary Session"
+            "name": "2014 First Extraordinary Session",
         },
         {
             "_scraped_name": "2014 Second Extraordinary Session",
             "identifier": "20142E",
-            "name": "2014 Second Extraordinary Session"
+            "name": "2014 Second Extraordinary Session",
         },
         {
             "_scraped_name": "2015 Regular Session",
             "identifier": "2015",
-            "name": "2015 Regular Session"
+            "name": "2015 Regular Session",
         },
         {
             "_scraped_name": "2016 Regular Session",
@@ -113,24 +114,24 @@ class Mississippi(Jurisdiction):
             "end_date": "2016-05-08",
             "identifier": "2016",
             "name": "2016 Regular Session",
-            "start_date": "2016-01-05"
+            "start_date": "2016-01-05",
         },
         {
             "_scraped_name": "2016 First Extraordinary Session",
             "identifier": "20161E",
-            "name": "2016 First Extraordinary Session"
+            "name": "2016 First Extraordinary Session",
         },
         {
             "_scraped_name": "2016 Second Extraordinary Session",
             "identifier": "20162E",
-            "name": "2016 Second Extraordinary Session"
+            "name": "2016 Second Extraordinary Session",
         },
         {
             "_scraped_name": "2017 Regular Session",
             "classification": "primary",
             "identifier": "2017",
             "name": "2017 Regular Session",
-            "start_date": "2017-01-03"
+            "start_date": "2017-01-03",
         },
         {
             "_scraped_name": "2017 First Extraordinary Session",
@@ -144,7 +145,7 @@ class Mississippi(Jurisdiction):
             "end_date": "2018-04-01",
             "identifier": "2018",
             "name": "2018 Regular Session",
-            "start_date": "2018-01-02"
+            "start_date": "2018-01-02",
         },
         {
             "_scraped_name": "2018 First Extraordinary Session",
@@ -159,7 +160,7 @@ class Mississippi(Jurisdiction):
             "end_date": "2019-03-05",
             "identifier": "2019",
             "name": "2019 Regular Session",
-            "start_date": "2019-01-08"
+            "start_date": "2019-01-08",
         },
     ]
     ignored_scraped_sessions = [
@@ -193,20 +194,20 @@ class Mississippi(Jurisdiction):
         "2000 Third Extraordinary Session",
         "1999 Regular Session",
         "1998 Regular Session",
-        "1997 Regular Session"
+        "1997 Regular Session",
     ]
 
     def get_organizations(self):
         legislature_name = "Mississippi Legislature"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        executive = Organization(name='Office of the Governor',
-                                 classification='executive')
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        executive = Organization(
+            name="Office of the Governor", classification="executive"
+        )
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
         yield legislature
         yield executive
@@ -214,5 +215,4 @@ class Mississippi(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        return url_xpath('http://billstatus.ls.state.ms.us/sessions.htm',
-                         '//a/text()')
+        return url_xpath("http://billstatus.ls.state.ms.us/sessions.htm", "//a/text()")

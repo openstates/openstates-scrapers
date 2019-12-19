@@ -29,24 +29,21 @@ COMMITTEE_LINKS_TEMPLATE = '//h2[text()="{header}"]/parent::*//a'
 
 
 class TNCommitteeScraper(Scraper):
-    base_href = 'http://www.capitol.tn.gov'
-    chambers = {
-        'lower': 'house',
-        'upper': 'senate'
-    }
+    base_href = "http://www.capitol.tn.gov"
+    chambers = {"lower": "house", "upper": "senate"}
     parents = {}
 
     def scrape(self, chamber=None):
         if chamber:
             yield from self.scrape_chamber(chamber)
         else:
-            yield from self.scrape_chamber('upper')
-            yield from self.scrape_chamber('lower')
+            yield from self.scrape_chamber("upper")
+            yield from self.scrape_chamber("lower")
 
     def scrape_chamber(self, chamber):
         url_chamber = self.chambers[chamber]
-        url = 'http://www.capitol.tn.gov/%s/committees/' % (url_chamber)
-        if chamber == 'upper':
+        url = "http://www.capitol.tn.gov/%s/committees/" % (url_chamber)
+        if chamber == "upper":
             yield self.scrape_senate_committees(url)
             yield self.scrape_joint_committees()
         else:
@@ -59,12 +56,11 @@ class TNCommitteeScraper(Scraper):
 
         standing = COMMITTEE_LINKS_TEMPLATE.format(header="Standing Committees")
         select = COMMITTEE_LINKS_TEMPLATE.format(header="Select Committees")
-        find_expr = '{}|{}'.format(standing, select)
-        links = [(a.text_content(), a.attrib['href']) for a in
-                 page.xpath(find_expr)]
+        find_expr = "{}|{}".format(standing, select)
+        links = [(a.text_content(), a.attrib["href"]) for a in page.xpath(find_expr)]
 
         for committee_name, link in links:
-            yield self._scrape_committee(committee_name, link, 'upper')
+            yield self._scrape_committee(committee_name, link, "upper")
 
     def scrape_house_committees(self, url):
         html = self.get(url).text
@@ -73,10 +69,10 @@ class TNCommitteeScraper(Scraper):
 
         standing = COMMITTEE_LINKS_TEMPLATE.format(header="Committees & Subcommittees")
         select = COMMITTEE_LINKS_TEMPLATE.format(header="Select Committees")
-        links = doc.xpath('{}|{}'.format(standing, select))
+        links = doc.xpath("{}|{}".format(standing, select))
 
         for a in links:
-            yield self._scrape_committee(a.text.strip(), a.get('href'), 'lower')
+            yield self._scrape_committee(a.text.strip(), a.get("href"), "lower")
 
     def _scrape_committee(self, committee_name, link, chamber):
         """Scrape individual committee page and add members"""
@@ -89,37 +85,43 @@ class TNCommitteeScraper(Scraper):
         if is_subcommittee:
             # All TN subcommittees are just the name of the parent committee with " Subcommittee"
             # at the end
-            parent_committee_name = re.sub(r'\s*(Study )?Subcommittee\s*', '', committee_name)
-            com = Organization(
-                    committee_name,
-                    classification='committee',
-                    parent_id=self.parents[parent_committee_name]
-                    )
-        else:
+            parent_committee_name = re.sub(
+                r"\s*(Study )?Subcommittee\s*", "", committee_name
+            )
             com = Organization(
                 committee_name,
-                chamber=chamber,
-                classification='committee',
+                classification="committee",
+                parent_id=self.parents[parent_committee_name],
+            )
+        else:
+            com = Organization(
+                committee_name, chamber=chamber, classification="committee"
             )
             self.parents[committee_name] = com._id
 
-        OFFICER_SEARCH = '//h2[contains(text(), "Committee Officers")]/' \
-                         'following-sibling::div/ul/li/a'
-        MEMBER_SEARCH = '//h2[contains(text(), "Committee Members")]/' \
-                        'following-sibling::div/ul/li/a'
-        for a in (page.xpath(OFFICER_SEARCH) + page.xpath(MEMBER_SEARCH)):
+        OFFICER_SEARCH = (
+            '//h2[contains(text(), "Committee Officers")]/'
+            "following-sibling::div/ul/li/a"
+        )
+        MEMBER_SEARCH = (
+            '//h2[contains(text(), "Committee Members")]/'
+            "following-sibling::div/ul/li/a"
+        )
+        for a in page.xpath(OFFICER_SEARCH) + page.xpath(MEMBER_SEARCH):
 
-            member_name = ' '.join([
-                    x.strip() for x in
-                    a.xpath('text()') + a.xpath('span/text()')
+            member_name = " ".join(
+                [
+                    x.strip()
+                    for x in a.xpath("text()") + a.xpath("span/text()")
                     if x.strip()
-                    ])
-            role = a.xpath('small')
+                ]
+            )
+            role = a.xpath("small")
             if role:
-                role = role[0].xpath('text()')[0].strip()
+                role = role[0].xpath("text()")[0].strip()
             else:
-                role = 'member'
-            if '(Vacant)' in role:
+                role = "member"
+            if "(Vacant)" in role:
                 continue
 
             com.add_member(member_name, role)
@@ -130,7 +132,7 @@ class TNCommitteeScraper(Scraper):
 
     # Scrapes joint committees
     def scrape_joint_committees(self):
-        main_url = 'http://www.capitol.tn.gov/joint/'
+        main_url = "http://www.capitol.tn.gov/joint/"
 
         page = self.get(main_url).text
         page = lxml.html.fromstring(page)
@@ -145,11 +147,9 @@ class TNCommitteeScraper(Scraper):
 
     # Scrapes the individual joint committee - most of it is special case
     def scrape_joint_committee(self, committee_name, url):
-        if 'state.tn.us' in url:
+        if "state.tn.us" in url:
             com = Organization(
-                committee_name,
-                chamber='legislature',
-                classification='committee',
+                committee_name, chamber="legislature", classification="committee"
             )
             try:
                 page = self.get(url).text
@@ -162,17 +162,17 @@ class TNCommitteeScraper(Scraper):
             for el in page.xpath(
                 "//div[@class='Blurb']/table//tr[2 <= position() and  position() < 10]/td[1]"
             ):
-                if el.xpath('text()') == ['Vacant']:
+                if el.xpath("text()") == ["Vacant"]:
                     continue
 
-                (member_name, ) = el.xpath('a/text()')
-                if el.xpath('text()'):
-                    role = el.xpath('text()')[0].strip(' ,')
+                (member_name,) = el.xpath("a/text()")
+                if el.xpath("text()"):
+                    role = el.xpath("text()")[0].strip(" ,")
                 else:
-                    role = 'member'
+                    role = "member"
 
-                member_name = member_name.replace('Senator', '')
-                member_name = member_name.replace('Representative', '')
+                member_name = member_name.replace("Senator", "")
+                member_name = member_name.replace("Representative", "")
                 member_name = member_name.strip()
                 com.add_member(member_name, role)
 
@@ -180,40 +180,39 @@ class TNCommitteeScraper(Scraper):
             com.add_source(url)
             return com
 
-        elif 'gov-opps' in url:
+        elif "gov-opps" in url:
             com = Organization(
-                committee_name,
-                chamber='legislature',
-                classification='committee',
+                committee_name, chamber="legislature", classification="committee"
             )
             page = self.get(url).text
             page = lxml.html.fromstring(page)
 
-            links = ['senate', 'house']
+            links = ["senate", "house"]
             for link in links:
-                chamber_link = self.base_href + '/' + link + '/committees/gov-opps.html'
+                chamber_link = self.base_href + "/" + link + "/committees/gov-opps.html"
                 chamber_page = self.get(chamber_link).text
                 chamber_page = lxml.html.fromstring(chamber_page)
 
-                OFFICER_SEARCH = '//h2[contains(text(), "Committee Officers")]/' \
-                                 'following-sibling::div/ul/li/a'
-                MEMBER_SEARCH = '//h2[contains(text(), "Committee Members")]/' \
-                                'following-sibling::div/ul/li/a'
-                for a in (
-                        chamber_page.xpath(OFFICER_SEARCH) +
-                        chamber_page.xpath(MEMBER_SEARCH)
-                        ):
-                    member_name = ' '.join([
-                            x.strip() for x in
-                            a.xpath('.//text()')
-                            if x.strip()
-                            ])
-                    role = a.xpath('small')
+                OFFICER_SEARCH = (
+                    '//h2[contains(text(), "Committee Officers")]/'
+                    "following-sibling::div/ul/li/a"
+                )
+                MEMBER_SEARCH = (
+                    '//h2[contains(text(), "Committee Members")]/'
+                    "following-sibling::div/ul/li/a"
+                )
+                for a in chamber_page.xpath(OFFICER_SEARCH) + chamber_page.xpath(
+                    MEMBER_SEARCH
+                ):
+                    member_name = " ".join(
+                        [x.strip() for x in a.xpath(".//text()") if x.strip()]
+                    )
+                    role = a.xpath("small")
                     if role:
-                        role = role[0].xpath('text()')[0].strip()
-                        member_name = member_name.replace(role, '').strip()
+                        role = role[0].xpath("text()")[0].strip()
+                        member_name = member_name.replace(role, "").strip()
                     else:
-                        role = 'member'
+                        role = "member"
                     com.add_member(member_name, role)
 
                 com.add_source(chamber_link)
@@ -223,4 +222,4 @@ class TNCommitteeScraper(Scraper):
             return com
 
         else:
-            return self._scrape_committee(committee_name, url, 'legislature')
+            return self._scrape_committee(committee_name, url, "legislature")
