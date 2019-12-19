@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 
 from pupa.scrape import Scraper, Bill, VoteEvent
@@ -25,6 +26,8 @@ from .util import get_client, get_url, backoff, SESSION_SITE_IDS
 
 member_cache = {}
 SOURCE_URL = "http://www.legis.ga.gov/Legislation/en-US/display/{session}/{bid}"
+
+vote_name_pattern = re.compile(r"(.*), (\d+(?:ST|ND|RD|TH))", re.IGNORECASE)
 
 
 class GABillScraper(Scraper):
@@ -198,7 +201,10 @@ class GABillScraper(Scraper):
                     for vdetail in vote_["Votes"][0]:
                         whom = vdetail["Member"]
                         how = vdetail["MemberVoted"]
-                        vote.vote(methods.get(how, "other"), whom["Name"])
+                        if whom["Name"] == "VACANT":
+                            continue
+                        name, district = vote_name_pattern.search(whom["Name"]).groups()
+                        vote.vote(methods.get(how, "other"), name, note=district)
 
                     yield vote
 
