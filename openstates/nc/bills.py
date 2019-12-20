@@ -1,7 +1,7 @@
-import pytz
 import datetime as dt
 import lxml.html
-from pupa.scrape import Scraper, Bill, VoteEvent
+from pupa.scrape import Bill, Scraper, VoteEvent
+import pytz
 
 eastern = pytz.timezone('US/Eastern')
 
@@ -172,7 +172,8 @@ class NCBillScraper(Scraper):
                 bill.add_action(action, act_date, chamber=actor, classification=atype)
 
         # TODO: Fix vote scraper
-        # yield from self.scrape_votes(bill, doc)
+        for row in doc.xpath("//h6[@id='vote-header']"):
+            yield from self.scrape_votes(bill, doc)
 
         yield bill
 
@@ -218,29 +219,35 @@ class NCBillScraper(Scraper):
             vdoc = lxml.html.fromstring(data)
 
             # only one table that looks like this
-            vote_table, = vdoc.xpath('//table[@cellpadding="5"]')
+            vote_table = vdoc.xpath("//div[@class='row ncga-row-no-gutters']")
 
-            # skip party row
-            for row in vote_table.xpath('tr')[1:]:
-                vote_type, dems, reps = row.xpath('td')
-
-                vote_type = vote_type.text_content()
-                if 'Ayes' in vote_type:
-                    vote_type = 'yes'
-                elif 'Noes' in vote_type:
-                    vote_type = 'no'
-                elif 'Not Voting' in vote_type:
-                    vote_type = 'not voting'
-                elif 'Exc. Absence' in vote_type:
+            # Grabs names for how people voted
+            for row in vote_table:
+                votes_names = []
+                row = row.text_content()
+                if 'None' in row:
+                    vote_type = "Nope"
+                elif 'Ayes (' in row:
+                    row = row.replace('\n', ';')
+                    votes_names = row.replace(" ", "").strip().split(';')[2:-1]
+                    vote_type = "yes"
+                elif 'Noes (' in row:
+                    row = row.replace('\n', ';')
+                    votes_names = row.replace(" ", "").strip().split(';')[2:-1]
+                    vote_type = "no"
+                elif 'Excused Absence (' in row:
+                    row = row.replace('\n', ';')
+                    votes_names = row.replace(" ", "").strip().split(';')[2:-1]
                     vote_type = 'absent'
-                elif 'Exc. Vote' in vote_type:
-                    vote_type = 'excused'
+                elif 'Not Voting (' in row:
+                    row = row.replace('\n', ';')
+                    votes_names = row.replace(" ", "").strip().split(';')[2:-1]
+                    vote_type = 'abstain'
                 else:
-                    raise ValueError('unknown vote type: ' + vote_type)
-
-                for name in (vote_list_to_names(dems.text_content()) +
-                             vote_list_to_names(reps.text_content())):
-                    ve.vote(vote_type, name)
+                    vote_type = "Not a vote"
+                if votes_names:
+                    for name in votes_names:
+                        ve.vote(vote_type, name)
 
             yield ve
 
@@ -255,7 +262,6 @@ class NCBillScraper(Scraper):
 
     def scrape_chamber(self, chamber, session):
         chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
-
         url = 'https://www3.ncleg.gov/gascripts/SimpleBillInquiry/displaybills.pl'
         post_data = {
             'Session': session,
