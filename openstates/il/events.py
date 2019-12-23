@@ -8,12 +8,12 @@ import pytz
 
 urls = {
     "upper": "http://www.ilga.gov/senate/schedules/weeklyhearings.asp",
-    "lower": "http://www.ilga.gov/house/schedules/weeklyhearings.asp"
+    "lower": "http://www.ilga.gov/house/schedules/weeklyhearings.asp",
 }
 
 
 class IlEventScraper(Scraper):
-    localize = pytz.timezone('America/Chicago').localize
+    localize = pytz.timezone("America/Chicago").localize
 
     def scrape_page(self, url, session, chamber):
         html = self.get(url).text
@@ -32,28 +32,23 @@ class IlEventScraper(Scraper):
             value = tds[1].text_content().strip()
             metainf[key] = value
 
-        where = metainf['Location:']
-        subject_matter = metainf['Subject Matter:']
+        where = metainf["Location:"]
+        subject_matter = metainf["Subject Matter:"]
         description = "{}, {}".format(ctty_name, subject_matter)
 
-        datetime = metainf['Scheduled Date:']
+        datetime = metainf["Scheduled Date:"]
         datetime = re.sub(r"\s+", " ", datetime)
-        repl = {
-            "AM": " AM",
-            "PM": " PM"  # Space shim.
-        }
+        repl = {"AM": " AM", "PM": " PM"}  # Space shim.
         for r in repl:
             datetime = datetime.replace(r, repl[r])
         datetime = self.localize(dt.datetime.strptime(datetime, "%b %d, %Y %I:%M %p"))
 
-        event = Event(description,
-                      start_date=datetime,
-                      location_name=where)
+        event = Event(description, start_date=datetime, location_name=where)
         event.add_source(url)
 
-        if ctty_name.startswith('Hearing Notice For'):
-            ctty_name.replace('Hearing Notice For', '')
-        event.add_participant(ctty_name, 'organization')
+        if ctty_name.startswith("Hearing Notice For"):
+            ctty_name.replace("Hearing Notice For", "")
+        event.add_participant(ctty_name, "organization")
 
         bills = tables[1]
         for bill in bills.xpath(".//tr")[1:]:
@@ -69,8 +64,8 @@ class IlEventScraper(Scraper):
 
     def scrape(self):
         for session in self.jurisdiction.legislative_sessions:
-            session_id = session['identifier']
-            for chamber in ('upper', 'lower'):
+            session_id = session["identifier"]
+            for chamber in ("upper", "lower"):
 
                 try:
                     url = urls[chamber]
@@ -84,6 +79,7 @@ class IlEventScraper(Scraper):
                 for table in tables:
                     meetings = table.xpath(".//a")
                     for meeting in meetings:
-                        event = self.scrape_page(meeting.attrib['href'],
-                                                 session_id, chamber)
+                        event = self.scrape_page(
+                            meeting.attrib["href"], session_id, chamber
+                        )
                         yield event

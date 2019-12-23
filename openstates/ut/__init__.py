@@ -6,6 +6,7 @@ from openstates.utils import url_xpath
 
 from .people import UTPersonScraper
 from .events import UTEventScraper
+
 # from .committees import UTCommitteeScraper
 from .bills import UTBillScraper
 
@@ -16,10 +17,10 @@ class Utah(Jurisdiction):
     name = "Utah"
     url = "http://le.utah.gov/"
     scrapers = {
-        'people': UTPersonScraper,
-        'events': UTEventScraper,
+        "people": UTPersonScraper,
+        "events": UTEventScraper,
         # 'committees': UTCommitteeScraper,
-        'bills': UTBillScraper,
+        "bills": UTBillScraper,
     }
     legislative_sessions = [
         {
@@ -27,107 +28,107 @@ class Utah(Jurisdiction):
             "classification": "primary",
             "identifier": "2011",
             "name": "2011 Regular Session",
-            "start_date": "2011-01-24"
+            "start_date": "2011-01-24",
         },
         {
             "_scraped_name": "2011 1st Special Session",
             "classification": "special",
             "identifier": "2011S1",
-            "name": "2011, 1st Special Session"
+            "name": "2011, 1st Special Session",
         },
         {
             "_scraped_name": "2011 2nd Special Session",
             "classification": "special",
             "identifier": "2011S2",
-            "name": "2011, 2nd Special Session"
+            "name": "2011, 2nd Special Session",
         },
         {
             "_scraped_name": "2011 3rd Special Session",
             "classification": "special",
             "identifier": "2011S3",
-            "name": "2011, 3rd Special Session"
+            "name": "2011, 3rd Special Session",
         },
         {
             "_scraped_name": "2012 General Session",
             "classification": "primary",
             "identifier": "2012",
-            "name": "2012 General Session"
+            "name": "2012 General Session",
         },
         {
             "_scraped_name": "2012 4th Special Session",
             "classification": "special",
             "identifier": "2012S4",
-            "name": "2012, 4th Special Session"
+            "name": "2012, 4th Special Session",
         },
         {
             "_scraped_name": "2013 General Session",
             "classification": "primary",
             "identifier": "2013",
-            "name": "2013 General Session"
+            "name": "2013 General Session",
         },
         {
             "_scraped_name": "2013 House Session",
             "classification": "special",
             "identifier": "2013h1",
-            "name": "2013 House Session"
+            "name": "2013 House Session",
         },
         {
             "_scraped_name": "2013 1st Special Session",
             "classification": "special",
             "identifier": "2013s1",
-            "name": "2013 1st Special Session"
+            "name": "2013 1st Special Session",
         },
         {
             "_scraped_name": "2013 2nd Special Session",
             "classification": "special",
             "identifier": "2013s2",
-            "name": "2013 2nd Special Session"
+            "name": "2013 2nd Special Session",
         },
         {
             "_scraped_name": "2014 General Session",
             "classification": "primary",
             "identifier": "2014",
-            "name": "2014 General Session"
+            "name": "2014 General Session",
         },
         {
             "_scraped_name": "2015 General Session",
             "classification": "primary",
             "identifier": "2015",
-            "name": "2015 General Session"
+            "name": "2015 General Session",
         },
         {
             "_scraped_name": "2015 1st Special Session",
             "classification": "special",
             "identifier": "2015s1",
-            "name": "2015 1st Special Session"
+            "name": "2015 1st Special Session",
         },
         {
             "_scraped_name": "2016 General Session",
             "classification": "primary",
             "identifier": "2016",
             "name": "2016 General Session",
-            "start_date": "2016-01-25"
+            "start_date": "2016-01-25",
         },
         {
             "_scraped_name": "2016 2nd Special Session",
             "classification": "special",
             "identifier": "2016S2",
             "name": "2016 2nd Special Session",
-            "start_date": "2016-05-18"
+            "start_date": "2016-05-18",
         },
         {
             "_scraped_name": "2016 3rd Special Session",
             "classification": "special",
             "identifier": "2016S3",
             "name": "2016 3rd Special Session",
-            "start_date": "2016-07-13"
+            "start_date": "2016-07-13",
         },
         {
             "_scraped_name": "2016 4th Special Session",
             "classification": "special",
             "identifier": "2016S4",
             "name": "2016 4th Special Session",
-            "start_date": "2016-11-16"
+            "start_date": "2016-11-16",
         },
         {
             "_scraped_name": "2017 General Session",
@@ -228,18 +229,17 @@ class Utah(Jurisdiction):
         "1997 2nd Special Session",
         "1997 1st Special Session",
         "1997 General Session",
-        "1990-1996"
+        "1990-1996",
     ]
 
     def get_organizations(self):
         legislature_name = "Utah State Legislature"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
         # fiscal analyst
         # fisc = Organization('Office of the Legislative Fiscal Analyst',
@@ -248,13 +248,13 @@ class Utah(Jurisdiction):
         #                     )
 
         yield legislature
-        yield Organization('Office of the Governor', classification='executive')
+        yield Organization("Office of the Governor", classification="executive")
         yield upper
         yield lower
 
     def get_session_list(self):
         sessions = url_xpath(
-                'http://le.utah.gov/Documents/bills.htm',
-                '//ul[contains(@class,"bills-alternate")]/li/a[contains(@href, "BillList")]/text()'
-                )
-        return [re.sub(r'\s+', ' ', session.strip()) for session in sessions]
+            "http://le.utah.gov/Documents/bills.htm",
+            '//ul[contains(@class,"bills-alternate")]/li/a[contains(@href, "BillList")]/text()',
+        )
+        return [re.sub(r"\s+", " ", session.strip()) for session in sessions]

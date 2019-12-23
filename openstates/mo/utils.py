@@ -15,29 +15,29 @@ def clean_text(text):
 def house_get_actor_from_action(text):
     m = re.search(r"\((\bH\b|\bS\b)\)", text)
     if not m:
-        if text.endswith('Governor'):
-            return 'executive'
+        if text.endswith("Governor"):
+            return "executive"
         else:
-            return 'lower'
+            return "lower"
 
     abbrev = m.group(1)
-    if abbrev == 'S':
-        return 'upper'
-    return 'lower'
+    if abbrev == "S":
+        return "upper"
+    return "lower"
 
 
 def senate_get_actor_from_action(text):
     if re.search("Prefiled", text):
-        return 'upper'
+        return "upper"
 
     m = re.search(r"(\bH\b|\bS\b|House)", text)
     if not m:
-        if text.endswith('Governor'):
-            return 'executive'
+        if text.endswith("Governor"):
+            return "executive"
         else:
-            return 'upper'
+            return "upper"
 
-    if m.group(1) == 'S':
-        return 'upper'
+    if m.group(1) == "S":
+        return "upper"
     else:
-        return 'lower'
+        return "lower"

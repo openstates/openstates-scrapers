@@ -3,6 +3,7 @@ from openstates.utils import url_xpath
 
 from .people import ARLegislatorScraper
 from .bills import ARBillScraper
+
 # from .committees import ARCommitteeScraper
 # from .events import AREventScraper
 
@@ -13,9 +14,9 @@ class Arkansas(Jurisdiction):
     name = "Arkansas"
     url = "http://www.arkleg.state.ar.us"
     scrapers = {
-        'people': ARLegislatorScraper,
+        "people": ARLegislatorScraper,
         # 'committees': ARCommitteeScraper,
-        'bills': ARBillScraper,
+        "bills": ARBillScraper,
         # 'events': AREventScraper
     }
     legislative_sessions = [
@@ -25,7 +26,7 @@ class Arkansas(Jurisdiction):
             "end_date": "2011-04-27",
             "identifier": "2011",
             "name": "2011 Regular Session",
-            "start_date": "2011-01-10"
+            "start_date": "2011-01-10",
         },
         {
             "_scraped_name": "Fiscal Session 2012",
@@ -33,7 +34,7 @@ class Arkansas(Jurisdiction):
             "end_date": "2012-03-09",
             "identifier": "2012F",
             "name": "2012 Fiscal Session",
-            "start_date": "2012-02-13"
+            "start_date": "2012-02-13",
         },
         {
             "_scraped_name": "Regular Session, 2013",
@@ -41,7 +42,7 @@ class Arkansas(Jurisdiction):
             "end_date": "2013-05-17",
             "identifier": "2013",
             "name": "2013 Regular Session",
-            "start_date": "2013-01-14"
+            "start_date": "2013-01-14",
         },
         {
             "_scraped_name": "First Extraordinary Session, 2013",
@@ -49,7 +50,7 @@ class Arkansas(Jurisdiction):
             "end_date": "2013-10-19",
             "identifier": "2013S1",
             "name": "2013 First Extraordinary Session",
-            "start_date": "2013-10-17"
+            "start_date": "2013-10-17",
         },
         {
             "_scraped_name": "Regular Session, 2014",
@@ -57,7 +58,7 @@ class Arkansas(Jurisdiction):
             "end_date": "2014-03-19",
             "identifier": "2014",
             "name": "2014 Regular Session",
-            "start_date": "2014-02-10"
+            "start_date": "2014-02-10",
         },
         {
             "_scraped_name": "Fiscal Session, 2014",
@@ -65,7 +66,7 @@ class Arkansas(Jurisdiction):
             "end_date": "2014-03-19",
             "identifier": "2014F",
             "name": "2014 Fiscal Session",
-            "start_date": "2014-02-10"
+            "start_date": "2014-02-10",
         },
         {
             "_scraped_name": "Second Extraordinary Session, 2014",
@@ -73,7 +74,7 @@ class Arkansas(Jurisdiction):
             "end_date": "2014-07-02",
             "identifier": "2014S2",
             "name": "2014 Second Extraordinary Session",
-            "start_date": "2014-06-30"
+            "start_date": "2014-06-30",
         },
         {
             "_scraped_name": "Regular Session, 2015",
@@ -81,7 +82,7 @@ class Arkansas(Jurisdiction):
             "end_date": "2015-04-22",
             "identifier": "2015",
             "name": "2015 Regular Session",
-            "start_date": "2015-01-12"
+            "start_date": "2015-01-12",
         },
         {
             "_scraped_name": "First Extraordinary Session, 2015",
@@ -89,7 +90,7 @@ class Arkansas(Jurisdiction):
             "end_date": "2015-05-28",
             "identifier": "2015S1",
             "name": "2015 First Extraordinary Session",
-            "start_date": "2015-05-26"
+            "start_date": "2015-05-26",
         },
         {
             "_scraped_name": "Fiscal Session, 2016",
@@ -97,7 +98,7 @@ class Arkansas(Jurisdiction):
             "end_date": "2016-05-09",
             "identifier": "2016F",
             "name": "2016 Fiscal Session",
-            "start_date": "2016-04-13"
+            "start_date": "2016-04-13",
         },
         {
             "_scraped_name": "Second Extraordinary Session, 2016",
@@ -105,14 +106,14 @@ class Arkansas(Jurisdiction):
             "end_date": "2016-04-06",
             "identifier": "2016S2",
             "name": "2016 Second Extraordinary Session",
-            "start_date": "2016-04-06"
+            "start_date": "2016-04-06",
         },
         {
             "_scraped_name": "Third Extraordinary Session, 2016",
             "classification": "special",
             "identifier": "2016S3",
             "name": "2016 Third Extraordinary Session",
-            "start_date": "2016-05-19"
+            "start_date": "2016-05-19",
         },
         {
             "_scraped_name": "Regular Session, 2017",
@@ -120,7 +121,7 @@ class Arkansas(Jurisdiction):
             "end_date": "2017-04-22",
             "identifier": "2017",
             "name": "2017 Regular Session",
-            "start_date": "2017-01-12"
+            "start_date": "2017-01-12",
         },
         {
             "_scraped_name": "First Extraordinary Session, 2017",
@@ -128,7 +129,7 @@ class Arkansas(Jurisdiction):
             "end_date": "2017-07-01",
             "identifier": "2017S1",
             "name": "2017 First Extraordinary Session",
-            "start_date": "2017-05-01"
+            "start_date": "2017-05-01",
         },
         {
             "_scraped_name": "Fiscal Session, 2018",
@@ -136,21 +137,21 @@ class Arkansas(Jurisdiction):
             "end_date": "2018-03-12",
             "identifier": "2018F",
             "name": "2018 Fiscal Session",
-            "start_date": "2018-02-12"
+            "start_date": "2018-02-12",
         },
         {
             "_scraped_name": "Second Extraordinary Session, 2018",
             "classification": "special",
             "identifier": "2018S2",
             "name": "2018 Second Extraordinary Session",
-            "start_date": "2018-03-13"
+            "start_date": "2018-03-13",
         },
         {
             "_scraped_name": "Regular Session, 2019",
             "classification": "primary",
             "identifier": "2019",
             "name": "2019 Regular Session",
-            "start_date": "2019-01-14"
+            "start_date": "2019-01-14",
         },
     ]
     ignored_scraped_sessions = [
@@ -185,26 +186,29 @@ class Arkansas(Jurisdiction):
         "First Extraordinary Session, 1987",
         "Second Extraordinary Session, 1987",
         "Third Extraordinary Session, 1987",
-        "Fourth Extraordinary Session, 1987"
+        "Fourth Extraordinary Session, 1987",
     ]
 
     def get_organizations(self):
         legislature_name = "Arkansas General Assembly"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
         yield legislature
         yield upper
         yield lower
 
     def get_session_list(self):
-        links = url_xpath('http://www.arkleg.state.ar.us/assembly/2013/2013R/Pages'
-                          '/Previous%20Legislatures.aspx', '//a')
-        sessions = [a.text_content() for a in links if 'Session' in a.attrib.get(
-                    'title', '')]
+        links = url_xpath(
+            "http://www.arkleg.state.ar.us/assembly/2013/2013R/Pages"
+            "/Previous%20Legislatures.aspx",
+            "//a",
+        )
+        sessions = [
+            a.text_content() for a in links if "Session" in a.attrib.get("title", "")
+        ]
         return sessions

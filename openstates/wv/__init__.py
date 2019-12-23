@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 
 from .people import WVPersonScraper
+
 # from .committees import WVCommitteeScraper
 from .bills import WVBillScraper
 
@@ -11,52 +12,52 @@ class WestVirginia(Jurisdiction):
     name = "West Virginia"
     url = "http://www.legis.state.wv.us/"
     scrapers = {
-        'people': WVPersonScraper,
+        "people": WVPersonScraper,
         # 'committees': WVCommitteeScraper,
-        'bills': WVBillScraper
+        "bills": WVBillScraper,
     }
     legislative_sessions = [
         {
             "_scraped_name": "2011",
             "classification": "primary",
             "identifier": "2011",
-            "name": "2011 Regular Session"
+            "name": "2011 Regular Session",
         },
         {
             "_scraped_name": "2012",
             "classification": "primary",
             "identifier": "2012",
-            "name": "2012 Regular Session"
+            "name": "2012 Regular Session",
         },
         {
             "_scraped_name": "2013",
             "classification": "primary",
             "identifier": "2013",
-            "name": "2013 Regular Session"
+            "name": "2013 Regular Session",
         },
         {
             "_scraped_name": "2014",
             "classification": "primary",
             "identifier": "2014",
-            "name": "2014 Regular Session"
+            "name": "2014 Regular Session",
         },
         {
             "_scraped_name": "2015",
             "classification": "primary",
             "identifier": "2015",
-            "name": "2015 Regular Session"
+            "name": "2015 Regular Session",
         },
         {
             "_scraped_name": "2016",
             "classification": "primary",
             "identifier": "2016",
-            "name": "2016 Regular Session"
+            "name": "2016 Regular Session",
         },
         {
             "_scraped_name": "2016",
             "classification": "special",
             "identifier": "20161S",
-            "name": "2016 First Special Session"
+            "name": "2016 First Special Session",
         },
         {
             "_scraped_name": "2017",
@@ -140,18 +141,17 @@ class WestVirginia(Jurisdiction):
         "1996",
         "1995",
         "1994",
-        "1993"
+        "1993",
     ]
 
     def get_organizations(self):
         legislature_name = "West Virginia Legislature"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
         yield legislature
         yield upper
@@ -159,5 +159,8 @@ class WestVirginia(Jurisdiction):
 
     def get_session_list(self):
         from openstates.utils import url_xpath
-        return url_xpath('http://www.legis.state.wv.us/Bill_Status/Bill_Status.cfm',
-                         '//select[@name="year"]/option/text()')
+
+        return url_xpath(
+            "http://www.legis.state.wv.us/Bill_Status/Bill_Status.cfm",
+            '//select[@name="year"]/option/text()',
+        )

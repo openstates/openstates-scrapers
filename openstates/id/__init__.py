@@ -1,5 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import IDPersonScraper
+
 # from .committees import IDCommitteeScraper
 from .bills import IDBillScraper
 from openstates.utils.lxmlize import url_xpath
@@ -11,9 +12,9 @@ class Idaho(Jurisdiction):
     name = "Idaho"
     url = "http://www.legislature.idaho.gov"
     scrapers = {
-        'people': IDPersonScraper,
+        "people": IDPersonScraper,
         # 'committees': IDCommitteeScraper,
-        'bills': IDBillScraper
+        "bills": IDBillScraper,
     }
     legislative_sessions = [
         {
@@ -22,25 +23,25 @@ class Idaho(Jurisdiction):
             "end_date": "2011-04-07",
             "identifier": "2011",
             "name": "61st Legislature, 1st Regular Session (2011)",
-            "start_date": "2011-01-10"
+            "start_date": "2011-01-10",
         },
         {
             "_scraped_name": "2012 Session",
             "classification": "primary",
             "identifier": "2012",
-            "name": "61st Legislature, 2nd Regular Session (2012)"
+            "name": "61st Legislature, 2nd Regular Session (2012)",
         },
         {
             "_scraped_name": "2013 Session",
             "classification": "primary",
             "identifier": "2013",
-            "name": "62nd Legislature, 1st Regular Session (2013)"
+            "name": "62nd Legislature, 1st Regular Session (2013)",
         },
         {
             "_scraped_name": "2014 Session",
             "classification": "primary",
             "identifier": "2014",
-            "name": "63nd Legislature, 1st Regular Session (2014)"
+            "name": "63nd Legislature, 1st Regular Session (2014)",
         },
         {
             "_scraped_name": "2015 Session",
@@ -48,7 +49,7 @@ class Idaho(Jurisdiction):
             "end_date": "2015-04-10",
             "identifier": "2015",
             "name": "64th Legislature, 1st Regular Session (2015)",
-            "start_date": "2015-01-12"
+            "start_date": "2015-01-12",
         },
         {
             "_scraped_name": "2015 Extraordinary Session",
@@ -56,7 +57,7 @@ class Idaho(Jurisdiction):
             "end_date": "2015-05-18",
             "identifier": "2015spcl",
             "name": "65th Legislature, 1st Extraordinary Session (2015)",
-            "start_date": "2015-05-18"
+            "start_date": "2015-05-18",
         },
         {
             "_scraped_name": "2016 Session",
@@ -64,7 +65,7 @@ class Idaho(Jurisdiction):
             "end_date": "2016-03-25",
             "identifier": "2016",
             "name": "63rd Legislature, 2nd Regular Session (2016)",
-            "start_date": "2016-01-11"
+            "start_date": "2016-01-11",
         },
         {
             "_scraped_name": "2017 Session",
@@ -72,7 +73,7 @@ class Idaho(Jurisdiction):
             "end_date": "2017-04-07",
             "identifier": "2017",
             "name": "64th Legislature, 1st Regular Session (2017)",
-            "start_date": "2017-01-09"
+            "start_date": "2017-01-09",
         },
         {
             "_scraped_name": "2018 Session",
@@ -80,7 +81,7 @@ class Idaho(Jurisdiction):
             "end_date": "2018-03-27",
             "identifier": "2018",
             "name": "64th Legislature, 2nd Regular Session (2018)",
-            "start_date": "2018-01-08"
+            "start_date": "2018-01-08",
         },
         {
             "_scraped_name": "2019 Session",
@@ -89,7 +90,7 @@ class Idaho(Jurisdiction):
             "name": "65th Legislature, 1st Regular Session (2019)",
             "start_date": "2019-01-07",
             "end_date": "2019-03-29",
-        }
+        },
     ]
     ignored_scraped_sessions = [
         "2020 Session",
@@ -107,23 +108,24 @@ class Idaho(Jurisdiction):
         "2000 Extraordinary Session",
         "2000 Session",
         "1999 Session",
-        "1998 Session"
+        "1998 Session",
     ]
 
     def get_organizations(self):
         legislature_name = "Idaho State Legislature"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
         yield legislature
         yield upper
         yield lower
 
     def get_session_list(self):
-        return url_xpath('https://legislature.idaho.gov/sessioninfo/',
-                         '//select[@id="ddlsessions"]/option/text()')
+        return url_xpath(
+            "https://legislature.idaho.gov/sessioninfo/",
+            '//select[@id="ddlsessions"]/option/text()',
+        )

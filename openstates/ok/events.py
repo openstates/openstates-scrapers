@@ -7,10 +7,10 @@ from pupa.scrape import Scraper, Event
 
 
 class OKEventScraper(Scraper):
-    _tz = pytz.timezone('CST6CDT')
+    _tz = pytz.timezone("CST6CDT")
 
     def scrape(self, chamber=None):
-        chambers = [chamber] if chamber is not None else ['upper']
+        chambers = [chamber] if chamber is not None else ["upper"]
         for chamber in chambers:
             yield from self.scrape_upper()
 
@@ -20,8 +20,8 @@ class OKEventScraper(Scraper):
         page.make_links_absolute(url)
 
         text = page.text_content()
-        _, text = text.split('MEETING NOTICES')
-        re_date = r'[A-Z][a-z]+,\s+[A-Z][a-z]+ \d+, \d{4}'
+        _, text = text.split("MEETING NOTICES")
+        re_date = r"[A-Z][a-z]+,\s+[A-Z][a-z]+ \d+, \d{4}"
         chunks = zip(re.finditer(re_date, text), re.split(re_date, text)[1:])
 
         for match, data in chunks:
@@ -29,19 +29,19 @@ class OKEventScraper(Scraper):
             when = datetime.datetime.strptime(when, "%A, %B %d, %Y")
 
             lines = filter(None, [x.strip() for x in data.splitlines()])
-            time_ = re.search(r'^\s*TIME:\s+(.+?)\s+\x96', data, re.M).group(1)
-            time_ = time_.replace('a.m.', 'AM').replace('p.m.', 'PM')
-            time_ = time.strptime(time_, '%I:%M %p')
+            time_ = re.search(r"^\s*TIME:\s+(.+?)\s+\x96", data, re.M).group(1)
+            time_ = time_.replace("a.m.", "AM").replace("p.m.", "PM")
+            time_ = time.strptime(time_, "%I:%M %p")
             when += datetime.timedelta(hours=time_.tm_hour, minutes=time_.tm_min)
 
             title = lines[0]
 
-            where = re.search(r'^\s*PLACE:\s+(.+)', data, re.M).group(1)
+            where = re.search(r"^\s*PLACE:\s+(.+)", data, re.M).group(1)
             where = where.strip()
 
-            event = Event(name=title,
-                          start_date=self._tz.localize(when),
-                          location_name=where)
+            event = Event(
+                name=title, start_date=self._tz.localize(when), location_name=where
+            )
             event.add_source(url)
 
             yield event

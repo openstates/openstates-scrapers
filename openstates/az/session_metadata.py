@@ -1,4 +1,3 @@
-
 session_id_meta_data = {
     "54th-2nd-regular": 122,
     "54th-1st-regular": 121,
@@ -28,5 +27,5 @@ session_id_meta_data = {
     "49th-3rd-special": 91,
     "49th-2nd-special": 90,
     "49th-1st-special": 89,
-    "49th-1st-regular": 87
+    "49th-1st-regular": 87,
 }

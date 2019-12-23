@@ -6,7 +6,7 @@ def get_slug_for_session(session):
 
     # In our `__init__.py` session metadata, we don't put an `R`
     # after our regular-session identifiers, so need to add one here
-    if 'S' in session or session.endswith('F'):
+    if "S" in session or session.endswith("F"):
         return session
     else:
-        return '{}R'.format(session)
+        return "{}R".format(session)

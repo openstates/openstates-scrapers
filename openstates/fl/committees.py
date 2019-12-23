@@ -12,30 +12,29 @@ class HouseComList(Page):
         parent = None
 
         for item in self.doc.xpath(self.list_xpath):
-            cssclass = item.attrib.get('class', '')
+            cssclass = item.attrib.get("class", "")
             name = item.text_content().strip()
 
-            if 'parentcommittee' in cssclass:
+            if "parentcommittee" in cssclass:
                 parent = None
-                chamber = 'lower'
+                chamber = "lower"
 
-            comm = Organization(name=name, classification="committee",
-                                chamber=chamber, parent_id=parent)
-            yield self.scrape_page(HouseComDetail, item.attrib['href'],
-                                   obj=comm)
+            comm = Organization(
+                name=name, classification="committee", chamber=chamber, parent_id=parent
+            )
+            yield self.scrape_page(HouseComDetail, item.attrib["href"], obj=comm)
 
             # parent for next time
-            if 'parentcommittee' in cssclass:
+            if "parentcommittee" in cssclass:
                 parent = comm._id
                 chamber = None
 
 
 class HouseComDetail(Page):
-
     def clean_name(self, name):
-        name = name.replace(' [D]', '')
-        name = name.replace(' [R]', '')
-        name = name.replace(' [I]', '')
+        name = name.replace(" [D]", "")
+        name = name.replace(" [R]", "")
+        name = name.replace(" [I]", "")
         name = name.strip()
         name = fix_name(name)
         return name
@@ -45,7 +44,9 @@ class HouseComDetail(Page):
 
         for lm in self.doc.xpath('//div[@class="cd_LeaderMember"]'):
             role = lm.xpath('.//div[@class="cd_LeaderTitle"]')[0].text_content().strip()
-            name = lm.xpath('.//span[@class="cd_LeaderTitle"]/a')[0].text_content().strip()
+            name = (
+                lm.xpath('.//span[@class="cd_LeaderTitle"]/a')[0].text_content().strip()
+            )
             name = self.clean_name(name)
             self.obj.add_member(name, role=role)
 
@@ -68,33 +69,33 @@ class SenComList(Page):
 
 class SenComDetail(Page):
     def clean_name(self, member):
-        member = member.replace('Senator ', '').strip()
-        member = member.replace(' (D)', '')
-        member = member.replace(' (R)', '')
-        member = member.replace(' (I)', '')
+        member = member.replace("Senator ", "").strip()
+        member = member.replace(" (D)", "")
+        member = member.replace(" (R)", "")
+        member = member.replace(" (I)", "")
         member = fix_name(member)
         return member
 
     def handle_page(self):
         name = self.doc.xpath('//h2[@class="committeeName"]')[0].text
-        if name.startswith('Appropriations Subcommittee'):
+        if name.startswith("Appropriations Subcommittee"):
             return
             # TODO: restore scraping of Appropriations Subcommittees
             # name = name.replace('Appropriations ', '')
             # parent = {'name': 'Appropriations', 'classification': 'upper'}
             # chamber = None
         else:
-            if name.startswith('Committee on'):
-                name = name.replace('Committee on ', '')
+            if name.startswith("Committee on"):
+                name = name.replace("Committee on ", "")
             parent = None
-            chamber = 'upper'
-        comm = Organization(name=name, classification="committee",
-                            chamber=chamber, parent_id=parent,
-                            )
+            chamber = "upper"
+        comm = Organization(
+            name=name, classification="committee", chamber=chamber, parent_id=parent
+        )
 
         for dt in self.doc.xpath('//div[@id="members"]/dl/dt'):
-            role = dt.text.replace(': ', '').strip().lower()
-            member = dt.xpath('./following-sibling::dd')[0].text_content()
+            role = dt.text.replace(": ", "").strip().lower()
+            member = dt.xpath("./following-sibling::dd")[0].text_content()
             member = self.clean_name(member)
             comm.add_member(member, role=role)
 
@@ -108,7 +109,6 @@ class SenComDetail(Page):
 
 
 class FlCommitteeScraper(Scraper, Spatula):
-
     def scrape(self):
         yield from self.scrape_page_items(SenComList)
         yield from self.scrape_page_items(HouseComList)

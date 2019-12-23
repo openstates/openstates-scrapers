@@ -13,210 +13,154 @@ from pupa.scrape.base import ScrapeError
 from .models import CABill
 from .actions import CACategorizer
 
-SPONSOR_TYPES = {'LEAD_AUTHOR': 'author',
-                 'COAUTHOR': 'coauthor',
-                 'PRINCIPAL_COAUTHOR': 'principal coauthor'}
+SPONSOR_TYPES = {
+    "LEAD_AUTHOR": "author",
+    "COAUTHOR": "coauthor",
+    "PRINCIPAL_COAUTHOR": "principal coauthor",
+}
 
-MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
-MYSQL_USER = os.environ.get('MYSQL_USER', 'root')
-MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
+MYSQL_HOST = os.environ.get("MYSQL_HOST", "localhost")
+MYSQL_USER = os.environ.get("MYSQL_USER", "root")
+MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "")
 
 
 def clean_title(s):
     # replace smart quote characters
-    s = s.replace(u'\xe2\u20ac\u201c', '-')
+    s = s.replace(u"\xe2\u20ac\u201c", "-")
 
     # Cesar Chavez e
-    s = s.replace(u'\xc3\xa9', u'\u00E9')
+    s = s.replace(u"\xc3\xa9", u"\u00E9")
     # Cesar Chavez a
-    s = s.replace(u'\xc3\xa1', u'\u00E1')
-    s = s.replace(u'\xe2\u20ac\u201c', u'\u2013')
+    s = s.replace(u"\xc3\xa1", u"\u00E1")
+    s = s.replace(u"\xe2\u20ac\u201c", u"\u2013")
 
-    s = re.sub(r'[\u2018\u2019]', "'", s)
-    s = re.sub(r'[\u201C\u201D]', '"', s)
-    s = re.sub('\u00e2\u20ac\u2122', "'", s)
-    s = re.sub(r'\xe2\u20ac\u02dc', "'", s)
+    s = re.sub(r"[\u2018\u2019]", "'", s)
+    s = re.sub(r"[\u201C\u201D]", '"', s)
+    s = re.sub("\u00e2\u20ac\u2122", "'", s)
+    s = re.sub(r"\xe2\u20ac\u02dc", "'", s)
     return s
 
 
 # Committee codes used in action chamber text.
 committee_data_upper = [
-    ('Standing Committee on Governance and Finance',
-        'CS73', [u'GOV. & F.', u'Gov. & F.']),
-
-    ('Standing Committee on Energy, Utilities and Communications',
-        'CS71', [u'E., U., & C.']),
-
-    ('Standing Committee on Education',
-        'CS44', [u'ED.']),
-
-    ('Standing Committee on Appropriations',
-        'CS61', [u'APPR.']),
-
-    ('Standing Committee on Labor and Industrial Relations',
-        'CS51', [u'L. & I.R.']),
-
-    ('Standing Committee on Elections and Constitutional Amendments',
-        'CS45', [u'E. & C.A.']),
-
-    ('Standing Committee on Environmental Quality',
-        'CS64', [u'E.Q.']),
-
-    ('Standing Committee on Natural Resources And Water',
-        'CS55', [u'N.R. & W.']),
-
-    ('Standing Committee on Public Employment and Retirement',
-        'CS56', [u'P.E. & R.']),
-
-    ('Standing Committee on Governmental Organization',
-        'CS48', [u'G.O.']),
-
-    ('Standing Committee on Insurance',
-        'CS70', [u'INS.']),
-
-    ('Standing Committee on Public Safety',
-        'CS72', [u'PUB. S.']),
-
-    ('Standing Committee on Judiciary',
-        'CS53', [u'JUD.']),
-
-    ('Standing Committee on Health',
-        'CS60', [u'HEALTH']),
-
-    ('Standing Committee on Transportation and Housing',
-        'CS59', [u'T. & H.']),
-
-    ('Standing Committee on Business, Professions and Economic Development',
-        'CS42', [u'B., P. & E.D.']),
-
-    ('Standing Committee on Agriculture',
-        'CS40', [u'AGRI.']),
-
-    ('Standing Committee on Banking and Financial Institutions',
-        'CS69', [u'B. & F.I.']),
-
-    ('Standing Committee on Veterans Affairs',
-        'CS66', [u'V.A.']),
-
-    ('Standing Committee on Budget and Fiscal Review',
-        'CS62', [u'B. & F.R.']),
-
-    ('Standing Committee on Human Services',
-        'CS74', [u'HUM. S.', u'HUMAN S.']),
-
-    ('Standing Committee on Rules',
-        'CS58', [u'RLS.']),
-
-    ('Extraordinary Committee on Transportation and Infrastructure Development',
-        'CS67', [u'T. & I.D.']),
+    (
+        "Standing Committee on Governance and Finance",
+        "CS73",
+        [u"GOV. & F.", u"Gov. & F."],
+    ),
+    (
+        "Standing Committee on Energy, Utilities and Communications",
+        "CS71",
+        [u"E., U., & C."],
+    ),
+    ("Standing Committee on Education", "CS44", [u"ED."]),
+    ("Standing Committee on Appropriations", "CS61", [u"APPR."]),
+    ("Standing Committee on Labor and Industrial Relations", "CS51", [u"L. & I.R."]),
+    (
+        "Standing Committee on Elections and Constitutional Amendments",
+        "CS45",
+        [u"E. & C.A."],
+    ),
+    ("Standing Committee on Environmental Quality", "CS64", [u"E.Q."]),
+    ("Standing Committee on Natural Resources And Water", "CS55", [u"N.R. & W."]),
+    ("Standing Committee on Public Employment and Retirement", "CS56", [u"P.E. & R."]),
+    ("Standing Committee on Governmental Organization", "CS48", [u"G.O."]),
+    ("Standing Committee on Insurance", "CS70", [u"INS."]),
+    ("Standing Committee on Public Safety", "CS72", [u"PUB. S."]),
+    ("Standing Committee on Judiciary", "CS53", [u"JUD."]),
+    ("Standing Committee on Health", "CS60", [u"HEALTH"]),
+    ("Standing Committee on Transportation and Housing", "CS59", [u"T. & H."]),
+    (
+        "Standing Committee on Business, Professions and Economic Development",
+        "CS42",
+        [u"B., P. & E.D."],
+    ),
+    ("Standing Committee on Agriculture", "CS40", [u"AGRI."]),
+    (
+        "Standing Committee on Banking and Financial Institutions",
+        "CS69",
+        [u"B. & F.I."],
+    ),
+    ("Standing Committee on Veterans Affairs", "CS66", [u"V.A."]),
+    ("Standing Committee on Budget and Fiscal Review", "CS62", [u"B. & F.R."]),
+    ("Standing Committee on Human Services", "CS74", [u"HUM. S.", u"HUMAN S."]),
+    ("Standing Committee on Rules", "CS58", [u"RLS."]),
+    (
+        "Extraordinary Committee on Transportation and Infrastructure Development",
+        "CS67",
+        [u"T. & I.D."],
+    ),
 ]
 
 committee_data_lower = [
-    ('Standing Committee on Rules',
-        'CX20', [u'RLS.']),
-
-    ('Standing Committee on Revenue and Taxation',
-        'CX19', [u'REV. & TAX']),
-
-    ('Standing Committee on Natural Resources',
-        'CX16', [u'NAT. RES.']),
-
-    ('Standing Committee on Appropriations',
-        'CX25', [u'APPR.']),
-
-    ('Standing Committee on Insurance',
-        'CX28', [u'INS.']),
-
-    ('Standing Committee on Utilities and Commerce',
-        'CX23', [u'U. & C.']),
-
-    ('Standing Committee on Education',
-        'CX03', [u'ED.']),
-
-    ('Standing Committee on Public Safety',
-        'CX18', [u'PUB. S.']),
-
-    ('Standing Committee on Elections and Redistricting',
-        'CX04', [u'E. & R.']),
-
-    ('Standing Committee on Judiciary',
-        'CX13', [u'JUD.']),
-
-    ('Standing Committee on Higher Education',
-        'CX09', [u'HIGHER ED.']),
-
-    ('Standing Committee on Health',
-        'CX08', [u'HEALTH']),
-
-    ('Standing Committee on Human Services',
-        'CX11', [u'HUM. S.', u'HUMAN S.']),
-
-    ('Standing Committee on Arts, Entertainment, Sports, Tourism, and Internet Media',
-        'CX37', [u'A., E., S., T., & I.M.']),
-
-    ('Standing Committee on Transportation',
-        'CX22', [u'TRANS.']),
-
-    ('Standing Committee on Business, Professions and Consumer Protection',
-        'CX33', [u'B., P., & C.P.', u'B. & P.']),
-
-    ('Standing Committee on Water, Parks and Wildlife',
-        'CX24', [u'W., P., & W.']),
-
-    ('Standing Committee on Local Government',
-        'CX15', [u'L. GOV.', u'L. Gov.']),
-
-    ('Standing Committee on Aging and Long Term Care',
-        'CX31', [u'AGING & L.T.C.']),
-
-    ('Standing Committee on Labor and Employment',
-        'CX14', [u'L. & E.']),
-
-    ('Standing Committee on Governmental Organization',
-        'CX07', [u'G.O.']),
-
-    ('Standing Committee on Public Employees, Retirement and Social Security',
-        'CX17', [u'P.E., R., & S.S.']),
-
-    ('Standing Committee on Veterans Affairs',
-        'CX38', [u'V.A.']),
-
-    ('Standing Committee on Housing and Community Development',
-        'CX10', [u'H. & C.D.']),
-
-    ('Standing Committee on Environmental Safety and Toxic Materials',
-        'CX05', [u'E.S. & T.M.']),
-
-    ('Standing Committee on Agriculture',
-        'CX01', [u'AGRI.']),
-
-    ('Standing Committee on Banking and Finance',
-        'CX27', [u'B. & F.']),
-
-    ('Standing Committee on Jobs, Economic Development and the Economy',
-        'CX34', [u'J., E.D., & E.']),
-
-    ('Standing Committee on Accountability and Administrative Review',
-        'CX02', [u'A. & A.R.']),
-
-    ('Standing Committee on Budget',
-        'CX29', [u'BUDGET']),
-
-    ('Standing Committee on Privacy and Consumer Protection',
-        'CX32', [u'P. & C.P.']),
-
-    ('Extraordinary Committee on Finance',
-        'CX35', [u'FINANCE']),
-
-    ('Extraordinary Committee on Public Health and Developmental Services',
-        'CX30', [u'P.H. & D.S.']),
+    ("Standing Committee on Rules", "CX20", [u"RLS."]),
+    ("Standing Committee on Revenue and Taxation", "CX19", [u"REV. & TAX"]),
+    ("Standing Committee on Natural Resources", "CX16", [u"NAT. RES."]),
+    ("Standing Committee on Appropriations", "CX25", [u"APPR."]),
+    ("Standing Committee on Insurance", "CX28", [u"INS."]),
+    ("Standing Committee on Utilities and Commerce", "CX23", [u"U. & C."]),
+    ("Standing Committee on Education", "CX03", [u"ED."]),
+    ("Standing Committee on Public Safety", "CX18", [u"PUB. S."]),
+    ("Standing Committee on Elections and Redistricting", "CX04", [u"E. & R."]),
+    ("Standing Committee on Judiciary", "CX13", [u"JUD."]),
+    ("Standing Committee on Higher Education", "CX09", [u"HIGHER ED."]),
+    ("Standing Committee on Health", "CX08", [u"HEALTH"]),
+    ("Standing Committee on Human Services", "CX11", [u"HUM. S.", u"HUMAN S."]),
+    (
+        "Standing Committee on Arts, Entertainment, Sports, Tourism, and Internet Media",
+        "CX37",
+        [u"A., E., S., T., & I.M."],
+    ),
+    ("Standing Committee on Transportation", "CX22", [u"TRANS."]),
+    (
+        "Standing Committee on Business, Professions and Consumer Protection",
+        "CX33",
+        [u"B., P., & C.P.", u"B. & P."],
+    ),
+    ("Standing Committee on Water, Parks and Wildlife", "CX24", [u"W., P., & W."]),
+    ("Standing Committee on Local Government", "CX15", [u"L. GOV.", u"L. Gov."]),
+    ("Standing Committee on Aging and Long Term Care", "CX31", [u"AGING & L.T.C."]),
+    ("Standing Committee on Labor and Employment", "CX14", [u"L. & E."]),
+    ("Standing Committee on Governmental Organization", "CX07", [u"G.O."]),
+    (
+        "Standing Committee on Public Employees, Retirement and Social Security",
+        "CX17",
+        [u"P.E., R., & S.S."],
+    ),
+    ("Standing Committee on Veterans Affairs", "CX38", [u"V.A."]),
+    ("Standing Committee on Housing and Community Development", "CX10", [u"H. & C.D."]),
+    (
+        "Standing Committee on Environmental Safety and Toxic Materials",
+        "CX05",
+        [u"E.S. & T.M."],
+    ),
+    ("Standing Committee on Agriculture", "CX01", [u"AGRI."]),
+    ("Standing Committee on Banking and Finance", "CX27", [u"B. & F."]),
+    (
+        "Standing Committee on Jobs, Economic Development and the Economy",
+        "CX34",
+        [u"J., E.D., & E."],
+    ),
+    (
+        "Standing Committee on Accountability and Administrative Review",
+        "CX02",
+        [u"A. & A.R."],
+    ),
+    ("Standing Committee on Budget", "CX29", [u"BUDGET"]),
+    ("Standing Committee on Privacy and Consumer Protection", "CX32", [u"P. & C.P."]),
+    ("Extraordinary Committee on Finance", "CX35", [u"FINANCE"]),
+    (
+        "Extraordinary Committee on Public Health and Developmental Services",
+        "CX30",
+        [u"P.H. & D.S."],
+    ),
 ]
 
 committee_data_both = committee_data_upper + committee_data_lower
 
 
 def slugify(s):
-    return re.sub(r'[ ,.]', '', s)
+    return re.sub(r"[ ,.]", "", s)
 
 
 def get_committee_code_data():
@@ -234,8 +178,10 @@ def get_committee_abbr_data():
         for abbr in abbrs:
             _committee_abbr_to_name_lower[slugify(abbr).lower()] = name
 
-    committee_data = {'upper': _committee_abbr_to_name_upper,
-                      'lower': _committee_abbr_to_name_lower}
+    committee_data = {
+        "upper": _committee_abbr_to_name_upper,
+        "lower": _committee_abbr_to_name_lower,
+    }
 
     return committee_data
 
@@ -247,11 +193,10 @@ def get_committee_name_regex():
     _committee_abbrs = sorted(_committee_abbrs, reverse=True, key=len)
 
     _committee_abbr_regex = [
-        '%s' % r'[\s,]*'.join(abbr.replace(',', '').split(' '))
+        "%s" % r"[\s,]*".join(abbr.replace(",", "").split(" "))
         for abbr in _committee_abbrs
     ]
-    _committee_abbr_regex = re.compile(
-        '(%s)' % '|'.join(_committee_abbr_regex))
+    _committee_abbr_regex = re.compile("(%s)" % "|".join(_committee_abbr_regex))
 
     return _committee_abbr_regex
 
@@ -259,87 +204,104 @@ def get_committee_name_regex():
 class CABillScraper(Scraper):
     categorizer = CACategorizer()
 
-    _tz = pytz.timezone('US/Pacific')
+    _tz = pytz.timezone("US/Pacific")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        host = kwargs.pop('host', MYSQL_HOST)
-        user = kwargs.pop('user', MYSQL_USER)
-        pw = kwargs.pop('pw', MYSQL_PASSWORD)
+        host = kwargs.pop("host", MYSQL_HOST)
+        user = kwargs.pop("user", MYSQL_USER)
+        pw = kwargs.pop("pw", MYSQL_PASSWORD)
 
         if (user is not None) and (pw is not None):
-            conn_str = 'mysql://%s:%s@' % (user, pw)
+            conn_str = "mysql://%s:%s@" % (user, pw)
         else:
-            conn_str = 'mysql://'
-        conn_str = '%s%s/%s?charset=utf8' % (
-            conn_str, host, kwargs.pop('db', 'capublic'))
+            conn_str = "mysql://"
+        conn_str = "%s%s/%s?charset=utf8" % (
+            conn_str,
+            host,
+            kwargs.pop("db", "capublic"),
+        )
         self.engine = create_engine(conn_str)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
 
-    def committee_code_to_name(self, code,
-                               committee_code_to_name=get_committee_code_data()):
-        '''Need to map committee codes to names.
-        '''
+    def committee_code_to_name(
+        self, code, committee_code_to_name=get_committee_code_data()
+    ):
+        """Need to map committee codes to names.
+        """
         return committee_code_to_name[code]
 
-    def committee_abbr_to_name(self, chamber, abbr,
-                               committee_abbr_to_name=get_committee_abbr_data(),
-                               slugify=slugify):
+    def committee_abbr_to_name(
+        self,
+        chamber,
+        abbr,
+        committee_abbr_to_name=get_committee_abbr_data(),
+        slugify=slugify,
+    ):
         abbr = slugify(abbr).lower()
         try:
             return committee_abbr_to_name[chamber][slugify(abbr)]
         except KeyError:
             try:
-                other_chamber = {'upper': 'lower', 'lower': 'upper'}[chamber]
+                other_chamber = {"upper": "lower", "lower": "upper"}[chamber]
             except KeyError:
                 raise KeyError
             return committee_abbr_to_name[other_chamber][slugify(abbr)]
 
     def scrape(self, chamber=None, session=None):
         if session is None:
-            session = self.jurisdiction.legislative_sessions[-1]['identifier']
-            self.info('no session specified, using %s', session)
-        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+            session = self.jurisdiction.legislative_sessions[-1]["identifier"]
+            self.info("no session specified, using %s", session)
+        chambers = [chamber] if chamber is not None else ["upper", "lower"]
 
         bill_types = {
-            'lower': {
-                'AB': 'bill',
-                'ACA': 'constitutional amendment',
-                'ACR': 'concurrent resolution',
-                'AJR': 'joint resolution',
-                'HR': 'resolution',
+            "lower": {
+                "AB": "bill",
+                "ACA": "constitutional amendment",
+                "ACR": "concurrent resolution",
+                "AJR": "joint resolution",
+                "HR": "resolution",
             },
-            'upper': {
-                'SB': 'bill',
-                'SCA': 'constitutional amendment',
-                'SCR': 'concurrent resolution',
-                'SJR': 'joint resolution',
-                'SR': 'resolution',
-            }
+            "upper": {
+                "SB": "bill",
+                "SCA": "constitutional amendment",
+                "SCR": "concurrent resolution",
+                "SJR": "joint resolution",
+                "SR": "resolution",
+            },
         }
 
         for chamber in chambers:
             for abbr, type_ in bill_types[chamber].items():
                 yield from self.scrape_bill_type(chamber, session, type_, abbr)
 
-    def scrape_bill_type(self, chamber, session, bill_type, type_abbr,
-                         committee_abbr_regex=get_committee_name_regex()):
-        bills = self.session.query(CABill).filter_by(
-            session_year=session).filter_by(
-            measure_type=type_abbr)
+    def scrape_bill_type(
+        self,
+        chamber,
+        session,
+        bill_type,
+        type_abbr,
+        committee_abbr_regex=get_committee_name_regex(),
+    ):
+        bills = (
+            self.session.query(CABill)
+            .filter_by(session_year=session)
+            .filter_by(measure_type=type_abbr)
+        )
 
         for bill in bills:
             bill_session = session
-            if bill.session_num != '0':
-                bill_session += ' Special Session %s' % bill.session_num
+            if bill.session_num != "0":
+                bill_session += " Special Session %s" % bill.session_num
 
             bill_id = bill.short_bill_id
 
-            fsbill = Bill(bill_id, session, title='', chamber=chamber)
-            if ((bill_id.startswith('S') and chamber == 'lower') or
-                    (bill_id.startswith('A') and chamber == 'upper')):
+            fsbill = Bill(bill_id, session, title="", chamber=chamber)
+            if (bill_id.startswith("S") and chamber == "lower") or (
+                bill_id.startswith("A") and chamber == "upper"
+            ):
                 print("!!!! BAD ID/CHAMBER PAIR !!!!", bill)
                 continue
 
@@ -351,30 +313,32 @@ class CABillScraper(Scraper):
             #                         bill.measure_num)
 
             # Construct a fake source url
-            source_url = ('http://leginfo.legislature.ca.gov/faces/'
-                          'billNavClient.xhtml?bill_id=%s') % bill.bill_id
+            source_url = (
+                "http://leginfo.legislature.ca.gov/faces/"
+                "billNavClient.xhtml?bill_id=%s"
+            ) % bill.bill_id
 
             fsbill.add_source(source_url)
-            fsbill.add_version_link(bill_id, source_url, media_type='text/html')
+            fsbill.add_version_link(bill_id, source_url, media_type="text/html")
 
-            title = ''
-            type_ = ['bill']
-            subject = ''
+            title = ""
+            type_ = ["bill"]
+            subject = ""
             all_titles = set()
 
             # Get digest test (aka "summary") from latest version.
             if bill.versions:
                 version = bill.versions[-1]
                 nsmap = version.xml.nsmap
-                xpath = '//caml:DigestText/xhtml:p'
+                xpath = "//caml:DigestText/xhtml:p"
                 els = version.xml.xpath(xpath, namespaces=nsmap)
                 chunks = []
                 for el in els:
                     t = etree_text_content(el)
-                    t = re.sub(r'\s+', ' ', t)
-                    t = re.sub(r'\)(\S)', lambda m: ') %s' % m.group(1), t)
+                    t = re.sub(r"\s+", " ", t)
+                    t = re.sub(r"\)(\S)", lambda m: ") %s" % m.group(1), t)
                     chunks.append(t)
-                summary = '\n\n'.join(chunks)
+                summary = "\n\n".join(chunks)
 
             for version in bill.versions:
                 if not version.bill_xml:
@@ -384,31 +348,34 @@ class CABillScraper(Scraper):
 
                 # create a version name to match the state's format
                 # 02/06/17 - Enrolled
-                version_date_human = version_date.strftime(
-                    '%m/%d/%y')
+                version_date_human = version_date.strftime("%m/%d/%y")
                 version_name = "{} - {}".format(
-                    version_date_human, version.bill_version_action)
+                    version_date_human, version.bill_version_action
+                )
 
                 version_base = "https://leginfo.legislature.ca.gov/faces"
 
                 version_url_pdf = "{}/billPdf.xhtml?bill_id={}&version={}".format(
-                    version_base, version.bill_id, version.bill_version_id)
+                    version_base, version.bill_id, version.bill_version_id
+                )
 
                 fsbill.add_version_link(
                     version_name,
                     version_url_pdf,
-                    media_type='application/pdf',
-                    date=version_date.date())
+                    media_type="application/pdf",
+                    date=version_date.date(),
+                )
 
                 # CA is inconsistent in that some bills have a short title
                 # that is longer, more descriptive than title.
-                if bill.measure_type in ('AB', 'SB'):
+                if bill.measure_type in ("AB", "SB"):
                     impact_clause = clean_title(version.title)
                     title = clean_title(version.short_title)
                 else:
                     impact_clause = None
-                    if len(version.title) < len(version.short_title) and \
-                            not version.title.lower().startswith('an act'):
+                    if len(version.title) < len(
+                        version.short_title
+                    ) and not version.title.lower().startswith("an act"):
                         title = clean_title(version.short_title)
                     else:
                         title = clean_title(version.title)
@@ -418,18 +385,18 @@ class CABillScraper(Scraper):
 
                 type_ = [bill_type]
 
-                if version.appropriation == 'Yes':
-                    type_.append('appropriation')
+                if version.appropriation == "Yes":
+                    type_.append("appropriation")
 
                 tags = []
-                if version.fiscal_committee == 'Yes':
-                    tags.append('fiscal committee')
-                if version.local_program == 'Yes':
-                    tags.append('local program')
-                if version.urgency == 'Yes':
-                    tags.append('urgency')
-                if version.taxlevy == 'Yes':
-                    tags.append('tax levy')
+                if version.fiscal_committee == "Yes":
+                    tags.append("fiscal committee")
+                if version.local_program == "Yes":
+                    tags.append("local program")
+                if version.urgency == "Yes":
+                    tags.append("urgency")
+                if version.taxlevy == "Yes":
+                    tags.append("tax levy")
 
                 if version.subject:
                     subject = clean_title(version.subject)
@@ -440,11 +407,11 @@ class CABillScraper(Scraper):
 
             fsbill.title = title
             if summary:
-                fsbill.add_abstract(summary, note='summary')
+                fsbill.add_abstract(summary, note="summary")
             fsbill.classification = type_
             fsbill.subject = [subject] if subject else []
-            fsbill.extras['impact_clause'] = impact_clause
-            fsbill.extras['tags'] = tags
+            fsbill.extras["impact_clause"] = impact_clause
+            fsbill.extras["tags"] = tags
 
             # We don't want the current title in alternate_titles
             all_titles.remove(title)
@@ -456,8 +423,8 @@ class CABillScraper(Scraper):
                 fsbill.add_sponsorship(
                     author.name,
                     classification=SPONSOR_TYPES[author.contribution],
-                    primary=author.primary_author_flg == 'Y',
-                    entity_type='person',
+                    primary=author.primary_author_flg == "Y",
+                    entity_type="person",
                 )
                 # fsbill.sponsorships[-1]['extras'] = {'official_type': author.contribution}
 
@@ -469,26 +436,27 @@ class CABillScraper(Scraper):
                     continue
                 actor = action.actor or chamber
                 actor = actor.strip()
-                match = re.match(r'(Assembly|Senate)($| \(Floor)', actor)
+                match = re.match(r"(Assembly|Senate)($| \(Floor)", actor)
                 if match:
-                    actor = {'Assembly': 'lower',
-                             'Senate': 'upper'}[match.group(1)]
-                elif actor.startswith('Governor'):
-                    actor = 'executive'
+                    actor = {"Assembly": "lower", "Senate": "upper"}[match.group(1)]
+                elif actor.startswith("Governor"):
+                    actor = "executive"
                 else:
+
                     def replacer(matchobj):
                         if matchobj:
-                            return {'Assembly': 'lower',
-                                    'Senate': 'upper'}[matchobj.group()]
+                            return {"Assembly": "lower", "Senate": "upper"}[
+                                matchobj.group()
+                            ]
                         else:
                             return matchobj.group()
 
-                    actor = re.sub(r'^(Assembly|Senate)', replacer, actor)
+                    actor = re.sub(r"^(Assembly|Senate)", replacer, actor)
 
                 type_ = []
 
                 act_str = action.action
-                act_str = re.sub(r'\s+', ' ', act_str)
+                act_str = re.sub(r"\s+", " ", act_str)
 
                 attrs = self.categorizer.categorize(act_str)
 
@@ -496,8 +464,8 @@ class CABillScraper(Scraper):
                 kwargs = attrs
                 matched_abbrs = committee_abbr_regex.findall(action.action)
 
-                if re.search(r'Com[s]?. on', action.action) and not matched_abbrs:
-                    msg = 'Failed to extract committee abbr from %r.'
+                if re.search(r"Com[s]?. on", action.action) and not matched_abbrs:
+                    msg = "Failed to extract committee abbr from %r."
                     self.logger.warning(msg % action.action)
 
                 if matched_abbrs:
@@ -507,47 +475,49 @@ class CABillScraper(Scraper):
                             name = self.committee_abbr_to_name(chamber, abbr)
                             committees.append(name)
                         except KeyError:
-                            msg = ('Mapping contains no committee name for '
-                                   'abbreviation %r. Action text was %r.')
+                            msg = (
+                                "Mapping contains no committee name for "
+                                "abbreviation %r. Action text was %r."
+                            )
                             args = (abbr, action.action)
                             raise KeyError(msg % args)
 
                     committees = filter(None, committees)
-                    kwargs['committees'] = committees
+                    kwargs["committees"] = committees
 
-                    code = re.search(r'C[SXZ]\d+', actor)
+                    code = re.search(r"C[SXZ]\d+", actor)
                     if code is not None:
                         code = code.group()
-                        kwargs['actor_info'] = {'committee_code': code}
+                        kwargs["actor_info"] = {"committee_code": code}
 
                     assert len(list(committees)) == len(matched_abbrs)
                     for committee, abbr in zip(committees, matched_abbrs):
-                        act_str = act_str.replace('Coms. on ', '')
-                        act_str = act_str.replace('Com. on ' + abbr, committee)
+                        act_str = act_str.replace("Coms. on ", "")
+                        act_str = act_str.replace("Com. on " + abbr, committee)
                         act_str = act_str.replace(abbr, committee)
-                        if not act_str.endswith('.'):
-                            act_str = act_str + '.'
+                        if not act_str.endswith("."):
+                            act_str = act_str + "."
 
                 # Determine which chamber the action originated from.
                 changed = False
-                for committee_chamber in ['upper', 'lower', 'legislature']:
+                for committee_chamber in ["upper", "lower", "legislature"]:
                     if actor.startswith(committee_chamber):
                         actor = committee_chamber
                         changed = True
                         break
                 if not changed:
-                    actor = 'legislature'
+                    actor = "legislature"
 
                 if actor != action.actor:
-                    actor_info = kwargs.get('actor_info', {})
-                    actor_info['details'] = action.actor
-                    kwargs['actor_info'] = actor_info
+                    actor_info = kwargs.get("actor_info", {})
+                    actor_info["details"] = action.actor
+                    kwargs["actor_info"] = actor_info
 
                 # Add strings for related legislators, if any.
-                rgx = r'(?:senator|assembly[mwp][^ .,:;]+)\s+[^ .,:;]+'
+                rgx = r"(?:senator|assembly[mwp][^ .,:;]+)\s+[^ .,:;]+"
                 legislators = re.findall(rgx, action.action, re.I)
                 if legislators:
-                    kwargs['legislators'] = legislators
+                    kwargs["legislators"] = legislators
 
                 date = action.action_date
                 date = self._tz.localize(date)
@@ -557,15 +527,18 @@ class CABillScraper(Scraper):
 
                 kwargs.update(self.categorizer.categorize(act_str))
 
-                action = fsbill.add_action(act_str, date.strftime('%Y-%m-%d'), chamber=actor,
-                                           classification=kwargs['classification'])
-                for committee in kwargs.get('committees', []):
-                    action.add_related_entity(
-                        committee, entity_type='organization')
+                action = fsbill.add_action(
+                    act_str,
+                    date.strftime("%Y-%m-%d"),
+                    chamber=actor,
+                    classification=kwargs["classification"],
+                )
+                for committee in kwargs.get("committees", []):
+                    action.add_related_entity(committee, entity_type="organization")
                 seen_actions.add((actor, act_str, date))
 
             for vote_num, vote in enumerate(bill.votes):
-                if vote.vote_result == '(PASS)':
+                if vote.vote_result == "(PASS)":
                     result = True
                 else:
                     result = False
@@ -574,44 +547,46 @@ class CABillScraper(Scraper):
                     continue
 
                 full_loc = vote.location.description
-                first_part = full_loc.split(' ')[0].lower()
-                if first_part in ['asm', 'assembly']:
-                    vote_chamber = 'lower'
+                first_part = full_loc.split(" ")[0].lower()
+                if first_part in ["asm", "assembly"]:
+                    vote_chamber = "lower"
                     # vote_location = ' '.join(full_loc.split(' ')[1:])
-                elif first_part.startswith('sen'):
-                    vote_chamber = 'upper'
+                elif first_part.startswith("sen"):
+                    vote_chamber = "upper"
                     # vote_location = ' '.join(full_loc.split(' ')[1:])
                 else:
                     raise ScrapeError("Bad location: %s" % full_loc)
 
                 if vote.motion:
-                    motion = vote.motion.motion_text or ''
+                    motion = vote.motion.motion_text or ""
                 else:
-                    motion = ''
+                    motion = ""
 
                 if "Third Reading" in motion or "3rd Reading" in motion:
-                    vtype = 'passage'
+                    vtype = "passage"
                 elif "Do Pass" in motion:
-                    vtype = 'passage'
+                    vtype = "passage"
                 else:
-                    vtype = 'other'
+                    vtype = "other"
 
                 motion = motion.strip()
 
                 # Why did it take until 2.7 to get a flags argument on re.sub?
-                motion = re.compile(r'(\w+)( Extraordinary)? Session$',
-                                    re.IGNORECASE).sub('', motion)
-                motion = re.compile(r'^(Senate|Assembly) ',
-                                    re.IGNORECASE).sub('', motion)
-                motion = re.sub(r'^(SCR|SJR|SB|AB|AJR|ACR)\s?\d+ \w+\.?  ',
-                                '', motion)
-                motion = re.sub(r' \(\w+\)$', '', motion)
-                motion = re.sub(r'(SCR|SB|AB|AJR|ACR)\s?\d+ \w+\.?$',
-                                '', motion)
-                motion = re.sub(r'(SCR|SJR|SB|AB|AJR|ACR)\s?\d+ \w+\.? '
-                                r'Urgency Clause$',
-                                '(Urgency Clause)', motion)
-                motion = re.sub(r'\s+', ' ', motion)
+                motion = re.compile(
+                    r"(\w+)( Extraordinary)? Session$", re.IGNORECASE
+                ).sub("", motion)
+                motion = re.compile(r"^(Senate|Assembly) ", re.IGNORECASE).sub(
+                    "", motion
+                )
+                motion = re.sub(r"^(SCR|SJR|SB|AB|AJR|ACR)\s?\d+ \w+\.?  ", "", motion)
+                motion = re.sub(r" \(\w+\)$", "", motion)
+                motion = re.sub(r"(SCR|SB|AB|AJR|ACR)\s?\d+ \w+\.?$", "", motion)
+                motion = re.sub(
+                    r"(SCR|SJR|SB|AB|AJR|ACR)\s?\d+ \w+\.? " r"Urgency Clause$",
+                    "(Urgency Clause)",
+                    motion,
+                )
+                motion = re.sub(r"\s+", " ", motion)
 
                 if not motion:
                     self.warning("Got blank motion on vote for %s" % bill_id)
@@ -628,29 +603,29 @@ class CABillScraper(Scraper):
                 fsvote = VoteEvent(
                     motion_text=motion,
                     start_date=self._tz.localize(vote.vote_date_time),
-                    result='pass' if result else 'fail',
+                    result="pass" if result else "fail",
                     classification=vtype,
                     # organization=org,
                     chamber=vote_chamber,
                     bill=fsbill,
                 )
-                fsvote.extras = {'threshold': vote.threshold}
+                fsvote.extras = {"threshold": vote.threshold}
 
                 source_url = (
-                    'http://leginfo.legislature.ca.gov/faces'
-                    '/billVotesClient.xhtml?bill_id={}'
+                    "http://leginfo.legislature.ca.gov/faces"
+                    "/billVotesClient.xhtml?bill_id={}"
                 ).format(fsbill.identifier)
                 fsvote.add_source(source_url)
-                fsvote.pupa_id = source_url + '#' + str(vote_num)
+                fsvote.pupa_id = source_url + "#" + str(vote_num)
 
-                rc = {'yes': [], 'no': [], 'other': []}
+                rc = {"yes": [], "no": [], "other": []}
                 for record in vote.votes:
-                    if record.vote_code == 'AYE':
-                        rc['yes'].append(record.legislator_name)
-                    elif record.vote_code.startswith('NO'):
-                        rc['no'].append(record.legislator_name)
+                    if record.vote_code == "AYE":
+                        rc["yes"].append(record.legislator_name)
+                    elif record.vote_code.startswith("NO"):
+                        rc["no"].append(record.legislator_name)
                     else:
-                        rc['other'].append(record.legislator_name)
+                        rc["other"].append(record.legislator_name)
 
                 # Handle duplicate votes
                 for key in rc.keys():

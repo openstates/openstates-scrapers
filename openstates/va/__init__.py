@@ -10,9 +10,7 @@ from .bills import VaBillScraper
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 
-settings = {
-    'SCRAPELIB_RPM': 40
-}
+settings = {"SCRAPELIB_RPM": 40}
 
 
 class Virginia(Jurisdiction):
@@ -20,10 +18,7 @@ class Virginia(Jurisdiction):
     classification = "government"
     name = "Virginia"
     url = "http://virginiageneralassembly.gov/"
-    scrapers = {
-        "people": VaPersonScraper,
-        "bills": VaBillScraper,
-    }
+    scrapers = {"people": VaPersonScraper, "bills": VaBillScraper}
     legislative_sessions = [
         {
             "_scraped_name": "2010 Session",
@@ -143,62 +138,61 @@ class Virginia(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = [
-        '2015 Special Session I',
-        '2015 Session',
-        '2014 Special Session I',
-        '2014 Session',
-        '2013 Special Session I',
-        '2013 Session',
-        '2012 Special Session I',
-        '2012 Session',
-        '2011 Special Session I',
-        '2011 Session',
-        '2010 Session',
-        '2009 Session',
-        '2009 Special Session I',
-        '2008 Session',
-        '2008 Special Session I',
-        '2008 Special Session II',
-        '2007 Session',
-        '2006 Session',
-        '2006 Special Session I',
-        '2005 Session',
-        '2004 Session',
-        '2004 Special Session I',
-        '2004 Special Session II',
-        '2003 Session',
-        '2002 Session',
-        '2001 Session',
-        '2001 Special Session I',
-        '2000 Session',
-        '1999 Session',
-        '1998 Session',
-        '1998 Special Session I',
-        '1997 Session',
-        '1996 Session',
-        '1995 Session',
-        '1994 Session',
-        '1994 Special Session I',
-        '1994 Special Session II',
+        "2015 Special Session I",
+        "2015 Session",
+        "2014 Special Session I",
+        "2014 Session",
+        "2013 Special Session I",
+        "2013 Session",
+        "2012 Special Session I",
+        "2012 Session",
+        "2011 Special Session I",
+        "2011 Session",
+        "2010 Session",
+        "2009 Session",
+        "2009 Special Session I",
+        "2008 Session",
+        "2008 Special Session I",
+        "2008 Special Session II",
+        "2007 Session",
+        "2006 Session",
+        "2006 Special Session I",
+        "2005 Session",
+        "2004 Session",
+        "2004 Special Session I",
+        "2004 Special Session II",
+        "2003 Session",
+        "2002 Session",
+        "2001 Session",
+        "2001 Special Session I",
+        "2000 Session",
+        "1999 Session",
+        "1998 Session",
+        "1998 Special Session I",
+        "1997 Session",
+        "1996 Session",
+        "1995 Session",
+        "1994 Session",
+        "1994 Special Session I",
+        "1994 Special Session II",
     ]
 
     def get_organizations(self):
         legislature_name = "Virginia General Assembly"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
-        yield Organization(name='Office of the Governor', classification='executive')
+        yield Organization(name="Office of the Governor", classification="executive")
         yield legislature
         yield upper
         yield lower
 
     def get_session_list(self):
         sessions = url_xpath(
-            'http://lis.virginia.gov/',
-            "//div[@id='sLink']//select/option/text()")
-        return [s.strip() for s in sessions if 'Session' in s]
+            "http://lis.virginia.gov/", "//div[@id='sLink']//select/option/text()"
+        )
+        return [s.strip() for s in sessions if "Session" in s]

@@ -37,16 +37,16 @@ _TIMECODES = {
 
 
 class AREventScraper(Scraper):
-    _tz = pytz.timezone('America/Chicago')
+    _tz = pytz.timezone("America/Chicago")
 
     def scrape(self, session=None, chamber=None):
         if not session:
             session = self.latest_session()
-            self.info('no session specified, using %s', session)
+            self.info("no session specified, using %s", session)
 
         url = "ftp://www.arkleg.state.ar.us/dfadooas/ScheduledMeetings.txt"
         page = self.get(url)
-        page = csv.reader(StringIO(page.text), delimiter='|')
+        page = csv.reader(StringIO(page.text), delimiter="|")
 
         for row in page:
             # Deal with embedded newline characters, which cause fake new rows
@@ -56,13 +56,13 @@ class AREventScraper(Scraper):
 
             desc = row[7].strip()
 
-            match = re.match(r'^(.*)- (HOUSE|SENATE)$', desc)
+            match = re.match(r"^(.*)- (HOUSE|SENATE)$", desc)
             if match:
 
                 comm = match.group(1).strip()
-                comm = re.sub(r'\s+', ' ', comm)
-                location = row[5].strip() or 'Unknown'
-                when = datetime.datetime.strptime(row[2], '%Y-%m-%d %H:%M:%S')
+                comm = re.sub(r"\s+", " ", comm)
+                location = row[5].strip() or "Unknown"
+                when = datetime.datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S")
                 when = self._tz.localize(when)
                 # Only assign events to a session if they are in the same year
                 # Given that session metadata have some overlap and
@@ -73,14 +73,14 @@ class AREventScraper(Scraper):
 
                 description = "%s MEETING" % comm
                 event = Event(
-                        name=description,
-                        start_date=when,
-                        location_name=location,
-                        description=description,
+                    name=description,
+                    start_date=when,
+                    location_name=location,
+                    description=description,
                 )
                 event.add_source(url)
 
-                event.add_participant(comm, type='committee', note='host')
+                event.add_participant(comm, type="committee", note="host")
                 # time = row[3].strip()
                 # if time in _TIMECODES:
                 #     event['notes'] = TIMECODES[time]

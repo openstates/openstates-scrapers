@@ -18,15 +18,9 @@ RI_URL_BASE = "http://webserver.rilin.state.ri.us"
 def bill_start_numbers(session):
     # differs by first/second session in term
     if int(session) % 2 == 0:
-        return {
-            "lower": 7000,
-            "upper": 2000
-        }
+        return {"lower": 7000, "upper": 2000}
     else:
-        return {
-            "lower": 5000,
-            "upper": 1
-        }
+        return {"lower": 5000, "upper": 1}
 
 
 def get_postable_subjects():
@@ -34,9 +28,9 @@ def get_postable_subjects():
     if subjects is None:
         subs = url_xpath(
             "http://status.rilin.state.ri.us/",
-            "//select[@id='rilinContent_cbCategory']"
+            "//select[@id='rilinContent_cbCategory']",
         )[0].xpath("./*")
-        subjects = {o.text: o.attrib['value'] for o in subs}
+        subjects = {o.text: o.attrib["value"] for o in subs}
         subjects.pop(None)
     return subjects
 
@@ -44,10 +38,10 @@ def get_postable_subjects():
 def get_default_headers(page):
     headers = {}
     for el in url_xpath(page, "//*[@name]"):
-        name = el.attrib['name']
+        name = el.attrib["name"]
         value = ""
         try:
-            value = el.attrib['value']
+            value = el.attrib["value"]
         except KeyError:
             value = el.text
 
@@ -55,9 +49,9 @@ def get_default_headers(page):
             value = value.strip()
 
         headers[name] = value or ""
-    headers['__EVENTTARGET'] = ""
-    headers['__EVENTARGUMENT'] = ""
-    headers['__LASTFOCUS'] = ""
+    headers["__EVENTTARGET"] = ""
+    headers["__EVENTARGUMENT"] = ""
+    headers["__LASTFOCUS"] = ""
     return headers
 
 
@@ -67,7 +61,7 @@ BILL_NAME_TRANSLATIONS = {
     "House Bill No.": "HB",
     "Senate Bill No.": "SB",
     "Senate Resolution No.": "SR",
-    "House Resolution No.": "HR"
+    "House Resolution No.": "HR",
 }
 
 BILL_STRING_FLAGS = {
@@ -78,7 +72,7 @@ BILL_STRING_FLAGS = {
     "resolution": r"Resolution.*",
     "chapter": r"^Chapter.*",
     "by_request": r"^\(.*\)$",
-    "act": r"^Act\ \d*$"
+    "act": r"^Act\ \d*$",
 }
 
 
@@ -94,7 +88,7 @@ class RIBillScraper(Scraper):
 
         p = lxml.html.fromstring(page)
         if "We're Sorry! You seem to be lost." in p.text_content():
-            raise ValueError('POSTing has gone wrong')
+            raise ValueError("POSTing has gone wrong")
 
         nodes = p.xpath("//span[@id='lblBills']/*")
         for node in nodes:
@@ -111,16 +105,18 @@ class RIBillScraper(Scraper):
     def digest_results_page(self, nodes):
         blocks = {}
         for node in nodes:
-            nblock = {'actions': []}
+            nblock = {"actions": []}
             lines = [(n.text_content().strip(), n) for n in node]
-            if 'No Bills Met this Criteria' in [x[0] for x in lines]:
+            if "No Bills Met this Criteria" in [x[0] for x in lines]:
                 self.info("No results. Skipping block")
                 return []
 
             for line in lines:
                 line, node = line
-                if ('Total Bills:' in line and
-                        'State House, Providence, Rhode Island' in line):
+                if (
+                    "Total Bills:" in line
+                    and "State House, Providence, Rhode Island" in line
+                ):
                     continue
 
                 found = False
@@ -132,11 +128,11 @@ class RIBillScraper(Scraper):
                         nblock[regexp] = line
                         found = True
                 if not found:
-                    nblock['actions'].append(line)
+                    nblock["actions"].append(line)
 
             self.info("Working on %s" % (nblock.get("bill_id")))
             if "bill_id" in nblock:
-                blocks[nblock['bill_id']] = nblock
+                blocks[nblock["bill_id"]] = nblock
             else:
                 self.warning(lines)
                 self.warning("ERROR! Can not find bill_id for current entry!")
@@ -149,17 +145,17 @@ class RIBillScraper(Scraper):
             return bill_subjects
         ret = {}
         subjects = get_postable_subjects()
-        self.info('getting subjects (total=%s)', len(subjects))
+        self.info("getting subjects (total=%s)", len(subjects))
         for subject in subjects:
 
             default_headers = get_default_headers(SEARCH_URL)
 
-            default_headers['ctl00$rilinContent$cbCategory'] = \
-                subjects[subject]
-            default_headers['ctl00$rilinContent$cbYear'] = session
+            default_headers["ctl00$rilinContent$cbCategory"] = subjects[subject]
+            default_headers["ctl00$rilinContent$cbYear"] = session
 
-            blocks = self.parse_results_page(self.post(SEARCH_URL,
-                                             data=default_headers).text)
+            blocks = self.parse_results_page(
+                self.post(SEARCH_URL, data=default_headers).text
+            )
             blocks = blocks[1:-1]
             blocks = self.digest_results_page(blocks)
             for block in blocks:
@@ -187,20 +183,17 @@ class RIBillScraper(Scraper):
             date = action.split(" ")[0]
             date = dt.datetime.strptime(date, "%m/%d/%Y")
             bill.add_action(
-                action, date.strftime('%Y-%m-%d'), chamber=actor,
-                classification=self.get_type_by_action(action))
+                action,
+                date.strftime("%Y-%m-%d"),
+                chamber=actor,
+                classification=self.get_type_by_action(action),
+            )
 
     def get_type_by_name(self, name):
         name = name.lower()
         self.info(name)
 
-        things = [
-            "resolution",
-            "joint resolution"
-            "memorial",
-            "memorandum",
-            "bill"
-        ]
+        things = ["resolution", "joint resolution" "memorial", "memorandum", "bill"]
 
         for t in things:
             if t in name:
@@ -245,8 +238,9 @@ class RIBillScraper(Scraper):
             default_headers[TO] = idex + MAXQUERY
             default_headers[YEAR] = session
             idex += MAXQUERY
-            blocks = self.parse_results_page(self.post(SEARCH_URL,
-                                             data=default_headers).text)
+            blocks = self.parse_results_page(
+                self.post(SEARCH_URL, data=default_headers).text
+            )
             blocks = blocks[1:-1]
             blocks = self.digest_results_page(blocks)
 
@@ -254,46 +248,52 @@ class RIBillScraper(Scraper):
                 bill = blocks[block]
                 subs = []
                 try:
-                    subs = subjects[bill['bill_id']]
+                    subs = subjects[bill["bill_id"]]
                 except KeyError:
                     pass
 
-                title = bill['title'][len("ENTITLED, "):]
-                billid = bill['bill_id']
+                title = bill["title"][len("ENTITLED, ") :]
+                billid = bill["bill_id"]
                 try:
-                    subs = subjects[bill['bill_id']]
+                    subs = subjects[bill["bill_id"]]
                 except KeyError:
                     subs = []
 
                 for b in BILL_NAME_TRANSLATIONS:
-                    if billid[:len(b)] == b:
-                        billid = BILL_NAME_TRANSLATIONS[b] + billid[len(b) + 1:].split()[0]
+                    if billid[: len(b)] == b:
+                        billid = (
+                            BILL_NAME_TRANSLATIONS[b] + billid[len(b) + 1 :].split()[0]
+                        )
 
                 b = Bill(
                     billid,
                     title=title,
                     chamber=chamber,
                     legislative_session=session,
-                    classification=self.get_type_by_name(bill['bill_id']),
+                    classification=self.get_type_by_name(bill["bill_id"]),
                 )
                 b.subject = subs
 
                 # keep bill ID around
-                self._bill_id_by_type[(chamber, re.findall(r'\d+', billid)[0])] = billid
+                self._bill_id_by_type[(chamber, re.findall(r"\d+", billid)[0])] = billid
 
-                self.process_actions(bill['actions'], b)
-                sponsors = bill['sponsors'][len("BY"):].strip()
+                self.process_actions(bill["actions"], b)
+                sponsors = bill["sponsors"][len("BY") :].strip()
                 sponsors = sponsors.split(",")
                 sponsors = [s.strip() for s in sponsors]
 
-                for href in bill['bill_id_hrefs']:
+                for href in bill["bill_id_hrefs"]:
                     b.add_version_link(
-                        href.text, href.attrib['href'],
-                        media_type="application/pdf")
+                        href.text, href.attrib["href"], media_type="application/pdf"
+                    )
 
                 for sponsor in sponsors:
                     b.add_sponsorship(
-                        sponsor, entity_type='person', classification='primary', primary=True)
+                        sponsor,
+                        entity_type="person",
+                        classification="primary",
+                        primary=True,
+                    )
 
                 b.add_source(SEARCH_URL)
                 yield b
@@ -301,9 +301,9 @@ class RIBillScraper(Scraper):
     def scrape(self, chamber=None, session=None):
         if not session:
             session = self.latest_session()
-            self.info('no session specified, using %s', session)
+            self.info("no session specified, using %s", session)
 
-        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        chambers = [chamber] if chamber is not None else ["upper", "lower"]
 
         subjects = self.get_subject_bill_dict(session)
 
@@ -314,7 +314,7 @@ class RIBillScraper(Scraper):
     def scrape_chamber_votes(self, chamber, session):
         url = {
             "upper": "%s/%s" % (RI_URL_BASE, "SVotes"),
-            "lower": "%s/%s" % (RI_URL_BASE, "HVotes")
+            "lower": "%s/%s" % (RI_URL_BASE, "HVotes"),
         }[chamber]
         action = "%s/%s" % (url, "votes.asp")
         dates = self.get_vote_dates(url, session)
@@ -322,40 +322,36 @@ class RIBillScraper(Scraper):
             votes = self.parse_vote_page(self.post_to(action, date), url, session)
             for vote_dict in votes:
                 for vote in vote_dict.values():
-                    count = vote['count']
-                    chamber = {
-                        "H": "lower",
-                        "S": "upper"
-                    }[vote['meta']['chamber']]
+                    count = vote["count"]
+                    chamber = {"H": "lower", "S": "upper"}[vote["meta"]["chamber"]]
 
                     try:
-                        bill_id = self._bill_id_by_type[(chamber, vote['meta']['bill'])]
+                        bill_id = self._bill_id_by_type[(chamber, vote["meta"]["bill"])]
                     except KeyError:
-                        self.warning('no such bill_id %s %s', chamber, vote['meta']['bill'])
+                        self.warning(
+                            "no such bill_id %s %s", chamber, vote["meta"]["bill"]
+                        )
                         continue
 
                     v = VoteEvent(
                         chamber=chamber,
-                        start_date=vote['time'].strftime('%Y-%m-%d'),
-                        motion_text=vote['meta']['extra']['motion'],
-                        result='pass' if count['passage'] else 'fail',
-                        classification='passage',
+                        start_date=vote["time"].strftime("%Y-%m-%d"),
+                        motion_text=vote["meta"]["extra"]["motion"],
+                        result="pass" if count["passage"] else "fail",
+                        classification="passage",
                         legislative_session=session,
                         bill=bill_id,
                         bill_chamber=chamber,
                     )
-                    v.set_count('yes', int(count['YEAS']))
-                    v.set_count('no', int(count['NAYS']))
-                    v.set_count('other', int(count['NOT VOTING']))
-                    v.add_source(vote['source'])
-                    v.pupa_id = vote['source']
+                    v.set_count("yes", int(count["YEAS"]))
+                    v.set_count("no", int(count["NAYS"]))
+                    v.set_count("other", int(count["NOT VOTING"]))
+                    v.add_source(vote["source"])
+                    v.pupa_id = vote["source"]
 
-                    for vt in vote['votes']:
-                        key = {
-                            'Y': 'yes',
-                            'N': 'no',
-                        }.get(vt['vote'], 'other')
-                        v.vote(key, vt['name'])
+                    for vt in vote["votes"]:
+                        key = {"Y": "yes", "N": "no"}.get(vt["vote"], "other")
+                        v.vote(key, vt["name"])
                     yield v
 
     def post_to(self, url, vote):
@@ -395,7 +391,7 @@ class RIBillScraper(Scraper):
         il = iter(digest)
         d = dict(zip(il, il))
         vote_count = d
-        vote_count['passage'] = int(vote_count['YEAS']) > int(vote_count['NAYS'])
+        vote_count["passage"] = int(vote_count["YEAS"]) > int(vote_count["NAYS"])
         # XXX: This here has a greater then normal chance of failing.
         # However, it's an upstream issue.
 
@@ -417,12 +413,10 @@ class RIBillScraper(Scraper):
             inf = re.search(bill_s_n_no, h)
             if inf is not None:
                 bill_metainf = inf.groupdict()
-                if bill_metainf['year'][-2:] != session[-2:]:
+                if bill_metainf["year"][-2:] != session[-2:]:
                     self.warning(
-                        "Skipping vote - it's in the %s session, we're in the %s session." % (
-                            bill_metainf['year'][-2:],
-                            session[-2:]
-                        )
+                        "Skipping vote - it's in the %s session, we're in the %s session."
+                        % (bill_metainf["year"][-2:], session[-2:])
                     )
                     return ret
 
@@ -431,7 +425,7 @@ class RIBillScraper(Scraper):
             return ret
 
         motion = headers[-1].strip()
-        bill_metainf['extra'] = {"motion": motion}
+        bill_metainf["extra"] = {"motion": motion}
 
         votes = []
 
@@ -441,18 +435,15 @@ class RIBillScraper(Scraper):
                 if node.tag == "span":
                     vote = node.text.strip().upper()
                     name = node.tail.strip()
-                    votes.append({
-                        "name": name,
-                        "vote": vote
-                    })
+                    votes.append({"name": name, "vote": vote})
             if len(votes) > 0:
-                bid = bill_metainf['chamber'] + bill_metainf['bill']
+                bid = bill_metainf["chamber"] + bill_metainf["bill"]
                 ret[bid] = {
                     "votes": votes,
                     "meta": bill_metainf,
                     "time": date_time,
                     "count": vote_count,
-                    "source": url
+                    "source": url,
                 }
         return ret
 
@@ -462,6 +453,7 @@ class RIBillScraper(Scraper):
         votes = p.xpath("//center/div[@class='vote']")
         for vote in votes:
             votes = self.get_votes(
-                context_url + "/" + vote.xpath("./a")[0].attrib["href"], session)
+                context_url + "/" + vote.xpath("./a")[0].attrib["href"], session
+            )
             ret.append(votes)
         return ret

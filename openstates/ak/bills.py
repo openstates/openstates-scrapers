@@ -8,97 +8,98 @@ from pupa.scrape import Scraper, Bill, VoteEvent
 
 class AKBillScraper(Scraper):
     _fiscal_dept_mapping = {
-        'ADM': 'Administration',
-        'CED': 'Commerce, Community & Economic Development',
-        'COR': 'Corrections',
-        'CRT': 'Court System',
-        'EED': 'Education and Early Development',
-        'DEC': 'Environmental Conservation ',
-        'DFG': 'Fish and Game',
-        'GOV': "Governor's Office",
-        'DHS': 'Health and Social Services',
-        'LWF': 'Labor and Workforce Development',
-        'LAW': 'Law',
-        'LEG': 'Legislative Agency',
-        'MVA': "Military and Veterans' Affairs",
-        'DNR': 'Natural Resources',
-        'DPS': 'Public Safety',
-        'REV': 'Revenue',
-        'DOT': 'Transportation and Public Facilities',
-        'UA': 'University of Alaska',
-        'ALL': 'All Departments'}
-
-    _comm_vote_type = {
-        'DP': 'Do Pass',
-        'DNP': 'Do Not Pass',
-        'NR': 'No Recommendation',
-        'AM': 'Amend'}
-
-    _comm_mapping = {
-        'AET': 'Arctic Policy, Economic Development, & Tourism',
-        'CRA': 'Community & Regional Affairs',
-        'EDC': 'Education',
-        'FIN': 'Finance',
-        'HSS': 'Health & Social Services',
-        'JUD': 'Judiciary',
-        'L&C': 'Labor & Commerce',
-        'RES': 'Resources',
-        'RLS': 'Rules',
-        'STA': 'State Affairs',
-        'TRA': 'Transportation',
-        'EDT': 'Economic Development, Trade & Tourism',
-        'NRG': 'Energy',
-        'FSH': 'Fisheries',
-        'MLV': 'Military & Veterans',
-        'WTR': 'World Trade',
-        'ARR': 'Administrative Regulation Review',
-        'ASC': 'Armed Services Committee',
-        'BUD': 'Legislative Budget & Audit',
-        'ECR': 'Higher Education/Career Readiness Task Force',
-        'EFF': 'Education Fuding District Cost Factor Committee',
-        'ETH': 'Select Committee on Legislative Ethics',
-        'LEC': 'Legislative Council',
-        'ARC': 'Special Committee on the Arctic',
-        'EDA': 'Economic Development, Trade, Tourism & Arctic Policy',
-        'ENE': 'Energy',
+        "ADM": "Administration",
+        "CED": "Commerce, Community & Economic Development",
+        "COR": "Corrections",
+        "CRT": "Court System",
+        "EED": "Education and Early Development",
+        "DEC": "Environmental Conservation ",
+        "DFG": "Fish and Game",
+        "GOV": "Governor's Office",
+        "DHS": "Health and Social Services",
+        "LWF": "Labor and Workforce Development",
+        "LAW": "Law",
+        "LEG": "Legislative Agency",
+        "MVA": "Military and Veterans' Affairs",
+        "DNR": "Natural Resources",
+        "DPS": "Public Safety",
+        "REV": "Revenue",
+        "DOT": "Transportation and Public Facilities",
+        "UA": "University of Alaska",
+        "ALL": "All Departments",
     }
 
-    _comm_re = re.compile(r'^(%s)\s' % '|'.join(_comm_mapping.keys()))
+    _comm_vote_type = {
+        "DP": "Do Pass",
+        "DNP": "Do Not Pass",
+        "NR": "No Recommendation",
+        "AM": "Amend",
+    }
+
+    _comm_mapping = {
+        "AET": "Arctic Policy, Economic Development, & Tourism",
+        "CRA": "Community & Regional Affairs",
+        "EDC": "Education",
+        "FIN": "Finance",
+        "HSS": "Health & Social Services",
+        "JUD": "Judiciary",
+        "L&C": "Labor & Commerce",
+        "RES": "Resources",
+        "RLS": "Rules",
+        "STA": "State Affairs",
+        "TRA": "Transportation",
+        "EDT": "Economic Development, Trade & Tourism",
+        "NRG": "Energy",
+        "FSH": "Fisheries",
+        "MLV": "Military & Veterans",
+        "WTR": "World Trade",
+        "ARR": "Administrative Regulation Review",
+        "ASC": "Armed Services Committee",
+        "BUD": "Legislative Budget & Audit",
+        "ECR": "Higher Education/Career Readiness Task Force",
+        "EFF": "Education Fuding District Cost Factor Committee",
+        "ETH": "Select Committee on Legislative Ethics",
+        "LEC": "Legislative Council",
+        "ARC": "Special Committee on the Arctic",
+        "EDA": "Economic Development, Trade, Tourism & Arctic Policy",
+        "ENE": "Energy",
+    }
+
+    _comm_re = re.compile(r"^(%s)\s" % "|".join(_comm_mapping.keys()))
     _current_comm = None
 
     def scrape(self, chamber=None, session=None):
         if session is None:
             session = self.latest_session()
-            self.info('no session specified')
+            self.info("no session specified")
 
-        bill_types = {'B': 'bill', 'R': 'resolution', 'JR': 'joint resolution',
-                      'CR': 'concurrent resolution'}
+        bill_types = {
+            "B": "bill",
+            "R": "resolution",
+            "JR": "joint resolution",
+            "CR": "concurrent resolution",
+        }
 
-        bill_list_url = ("https://www.akleg.gov/basis/Bill/Range/{session}")
+        bill_list_url = "https://www.akleg.gov/basis/Bill/Range/{session}"
         doc = lxml.html.fromstring(self.get(bill_list_url).text)
         doc.make_links_absolute(bill_list_url)
-        for bill_link in doc.xpath('//tr//td[1]//nobr[1]//a[1]'):
+        for bill_link in doc.xpath("//tr//td[1]//nobr[1]//a[1]"):
             bill_abbr = bill_link.text
-            if ' ' in bill_abbr:
-                bill_abbr = bill_abbr.split(' ')[0]
-            elif 'HCR' in bill_abbr:
+            if " " in bill_abbr:
+                bill_abbr = bill_abbr.split(" ")[0]
+            elif "HCR" in bill_abbr:
                 bill_abbr = bill_abbr[:3]
             else:
                 bill_abbr = bill_abbr[:2]
-            bill_id = bill_link.text.replace(' ', '')
+            bill_id = bill_link.text.replace(" ", "")
             bill_type = bill_types[bill_abbr[1:]]
-            bill_url = bill_link.get('href').replace(' ', '')
-            if bill_abbr in ['SB', 'SR', 'SCR', 'SJR']:
-                chamber = 'upper'
+            bill_url = bill_link.get("href").replace(" ", "")
+            if bill_abbr in ["SB", "SR", "SCR", "SJR"]:
+                chamber = "upper"
             else:
-                chamber = 'lower'
+                chamber = "lower"
 
-            yield from self.scrape_bill(
-                chamber,
-                session,
-                bill_id,
-                bill_type,
-                bill_url)
+            yield from self.scrape_bill(chamber, session, bill_id, bill_type, bill_url)
 
     def scrape_bill(self, chamber, session, bill_id, bill_type, url):
         doc = lxml.html.fromstring(self.get(url).text)
@@ -121,19 +122,19 @@ class AKBillScraper(Scraper):
         bill.add_source(url)
 
         # Get sponsors
-        spons_str = doc.xpath('//span[contains(text(), "Sponsor(S)")]')[0].getparent()[1].text
-        sponsors_match = re.match(
-            r'(SENATOR|REPRESENTATIVE)',
-            spons_str)
+        spons_str = (
+            doc.xpath('//span[contains(text(), "Sponsor(S)")]')[0].getparent()[1].text
+        )
+        sponsors_match = re.match(r"(SENATOR|REPRESENTATIVE)", spons_str)
         if sponsors_match:
-            sponsors = spons_str.split(',')
+            sponsors = spons_str.split(",")
             sponsor = sponsors[0].strip()
 
             if sponsor:
                 bill.add_sponsorship(
                     sponsors[0].split()[1],
-                    entity_type='person',
-                    classification='primary',
+                    entity_type="person",
+                    classification="primary",
                     primary=True,
                 )
 
@@ -142,8 +143,8 @@ class AKBillScraper(Scraper):
                 if sponsor:
                     bill.add_sponsorship(
                         sponsor,
-                        entity_type='person',
-                        classification='cosponsor',
+                        entity_type="person",
+                        classification="cosponsor",
                         primary=False,
                     )
 
@@ -151,17 +152,17 @@ class AKBillScraper(Scraper):
             # Committee sponsorship
             spons_str = spons_str.strip()
 
-            if re.match(r' BY REQUEST OF THE GOVERNOR$', spons_str):
-                spons_str = re.sub(r' BY REQUEST OF THE GOVERNOR$',
-                                   '', spons_str).title()
-                spons_str = (spons_str +
-                             " Committee (by request of the governor)")
+            if re.match(r" BY REQUEST OF THE GOVERNOR$", spons_str):
+                spons_str = re.sub(
+                    r" BY REQUEST OF THE GOVERNOR$", "", spons_str
+                ).title()
+                spons_str = spons_str + " Committee (by request of the governor)"
 
             if spons_str:
                 bill.add_sponsorship(
                     spons_str,
-                    entity_type='person',
-                    classification='primary',
+                    entity_type="person",
+                    classification="primary",
                     primary=True,
                 )
 
@@ -169,11 +170,13 @@ class AKBillScraper(Scraper):
         self._current_comm = None
         act_rows = doc.xpath("//div[@id='tab6_4']//tr")[1:]
         for row in act_rows:
-            date, journal, action = row.xpath('td')
+            date, journal, action = row.xpath("td")
             action = action.text_content().strip()
             raw_chamber = action[0:3]
             journal_entry_number = journal.text_content()
-            act_date = datetime.datetime.strptime(date.text_content().strip(), '%m/%d/%Y')
+            act_date = datetime.datetime.strptime(
+                date.text_content().strip(), "%m/%d/%Y"
+            )
             if raw_chamber == "(H)":
                 act_chamber = "lower"
             elif raw_chamber == "(S)":
@@ -181,28 +184,31 @@ class AKBillScraper(Scraper):
 
             # Votes
             if re.search(r"Y(\d+)", action):
-                vote_href = journal.xpath('.//a/@href')
+                vote_href = journal.xpath(".//a/@href")
                 if vote_href:
-                    vote_href = vote_href[0].replace(' ', '')
+                    vote_href = vote_href[0].replace(" ", "")
                     yield from self.parse_vote(
                         bill,
                         journal_entry_number,
                         action,
                         act_chamber,
                         act_date,
-                        vote_href
+                        vote_href,
                     )
 
             action, atype = self.clean_action(action)
 
-            match = re.search(r'^Prefile released (\d+/\d+/\d+)$', action)
+            match = re.search(r"^Prefile released (\d+/\d+/\d+)$", action)
             if match:
-                action = 'Prefile released'
-                act_date = datetime.datetime.strptime(match.group(1), '%m/%d/%y')
+                action = "Prefile released"
+                act_date = datetime.datetime.strptime(match.group(1), "%m/%d/%y")
 
             bill.add_action(
-                action, chamber=act_chamber, date=act_date.strftime('%Y-%m-%d'),
-                classification=atype)
+                action,
+                chamber=act_chamber,
+                date=act_date.strftime("%Y-%m-%d"),
+                classification=atype,
+            )
 
         # Get subjects
         for subj in doc.xpath('//a[contains(@href, "subject")]/text()'):
@@ -210,25 +216,27 @@ class AKBillScraper(Scraper):
 
         # Get versions - to do
         text_list_url = (
-            "https://www.akleg.gov/basis/Bill/Detail/{session}?Root={bill_id}#tab1_4")
+            "https://www.akleg.gov/basis/Bill/Detail/{session}?Root={bill_id}#tab1_4"
+        )
         bill.add_source(text_list_url)
 
         text_doc = lxml.html.fromstring(self.get(text_list_url).text)
         text_doc.make_links_absolute(text_list_url)
         for link in text_doc.xpath('//a[contains(@href, "/Text/")]'):
             name = link.text_content()
-            text_url = link.get('href')
+            text_url = link.get("href")
             bill.add_version_link(name, text_url, media_type="text/html")
 
         # Get documents - to do
         doc_list_url = (
-            "https://www.akleg.gov/basis/Bill/Detail/{session}?Root={bill_id}#tab5_4")
+            "https://www.akleg.gov/basis/Bill/Detail/{session}?Root={bill_id}#tab5_4"
+        )
         doc_list = lxml.html.fromstring(self.get(doc_list_url).text)
         doc_list.make_links_absolute(doc_list_url)
         bill.add_source(doc_list_url)
         for href in doc_list.xpath('//a[contains(@href, "get_documents")][@onclick]'):
             h_name = href.text_content()
-            h_href = href.attrib['href']
+            h_href = href.attrib["href"]
             if h_name.strip():
                 try:
                     bill.add_document_link(h_name, h_href)
@@ -238,14 +246,16 @@ class AKBillScraper(Scraper):
 
         yield bill
 
-    def parse_vote(self, bill, journal_entry_number, action, act_chamber, act_date, url):
+    def parse_vote(
+        self, bill, journal_entry_number, action, act_chamber, act_date, url
+    ):
         # html = self.get(url).text
         # doc = lxml.html.fromstring(html)
         yes = no = other = 0
         result = ""
         vote_counts = action.split()
         for vote_count in vote_counts:
-            if re.match(r'[\D][\d]', vote_count):
+            if re.match(r"[\D][\d]", vote_count):
                 if "Y" in vote_count:
                     yes = int(vote_count[1:])
                 elif "N" in vote_count:
@@ -253,25 +263,25 @@ class AKBillScraper(Scraper):
                 elif "E" in vote_count or "A" in vote_count:
                     other += int(vote_count[1:])
 
-        if 'PASSED' in action:
-            result = 'pass'
-        elif 'FAILED' in action:
-            result = 'fail'
+        if "PASSED" in action:
+            result = "pass"
+        elif "FAILED" in action:
+            result = "fail"
         else:
-            result = 'pass' if yes > no else 'fail'
+            result = "pass" if yes > no else "fail"
 
         vote = VoteEvent(
             bill=bill,
-            start_date=act_date.strftime('%Y-%m-%d'),
+            start_date=act_date.strftime("%Y-%m-%d"),
             chamber=act_chamber,
             motion_text=action,
             result=result,
-            classification='passage',
+            classification="passage",
         )
 
-        vote.set_count('yes', yes)
-        vote.set_count('no', no)
-        vote.set_count('other', other)
+        vote.set_count("yes", yes)
+        vote.set_count("no", no)
+        vote.set_count("other", other)
         vote.add_source(url)
 
         yield vote
@@ -366,88 +376,85 @@ class AKBillScraper(Scraper):
 
     def clean_action(self, action):
         # Clean up some acronyms
-        match = re.match(r'^FN(\d+): (ZERO|INDETERMINATE)?\((\w+)\)', action)
+        match = re.match(r"^FN(\d+): (ZERO|INDETERMINATE)?\((\w+)\)", action)
         if match:
             num = match.group(1)
 
-            if match.group(2) == 'ZERO':
-                impact = 'No fiscal impact'
-            elif match.group(2) == 'INDETERMINATE':
-                impact = 'Indeterminate fiscal impact'
+            if match.group(2) == "ZERO":
+                impact = "No fiscal impact"
+            elif match.group(2) == "INDETERMINATE":
+                impact = "Indeterminate fiscal impact"
             else:
-                impact = ''
+                impact = ""
 
             dept = match.group(3)
             dept = self._fiscal_dept_mapping.get(dept, dept)
 
             action = "Fiscal Note {num}: {impact} ({dept})".format(
-                num=num,
-                impact=impact,
-                dept=dept)
+                num=num, impact=impact, dept=dept
+            )
 
         match = self._comm_re.match(action)
         if match:
             self._current_comm = match.group(1)
 
-        match = re.match(r'^(DP|DNP|NR|AM):\s(.*)$', action)
+        match = re.match(r"^(DP|DNP|NR|AM):\s(.*)$", action)
         if match:
             vtype = self._comm_vote_type[match.group(1)]
 
             action = f"{self._current_comm} {vtype}: {match.group(2)}"
 
-        match = re.match(r'^COSPONSOR\(S\): (.*)$', action)
+        match = re.match(r"^COSPONSOR\(S\): (.*)$", action)
         if match:
-            action = f'Cosponsors added: {match.group(1)}'
+            action = f"Cosponsors added: {match.group(1)}"
 
-        match = re.match('^([A-Z]{3,3}), ([A-Z]{3,3})$', action)
+        match = re.match("^([A-Z]{3,3}), ([A-Z]{3,3})$", action)
         if match:
-            action = f'REFERRED TO {self._comm_mapping[match.group(1)]} and'
-            '{self._comm_mapping[match.group(2)]}'
+            action = f"REFERRED TO {self._comm_mapping[match.group(1)]} and"
+            "{self._comm_mapping[match.group(2)]}"
 
-        match = re.match('^([A-Z]{3,3})$', action)
+        match = re.match("^([A-Z]{3,3})$", action)
         if match:
-            action = f'REFERRED TO {self._comm_mapping[action]}'
+            action = f"REFERRED TO {self._comm_mapping[action]}"
 
-        match = re.match('^REFERRED TO (.*)$', action)
+        match = re.match("^REFERRED TO (.*)$", action)
         if match:
-            comms = match.group(1).title().replace(' And ', ' and ')
-            action = f'REFERRED TO {comms}'
+            comms = match.group(1).title().replace(" And ", " and ")
+            action = f"REFERRED TO {comms}"
 
-        action = re.sub(r'\s+', ' ', action)
+        action = re.sub(r"\s+", " ", action)
 
-        action = action.replace('PREFILE RELEASED', 'Prefile released')
+        action = action.replace("PREFILE RELEASED", "Prefile released")
 
         atype = []
-        if 'READ THE FIRST TIME' in action:
-            atype.append('introduction')
-            atype.append('reading-1')
-            action = action.replace('READ THE FIRST TIME',
-                                    'Read the first time')
-        if 'READ THE SECOND TIME' in action:
-            atype.append('reading-2')
-            action = action.replace('READ THE SECOND TIME',
-                                    'Read the second time')
-        if 'READ THE THIRD TIME' in action:
-            atype.append('reading-3')
-            action = action.replace('READ THE THIRD TIME',
-                                    'Read the third time')
-        if 'TRANSMITTED TO GOVERNOR' in action:
-            atype.append('executive-receipt')
-            action = action.replace('TRANSMITTED TO GOVERNOR',
-                                    'Transmitted to Governor')
-        if 'SIGNED INTO LAW' in action:
-            atype.append('executive-signature')
-            action = action.replace('SIGNED INTO LAW', 'Signed into law')
-        if 'Do Pass' in action:
-            atype.append('committee-passage')
-        if 'Do Not Pass' in action:
-            atype.append('committee-failure')
-        if action.startswith('PASSED'):
-            atype.append('passage')
-        if 'REFERRED TO' in action:
-            atype.append('referral-committee')
-            action = action.replace('REFERRED TO', 'Referred to')
-        if 'Prefile released' in action:
-            atype.append('filing')
+        if "READ THE FIRST TIME" in action:
+            atype.append("introduction")
+            atype.append("reading-1")
+            action = action.replace("READ THE FIRST TIME", "Read the first time")
+        if "READ THE SECOND TIME" in action:
+            atype.append("reading-2")
+            action = action.replace("READ THE SECOND TIME", "Read the second time")
+        if "READ THE THIRD TIME" in action:
+            atype.append("reading-3")
+            action = action.replace("READ THE THIRD TIME", "Read the third time")
+        if "TRANSMITTED TO GOVERNOR" in action:
+            atype.append("executive-receipt")
+            action = action.replace(
+                "TRANSMITTED TO GOVERNOR", "Transmitted to Governor"
+            )
+        if "SIGNED INTO LAW" in action:
+            atype.append("executive-signature")
+            action = action.replace("SIGNED INTO LAW", "Signed into law")
+        if "Do Pass" in action:
+            atype.append("committee-passage")
+        if "Do Not Pass" in action:
+            atype.append("committee-failure")
+        if action.startswith("PASSED"):
+            atype.append("passage")
+        if "REFERRED TO" in action:
+            atype.append("referral-committee")
+            action = action.replace("REFERRED TO", "Referred to")
+        if "Prefile released" in action:
+            atype.append("filing")
 
         return action, atype
