@@ -162,7 +162,6 @@ class NCBillScraper(Scraper):
             # if text is blank, try diving in
             action = (cols[5].text or "").strip() or cols[5].text_content().strip()
 
-<<<<<<< HEAD
             if act_date is None:
                 search_action_date = action.split()
                 for act in search_action_date:
@@ -176,11 +175,6 @@ class NCBillScraper(Scraper):
                             #     raise Exception("No Action Date Provided")
                     except KeyError:
                         raise Exception("No Action Date Provided")
-            else:
-                act_date = dt.datetime.strptime(act_date, '%m/%d/%Y').strftime('%Y-%m-%d')
-=======
-            act_date = dt.datetime.strptime(act_date, "%m/%d/%Y").strftime("%Y-%m-%d")
->>>>>>> 8421d56e2a94114d042edab7fe0812bcfd3be069
 
             if actor == "Senate":
                 actor = "upper"
