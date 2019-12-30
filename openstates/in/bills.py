@@ -13,43 +13,44 @@ from .apiclient import ApiClient
 
 
 class INBillScraper(Scraper):
-    jurisdiction = 'in'
+    jurisdiction = "in"
 
-    _tz = pytz.timezone('US/Eastern')
+    _tz = pytz.timezone("US/Eastern")
 
     def _get_bill_id_components(self, bill_id):
-        bill_prefix = ''.join([c for c in bill_id if c.isalpha()])
-        bill_number = ''.join([c for c in bill_id if c.isdigit()]).lstrip('0')
+        bill_prefix = "".join([c for c in bill_id if c.isalpha()])
+        bill_number = "".join([c for c in bill_id if c.isdigit()]).lstrip("0")
 
         return (bill_prefix, bill_number)
 
     def _get_name(self, random_json):
         # got sick of doing this everywhere
-        return ' '.join([random_json["firstName"], random_json["lastName"]])
+        return " ".join([random_json["firstName"], random_json["lastName"]])
 
     def _get_bill_url(self, session, bill_id):
         bill_prefix, bill_number = self._get_bill_id_components(bill_id)
 
-        url_template = 'http://iga.in.gov/legislative/{}/{}/{}'
+        url_template = "http://iga.in.gov/legislative/{}/{}/{}"
 
         try:
-            url_segment = self._bill_prefix_map[bill_prefix]['url_segment']
+            url_segment = self._bill_prefix_map[bill_prefix]["url_segment"]
         except KeyError:
-            raise AssertionError("Unknown bill type {}, don't know how to "
-                                 "make url.".format(bill_id))
+            raise AssertionError(
+                "Unknown bill type {}, don't know how to " "make url.".format(bill_id)
+            )
 
         return url_template.format(session, url_segment, bill_number)
 
     def _process_votes(self, rollcalls, bill_id, original_chamber, session, proxy):
         result_types = {
-            'FAILED': False,
-            'DEFEATED': False,
-            'PREVAILED': True,
-            'PASSED': True,
-            'SUSTAINED': True,
-            'NOT SECONDED': False,
-            'OVERRIDDEN': True,
-            'ADOPTED': True,
+            "FAILED": False,
+            "DEFEATED": False,
+            "PREVAILED": True,
+            "PASSED": True,
+            "SUSTAINED": True,
+            "NOT SECONDED": False,
+            "OVERRIDDEN": True,
+            "ADOPTED": True,
         }
 
         for r in rollcalls:
@@ -59,20 +60,27 @@ class INBillScraper(Scraper):
                 (path, resp) = self.urlretrieve(proxy_link)
             except scrapelib.HTTPError as e:
                 self.warning(e)
-                self.warning("Unable to contact openstates proxy, skipping vote {}"
-                             .format(r['link']))
+                self.warning(
+                    "Unable to contact openstates proxy, skipping vote {}".format(
+                        r["link"]
+                    )
+                )
                 continue
 
-            text = convert_pdf(path, 'text').decode("utf-8")
+            text = convert_pdf(path, "text").decode("utf-8")
             lines = text.split("\n")
             os.remove(path)
 
-            chamber = "lower" if "house of representatives" in lines[0].lower() else "upper"
+            chamber = (
+                "lower" if "house of representatives" in lines[0].lower() else "upper"
+            )
             date_parts = lines[1].strip().split()[-3:]
             date_str = " ".join(date_parts).title() + " " + lines[2].strip()
 
             vote_date = datetime.datetime.strptime(date_str, "%b %d, %Y %I:%M:%S %p")
-            vote_date = pytz.timezone('America/Indiana/Indianapolis').localize(vote_date)
+            vote_date = pytz.timezone("America/Indiana/Indianapolis").localize(
+                vote_date
+            )
             vote_date = vote_date.isoformat()
 
             passed = None
@@ -99,19 +107,21 @@ class INBillScraper(Scraper):
                 self.logger.warning("Vote format is weird, skipping")
                 continue
 
-            vote = VoteEvent(chamber=chamber,
-                             legislative_session=session,
-                             bill=bill_id,
-                             bill_chamber=original_chamber,
-                             start_date=vote_date,
-                             motion_text=motion,
-                             result="pass" if passed else "fail",
-                             classification="passage")
+            vote = VoteEvent(
+                chamber=chamber,
+                legislative_session=session,
+                bill=bill_id,
+                bill_chamber=original_chamber,
+                start_date=vote_date,
+                motion_text=motion,
+                result="pass" if passed else "fail",
+                classification="passage",
+            )
 
-            vote.set_count('yes', yeas)
-            vote.set_count('no', nays)
-            vote.set_count('excused', excused)
-            vote.set_count('not voting', not_voting)
+            vote.set_count("yes", yeas)
+            vote.set_count("no", nays)
+            vote.set_count("excused", excused)
+            vote.set_count("not voting", not_voting)
             vote.add_source(proxy_link)
 
             currently_counting = ""
@@ -130,7 +140,7 @@ class INBillScraper(Scraper):
                     currently_counting = "not voting"
                 elif currently_counting == "":
                     pass
-                elif re.search(r'v\. \d\.\d', line):
+                elif re.search(r"v\. \d\.\d", line):
                     # this gets rid of the version number
                     # which is often found at the bottom of the doc
                     pass
@@ -163,7 +173,9 @@ class INBillScraper(Scraper):
                 link = proxy["url"] + doc["link"]
                 if link not in urls_seen:
                     urls_seen.append(link)
-                    bill.add_document_link(note=title, url=link, media_type="application/pdf")
+                    bill.add_document_link(
+                        note=title, url=link, media_type="application/pdf"
+                    )
 
         # version
         link = proxy["url"] + version["link"]
@@ -180,14 +192,17 @@ class INBillScraper(Scraper):
                     # If we figure out how to make pupa not choke, here's the line you want:
                     # ## #
                     # self._tz.localize(datetime.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S"))
-                    update_date = datetime.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S").date()
+                    update_date = datetime.datetime.strptime(
+                        d, "%Y-%m-%dT%H:%M:%S"
+                    ).date()
                 except TypeError:
                     continue
                 else:
                     break
 
-            bill.add_version_link(note=name, url=link,
-                                  media_type="application/pdf", date=update_date)
+            bill.add_version_link(
+                note=name, url=link, media_type="application/pdf", date=update_date
+            )
 
         # votes
         votes = version["rollcalls"]
@@ -196,56 +211,44 @@ class INBillScraper(Scraper):
     def scrape(self, session=None):
         if not session:
             session = self.latest_session()
-            self.info('no session specified, using %s', session)
+            self.info("no session specified, using %s", session)
 
         self._bill_prefix_map = {
-            'HB':  {
-                'type': 'bill',
-                'url_segment': 'bills/house',
+            "HB": {"type": "bill", "url_segment": "bills/house"},
+            "HR": {"type": "resolution", "url_segment": "resolutions/house/simple"},
+            "HCR": {
+                "type": "concurrent resolution",
+                "url_segment": "resolutions/house/concurrent",
             },
-            'HR':  {
-                'type': 'resolution',
-                'url_segment': 'resolutions/house/simple',
+            "HJR": {
+                "type": "joint resolution",
+                "url_segment": "resolutions/house/joint",
             },
-            'HCR': {
-                'type': 'concurrent resolution',
-                'url_segment': 'resolutions/house/concurrent',
+            "HC": {
+                "type": "concurrent resolution",
+                "url_segment": "resolutions/house/concurrent",
             },
-            'HJR': {
-                'type': 'joint resolution',
-                'url_segment': 'resolutions/house/joint'
+            "HJ": {
+                "type": "joint resolution",
+                "url_segment": "resolutions/house/joint",
             },
-            'HC': {
-                'type': 'concurrent resolution',
-                'url_segment': 'resolutions/house/concurrent',
+            "SB": {"type": "bill", "url_segment": "bills/senate"},
+            "SR": {"type": "resolution", "url_segment": "resolutions/senate/simple"},
+            "SCR": {
+                "type": "concurrent resolution",
+                "url_segment": "resolutions/senate/concurrent",
             },
-            'HJ': {
-                'type': 'joint resolution',
-                'url_segment': 'resolutions/house/joint',
+            "SJR": {
+                "type": "joint resolution",
+                "url_segment": "resolutions/senate/joint",
             },
-            'SB': {
-                'type': 'bill',
-                'url_segment': 'bills/senate',
+            "SC": {
+                "type": "concurrent resolution",
+                "url_segment": "resolutions/senate/concurrent",
             },
-            'SR': {
-                'type': 'resolution',
-                'url_segment': 'resolutions/senate/simple',
-            },
-            'SCR': {
-                'type': 'concurrent resolution',
-                'url_segment': 'resolutions/senate/concurrent',
-            },
-            'SJR': {
-                'type': 'joint resolution',
-                'url_segment': 'resolutions/senate/joint',
-            },
-            'SC': {
-                'type': 'concurrent resolution',
-                'url_segment': 'resolutions/senate/concurrent',
-            },
-            'SJ': {
-                'type': 'joint resolution',
-                'url_segment': 'resolutions/senate/joint',
+            "SJ": {
+                "type": "joint resolution",
+                "url_segment": "resolutions/senate/joint",
             },
         }
 
@@ -270,7 +273,7 @@ class INBillScraper(Scraper):
                     int(char)
                 except ValueError:
                     continue
-                disp_bill_id = bill_id[:idx]+" "+str(int(bill_id[idx:]))
+                disp_bill_id = bill_id[:idx] + " " + str(int(bill_id[idx:]))
                 break
 
             bill_link = b["link"]
@@ -278,7 +281,7 @@ class INBillScraper(Scraper):
             try:
                 bill_json = client.get("bill", session=session, bill_id=bill_id.lower())
             except scrapelib.HTTPError:
-                self.logger.warning('Bill could not be accessed. Skipping.')
+                self.logger.warning("Bill could not be accessed. Skipping.")
                 continue
 
             title = bill_json["title"]
@@ -297,48 +300,62 @@ class INBillScraper(Scraper):
 
             bill_prefix = self._get_bill_id_components(bill_id)[0]
 
-            original_chamber = ("lower" if bill_json["originChamber"].lower() == "house"
-                                else "upper")
-            bill_type = self._bill_prefix_map[bill_prefix]['type']
-            bill = Bill(disp_bill_id,
-                        legislative_session=session,
-                        chamber=original_chamber,
-                        title=title,
-                        classification=bill_type)
+            original_chamber = (
+                "lower" if bill_json["originChamber"].lower() == "house" else "upper"
+            )
+            bill_type = self._bill_prefix_map[bill_prefix]["type"]
+            bill = Bill(
+                disp_bill_id,
+                legislative_session=session,
+                chamber=original_chamber,
+                title=title,
+                classification=bill_type,
+            )
 
             bill.add_source(self._get_bill_url(session, bill_id))
             bill.add_source(api_source)
 
             # sponsors
             for s in bill_json["authors"]:
-                bill.add_sponsorship(classification="author",
-                                     name=self._get_name(s),
-                                     entity_type='person',
-                                     primary=True)
+                bill.add_sponsorship(
+                    classification="author",
+                    name=self._get_name(s),
+                    entity_type="person",
+                    primary=True,
+                )
 
             for s in bill_json["coauthors"]:
-                bill.add_sponsorship(classification="coauthor",
-                                     name=self._get_name(s),
-                                     entity_type='person',
-                                     primary=False)
+                bill.add_sponsorship(
+                    classification="coauthor",
+                    name=self._get_name(s),
+                    entity_type="person",
+                    primary=False,
+                )
 
             for s in bill_json["sponsors"]:
-                bill.add_sponsorship(classification="sponsor",
-                                     name=self._get_name(s),
-                                     entity_type='person', primary=True)
+                bill.add_sponsorship(
+                    classification="sponsor",
+                    name=self._get_name(s),
+                    entity_type="person",
+                    primary=True,
+                )
 
             for s in bill_json["cosponsors"]:
-                bill.add_sponsorship(classification="cosponsor",
-                                     name=self._get_name(s),
-                                     entity_type='person',
-                                     primary=False)
+                bill.add_sponsorship(
+                    classification="cosponsor",
+                    name=self._get_name(s),
+                    entity_type="person",
+                    primary=False,
+                )
 
             # actions
             action_link = bill_json["actions"]["link"]
             api_source = api_base_url + action_link
 
             try:
-                actions = client.get("bill_actions", session=session, bill_id=bill_id.lower())
+                actions = client.get(
+                    "bill_actions", session=session, bill_id=bill_id.lower()
+                )
             except scrapelib.HTTPError:
                 self.logger.warning("Could not find bill actions page")
                 actions = {"items": []}
@@ -358,7 +375,7 @@ class INBillScraper(Scraper):
                     continue
 
                 # convert time to pupa fuzzy time
-                date = date.replace('T', ' ')
+                date = date.replace("T", " ")
                 # TODO: if we update pupa to accept datetimes we can drop this line
                 date = date.split()[0]
 
@@ -371,11 +388,11 @@ class INBillScraper(Scraper):
                     action_type.append("reading-1")
                     reading = True
 
-                if ("second reading" in d or "reread second time" in d):
+                if "second reading" in d or "reread second time" in d:
                     action_type.append("reading-2")
                     reading = True
 
-                if ("third reading" in d or "reread third time" in d):
+                if "third reading" in d or "reread third time" in d:
                     action_type.append("reading-3")
                     if "passed" in d:
                         action_type.append("passage")
@@ -386,8 +403,12 @@ class INBillScraper(Scraper):
                 if "adopted" in d and reading:
                     action_type.append("passage")
 
-                if ("referred" in d and "committee on" in d
-                        or "reassigned" in d and "committee on" in d):
+                if (
+                    "referred" in d
+                    and "committee on" in d
+                    or "reassigned" in d
+                    and "committee on" in d
+                ):
                     committee = d.split("committee on")[-1].strip()
                     action_type.append("referral-committee")
 
@@ -410,16 +431,19 @@ class INBillScraper(Scraper):
 
                 if len(action_type) == 0:
                     # calling it other and moving on with a warning
-                    self.logger.warning("Could not recognize an action in '{}'".format(
-                        action_desc))
+                    self.logger.warning(
+                        "Could not recognize an action in '{}'".format(action_desc)
+                    )
                     action_type = None
 
-                a = bill.add_action(chamber=action_chamber,
-                                    description=action_desc,
-                                    date=date,
-                                    classification=action_type)
+                a = bill.add_action(
+                    chamber=action_chamber,
+                    description=action_desc,
+                    date=date,
+                    classification=action_type,
+                )
                 if committee:
-                    a.add_related_entity(committee, entity_type='organization')
+                    a.add_related_entity(committee, entity_type="organization")
 
             # subjects
             subjects = [s["entry"] for s in bill_json["latestVersion"]["subjects"]]
@@ -429,15 +453,18 @@ class INBillScraper(Scraper):
             # versions and votes
             for version in bill_json["versions"][::-1]:
                 try:
-                    version_json = client.get("bill_version",
-                                              session=session,
-                                              bill_id=version["billName"],
-                                              version_id=version["printVersionName"])
+                    version_json = client.get(
+                        "bill_version",
+                        session=session,
+                        bill_id=version["billName"],
+                        version_id=version["printVersionName"],
+                    )
                 except scrapelib.HTTPError:
                     self.logger.warning("Bill version does not seem to exist.")
                     continue
 
-                yield from self.deal_with_version(version_json, bill, bill_id,
-                                                  original_chamber, session, proxy)
+                yield from self.deal_with_version(
+                    version_json, bill, bill_id, original_chamber, session, proxy
+                )
 
             yield bill

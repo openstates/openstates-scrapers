@@ -5,6 +5,7 @@ from openstates.utils import url_xpath
 from .bills import AKBillScraper
 from .events import AKEventScraper
 from .people import AKPersonScraper
+
 # from .committees import AKCommitteeScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=600)
@@ -16,35 +17,35 @@ class Alaska(Jurisdiction):
     name = "Alaska"
     url = "http://w3.legis.state.ak.us/"
     scrapers = {
-        'bills': AKBillScraper,
-        'events': AKEventScraper,
-        'people': AKPersonScraper,
+        "bills": AKBillScraper,
+        "events": AKEventScraper,
+        "people": AKPersonScraper,
         # 'committees': AKCommitteeScraper,
     }
     legislative_sessions = [
         {
             "_scraped_name": "28th Legislature (2013-2014)",
             "identifier": "28",
-            "name": "28th Legislature (2013-2014)"
+            "name": "28th Legislature (2013-2014)",
         },
         {
             "_scraped_name": "29th Legislature (2015-2016)",
             "identifier": "29",
-            "name": "29th Legislature (2015-2016)"
+            "name": "29th Legislature (2015-2016)",
         },
         {
             "_scraped_name": "30th Legislature (2017-2018)",
             "end_date": "2017-04-16",
             "identifier": "30",
             "name": "30th Legislature (2017-2018)",
-            "start_date": "2017-01-17"
+            "start_date": "2017-01-17",
         },
         {
             "_scraped_name": "31st Legislature (2019-2020)",
             "identifier": "31",
             "name": "31st Legislature (2019-2020)",
-            "start_date": "2019-01-15"
-        }
+            "start_date": "2019-01-15",
+        },
     ]
     ignored_scraped_sessions = [
         "27th Legislature (2011-2012)",
@@ -56,27 +57,25 @@ class Alaska(Jurisdiction):
         "21st Legislature (1999-2000)",
         "20th Legislature (1997-1998)",
         "19th Legislature (1995-1996)",
-        "18th Legislature (1993-1994)"
+        "18th Legislature (1993-1994)",
     ]
 
     def get_organizations(self):
         legislature_name = "Alaska State Legislature"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization("Senate", classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization("House", classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
         yield legislature
         yield upper
         yield lower
 
     def get_session_list(self):
-        return [session['_scraped_name']
-                for session in self.legislative_sessions]
+        return [session["_scraped_name"] for session in self.legislative_sessions]
         return url_xpath(
-            'https://www.akleg.gov/basis/Home/Archive',
-            '//div[@id="fullpage"]//a[contains(@href, "/BillsandLaws/")]//text()'
+            "https://www.akleg.gov/basis/Home/Archive",
+            '//div[@id="fullpage"]//a[contains(@href, "/BillsandLaws/")]//text()',
         )

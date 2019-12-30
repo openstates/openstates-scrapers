@@ -1,6 +1,7 @@
 import lxml
 from pupa.scrape import Jurisdiction, Organization
 from .people import NCPersonScraper
+
 # from .committees import NCCommitteeScraper
 from .bills import NCBillScraper
 
@@ -11,9 +12,9 @@ class NorthCarolina(Jurisdiction):
     name = "North Carolina"
     url = "http://www.ncleg.net/"
     scrapers = {
-        'people': NCPersonScraper,
+        "people": NCPersonScraper,
         # 'committees': NCCommitteeScraper,
-        'bills': NCBillScraper,
+        "bills": NCBillScraper,
     }
     legislative_sessions = [
         {
@@ -216,28 +217,28 @@ class NorthCarolina(Jurisdiction):
             "classification": "primary",
             "identifier": "2009",
             "name": "2009-2010 Session",
-            "start_date": "2009-01-28"
+            "start_date": "2009-01-28",
         },
         {
             "_scraped_name": "2011-2012 Session",
             "classification": "primary",
             "identifier": "2011",
             "name": "2011-2012 Session",
-            "start_date": "2011-01-26"
+            "start_date": "2011-01-26",
         },
         {
             "_scraped_name": "2013-2014 Session",
             "classification": "primary",
             "identifier": "2013",
             "name": "2013-2014 Session",
-            "start_date": "2013-01-30"
+            "start_date": "2013-01-30",
         },
         {
             "_scraped_name": "2015-2016 Session",
             "classification": "primary",
             "identifier": "2015",
             "name": "2015-2016 Session",
-            "start_date": "2015-01-30"
+            "start_date": "2015-01-30",
         },
         {
             "_scraped_name": "2016 Extra Session",
@@ -275,7 +276,7 @@ class NorthCarolina(Jurisdiction):
             "identifier": "2017",
             "name": "2017-2018 Session",
             "start_date": "2017-01-11",
-            "end_date": "2018-08-01"
+            "end_date": "2018-08-01",
         },
         {
             "_scraped_name": "2018 First Extra Session",
@@ -288,14 +289,14 @@ class NorthCarolina(Jurisdiction):
             "classification": "special",
             "identifier": "2017E2",
             "name": "2018 Extra Session 2",
-            "start_date": "2018-08-24"
+            "start_date": "2018-08-24",
         },
         {
             "_scraped_name": "2018 Third Extra Session",
             "classification": "special",
             "identifier": "2017E3",
             "name": "2018 Extra Session 3",
-            "start_date": "2018-10-02"
+            "start_date": "2018-10-02",
         },
         {
             "_scraped_name": "2019-2020 Session",
@@ -303,51 +304,51 @@ class NorthCarolina(Jurisdiction):
             "identifier": "2019",
             "name": "2019-2020 Session",
             "start_date": "2019-01-03",
-            "end_date": "2020-08-01"
+            "end_date": "2020-08-01",
         },
     ]
     ignored_scraped_sessions = [
-        '2016 First Extra Session',
-        '2008 Extra Session',
-        '2007-2008 Session',
-        '2007 Extra Session',
-        '2005-2006 Session',
-        '2004 Extra Session',
-        '2003-2004 Session',
-        '2003 Extra Session',
-        '2002 Extra Session',
-        '2001-2002 Session',
-        '2000 Special Session',
-        '1999-2000 Session',
-        '1999 Special Session',
-        '1998 Special Session',
-        '1997-1998 Session',
-        '1996 2nd Special Session',
-        '1996 1st Special Session',
-        '1995-1996 Session',
-        '1994 Special Session',
-        '1993-1994 Session',
-        '1991-1992 Session',
-        '1991 Special Session',
-        '1990 Special Session',
-        '1989-1990 Session',
-        '1989 Special Session',
-        '1987-1988 Session',
-        '1986 Special Session',
-        '1985-1986 Session',
+        "2016 First Extra Session",
+        "2008 Extra Session",
+        "2007-2008 Session",
+        "2007 Extra Session",
+        "2005-2006 Session",
+        "2004 Extra Session",
+        "2003-2004 Session",
+        "2003 Extra Session",
+        "2002 Extra Session",
+        "2001-2002 Session",
+        "2000 Special Session",
+        "1999-2000 Session",
+        "1999 Special Session",
+        "1998 Special Session",
+        "1997-1998 Session",
+        "1996 2nd Special Session",
+        "1996 1st Special Session",
+        "1995-1996 Session",
+        "1994 Special Session",
+        "1993-1994 Session",
+        "1991-1992 Session",
+        "1991 Special Session",
+        "1990 Special Session",
+        "1989-1990 Session",
+        "1989 Special Session",
+        "1987-1988 Session",
+        "1986 Special Session",
+        "1985-1986 Session",
     ]
 
     def get_organizations(self):
         legislature_name = "North Carolina General Assembly"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        executive = Organization(name='Executive Office of the Governor',
-                                 classification="executive")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        executive = Organization(
+            name="Executive Office of the Governor", classification="executive"
+        )
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
         yield legislature
         yield executive
@@ -356,13 +357,16 @@ class NorthCarolina(Jurisdiction):
 
     def get_session_list(self):
         from openstates.utils.lxmlize import url_xpath
+
         # This is the URL that populates the session `<select>` in the
         # state homepage header navigation
-        return url_xpath('https://webservices.ncleg.net/sessionselectlist/false',
-                         '//option/text()')
+        return url_xpath(
+            "https://webservices.ncleg.net/sessionselectlist/false", "//option/text()"
+        )
 
     def extract_text(self, doc, data):
         doc = lxml.html.fromstring(data)
-        text = ' '.join([x.text_content() for x in
-                         doc.xpath('//p[starts-with(@class, "a")]')])
+        text = " ".join(
+            [x.text_content() for x in doc.xpath('//p[starts-with(@class, "a")]')]
+        )
         return text

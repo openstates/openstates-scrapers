@@ -11,76 +11,76 @@ class Alabama(Jurisdiction):
     name = "Alabama"
     url = "http://www.legislature.state.al.us/"
     scrapers = {
-        'bills': ALBillScraper,
-        'events': ALEventScraper,
-        'people': ALPersonScraper,
+        "bills": ALBillScraper,
+        "events": ALEventScraper,
+        "people": ALPersonScraper,
     }
     legislative_sessions = [
         {
             "_scraped_name": "Regular Session 2011",
             "classification": "primary",
             "identifier": "2011rs",
-            "name": "2011 Regular Session"
+            "name": "2011 Regular Session",
         },
         {
             "_scraped_name": "First Special Session 2012",
             "classification": "special",
             "identifier": "2012fs",
-            "name": "First Special Session 2012"
+            "name": "First Special Session 2012",
         },
         {
             "_scraped_name": "Regular Session 2012",
             "classification": "primary",
             "identifier": "2012rs",
-            "name": "2012 Regular Session"
+            "name": "2012 Regular Session",
         },
         {
             "_scraped_name": "Regular Session 2013",
             "classification": "primary",
             "identifier": "2013rs",
-            "name": "2013 Regular Session"
+            "name": "2013 Regular Session",
         },
         {
             "_scraped_name": "Regular Session 2014",
             "classification": "primary",
             "identifier": "2014rs",
-            "name": "2014 Regular Session"
+            "name": "2014 Regular Session",
         },
         {
             "_scraped_name": "First Special Session 2015",
             "classification": "special",
             "identifier": "2015fs",
-            "name": "First Special Session 2015"
+            "name": "First Special Session 2015",
         },
         {
             "_scraped_name": "Organizational Session 2015",
             "classification": "primary",
             "identifier": "2015os",
-            "name": "2015 Organizational Session"
+            "name": "2015 Organizational Session",
         },
         {
             "_scraped_name": "Regular Session 2015",
             "classification": "primary",
             "identifier": "2015rs",
-            "name": "2015 Regular Session"
+            "name": "2015 Regular Session",
         },
         {
             "_scraped_name": "Second Special Session 2015",
             "classification": "special",
             "identifier": "2015ss",
-            "name": "Second Special Session 2015"
+            "name": "Second Special Session 2015",
         },
         {
             "_scraped_name": "First Special Session 2016",
             "classification": "special",
             "identifier": "2016fs",
-            "name": "First Special Session 2016"
+            "name": "First Special Session 2016",
         },
         {
             "_scraped_name": "Regular Session 2016",
             "classification": "primary",
             "identifier": "2016rs",
-            "name": "2016 Regular Session"
+            "name": "2016 Regular Session",
         },
         {
             "_scraped_name": "Regular Session 2017",
@@ -88,7 +88,7 @@ class Alabama(Jurisdiction):
             "end_date": "2017-05-31",
             "identifier": "2017rs",
             "name": "2017 Regular Session",
-            "start_date": "2017-02-07"
+            "start_date": "2017-02-07",
         },
         {
             "_scraped_name": "Regular Session 2018",
@@ -103,7 +103,7 @@ class Alabama(Jurisdiction):
             "classification": "special",
             "identifier": "2019fs",
             "name": "First Special Session 2019",
-            "start_date": "2019-03-08"
+            "start_date": "2019-03-08",
         },
         {
             "_scraped_name": "Regular Session 2019",
@@ -111,14 +111,14 @@ class Alabama(Jurisdiction):
             "end_date": "2019-06-17",
             "identifier": "2019rs",
             "name": "2019 Regular Session",
-            "start_date": "2019-03-05"
+            "start_date": "2019-03-05",
         },
         {
             "_scraped_name": "Regular Session 2020",
             "classification": "primary",
             "identifier": "2020rs",
             "name": "2020 Regular Session",
-            "start_date": "2020-02-04"
+            "start_date": "2020-02-04",
         },
     ]
     ignored_scraped_sessions = [
@@ -160,12 +160,11 @@ class Alabama(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Alabama Legislature"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
         yield legislature
         yield upper
@@ -176,6 +175,8 @@ class Alabama(Jurisdiction):
         import requests
 
         s = requests.Session()
-        r = s.get('http://alisondb.legislature.state.al.us/alison/SelectSession.aspx')
+        r = s.get("http://alisondb.legislature.state.al.us/alison/SelectSession.aspx")
         doc = lxml.html.fromstring(r.text)
-        return doc.xpath('//*[@id="ContentPlaceHolder1_gvSessions"]/tr/td/font/a/font/text()')
+        return doc.xpath(
+            '//*[@id="ContentPlaceHolder1_gvSessions"]/tr/td/font/a/font/text()'
+        )

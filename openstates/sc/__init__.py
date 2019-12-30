@@ -18,9 +18,9 @@ class SouthCarolina(Jurisdiction):
     name = "South Carolina"
     url = "http://www.scstatehouse.gov/"
     scrapers = {
-        'people': SCPersonScraper,
-        'bills': SCBillScraper,
-        'events': SCEventScraper
+        "people": SCPersonScraper,
+        "bills": SCBillScraper,
+        "events": SCEventScraper,
     }
     legislative_sessions = [
         {
@@ -28,21 +28,21 @@ class SouthCarolina(Jurisdiction):
             "classification": "primary",
             "identifier": "119",
             "name": "2011-2012 Regular Session",
-            "start_date": "2010-11-17"
+            "start_date": "2010-11-17",
         },
         {
             "_scraped_name": "120 - (2013-2014)",
             "classification": "primary",
             "identifier": "2013-2014",
             "name": "2013-2014 Regular Session",
-            "start_date": "2013-01-08"
+            "start_date": "2013-01-08",
         },
         {
             "_scraped_name": "121 - (2015-2016)",
             "classification": "primary",
             "identifier": "2015-2016",
             "name": "2015-2016 Regular Session",
-            "start_date": "2015-01-13"
+            "start_date": "2015-01-13",
         },
         {
             "_scraped_name": "122 - (2017-2018)",
@@ -50,7 +50,7 @@ class SouthCarolina(Jurisdiction):
             "end_date": "2018-05-09",
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
-            "start_date": "2017-01-10"
+            "start_date": "2017-01-10",
         },
         {
             "_scraped_name": "123 - (2019-2020)",
@@ -58,8 +58,8 @@ class SouthCarolina(Jurisdiction):
             "end_date": "2019-05-09",
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
-            "start_date": "2019-01-09"
-        }
+            "start_date": "2019-01-09",
+        },
     ]
     ignored_scraped_sessions = [
         "118 - (2009-2010)",
@@ -79,19 +79,18 @@ class SouthCarolina(Jurisdiction):
         "104 - (1981-1982)",
         "103 - (1979-1980)",
         "102 - (1977-1978)",
-        "101 - (1975-1976)"
+        "101 - (1975-1976)",
     ]
 
     def get_organizations(self):
         """ generator to obtain organization data. """
         legislature_name = "South Carolina Legislature"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
         yield legislature
         yield upper
@@ -99,7 +98,7 @@ class SouthCarolina(Jurisdiction):
 
     def get_session_list(self):
         """ Get session list from billsearch page using xpath"""
-        url = 'http://www.scstatehouse.gov/billsearch.php'
+        url = "http://www.scstatehouse.gov/billsearch.php"
         path = "//select[@id='session']/option/text()"
 
         doc = lxml.html.fromstring(requests.get(url).text)

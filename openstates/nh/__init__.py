@@ -1,5 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import NHPersonScraper
+
 # from .committees import NHCommitteeScraper
 from .bills import NHBillScraper
 
@@ -10,9 +11,9 @@ class NewHampshire(Jurisdiction):
     name = "New Hampshire"
     url = "TODO"
     scrapers = {
-        'people': NHPersonScraper,
+        "people": NHPersonScraper,
         # 'committees': NHCommitteeScraper,
-        'bills': NHBillScraper,
+        "bills": NHBillScraper,
     }
     legislative_sessions = [
         {
@@ -25,11 +26,7 @@ class NewHampshire(Jurisdiction):
             "identifier": "2012",
             "name": "2012 Regular Session",
         },
-        {
-            "_scraped_name": "2013",
-            "identifier": "2013",
-            "name": "2013 Regular Session",
-        },
+        {"_scraped_name": "2013", "identifier": "2013", "name": "2013 Regular Session"},
         {
             "_scraped_name": "2014 Session",
             "identifier": "2014",
@@ -69,20 +66,25 @@ class NewHampshire(Jurisdiction):
     ]
     ignored_scraped_sessions = [
         "2013 Session",
-        "2017 Session Bill Status Tables Link.txt"
+        "2017 Session Bill Status Tables Link.txt",
     ]
 
     def get_organizations(self):
         legislature_name = "New Hampshire General Court"
         legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization('Senate', classification='upper', parent_id=legislature._id)
-        lower = Organization('House', classification='lower', parent_id=legislature._id)
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
         yield legislature
         yield upper
         yield lower
 
     def get_session_list(self):
         from openstates.utils import url_xpath
-        zips = url_xpath('http://gencourt.state.nh.us/downloads/',
-                         '//a[contains(@href, "Bill%20Status%20Tables")]/text()')
-        return [zip.replace(' Bill Status Tables.zip', '') for zip in zips]
+
+        zips = url_xpath(
+            "http://gencourt.state.nh.us/downloads/",
+            '//a[contains(@href, "Bill%20Status%20Tables")]/text()',
+        )
+        return [zip.replace(" Bill Status Tables.zip", "") for zip in zips]

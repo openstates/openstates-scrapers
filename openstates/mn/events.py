@@ -15,22 +15,19 @@ class MNEventScraper(Scraper, LXMLMixin):
     verify = False
 
     tz = pytz.timezone("US/Central")
-    date_formats = (
-        '%A, %B %d, %Y %I:%M %p',
-        '%A, %B %d'
-    )
+    date_formats = ("%A, %B %d, %Y %I:%M %p", "%A, %B %d")
 
     def scrape(self):
         page = self.lxmlize(url)
 
         commission_meetings = page.xpath("//div[@class='cal_item comm_item']")
-        yield from self.scrape_meetings(commission_meetings, 'commission')
+        yield from self.scrape_meetings(commission_meetings, "commission")
 
         house_meetings = page.xpath("//div[@class='cal_item house_item']")
-        yield from self.scrape_meetings(house_meetings, 'house')
+        yield from self.scrape_meetings(house_meetings, "house")
 
         senate_meetings = page.xpath("//div[@class='cal_item senate_item']")
-        yield from self.scrape_meetings(senate_meetings, 'senate')
+        yield from self.scrape_meetings(senate_meetings, "senate")
 
     def scrape_meetings(self, meetings, group):
         """
@@ -50,9 +47,12 @@ class MNEventScraper(Scraper, LXMLMixin):
             location = self.get_location(meeting)
 
             if when and description and location:
-                event = Event(name=description, start_date=when.replace(tzinfo=self.tz),
-                              description=description,
-                              location_name=location)
+                event = Event(
+                    name=description,
+                    start_date=when.replace(tzinfo=self.tz),
+                    description=description,
+                    location_name=location,
+                )
                 agenda = self.get_agenda(meeting)
                 if agenda:
                     event.add_agenda_item(agenda)
@@ -74,7 +74,7 @@ class MNEventScraper(Scraper, LXMLMixin):
         raw_text = date_raw[0].text_content()
         if "canceled" in raw_text.lower():
             return
-        date_string = raw_text.split('**')[0].strip()
+        date_string = raw_text.split("**")[0].strip()
 
         for date_format in self.date_formats:
             try:
@@ -99,17 +99,17 @@ class MNEventScraper(Scraper, LXMLMixin):
         i -- The index of `a`/`span` tags to look for.
 
         """
-        description_raw = meeting.xpath(".//a[not(starts-with(@href,"
-                                        "'https://events.qwikcast.tv/'))]")
-        if (len(description_raw) < 1 or
-                description_raw[0].text_content() == ''):
+        description_raw = meeting.xpath(
+            ".//a[not(starts-with(@href," "'https://events.qwikcast.tv/'))]"
+        )
+        if len(description_raw) < 1 or description_raw[0].text_content() == "":
             description_raw = meeting.xpath(".//span")
         if len(description_raw) < (i + 1):
             return
 
         description = description_raw[i].text_content().strip()
 
-        if description == 'House' or description == 'Senate':
+        if description == "House" or description == "Senate":
             return self.get_description(meeting, i + 1)
 
         return description
@@ -125,7 +125,7 @@ class MNEventScraper(Scraper, LXMLMixin):
         meeting -- A lxml element containing event information
 
         """
-        result = self.get_tail_of(meeting, '^Room:')
+        result = self.get_tail_of(meeting, "^Room:")
         if result is not None:
             return result
         fallback_texts = meeting.xpath(".//text()[starts-with(., 'Room')]")
@@ -143,7 +143,7 @@ class MNEventScraper(Scraper, LXMLMixin):
         meeting -- A lxml element containing event information
 
         """
-        return self.get_tail_of(meeting, '^Agenda:')
+        return self.get_tail_of(meeting, "^Agenda:")
 
     def get_tail_of(self, meeting, pattern_string):
         """
@@ -167,12 +167,12 @@ class MNEventScraper(Scraper, LXMLMixin):
         p_tag = p_tags[0]
 
         for element in p_tag.iter():
-            if element.tag == 'b':
+            if element.tag == "b":
                 raw = element.text_content().strip()
                 r = pattern.search(raw)
                 if r and element.tail:
                     tail = element.tail.strip()
-                    if tail != '':
+                    if tail != "":
                         return tail
                     break
         return

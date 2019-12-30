@@ -96,25 +96,25 @@ RCS# 2811                    Fiftieth Legislature                       2/24/11
                             ___________________________________ (Chief Clerk)"""
 
 
-HOUSE_VOTE_RE = re.compile(r'([YNE ])\s+([A-Z][a-z\'].+?)(?=\s[\sNYE])')
+HOUSE_VOTE_RE = re.compile(r"([YNE ])\s+([A-Z][a-z\'].+?)(?=\s[\sNYE])")
 
 
 def check_regex_against_vote(vote, y, n, a, e):
     counts = defaultdict(int)
     for v in HOUSE_VOTE_RE.findall(vote):
-        if 'Excused' in v[1]:
+        if "Excused" in v[1]:
             counts = defaultdict(int)
             continue
         counts[v[0]] += 1
-    if counts['Y'] != y or counts['N'] != n or counts[' '] != a or counts['E'] != e:
+    if counts["Y"] != y or counts["N"] != n or counts[" "] != a or counts["E"] != e:
         print(counts)
         for x in HOUSE_VOTE_RE.findall(vote):
-            print(' ', x)
+            print(" ", x)
     else:
-        print('  good')
+        print("  good")
 
 
-print('HB1')
+print("HB1")
 check_regex_against_vote(hb1, 66, 0, 4, 0)
-print('HB131')
+print("HB131")
 check_regex_against_vote(hb131, 34, 34, 0, 2)

@@ -5,9 +5,10 @@ from openstates.utils import url_xpath
 from .bills import PABillScraper
 from .events import PAEventScraper
 from .people import PALegislatorScraper
+
 # from .committees import PACommitteeScraper
 
-settings = {'SCRAPELIB_RPM': 30}
+settings = {"SCRAPELIB_RPM": 30}
 
 
 class Pennsylvania(Jurisdiction):
@@ -16,9 +17,9 @@ class Pennsylvania(Jurisdiction):
     name = "Pennsylvania"
     url = "http://www.legis.state.pa.us/"
     scrapers = {
-        'bills': PABillScraper,
-        'events': PAEventScraper,
-        'people': PALegislatorScraper,
+        "bills": PABillScraper,
+        "events": PAEventScraper,
+        "people": PALegislatorScraper,
         # 'committees': PACommitteeScraper,
     }
     legislative_sessions = [
@@ -26,31 +27,31 @@ class Pennsylvania(Jurisdiction):
             "_scraped_name": "2009-2010 Regular Session",
             "classification": "primary",
             "identifier": "2009-2010",
-            "name": "2009-2010 Regular Session"
+            "name": "2009-2010 Regular Session",
         },
         {
             "_scraped_name": "2009-2010 Special Session #1 (Transportation)",
             "classification": "special",
             "identifier": "2009-2010 Special Session #1 (Transportation)",
-            "name": "2009-2010, 1st Special Session"
+            "name": "2009-2010, 1st Special Session",
         },
         {
             "_scraped_name": "2011-2012 Regular Session",
             "classification": "primary",
             "identifier": "2011-2012",
-            "name": "2011-2012 Regular Session"
+            "name": "2011-2012 Regular Session",
         },
         {
             "_scraped_name": "2013-2014 Regular Session",
             "classification": "primary",
             "identifier": "2013-2014",
-            "name": "2013-2014 Regular Session"
+            "name": "2013-2014 Regular Session",
         },
         {
             "_scraped_name": "2015-2016 Regular Session",
             "classification": "primary",
             "identifier": "2015-2016",
-            "name": "2015-2016 Regular Session"
+            "name": "2015-2016 Regular Session",
         },
         {
             "_scraped_name": "2017-2018 Regular Session",
@@ -58,7 +59,7 @@ class Pennsylvania(Jurisdiction):
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-03",
-            "end_date": "2017-12-31"
+            "end_date": "2017-12-31",
         },
         {
             "_scraped_name": "2019-2020 Regular Session",
@@ -66,7 +67,7 @@ class Pennsylvania(Jurisdiction):
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-01",
-            "end_date": "2019-12-31"
+            "end_date": "2019-12-31",
         },
     ]
     ignored_scraped_sessions = [
@@ -206,12 +207,11 @@ class Pennsylvania(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Pennsylvania General Assembly"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
         yield legislature
         yield upper
@@ -220,8 +220,10 @@ class Pennsylvania(Jurisdiction):
     def get_session_list(self):
         # PA keeps slowly adding backdata, so just ignore it en masse
         for i in range(1800, 2000):
-            self.ignored_scraped_sessions.append('{} Regular Session'.format(i))
-            self.ignored_scraped_sessions.append('{} Special Session #1'.format(i))
+            self.ignored_scraped_sessions.append("{} Regular Session".format(i))
+            self.ignored_scraped_sessions.append("{} Special Session #1".format(i))
 
-        return url_xpath('http://www.legis.state.pa.us/cfdocs/legis/home/bills/',
-                         '//select[@id="billSessions"]/option/text()')
+        return url_xpath(
+            "http://www.legis.state.pa.us/cfdocs/legis/home/bills/",
+            '//select[@id="billSessions"]/option/text()',
+        )

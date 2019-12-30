@@ -1,4 +1,3 @@
-
 import lxml.html
 
 from pupa.scrape import Scraper, Organization
@@ -8,20 +7,22 @@ from scrapelib import HTTPError
 
 
 class INCommitteeScraper(Scraper):
-    jurisdiction = 'in'
+    jurisdiction = "in"
 
     _parent_committees = {}
 
     def process_special_members(self, comm, comm_json, role_name):
-        role_dict = {"chair": "Chair",
-                     "viceChair": "Vice Chair",
-                     "rankingMinMember": "Ranking Minority Member"}
+        role_dict = {
+            "chair": "Chair",
+            "viceChair": "Vice Chair",
+            "rankingMinMember": "Ranking Minority Member",
+        }
         try:
             mem = comm_json[role_name]
         except KeyError:
             return
         if mem:
-            person = mem["firstName"]+" "+mem["lastName"]
+            person = mem["firstName"] + " " + mem["lastName"]
             comm.add_member(person, role=role_dict[role_name])
             return person
         return None
@@ -76,7 +77,7 @@ class INCommitteeScraper(Scraper):
             try:
                 chamber = comm_json["chamber"]["name"]
             except KeyError:
-                chamber = 'joint'
+                chamber = "joint"
             else:
                 if chamber == "Senate":
                     chamber = "upper"
@@ -90,19 +91,24 @@ class INCommitteeScraper(Scraper):
                 owning_comm = subcomms[name]
             except KeyError:
                 name = name.replace("Statutory Committee on", "").strip()
-                comm = Organization(name=name, chamber=chamber, classification='committee')
+                comm = Organization(
+                    name=name, chamber=chamber, classification="committee"
+                )
                 if name in subcomms.values():
                     # Avoid identification issues, if committee names are re-used
                     # between upper and lower chambers
                     assert self._parent_committees.get(name) is None
                     self._parent_committees[name] = comm
             else:
-                name = name.replace("Statutory Committee on", ""
-                                    ).replace("Subcommittee", "").strip()
+                name = (
+                    name.replace("Statutory Committee on", "")
+                    .replace("Subcommittee", "")
+                    .strip()
+                )
                 comm = Organization(
                     name=name,
                     parent_id=self._parent_committees[owning_comm],
-                    classification='committee'
+                    classification="committee",
                 )
 
             chair = self.process_special_members(comm, comm_json, "chair")
@@ -114,7 +120,7 @@ class INCommitteeScraper(Scraper):
             comm_members = [m for m in [chair, vicechair, ranking] if m]
 
             for mem in comm_json["members"]:
-                mem_name = mem["firstName"]+" "+mem["lastName"]
+                mem_name = mem["firstName"] + " " + mem["lastName"]
                 if mem_name not in comm_members:
                     comm_members.append(mem_name)
                     comm.add_member(mem_name)

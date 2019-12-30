@@ -6,11 +6,9 @@ from .people import CTPersonScraper
 from .bills import CTBillScraper
 from .events import CTEventScraper
 
-settings = {
-    'SCRAPELIB_RPM': 20
-}
+settings = {"SCRAPELIB_RPM": 20}
 
-SKIP_SESSIONS = {'incoming', 'pub', 'CGAAudio', 'rba', 'NCSL', 'FOI_1', 'stainedglass'}
+SKIP_SESSIONS = {"incoming", "pub", "CGAAudio", "rba", "NCSL", "FOI_1", "stainedglass"}
 
 
 class Connecticut(Jurisdiction):
@@ -19,42 +17,22 @@ class Connecticut(Jurisdiction):
     name = "Connecticut"
     url = "http://www.cga.ct.gov/"
     scrapers = {
-        'people': CTPersonScraper,
-        'bills': CTBillScraper,
-        'events': CTEventScraper,
+        "people": CTPersonScraper,
+        "bills": CTBillScraper,
+        "events": CTEventScraper,
     }
     legislative_sessions = [
-        {
-            "_scraped_name": "2011",
-            "identifier": "2011",
-            "name": "2011 Regular Session"
-        },
-        {
-            "_scraped_name": "2012",
-            "identifier": "2012",
-            "name": "2012 Regular Session"
-        },
-        {
-            "_scraped_name": "2013",
-            "identifier": "2013",
-            "name": "2013 Regular Session"
-        },
-        {
-            "_scraped_name": "2014",
-            "identifier": "2014",
-            "name": "2014 Regular Session"
-        },
-        {
-            "_scraped_name": "2015",
-            "identifier": "2015",
-            "name": "2015 Regular Session"
-        },
+        {"_scraped_name": "2011", "identifier": "2011", "name": "2011 Regular Session"},
+        {"_scraped_name": "2012", "identifier": "2012", "name": "2012 Regular Session"},
+        {"_scraped_name": "2013", "identifier": "2013", "name": "2013 Regular Session"},
+        {"_scraped_name": "2014", "identifier": "2014", "name": "2014 Regular Session"},
+        {"_scraped_name": "2015", "identifier": "2015", "name": "2015 Regular Session"},
         {
             "_scraped_name": "2016",
             "end_date": "2016-05-04",
             "identifier": "2016",
             "name": "2016 Regular Session",
-            "start_date": "2016-02-03"
+            "start_date": "2016-02-03",
         },
         {
             "_scraped_name": "2017",
@@ -95,29 +73,28 @@ class Connecticut(Jurisdiction):
         "2008",
         "2007",
         "2006",
-        "2005"
+        "2005",
     ]
 
     def get_organizations(self):
         legislature_name = "Connecticut General Assembly"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
         yield legislature
         yield upper
         yield lower
 
     def get_session_list(self):
-        text = scrapelib.Scraper().get('ftp://ftp.cga.ct.gov').text
+        text = scrapelib.Scraper().get("ftp://ftp.cga.ct.gov").text
         sessions = [line.split()[-1] for line in text.splitlines()]
         return [session for session in sessions if session not in SKIP_SESSIONS]
 
     def get_extract_text(self, doc, data):
         doc = lxml.html.fromstring(data)
-        text = ' '.join(p.text_content() for p in doc.xpath('//body/p'))
+        text = " ".join(p.text_content() for p in doc.xpath("//body/p"))
         return text

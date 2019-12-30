@@ -3,8 +3,10 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
 from .bills import RIBillScraper
+
 # from .events import RIEventScraper
 from .people import RIPersonScraper
+
 # from .committees import RICommitteeScraper
 
 
@@ -14,9 +16,9 @@ class RhodeIsland(Jurisdiction):
     name = "Rhode Island"
     url = "http://www.ri.gov/"
     scrapers = {
-        'bills': RIBillScraper,
+        "bills": RIBillScraper,
         # 'events': RIEventScraper,
-        'people': RIPersonScraper,
+        "people": RIPersonScraper,
         # 'committees': RICommitteeScraper,
     }
     legislative_sessions = [
@@ -26,7 +28,7 @@ class RhodeIsland(Jurisdiction):
             "end_date": "2012-06-13",
             "identifier": "2012",
             "name": "2012 Regular Session",
-            "start_date": "2012-01-03"
+            "start_date": "2012-01-03",
         },
         {
             "_scraped_name": "2013",
@@ -34,7 +36,7 @@ class RhodeIsland(Jurisdiction):
             "end_date": "2013-07-03",
             "identifier": "2013",
             "name": "2013 Regular Session",
-            "start_date": "2013-01-01"
+            "start_date": "2013-01-01",
         },
         {
             "_scraped_name": "2014",
@@ -42,7 +44,7 @@ class RhodeIsland(Jurisdiction):
             "end_date": "2014-06-21",
             "identifier": "2014",
             "name": "2014 Regular Session",
-            "start_date": "2014-01-07"
+            "start_date": "2014-01-07",
         },
         {
             "_scraped_name": "2015",
@@ -50,14 +52,14 @@ class RhodeIsland(Jurisdiction):
             "end_date": "2015-06-25",
             "identifier": "2015",
             "name": "2015 Regular Session",
-            "start_date": "2015-01-06"
+            "start_date": "2015-01-06",
         },
         {
             "_scraped_name": "2016",
             "classification": "primary",
             "identifier": "2016",
             "name": "2016 Regular Session",
-            "start_date": "2016-01-05"
+            "start_date": "2016-01-05",
         },
         {
             "_scraped_name": "2017",
@@ -93,20 +95,20 @@ class RhodeIsland(Jurisdiction):
         "2010",
         "2009",
         "2008",
-        "2007"
+        "2007",
     ]
 
     def get_organizations(self):
         legislature_name = "Rhode Island General Assembly"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        executive = Organization(name='Office of the Governor',
-                                 classification="executive")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        executive = Organization(
+            name="Office of the Governor", classification="executive"
+        )
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
         yield legislature
         yield executive
@@ -115,5 +117,6 @@ class RhodeIsland(Jurisdiction):
 
     def get_session_list(self):
         return url_xpath(
-            'http://status.rilin.state.ri.us/bill_history.aspx?mode=previous',
-            '//select[@name="ctl00$rilinContent$cbYear"]/option/text()')
+            "http://status.rilin.state.ri.us/bill_history.aspx?mode=previous",
+            '//select[@name="ctl00$rilinContent$cbYear"]/option/text()',
+        )

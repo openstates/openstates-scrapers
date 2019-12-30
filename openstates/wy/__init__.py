@@ -2,6 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from .bills import WYBillScraper
 from .people import WYPersonScraper
+
 # from .committees import WYCommitteeScraper
 
 import requests
@@ -14,8 +15,8 @@ class Wyoming(Jurisdiction):
     name = "Wyoming"
     url = "http://legisweb.state.wy.us/"
     scrapers = {
-        'bills': WYBillScraper,
-        'people': WYPersonScraper,
+        "bills": WYBillScraper,
+        "people": WYPersonScraper,
         # 'committees': WYCommitteeScraper,
     }
     legislative_sessions = [
@@ -23,37 +24,37 @@ class Wyoming(Jurisdiction):
             "_scraped_name": "2011",
             "classification": "primary",
             "identifier": "2011",
-            "name": "2011"
+            "name": "2011",
         },
         {
             "_scraped_name": "2012",
             "classification": "special",
             "identifier": "2012",
-            "name": "2012"
+            "name": "2012",
         },
         {
             "_scraped_name": "2013",
             "classification": "primary",
             "identifier": "2013",
-            "name": "2013"
+            "name": "2013",
         },
         {
             "_scraped_name": "2014",
             "classification": "primary",
             "identifier": "2014",
-            "name": "2014"
+            "name": "2014",
         },
         {
             "_scraped_name": "2015",
             "classification": "primary",
             "identifier": "2015",
-            "name": "2015"
+            "name": "2015",
         },
         {
             "_scraped_name": "2016",
             "classification": "primary",
             "identifier": "2016",
-            "name": "2016"
+            "name": "2016",
         },
         {
             "_scraped_name": "2017",
@@ -103,20 +104,19 @@ class Wyoming(Jurisdiction):
         "2004",
         "2003",
         "2002",
-        "2001"
+        "2001",
     ]
 
     def get_organizations(self):
         legislature_name = "Wyoming State Legislature"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
-        yield Organization(name='Governor of Wyoming', classification='executive')
+        yield Organization(name="Governor of Wyoming", classification="executive")
         yield legislature
         yield upper
         yield lower
@@ -126,11 +126,11 @@ class Wyoming(Jurisdiction):
         # it looks like:
         # .constant("YEAR_VALUES",[{year:2001,title:"General Session",isActive:!0}, ...
         session = requests.Session()
-        js = session.get('http://wyoleg.gov/js/site.min.js').content.decode('utf-8')
+        js = session.get("http://wyoleg.gov/js/site.min.js").content.decode("utf-8")
         # seriously, there must be a better way to do this
-        sessions_regex = r'constant\(\"YEAR_VALUES\",\[(.*)\)}\(\),function\(w'
+        sessions_regex = r"constant\(\"YEAR_VALUES\",\[(.*)\)}\(\),function\(w"
         sessions_string = re.search(sessions_regex, js)
         # once we have the big string, pull out year:2001, etc
-        year_regex = r'year\:(\d+)'
+        year_regex = r"year\:(\d+)"
         years = re.findall(year_regex, sessions_string.groups(0)[0])
         return years

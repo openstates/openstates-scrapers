@@ -14,10 +14,10 @@ class Iowa(Jurisdiction):
     name = "Iowa"
     url = "https://www.legis.iowa.gov/"
     scrapers = {
-        'people': IAPersonScraper,
-        'bills': IABillScraper,
-        'votes': IAVoteScraper,
-        'events': IAEventScraper,
+        "people": IAPersonScraper,
+        "bills": IABillScraper,
+        "votes": IAVoteScraper,
+        "events": IAEventScraper,
     }
     legislative_sessions = [
         {
@@ -50,7 +50,7 @@ class Iowa(Jurisdiction):
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-14",
             "end_date": "2019-05-03",
-        }
+        },
     ]
     ignored_scraped_sessions = [
         "Legislative Assembly: 86",
@@ -64,18 +64,17 @@ class Iowa(Jurisdiction):
         "General Assembly: 78",
         "General Assembly: 77",
         "General Assembly: 77",
-        "General Assembly: 76"
+        "General Assembly: 76",
     ]
 
     def get_organizations(self):
         legislature_name = "Iowa General Assembly"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization('House', classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization(
+            "Senate", classification="upper", parent_id=legislature._id
+        )
+        lower = Organization("House", classification="lower", parent_id=legislature._id)
 
         yield legislature
         yield upper
@@ -83,11 +82,14 @@ class Iowa(Jurisdiction):
 
     def get_session_list(self):
         sessions = url_xpath(
-            'https://www.legis.iowa.gov/legislation/findLegislation',
-            "//section[@class='grid_6']//li/a/text()[normalize-space()]"
+            "https://www.legis.iowa.gov/legislation/findLegislation",
+            "//section[@class='grid_6']//li/a/text()[normalize-space()]",
         )
 
-        return [x[0] for x in filter(lambda x: x != [], [
-            re.findall(r'^.*Assembly: [0-9]+', session)
-            for session in sessions
-        ])]
+        return [
+            x[0]
+            for x in filter(
+                lambda x: x != [],
+                [re.findall(r"^.*Assembly: [0-9]+", session) for session in sessions],
+            )
+        ]

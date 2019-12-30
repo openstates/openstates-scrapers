@@ -3,8 +3,8 @@ from collections import namedtuple, defaultdict, Iterable
 from six import string_types
 
 
-class Rule(namedtuple('Rule', 'regexes types stop attrs')):
-    '''If any of ``regexes`` matches the action text, the resulting
+class Rule(namedtuple("Rule", "regexes types stop attrs")):
+    """If any of ``regexes`` matches the action text, the resulting
     action's types should include ``types``.
 
     If stop is true, no other rules should be tested after this one;
@@ -14,20 +14,22 @@ class Rule(namedtuple('Rule', 'regexes types stop attrs')):
     The resulting action should contain ``attrs``, which basically
     enables overwriting certain attributes, like the chamber if
     the action was listed in the wrong column.
-    '''
-    def __new__(_cls, regexes, types=None, stop=False,
-                flexible_whitespace=True, **kwargs):
-        'Create new instance of Rule(regex, types, attrs, stop)'
+    """
+
+    def __new__(
+        _cls, regexes, types=None, stop=False, flexible_whitespace=True, **kwargs
+    ):
+        "Create new instance of Rule(regex, types, attrs, stop)"
 
         # Regexes can be a string, regex, or sequence.
-        if isinstance(regexes, string_types) or hasattr(regexes, 'match'):
+        if isinstance(regexes, string_types) or hasattr(regexes, "match"):
             regexes = (regexes,)
         compiled_regexes = []
         # pre-compile any string regexes
         for regex in regexes:
             if isinstance(regex, string_types):
                 if flexible_whitespace:
-                    regex = re.sub(r'\s{1,4}', r'\\s{,10}', regex)
+                    regex = re.sub(r"\s{1,4}", r"\\s{,10}", regex)
                 compiled_regexes.append(re.compile(regex))
             else:
                 compiled_regexes.append(regex)
@@ -58,12 +60,13 @@ class Rule(namedtuple('Rule', 'regexes types stop attrs')):
 
 
 class BaseCategorizer(object):
-    '''A class that exposes a main categorizer function
+    """A class that exposes a main categorizer function
     and before and after hooks, in case categorization requires specific
     steps that make use of action or category info. The return
     value is a 2-tuple of category types and a dictionary of
     attributes to overwrite on the target action object.
-    '''
+    """
+
     rules = []
 
     def __init__(self):
@@ -97,7 +100,7 @@ class BaseCategorizer(object):
                     break
 
         # set type
-        return_val['classification'] = list(types)
+        return_val["classification"] = list(types)
 
         # run post-categorize hook
         return_val = self.post_categorize(return_val)
@@ -105,10 +108,10 @@ class BaseCategorizer(object):
         return self.finalize(return_val)
 
     def finalize(self, return_val):
-        '''Before the types and attrs get passed to the
+        """Before the types and attrs get passed to the
         importer they need to be altered by converting lists to
         sets, etc.
-        '''
+        """
         attrs = return_val
         return_val = {}
 
@@ -127,7 +130,7 @@ class BaseCategorizer(object):
                 v = list(v)
 
             # Some vals should be strings, not seqs.
-            if k == 'actor' and len(v) == 1:
+            if k == "actor" and len(v) == 1:
                 v = v.pop()
 
             return_val[k] = v
@@ -135,9 +138,9 @@ class BaseCategorizer(object):
         return return_val
 
     def pre_categorize(self, text):
-        '''A precategorization hook. Takes & returns text.  '''
+        """A precategorization hook. Takes & returns text.  """
         return text
 
     def post_categorize(self, return_val):
-        '''A post-categorization hook. Takes & returns attrs dict.  '''
+        """A post-categorization hook. Takes & returns attrs dict.  """
         return return_val
