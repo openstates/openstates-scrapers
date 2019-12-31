@@ -139,7 +139,7 @@ class NorthCarolina(Jurisdiction):
             "_scraped_name": "2000 First Extra Session",
             "classification": "special",
             "identifier": "1999E2",
-            "name": "1999 Extra Session 1",
+            "name": "2000 Extra Session 1",
             "start_date": "2000-04-05"
         },
         {
