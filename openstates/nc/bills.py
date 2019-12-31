@@ -156,7 +156,6 @@ class NCBillScraper(Scraper):
             '/div[@class="row"]'
         )
 
-        print("Before actions")
         # skip two header rows
         for row in doc.xpath(action_tr_xpath):
             cols = row.xpath("div")
@@ -164,14 +163,12 @@ class NCBillScraper(Scraper):
             actor = cols[3].text or ""
             # if text is blank, try diving in
             action = (cols[5].text or "").strip() or cols[5].text_content().strip()
-            print(act_date)
 
             if act_date is None:
                 search_action_date = action.split()
                 for act in search_action_date:
                     try:
                         if '/' in act:
-                            print("Look here: ", act)
                             # try:
                             act_date = dt.datetime.strptime(act, '%m/%d/%Y').strftime('%Y-%m-%d')
                             #     print(type(act_date))
