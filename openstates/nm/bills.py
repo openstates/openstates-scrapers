@@ -96,7 +96,10 @@ class NMBillScraper(Scraper):
 
         # McSorley resigned so they removed him from the API
         # but he is still attached to some bills
+        # Gonzales switched from being in the House to the Senate
+        # but was still showing as a sponsor
         sponsor_map["SMCSO"] = "Cisco McSorley"
+        sponsor_map["SGONZ"] = "Roberto J. Gonzales"
 
         subject_map = {}
         for subject in self.access_to_csv("TblSubjects"):
@@ -139,7 +142,6 @@ class NMBillScraper(Scraper):
                 "{Chamber}&legType={LegType}&legNo={LegNo}"
                 "&year={SessionYear}".format(**data)
             )
-
             bill.add_sponsorship(
                 sponsor_map[data["SponsorCode"]],
                 classification="primary",
