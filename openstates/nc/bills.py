@@ -73,7 +73,7 @@ class NCBillScraper(Scraper):
 
 
         bill_title = doc.xpath(    
-            '/html/body/div/div/main/div[2]/div[contains(@class,"col-12")]/a'
+            '/html[1]/body[1]/div[1]/div[1]/main[1]/div[2]/div[1]'
         )[0]
         bill_title = bill_title.text_content().strip()
         if bill_title is '':
