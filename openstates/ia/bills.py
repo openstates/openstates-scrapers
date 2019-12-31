@@ -143,6 +143,9 @@ class IABillScraper(Scraper):
                     version_abbrev.upper(), session_id, bill_id.replace(" ", "")
                 )
 
+                if "Marked Up" in version_name:
+                    version_pdf_url = sidebar.xpath("//iframe[@id='bbContextDoc']/@src")[0]
+
                 bill.add_version_link(
                     note=version_name, url=version_pdf_url, media_type="application/pdf"
                 )
