@@ -280,41 +280,37 @@ class NCBillScraper(Scraper):
     def scrape_archived_votes(self, chamber, session):
         chamber_abbr = "S" if chamber == "upper" else "H"
         url = f"https://www.ncleg.gov/Legislation/Votes/MemberVoteHistory/{session}/{chamber_abbr}"
-        print(url)
-        doc = lxml.html.fromstring(url)
+        data = self.get(url).text
+        doc = lxml.html.fromstring(data)
+        doc.make_links_absolute(url)
 
-        # POST request area to grab members
-        # data = self.get(url).text
-        # doc = lxml.html.fromstring(data)
-        # doc.make_links_absolute(url)
+        rep_links = doc.xpath('//option/@value')[1:]
+        print("Representatives:", len(rep_links))
+        for rep_link in rep_links:
+            rep_url = f"https://www.ncleg.gov/Legislation/Votes/MemberVoteHistory/{session}/{chamber_abbr}/{rep_link}"
+            print(rep_url)
 
-        # reps = doc.xpath('//select[@id="MemberSelect"]/option')
-        # print("Representatives:", len(reps))
-        # for rep in reps:
-        #     print(rep.text)
+            # Scrapping detailed vote pages for archived representatives
+            rep_data = self.get(rep_url).text
+            rep_doc = lxml.html.fromstring(rep_data)
+            rep_doc.make_links_absolute(rep_url)
 
-        # Scrapping detailed vote pages for archived representatives
-        rep_url = "https://www.ncleg.gov/Legislation/Votes/MemberVoteHistory/1999/S/allran-285"
-        rep_data = self.get(rep_url).text
-        rep_doc = lxml.html.fromstring(rep_data)
-        rep_doc.make_links_absolute(rep_url)
+            vote_text = rep_doc.xpath('//pre')[0].text.splitlines()
+            for x in range(len(vote_text)):
+                line = vote_text[x].split()
+                if line and re.match(r"[H, S]\d\d\d\d", line[0]):
+                    bill_id = line[0]
 
-        vote_text = rep_doc.xpath('//pre')[0].text.splitlines()
-        for x in range(len(vote_text)):
-            line = vote_text[x].split()
-            if line and re.match(r"[H, S]\d\d\d\d", line[0]):
-                bill_id = line[0]
+                    # Designates where the X is placed to indicate a vote
+                    yes_location = 59
+                    no_location = 64
+                    noVt_location = 69
+                    exAb_location = 74
+                    exVt_location = 79
 
-                # Designates where the X is placed to indicate a vote
-                yes_location = 59
-                no_location = 64
-                noVt_location = 69
-                exAb_location = 74
-                exVt_location = 79
-
-                rep_vote = vote_text[x+2]
-                vote_location = rep_vote.rfind("X")
-                print("Spaces in count:", vote_location, "Text:", rep_vote)
+                    rep_vote = vote_text[x+2]
+                    vote_location = rep_vote.rfind("X")
+                    print("Spaces in count:", vote_location, "Text:", rep_vote)
 
 
     def scrape(self, session=None, chamber=None):
