@@ -6,6 +6,7 @@ import pytz
 
 eastern = pytz.timezone("US/Eastern")
 
+archived_votes = {}
 
 class NCBillScraper(Scraper):
 
@@ -295,6 +296,11 @@ class NCBillScraper(Scraper):
             rep_doc = lxml.html.fromstring(rep_data)
             rep_doc.make_links_absolute(rep_url)
 
+            rep_name = rep_doc.xpath("//div[@class='section-title']")[0].text.split()[1:-2]
+            rep_name = " ".join(rep_name)
+
+            print(rep_name)
+
             vote_text = rep_doc.xpath('//pre')[0].text.splitlines()
             for x in range(len(vote_text)):
                 line = vote_text[x].split()
@@ -310,7 +316,23 @@ class NCBillScraper(Scraper):
 
                     rep_vote = vote_text[x+2]
                     vote_location = rep_vote.rfind("X")
-                    print("Spaces in count:", vote_location, "Text:", rep_vote)
+
+                    if vote_location == yes_location:
+                        how_voted = "yes"
+                    elif vote_location == no_location:
+                        how_voted = "no"
+                    elif vote_location == noVt_location:
+                        how_voted = "other"
+                    elif vote_location == exAb_location:
+                        how_voted == "absent"
+                    else:
+                        how_voted = "excused"
+
+                    print("Bill ID", bill_id, "How Voted:", how_voted)
+                    # archived_votes[bill_id].append({
+                    #     "leg": rep_name,
+                    #     "how_voted": how_voted
+                    #     })
 
 
     def scrape(self, session=None, chamber=None):
