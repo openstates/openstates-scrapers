@@ -199,6 +199,10 @@ class NCBillScraper(Scraper):
         for row in doc.xpath("//h6[@id='vote-header']"):
             yield from self.scrape_votes(bill, doc)
 
+        # For archived votes
+        if session in ['1997', '1999']:
+            yield from self.add_archived_votes(bill, bill_id)
+
         yield bill
 
     def scrape_votes(self, bill, doc):
@@ -277,6 +281,21 @@ class NCBillScraper(Scraper):
 
             yield ve
 
+    # Adds archived votes
+    def add_archived_votes(self, bill, bill_id):
+        bill_id = bill_id.split()
+        bill_id[0] = bill_id[0][0]
+        if len(bill_id[-1]) == 2:
+            bill_id[-1] = "00" + bill_id[-1]
+        if len(bill_id[-1]) == 3:
+            bill_id[-1] = "0" + bill_id[-1]
+        bill_id = "".join(bill_id)
+        print("Bill ID", bill_id)
+        if bill_id in archived_votes:
+            votes = archived_votes[bill_id]
+            print("Total votes for bill:", len(votes))
+        yield bill
+
     # Specifically meant for scraping 1997 and 1999 sessions
     def scrape_archived_votes(self, chamber, session):
         chamber_abbr = "S" if chamber == "upper" else "H"
@@ -350,6 +369,7 @@ class NCBillScraper(Scraper):
 
             if session in ['1997', '1999']:
                 self.scrape_archived_votes(chamber, session)
+                yield from self.scrape_chamber(chamber, session)
                 # print(archived_votes)
             else:
                 yield from self.scrape_chamber(chamber, session)
