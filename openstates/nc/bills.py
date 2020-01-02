@@ -299,7 +299,7 @@ class NCBillScraper(Scraper):
             rep_name = rep_doc.xpath("//div[@class='section-title']")[0].text.split()[1:-2]
             rep_name = " ".join(rep_name)
 
-            print(rep_name)
+            # print(rep_name)
 
             vote_text = rep_doc.xpath('//pre')[0].text.splitlines()
             for x in range(len(vote_text)):
@@ -328,11 +328,16 @@ class NCBillScraper(Scraper):
                     else:
                         how_voted = "excused"
 
-                    print("Bill ID", bill_id, "How Voted:", how_voted)
-                    # archived_votes[bill_id].append({
-                    #     "leg": rep_name,
-                    #     "how_voted": how_voted
-                    #     })
+                    # print("Bill ID", bill_id, "How Voted:", how_voted)
+                    if bill_id in archived_votes:
+                        archived_votes[bill_id].append({
+                            "leg": rep_name,
+                            "how_voted": how_voted})
+                    else:
+                        archived_votes[bill_id] = [{
+                            "leg": rep_name,
+                            "how_voted": how_voted
+                        }]
 
 
     def scrape(self, session=None, chamber=None):
@@ -345,6 +350,7 @@ class NCBillScraper(Scraper):
 
             if session in ['1997', '1999']:
                 self.scrape_archived_votes(chamber, session)
+                # print(archived_votes)
             else:
                 yield from self.scrape_chamber(chamber, session)
 
