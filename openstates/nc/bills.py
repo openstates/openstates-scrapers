@@ -333,6 +333,14 @@ class NCBillScraper(Scraper):
                     exAb_location = 74
                     exVt_location = 79
 
+                    vote_details_line = vote_text[x+1]
+                    vote_date = vote_details_line[2:20]
+                    vote_date = dt.datetime.strptime(vote_date, "%b %d, %Y %H:%M")
+                    print(vote_date)
+
+                    r_number = vote_details_line[21:23]
+                    a_number = vote_details_line[25:28]
+
                     rep_vote = vote_text[x+2]
                     vote_location = rep_vote.rfind("X")
 
@@ -369,7 +377,7 @@ class NCBillScraper(Scraper):
 
             if session in ['1997', '1999']:
                 self.scrape_archived_votes(chamber, session)
-                yield from self.scrape_chamber(chamber, session)
+                # yield from self.scrape_chamber(chamber, session)
                 # print(archived_votes)
             else:
                 yield from self.scrape_chamber(chamber, session)
