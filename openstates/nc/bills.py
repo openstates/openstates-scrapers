@@ -308,7 +308,10 @@ class NCBillScraper(Scraper):
         print("Representatives:", len(rep_links))
         for rep_link in rep_links:
             rep_url = f"https://www.ncleg.gov/Legislation/Votes/MemberVoteHistory/{session}/{chamber_abbr}/{rep_link}"
-            print(rep_url)
+
+            # Special case as page has had some issues
+            if rep_link == "boyd-mcintyre-348":
+                continue
 
             # Scrapping detailed vote pages for archived representatives
             rep_data = self.get(rep_url).text
@@ -318,7 +321,12 @@ class NCBillScraper(Scraper):
             rep_name = rep_doc.xpath("//div[@class='section-title']")[0].text.split()[1:-2]
             rep_name = " ".join(rep_name)
 
-            # print(rep_name)
+            # Designates where the X is placed to indicate a vote
+            yes_location = 59
+            no_location = 64
+            noVt_location = 69
+            exAb_location = 74
+            exVt_location = 79
 
             vote_text = rep_doc.xpath('//pre')[0].text.splitlines()
             for x in range(len(vote_text)):
@@ -326,45 +334,47 @@ class NCBillScraper(Scraper):
                 if line and re.match(r"[H, S]\d\d\d\d", line[0]):
                     bill_id = line[0]
 
-                    # Designates where the X is placed to indicate a vote
-                    yes_location = 59
-                    no_location = 64
-                    noVt_location = 69
-                    exAb_location = 74
-                    exVt_location = 79
+                    # Counting by 2 to find each line. 50 is an abitraty number that is
+                    # high enough to find all votes for a bill
+                    for y in range(1, 50, 2):
+                        if not re.match(r"[H, S]\d\d\d\d", vote_text[x+y]) and ((x+y+2) < len(vote_text)) :
 
-                    vote_details_line = vote_text[x+1]
-                    vote_date = vote_details_line[2:20]
-                    vote_date = dt.datetime.strptime(vote_date, "%b %d, %Y %H:%M")
-                    print(vote_date)
+                            vote_details_line = vote_text[x+y]
+                            vote_date = vote_details_line[2:20]
+                            vote_date = dt.datetime.strptime(vote_date, "%b %d, %Y %H:%M")
+                            r_number = vote_details_line[21:23]
+                            a_number = vote_details_line[25:28]
 
-                    r_number = vote_details_line[21:23]
-                    a_number = vote_details_line[25:28]
+                            rep_vote = vote_text[x+y+1]
+                            vote_location = rep_vote.rfind("X")
 
-                    rep_vote = vote_text[x+2]
-                    vote_location = rep_vote.rfind("X")
+                            if vote_location == yes_location:
+                                how_voted = "yes"
+                            elif vote_location == no_location:
+                                how_voted = "no"
+                            elif vote_location == noVt_location:
+                                how_voted = "other"
+                            elif vote_location == exAb_location:
+                                how_voted == "absent"
+                            else:
+                                how_voted = "excused"
 
-                    if vote_location == yes_location:
-                        how_voted = "yes"
-                    elif vote_location == no_location:
-                        how_voted = "no"
-                    elif vote_location == noVt_location:
-                        how_voted = "other"
-                    elif vote_location == exAb_location:
-                        how_voted == "absent"
-                    else:
-                        how_voted = "excused"
-
-                    # print("Bill ID", bill_id, "How Voted:", how_voted)
-                    if bill_id in archived_votes:
-                        archived_votes[bill_id].append({
-                            "leg": rep_name,
-                            "how_voted": how_voted})
-                    else:
-                        archived_votes[bill_id] = [{
-                            "leg": rep_name,
-                            "how_voted": how_voted
-                        }]
+                            # print("Bill ID", bill_id, "How Voted:", how_voted)
+                            if bill_id in archived_votes:
+                                archived_votes[bill_id].append({
+                                    "leg": rep_name,
+                                    "how_voted": how_voted,
+                                    "vote_date": vote_date,
+                                    "r_number": r_number})
+                            else:
+                                archived_votes[bill_id] = [{
+                                    "leg": rep_name,
+                                    "how_voted": how_voted,
+                                    "vote_date": vote_date,
+                                    "r_number": r_number
+                                }]
+                        else:
+                            break
 
 
     def scrape(self, session=None, chamber=None):
@@ -377,8 +387,7 @@ class NCBillScraper(Scraper):
 
             if session in ['1997', '1999']:
                 self.scrape_archived_votes(chamber, session)
-                # yield from self.scrape_chamber(chamber, session)
-                # print(archived_votes)
+                yield from self.scrape_chamber(chamber, session)
             else:
                 yield from self.scrape_chamber(chamber, session)
 
