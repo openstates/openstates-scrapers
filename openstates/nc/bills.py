@@ -297,7 +297,7 @@ class NCBillScraper(Scraper):
             votes = archived_votes[bill_id]
 
             for vote_key, legislator_votes in archived_votes[bill_id].items():
-                vote_date, _, action_number, action_vote_result = vote_key
+                vote_date, _, action_number, action_vote_result, archive_url = vote_key
                 ve = VoteEvent(
                     chamber=chamber,  # TODO: check this
                     start_date=vote_date,
@@ -306,6 +306,7 @@ class NCBillScraper(Scraper):
                     classification="passage", # ???
                     result=action_vote_result
                 )
+                ve.add_source(archive_url)
 
                 for lv in legislator_votes:
                     ve.vote(lv["how_voted"], lv["leg"])
@@ -315,10 +316,10 @@ class NCBillScraper(Scraper):
     # Specifically meant for scraping 1997 and 1999 sessions
     def scrape_archived_votes(self, chamber, session):
         chamber_abbr = "S" if chamber == "upper" else "H"
-        url = f"https://www.ncleg.gov/Legislation/Votes/MemberVoteHistory/{session}/{chamber_abbr}"
-        data = self.get(url).text
+        archive_url = f"https://www.ncleg.gov/Legislation/Votes/MemberVoteHistory/{session}/{chamber_abbr}"
+        data = self.get(archive_url).text
         doc = lxml.html.fromstring(data)
-        doc.make_links_absolute(url)
+        doc.make_links_absolute(archive_url)
 
         rep_links = doc.xpath('//option/@value')[1:]
         print("Representatives:", len(rep_links))
@@ -388,7 +389,7 @@ class NCBillScraper(Scraper):
                                 how_voted = "excused"
 
                             # print("Bill ID", bill_id, "How Voted:", how_voted)
-                            archived_votes[bill_id][(vote_date, r_number, action_number, action_vote_result)].append({
+                            archived_votes[bill_id][(vote_date, r_number, action_number, action_vote_result, archive_url)].append({
                                 "leg": rep_name,
                                 "how_voted": how_voted,
                             })
