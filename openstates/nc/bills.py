@@ -297,15 +297,18 @@ class NCBillScraper(Scraper):
             votes = archived_votes[bill_id]
 
             for vote_key, legislator_votes in archived_votes[bill_id].items():
-                vote_date, _, action_number, action_vote_result, archive_url = vote_key
+                vote_date, r_number, action_number, action_vote_result, archive_url, cod = vote_key
 
                 vote_date = eastern.localize(vote_date)
                 vote_date = vote_date.isoformat()
 
+                motion_text = (action_number+r_number+cod+bill_id).replace(" ", "_")
+                # print(motion_text)
+
                 ve = VoteEvent(
                     chamber=chamber,  # TODO: check this
                     start_date=vote_date,
-                    motion_text=action_number,
+                    motion_text=motion_text,
                     bill=bill,
                     classification="other", # No indication on classification for archived votes
                     result=action_vote_result
@@ -364,6 +367,7 @@ class NCBillScraper(Scraper):
                             vote_date = dt.datetime.strptime(vote_date, "%b %d, %Y %H:%M")
                             r_number = vote_details_line[21:23]
                             action_number = vote_details_line[25:28]
+                            cod = vote_details_line[29:33]
 
                             # Determining how the bill was voted
                             vote_numbers = vote_details_line.split()
@@ -392,7 +396,7 @@ class NCBillScraper(Scraper):
                                 how_voted = "excused"
 
                             # print("Bill ID", bill_id, "How Voted:", how_voted)
-                            archived_votes[bill_id][(vote_date, r_number, action_number, action_vote_result, archive_url)].append({
+                            archived_votes[bill_id][(vote_date, r_number, action_number, action_vote_result, archive_url, cod)].append({
                                 "leg": rep_name,
                                 "how_voted": how_voted,
                             })
