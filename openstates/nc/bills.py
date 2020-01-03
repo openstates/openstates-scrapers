@@ -290,10 +290,34 @@ class NCBillScraper(Scraper):
         if len(bill_id[-1]) == 3:
             bill_id[-1] = "0" + bill_id[-1]
         bill_id = "".join(bill_id)
-        print("Bill ID", bill_id)
+
         if bill_id in archived_votes:
             votes = archived_votes[bill_id]
             print("Total votes for bill:", len(votes))
+
+            possible_actions = set()
+            possible_r_numbers = set("")
+
+            for k in votes:
+                possible_actions.add(k['action_number'])
+                possible_r_numbers.add(k['r_number'])
+
+            for act in possible_actions:
+                votes_with_actions = [d for d in votes if d['action_number'] in act]
+                for r_num in possible_r_numbers:
+                    votes_with_r_numbers = [d for d in votes_with_actions if d['r_number'] in r_num]
+                    print("Bill", bill_id, "action", act, ", R Number:", r_num, " - Total votes with r_number", len(votes_with_r_numbers))
+
+
+            # ve = VoteEvent(
+            #         chamber=bill.chamber,
+            #         start_date=vote[],
+            #         motion_text=subject,
+            #         bill=bill,
+            #         classification="passage",  # TODO: classify votes
+            # )
+            # for vote in votes:
+
         yield bill
 
     # Specifically meant for scraping 1997 and 1999 sessions
@@ -343,7 +367,7 @@ class NCBillScraper(Scraper):
                             vote_date = vote_details_line[2:20]
                             vote_date = dt.datetime.strptime(vote_date, "%b %d, %Y %H:%M")
                             r_number = vote_details_line[21:23]
-                            a_number = vote_details_line[25:28]
+                            action_number = vote_details_line[25:28]
 
                             rep_vote = vote_text[x+y+1]
                             vote_location = rep_vote.rfind("X")
@@ -359,15 +383,21 @@ class NCBillScraper(Scraper):
                             else:
                                 how_voted = "excused"
 
+                            archive_bill_id = bill_id + "_" + action_number
                             # print("Bill ID", bill_id, "How Voted:", how_voted)
                             if bill_id in archived_votes:
                                 archived_votes[bill_id].append({
+                                    "bill_id": bill_id,
+                                    "action_number": action_number,
                                     "leg": rep_name,
                                     "how_voted": how_voted,
                                     "vote_date": vote_date,
-                                    "r_number": r_number})
+                                    "r_number": r_number
+                                })
                             else:
                                 archived_votes[bill_id] = [{
+                                    "bill_id": bill_id,
+                                    "action_number": action_number,
                                     "leg": rep_name,
                                     "how_voted": how_voted,
                                     "vote_date": vote_date,
@@ -387,6 +417,23 @@ class NCBillScraper(Scraper):
 
             if session in ['1997', '1999']:
                 self.scrape_archived_votes(chamber, session)
+                # test_votes = archived_votes["H0162"]
+                # possible_actions = set()
+
+                # for k in test_votes:
+                #     possible_actions.add(k['action_number'])
+
+                # print("Votes within Bill ID H0162:", len(test_votes))
+                # print(possible_actions)
+
+                # # 'A05' test action
+                # test_keys = ['A05']
+                # for act in possible_actions:
+                #     votes_with_actions = [d for d in test_votes if d['action_number'] in act]
+                #     print("Total votes for action", act, ":", len(votes_with_actions))
+                #     print(votes_with_actions[0])
+
+
                 yield from self.scrape_chamber(chamber, session)
             else:
                 yield from self.scrape_chamber(chamber, session)
