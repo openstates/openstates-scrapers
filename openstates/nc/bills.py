@@ -298,12 +298,16 @@ class NCBillScraper(Scraper):
 
             for vote_key, legislator_votes in archived_votes[bill_id].items():
                 vote_date, _, action_number, action_vote_result, archive_url = vote_key
+
+                vote_date = eastern.localize(vote_date)
+                vote_date = vote_date.isoformat()
+
                 ve = VoteEvent(
                     chamber=chamber,  # TODO: check this
                     start_date=vote_date,
                     motion_text=action_number,
                     bill=bill,
-                    classification="passage", # ???
+                    classification="other", # No indication on classification for archived votes
                     result=action_vote_result
                 )
                 ve.add_source(archive_url)
@@ -311,7 +315,7 @@ class NCBillScraper(Scraper):
                 for lv in legislator_votes:
                     ve.vote(lv["how_voted"], lv["leg"])
 
-        yield bill
+                yield ve
 
     # Specifically meant for scraping 1997 and 1999 sessions
     def scrape_archived_votes(self, chamber, session):
@@ -322,7 +326,6 @@ class NCBillScraper(Scraper):
         doc.make_links_absolute(archive_url)
 
         rep_links = doc.xpath('//option/@value')[1:]
-        print("Representatives:", len(rep_links))
         for rep_link in rep_links:
             rep_url = f"https://www.ncleg.gov/Legislation/Votes/MemberVoteHistory/{session}/{chamber_abbr}/{rep_link}"
 
@@ -403,10 +406,15 @@ class NCBillScraper(Scraper):
             self.info("no session specified, using %s", session)
 
         chambers = [chamber] if chamber else ["upper", "lower"]
+
+        if session in ['1997', '1999']:
+            self.scrape_archived_votes("upper", session)
+            self.scrape_archived_votes("lower", session)
+
         for chamber in chambers:
 
             if session in ['1997', '1999']:
-                self.scrape_archived_votes(chamber, session)
+                # self.scrape_archived_votes(chamber, session)
                 yield from self.scrape_chamber(chamber, session)
             else:
                 yield from self.scrape_chamber(chamber, session)
