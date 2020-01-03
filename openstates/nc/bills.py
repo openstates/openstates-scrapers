@@ -297,15 +297,14 @@ class NCBillScraper(Scraper):
             votes = archived_votes[bill_id]
 
             for vote_key, legislator_votes in archived_votes[bill_id].items():
-                print("Total votes for bill:", len(legislator_votes))
-                vote_date, _, action_number = vote_key
+                vote_date, _, action_number, action_vote_result = vote_key
                 ve = VoteEvent(
                     chamber=chamber,  # TODO: check this
                     start_date=vote_date,
                     motion_text=action_number,
                     bill=bill,
                     classification="passage", # ???
-                    result="pass"
+                    result=action_vote_result
                 )
 
                 for lv in legislator_votes:
@@ -362,6 +361,18 @@ class NCBillScraper(Scraper):
                             r_number = vote_details_line[21:23]
                             action_number = vote_details_line[25:28]
 
+                            # Determining how the bill was voted
+                            vote_numbers = vote_details_line.split()
+                            yes_votes = int(vote_numbers[-5])
+                            no_votes = int(vote_numbers[-4])
+                            noVt_votes = int(vote_numbers[-3])
+                            exAb_votes = int(vote_numbers[-2])
+                            exVt_votes = int(vote_numbers[-1])
+                            if yes_votes > (no_votes + noVt_votes + exAb_votes + exVt_votes):
+                                action_vote_result = "pass"
+                            else:
+                                action_vote_result = "fail"
+
                             rep_vote = vote_text[x+y+1]
                             vote_location = rep_vote.rfind("X")
 
@@ -377,7 +388,7 @@ class NCBillScraper(Scraper):
                                 how_voted = "excused"
 
                             # print("Bill ID", bill_id, "How Voted:", how_voted)
-                            archived_votes[bill_id][(vote_date, r_number, action_number)].append({
+                            archived_votes[bill_id][(vote_date, r_number, action_number, action_vote_result)].append({
                                 "leg": rep_name,
                                 "how_voted": how_voted,
                             })
