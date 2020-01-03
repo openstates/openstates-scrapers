@@ -311,15 +311,6 @@ class NCBillScraper(Scraper):
                 for lv in legislator_votes:
                     ve.vote(lv["how_voted"], lv["leg"])
 
-            # ve = VoteEvent(
-            #         chamber=bill.chamber,
-            #         start_date=vote[],
-            #         motion_text=subject,
-            #         bill=bill,
-            #         classification="passage",  # TODO: classify votes
-            # )
-            # for vote in votes:
-
         yield bill
 
     # Specifically meant for scraping 1997 and 1999 sessions
@@ -404,23 +395,6 @@ class NCBillScraper(Scraper):
 
             if session in ['1997', '1999']:
                 self.scrape_archived_votes(chamber, session)
-                # test_votes = archived_votes["H0162"]
-                # possible_actions = set()
-
-                # for k in test_votes:
-                #     possible_actions.add(k['action_number'])
-
-                # print("Votes within Bill ID H0162:", len(test_votes))
-                # print(possible_actions)
-
-                # # 'A05' test action
-                # test_keys = ['A05']
-                # for act in possible_actions:
-                #     votes_with_actions = [d for d in test_votes if d['action_number'] in act]
-                #     print("Total votes for action", act, ":", len(votes_with_actions))
-                #     print(votes_with_actions[0])
-
-
                 yield from self.scrape_chamber(chamber, session)
             else:
                 yield from self.scrape_chamber(chamber, session)
