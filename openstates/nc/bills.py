@@ -3,10 +3,12 @@ import lxml.html
 import re
 from pupa.scrape import Bill, Scraper, VoteEvent
 import pytz
+from collections import defaultdict
+
 
 eastern = pytz.timezone("US/Eastern")
 
-archived_votes = {}
+archived_votes = defaultdict(lambda: defaultdict(list))
 
 class NCBillScraper(Scraper):
 
@@ -201,7 +203,7 @@ class NCBillScraper(Scraper):
 
         # For archived votes
         if session in ['1997', '1999']:
-            yield from self.add_archived_votes(bill, bill_id)
+            yield from self.add_archived_votes(bill, bill_id, chamber)
 
         yield bill
 
@@ -282,7 +284,7 @@ class NCBillScraper(Scraper):
             yield ve
 
     # Adds archived votes
-    def add_archived_votes(self, bill, bill_id):
+    def add_archived_votes(self, bill, bill_id, chamber):
         bill_id = bill_id.split()
         bill_id[0] = bill_id[0][0]
         if len(bill_id[-1]) == 2:
@@ -293,21 +295,21 @@ class NCBillScraper(Scraper):
 
         if bill_id in archived_votes:
             votes = archived_votes[bill_id]
-            print("Total votes for bill:", len(votes))
 
-            possible_actions = set()
-            possible_r_numbers = set("")
+            for vote_key, legislator_votes in archived_votes[bill_id].items():
+                print("Total votes for bill:", len(legislator_votes))
+                vote_date, _, action_number = vote_key
+                ve = VoteEvent(
+                    chamber=chamber,  # TODO: check this
+                    start_date=vote_date,
+                    motion_text=action_number,
+                    bill=bill,
+                    classification="passage", # ???
+                    result="pass"
+                )
 
-            for k in votes:
-                possible_actions.add(k['action_number'])
-                possible_r_numbers.add(k['r_number'])
-
-            for act in possible_actions:
-                votes_with_actions = [d for d in votes if d['action_number'] in act]
-                for r_num in possible_r_numbers:
-                    votes_with_r_numbers = [d for d in votes_with_actions if d['r_number'] in r_num]
-                    print("Bill", bill_id, "action", act, ", R Number:", r_num, " - Total votes with r_number", len(votes_with_r_numbers))
-
+                for lv in legislator_votes:
+                    ve.vote(lv["how_voted"], lv["leg"])
 
             # ve = VoteEvent(
             #         chamber=bill.chamber,
@@ -383,26 +385,11 @@ class NCBillScraper(Scraper):
                             else:
                                 how_voted = "excused"
 
-                            archive_bill_id = bill_id + "_" + action_number
                             # print("Bill ID", bill_id, "How Voted:", how_voted)
-                            if bill_id in archived_votes:
-                                archived_votes[bill_id].append({
-                                    "bill_id": bill_id,
-                                    "action_number": action_number,
-                                    "leg": rep_name,
-                                    "how_voted": how_voted,
-                                    "vote_date": vote_date,
-                                    "r_number": r_number
-                                })
-                            else:
-                                archived_votes[bill_id] = [{
-                                    "bill_id": bill_id,
-                                    "action_number": action_number,
-                                    "leg": rep_name,
-                                    "how_voted": how_voted,
-                                    "vote_date": vote_date,
-                                    "r_number": r_number
-                                }]
+                            archived_votes[bill_id][(vote_date, r_number, action_number)].append({
+                                "leg": rep_name,
+                                "how_voted": how_voted,
+                            })
                         else:
                             break
 
