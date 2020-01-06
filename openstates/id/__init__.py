@@ -95,7 +95,7 @@ class Idaho(Jurisdiction):
             "_scraped_name": "2020 Session",
             "classification": "primary",
             "identifier": "2020",
-            "name": "65th Legislature, 2nd Regular Session (2019)",
+            "name": "65th Legislature, 2nd Regular Session (2020)",
             "start_date": "2020-01-06",
             "end_date": "2020-03-27",
         },
