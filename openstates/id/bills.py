@@ -148,7 +148,7 @@ class IDBillScraper(Scraper):
         self._subjects = defaultdict(list)
 
         url = (
-            "https://legislature.idaho.gov/sessioninfo" "/2018/legislation/topicind/"
+            "https://legislature.idaho.gov/sessioninfo" "/{}/legislation/topicind/"
         ).format(session)
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
