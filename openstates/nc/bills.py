@@ -297,12 +297,12 @@ class NCBillScraper(Scraper):
             votes = archived_votes[bill_id]
 
             for vote_key, legislator_votes in archived_votes[bill_id].items():
-                vote_date, r_number, action_number, action_vote_result, archive_url, cod = vote_key
+                vote_date, r_number, action_number, action_vote_result, archive_url, cod, _ = vote_key
 
                 vote_date = eastern.localize(vote_date)
                 vote_date = vote_date.isoformat()
 
-                motion_text = (action_number+r_number+cod+bill_id).replace(" ", "_")
+                motion_text = (action_number+r_number+cod+bill_id+vote_date+archive_url).replace(" ", "_")
                 # print(motion_text)
 
                 ve = VoteEvent(
@@ -396,7 +396,7 @@ class NCBillScraper(Scraper):
                                 how_voted = "excused"
 
                             # print("Bill ID", bill_id, "How Voted:", how_voted)
-                            archived_votes[bill_id][(vote_date, r_number, action_number, action_vote_result, archive_url, cod)].append({
+                            archived_votes[bill_id][(vote_date, r_number, action_number, action_vote_result, archive_url, cod, chamber)].append({
                                 "leg": rep_name,
                                 "how_voted": how_voted,
                             })
