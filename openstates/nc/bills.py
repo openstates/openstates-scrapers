@@ -203,7 +203,7 @@ class NCBillScraper(Scraper):
 
         # For archived votes
         if session in ['1997', '1999']:
-            yield from self.add_archived_votes(bill, bill_id, chamber)
+            yield from self.add_archived_votes(bill, bill_id)
 
         yield bill
 
@@ -284,7 +284,7 @@ class NCBillScraper(Scraper):
             yield ve
 
     # Adds archived votes
-    def add_archived_votes(self, bill, bill_id, chamber):
+    def add_archived_votes(self, bill, bill_id):
         bill_id = bill_id.split()
         bill_id[0] = bill_id[0][0]
         if len(bill_id[-1]) == 2:
@@ -299,10 +299,15 @@ class NCBillScraper(Scraper):
             for vote_key, legislator_votes in archived_votes[bill_id].items():
                 vote_date, r_number, action_number, action_vote_result, archive_url, cod, _ = vote_key
 
+                if archive_url[-1] == "S":
+                    chamber = "upper"
+                else:
+                    chamber = "lower"
+
                 vote_date = eastern.localize(vote_date)
                 vote_date = vote_date.isoformat()
 
-                motion_text = (action_number+r_number+cod+bill_id+vote_date+archive_url).replace(" ", "_")
+                motion_text = (action_number+r_number+cod).replace(" ", "_")
                 # print(motion_text)
 
                 ve = VoteEvent(
