@@ -225,15 +225,18 @@ class HIBillScraper(Scraper):
                 legislative_session=prior_session,
                 relation_type="companion",
             )
-        prior = bill_page.xpath(
+        if bill_page.xpath(
             "//table[@id='ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()"
-        )[-1]
-        if "carried over" in prior.lower():
-            b.add_related_bill(
-                identifier=bill_id.replace(u"\xa0", " "),
-                legislative_session=prior_session,
-                relation_type="companion",
-            )
+        ):
+            prior = bill_page.xpath(
+                "//table[@id='ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()"
+            )[-1]
+            if "carried over" in prior.lower():
+                b.add_related_bill(
+                    identifier=bill_id.replace(u"\xa0", " "),
+                    legislative_session=prior_session,
+                    relation_type="companion",
+                )
         for sponsor in meta["Introducer(s)"]:
             b.add_sponsorship(sponsor, "primary", "person", True)
         versions = self.parse_bill_versions_table(b, versions)
