@@ -190,6 +190,14 @@ class Utah(Jurisdiction):
             "name": "2019 2nd Special Session",
             "start_date": "2019-12-11",
         },
+        {
+            "_scraped_name": "2020 General Session",
+            "classification": "primary",
+            "identifier": "2020",
+            "name": "2020 General Session",
+            "start_date": "2020-01-27",
+            "end_date": "2020-03-12",
+        },
     ]
     ignored_scraped_sessions = [
         "2011 Veto Override Session",
