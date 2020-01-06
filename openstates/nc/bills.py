@@ -437,6 +437,10 @@ class NCBillScraper(Scraper):
         doc = lxml.html.fromstring(data)
         for row in doc.xpath("//table[@cellpadding=3]/tr")[1:]:
             bill_id = row.xpath("td[1]/a/text()")[0]
+
+            # Special case for a page that 404s
+            if session == "2009" and bill_id == "H234":
+                continue
             yield from self.scrape_bill(chamber, session, bill_id)
 
 
