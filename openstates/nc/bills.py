@@ -423,7 +423,6 @@ class NCBillScraper(Scraper):
         for chamber in chambers:
 
             if session in ['1997', '1999']:
-                # self.scrape_archived_votes(chamber, session)
                 yield from self.scrape_chamber(chamber, session)
             else:
                 yield from self.scrape_chamber(chamber, session)
