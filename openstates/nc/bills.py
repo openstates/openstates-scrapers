@@ -307,7 +307,7 @@ class NCBillScraper(Scraper):
                 vote_date = eastern.localize(vote_date)
                 vote_date = vote_date.isoformat()
 
-                motion_text = (action_number+r_number+cod).replace(" ", "_")
+                motion_text = (action_number+r_number+cod+action_vote_result).replace(" ", "_")
                 # print(motion_text)
 
                 ve = VoteEvent(
