@@ -445,11 +445,7 @@ class NCBillScraper(Scraper):
             self.scrape_archived_votes("lower", session)
 
         for chamber in chambers:
-
-            if session in ["1997", "1999"]:
-                yield from self.scrape_chamber(chamber, session)
-            else:
-                yield from self.scrape_chamber(chamber, session)
+            yield from self.scrape_chamber(chamber, session)
 
     def scrape_chamber(self, chamber, session):
         chamber = {"lower": "House", "upper": "Senate"}[chamber]
