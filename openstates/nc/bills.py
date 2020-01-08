@@ -79,6 +79,8 @@ class NCBillScraper(Scraper):
             0
         ]
         bill_title = bill_title.text_content().strip()
+
+        # For special cases where bill title is blank, a new title is created using Bill ID
         if not bill_title:
             bill_title = bill_id.replace(" ", "")
 
