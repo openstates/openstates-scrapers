@@ -22,7 +22,7 @@ class NorthCarolina(Jurisdiction):
             "classification": "primary",
             "identifier": "1985",
             "name": "1985-1986 Session",
-            "start_date": "1985-02-05"
+            "start_date": "1985-02-05",
         },
         {
             "_scraped_name": "1986 First Extra Session",
@@ -35,182 +35,182 @@ class NorthCarolina(Jurisdiction):
             "classification": "primary",
             "identifier": "1987",
             "name": "1987-1988 Session",
-            "start_date": "1987-02-09"
+            "start_date": "1987-02-09",
         },
         {
             "_scraped_name": "1989-1990 Session",
             "classification": "primary",
             "identifier": "1989",
             "name": "1989-1990 Session",
-            "start_date": "1989-01-11"
+            "start_date": "1989-01-11",
         },
         {
             "_scraped_name": "1989 First Extra Session",
             "classification": "special",
             "identifier": "1989E1",
             "name": "1989 Extra Session 1",
-            "start_date": "1989-12-07"
+            "start_date": "1989-12-07",
         },
         {
             "_scraped_name": "1989 Second Extra Session",
             "classification": "special",
             "identifier": "1989E2",
             "name": "1989 Extra Session 2",
-            "start_date": "1990-03-06"
+            "start_date": "1990-03-06",
         },
         {
             "_scraped_name": "1991-1992 Session",
             "classification": "primary",
             "identifier": "1991",
             "name": "1991-1992 Session",
-            "start_date": "1991-01-30"
+            "start_date": "1991-01-30",
         },
         {
             "_scraped_name": "1991 First Extra Session",
             "classification": "special",
             "identifier": "1991E1",
             "name": "1991 Extra Session 1",
-            "start_date": "1991-12-30"
+            "start_date": "1991-12-30",
         },
         {
             "_scraped_name": "1993-1994 Session",
             "classification": "primary",
             "identifier": "1993",
             "name": "1993-1994 Session",
-            "start_date": "1991-01-27"
+            "start_date": "1991-01-27",
         },
         {
             "_scraped_name": "1994 First Extra Session",
             "classification": "special",
             "identifier": "1993E1",
             "name": "1994 Extra Session 1",
-            "start_date": "1994-02-08"
+            "start_date": "1994-02-08",
         },
         {
             "_scraped_name": "1995-1996 Session",
             "classification": "primary",
             "identifier": "1995",
             "name": "1995-1996 Session",
-            "start_date": "1995-01-25"
+            "start_date": "1995-01-25",
         },
         {
             "_scraped_name": "1996 First Extra Session",
             "classification": "special",
             "identifier": "1995E1",
             "name": "1996 Extra Session 1",
-            "start_date": "1996-02-21"
+            "start_date": "1996-02-21",
         },
         {
             "_scraped_name": "1996 Second Extra Session",
             "classification": "special",
             "identifier": "1995E2",
             "name": "1996 Extra Session 2",
-            "start_date": "1996-07-08"
+            "start_date": "1996-07-08",
         },
         {
             "_scraped_name": "1997-1998 Session",
             "classification": "primary",
             "identifier": "1997",
             "name": "1997-1998 Session",
-            "start_date": "1997-01-29"
+            "start_date": "1997-01-29",
         },
         {
             "_scraped_name": "1998 First Extra Session",
             "classification": "special",
             "identifier": "1997E1",
             "name": "1998 Extra Session 1",
-            "start_date": "1998-03-24"
+            "start_date": "1998-03-24",
         },
         {
             "_scraped_name": "1999-2000 Session",
             "classification": "primary",
             "identifier": "1999",
             "name": "1999-2000 Session",
-            "start_date": "1999-01-27"
+            "start_date": "1999-01-27",
         },
         {
             "_scraped_name": "1999 First Extra Session",
             "classification": "special",
             "identifier": "1999E1",
             "name": "1999 Extra Session 1",
-            "start_date": "1999-12-15"
+            "start_date": "1999-12-15",
         },
         {
             "_scraped_name": "2000 First Extra Session",
             "classification": "special",
             "identifier": "1999E2",
             "name": "2000 Extra Session 1",
-            "start_date": "2000-04-05"
+            "start_date": "2000-04-05",
         },
         {
             "_scraped_name": "2001-2002 Session",
             "classification": "primary",
             "identifier": "2001",
             "name": "2001-2002 Session",
-            "start_date": "2001-01-24"
+            "start_date": "2001-01-24",
         },
         {
             "_scraped_name": "2002 Extra Session on Redistricting",
             "classification": "special",
             "identifier": "2001E1",
             "name": "2002 Extra Session on Redistricting",
-            "start_date": "2002-05-14"
+            "start_date": "2002-05-14",
         },
         {
             "_scraped_name": "2003-2004 Session",
             "classification": "primary",
             "identifier": "2003",
             "name": "2003-2004 Session",
-            "start_date": "2003-01-29"
+            "start_date": "2003-01-29",
         },
         {
             "_scraped_name": "2003 Extra Session on Redistricting",
             "classification": "special",
             "identifier": "2003E1",
             "name": "2003 Extra Session on Redistricting",
-            "start_date": "2003-11-24"
+            "start_date": "2003-11-24",
         },
         {
             "_scraped_name": "2003 Extra Session on Economic Development Issues",
             "classification": "special",
             "identifier": "2003E2",
             "name": "2003 Extra Session on Economic Development Issues",
-            "start_date": "2003-12-09"
+            "start_date": "2003-12-09",
         },
         {
             "_scraped_name": "2004 Extra Session on Economic Development Issues",
             "classification": "special",
             "identifier": "2003E3",
-            "name": "2004 Extra Session on Eco  nomic Development Issues",
-            "start_date": "2004-11-04"
+            "name": "2004 Extra Session on Economic Development Issues",
+            "start_date": "2004-11-04",
         },
         {
             "_scraped_name": "2005-2006 Session",
             "classification": "primary",
             "identifier": "2005",
             "name": "2005-2006 Session",
-            "start_date": "2005-01-26"
+            "start_date": "2005-01-26",
         },
         {
             "_scraped_name": "2007-2008 Session",
             "classification": "primary",
             "identifier": "2007",
             "name": "2007-2008 Session",
-            "start_date": "2007-01-24"
+            "start_date": "2007-01-24",
         },
         {
             "_scraped_name": "2007 Extra Session",
             "classification": "special",
             "identifier": "2007E1",
             "name": "2007 Extra Session",
-            "start_date": "2007-09-10"
+            "start_date": "2007-09-10",
         },
         {
             "_scraped_name": "2008 Extra Session",
             "classification": "special",
             "identifier": "2007E2",
             "name": "2008 Extra Session",
-            "start_date": "2008-03-20"
+            "start_date": "2008-03-20",
         },
         {
             "_scraped_name": "2009-2010 Session",
