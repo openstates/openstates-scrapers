@@ -8,10 +8,10 @@ from collections import defaultdict
 
 eastern = pytz.timezone("US/Eastern")
 
-archived_votes = defaultdict(lambda: defaultdict(list))
-
 
 class NCBillScraper(Scraper):
+
+    archived_votes = defaultdict(lambda: defaultdict(list))
 
     _action_classifiers = {
         "Vetoed": "executive-veto",
@@ -296,9 +296,9 @@ class NCBillScraper(Scraper):
             bill_id[-1] = "0" + bill_id[-1]
         bill_id = "".join(bill_id)
 
-        if bill_id in archived_votes:
+        if bill_id in self.archived_votes:
 
-            for vote_key, legislator_votes in archived_votes[bill_id].items():
+            for vote_key, legislator_votes in self.archived_votes[bill_id].items():
                 (
                     vote_date,
                     r_number,
@@ -419,7 +419,7 @@ class NCBillScraper(Scraper):
                             else:
                                 how_voted = "excused"
 
-                            archived_votes[bill_id][
+                            self.archived_votes[bill_id][
                                 (
                                     vote_date,
                                     r_number,
