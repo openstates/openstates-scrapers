@@ -65,6 +65,13 @@ class SouthDakota(Jurisdiction):
             "start_date": "2019-01-08",
             "end_date": "2019-03-13",
         },
+        {
+            "_scraped_name": "2020",
+            "identifier": "2020",
+            "name": "2020 Regular Session",
+            "start_date": "2020-01-14",
+            "end_date": "2020-03-30",
+        },
     ]
     ignored_scraped_sessions = [
         "2008",
