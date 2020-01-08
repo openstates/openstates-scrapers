@@ -10,6 +10,7 @@ eastern = pytz.timezone("US/Eastern")
 
 archived_votes = defaultdict(lambda: defaultdict(list))
 
+
 class NCBillScraper(Scraper):
 
     _action_classifiers = {
@@ -74,12 +75,12 @@ class NCBillScraper(Scraper):
             bill_type = "bill"
             bill_id = bill_id[0] + "B " + bill_id[1:]
 
-
-        bill_title = doc.xpath(    
-            '/html[1]/body[1]/div[1]/div[1]/main[1]/div[2]/div[1]'
-        )[0]
+        bill_title = doc.xpath("/html[1]/body[1]/div[1]/div[1]/main[1]/div[2]/div[1]")[
+            0
+        ]
         bill_title = bill_title.text_content().strip()
-        if bill_title is '':
+        if not bill_title:
+            print(bill_title)
             bill_title = bill_id.replace(" ", "")
 
         bill = Bill(
@@ -98,7 +99,7 @@ class NCBillScraper(Scraper):
             link_xpath = '//a[contains(@href, "/Bills/Senate/PDF/")]'
         for vlink in doc.xpath(link_xpath)[1:]:
             # get the name from the PDF link...
-            version_name = vlink.text.replace(u"\xa0", " ")
+            version_name = vlink.text.replace("\xa0", " ")
             version_url = vlink.attrib["href"]
 
             media_type = "text/html"
@@ -131,7 +132,7 @@ class NCBillScraper(Scraper):
         spon_type = "primary"
         spon_lines = spon_row.text_content().replace("\r\n", ";")
         for leg in spon_lines.split(";"):
-            name = leg.replace(u"\xa0", " ").strip()
+            name = leg.replace("\xa0", " ").strip()
             if name.startswith("(Primary)") or name.endswith("(Primary)"):
                 name = name.replace("(Primary)", "").strip()
                 spon_type = "cosponsor"
@@ -171,16 +172,20 @@ class NCBillScraper(Scraper):
                 search_action_date = action.split()
                 for act in search_action_date:
                     try:
-                        if '/' in act:
+                        if "/" in act:
                             # try:
-                            act_date = dt.datetime.strptime(act, '%m/%d/%Y').strftime('%Y-%m-%d')
+                            act_date = dt.datetime.strptime(act, "%m/%d/%Y").strftime(
+                                "%Y-%m-%d"
+                            )
                             #     print(type(act_date))
                             # except KeyError:
                             #     raise Exception("No Action Date Provided")
                     except KeyError:
                         raise Exception("No Action Date Provided")
             else:
-                act_date = dt.datetime.strptime(act_date, '%m/%d/%Y').strftime('%Y-%m-%d')
+                act_date = dt.datetime.strptime(act_date, "%m/%d/%Y").strftime(
+                    "%Y-%m-%d"
+                )
 
             if actor == "Senate":
                 actor = "upper"
@@ -202,7 +207,7 @@ class NCBillScraper(Scraper):
             yield from self.scrape_votes(bill, doc)
 
         # For archived votes
-        if session in ['1997', '1999']:
+        if session in ["1997", "1999"]:
             yield from self.add_archived_votes(bill, bill_id)
 
         yield bill
@@ -294,10 +299,17 @@ class NCBillScraper(Scraper):
         bill_id = "".join(bill_id)
 
         if bill_id in archived_votes:
-            votes = archived_votes[bill_id]
 
             for vote_key, legislator_votes in archived_votes[bill_id].items():
-                vote_date, r_number, action_number, action_vote_result, archive_url, cod, _ = vote_key
+                (
+                    vote_date,
+                    r_number,
+                    action_number,
+                    action_vote_result,
+                    archive_url,
+                    cod,
+                    _,
+                ) = vote_key
 
                 if archive_url[-1] == "S":
                     chamber = "upper"
@@ -307,7 +319,9 @@ class NCBillScraper(Scraper):
                 vote_date = eastern.localize(vote_date)
                 vote_date = vote_date.isoformat()
 
-                motion_text = (action_number+r_number+cod+action_vote_result).replace(" ", "_")
+                motion_text = (
+                    action_number + r_number + cod + action_vote_result
+                ).replace(" ", "_")
                 # print(motion_text)
 
                 ve = VoteEvent(
@@ -315,8 +329,8 @@ class NCBillScraper(Scraper):
                     start_date=vote_date,
                     motion_text=motion_text,
                     bill=bill,
-                    classification="other", # No indication on classification for archived votes
-                    result=action_vote_result
+                    classification="other",  # No indication on classification for archived votes
+                    result=action_vote_result,
                 )
                 ve.add_source(archive_url)
 
@@ -333,7 +347,7 @@ class NCBillScraper(Scraper):
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(archive_url)
 
-        rep_links = doc.xpath('//option/@value')[1:]
+        rep_links = doc.xpath("//option/@value")[1:]
         for rep_link in rep_links:
             rep_url = f"https://www.ncleg.gov/Legislation/Votes/MemberVoteHistory/{session}/{chamber_abbr}/{rep_link}"
 
@@ -346,7 +360,9 @@ class NCBillScraper(Scraper):
             rep_doc = lxml.html.fromstring(rep_data)
             rep_doc.make_links_absolute(rep_url)
 
-            rep_name = rep_doc.xpath("//div[@class='section-title']")[0].text.split()[1:-2]
+            rep_name = rep_doc.xpath("//div[@class='section-title']")[0].text.split()[
+                1:-2
+            ]
             rep_name = " ".join(rep_name)
 
             # Designates where the X is placed to indicate a vote
@@ -354,9 +370,9 @@ class NCBillScraper(Scraper):
             no_location = 64
             noVt_location = 69
             exAb_location = 74
-            exVt_location = 79
+            # exVt_location = 79
 
-            vote_text = rep_doc.xpath('//pre')[0].text.splitlines()
+            vote_text = rep_doc.xpath("//pre")[0].text.splitlines()
             for x in range(len(vote_text)):
                 line = vote_text[x].split()
                 if line and re.match(r"[H, S]\d\d\d\d", line[0]):
@@ -365,11 +381,15 @@ class NCBillScraper(Scraper):
                     # Counting by 2 to find each line. 50 is an abitraty number that is
                     # high enough to find all votes for a bill
                     for y in range(1, 50, 2):
-                        if not re.match(r"[H, S]\d\d\d\d", vote_text[x+y]) and ((x+y+2) < len(vote_text)) :
+                        if not re.match(r"[H, S]\d\d\d\d", vote_text[x + y]) and (
+                            (x + y + 2) < len(vote_text)
+                        ):
 
-                            vote_details_line = vote_text[x+y]
+                            vote_details_line = vote_text[x + y]
                             vote_date = vote_details_line[2:20]
-                            vote_date = dt.datetime.strptime(vote_date, "%b %d, %Y %H:%M")
+                            vote_date = dt.datetime.strptime(
+                                vote_date, "%b %d, %Y %H:%M"
+                            )
                             r_number = vote_details_line[21:23]
                             action_number = vote_details_line[25:28]
                             cod = vote_details_line[29:33]
@@ -381,12 +401,14 @@ class NCBillScraper(Scraper):
                             noVt_votes = int(vote_numbers[-3])
                             exAb_votes = int(vote_numbers[-2])
                             exVt_votes = int(vote_numbers[-1])
-                            if yes_votes > (no_votes + noVt_votes + exAb_votes + exVt_votes):
+                            if yes_votes > (
+                                no_votes + noVt_votes + exAb_votes + exVt_votes
+                            ):
                                 action_vote_result = "pass"
                             else:
                                 action_vote_result = "fail"
 
-                            rep_vote = vote_text[x+y+1]
+                            rep_vote = vote_text[x + y + 1]
                             vote_location = rep_vote.rfind("X")
 
                             if vote_location == yes_location:
@@ -401,13 +423,19 @@ class NCBillScraper(Scraper):
                                 how_voted = "excused"
 
                             # print("Bill ID", bill_id, "How Voted:", how_voted)
-                            archived_votes[bill_id][(vote_date, r_number, action_number, action_vote_result, archive_url, cod, chamber)].append({
-                                "leg": rep_name,
-                                "how_voted": how_voted,
-                            })
+                            archived_votes[bill_id][
+                                (
+                                    vote_date,
+                                    r_number,
+                                    action_number,
+                                    action_vote_result,
+                                    archive_url,
+                                    cod,
+                                    chamber,
+                                )
+                            ].append({"leg": rep_name, "how_voted": how_voted})
                         else:
                             break
-
 
     def scrape(self, session=None, chamber=None):
         if not session:
@@ -416,13 +444,13 @@ class NCBillScraper(Scraper):
 
         chambers = [chamber] if chamber else ["upper", "lower"]
 
-        if session in ['1997', '1999']:
+        if session in ["1997", "1999"]:
             self.scrape_archived_votes("upper", session)
             self.scrape_archived_votes("lower", session)
 
         for chamber in chambers:
 
-            if session in ['1997', '1999']:
+            if session in ["1997", "1999"]:
                 yield from self.scrape_chamber(chamber, session)
             else:
                 yield from self.scrape_chamber(chamber, session)
