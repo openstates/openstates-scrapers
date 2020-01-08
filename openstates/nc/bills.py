@@ -80,7 +80,6 @@ class NCBillScraper(Scraper):
         ]
         bill_title = bill_title.text_content().strip()
         if not bill_title:
-            print(bill_title)
             bill_title = bill_id.replace(" ", "")
 
         bill = Bill(
@@ -177,9 +176,6 @@ class NCBillScraper(Scraper):
                             act_date = dt.datetime.strptime(act, "%m/%d/%Y").strftime(
                                 "%Y-%m-%d"
                             )
-                            #     print(type(act_date))
-                            # except KeyError:
-                            #     raise Exception("No Action Date Provided")
                     except KeyError:
                         raise Exception("No Action Date Provided")
             else:
@@ -322,7 +318,6 @@ class NCBillScraper(Scraper):
                 motion_text = (
                     action_number + r_number + cod + action_vote_result
                 ).replace(" ", "_")
-                # print(motion_text)
 
                 ve = VoteEvent(
                     chamber=chamber,  # TODO: check this
@@ -422,7 +417,6 @@ class NCBillScraper(Scraper):
                             else:
                                 how_voted = "excused"
 
-                            # print("Bill ID", bill_id, "How Voted:", how_voted)
                             archived_votes[bill_id][
                                 (
                                     vote_date,
