@@ -61,6 +61,13 @@ class NewJersey(Jurisdiction):
             "start_date": "2018-01-08",
             "end_date": "2020-01-09",
         },
+        {
+            "_scraped_name": "2020-2021",
+            "identifier": "219",
+            "name": "2020-2021 Regular Session",
+            "start_date": "2020-01-08",
+            "end_date": "2022-01-09",
+        },
     ]
     ignored_scraped_sessions = [
         "2006-2007",

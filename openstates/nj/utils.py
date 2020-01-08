@@ -24,7 +24,7 @@ def chamber_name(chamber):
 
 class MDBMixin(object):
     def _init_mdb(self, year):
-        if year < 2018:
+        if int(year) < 2018:
             self.mdbfile = "DB%s.mdb" % year
             url = "ftp://www.njleg.state.nj.us/ag/%sdata/DB%s.zip" % (year, year)
             fname, resp = self.urlretrieve(url)
