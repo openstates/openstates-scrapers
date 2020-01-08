@@ -1,12 +1,17 @@
 import datetime as dt
 import lxml.html
+import re
 from pupa.scrape import Bill, Scraper, VoteEvent
 import pytz
+from collections import defaultdict
+
 
 eastern = pytz.timezone("US/Eastern")
 
 
 class NCBillScraper(Scraper):
+
+    archived_votes = defaultdict(lambda: defaultdict(list))
 
     _action_classifiers = {
         "Vetoed": "executive-veto",
@@ -70,10 +75,14 @@ class NCBillScraper(Scraper):
             bill_type = "bill"
             bill_id = bill_id[0] + "B " + bill_id[1:]
 
-        bill_title = doc.xpath(
-            '/html/body/div/div/main/div[2]/div[contains(@class,"col-12")]/a'
-        )[0]
+        bill_title = doc.xpath("/html[1]/body[1]/div[1]/div[1]/main[1]/div[2]/div[1]")[
+            0
+        ]
         bill_title = bill_title.text_content().strip()
+
+        # For special cases where bill title is blank, a new title is created using Bill ID
+        if not bill_title:
+            bill_title = bill_id.replace(" ", "")
 
         bill = Bill(
             bill_id,
@@ -91,7 +100,7 @@ class NCBillScraper(Scraper):
             link_xpath = '//a[contains(@href, "/Bills/Senate/PDF/")]'
         for vlink in doc.xpath(link_xpath)[1:]:
             # get the name from the PDF link...
-            version_name = vlink.text.replace(u"\xa0", " ")
+            version_name = vlink.text.replace("\xa0", " ")
             version_url = vlink.attrib["href"]
 
             media_type = "text/html"
@@ -124,7 +133,7 @@ class NCBillScraper(Scraper):
         spon_type = "primary"
         spon_lines = spon_row.text_content().replace("\r\n", ";")
         for leg in spon_lines.split(";"):
-            name = leg.replace(u"\xa0", " ").strip()
+            name = leg.replace("\xa0", " ").strip()
             if name.startswith("(Primary)") or name.endswith("(Primary)"):
                 name = name.replace("(Primary)", "").strip()
                 spon_type = "cosponsor"
@@ -151,6 +160,7 @@ class NCBillScraper(Scraper):
             '//div[contains(@class, "card-body")]'
             '/div[@class="row"]'
         )
+
         # skip two header rows
         for row in doc.xpath(action_tr_xpath):
             cols = row.xpath("div")
@@ -159,7 +169,21 @@ class NCBillScraper(Scraper):
             # if text is blank, try diving in
             action = (cols[5].text or "").strip() or cols[5].text_content().strip()
 
-            act_date = dt.datetime.strptime(act_date, "%m/%d/%Y").strftime("%Y-%m-%d")
+            if act_date is None:
+                search_action_date = action.split()
+                for act in search_action_date:
+                    try:
+                        if "/" in act:
+                            # try:
+                            act_date = dt.datetime.strptime(act, "%m/%d/%Y").strftime(
+                                "%Y-%m-%d"
+                            )
+                    except KeyError:
+                        raise Exception("No Action Date Provided")
+            else:
+                act_date = dt.datetime.strptime(act_date, "%m/%d/%Y").strftime(
+                    "%Y-%m-%d"
+                )
 
             if actor == "Senate":
                 actor = "upper"
@@ -173,12 +197,16 @@ class NCBillScraper(Scraper):
                     break
             else:
                 atype = None
-
-            bill.add_action(action, act_date, chamber=actor, classification=atype)
+            if act_date is not None:
+                bill.add_action(action, act_date, chamber=actor, classification=atype)
 
         # TODO: Fix vote scraper
         for row in doc.xpath("//h6[@id='vote-header']"):
             yield from self.scrape_votes(bill, doc)
+
+        # For archived votes
+        if session in ["1997", "1999"]:
+            yield from self.add_archived_votes(bill, bill_id)
 
         yield bill
 
@@ -258,12 +286,164 @@ class NCBillScraper(Scraper):
 
             yield ve
 
+    # Adds archived votes
+    def add_archived_votes(self, bill, bill_id):
+        bill_id = bill_id.split()
+        bill_id[0] = bill_id[0][0]
+        if len(bill_id[-1]) == 2:
+            bill_id[-1] = "00" + bill_id[-1]
+        if len(bill_id[-1]) == 3:
+            bill_id[-1] = "0" + bill_id[-1]
+        bill_id = "".join(bill_id)
+
+        if bill_id in self.archived_votes:
+
+            for vote_key, legislator_votes in self.archived_votes[bill_id].items():
+                (
+                    vote_date,
+                    r_number,
+                    action_number,
+                    action_vote_result,
+                    archive_url,
+                    cod,
+                    _,
+                ) = vote_key
+
+                if archive_url[-1] == "S":
+                    chamber = "upper"
+                else:
+                    chamber = "lower"
+
+                vote_date = eastern.localize(vote_date)
+                vote_date = vote_date.isoformat()
+
+                motion_text = (
+                    action_number + r_number + cod + action_vote_result
+                ).replace(" ", "_")
+
+                ve = VoteEvent(
+                    chamber=chamber,  # TODO: check this
+                    start_date=vote_date,
+                    motion_text=motion_text,
+                    bill=bill,
+                    classification="other",  # No indication on classification for archived votes
+                    result=action_vote_result,
+                )
+                ve.add_source(archive_url)
+
+                for lv in legislator_votes:
+                    ve.vote(lv["how_voted"], lv["leg"])
+
+                yield ve
+
+    # Specifically meant for scraping 1997 and 1999 sessions
+    def scrape_archived_votes(self, chamber, session):
+        chamber_abbr = "S" if chamber == "upper" else "H"
+        archive_url = f"https://www.ncleg.gov/Legislation/Votes/MemberVoteHistory/{session}/{chamber_abbr}"
+        data = self.get(archive_url).text
+        doc = lxml.html.fromstring(data)
+        doc.make_links_absolute(archive_url)
+
+        rep_links = doc.xpath("//option/@value")[1:]
+        for rep_link in rep_links:
+            rep_url = f"https://www.ncleg.gov/Legislation/Votes/MemberVoteHistory/{session}/{chamber_abbr}/{rep_link}"
+
+            # Special case as page has had some issues
+            if rep_link == "boyd-mcintyre-348":
+                continue
+
+            # Scrapping detailed vote pages for archived representatives
+            rep_data = self.get(rep_url).text
+            rep_doc = lxml.html.fromstring(rep_data)
+            rep_doc.make_links_absolute(rep_url)
+
+            rep_name = rep_doc.xpath("//div[@class='section-title']")[0].text.split()[
+                1:-2
+            ]
+            rep_name = " ".join(rep_name)
+
+            # Designates where the X is placed to indicate a vote
+            yes_location = 59
+            no_location = 64
+            noVt_location = 69
+            exAb_location = 74
+            # exVt_location = 79
+
+            vote_text = rep_doc.xpath("//pre")[0].text.splitlines()
+            for x in range(len(vote_text)):
+                line = vote_text[x].split()
+                if line and re.match(r"[H, S]\d\d\d\d", line[0]):
+                    bill_id = line[0]
+
+                    # Counting by 2 to find each line. 50 is an abitraty number that is
+                    # high enough to find all votes for a bill
+                    for y in range(1, 50, 2):
+                        if not re.match(r"[H, S]\d\d\d\d", vote_text[x + y]) and (
+                            (x + y + 2) < len(vote_text)
+                        ):
+
+                            vote_details_line = vote_text[x + y]
+                            vote_date = vote_details_line[2:20]
+                            vote_date = dt.datetime.strptime(
+                                vote_date, "%b %d, %Y %H:%M"
+                            )
+                            r_number = vote_details_line[21:23]
+                            action_number = vote_details_line[25:28]
+                            cod = vote_details_line[29:33]
+
+                            # Determining how the bill was voted
+                            vote_numbers = vote_details_line.split()
+                            yes_votes = int(vote_numbers[-5])
+                            no_votes = int(vote_numbers[-4])
+                            noVt_votes = int(vote_numbers[-3])
+                            exAb_votes = int(vote_numbers[-2])
+                            exVt_votes = int(vote_numbers[-1])
+                            if yes_votes > (
+                                no_votes + noVt_votes + exAb_votes + exVt_votes
+                            ):
+                                action_vote_result = "pass"
+                            else:
+                                action_vote_result = "fail"
+
+                            rep_vote = vote_text[x + y + 1]
+                            vote_location = rep_vote.rfind("X")
+
+                            if vote_location == yes_location:
+                                how_voted = "yes"
+                            elif vote_location == no_location:
+                                how_voted = "no"
+                            elif vote_location == noVt_location:
+                                how_voted = "other"
+                            elif vote_location == exAb_location:
+                                how_voted == "absent"
+                            else:
+                                how_voted = "excused"
+
+                            self.archived_votes[bill_id][
+                                (
+                                    vote_date,
+                                    r_number,
+                                    action_number,
+                                    action_vote_result,
+                                    archive_url,
+                                    cod,
+                                    chamber,
+                                )
+                            ].append({"leg": rep_name, "how_voted": how_voted})
+                        else:
+                            break
+
     def scrape(self, session=None, chamber=None):
         if not session:
             session = self.latest_session()
             self.info("no session specified, using %s", session)
 
         chambers = [chamber] if chamber else ["upper", "lower"]
+
+        if session in ["1997", "1999"]:
+            self.scrape_archived_votes("upper", session)
+            self.scrape_archived_votes("lower", session)
+
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
 
@@ -276,6 +456,12 @@ class NCBillScraper(Scraper):
         doc = lxml.html.fromstring(data)
         for row in doc.xpath("//table[@cellpadding=3]/tr")[1:]:
             bill_id = row.xpath("td[1]/a/text()")[0]
+
+            # Special cases for a page that 404s
+            if session == "2009" and bill_id == "H234":
+                continue
+            if session == "2003E3" and bill_id == "S2":
+                continue
             yield from self.scrape_bill(chamber, session, bill_id)
 
 
