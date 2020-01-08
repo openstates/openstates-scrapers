@@ -110,7 +110,7 @@ class MSLegislatorScraper(Scraper):
             email_name = root.xpath("string(//EMAIL_ADDRESS)").strip()
             cap_room = root.xpath("string(//CAP_ROOM)")
 
-            if leg_name in ("Lataisha Jackson", "John G. Faulkner", "Jeffery Harness"):
+            if leg_name in ("Lataisha Jackson", "John G. Faulkner"):
                 assert not party, (
                     "Remove special-casing for this Democrat without a "
                     "listed party: {}"
@@ -126,6 +126,8 @@ class MSLegislatorScraper(Scraper):
                 party = "Democratic"
             elif party == "R":
                 party = "Republican"
+            elif party == "I":
+                party = "Independent"
             else:
                 raise AssertionError(
                     "A member with no identifiable party was found: {}".format(leg_name)
