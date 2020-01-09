@@ -98,6 +98,14 @@ class Colorado(Jurisdiction):
             "start_date": "2019-01-04",
             "end_date": "2019-05-03",
         },
+        {
+            "_scraped_name": "2020 Regular Session",
+            "classification": "primary",
+            "identifier": "2020A",
+            "name": "2020 Regular Session",
+            "start_date": "2020-01-08",
+            "end_date": "2020-05-06",
+        },
     ]
     ignored_scraped_sessions = [
         "2013 Legislative Session",
