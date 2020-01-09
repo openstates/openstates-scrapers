@@ -9,7 +9,7 @@ import lxml.html
 from pupa.scrape import Scraper, Bill, VoteEvent
 from pupa.utils import convert_pdf
 
-from ._utils import canonicalize_url
+# from ._utils import canonicalize_url
 
 
 session_details = {
@@ -377,15 +377,15 @@ class IlBillScraper(Scraper):
             action = action_elem.text_content()
             classification, related_orgs = _categorize_action(action)
 
-            if related_orgs and any(c.startswith("committee") for c in classification):
-                ((name, source),) = [
-                    (a.text, a.get("href"))
-                    for a in action_elem.xpath("a")
-                    if "committee" in a.get("href")
-                ]
-                source = canonicalize_url(source)
-                actor_id = {"sources__url": source, "classification": "committee"}
-                committee_actors[source] = name
+            # if related_orgs and any(c.startswith("committee") for c in classification):
+            #     ((name, source),) = [
+            #         (a.text, a.get("href"))
+            #         for a in action_elem.xpath("a")
+            #         if "committee" in a.get("href")
+            #     ]
+            #     source = canonicalize_url(source)
+            #     actor_id = {"sources__url": source, "classification": "committee"}
+            #     committee_actors[source] = name
 
             bill.add_action(
                 action,
