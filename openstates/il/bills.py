@@ -266,6 +266,11 @@ class IlBillScraper(Scraper):
         else:
             session_id = self.latest_session()
 
+        # Sessions that run from 1997 - 2002. Last few sessiosn before bills were PDFs
+        if session in ["90th", "91st", "92nd"]:
+            print("Within session", session)
+            yield from self.scrape_archive_bills(session)
+
         for chamber in ("lower", "upper"):
             for doc_type in [
                 chamber_slug(chamber) + doc_type for doc_type in DOC_TYPES
@@ -285,6 +290,36 @@ class IlBillScraper(Scraper):
         #                                    'joint session resolution')
         #     yield bill
         #     yield from votes
+
+    def scrape_archive_bills(self, session):
+        session_abr = session[0:2]
+        url = f"http://www.ilga.gov/legislation/legisnet{session_abr}/{session_abr}gatoc.html"
+        print(url)
+        html = self.get(url).text
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+        bill_numbers_sections = doc.xpath("//table//a/@href")
+
+        # Contains multiple bills
+        for bill_numbers_section_url in bill_numbers_sections:
+            bill_section_html = self.get(bill_numbers_section_url).text
+            bill_section_doc = lxml.html.fromstring(bill_section_html)
+            bill_section_doc.make_links_absolute(bill_numbers_section_url)
+
+            bills_urls = bill_section_doc.xpath("//blockquote/a/@href")
+
+            # Actual Bill Pages
+            for bill_url in bills_urls:
+
+                bill_html = self.get(bill_url).text
+                bill_doc = lxml.html.fromstring(bill_html)
+                bill_doc.make_links_absolute(bill_url)
+
+                # sponsors = bill_doc.xpath('//pre/a[contains(@href, "sponsor")]')
+                # bill_text = bill_doc.xpath("//pre")
+
+        # print(bill_numbers[0:10])
+        yield "This will break it"
 
     def scrape_bill(self, chamber, session, doc_type, url, bill_type=None):
         try:
