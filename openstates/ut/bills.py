@@ -34,30 +34,14 @@ class UTBillScraper(Scraper, LXMLMixin):
         #             url='https://le.utah.gov/~2019/bills/static/HB0087.html'
         #         )
 
-        # Identify the index page for the given session
-        sessions = self.lxmlize("http://le.utah.gov/Documents/bills.htm")
+        if "S" in session:
+            session_slug = session
+        else:
+            session_slug = "{}GS".format(session)
 
-        session_search_text = session
-        if "s" not in session.lower() and "h" not in session.lower():
-            session_search_text += "GS"
-
-        sessions = sessions.xpath(
-            '//li/a[contains(@href, "{}")]'.format(session_search_text)
+        session_url = "https://le.utah.gov/DynaBill/BillList?session={}".format(
+            session_slug
         )
-
-        session_url = ""
-        S = [
-            i
-            for i, _ in enumerate(self.jurisdiction.legislative_sessions)
-            if _["identifier"] == session
-        ][0]
-        for elem in sessions:
-            if (
-                re.sub(r"\s+", " ", elem.xpath("text()")[0])
-                == self.jurisdiction.legislative_sessions[S]["_scraped_name"]
-            ):
-                session_url = elem.xpath("@href")[0]
-        assert session_url
 
         # For some sessions the link doesn't go straight to the bill list
         doc = self.lxmlize(session_url)
