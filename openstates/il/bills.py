@@ -317,6 +317,20 @@ class IlBillScraper(Scraper):
 
                 # sponsors = bill_doc.xpath('//pre/a[contains(@href, "sponsor")]')
                 # bill_text = bill_doc.xpath("//pre")
+                bill_id_text = (
+                    bill_doc.xpath('//font[contains (., "Status of")]')[0]
+                    .text_content()
+                    .split()[-1]
+                )
+                print(bill_id_text)
+
+                # bill = Bill(
+                #     bill_id,
+                #     legislative_session=session,
+                #     title=bill_title,
+                #     chamber=chamber,
+                #     classification=bill_type,
+                # )
 
         # print(bill_numbers[0:10])
         yield "This will break it"
