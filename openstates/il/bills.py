@@ -306,6 +306,11 @@ class IlBillScraper(Scraper):
             bill_section_doc = lxml.html.fromstring(bill_section_html)
             bill_section_doc.make_links_absolute(bill_numbers_section_url)
 
+            if "/sb" in bill_numbers_section_url or "/sr" in bill_numbers_section_url:
+                chamber = "upper"
+            else:
+                chamber = "lower"
+
             bills_urls = bill_section_doc.xpath("//blockquote/a/@href")
 
             # Actual Bill Pages
@@ -317,23 +322,38 @@ class IlBillScraper(Scraper):
 
                 # sponsors = bill_doc.xpath('//pre/a[contains(@href, "sponsor")]')
                 # bill_text = bill_doc.xpath("//pre")
-                bill_id_text = (
+                bill_id = (
                     bill_doc.xpath('//font[contains (., "Status of")]')[0]
                     .text_content()
                     .split()[-1]
                 )
-                print(bill_id_text)
+                # print(bill_id_text)
 
-                # bill = Bill(
-                #     bill_id,
-                #     legislative_session=session,
-                #     title=bill_title,
-                #     chamber=chamber,
-                #     classification=bill_type,
-                # )
+                summary_page_url = bill_doc.xpath(
+                    '//a[contains (., "Bill Summary")]/@href'
+                )[0]
+                summary_page_html = self.get(summary_page_url).text
+                summary_page_doc = lxml.html.fromstring(summary_page_html)
+                summary_page_doc.make_links_absolute(summary_page_url)
 
-        # print(bill_numbers[0:10])
-        yield "This will break it"
+                summary_text = (
+                    summary_page_doc.xpath("//pre")[0].text_content().splitlines()
+                )
+                for x in range(len(summary_text)):
+                    line = summary_text[x]
+                    if "Short description:" in line:
+                        bill_title = summary_text[x + 1]
+
+                bill = Bill(
+                    bill_id,
+                    legislative_session=session,
+                    title=bill_title,
+                    chamber=chamber,
+                    classification="bill",
+                )
+                bill.add_source(summary_page_url)
+
+                yield bill
 
     def scrape_bill(self, chamber, session, doc_type, url, bill_type=None):
         try:
