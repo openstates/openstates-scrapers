@@ -333,6 +333,16 @@ class IlBillScraper(Scraper):
                 bill_id = bill_id[0].text_content().split()[-1]
                 # print(bill_id)
 
+                if "JRCA" in bill_id:
+                    classification = "constitutional amendment"
+                elif "JR" in bill_id:
+                    classification = "joint resolution"
+                elif "R" in bill_id:
+                    classification = "resolution"
+                else:
+                    classification = "bill"
+                print(classification)
+
                 if "status" in bill_url:
                     summary_page_url = bill_doc.xpath(
                         '//a[contains (., "Bill Summary")]/@href'
@@ -356,7 +366,7 @@ class IlBillScraper(Scraper):
                     legislative_session=session,
                     title=bill_title,
                     chamber=chamber,
-                    classification="bill",
+                    classification=classification,
                 )
                 bill.add_source(summary_page_url)
 
