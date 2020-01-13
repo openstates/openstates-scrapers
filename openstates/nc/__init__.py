@@ -25,10 +25,10 @@ class NorthCarolina(Jurisdiction):
             "start_date": "1985-02-05",
         },
         {
-            "_scraped_name": "1986 First Extra Session",
+            "_scraped_name": "1986 Special Session",
             "classification": "special",
             "identifier": "1985E1",
-            "name": "1986 Extra Session 1",
+            "name": "1986 Special Session",
         },
         {
             "_scraped_name": "1987-1988 Session",
@@ -45,17 +45,17 @@ class NorthCarolina(Jurisdiction):
             "start_date": "1989-01-11",
         },
         {
-            "_scraped_name": "1989 First Extra Session",
+            "_scraped_name": "1989 Special Session",
             "classification": "special",
             "identifier": "1989E1",
-            "name": "1989 Extra Session 1",
+            "name": "1989 Extra Session",
             "start_date": "1989-12-07",
         },
         {
-            "_scraped_name": "1989 Second Extra Session",
+            "_scraped_name": "1990 Special Session",
             "classification": "special",
             "identifier": "1989E2",
-            "name": "1989 Extra Session 2",
+            "name": "1990 Extra Session",
             "start_date": "1990-03-06",
         },
         {
@@ -66,10 +66,10 @@ class NorthCarolina(Jurisdiction):
             "start_date": "1991-01-30",
         },
         {
-            "_scraped_name": "1991 First Extra Session",
+            "_scraped_name": "1991 Special Session",
             "classification": "special",
             "identifier": "1991E1",
-            "name": "1991 Extra Session 1",
+            "name": "1991 Special Session",
             "start_date": "1991-12-30",
         },
         {
@@ -80,10 +80,10 @@ class NorthCarolina(Jurisdiction):
             "start_date": "1991-01-27",
         },
         {
-            "_scraped_name": "1994 First Extra Session",
+            "_scraped_name": "1994 Special Session",
             "classification": "special",
             "identifier": "1993E1",
-            "name": "1994 Extra Session 1",
+            "name": "1994 Special Session",
             "start_date": "1994-02-08",
         },
         {
@@ -94,17 +94,17 @@ class NorthCarolina(Jurisdiction):
             "start_date": "1995-01-25",
         },
         {
-            "_scraped_name": "1996 First Extra Session",
+            "_scraped_name": "1996 1st Special Session",
             "classification": "special",
             "identifier": "1995E1",
-            "name": "1996 Extra Session 1",
+            "name": "1996 Special Session 1",
             "start_date": "1996-02-21",
         },
         {
-            "_scraped_name": "1996 Second Extra Session",
+            "_scraped_name": "1996 2nd Special Session",
             "classification": "special",
             "identifier": "1995E2",
-            "name": "1996 Extra Session 2",
+            "name": "1996 Special Session 2",
             "start_date": "1996-07-08",
         },
         {
@@ -115,10 +115,10 @@ class NorthCarolina(Jurisdiction):
             "start_date": "1997-01-29",
         },
         {
-            "_scraped_name": "1998 First Extra Session",
+            "_scraped_name": "1998 Special Session",
             "classification": "special",
             "identifier": "1997E1",
-            "name": "1998 Extra Session 1",
+            "name": "1998 Special Session",
             "start_date": "1998-03-24",
         },
         {
@@ -129,17 +129,17 @@ class NorthCarolina(Jurisdiction):
             "start_date": "1999-01-27",
         },
         {
-            "_scraped_name": "1999 First Extra Session",
+            "_scraped_name": "1999 Special Session",
             "classification": "special",
             "identifier": "1999E1",
-            "name": "1999 Extra Session 1",
+            "name": "1999 Special Session",
             "start_date": "1999-12-15",
         },
         {
-            "_scraped_name": "2000 First Extra Session",
+            "_scraped_name": "2000 Special Session",
             "classification": "special",
             "identifier": "1999E2",
-            "name": "2000 Extra Session 1",
+            "name": "2000 Special Session",
             "start_date": "2000-04-05",
         },
         {
@@ -150,7 +150,7 @@ class NorthCarolina(Jurisdiction):
             "start_date": "2001-01-24",
         },
         {
-            "_scraped_name": "2002 Extra Session on Redistricting",
+            "_scraped_name": "2002 Extra Session",
             "classification": "special",
             "identifier": "2001E1",
             "name": "2002 Extra Session on Redistricting",
@@ -164,7 +164,7 @@ class NorthCarolina(Jurisdiction):
             "start_date": "2003-01-29",
         },
         {
-            "_scraped_name": "2003 Extra Session on Redistricting",
+            "_scraped_name": "2003 Extra Session",
             "classification": "special",
             "identifier": "2003E1",
             "name": "2003 Extra Session on Redistricting",
@@ -178,7 +178,7 @@ class NorthCarolina(Jurisdiction):
             "start_date": "2003-12-09",
         },
         {
-            "_scraped_name": "2004 Extra Session on Economic Development Issues",
+            "_scraped_name": "2004 Extra Session",
             "classification": "special",
             "identifier": "2003E3",
             "name": "2004 Extra Session on Economic Development Issues",
@@ -241,7 +241,7 @@ class NorthCarolina(Jurisdiction):
             "start_date": "2015-01-30",
         },
         {
-            "_scraped_name": "2016 Extra Session",
+            "_scraped_name": "2016 First Extra Session",
             "classification": "special",
             "identifier": "2015E1",
             "name": "2016 Extra Session 1",
@@ -307,36 +307,7 @@ class NorthCarolina(Jurisdiction):
             "end_date": "2020-08-01",
         },
     ]
-    ignored_scraped_sessions = [
-        "2016 First Extra Session",
-        "2008 Extra Session",
-        "2007-2008 Session",
-        "2007 Extra Session",
-        "2005-2006 Session",
-        "2004 Extra Session",
-        "2003-2004 Session",
-        "2003 Extra Session",
-        "2002 Extra Session",
-        "2001-2002 Session",
-        "2000 Special Session",
-        "1999-2000 Session",
-        "1999 Special Session",
-        "1998 Special Session",
-        "1997-1998 Session",
-        "1996 2nd Special Session",
-        "1996 1st Special Session",
-        "1995-1996 Session",
-        "1994 Special Session",
-        "1993-1994 Session",
-        "1991-1992 Session",
-        "1991 Special Session",
-        "1990 Special Session",
-        "1989-1990 Session",
-        "1989 Special Session",
-        "1987-1988 Session",
-        "1986 Special Session",
-        "1985-1986 Session",
-    ]
+    ignored_scraped_sessions = []
 
     def get_organizations(self):
         legislature_name = "North Carolina General Assembly"
