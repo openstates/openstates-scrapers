@@ -314,9 +314,6 @@ class IlBillScraper(Scraper):
 
             bills_urls = bill_section_doc.xpath("//blockquote/a/@href")
 
-            # print("Just about to go though a new section of bills/resolutions")
-            # print("Example bill url:", bills_urls[0])
-
             # Actual Bill Pages
             for bill_url in bills_urls:
 
@@ -324,7 +321,7 @@ class IlBillScraper(Scraper):
                 bill_doc = lxml.html.fromstring(bill_html)
                 bill_doc.make_links_absolute(bill_url)
 
-                # sponsors = bill_doc.xpath('//pre/a[contains(@href, "sponsor")]')
+                sponsors = bill_doc.xpath('//pre/a[contains(@href, "sponsor")]')
                 # bill_text = bill_doc.xpath("//pre")
 
                 bill_id = bill_doc.xpath('//font[contains (., "Status of")]')
@@ -341,7 +338,6 @@ class IlBillScraper(Scraper):
                     classification = "resolution"
                 else:
                     classification = "bill"
-                print(classification)
 
                 if "status" in bill_url:
                     summary_page_url = bill_doc.xpath(
@@ -369,6 +365,15 @@ class IlBillScraper(Scraper):
                     classification=classification,
                 )
                 bill.add_source(summary_page_url)
+
+                for sponsor in sponsors:
+                    if sponsor.text_content():
+                        bill.add_sponsorship(
+                            name=sponsor.text_content(),
+                            classification="cosponsor",
+                            entity_type="person",
+                            primary=False,
+                        )
 
                 yield bill
 
