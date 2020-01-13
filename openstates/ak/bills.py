@@ -80,7 +80,7 @@ class AKBillScraper(Scraper):
             "CR": "concurrent resolution",
         }
 
-        bill_list_url = "https://www.akleg.gov/basis/Bill/Range/{session}"
+        bill_list_url = f"https://www.akleg.gov/basis/Bill/Range/{session}"
         doc = lxml.html.fromstring(self.get(bill_list_url).text)
         doc.make_links_absolute(bill_list_url)
         for bill_link in doc.xpath("//tr//td[1]//nobr[1]//a[1]"):
@@ -216,7 +216,7 @@ class AKBillScraper(Scraper):
 
         # Get versions - to do
         text_list_url = (
-            "https://www.akleg.gov/basis/Bill/Detail/{session}?Root={bill_id}#tab1_4"
+            f"https://www.akleg.gov/basis/Bill/Detail/{session}?Root={bill_id}#tab1_4"
         )
         bill.add_source(text_list_url)
 
@@ -229,7 +229,7 @@ class AKBillScraper(Scraper):
 
         # Get documents - to do
         doc_list_url = (
-            "https://www.akleg.gov/basis/Bill/Detail/{session}?Root={bill_id}#tab5_4"
+            f"https://www.akleg.gov/basis/Bill/Detail/{session}?Root={bill_id}#tab5_4"
         )
         doc_list = lxml.html.fromstring(self.get(doc_list_url).text)
         doc_list.make_links_absolute(doc_list_url)
@@ -278,6 +278,7 @@ class AKBillScraper(Scraper):
             result=result,
             classification="passage",
         )
+        vote.pupa_id = url
 
         vote.set_count("yes", yes)
         vote.set_count("no", no)
