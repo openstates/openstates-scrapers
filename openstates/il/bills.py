@@ -322,7 +322,6 @@ class IlBillScraper(Scraper):
                 bill_doc.make_links_absolute(bill_url)
 
                 sponsors = bill_doc.xpath('//pre/a[contains(@href, "sponsor")]')
-                # bill_text = bill_doc.xpath("//pre")
 
                 bill_id = bill_doc.xpath('//font[contains (., "Status of")]')
                 if len(bill_id) < 1:
@@ -366,6 +365,7 @@ class IlBillScraper(Scraper):
                 )
                 bill.add_source(summary_page_url)
 
+                # Sponsors
                 for sponsor in sponsors:
                     if sponsor.text_content():
                         bill.add_sponsorship(
@@ -374,6 +374,10 @@ class IlBillScraper(Scraper):
                             entity_type="person",
                             primary=False,
                         )
+
+                # Bill version
+                version_url = bill_doc.xpath('//a[contains (., "Full Text")]/@href')[0]
+                bill.add_version_link(bill_id, version_url, media_type="text/html")
 
                 yield bill
 
