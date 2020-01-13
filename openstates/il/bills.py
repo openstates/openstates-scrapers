@@ -270,31 +270,32 @@ class IlBillScraper(Scraper):
         if session in ["90th", "91st", "92nd"]:
             print("Within session", session)
             yield from self.scrape_archive_bills(session)
+        else:
+            for chamber in ("lower", "upper"):
+                for doc_type in [
+                    chamber_slug(chamber) + doc_type for doc_type in DOC_TYPES
+                ]:
+                    for bill_url in self.get_bill_urls(chamber, session_id, doc_type):
+                        yield from self.scrape_bill(
+                            chamber, session_id, doc_type, bill_url
+                        )
 
-        for chamber in ("lower", "upper"):
-            for doc_type in [
-                chamber_slug(chamber) + doc_type for doc_type in DOC_TYPES
-            ]:
-                for bill_url in self.get_bill_urls(chamber, session_id, doc_type):
-                    yield from self.scrape_bill(chamber, session_id, doc_type, bill_url)
+            # special non-chamber cases
+            for bill_url in self.get_bill_urls(chamber, session_id, "AM"):
+                yield from self.scrape_bill(
+                    chamber, session_id, "AM", bill_url, "appointment"
+                )
 
-        # special non-chamber cases
-        for bill_url in self.get_bill_urls(chamber, session_id, "AM"):
-            yield from self.scrape_bill(
-                chamber, session_id, "AM", bill_url, "appointment"
-            )
-
-        # TODO: get joint session resolution added to python-opencivicdata
-        # for bill_url in self.get_bill_urls(chamber, session_id, 'JSR'):
-        #     bill, votes = self.scrape_bill(chamber, session_id, 'JSR', bill_url,
-        #                                    'joint session resolution')
-        #     yield bill
-        #     yield from votes
+            # TODO: get joint session resolution added to python-opencivicdata
+            # for bill_url in self.get_bill_urls(chamber, session_id, 'JSR'):
+            #     bill, votes = self.scrape_bill(chamber, session_id, 'JSR', bill_url,
+            #                                    'joint session resolution')
+            #     yield bill
+            #     yield from votes
 
     def scrape_archive_bills(self, session):
         session_abr = session[0:2]
         url = f"http://www.ilga.gov/legislation/legisnet{session_abr}/{session_abr}gatoc.html"
-        print(url)
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
@@ -313,6 +314,9 @@ class IlBillScraper(Scraper):
 
             bills_urls = bill_section_doc.xpath("//blockquote/a/@href")
 
+            # print("Just about to go though a new section of bills/resolutions")
+            # print("Example bill url:", bills_urls[0])
+
             # Actual Bill Pages
             for bill_url in bills_urls:
 
@@ -322,19 +326,22 @@ class IlBillScraper(Scraper):
 
                 # sponsors = bill_doc.xpath('//pre/a[contains(@href, "sponsor")]')
                 # bill_text = bill_doc.xpath("//pre")
-                bill_id = (
-                    bill_doc.xpath('//font[contains (., "Status of")]')[0]
-                    .text_content()
-                    .split()[-1]
-                )
-                # print(bill_id_text)
 
-                summary_page_url = bill_doc.xpath(
-                    '//a[contains (., "Bill Summary")]/@href'
-                )[0]
-                summary_page_html = self.get(summary_page_url).text
-                summary_page_doc = lxml.html.fromstring(summary_page_html)
-                summary_page_doc.make_links_absolute(summary_page_url)
+                bill_id = bill_doc.xpath('//font[contains (., "Status of")]')
+                if len(bill_id) < 1:
+                    bill_id = bill_doc.xpath('//font[contains (., "Summary of")]')
+                bill_id = bill_id[0].text_content().split()[-1]
+                # print(bill_id)
+
+                if "status" in bill_url:
+                    summary_page_url = bill_doc.xpath(
+                        '//a[contains (., "Bill Summary")]/@href'
+                    )[0]
+                    summary_page_html = self.get(summary_page_url).text
+                    summary_page_doc = lxml.html.fromstring(summary_page_html)
+                    summary_page_doc.make_links_absolute(summary_page_url)
+                else:
+                    summary_page_doc = bill_doc
 
                 summary_text = (
                     summary_page_doc.xpath("//pre")[0].text_content().splitlines()
