@@ -2,12 +2,13 @@
 import re
 import os
 import datetime
-
 import pytz
 import scrapelib
 import lxml.html
 from pupa.scrape import Scraper, Bill, VoteEvent
 from pupa.utils import convert_pdf
+
+eastern = pytz.timezone("US/Eastern")
 
 # from ._utils import canonicalize_url
 
@@ -339,6 +340,7 @@ class IlBillScraper(Scraper):
                     classification = "bill"
 
                 if "status" in bill_url:
+                    # Currently on status page, but need info for summary page
                     summary_page_url = bill_doc.xpath(
                         '//a[contains (., "Bill Summary")]/@href'
                     )[0]
@@ -346,7 +348,14 @@ class IlBillScraper(Scraper):
                     summary_page_doc = lxml.html.fromstring(summary_page_html)
                     summary_page_doc.make_links_absolute(summary_page_url)
                 else:
+                    # Currently on summary page, but need info for status page
                     summary_page_doc = bill_doc
+                    bill_url = bill_doc.xpath('//a[contains (., "Bill Status")]/@href')[
+                        0
+                    ]
+                    bill_html = self.get(bill_url).text
+                    bill_doc = lxml.html.fromstring(bill_html)
+                    bill_doc.make_links_absolute(bill_url)
 
                 summary_text = (
                     summary_page_doc.xpath("//pre")[0].text_content().splitlines()
@@ -378,6 +387,32 @@ class IlBillScraper(Scraper):
                 # Bill version
                 version_url = bill_doc.xpath('//a[contains (., "Full Text")]/@href')[0]
                 bill.add_version_link(bill_id, version_url, media_type="text/html")
+
+                # Actions
+                bill_text = bill_doc.xpath("//pre")[0].text_content().splitlines()
+                for x in range(len(bill_text)):
+                    line = bill_text[x].split()
+                    # Regex is looking for this format: JAN-11-2001
+                    if line and re.match(r"\D\D\D-\d\d-\d\d\d\d", line[0]):
+                        action_date = datetime.datetime.strptime(line[0], "%b-%d-%Y")
+
+                        action_date = eastern.localize(action_date)
+                        action_date = action_date.isoformat()
+
+                        action = " ".join(line[2:-1])
+                        if line[1] == "S":
+                            action_chamber = "upper"
+                        else:
+                            action_chamber = "lower"
+
+                        classification, related_orgs = _categorize_action(action)
+                        print(action)
+                        bill.add_action(
+                            action,
+                            action_date,
+                            chamber=action_chamber,
+                            classification=classification,
+                        )
 
                 yield bill
 
