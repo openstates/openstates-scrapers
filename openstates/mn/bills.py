@@ -99,6 +99,9 @@ class MNBillScraper(Scraper, LXMLMixin):
         if self.is_testing():
             self.debug("TESTING...")
 
+        # SSL broken as of Jan 2020
+        self.verify = False
+
         if not session:
             session = self.latest_session()
             self.info("no session specified, using %s", session)
