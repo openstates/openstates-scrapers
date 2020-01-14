@@ -274,11 +274,10 @@ class AKBillScraper(Scraper):
             bill=bill,
             start_date=act_date.strftime("%Y-%m-%d"),
             chamber=act_chamber,
-            motion_text=action,
+            motion_text=action + " #" + journal_entry_number,
             result=result,
             classification="passage",
         )
-        vote.pupa_id = url
 
         vote.set_count("yes", yes)
         vote.set_count("no", no)
