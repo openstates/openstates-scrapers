@@ -188,6 +188,22 @@ _OTHER_FREQUENT_ACTION_PATTERNS_WHICH_ARE_CURRENTLY_UNCLASSIFIED = [
     r"^Held in (?P<committee>.+)",
 ]
 
+_archived_action_classifiers = {
+    "GOVERNOR AMENDATORY VETO": "executive-veto",
+    "GOVERNOR APPROVED": "executive-signature",
+    "SENT TO THE GOVERNOR": "executive-receipt",
+    "REFERRED ": "referral-committee",
+    "FIRST READING": "reading-1",
+    "SECOND READING": "reading-2",
+    "THIRD READING": ["reading-3"],
+    "THIRD READING - PASSED": ["passage", "reading-3"],
+    "THIRD READING/SHORT DEBATE/PASSED": ["passage", "reading-3"],
+    "FILED": "introduction",
+    "ADOPTED": "passage",
+    "ASSIGNED TO COMMITTEE": "referral-committee",
+}
+
+
 VOTE_VALUES = ["NV", "Y", "N", "E", "A", "P", "-"]
 
 COMMITTEE_CORRECTIONS = {
@@ -389,30 +405,35 @@ class IlBillScraper(Scraper):
                 bill.add_version_link(bill_id, version_url, media_type="text/html")
 
                 # Actions
-                bill_text = bill_doc.xpath("//pre")[0].text_content().splitlines()
-                for x in range(len(bill_text)):
-                    line = bill_text[x].split()
-                    # Regex is looking for this format: JAN-11-2001
-                    if line and re.match(r"\D\D\D-\d\d-\d\d\d\d", line[0]):
-                        action_date = datetime.datetime.strptime(line[0], "%b-%d-%Y")
+                bill_text = bill_doc.xpath("//pre")
+                if bill_text:
+                    bill_text = bill_text[0].text_content().splitlines()
+                    for x in range(len(bill_text)):
+                        line = bill_text[x].split()
+                        # Regex is looking for this format: JAN-11-2001
+                        if line and re.match(r"\D\D\D-\d\d-\d\d\d\d", line[0]):
+                            action_date = datetime.datetime.strptime(
+                                line[0], "%b-%d-%Y"
+                            )
 
-                        action_date = eastern.localize(action_date)
-                        action_date = action_date.isoformat()
+                            action_date = eastern.localize(action_date)
+                            action_date = action_date.isoformat()
 
-                        action = " ".join(line[2:-1])
-                        if line[1] == "S":
-                            action_chamber = "upper"
-                        else:
-                            action_chamber = "lower"
+                            action = " ".join(line[2:])
+                            if line[1] == "S":
+                                action_chamber = "upper"
+                            else:
+                                action_chamber = "lower"
 
-                        classification, related_orgs = _categorize_action(action)
-                        print(action)
-                        bill.add_action(
-                            action,
-                            action_date,
-                            chamber=action_chamber,
-                            classification=classification,
-                        )
+                            for pattern, atype in _archived_action_classifiers.items():
+                                if action.startswith(pattern):
+                                    break
+                            bill.add_action(
+                                action,
+                                action_date,
+                                chamber=action_chamber,
+                                classification=atype,
+                            )
 
                 yield bill
 
