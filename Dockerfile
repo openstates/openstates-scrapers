@@ -24,7 +24,9 @@ RUN apt update && apt install -y --no-install-recommends \
       libgeos-dev \
       libmariadb-dev \
 #     mariadb \
-#     mariadb-client \
+      mariadb-client \
+      wget \
+      unzip \
 #     libcrypto1.1 \
       mdbtools && \
       rm -rf /var/lib/apt/lists/*
