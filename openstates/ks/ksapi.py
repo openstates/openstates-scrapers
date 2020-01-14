@@ -93,6 +93,7 @@ action_codes = {
     "cur_con_335": None,
     "ref_rbc_308": "referral-committee",
     "ref_rbc_307": "referral-committee",
+    "ref_rbc_311": "referral-committee",
     "efa_fabc_352": "passage",
     "efa_fabc_351": "passage",
     "intro_ibc_251": "passage",
