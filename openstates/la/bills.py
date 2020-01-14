@@ -4,7 +4,7 @@ import tempfile
 import os
 import re
 from collections import defaultdict
-from pupa.scrape import Scraper, Bill, VoteEvent as Vote
+from pupa.scrape import Scraper, Bill, VoteEvent
 from pupa.utils import convert_pdf
 from openstates.utils import LXMLMixin
 
@@ -206,7 +206,7 @@ class LABillScraper(Scraper, LXMLMixin):
         else:
             passed = False
 
-        vote = Vote(
+        vote = VoteEvent(
             chamber=chamber,
             start_date=start_date.strftime("%Y-%m-%d"),
             motion_text=motion,
