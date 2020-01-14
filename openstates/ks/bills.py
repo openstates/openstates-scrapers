@@ -31,6 +31,10 @@ class KSBillScraper(Scraper):
         bill_request = self.get(ksapi.url + "bill_status/").text
         bill_request_json = json.loads(bill_request)
         bills = bill_request_json["content"]
+
+        # there are duplicates
+        seen_ids = set()
+
         for bill_data in bills:
 
             bill_id = bill_data["BILLNO"]
@@ -38,6 +42,11 @@ class KSBillScraper(Scraper):
             # filter other chambers
             if not bill_id.startswith(chamber_letter):
                 continue
+            # filter duplicates
+            if bill_id in seen_ids:
+                continue
+
+            seen_ids.add(bill_id)
 
             if "CR" in bill_id:
                 btype = "concurrent resolution"

@@ -13,10 +13,7 @@ class Alaska(Jurisdiction):
     classification = "government"
     name = "Alaska"
     url = "http://w3.legis.state.ak.us/"
-    scrapers = {
-        "bills": AKBillScraper,
-        "events": AKEventScraper,
-    }
+    scrapers = {"bills": AKBillScraper, "events": AKEventScraper}
     legislative_sessions = [
         {
             "_scraped_name": "28th Legislature (2013-2014)",
