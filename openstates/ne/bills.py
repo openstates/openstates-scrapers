@@ -121,9 +121,6 @@ class NEBillScraper(Scraper, LXMLMixin):
                 classification=action_type,
             )
 
-        # Were in reverse chronological order.
-        bill.actions.reverse()
-
         # Grabs bill version documents.
         version_links = self.get_nodes(
             bill_page, "/html/body/div[3]/div[2]/div[2]/div/" "div[3]/div[2]/ul/li/a"
@@ -138,29 +135,38 @@ class NEBillScraper(Scraper, LXMLMixin):
                 version_name, version_url, media_type="application/pdf"
             )
 
+        soi = self.get_nodes(bill_page, ".//a[contains(text(), 'Statement of Intent')]")
+        if soi:
+            bill.add_document_link(
+                "Statement of Intent", soi[0].get("href"), media_type="application/pdf"
+            )
+        comstmt = self.get_nodes(
+            bill_page, ".//a[contains(text(), 'Committee Statement')]"
+        )
+        if comstmt:
+            bill.add_document_link(
+                "Committee Statement",
+                comstmt[0].get("href"),
+                media_type="application/pdf",
+            )
+        fn = self.get_nodes(bill_page, ".//a[contains(text(), 'Fiscal Note')]")
+        if fn:
+            bill.add_document_link(
+                "Fiscal Note", fn[0].get("href"), media_type="application/pdf"
+            )
+
         # Adds any documents related to amendments.
         amendment_links = self.get_nodes(
-            bill_page, '//div[@class="main-content"]/div[5]/div[2]/table/tr/td[1]/a'
+            bill_page, ".//div[contains(@class, 'amend-link')]/a"
         )
 
         for amendment_link in amendment_links:
             amendment_name = amendment_link.text
             amendment_url = amendment_link.attrib["href"]
+            # skip over transcripts
+            if "/AM/" not in amendment_url:
+                continue
             bill.add_document_link(amendment_name, amendment_url)
-
-        self.scrape_amendments(bill, bill_page)
-
-        # Related transcripts.
-        transcript_links = self.get_nodes(
-            bill_page,
-            '//div[@class="main-content"]/div[5]/div[2]/'
-            'div[@class="hidden-xs"]/table/tr/td/a',
-        )
-
-        for transcript_link in transcript_links:
-            transcript_name = transcript_link.text
-            transcript_url = transcript_link.attrib["href"]
-            bill.add_document_link(transcript_name, transcript_url)
 
         yield bill
 
