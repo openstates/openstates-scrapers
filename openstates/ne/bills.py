@@ -166,7 +166,9 @@ class NEBillScraper(Scraper, LXMLMixin):
             # skip over transcripts
             if "/AM/" not in amendment_url:
                 continue
-            bill.add_document_link(amendment_name, amendment_url)
+            bill.add_document_link(
+                amendment_name, amendment_url, media_type="application/pdf"
+            )
 
         yield bill
 
