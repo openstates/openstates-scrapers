@@ -237,7 +237,11 @@ class OHBillScraper(Scraper):
 
                 # votes
                 vote_url = base_url + bill_version["votes"][0]["link"]
-                vote_doc = self.get(vote_url)
+                try:
+                    vote_doc = self.get(vote_url)
+                except scrapelib.HTTPError:
+                    self.warning("Vote page not loading; skipping: {}".format(vote_url))
+                    continue
                 votes = vote_doc.json()
                 yield from self.process_vote(
                     votes,
@@ -254,9 +258,7 @@ class OHBillScraper(Scraper):
                 try:
                     vote_doc = self.get(vote_url)
                 except scrapelib.HTTPError:
-                    self.warning(
-                        "Vote page not " "loading; skipping: {}".format(vote_url)
-                    )
+                    self.warning("Vote page not loading; skipping: {}".format(vote_url))
                     continue
                 votes = vote_doc.json()
                 yield from self.process_vote(
