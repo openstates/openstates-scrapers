@@ -370,6 +370,8 @@ class NJBillScraper(Scraper, MDBMixin):
             "CA%s-%s" % (year_abr, next_year),
             "CS%s-%s" % (year_abr, next_year),
         ]
+        # keep votes clean globally, a few votes show up in multiple files
+        votes = {}
 
         for filename in vote_info_list:
             s_vote_url = "ftp://www.njleg.state.nj.us/votes/%s.zip" % filename
@@ -393,8 +395,6 @@ class NJBillScraper(Scraper, MDBMixin):
                     continue
 
                 vdict_file = csv.DictReader(vote_file)
-
-                votes = {}
                 if filename.startswith("A") or filename.startswith("CA"):
                     chamber = "lower"
                 else:
