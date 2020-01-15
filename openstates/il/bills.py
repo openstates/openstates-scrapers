@@ -410,11 +410,19 @@ class IlBillScraper(Scraper):
                     bill_text = bill_text[0].text_content().splitlines()
                     for x in range(len(bill_text)):
                         line = bill_text[x].split()
-                        # Regex is looking for this format: JAN-11-2001
-                        if line and re.match(r"\D\D\D-\d\d-\d\d\d\d", line[0]):
-                            action_date = datetime.datetime.strptime(
-                                line[0], "%b-%d-%Y"
-                            )
+                        # Regex is looking for this format: JAN-11-2001 or 99-02-17
+                        if line and (
+                            re.match(r"\D\D\D-\d\d-\d\d\d\d", line[0])
+                            or re.match(r"\d\d-\d\d-\d\d", line[0])
+                        ):
+                            if session == "91st":
+                                action_date = datetime.datetime.strptime(
+                                    line[0], "%y-%m-%d"
+                                )
+                            else:
+                                action_date = datetime.datetime.strptime(
+                                    line[0], "%b-%d-%Y"
+                                )
 
                             action_date = eastern.localize(action_date)
                             action_date = action_date.isoformat()
