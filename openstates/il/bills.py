@@ -366,6 +366,7 @@ class IlBillScraper(Scraper):
                 else:
                     # Currently on summary page, but need info for status page
                     summary_page_doc = bill_doc
+                    summary_page_url = bill_url
                     bill_url = bill_doc.xpath('//a[contains (., "Bill Status")]/@href')[
                         0
                     ]
@@ -389,6 +390,7 @@ class IlBillScraper(Scraper):
                     classification=classification,
                 )
                 bill.add_source(summary_page_url)
+                bill.add_source(url)
 
                 # Sponsors
                 for sponsor in sponsors:
@@ -415,7 +417,7 @@ class IlBillScraper(Scraper):
                             re.match(r"\D\D\D-\d\d-\d\d\d\d", line[0])
                             or re.match(r"\d\d-\d\d-\d\d", line[0])
                         ):
-                            if session == "91st":
+                            if session in ["91st", "90th"]:
                                 action_date = datetime.datetime.strptime(
                                     line[0], "%y-%m-%d"
                                 )
