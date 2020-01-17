@@ -22,7 +22,6 @@ RUN apt update && apt install -y --no-install-recommends \
       libpq-dev \
       libgdal-dev \
       libgeos-dev \
-      libmariadb-dev \
       wget \
       unzip \
 #     libcrypto1.1 \
