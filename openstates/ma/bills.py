@@ -91,7 +91,11 @@ class MABillScraper(Scraper):
         chamber_filter = self.chamber_filters[self.chamber_map[chamber]]
         search_url = (
             "https://malegislature.gov/Bills/Search?"
-            "SearchTerms=&Page={}&Refinements%5Blawsgeneralcourt%5D={}"
+            "SearchTerms="
+            "&Page={}"
+            "&SortManagedProperty=lawsbillnumber"
+            "&Direction=asc"
+            "&Refinements%5Blawsgeneralcourt%5D={}"
             "&Refinements%5Blawsbranchname%5D={}".format(
                 pageNumber, session_filter, chamber_filter
             )
