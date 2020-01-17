@@ -163,7 +163,13 @@ class MABillScraper(Scraper):
             self.warning("Couldn't find title for {}; skipping".format(bill_id))
             return False
 
-        bill_id = re.sub(r"[^S|H|D|\d]", "", bill_id)
+        bill_types = ['H', 'HD', 'S', 'SD', 'SRes']
+        if re.sub('[0-9]', '', bill_id) not in bill_types:
+            self.warning("Unsupported bill type for {}; skipping".format(bill_id))
+            return False
+
+        if 'SRes' in bill_id:
+            bill_id = bill_id.replace('SRes', 'SR')
 
         bill = Bill(
             bill_id,
