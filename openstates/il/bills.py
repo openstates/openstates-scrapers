@@ -285,7 +285,6 @@ class IlBillScraper(Scraper):
 
         # Sessions that run from 1997 - 2002. Last few sessiosn before bills were PDFs
         if session in ["90th", "91st", "92nd"]:
-            print("Within session", session)
             yield from self.scrape_archive_bills(session)
         else:
             for chamber in ("lower", "upper"):
@@ -344,7 +343,6 @@ class IlBillScraper(Scraper):
                 if len(bill_id) < 1:
                     bill_id = bill_doc.xpath('//font[contains (., "Summary of")]')
                 bill_id = bill_id[0].text_content().split()[-1]
-                # print(bill_id)
 
                 if "JRCA" in bill_id:
                     classification = "constitutional amendment"
@@ -438,6 +436,8 @@ class IlBillScraper(Scraper):
                             for pattern, atype in _archived_action_classifiers.items():
                                 if action.startswith(pattern):
                                     break
+                            else:
+                                atype = None
                             bill.add_action(
                                 action,
                                 action_date,
