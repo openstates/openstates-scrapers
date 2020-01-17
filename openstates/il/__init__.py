@@ -21,6 +21,24 @@ class Illinois(Jurisdiction):
     }
     legislative_sessions = [
         {
+            "name": "90th Regular Session",
+            "identifier": "90th",
+            "classification": "primary",
+            "_scraped_name": "90   (1997-1998)",
+        },
+        {
+            "name": "91st Regular Session",
+            "identifier": "91st",
+            "classification": "primary",
+            "_scraped_name": "91   (1999-2000)",
+        },
+        {
+            "name": "92nd Regular Session",
+            "identifier": "92nd",
+            "classification": "primary",
+            "_scraped_name": "92   (2001-2002)",
+        },
+        {
             "name": "93rd Regular Session",
             "identifier": "93rd",
             "classification": "primary",

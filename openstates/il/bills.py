@@ -2,14 +2,15 @@
 import re
 import os
 import datetime
-
 import pytz
 import scrapelib
 import lxml.html
 from pupa.scrape import Scraper, Bill, VoteEvent
 from pupa.utils import convert_pdf
 
-from ._utils import canonicalize_url
+central = pytz.timezone("US/Central")
+
+# from ._utils import canonicalize_url
 
 
 session_details = {
@@ -187,6 +188,22 @@ _OTHER_FREQUENT_ACTION_PATTERNS_WHICH_ARE_CURRENTLY_UNCLASSIFIED = [
     r"^Held in (?P<committee>.+)",
 ]
 
+_archived_action_classifiers = {
+    "GOVERNOR AMENDATORY VETO": "executive-veto",
+    "GOVERNOR APPROVED": "executive-signature",
+    "SENT TO THE GOVERNOR": "executive-receipt",
+    "REFERRED ": "referral-committee",
+    "FIRST READING": "reading-1",
+    "SECOND READING": "reading-2",
+    "THIRD READING": ["reading-3"],
+    "THIRD READING - PASSED": ["passage", "reading-3"],
+    "THIRD READING/SHORT DEBATE/PASSED": ["passage", "reading-3"],
+    "FILED": "introduction",
+    "ADOPTED": "passage",
+    "ASSIGNED TO COMMITTEE": "referral-committee",
+}
+
+
 VOTE_VALUES = ["NV", "Y", "N", "E", "A", "P", "-"]
 
 COMMITTEE_CORRECTIONS = {
@@ -266,25 +283,169 @@ class IlBillScraper(Scraper):
         else:
             session_id = self.latest_session()
 
-        for chamber in ("lower", "upper"):
-            for doc_type in [
-                chamber_slug(chamber) + doc_type for doc_type in DOC_TYPES
-            ]:
-                for bill_url in self.get_bill_urls(chamber, session_id, doc_type):
-                    yield from self.scrape_bill(chamber, session_id, doc_type, bill_url)
+        # Sessions that run from 1997 - 2002. Last few sessiosn before bills were PDFs
+        if session in ["90th", "91st", "92nd"]:
+            yield from self.scrape_archive_bills(session)
+        else:
+            for chamber in ("lower", "upper"):
+                for doc_type in [
+                    chamber_slug(chamber) + doc_type for doc_type in DOC_TYPES
+                ]:
+                    for bill_url in self.get_bill_urls(chamber, session_id, doc_type):
+                        yield from self.scrape_bill(
+                            chamber, session_id, doc_type, bill_url
+                        )
 
-        # special non-chamber cases
-        for bill_url in self.get_bill_urls(chamber, session_id, "AM"):
-            yield from self.scrape_bill(
-                chamber, session_id, "AM", bill_url, "appointment"
-            )
+            # special non-chamber cases
+            for bill_url in self.get_bill_urls(chamber, session_id, "AM"):
+                yield from self.scrape_bill(
+                    chamber, session_id, "AM", bill_url, "appointment"
+                )
 
-        # TODO: get joint session resolution added to python-opencivicdata
-        # for bill_url in self.get_bill_urls(chamber, session_id, 'JSR'):
-        #     bill, votes = self.scrape_bill(chamber, session_id, 'JSR', bill_url,
-        #                                    'joint session resolution')
-        #     yield bill
-        #     yield from votes
+            # TODO: get joint session resolution added to python-opencivicdata
+            # for bill_url in self.get_bill_urls(chamber, session_id, 'JSR'):
+            #     bill, votes = self.scrape_bill(chamber, session_id, 'JSR', bill_url,
+            #                                    'joint session resolution')
+            #     yield bill
+            #     yield from votes
+
+    def scrape_archive_bills(self, session):
+        session_abr = session[0:2]
+        url = f"http://www.ilga.gov/legislation/legisnet{session_abr}/{session_abr}gatoc.html"
+        html = self.get(url).text
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+        bill_numbers_sections = doc.xpath("//table//a/@href")
+
+        # Contains multiple bills
+        for bill_numbers_section_url in bill_numbers_sections:
+            bill_section_html = self.get(bill_numbers_section_url).text
+            bill_section_doc = lxml.html.fromstring(bill_section_html)
+            bill_section_doc.make_links_absolute(bill_numbers_section_url)
+
+            if "/sb" in bill_numbers_section_url or "/sr" in bill_numbers_section_url:
+                chamber = "upper"
+            else:
+                chamber = "lower"
+
+            bills_urls = bill_section_doc.xpath("//blockquote/a/@href")
+
+            # Actual Bill Pages
+            for bill_url in bills_urls:
+
+                bill_html = self.get(bill_url).text
+                bill_doc = lxml.html.fromstring(bill_html)
+                bill_doc.make_links_absolute(bill_url)
+
+                sponsors = bill_doc.xpath('//pre/a[contains(@href, "sponsor")]')
+
+                bill_id = bill_doc.xpath('//font[contains (., "Status of")]')
+                if len(bill_id) < 1:
+                    bill_id = bill_doc.xpath('//font[contains (., "Summary of")]')
+                bill_id = bill_id[0].text_content().split()[-1]
+
+                if "JRCA" in bill_id:
+                    classification = "constitutional amendment"
+                elif "JR" in bill_id:
+                    classification = "joint resolution"
+                elif "R" in bill_id:
+                    classification = "resolution"
+                else:
+                    classification = "bill"
+
+                if "status" in bill_url:
+                    # Currently on status page, but need info for summary page
+                    summary_page_url = bill_doc.xpath(
+                        '//a[contains (., "Bill Summary")]/@href'
+                    )[0]
+                    summary_page_html = self.get(summary_page_url).text
+                    summary_page_doc = lxml.html.fromstring(summary_page_html)
+                    summary_page_doc.make_links_absolute(summary_page_url)
+                else:
+                    # Currently on summary page, but need info for status page
+                    summary_page_doc = bill_doc
+                    summary_page_url = bill_url
+                    bill_url = bill_doc.xpath('//a[contains (., "Bill Status")]/@href')[
+                        0
+                    ]
+                    bill_html = self.get(bill_url).text
+                    bill_doc = lxml.html.fromstring(bill_html)
+                    bill_doc.make_links_absolute(bill_url)
+
+                summary_text = (
+                    summary_page_doc.xpath("//pre")[0].text_content().splitlines()
+                )
+                for x in range(len(summary_text)):
+                    line = summary_text[x]
+                    if "Short description:" in line:
+                        bill_title = summary_text[x + 1]
+
+                bill = Bill(
+                    bill_id,
+                    legislative_session=session,
+                    title=bill_title,
+                    chamber=chamber,
+                    classification=classification,
+                )
+                bill.add_source(summary_page_url)
+                bill.add_source(url)
+
+                # Sponsors
+                for sponsor in sponsors:
+                    if sponsor.text_content():
+                        bill.add_sponsorship(
+                            name=sponsor.text_content(),
+                            classification="cosponsor",
+                            entity_type="person",
+                            primary=False,
+                        )
+
+                # Bill version
+                version_url = bill_doc.xpath('//a[contains (., "Full Text")]/@href')[0]
+                bill.add_version_link(bill_id, version_url, media_type="text/html")
+
+                # Actions
+                bill_text = bill_doc.xpath("//pre")
+                if bill_text:
+                    bill_text = bill_text[0].text_content().splitlines()
+                    for x in range(len(bill_text)):
+                        line = bill_text[x].split()
+                        # Regex is looking for this format: JAN-11-2001 or 99-02-17
+                        if line and (
+                            re.match(r"\D\D\D-\d\d-\d\d\d\d", line[0])
+                            or re.match(r"\d\d-\d\d-\d\d", line[0])
+                        ):
+                            if session in ["91st", "90th"]:
+                                action_date = datetime.datetime.strptime(
+                                    line[0], "%y-%m-%d"
+                                )
+                            else:
+                                action_date = datetime.datetime.strptime(
+                                    line[0], "%b-%d-%Y"
+                                )
+
+                            action_date = central.localize(action_date)
+                            action_date = action_date.isoformat()
+
+                            action = " ".join(line[2:])
+                            if line[1] == "S":
+                                action_chamber = "upper"
+                            else:
+                                action_chamber = "lower"
+
+                            for pattern, atype in _archived_action_classifiers.items():
+                                if action.startswith(pattern):
+                                    break
+                            else:
+                                atype = None
+                            bill.add_action(
+                                action,
+                                action_date,
+                                chamber=action_chamber,
+                                classification=atype,
+                            )
+
+                yield bill
 
     def scrape_bill(self, chamber, session, doc_type, url, bill_type=None):
         try:
@@ -342,15 +503,15 @@ class IlBillScraper(Scraper):
             action = action_elem.text_content()
             classification, related_orgs = _categorize_action(action)
 
-            if related_orgs and any(c.startswith("committee") for c in classification):
-                ((name, source),) = [
-                    (a.text, a.get("href"))
-                    for a in action_elem.xpath("a")
-                    if "committee" in a.get("href")
-                ]
-                source = canonicalize_url(source)
-                actor_id = {"sources__url": source, "classification": "committee"}
-                committee_actors[source] = name
+            # if related_orgs and any(c.startswith("committee") for c in classification):
+            #     ((name, source),) = [
+            #         (a.text, a.get("href"))
+            #         for a in action_elem.xpath("a")
+            #         if "committee" in a.get("href")
+            #     ]
+            #     source = canonicalize_url(source)
+            #     actor_id = {"sources__url": source, "classification": "committee"}
+            #     committee_actors[source] = name
 
             bill.add_action(
                 action,
