@@ -66,6 +66,7 @@ class MEBillScraper(Scraper):
         r.raise_for_status()
 
         bills = lxml.html.fromstring(r.text).xpath("//tr/td/b/a")
+        seen = set()
         if bills:
             for bill in bills:
                 bill_id_slug = bill.xpath("./@href")[0]
@@ -78,6 +79,11 @@ class MEBillScraper(Scraper):
 
                 if bill_id in BLACKLISTED_BILL_IDS[session]:
                     continue
+
+                # avoid duplicates
+                if bill_id in seen:
+                    continue
+                seen.add(bill_id)
 
                 bill = Bill(
                     identifier=bill_id,
