@@ -8,7 +8,7 @@ import lxml.html
 from pupa.scrape import Scraper, Bill, VoteEvent
 from pupa.utils import convert_pdf
 
-eastern = pytz.timezone("US/Eastern")
+central = pytz.timezone("US/Central")
 
 # from ._utils import canonicalize_url
 
@@ -426,7 +426,7 @@ class IlBillScraper(Scraper):
                                     line[0], "%b-%d-%Y"
                                 )
 
-                            action_date = eastern.localize(action_date)
+                            action_date = central.localize(action_date)
                             action_date = action_date.isoformat()
 
                             action = " ".join(line[2:])
