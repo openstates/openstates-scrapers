@@ -236,6 +236,7 @@ class MABillScraper(Scraper):
             if not any(
                 sponsor["name"] == cosponsor_name for sponsor in bill.sponsorships
             ):
+                cosponsor_name = cosponsor_name.strip()
                 bill.add_sponsorship(
                     cosponsor_name,
                     classification="cosponsor",
@@ -365,6 +366,7 @@ class MABillScraper(Scraper):
                 classification=attrs["classification"],
             )
             for com in attrs.get("committees", []):
+                com = com.strip()
                 action.add_related_entity(com, entity_type="organization")
 
     def get_house_pdf(self, vurl):
