@@ -89,6 +89,9 @@ class NYBillScraper(Scraper):
         else:
             raise ValueError("Unknown vote type encountered.")
 
+        if vote_data["version"]:
+            motion += " - Version: " + vote_data["version"]
+
         vote = VoteEvent(
             chamber="upper",
             start_date=vote_datetime.strftime("%Y-%m-%d"),
@@ -317,13 +320,19 @@ class NYBillScraper(Scraper):
         bill.add_source(assembly_url)
 
         # Chamber-specific processing.
-        if bill_chamber == "upper":
-            # Collect votes.
-            for vote_data in bill_data["votes"]["items"]:
-                yield self._parse_senate_votes(vote_data, bill, api_url)
-        elif bill_chamber == "lower":
-            assembly = AssemblyBillPage(self, session, bill, details)
-            yield from assembly.build()
+        for vote_data in bill_data["votes"]["items"]:
+            yield self._parse_senate_votes(vote_data, bill, api_url)
+        assembly = AssemblyBillPage(self, session, bill, details)
+        yield from assembly.build()
+
+        # # Chamber-specific processing.
+        # if bill_chamber == "upper":
+        #     # Collect votes.
+        #     for vote_data in bill_data["votes"]["items"]:
+        #         yield self._parse_senate_votes(vote_data, bill, api_url)
+        # elif bill_chamber == "lower":
+        #     assembly = AssemblyBillPage(self, session, bill, details)
+        #     yield from assembly.build()
 
         # A little strange the way it works out, but the Assembly
         # provides the HTML version documents and the Senate provides
@@ -384,6 +393,7 @@ class NYBillScraper(Scraper):
 
         for bill in self._generate_bills(session, window):
             if bill_no:
+                print("Bill is scraping:", bill["printNo"])
                 if bill["printNo"] == bill_no:
                     yield from self._scrape_bill(session, bill)
                     return
