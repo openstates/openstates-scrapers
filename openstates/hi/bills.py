@@ -162,9 +162,7 @@ class HIBillScraper(Scraper):
 
     def parse_bill_versions_table(self, bill, versions):
         versions = versions.xpath("./*")
-        if len(versions) > 1:
-            versions = versions[1:]
-
+        
         if versions == []:
             raise Exception("Missing bill versions.")
 
