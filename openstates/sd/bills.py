@@ -144,19 +144,20 @@ class SDBillScraper(Scraper, LXMLMixin):
             if "Motion to amend, Passed Amendment" in action:
                 atypes.append("amendment-introduction")
                 atypes.append("amendment-passage")
-                amd = row.xpath('td[2]/a[contains(@href,"Amendment.aspx")]')[0]
-                version_name = amd.xpath("string(.)")
-                version_url = amd.xpath("@href")[0]
-                if "htm" in version_url:
-                    mimetype = "text/html"
-                elif "pdf" in version_url:
-                    mimetype = "application/pdf"
-                bill.add_version_link(
-                    version_name,
-                    version_url,
-                    media_type=mimetype,
-                    on_duplicate="ignore",
-                )
+                if row.xpath('td[2]/a[contains(@href,"Amendment.aspx")]'):
+                    amd = row.xpath('td[2]/a[contains(@href,"Amendment.aspx")]')[0]
+                    version_name = amd.xpath("string(.)")
+                    version_url = amd.xpath("@href")[0]
+                    if "htm" in version_url:
+                        mimetype = "text/html"
+                    elif "pdf" in version_url:
+                        mimetype = "application/pdf"
+                    bill.add_version_link(
+                        version_name,
+                        version_url,
+                        media_type=mimetype,
+                        on_duplicate="ignore",
+                    )
 
             if "Veto override, Passed" in action:
                 atypes.append("veto-override-passage")
