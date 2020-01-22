@@ -29,6 +29,7 @@ class LABillScraper(Scraper, LXMLMixin):
         "2018 2nd Extraordinary Session": "182ES",
         "2018 3rd Extraordinary Session": "183ES",
         "2019": "19RS",
+        "2020": "20RS",
     }
 
     def pdf_to_lxml(self, filename, type="html"):
@@ -105,6 +106,8 @@ class LABillScraper(Scraper, LXMLMixin):
         session_id = self._session_ids[session]
         # Scan bill abbreviation list if necessary.
         self._bill_abbreviations = self._get_bill_abbreviations(session_id)
+        # there are duplicates we need to skip
+        seen_bill_urls = set()
         for chamber in chambers:
             for bill_abbreviation in self._bill_abbreviations[chamber]:
                 bill_list_url = "http://www.legis.la.gov/Legis/BillSearchListQ.aspx?s={}&r={}1*".format(
@@ -115,9 +118,13 @@ class LABillScraper(Scraper, LXMLMixin):
                     for bill in bill_page.xpath(
                         "//a[contains(@href, 'BillInfo.aspx') and text()='more...']"
                     ):
+                        bill_url = bill.attrib["href"]
+                        if bill_url in seen_bill_urls:
+                            continue
+                        seen_bill_urls.add(bill_url)
                         bills_found = True
                         yield from self.scrape_bill_page(
-                            chamber, session, bill.attrib["href"], bill_abbreviation
+                            chamber, session, bill_url, bill_abbreviation
                         )
                 if not bills_found:
                     # If a session only has one legislative item of a given type
