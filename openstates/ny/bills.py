@@ -8,7 +8,6 @@ from pupa.scrape import Scraper, Bill, VoteEvent
 
 from .apiclient import OpenLegislationAPIClient
 from .actions import Categorizer
-from operator import itemgetter
 
 eastern = pytz.timezone("US/Eastern")
 
@@ -340,7 +339,6 @@ class NYBillScraper(Scraper):
         for vote_data in bill_data["votes"]["items"]:
             yield self._parse_senate_votes(vote_data, bill, api_url)
         yield from self.scrape_assembly_votes(session, bill, assembly_url, bill_id)
-        bill.votes = sorted(bill.votes, key=itemgetter("date"))
 
         # A little strange the way it works out, but the Assembly
         # provides the HTML version documents and the Senate provides
