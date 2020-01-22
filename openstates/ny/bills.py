@@ -83,8 +83,8 @@ class NYBillScraper(Scraper):
         else:
             assembly_bill_id = bill_id
         assembly_url = (
-            "https://nyassembly.gov/leg/?default_fld=&leg_video=&bn={bill_id}&term=2017"
-        ).format(bill_id=assembly_bill_id)
+            "https://nyassembly.gov/leg/?default_fld=&leg_video=&bn={bill_id}&term={term}"
+        ).format(bill_id=assembly_bill_id, term=bill["session"])
 
         return (
             senate_url,
