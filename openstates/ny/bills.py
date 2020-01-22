@@ -1,12 +1,15 @@
 import re
 import datetime
+import lxml.html
+import pytz
 from collections import defaultdict
 
 from pupa.scrape import Scraper, Bill, VoteEvent
 
 from .apiclient import OpenLegislationAPIClient
-from .models import AssemblyBillPage
 from .actions import Categorizer
+
+eastern = pytz.timezone("US/Eastern")
 
 
 class NYBillScraper(Scraper):
@@ -64,10 +67,24 @@ class NYBillScraper(Scraper):
             "http://www.nysenate.gov/legislation/bills/{bill_session}/" "{bill_id}"
         ).format(bill_session=bill["session"], bill_id=bill_id)
 
+        # assembly_url = (
+        #     "http://assembly.state.ny.us/leg/?default_fld=&bn={bill_id}"
+        #     "&Summary=Y&Actions=Y&Text=Y"
+        # ).format(bill_id=bill_id)
+        assembly_bill_id = bill_id
+        if (bill_id[-1] == "A") or (bill_id[-1] == "B"):
+            assembly_bill_id = bill_id[:-1]
+        if len(assembly_bill_id) == 3:
+            assembly_bill_id = assembly_bill_id[0] + "000" + assembly_bill_id[-2:]
+        elif len(assembly_bill_id) == 4:
+            assembly_bill_id = assembly_bill_id[0] + "00" + assembly_bill_id[-3:]
+        elif len(assembly_bill_id) == 5:
+            assembly_bill_id = assembly_bill_id[0] + "0" + assembly_bill_id[-4:]
+        else:
+            assembly_bill_id = bill_id
         assembly_url = (
-            "http://assembly.state.ny.us/leg/?default_fld=&bn={bill_id}"
-            "&Summary=Y&Actions=Y&Text=Y"
-        ).format(bill_id=bill_id)
+            "https://nyassembly.gov/leg/?default_fld=&leg_video=&bn={bill_id}&term=2017"
+        ).format(bill_id=assembly_bill_id)
 
         return (
             senate_url,
@@ -81,7 +98,6 @@ class NYBillScraper(Scraper):
 
     def _parse_senate_votes(self, vote_data, bill, url):
         vote_datetime = datetime.datetime.strptime(vote_data["voteDate"], "%Y-%m-%d")
-
         if vote_data["voteType"] == "FLOOR":
             motion = "Floor Vote"
         elif vote_data["voteType"] == "COMMITTEE":
@@ -322,17 +338,7 @@ class NYBillScraper(Scraper):
         # Chamber-specific processing.
         for vote_data in bill_data["votes"]["items"]:
             yield self._parse_senate_votes(vote_data, bill, api_url)
-        assembly = AssemblyBillPage(self, session, bill, details)
-        yield from assembly.build()
-
-        # # Chamber-specific processing.
-        # if bill_chamber == "upper":
-        #     # Collect votes.
-        #     for vote_data in bill_data["votes"]["items"]:
-        #         yield self._parse_senate_votes(vote_data, bill, api_url)
-        # elif bill_chamber == "lower":
-        #     assembly = AssemblyBillPage(self, session, bill, details)
-        #     yield from assembly.build()
+        yield from self.scrape_assembly_votes(session, bill, assembly_url, bill_id)
 
         # A little strange the way it works out, but the Assembly
         # provides the HTML version documents and the Senate provides
@@ -362,6 +368,71 @@ class NYBillScraper(Scraper):
             )
 
         yield bill
+
+    def scrape_assembly_votes(self, session, bill, assembly_url, bill_id):
+
+        # parse the bill data page, finding the latest html text
+        url = assembly_url + "&Floor%26nbspVotes=Y"
+
+        data = self.get(url).text
+        doc = lxml.html.fromstring(data)
+        doc.make_links_absolute(url)
+
+        if "Votes:" in doc.text_content():
+            for table in doc.xpath("//table"):
+
+                date = table.xpath('caption/span[contains(., "DATE:")]')
+                date = next(date[0].itersiblings()).text
+                date = datetime.datetime.strptime(date, "%m/%d/%Y")
+                date = eastern.localize(date)
+                date = date.isoformat()
+
+                spanText = table.xpath("caption/span/text()")
+                motion = spanText[2].strip() + spanText[3].strip()
+
+                votes = (
+                    table.xpath("caption/span/span")[0].text.split(":")[1].split("/")
+                )
+                yes_count, no_count = map(int, votes)
+                passed = yes_count > no_count
+                vote = VoteEvent(
+                    chamber="lower",
+                    start_date=date,
+                    motion_text=motion,
+                    bill=bill,
+                    result="pass" if passed else "fail",
+                    classification="passage",
+                )
+
+                vote.set_count("yes", yes_count)
+                vote.set_count("no", no_count)
+                absent_count = 0
+                excused_count = 0
+                tds = table.xpath("tr/td/text()")
+                votes = [tds[i : i + 2] for i in range(0, len(tds), 2)]
+
+                vote_dictionary = {
+                    "Y": "yes",
+                    "NO": "no",
+                    "ER": "excused",
+                    "AB": "absent",
+                    "NV": "not voting",
+                }
+
+                for vote_pair in votes:
+                    name, vote_val = vote_pair
+                    vote.vote(vote_dictionary[vote_val], name)
+                    if vote_val == "AB":
+                        absent_count += 1
+                    elif vote_val == "ER":
+                        excused_count += 1
+
+                vote.set_count("absent", absent_count)
+                vote.set_count("excused", excused_count)
+                vote.add_source(url)
+                vote.pupa_id = url + motion + spanText[1]
+
+                yield vote
 
     def parse_relative_time(self, time_str):
         regex = re.compile(
@@ -393,9 +464,7 @@ class NYBillScraper(Scraper):
 
         for bill in self._generate_bills(session, window):
             if bill_no:
-                print("Bill is scraping:", bill["printNo"])
-                if bill["printNo"] == bill_no:
-                    yield from self._scrape_bill(session, bill)
-                    return
+                yield from self._scrape_bill(session, bill)
+                return
             else:
                 yield from self._scrape_bill(session, bill)
