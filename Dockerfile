@@ -23,7 +23,7 @@ RUN apt update && apt install -y --no-install-recommends \
       libgdal-dev \
       libgeos-dev \
       libmariadb-dev \
-#     mariadb \
+      mariadb-server \
       mariadb-client \
       wget \
       unzip \

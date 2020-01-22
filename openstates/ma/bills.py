@@ -91,7 +91,11 @@ class MABillScraper(Scraper):
         chamber_filter = self.chamber_filters[self.chamber_map[chamber]]
         search_url = (
             "https://malegislature.gov/Bills/Search?"
-            "SearchTerms=&Page={}&Refinements%5Blawsgeneralcourt%5D={}"
+            "SearchTerms="
+            "&Page={}"
+            "&SortManagedProperty=lawsbillnumber"
+            "&Direction=asc"
+            "&Refinements%5Blawsgeneralcourt%5D={}"
             "&Refinements%5Blawsbranchname%5D={}".format(
                 pageNumber, session_filter, chamber_filter
             )
@@ -159,7 +163,13 @@ class MABillScraper(Scraper):
             self.warning("Couldn't find title for {}; skipping".format(bill_id))
             return False
 
-        bill_id = re.sub(r"[^S|H|D|\d]", "", bill_id)
+        bill_types = ['H', 'HD', 'S', 'SD', 'SRes']
+        if re.sub('[0-9]', '', bill_id) not in bill_types:
+            self.warning("Unsupported bill type for {}; skipping".format(bill_id))
+            return False
+
+        if 'SRes' in bill_id:
+            bill_id = bill_id.replace('SRes', 'SR')
 
         bill = Bill(
             bill_id,
@@ -226,6 +236,7 @@ class MABillScraper(Scraper):
             if not any(
                 sponsor["name"] == cosponsor_name for sponsor in bill.sponsorships
             ):
+                cosponsor_name = cosponsor_name.strip()
                 bill.add_sponsorship(
                     cosponsor_name,
                     classification="cosponsor",
@@ -355,6 +366,7 @@ class MABillScraper(Scraper):
                 classification=attrs["classification"],
             )
             for com in attrs.get("committees", []):
+                com = com.strip()
                 action.add_related_entity(com, entity_type="organization")
 
     def get_house_pdf(self, vurl):
