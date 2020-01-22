@@ -2,7 +2,8 @@ import re
 import inspect
 
 from openstates.utils import LXMLMixin
-from pupa.scrape import VoteEvent
+from pupa.scrape import VoteEvent, Scraper
+import lxml.html
 
 from .utils import Urls
 import datetime
@@ -29,7 +30,6 @@ class AssemblyBillPage(LXMLMixin):
             title,
             bill_id_parts,
         ) = details
-
         self.bill = bill
         self.bill_id = bill_id
         # This works on the assumption that the metadata term ID is
@@ -41,9 +41,12 @@ class AssemblyBillPage(LXMLMixin):
             "http://assembly.state.ny.us/leg/?default_fld="
             "&bn={}&term={}".format(self.bill_id, self.term_start_year)
         )
+
         self.urls = Urls(
             scraper=scraper, urls={"assembly": assembly_url, "senate": senate_url}
         )
+
+        self._build_lower_votes()
 
     def _scrub_name(self, name):
         junk = [
@@ -70,10 +73,16 @@ class AssemblyBillPage(LXMLMixin):
                     yield member()
 
     def _build_lower_votes(self):
+        print("Within Build Lower vote method")
         url = self.shared_url + "&Floor%26nbspVotes=Y"
         self.urls.add(votes=url)
         self.bill.add_source(url)
-        doc = self.urls.votes.doc
+
+        data = Scraper().get(url).text
+        doc = lxml.html.fromstring(data)
+        doc.make_links_absolute(url)
+        print(url)
+        # doc = self.urls.votes.doc
         if doc is None:
             return
 
@@ -84,11 +93,15 @@ class AssemblyBillPage(LXMLMixin):
             no_votes = "There are no votes for this bill in this legislative "
 
             if pre == no_votes:
+                print("Pre is no votes")
                 raise ValueError("No votes for this bill.")
         # Skip bill if votes can't be found.
         except (IndexError, ValueError):
+            print("Within the except")
             return
 
+        print("We should be grabbing votes")
+        print("Fuck yeah")
         for table in doc.xpath("//table"):
 
             date = table.xpath('caption/span[contains(., "DATE:")]')
