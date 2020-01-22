@@ -8,6 +8,7 @@ from pupa.scrape import Scraper, Bill, VoteEvent
 
 from .apiclient import OpenLegislationAPIClient
 from .actions import Categorizer
+from operator import itemgetter
 
 eastern = pytz.timezone("US/Eastern")
 
@@ -339,6 +340,7 @@ class NYBillScraper(Scraper):
         for vote_data in bill_data["votes"]["items"]:
             yield self._parse_senate_votes(vote_data, bill, api_url)
         yield from self.scrape_assembly_votes(session, bill, assembly_url, bill_id)
+        bill.votes = sorted(bill.votes, key=itemgetter("date"))
 
         # A little strange the way it works out, but the Assembly
         # provides the HTML version documents and the Senate provides
@@ -379,6 +381,8 @@ class NYBillScraper(Scraper):
         doc.make_links_absolute(url)
 
         if "Votes:" in doc.text_content():
+            vote_motions = []
+            additional_votes_on_motion = 2
             for table in doc.xpath("//table"):
 
                 date = table.xpath('caption/span[contains(., "DATE:")]')
@@ -389,6 +393,11 @@ class NYBillScraper(Scraper):
 
                 spanText = table.xpath("caption/span/text()")
                 motion = spanText[2].strip() + spanText[3].strip()
+                if motion in vote_motions:
+                    motion = motion + f" - Vote {additional_votes_on_motion}"
+                    additional_votes_on_motion += 1
+                else:
+                    vote_motions.append(motion)
 
                 votes = (
                     table.xpath("caption/span/span")[0].text.split(":")[1].split("/")

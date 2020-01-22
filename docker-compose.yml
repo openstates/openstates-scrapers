@@ -11,7 +11,7 @@ services:
     - MYSQL_HOST=mysql
     - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
     - PYTHONPATH=./openstates
-    - NEW_YORK_API_KEY
+    - NEW_YORK_API_KEY=NXB95xqgigVjJ5aLCgLjZDZx3NbR0fSI
     - INDIANA_API_KEY
     - PUPA_ARGS
     volumes:
