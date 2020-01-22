@@ -29,6 +29,7 @@ class LABillScraper(Scraper, LXMLMixin):
         "2018 2nd Extraordinary Session": "182ES",
         "2018 3rd Extraordinary Session": "183ES",
         "2019": "19RS",
+        "2020": "20RS",
     }
 
     def pdf_to_lxml(self, filename, type="html"):

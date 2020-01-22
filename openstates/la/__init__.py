@@ -169,6 +169,14 @@ class Louisiana(Jurisdiction):
             "start_date": "2019-04-08",
             "end_date": "2019-06-06",
         },
+        {
+            "_scraped_name": "2020 Regular Session",
+            "classification": "primary",
+            "identifier": "2020",
+            "name": "2020 Regular Session",
+            "start_date": "2020-03-09",
+            "end_date": "2020-06-01",
+        },
     ]
     ignored_scraped_sessions = [
         "2020 Organizational Session",
