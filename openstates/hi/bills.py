@@ -240,7 +240,7 @@ class HIBillScraper(Scraper):
 
         qs = dict(urlparse.parse_qsl(urlparse.urlparse(url).query))
         bill_id = "{}{}".format(qs["billtype"], qs["billnumber"])
-        versions = bill_page.xpath("//table[contains(@id, 'GridViewTestimony')]")[0]
+        versions = bill_page.xpath("//table[contains(@id, 'GridViewVersions')]")[0]
 
         metainf_table = bill_page.xpath(
             '//div[contains(@id, "itemPlaceholder")]//table[1]'
