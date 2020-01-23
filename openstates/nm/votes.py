@@ -7,7 +7,7 @@ from bisect import bisect_left
 import lxml.html
 import lxml.etree
 import scrapelib
-
+import pytz
 from pupa.scrape import Scraper, VoteEvent
 from pupa.utils.generic import convert_pdf
 
@@ -18,6 +18,7 @@ h_vote_header = re.compile(r"(YEA(?!S))|(NAY(?!S))|(EXCUSED(?!:))|(ABSENT(?!:))"
 
 # Date regex for senate and house parser
 date_regex = re.compile(r"([0-1][0-9]/[0-3][0-9]/\d+)")
+mountain = pytz.timezone("US/Mountain")
 
 
 def convert_sv_char(c):
@@ -210,84 +211,119 @@ class NMVoteScraper(Scraper):
             # adapt to bill_id format
             bill_id = bill_type + " " + bill_num
 
-            # votes
-            if "SVOTE" in suffix and chamber == "upper":
-                sv_text = self.scrape_vote_text(doc_path + fname)
-                if not sv_text:
-                    continue
+            # New vote_text is an array of lines from the file
+            vote_text_lines = self.scrape_vote_text(doc_path + fname)
+            # for line in vote_text_lines:
+            #     print(line)
 
-                vote = self.parse_senate_vote(
-                    sv_text, doc_path + fname, session, bill_id
-                )
-                if not vote:
-                    self.warning("Bad parse on the senate vote for {}".format(bill_id))
-                else:
-                    yield vote
+            url = doc_path + fname
+            if "SVOTE" in suffix and chamber == "upper":
+                vote = self.parse_senate_votes(bill_id, session, url, vote_text_lines)
+                yield vote
+            #     sv_text = self.scrape_vote_text(doc_path + fname)
+            #     if not sv_text:
+            #         continue
+
+            #     vote = self.parse_senate_vote(
+            #         sv_text, doc_path + fname, session, bill_id
+            #     )
+            #     if not vote:
+            #         self.warning("Bad parse on the senate vote for {}".format(bill_id))
+            #     else:
+            #         yield vote
 
             elif "HVOTE" in suffix and chamber == "lower":
-                hv_text = self.scrape_vote_text(doc_path + fname)
-                if not hv_text:
-                    continue
-                vote = self.parse_house_vote(
-                    hv_text, doc_path + fname, session, bill_id
-                )
-                if not vote:
-                    self.warning("Bad parse on the house vote for {}".format(bill_id))
-                else:
-                    yield vote
+                vote = self.parse_house_votes(bill_id, session, url, vote_text_lines)
+                yield vote
+            #     hv_text = self.scrape_vote_text(doc_path + fname)
+            #     if not hv_text:
+            #         continue
+            #     vote = self.parse_house_vote(
+            #         hv_text, doc_path + fname, session, bill_id
+            #     )
+            #     if not vote:
+            #         self.warning("Bad parse on the house vote for {}".format(bill_id))
+            #     else:
+            #         yield vote
 
     def scrape_vote_text(self, filelocation, local=False):
         """Retrieves or uses local copy of vote pdf and converts into XML."""
         if not local:
             try:
                 filename, response = self.urlretrieve(url=filelocation)
-                vote_text = convert_pdf(filename, type="xml")
+                pdflines = [
+                    line.decode("utf-8")
+                    for line in convert_pdf(filename, "text").splitlines()
+                ]
+                # vote_text = convert_pdf(filename, type="xml")
                 os.remove(filename)
             except scrapelib.HTTPError:
                 self.warning("Request failed: {}".format(filelocation))
                 return
         else:
-            vote_text = convert_pdf(filelocation, type="xml")
+            pdflines = [
+                line.decode("utf-8")
+                for line in convert_pdf(filename, "text").splitlines()
+            ]
+            # vote_text = convert_pdf(filelocation, type="xml")
             os.remove(filelocation)
-        return vote_text
+        return pdflines
 
-    def parse_house_vote(self, hv_text, url, session, bill_id):
-        """Sets any overrides and creates the vote instance"""
-        overrides = {"ONEILL": "O'NEILL"}
-        # Add new columns as they appear to be safe
-        vote_record, row_headers, sane_row = self.parse_visual_grid(
-            hv_text, overrides, h_vote_header, "CERTIFIED CORRECT", "YEAS"
-        )
-        vote = build_vote(session, bill_id, url, vote_record, "lower", "house passage")
+    def parse_house_votes(self, bill_id, session, url, vote_text_lines):
+        print("In House")
+        for x in range(len(vote_text_lines)):
+            line = vote_text_lines[x]
+            print(line)
 
-        try:
-            validate_house_vote(row_headers, sane_row, vote_record)
-        except ValueError:
-            # This _should not be necessary_; fix ticketed out in
-            # https://github.com/openstates/openstates/issues/2102
-            self.warning(
-                "Found inconsistencies; throwing out individual votes, keeping totals"
-            )
-            vote.votes = []
-        return vote
+    def parse_senate_votes(self, bill_id, session, url, vote_text_lines):
+        print("In Senate")
+        for x in range(len(vote_text_lines)):
+            line = vote_text_lines[x]
+            if "DATE" in line:
+                date = datetime.strptime(line.split()[-1], "%m/%d/%y")
+                date = mountain.localize(date)
+                date = date.isoformat()
+                print(date)
+            # print(line)
 
-    def parse_senate_vote(self, sv_text, url, session, bill_id):
-        """Sets any overrides and creates the vote instance"""
-        overrides = {"ONEILL": "O'NEILL"}
-        # Add new columns as they appear to be safe
-        vote_record, row_headers, sane_row = self.parse_visual_grid(
-            sv_text, overrides, s_vote_header, "TOTAL", "TOTAL"
-        )
-        vote = build_vote(session, bill_id, url, vote_record, "upper", "senate passage")
+    # def parse_house_vote(self, hv_text, url, session, bill_id):
+    #     """Sets any overrides and creates the vote instance"""
+    #     overrides = {"ONEILL": "O'NEILL"}
+    #     # Add new columns as they appear to be safe
+    #     vote_record, row_headers, sane_row = self.parse_visual_grid(
+    #         hv_text, overrides, h_vote_header, "CERTIFIED CORRECT", "YEAS"
+    #     )
+    #     vote = build_vote(session, bill_id, url, vote_record, "lower", "house passage")
 
-        validate_senate_vote(row_headers, sane_row, vote_record)
-        return vote
+    #     try:
+    #         validate_house_vote(row_headers, sane_row, vote_record)
+    #     except ValueError:
+    #         # This _should not be necessary_; fix ticketed out in
+    #         # https://github.com/openstates/openstates/issues/2102
+    #         self.warning(
+    #             "Found inconsistencies; throwing out individual votes, keeping totals"
+    #         )
+    #         vote.votes = []
+    #     return vote
+
+    # def parse_senate_vote(self, sv_text, url, session, bill_id):
+    #     """Sets any overrides and creates the vote instance"""
+    #     overrides = {"ONEILL": "O'NEILL"}
+    #     # Add new columns as they appear to be safe
+    #     vote_record, row_headers, sane_row = self.parse_visual_grid(
+    #         sv_text, overrides, s_vote_header, "TOTAL", "TOTAL"
+    #     )
+    #     vote = build_vote(session, bill_id, url, vote_record, "upper", "senate passage")
+
+    #     validate_senate_vote(row_headers, sane_row, vote_record)
+    #     return vote
 
     def parse_visual_grid(self, v_text, overrides, vote_header, table_stop, sane_iden):
         """
         Takes a (badly)formatted pdf and converts the vote grid into an X,Y
         grid to match votes
         """
+        # print(v_text)
         vote_record = {
             "date": None,
             "yes": [],
