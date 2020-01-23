@@ -10,7 +10,11 @@ URL = "http://www.capitol.hawaii.gov/upcominghearings.aspx"
 
 TIMEZONE = pytz.timezone("Pacific/Honolulu")
 
+
 class HIEventScraper(Scraper, LXMLMixin):
+    seen_hearings = []
+    chambers = {"lower": "House", "upper": "Senate", "joint": "Joint"}
+
     def get_related_bills(self, href):
         ret = []
         try:
@@ -39,6 +43,7 @@ class HIEventScraper(Scraper, LXMLMixin):
         return ret
 
     def scrape(self):
+
         get_short_codes(self)
         page = self.lxmlize(URL)
         table = page.xpath("//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']")[0]
@@ -46,15 +51,32 @@ class HIEventScraper(Scraper, LXMLMixin):
         for event in table.xpath(".//tr")[1:]:
             tds = event.xpath("./td")
             committee = tds[0].text_content().strip()
-            descr = [x.text_content() for x in tds[1].xpath(".//span")]
-            if len(descr) != 1:
-                raise Exception
-            descr = descr[0].replace(".", "").strip()
+
+            if self.short_ids.get(committee):
+                descr = "{} {}".format(
+                    self.chambers[self.short_ids[committee]["chamber"]],
+                    self.short_ids[committee]["name"],
+                )
+            else:
+                descr = [x.text_content() for x in tds[1].xpath(".//span")]
+                if len(descr) != 1:
+                    raise Exception
+                descr = descr[0].replace(".", "").strip()
+
             when = tds[2].text_content().strip()
             where = tds[3].text_content().strip()
             notice = tds[4].xpath(".//a")[0]
             notice_href = notice.attrib["href"]
             notice_name = notice.text
+
+            # the listing page shows the same hearing in multiple rows.
+            # combine these -- get_related_bills() will take care of adding the bills
+            # and descriptions
+            if notice_href in self.seen_hearings:
+                continue
+            else:
+                self.seen_hearings.append(notice_href)
+
             when = dt.datetime.strptime(when, "%m/%d/%Y %I:%M %p")
             when = TIMEZONE.localize(when)
             event = Event(
@@ -71,14 +93,12 @@ class HIEventScraper(Scraper, LXMLMixin):
                 committees = [committee]
 
             for committee in committees:
-                if "INFO" not in committee:
-                    committee = self.short_ids.get(
-                        "committee", {"chamber": "unknown", "name": committee}
+                if "INFO" not in committee and committee in self.short_ids:
+                    committee = "{} {}".format(
+                        self.chambers[self.short_ids[committee]["chamber"]],
+                        self.short_ids[committee]["name"],
                     )
-
-                else:
-                    committee = {"chamber": "joint", "name": committee}
-                event.add_committee(committee["name"], note="host")
+                event.add_committee(committee, note="host")
 
             event.add_source(URL)
             event.add_document(notice_name, notice_href, media_type="text/html")
