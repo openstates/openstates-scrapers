@@ -210,7 +210,6 @@ class HIBillScraper(Scraper):
 
             last_item = name
             media_type = self.classify_media(filename)
-            print(filename, name, media_type)
 
             bill.add_document_link(name, filename, media_type=media_type)
 
@@ -229,7 +228,6 @@ class HIBillScraper(Scraper):
 
             last_item = name
             media_type = self.classify_media(filename)
-            print(filename, name, media_type)
 
             bill.add_document_link(name, filename, media_type=media_type)
 
