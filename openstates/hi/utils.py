@@ -3,6 +3,7 @@ import lxml
 HI_URL_BASE = "https://capitol.hawaii.gov"
 SHORT_CODES = "%s/committees/committees.aspx?chamber=all" % (HI_URL_BASE)
 
+
 def get_short_codes(scraper):
     list_html = scraper.get(SHORT_CODES).text
     list_page = lxml.html.fromstring(list_html)
