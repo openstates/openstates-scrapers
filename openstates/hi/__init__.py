@@ -20,7 +20,7 @@ class Hawaii(Jurisdiction):
         "people": HIPersonScraper,
         "bills": HIBillScraper,
         # 'committees': HICommitteeScraper,
-        'events': HIEventScraper
+        "events": HIEventScraper,
     }
     legislative_sessions = [
         {

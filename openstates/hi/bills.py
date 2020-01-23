@@ -162,7 +162,7 @@ class HIBillScraper(Scraper):
 
     def parse_bill_versions_table(self, bill, versions):
         versions = versions.xpath("./*")
-        
+
         if versions == []:
             raise Exception("Missing bill versions.")
 
@@ -171,7 +171,7 @@ class HIBillScraper(Scraper):
             if "No other versions" in tds[0].text_content():
                 return
 
-            if version.xpath('./a'):
+            if version.xpath("./a"):
                 http_href = tds[0].xpath("./a")
                 name = http_href[0].text_content().strip()
                 pdf_href = tds[1].xpath("./a")
@@ -184,30 +184,29 @@ class HIBillScraper(Scraper):
 
     def classify_media(self, url):
         media_type = None
-        if 'pdf' in url.lower():
-            media_type="application/pdf"
-        elif '.htm' in url.lower():
-            media_type="text/html"
-        elif '.docx' in url.lower():
-            media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        elif '.doc' in url.lower():
-            media_type='application/msword'
+        if "pdf" in url.lower():
+            media_type = "application/pdf"
+        elif ".htm" in url.lower():
+            media_type = "text/html"
+        elif ".docx" in url.lower():
+            media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        elif ".doc" in url.lower():
+            media_type = "application/msword"
         return media_type
 
     def parse_testimony(self, bill, page):
         links = page.xpath("//table[contains(@id, 'GridViewTestimony')]/tr/td/a")
 
         # sometimes they have a second link w/ an icon for the pdf, sometimes now
-        last_item = ''
+        last_item = ""
 
         for link in links:
-            filename = link.attrib['href']
+            filename = link.attrib["href"]
             name = link.text_content().strip()
-            if name == '' and last_item != '':
+            if name == "" and last_item != "":
                 name = last_item
             else:
-                name = 'Testimony {}'.format(name)
-
+                name = "Testimony {}".format(name)
 
             last_item = name
             media_type = self.classify_media(filename)
@@ -218,15 +217,15 @@ class HIBillScraper(Scraper):
     def parse_cmte_reports(self, bill, page):
         links = page.xpath("//table[contains(@id, 'GridViewCommRpt')]/tr/td/a")
         # sometimes they have a second link w/ an icon for the pdf, sometimes now
-        last_item = ''
+        last_item = ""
 
         for link in links:
-            filename = link.attrib['href']
+            filename = link.attrib["href"]
             name = link.text_content().strip()
-            if name == '' and last_item != '':
+            if name == "" and last_item != "":
                 name = last_item
             else:
-                name = 'Committee Report {}'.format(name)
+                name = "Committee Report {}".format(name)
 
             last_item = name
             media_type = self.classify_media(filename)
@@ -290,7 +289,7 @@ class HIBillScraper(Scraper):
                 )
         for sponsor in meta["Introducer(s)"]:
             b.add_sponsorship(sponsor, "primary", "person", True)
-        
+
         self.parse_bill_versions_table(b, versions)
         self.parse_testimony(b, bill_page)
         self.parse_cmte_reports(b, bill_page)
