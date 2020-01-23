@@ -75,9 +75,7 @@ class NCBillScraper(Scraper):
             bill_type = "bill"
             bill_id = bill_id[0] + "B " + bill_id[1:]
 
-        bill_title = doc.xpath("/html[1]/body[1]/div[1]/div[1]/main[1]/div[2]/div[1]")[
-            0
-        ]
+        bill_title = doc.xpath("//main//div[@class='col-12'][1]")[0]
         bill_title = bill_title.text_content().strip()
 
         # For special cases where bill title is blank, a new title is created using Bill ID
