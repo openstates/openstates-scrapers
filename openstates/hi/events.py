@@ -8,6 +8,7 @@ import pytz
 
 URL = "http://www.capitol.hawaii.gov/upcominghearings.aspx"
 
+TIMEZONE = pytz.timezone("Pacific/Honolulu")
 
 class HIEventScraper(Scraper, LXMLMixin):
     def get_related_bills(self, href):
@@ -55,7 +56,7 @@ class HIEventScraper(Scraper, LXMLMixin):
             notice_href = notice.attrib["href"]
             notice_name = notice.text
             when = dt.datetime.strptime(when, "%m/%d/%Y %I:%M %p")
-            when = pytz.utc.localize(when)
+            when = TIMEZONE.localize(when)
             event = Event(
                 name=descr,
                 start_date=when,
