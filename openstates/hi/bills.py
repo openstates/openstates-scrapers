@@ -162,7 +162,7 @@ class HIBillScraper(Scraper):
 
     def parse_bill_versions_table(self, bill, versions):
         versions = versions.xpath("./*")
-
+        
         if versions == []:
             raise Exception("Missing bill versions.")
 
@@ -171,15 +171,68 @@ class HIBillScraper(Scraper):
             if "No other versions" in tds[0].text_content():
                 return
 
-            http_href = tds[0].xpath("./a")
-            name = http_href[0].text_content().strip()
-            pdf_href = tds[1].xpath("./a")
+            if version.xpath('./a'):
+                http_href = tds[0].xpath("./a")
+                name = http_href[0].text_content().strip()
+                pdf_href = tds[1].xpath("./a")
 
-            http_link = http_href[0].attrib["href"]
-            pdf_link = pdf_href[0].attrib["href"]
+                http_link = http_href[0].attrib["href"]
+                pdf_link = pdf_href[0].attrib["href"]
 
-            bill.add_version_link(name, http_link, media_type="text/html")
-            bill.add_version_link(name, pdf_link, media_type="application/pdf")
+                bill.add_version_link(name, http_link, media_type="text/html")
+                bill.add_version_link(name, pdf_link, media_type="application/pdf")
+
+    def classify_media(self, url):
+        media_type = None
+        if 'pdf' in url.lower():
+            media_type="application/pdf"
+        elif '.htm' in url.lower():
+            media_type="text/html"
+        elif '.docx' in url.lower():
+            media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        elif '.doc' in url.lower():
+            media_type='application/msword'
+        return media_type
+
+    def parse_testimony(self, bill, page):
+        links = page.xpath("//table[contains(@id, 'GridViewTestimony')]/tr/td/a")
+
+        # sometimes they have a second link w/ an icon for the pdf, sometimes now
+        last_item = ''
+
+        for link in links:
+            filename = link.attrib['href']
+            name = link.text_content().strip()
+            if name == '' and last_item != '':
+                name = last_item
+            else:
+                name = 'Testimony {}'.format(name)
+
+
+            last_item = name
+            media_type = self.classify_media(filename)
+            print(filename, name, media_type)
+
+            bill.add_document_link(name, filename, media_type=media_type)
+
+    def parse_cmte_reports(self, bill, page):
+        links = page.xpath("//table[contains(@id, 'GridViewCommRpt')]/tr/td/a")
+        # sometimes they have a second link w/ an icon for the pdf, sometimes now
+        last_item = ''
+
+        for link in links:
+            filename = link.attrib['href']
+            name = link.text_content().strip()
+            if name == '' and last_item != '':
+                name = last_item
+            else:
+                name = 'Committee Report {}'.format(name)
+
+            last_item = name
+            media_type = self.classify_media(filename)
+            print(filename, name, media_type)
+
+            bill.add_document_link(name, filename, media_type=media_type)
 
     def scrape_bill(self, session, chamber, bill_type, url):
         bill_html = self.get(url).text
@@ -187,7 +240,7 @@ class HIBillScraper(Scraper):
 
         qs = dict(urlparse.parse_qsl(urlparse.urlparse(url).query))
         bill_id = "{}{}".format(qs["billtype"], qs["billnumber"])
-        versions = bill_page.xpath("//table[contains(@id, 'GridViewVersions')]")[0]
+        versions = bill_page.xpath("//table[contains(@id, 'GridViewTestimony')]")[0]
 
         metainf_table = bill_page.xpath(
             '//div[contains(@id, "itemPlaceholder")]//table[1]'
@@ -237,7 +290,11 @@ class HIBillScraper(Scraper):
                 )
         for sponsor in meta["Introducer(s)"]:
             b.add_sponsorship(sponsor, "primary", "person", True)
-        versions = self.parse_bill_versions_table(b, versions)
+        
+        self.parse_bill_versions_table(b, versions)
+        self.parse_testimony(b, bill_page)
+        self.parse_cmte_reports(b, bill_page)
+
         yield from self.parse_bill_actions_table(
             b, action_table, bill_id, session, url, chamber
         )

@@ -40,7 +40,7 @@ class HIEventScraper(Scraper, LXMLMixin):
     def scrape(self):
         get_short_codes(self)
         page = self.lxmlize(URL)
-        table = page.xpath("//table[@id='ContentPlaceHolderCol1_GridView1']")[0]
+        table = page.xpath("//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']")[0]
 
         for event in table.xpath(".//tr")[1:]:
             tds = event.xpath("./td")
@@ -82,6 +82,6 @@ class HIEventScraper(Scraper, LXMLMixin):
             event.add_source(URL)
             event.add_document(notice_name, notice_href, media_type="text/html")
             for bill in self.get_related_bills(notice_href):
-                a = event.add_agenda_item(description=bill["descr"])
+                a = event.add_agenda_item(description=bill["descr"].strip())
                 a.add_bill(bill["bill_id"], note=bill["type"])
             yield event

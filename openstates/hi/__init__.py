@@ -2,7 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils.lxmlize import url_xpath
 from .people import HIPersonScraper
 
-# from .events import HIEventScraper
+from .events import HIEventScraper
 from .bills import HIBillScraper
 
 # from .committees import HICommitteeScraper
@@ -20,7 +20,7 @@ class Hawaii(Jurisdiction):
         "people": HIPersonScraper,
         "bills": HIBillScraper,
         # 'committees': HICommitteeScraper,
-        # 'events': HIEventScraper
+        'events': HIEventScraper
     }
     legislative_sessions = [
         {
