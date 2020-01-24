@@ -218,8 +218,8 @@ class NMVoteScraper(Scraper):
 
             url = doc_path + fname
             if "SVOTE" in suffix and chamber == "upper":
-                vote = self.parse_senate_votes(bill_id, session, url, vote_text_lines)
-                yield vote
+                self.parse_senate_votes(bill_id, session, url, vote_text_lines)
+                # yield vote
             #     sv_text = self.scrape_vote_text(doc_path + fname)
             #     if not sv_text:
             #         continue
@@ -233,8 +233,8 @@ class NMVoteScraper(Scraper):
             #         yield vote
 
             elif "HVOTE" in suffix and chamber == "lower":
-                vote = self.parse_house_votes(bill_id, session, url, vote_text_lines)
-                yield vote
+                self.parse_house_votes(bill_id, session, url, vote_text_lines)
+                # yield vote
             #     hv_text = self.scrape_vote_text(doc_path + fname)
             #     if not hv_text:
             #         continue
@@ -276,15 +276,112 @@ class NMVoteScraper(Scraper):
             print(line)
 
     def parse_senate_votes(self, bill_id, session, url, vote_text_lines):
-        print("In Senate")
+        # When they vote in a substitute they mark it as XHB
+        bill_id = bill_id.replace("XHB", "HB")
+        senate_votes = {}
+
+        # Notes on how votes are marked
+        # first_yes_pos = 22
+        # first_no_pos = 27
+        # first_abs_pos = 33
+        # first_exc_pos = 41 -Can also be 44
+        # first_rec_pos = 46
+
+        # second_yes_pos = 69
+        # second_no_pos = 77
+        # second_abs_pos = 82
+        # second_exc_pos = 89 - Could also be 90, 93
+        # second_rec_pos = 97
+
+        motion_text = ""
+
         for x in range(len(vote_text_lines)):
             line = vote_text_lines[x]
-            if "DATE" in line:
-                date = datetime.strptime(line.split()[-1], "%m/%d/%y")
-                date = mountain.localize(date)
-                date = date.isoformat()
-                print(date)
-            # print(line)
+            split_line = line.split()
+            if split_line:
+                if "DATE" in line:
+                    vote_date = datetime.strptime(split_line[-1], "%m/%d/%y")
+                    vote_date = mountain.localize(vote_date)
+                    vote_date = vote_date.isoformat()
+                if split_line[0] == "HOUSE":
+                    motion_text = line.strip()
+                if "YES   NO" in line:
+                    times_through_vote_line = 1
+                    vote_line = vote_text_lines[x + times_through_vote_line]
+                    # Loop to go through all of the lines with votes
+                    while "TOTAL" not in vote_line:
+                        # print(vote_line)
+                        first_vote = vote_line.find("X")
+                        second_vote = vote_line.rfind("X")
+                        first_voter_name = vote_line[0 : first_vote - 1].strip()
+                        second_voter_name = vote_line[
+                            first_vote + 1 : second_vote - 1
+                        ].strip()
+
+                        # Determines how first voter voted
+                        if 24 >= first_vote >= 20:
+                            how_first_voted = "yes"
+                        elif 29 >= first_vote >= 25:
+                            how_first_voted = "no"
+                        elif 37 >= first_vote >= 30:
+                            how_first_voted = "absent"
+                        elif 44 >= first_vote >= 38:
+                            how_first_voted = "excused"
+                        else:
+                            how_first_voted = "other"
+
+                        # Determins how second voter voted
+                        if 73 >= second_vote >= 67:
+                            how_second_voted = "yes"
+                        elif 81 >= second_vote >= 75:
+                            how_second_voted = "no"
+                        elif 86 >= second_vote >= 82:
+                            how_second_voted = "absent"
+                        elif 94 >= second_vote >= 87:
+                            how_second_voted = "excused"
+                        else:
+                            how_second_voted = "other"
+
+                        senate_votes[first_voter_name] = how_first_voted
+                        senate_votes[second_voter_name] = how_second_voted
+
+                        # Moves onto next vote line
+                        vote_line = vote_text_lines[x + times_through_vote_line]
+                        times_through_vote_line += 1
+                if "TOTAL" in line:
+                    total_yes_votes = int(split_line[-5])
+                    total_no_votes = int(split_line[-4])
+                    total_abs_votes = int(split_line[-3])
+                    total_exe_votes = int(split_line[-2])
+                    total_rec_votes = int(split_line[-1])
+
+                    if "X" in line:
+                        first_vote = vote_line.find("X")
+                        first_voter_name = vote_line[0 : first_vote - 1].strip()
+
+        passed = total_yes_votes > total_no_votes
+
+        vote = VoteEvent(
+            chamber="upper",
+            start_date=vote_date,
+            motion_text=motion_text,
+            legislative_session=session,
+            bill=bill_id,
+            classification="other",
+            result="pass" if passed else "fail",
+        )
+
+        vote.pupa_id = url
+        vote.set_count("yes", total_yes_votes)
+        vote.set_count("no", total_no_votes)
+        vote.set_count("excused", total_exe_votes)
+        vote.set_count("absent", total_abs_votes)
+        vote.set_count("other", total_rec_votes)
+
+        for voter, how_voted in senate_votes:
+            vote.vote(how_voted, voter)
+
+        yield vote
 
     # def parse_house_vote(self, hv_text, url, session, bill_id):
     #     """Sets any overrides and creates the vote instance"""
