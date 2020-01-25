@@ -64,7 +64,7 @@ class SenDetail(Page):
             .get("href")
             .split(":")[-1]
         )
-        self.obj.add_contact_detail(type="email", value=email)
+        self.obj.add_contact_detail(type="email", value=email, note="Capitol Office")
 
         self.obj.image = self.doc.xpath('//div[@id="sidebar"]//img/@src').pop()
 

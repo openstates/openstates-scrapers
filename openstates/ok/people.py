@@ -319,11 +319,11 @@ class OKPersonScraper(Scraper, LXMLMixin, LXMLMixinOK):
 
         district_phone = self._extract_phone(district_office_info)
 
-        if capitol_phone:
+        if district_phone:
             person.add_contact_detail(
                 type="voice", value=str(district_phone), note="District Office"
             )
-        if capitol_address_lines:
+        if district_address:
             person.add_contact_detail(
                 type="address", value=district_address, note="District Office"
             )

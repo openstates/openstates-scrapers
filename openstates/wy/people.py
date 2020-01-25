@@ -19,8 +19,8 @@ class WYPersonScraper(Scraper):
     def scrape_chamber(self, chamber, session):
         chamber_abbrev = {"upper": "S", "lower": "H"}[chamber]
 
-        url = "https://wyoleg.gov/LsoService/api/legislator/2018/{}".format(
-            chamber_abbrev
+        url = "https://wyoleg.gov/LsoService/api/legislator/{}/{}".format(
+            session, chamber_abbrev
         )
 
         response = self.get(url)
