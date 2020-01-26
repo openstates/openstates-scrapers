@@ -205,7 +205,7 @@ class OHLegislatorScraper(Scraper):
             page = lxml.html.fromstring(homepage)
             phone = page.xpath("//div[@class='phone']/span/text()")[0]
 
-            address_lines = page.xpath("//div[@class='address']/span/text()")
+            address_lines = page.xpath("//div[@class='address']/descendant::*/text()")
             address = "\n".join(address_lines)
 
             party_image = page.xpath('//div[@class="senatorParty"]/img/@src')[0]

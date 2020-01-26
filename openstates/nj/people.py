@@ -11,7 +11,7 @@ class NJPersonScraper(Scraper, MDBMixin):
 
         year_abr = session[0:4]
 
-        self._init_mdb(year_abr)
+        self._init_mdb(int(year_abr))
 
         roster_csv = self.access_to_csv("Roster")
         bio_csv = self.access_to_csv("LegBio")
