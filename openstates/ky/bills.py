@@ -30,7 +30,9 @@ class KYBillScraper(Scraper, LXMLMixin):
         ("vetoed", "executive-veto"),
         (r"^to [A-Z]", "referral-committee"),
         (" to [A-Z]", "referral-committee"),
+        ("reported favorably", "committee-passage"),
         ("adopted by voice vote", "passage"),
+        ("3rd reading, passed", ["reading-3", "passage"])
         ("1st reading", "reading-1"),
         ("2nd reading", "reading-2"),
         ("3rd reading", "reading-3"),
