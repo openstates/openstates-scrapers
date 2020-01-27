@@ -44,7 +44,7 @@ ACTION_CLASSIFIERS = (
     ("Read third time", "reading-3"),
     ("Senators: ", SKIP),
     ("Delegates: ", SKIP),
-    ("Committee substitute printed", SKIP),
+    ("Committee substitute printed", "substitution"),
     ("Bill text as passed", SKIP),
     ("Acts of Assembly", SKIP),
 )
@@ -279,7 +279,7 @@ class BillDetailPage(Page, Spatula):
                         cached_vote.add_source(vote_url[0])
                     else:
                         cached_vote.add_source(self.url)
-                    continue
+                    # continue
                 elif cached_vote is not None:
                     if vote_action.startswith(u"VOTE:"):
                         counts = {
