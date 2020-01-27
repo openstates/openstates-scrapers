@@ -106,6 +106,13 @@ class Oregon(Jurisdiction):
             "start_date": "2019-01-22",
             "end_date": "2019-06-30",
         },
+        {
+            "_scraped_name": "2020 Regular Session",
+            "identifier": "2020 Regular Session",
+            "name": "2020 Regular Session",
+            "start_date": "2020-02-03",
+            "end_date": "2020-03-08",
+        },
     ]
     ignored_scraped_sessions = [
         "Mock Session 2020",
