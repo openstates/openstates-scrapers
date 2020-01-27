@@ -11,9 +11,9 @@ class AKEventScraper(Scraper, LXMLMixin):
     _TZ = pytz.timezone("US/Alaska")
     API_BASE = "http://www.legis.state.ak.us/publicservice/basis"
     NS = {"ak": "http://www.legis.state.ak.us/Basis"}
-    CHAMBERS = {"S": "upper", "H": "lower"}
-    COMMITTEES = {"upper": {}, "lower": {}}
-    COMMITTEES_PRETTY = {"upper": "SENATE", "lower": "HOUSE"}
+    CHAMBERS = {"S": "upper", "H": "lower", "J": "joint"}
+    COMMITTEES = {"upper": {}, "lower": {}, "joint": {}}
+    COMMITTEES_PRETTY = {"upper": "SENATE", "lower": "HOUSE", "joint": "JOINT"}
 
     # date_filter argument can give you just one day;
     # format is "2/28/2019" per AK's site
@@ -102,6 +102,9 @@ class AKEventScraper(Scraper, LXMLMixin):
             chamber = self.CHAMBERS[row.get("chamber")]
             category = row.get("category").strip()
             self.COMMITTEES[chamber][code] = {"name": name, "category": category}
+
+            if category == "Joint Committee":
+                self.COMMITTEES["joint"][code] = {"name": name, "category": category}
 
     def api_request(self, path, args={}, headers={}):
         # http://www.akleg.gov/apptester.html
