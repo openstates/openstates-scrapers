@@ -100,7 +100,7 @@ _categorizer_rules = (
     # Prior to committee referral/passage and chamber passage
     # see http://www.capitol.tn.gov/about/billtolaw.html
     # these don't fall under pupas committee-passage or passage classifications
-    Rule("Intro., P1C", ["introduction",]),
+    Rule("Intro., P1C", ["introduction"]),
     Rule("Introduced, Passed on First Consideration", ["introduction"]),
     Rule("Reported back amended, do not pass", "committee-passage-unfavorable"),
     Rule("Reported back amended, do pass", "committee-passage-favorable"),
