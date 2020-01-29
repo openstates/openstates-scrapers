@@ -86,6 +86,15 @@ class WVBillScraper(Scraper):
         page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
 
+        # Debug code to scrape an individual bill:
+        # yield from self.scrape_bill(
+        #     session,
+        #     "upper",
+        #     "SB 500",
+        #     "test",
+        #     "http://www.legis.state.wv.us/Bill_Status/Bills_history.cfm?input=500&year=2020&sessiontype=RS&btype=bill",
+        # )
+
         for link in page.xpath("//a[contains(@href, 'Bills_history')]"):
             bill_id = link.xpath("string()").strip()
             title = link.xpath("string(../../td[2])").strip()
@@ -421,6 +430,11 @@ class WVBillScraper(Scraper):
                 vote_val = vote_val.strip()
                 name = name.strip()
                 if vote_val == "Y":
+                    # Fix for "Class Y special hunting" in
+                    # http://www.wvlegislature.gov/legisdocs/2020/RS/votes/senate/01-27-0033.pdf
+                    if "Class Y" in line:
+                        continue
+
                     vote.yes(name)
                     yes_count += 1
                 elif vote_val == "N":
