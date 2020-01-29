@@ -328,6 +328,7 @@ class NMBillScraper(Scraper):
             "7645": ("motion to reconsider adopted", None),
             "7649": ("printed", None),
             "7650": ("not printed %s", None),
+            "7651": ("not printed, referred to committee", "referral-committee"),
             "7652": ("not printed, not referred to committee, tabled", None),
             "7654": ("referred to %s", "referral-committee"),
             "7656": ("referred to Finance committee", "referral-committee"),
