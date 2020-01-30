@@ -4,7 +4,7 @@ from .people import ORPersonScraper
 # from .committees import ORCommitteeScraper
 from .bills import ORBillScraper
 from .votes import ORVoteScraper
-
+from .events import OREventScraper
 
 class Oregon(Jurisdiction):
     division_id = "ocd-division/country:us/state:or"
@@ -16,6 +16,7 @@ class Oregon(Jurisdiction):
         # 'committees': ORCommitteeScraper,
         "bills": ORBillScraper,
         "votes": ORVoteScraper,
+        "events": OREventScraper,
     }
     legislative_sessions = [
         {
