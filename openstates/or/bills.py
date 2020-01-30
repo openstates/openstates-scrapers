@@ -24,6 +24,7 @@ class ORBillScraper(Scraper):
     chamber_code = {"S": "upper", "H": "lower"}
 
     action_classifiers = (
+        (".*Presession Released to the Public.*", ["filing"]),
         (".*Introduction and first reading.*", ["introduction", "reading-1"]),
         (".*First reading.*", ["introduction", "reading-1"]),
         (".*Second reading.*", ["reading-2"]),
