@@ -6,6 +6,7 @@ from .bills import ORBillScraper
 from .votes import ORVoteScraper
 from .events import OREventScraper
 
+
 class Oregon(Jurisdiction):
     division_id = "ocd-division/country:us/state:or"
     classification = "government"
