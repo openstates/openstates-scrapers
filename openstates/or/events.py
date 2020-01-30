@@ -14,6 +14,10 @@ class OREventScraper(Scraper):
     _DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
     _SOURCE_BASE = "https://olis.oregonlegislature.gov/liz/{}/Committees/{}/{}/Agenda"
 
+    # this scraper supports a start_date argument of Y-m-d
+    # ex: pupa update or events --scrape start_date=2020-01-01
+    # if you choose a start date in a previous session, make sure to also pass the relevant session
+    # due to API limitations, each scrape will only scrape the events in that provided (or current) session
     def scrape(self, session=None, start_date=None):
         self.api_client = OregonLegislatorODataClient(self)
         if not session:
