@@ -14,14 +14,19 @@ class OREventScraper(Scraper):
     _DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
     _SOURCE_BASE = "https://olis.oregonlegislature.gov/liz/{}/Committees/{}/{}/Agenda"
 
-    def scrape(self, session=None, window=None):
+    def scrape(self, session=None, start_date=None):
         self.api_client = OregonLegislatorODataClient(self)
         if not session:
             session = self.latest_session()
-        yield from self.scrape_events(session)
+        yield from self.scrape_events(session, start_date)
 
-    def scrape_events(self, session):
+    def scrape_events(self, session, start_date):
         session_key = SESSION_KEYS[session]
+
+        if start_date is None:
+            start_date = datetime.date.today()
+        else:
+            start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
 
         committees_by_code = {}
 
@@ -30,7 +35,9 @@ class OREventScraper(Scraper):
             committees_by_code[committee["CommitteeCode"]] = committee["CommitteeName"]
 
         meetings_response = self.api_client.get(
-            "committee_meetings", start_date="2020-01-01T08:00:00", session=session_key,
+            "committee_meetings",
+            start_date=start_date.strftime(self._DATE_FORMAT),
+            session=session_key,
         )
 
         for meeting in meetings_response:
