@@ -57,6 +57,7 @@ class OREventScraper(Scraper):
             event.add_source(meeting["AgendaUrl"])
 
             event.extras["meeting_guid"] = meeting["MeetingGuid"]
+            event.extras["committee_code"] = committee["CommitteeCode"]
 
             event.add_participant(com_name, type="committee", note="host")
 
