@@ -185,7 +185,7 @@ description = "python opencivicdata library"
 name = "opencivicdata"
 optional = false
 python-versions = "*"
-version = "3.0.0"
+version = "3.1.0"
 
 [package.dependencies]
 Django = ">=2.2"
@@ -559,7 +559,7 @@ mysqlclient = [
     {file = "mysqlclient-1.4.6.tar.gz", hash = "sha256:f3fdaa9a38752a3b214a6fe79d7cae3653731a53e577821f9187e67cbecb2e16"},
 ]
 opencivicdata = [
-    {file = "opencivicdata-3.0.0.tar.gz", hash = "sha256:19b8bdbc50559eb1e6e954ff4440a27aac85a7b3c4b79c34b0a1144b6810c7b2"},
+    {file = "opencivicdata-3.1.0.tar.gz", hash = "sha256:cbd8693a53ddac867f642963209ae98c21fd565db4df20769c727395eaedafd8"},
 ]
 psycopg2-binary = [
     {file = "psycopg2-binary-2.8.4.tar.gz", hash = "sha256:3a2522b1d9178575acee4adf8fd9f979f9c0449b00b4164bb63c3475ea6528ed"},
