@@ -59,92 +59,6 @@ class MDBillScraper(Scraper):
 
     SESSION_IDS = {"2020": "2020rs"}
 
-    def parse_bill_sponsors(self, doc, bill):
-        sponsor_list = doc.xpath('//a[@name="Sponlst"]')
-        if sponsor_list:
-            # more than one bill sponsor exists
-            elems = sponsor_list[0].xpath("../../..//dd/a")
-            for elem in elems:
-                bill.add_sponsorship(
-                    _clean_sponsor(elem.text.strip()),
-                    entity_type="person",
-                    classification="cosponsor",
-                    primary=False,
-                )
-        else:
-            # single bill sponsor
-            sponsor = doc.xpath('//a[@name="Sponsors"]/../../dd')[0].text_content()
-            bill.add_sponsorship(
-                _clean_sponsor(sponsor),
-                entity_type="person",
-                classification="primary",
-                primary=True,
-            )
-
-    def parse_bill_actions(self, doc, bill):
-        for h5 in doc.xpath("//h5"):
-            if h5.text == "House Action":
-                chamber = "lower"
-            elif h5.text == "Senate Action":
-                chamber = "upper"
-            elif h5.text.startswith("Action after passage"):
-                chamber = "governor"
-            else:
-                break
-            dts = h5.getnext().xpath("dl/dt")
-            for dt in dts:
-                action_date = dt.text.strip()
-                if action_date and action_date != "No Action":
-                    year = int(bill.legislative_session[:4])
-                    action_date += "/%s" % year
-                    action_date = datetime.datetime.strptime(action_date, "%m/%d/%Y")
-
-                    # no actions after June?, decrement the year on these
-                    if action_date.month > 6:
-                        year -= 1
-                        action_date = action_date.replace(year)
-
-                    # iterate over all dds following the dt
-                    dcursor = dt
-                    while (
-                        dcursor.getnext() is not None and dcursor.getnext().tag == "dd"
-                    ):
-                        dcursor = dcursor.getnext()
-                        actions = dcursor.text_content().split("\r\n")
-                        for act in actions:
-                            act = act.strip()
-                            if not act:
-                                continue
-                            atype, committee = _classify_action(act)
-                            related = (
-                                [{"type": "committee", "name": committee}]
-                                if committee is not None
-                                else []
-                            )
-
-                            if atype:
-                                bill.add_action(
-                                    chamber,
-                                    act,
-                                    action_date.strftime("%Y-%m-%d"),
-                                    related_entities=related,
-                                )
-                            else:
-                                self.log("unknown action: %s" % act)
-
-    def parse_bill_documents(self, doc, bill):
-        bill_text_b = doc.xpath('//b[contains(text(), "Bill Text")]')[0]
-        for sib in bill_text_b.itersiblings():
-            if sib.tag == "a":
-                bill.add_version_link(
-                    sib.text.strip(","), sib.get("href"), media_type="application/pdf"
-                )
-
-        note_b = doc.xpath('//b[contains(text(), "Fiscal and Policy")]')[0]
-        for sib in note_b.itersiblings():
-            if sib.tag == "a" and sib.text == "Available":
-                bill.add_document_link("Fiscal and Policy Note", sib.get("href"))
-
     def parse_bill_votes(self, doc, bill):
         elems = doc.xpath("//a")
 
@@ -504,10 +418,6 @@ class MDBillScraper(Scraper):
                 fiscal_title, fiscal_url, media_type="application/pdf",
             )
 
-        # # documents
-        # self.scrape_documents(bill, doc)
-        # # actions
-        # self.scrape_actions(bill, url.replace("stab=01", "stab=03"))
         # yield from self.parse_bill_votes_new(doc, bill)
         yield bill
 
