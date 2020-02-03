@@ -1,11 +1,15 @@
 import re
-import datetime
 import scrapelib
 from collections import defaultdict
 from pytz import timezone
-
-from pupa.scrape import Scraper, Bill
+from datetime import datetime
+from pupa.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import LXMLMixin
+from pupa.utils.generic import convert_pdf
+import pytz
+import math
+
+central = pytz.timezone("US/Central")
 
 
 def chamber_abbr(chamber):
@@ -104,7 +108,7 @@ class KYBillScraper(Scraper, LXMLMixin):
         for row in action_rows:
             action_date = row.xpath("th[1]/text()")[0].strip()
 
-            action_date = datetime.datetime.strptime(action_date, "%m/%d/%y")
+            action_date = datetime.strptime(action_date, "%m/%d/%y")
             action_date = self._TZ.localize(action_date)
 
             action_texts = row.xpath("td[1]/ul/li/text() | td[1]/ul/li/strong/text()")
@@ -207,12 +211,116 @@ class KYBillScraper(Scraper, LXMLMixin):
                 primary=True,
             )
 
+        if page.xpath("//th[contains(text(),'Votes')]"):
+            vote_url = page.xpath("//a[contains(text(),'Vote History')]/@href")[0]
+            yield from self.scrape_votes(vote_url, bill, chamber)
+
         bdr_no = self.parse_bill_field(page, "Bill Request Number")
         if bdr_no.xpath("text()"):
             bdr = bdr_no.xpath("text()")[0].strip()
             bill.extras["BDR"] = bdr
 
         yield bill
+
+    def scrape_votes(self, vote_url, bill, chamber):
+        # Grabs text from pdf
+        pdflines = [
+            line.decode("utf-8") for line in convert_pdf(vote_url, "text").splitlines()
+        ]
+        vote_date = 0
+        for x in range(len(pdflines)):
+            line = pdflines[x]
+            voters = {"YEAS": [], "NAYS": [], "ABSTAINED": [], "NOT VOTING": []}
+            if re.search(r"(\d+/\d+/\d+)", line):
+                vote_date = datetime.strptime(line.strip(), "%m/%d/%Y")
+                vote_date = central.localize(vote_date)
+                vote_date = vote_date.isoformat()
+            if ("AM" in line) or ("PM" in line):
+                split_l = line.split()
+                for y in split_l:
+                    if ":" in y:
+                        time_location = split_l.index(y)
+                        motion = " ".join(split_l[0:time_location])
+
+                        # In rare case that no motion is provided
+                        if len(motion) < 1:
+                            motion = "No Motion Provided"
+            if "YEAS:" in line:
+                yeas = int(line.split()[-1])
+            if "NAYS:" in line:
+                nays = int(line.split()[-1])
+            if "ABSTAINED:" in line:
+                abstained = int(line.split()[-1])
+            if "PASSES:" in line:
+                abstained = int(line.split()[-1])
+            if "NOT VOTING:" in line:
+                not_voting = int(line.split()[-1])
+
+            if "YEAS :" in line:
+                y = 0
+                next_line = pdflines[x + y]
+                while "NAYS : " not in next_line:
+                    next_line = next_line.split("  ")
+                    if next_line and ("YEAS" not in next_line):
+                        for v in next_line:
+                            if v and "YEAS" not in v:
+                                voters["YEAS"].append(v.strip())
+                    next_line = pdflines[x + y]
+                    y += 1
+            if line and "NAYS :" in line:
+                y = 2
+                next_line = 0
+                next_line = pdflines[x + y]
+                while ("ABSTAINED : " not in next_line) and (
+                    "PASSES :" not in next_line
+                ):
+                    next_line = next_line.split("  ")
+                    if next_line and "NAYS" not in next_line:
+                        for v in next_line:
+                            if v:
+                                voters["NAYS"].append(v.strip())
+                    next_line = pdflines[x + y]
+                    y += 1
+
+            if line and ("ABSTAINED :" in line or "PASSES :" in line):
+                y = 2
+                next_line = 0
+                next_line = pdflines[x + y]
+                while "NOT VOTING :" not in next_line:
+                    next_line = next_line.split("  ")
+                    if next_line and (
+                        "ABSTAINED" not in next_line or "PASSES" not in next_line
+                    ):
+                        for v in next_line:
+                            if v:
+                                voters["NOT ABSTAINED"].append(v.strip())
+                    next_line = pdflines[x + y]
+                    y += 1
+
+            if line and "NOT VOTING : " in line:
+                lines_to_go_through = math.ceil(not_voting / 4)
+                next_line = pdflines[x]
+                for y in range(lines_to_go_through):
+                    next_line = pdflines[x + y + 2].split("  ")
+                    for v in next_line:
+                        if v:
+                            voters["NOT VOTING"].append(v.strip())
+
+                if yeas > (nays + abstained + not_voting):
+                    passed = True
+                else:
+                    passed = False
+
+                vote = VoteEvent(
+                    chamber=chamber,
+                    start_date=vote_date,
+                    motion_text=motion,
+                    result="pass" if passed else "fail",
+                    classification="bill",
+                    bill=bill,
+                )
+                vote.add_source(vote_url)
+                yield vote
 
     def parse_subjects(self, page, bill):
         subject_div = self.parse_bill_field(page, "Index Headings of Original Version")
