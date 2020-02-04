@@ -284,10 +284,10 @@ class INBillScraper(Scraper):
                 self.logger.warning("Bill could not be accessed. Skipping.")
                 continue
 
-            title = bill_json["title"]
+            title = bill_json["description"]
             if title == "NoneNone":
                 title = None
-            # sometimes title is blank
+            # sometimes description is blank
             # if that's the case, we can check to see if
             # the latest version has a short description
             if not title:
