@@ -228,9 +228,9 @@ class KYBillScraper(Scraper, LXMLMixin):
             line.decode("utf-8") for line in convert_pdf(vote_url, "text").splitlines()
         ]
         vote_date = 0
+        voters = defaultdict(list)
         for x in range(len(pdflines)):
             line = pdflines[x]
-            voters = {"YEAS": [], "NAYS": [], "ABSTAINED": [], "NOT VOTING": []}
             if re.search(r"(\d+/\d+/\d+)", line):
                 vote_date = datetime.strptime(line.strip(), "%m/%d/%Y")
                 vote_date = central.localize(vote_date)
@@ -264,11 +264,11 @@ class KYBillScraper(Scraper, LXMLMixin):
                     if next_line and ("YEAS" not in next_line):
                         for v in next_line:
                             if v and "YEAS" not in v:
-                                voters["YEAS"].append(v.strip())
+                                voters["yes"].append(v.strip())
                     next_line = pdflines[x + y]
                     y += 1
             if line and "NAYS :" in line:
-                y = 2
+                y = 0
                 next_line = 0
                 next_line = pdflines[x + y]
                 while ("ABSTAINED : " not in next_line) and (
@@ -277,8 +277,8 @@ class KYBillScraper(Scraper, LXMLMixin):
                     next_line = next_line.split("  ")
                     if next_line and "NAYS" not in next_line:
                         for v in next_line:
-                            if v:
-                                voters["NAYS"].append(v.strip())
+                            if v and "NAYS" not in v:
+                                voters["no"].append(v.strip())
                     next_line = pdflines[x + y]
                     y += 1
 
@@ -293,7 +293,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                     ):
                         for v in next_line:
                             if v:
-                                voters["NOT ABSTAINED"].append(v.strip())
+                                voters["abstain"].append(v.strip())
                     next_line = pdflines[x + y]
                     y += 1
 
@@ -304,14 +304,14 @@ class KYBillScraper(Scraper, LXMLMixin):
                     next_line = pdflines[x + y + 2].split("  ")
                     for v in next_line:
                         if v:
-                            voters["NOT VOTING"].append(v.strip())
+                            voters["not voting"].append(v.strip())
 
                 if yeas > (nays + abstained + not_voting):
                     passed = True
                 else:
                     passed = False
 
-                vote = VoteEvent(
+                ve = VoteEvent(
                     chamber=chamber,
                     start_date=vote_date,
                     motion_text=motion,
@@ -319,8 +319,13 @@ class KYBillScraper(Scraper, LXMLMixin):
                     classification="bill",
                     bill=bill,
                 )
-                vote.add_source(vote_url)
-                yield vote
+                ve.add_source(vote_url)
+                for how_voted, how_voted_voters in voters.items():
+                    for voter in how_voted_voters:
+                        ve.vote(how_voted, voter)
+                # Resets voters dictionary before going onto next page in pdf
+                voters = defaultdict(list)
+                yield ve
 
     def parse_subjects(self, page, bill):
         subject_div = self.parse_bill_field(page, "Index Headings of Original Version")
