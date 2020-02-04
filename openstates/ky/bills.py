@@ -232,16 +232,20 @@ class KYBillScraper(Scraper, LXMLMixin):
         for x in range(len(pdflines)):
             line = pdflines[x]
             if re.search(r"(\d+/\d+/\d+)", line):
-                vote_date = datetime.strptime(line.strip(), "%m/%d/%Y")
-                vote_date = central.localize(vote_date)
-                vote_date = vote_date.isoformat()
+                initial_date = line.strip()
             if ("AM" in line) or ("PM" in line):
                 split_l = line.split()
                 for y in split_l:
                     if ":" in y:
                         time_location = split_l.index(y)
                         motion = " ".join(split_l[0:time_location])
-
+                        time = split_l[time_location:]
+                        if len(time) > 0:
+                            time = "".join(time)
+                        dt = initial_date + " " + time
+                        dt = datetime.strptime(dt, "%m/%d/%Y %I:%M:%S%p")
+                        vote_date = central.localize(dt)
+                        vote_date = vote_date.isoformat()
                         # In rare case that no motion is provided
                         if len(motion) < 1:
                             motion = "No Motion Provided"
@@ -298,14 +302,13 @@ class KYBillScraper(Scraper, LXMLMixin):
                     y += 1
 
             if line and "NOT VOTING : " in line:
-                lines_to_go_through = math.ceil(not_voting / 4)
+                lines_to_go_through = math.ceil(not_voting / len(line.split()))
                 next_line = pdflines[x]
                 for y in range(lines_to_go_through):
                     next_line = pdflines[x + y + 2].split("  ")
                     for v in next_line:
                         if v:
                             voters["not voting"].append(v.strip())
-
                 if yeas > (nays + abstained + not_voting):
                     passed = True
                 else:
@@ -322,7 +325,8 @@ class KYBillScraper(Scraper, LXMLMixin):
                 ve.add_source(vote_url)
                 for how_voted, how_voted_voters in voters.items():
                     for voter in how_voted_voters:
-                        ve.vote(how_voted, voter)
+                        if len(voter) > 0:
+                            ve.vote(how_voted, voter)
                 # Resets voters dictionary before going onto next page in pdf
                 voters = defaultdict(list)
                 yield ve
