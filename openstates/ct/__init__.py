@@ -55,20 +55,18 @@ class Connecticut(Jurisdiction):
             "start_date": "2019-01-09",
             "end_date": "2019-06-05",
         },
-        # TODO: uncomment this once session starts
-        # {
-        #     "_scraped_name": "2020",
-        #     "identifier": "2020",
-        #     "name": "2020 Regular Session",
-        #     "start_date": "2020-02-05",
-        #     "end_date": "2020-05-06",
-        # },
+        {
+            "_scraped_name": "2020",
+            "identifier": "2020",
+            "name": "2020 Regular Session",
+            "start_date": "2020-02-05",
+            "end_date": "2020-05-06",
+        },
     ]
     ignored_scraped_sessions = [
         "test.txt",
         "20xx",
         "2021",
-        "2020",
         "2010",
         "2009",
         "2008",
