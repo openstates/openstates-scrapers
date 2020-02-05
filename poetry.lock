@@ -83,7 +83,7 @@ description = "A high-level Python Web framework that encourages rapid developme
 name = "django"
 optional = false
 python-versions = ">=3.6"
-version = "3.0.2"
+version = "3.0.3"
 
 [package.dependencies]
 asgiref = ">=3.2,<4.0"
@@ -209,7 +209,6 @@ version = "2.8.4"
 [[package]]
 category = "main"
 description = "scraping framework for muncipal data"
-develop = true
 name = "pupa"
 optional = false
 python-versions = "*"
@@ -226,11 +225,6 @@ scrapelib = ">=1.0"
 
 [package.extras]
 dev = ["mock", "pytest (>=3.6)", "pytest-cov", "pytest-django", "coveralls", "flake8"]
-
-[package.source]
-reference = ""
-type = "directory"
-url = "../pupa"
 
 [[package]]
 category = "main"
@@ -443,7 +437,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools"]
 
 [metadata]
-content-hash = "dfbdcd814c7f2971d0b2c4700323dc1ad15a3f3d042b1be176474b805a371362"
+content-hash = "cd41bc054d7964d9d171a20627f04a11604fb21295202c1413ea40e98e7913c3"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -526,8 +520,8 @@ dj-database-url = [
     {file = "dj_database_url-0.5.0-py2.py3-none-any.whl", hash = "sha256:851785365761ebe4994a921b433062309eb882fedd318e1b0fcecc607ed02da9"},
 ]
 django = [
-    {file = "Django-3.0.2-py3-none-any.whl", hash = "sha256:4f2c913303be4f874015993420bf0bd8fd2097a9c88e6b49c6a92f9bdd3fb13a"},
-    {file = "Django-3.0.2.tar.gz", hash = "sha256:8c3575f81e11390893860d97e1e0154c47512f180ea55bd84ce8fa69ba8051ca"},
+    {file = "Django-3.0.3-py3-none-any.whl", hash = "sha256:c91c91a7ad6ef67a874a4f76f58ba534f9208412692a840e1d125eb5c279cb0a"},
+    {file = "Django-3.0.3.tar.gz", hash = "sha256:2f1ba1db8648484dd5c238fb62504777b7ad090c81c5f1fd8d5eb5ec21b5f283"},
 ]
 feedparser = [
     {file = "feedparser-5.2.1.tar.bz2", hash = "sha256:ce875495c90ebd74b179855449040003a1beb40cd13d5f037a0654251e260b02"},
@@ -620,7 +614,9 @@ psycopg2-binary = [
     {file = "psycopg2_binary-2.8.4-cp38-cp38-win32.whl", hash = "sha256:98e10634792ac0e9e7a92a76b4991b44c2325d3e7798270a808407355e7bb0a1"},
     {file = "psycopg2_binary-2.8.4-cp38-cp38-win_amd64.whl", hash = "sha256:b8f490f5fad1767a1331df1259763b3bad7d7af12a75b950c2843ba319b2415f"},
 ]
-pupa = []
+pupa = [
+    {file = "pupa-0.10.0.tar.gz", hash = "sha256:710b52f0980690cece4baef7bc55b250d8d86e8cb6abd662e01e9ca72c8937bf"},
+]
 pycparser = [
     {file = "pycparser-2.19.tar.gz", hash = "sha256:a988718abfad80b6b157acce7bf130a30876d27603738ac39f140993246b25b3"},
 ]

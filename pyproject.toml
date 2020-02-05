@@ -18,8 +18,8 @@ SQLAlchemy = "^1.3"
 opencivicdata = "^3.0"
 requests = {version = "^2.22", extras = ["security"]}
 # mysqlclient = "^1.4.6"
-openstates_metadata = "^2020.1"
-pupa = {path = "../pupa"}
+openstates_metadata = "*"
+pupa = "^0.10.0"
 
 
 [build-system]

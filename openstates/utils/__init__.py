@@ -2,6 +2,7 @@ import re
 
 from .lxmlize import LXMLMixin  # noqa
 from .lxmlize import url_xpath  # noqa
+from .state import State  # noqa
 
 
 def validate_phone_number(phone_number):
