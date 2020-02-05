@@ -143,6 +143,7 @@ class Wisconsin(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = [
+        "January 2020 Special Session",
         "February 2015 Extraordinary Session",
         "2007 Regular Session",
         "April 2008 Special Session",
