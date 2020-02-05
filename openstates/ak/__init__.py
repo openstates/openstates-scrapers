@@ -1,6 +1,4 @@
-from pupa.scrape import Jurisdiction, Organization
-
-from openstates.utils import url_xpath
+from openstates.utils import State, url_xpath
 
 from .bills import AKBillScraper
 from .events import AKEventScraper
@@ -8,11 +6,7 @@ from .events import AKEventScraper
 settings = dict(SCRAPELIB_TIMEOUT=600)
 
 
-class Alaska(Jurisdiction):
-    division_id = "ocd-division/country:us/state:ak"
-    classification = "government"
-    name = "Alaska"
-    url = "http://w3.legis.state.ak.us/"
+class Alaska(State):
     scrapers = {"bills": AKBillScraper, "events": AKEventScraper}
     legislative_sessions = [
         {
@@ -51,19 +45,6 @@ class Alaska(Jurisdiction):
         "19th Legislature (1995-1996)",
         "18th Legislature (1993-1994)",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Alaska State Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         return [session["_scraped_name"] for session in self.legislative_sessions]

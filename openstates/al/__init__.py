@@ -1,15 +1,11 @@
-from pupa.scrape import Jurisdiction, Organization
+from utils import State
 
 from .bills import ALBillScraper
 from .events import ALEventScraper
 from .people import ALPersonScraper
 
 
-class Alabama(Jurisdiction):
-    division_id = "ocd-division/country:us/state:al"
-    classification = "government"
-    name = "Alabama"
-    url = "http://www.legislature.state.al.us/"
+class Alabama(State):
     scrapers = {
         "bills": ALBillScraper,
         "events": ALEventScraper,
@@ -156,19 +152,6 @@ class Alabama(Jurisdiction):
         "Regular Session 2016",
         "Organizational Session 2019",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Alabama Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         import lxml.html
