@@ -16,10 +16,11 @@ chardet = "^3.0"
 suds-py3 = "^1.3"
 SQLAlchemy = "^1.3"
 opencivicdata = "^3.0"
-pupa = "^0.10.0"
 requests = {version = "^2.22", extras = ["security"]}
 mysqlclient = "^1.4.6"
-[tool.poetry.dev-dependencies]
+openstates_metadata = "*"
+pupa = "^0.10.0"
+
 
 [build-system]
 requires = ["poetry>=0.12"]
