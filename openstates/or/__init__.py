@@ -1,16 +1,12 @@
-from pupa.scrape import Jurisdiction, Organization
+from openstates.utils import State
 from .people import ORPersonScraper
-
-# from .committees import ORCommitteeScraper
 from .bills import ORBillScraper
 from .votes import ORVoteScraper
 
+# from .committees import ORCommitteeScraper
 
-class Oregon(Jurisdiction):
-    division_id = "ocd-division/country:us/state:or"
-    classification = "government"
-    name = "Oregon"
-    url = "https://olis.leg.state.or.us"
+
+class Oregon(State):
     scrapers = {
         "people": ORPersonScraper,
         # 'committees': ORCommitteeScraper,
@@ -127,19 +123,6 @@ class Oregon(Jurisdiction):
         "2009 - 2010 Interim",
         "2007 - 2008 Interim",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Oregon Legislative Assembly"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         from .apiclient import OregonLegislatorODataClient

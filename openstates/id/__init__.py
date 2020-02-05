@@ -1,16 +1,11 @@
-from pupa.scrape import Jurisdiction, Organization
 from .people import IDPersonScraper
+from .bills import IDBillScraper
+from openstates.utils.lxmlize import url_xpath, State
 
 # from .committees import IDCommitteeScraper
-from .bills import IDBillScraper
-from openstates.utils.lxmlize import url_xpath
 
 
-class Idaho(Jurisdiction):
-    division_id = "ocd-division/country:us/state:id"
-    classification = "government"
-    name = "Idaho"
-    url = "http://www.legislature.idaho.gov"
+class Idaho(State):
     scrapers = {
         "people": IDPersonScraper,
         # 'committees': IDCommitteeScraper,
@@ -118,19 +113,6 @@ class Idaho(Jurisdiction):
         "1999 Session",
         "1998 Session",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Idaho State Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         return url_xpath(

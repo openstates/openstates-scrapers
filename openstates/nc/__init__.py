@@ -1,16 +1,12 @@
 import lxml
-from pupa.scrape import Jurisdiction, Organization
+from openstates.utils import State
 from .people import NCPersonScraper
-
-# from .committees import NCCommitteeScraper
 from .bills import NCBillScraper
 
+# from .committees import NCCommitteeScraper
 
-class NorthCarolina(Jurisdiction):
-    division_id = "ocd-division/country:us/state:nc"
-    classification = "government"
-    name = "North Carolina"
-    url = "http://www.ncleg.net/"
+
+class NorthCarolina(State):
     scrapers = {
         "people": NCPersonScraper,
         # 'committees': NCCommitteeScraper,
@@ -308,23 +304,6 @@ class NorthCarolina(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = []
-
-    def get_organizations(self):
-        legislature_name = "North Carolina General Assembly"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        executive = Organization(
-            name="Executive Office of the Governor", classification="executive"
-        )
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield executive
-        yield upper
-        yield lower
 
     def get_session_list(self):
         from openstates.utils.lxmlize import url_xpath

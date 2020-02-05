@@ -1,7 +1,4 @@
-from pupa.scrape import Jurisdiction, Organization
-
-from openstates.utils import url_xpath
-
+from openstates.utils import url_xpath, State
 from openstates.ks.bills import KSBillScraper
 from openstates.ks.people import KSPersonScraper
 
@@ -15,11 +12,7 @@ from openstates.ks.people import KSPersonScraper
 settings = dict(SCRAPELIB_TIMEOUT=300, SCRAPELIB_RPM=12)
 
 
-class Kansas(Jurisdiction):
-    division_id = "ocd-division/country:us/state:ks"
-    classification = "government"
-    name = "Kansas"
-    url = "http://www.kslegislature.org/"
+class Kansas(State):
     scrapers = {
         "bills": KSBillScraper,
         "people": KSPersonScraper,
@@ -65,19 +58,6 @@ class Kansas(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = []
-
-    def get_organizations(self):
-        legislature_name = "Kansas State Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         url = url_xpath(

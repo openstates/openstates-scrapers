@@ -1,6 +1,4 @@
-from pupa.scrape import Jurisdiction, Organization
-
-from openstates.utils import url_xpath
+from openstates.utils import url_xpath, State
 
 from .bills import WIBillScraper
 from .events import WIEventScraper
@@ -9,11 +7,7 @@ from .people import WIPersonScraper
 # from .committees import WICommitteeScraper
 
 
-class Wisconsin(Jurisdiction):
-    division_id = "ocd-division/country:us/state:wi"
-    classification = "government"
-    name = "Wisconsin"
-    url = "http://legis.wisconsin.gov/"
+class Wisconsin(State):
     scrapers = {
         "bills": WIBillScraper,
         "events": WIEventScraper,
@@ -169,21 +163,6 @@ class Wisconsin(Jurisdiction):
         "January 1995 Special Session",
         "September 1995 Special Session",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Wisconsin State Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization(
-            "Assembly", classification="lower", parent_id=legislature._id
-        )
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         sessions = url_xpath(

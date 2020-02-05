@@ -1,21 +1,13 @@
-from pupa.scrape import Jurisdiction, Organization
-
-from openstates.utils import url_xpath
-
+from openstates.utils import url_xpath, State
 from openstates.mo.bills import MOBillScraper
 from openstates.mo.events import MOEventScraper
-
-# from openstates.mo.votes import MOVoteScraper
 from openstates.mo.people import MOPersonScraper
 
+# from openstates.mo.votes import MOVoteScraper
 # from openstates.mo.committees import MOCommitteeScraper
 
 
-class Missouri(Jurisdiction):
-    division_id = "ocd-division/country:us/state:mo"
-    classification = "government"
-    name = "Missouri"
-    url = "http://www.moga.mo.gov/"
+class Missouri(State):
     scrapers = {
         "bills": MOBillScraper,
         # 'votes': MOVoteScraper,
@@ -82,20 +74,6 @@ class Missouri(Jurisdiction):
         "2016 Regular Session",
         "2019 1st Extraordinary Session",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Missouri General Assembly"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield Organization(name="Office of the Governor", classification="executive")
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         return url_xpath(

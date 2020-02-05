@@ -1,22 +1,16 @@
 # encoding=utf-8
 import logging
-from pupa.scrape import Jurisdiction, Organization
 from .bills import FlBillScraper
 from .people import FlPersonScraper
 
 # from .committees import FlCommitteeScraper
 # from .events import FlEventScraper
-from openstates.utils import url_xpath
+from openstates.utils import url_xpath, State
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 
-class Florida(Jurisdiction):
-    division_id = "ocd-division/country:us/state:fl"
-    classification = "government"
-    name = "Florida"
-    url = "http://myflorida.com"
-
+class Florida(State):
     scrapers = {
         "bills": FlBillScraper,
         "people": FlPersonScraper,
@@ -155,22 +149,6 @@ class Florida(Jurisdiction):
         "2000 Org.",
         "1998 Org",
     ]
-
-    def get_organizations(self):
-        legis = Organization(name="Florida Legislature", classification="legislature")
-
-        upper = Organization(
-            "Florida Senate", classification="upper", parent_id=legis._id
-        )
-        lower = Organization(
-            "Florida House of Representatives",
-            classification="lower",
-            parent_id=legis._id,
-        )
-
-        yield legis
-        yield upper
-        yield lower
 
     def get_session_list(self):
         return url_xpath("http://flsenate.gov", "//option/text()")

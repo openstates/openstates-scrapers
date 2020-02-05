@@ -1,19 +1,12 @@
-from utils.lxmlize import url_xpath
-from .utils import text_after_line_numbers, pdfdata_to_text
-
-from pupa.scrape import Jurisdiction, Organization
+from openstates.utils import url_xpath, State
 from .people import NVPeopleScraper
-
-# from .committees import NVCommitteeScraper
 from .bills import NVBillScraper
 from .events import NVEventScraper
 
+# from .committees import NVCommitteeScraper
 
-class Nevada(Jurisdiction):
-    division_id = "ocd-division/country:us/state:nv"
-    classification = "government"
-    name = "Nevada"
-    url = "http://www.leg.state.nv.us/"
+
+class Nevada(State):
     scrapers = {
         "people": NVPeopleScraper,
         # 'committees': NVCommitteeScraper,
@@ -122,30 +115,11 @@ class Nevada(Jurisdiction):
         "63rd (1985) Session",
     ]
 
-    def get_organizations(self):
-        legislature_name = "Nevada Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization(
-            "Assembly", classification="lower", parent_id=legislature._id
-        )
-
-        yield Organization("Office of the Governor", classification="executive")
-        yield legislature
-        yield upper
-        yield lower
-
     def get_session_list(self):
         return url_xpath(
             "https://www.leg.state.nv.us/Session/",
             '//div[contains(@class, "list-group-item-heading")]/text()',
         )
-
-    def get_extract_text(self, doc, data):
-        return text_after_line_numbers(pdfdata_to_text(data))
 
     session_slugs = {
         "2010Special26": "26th2010Special",

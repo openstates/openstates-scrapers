@@ -1,21 +1,15 @@
 import lxml.html
 import re
 import requests
-
-from pupa.scrape import Jurisdiction, Organization
-
+from openstates.utils import State
 from .people import AZPersonScraper
+from .bills import AZBillScraper
 
 # from .committees import AZCommitteeScraper
 # from .events import AZEventScraper
-from .bills import AZBillScraper
 
 
-class Arizona(Jurisdiction):
-    division_id = "ocd-division/country:us/state:az"
-    classification = "government"
-    name = "Arizona"
-    url = "http://www.azleg.gov/"
+class Arizona(State):
     scrapers = {
         "people": AZPersonScraper,
         # 'committees': AZCommitteeScraper,
@@ -311,20 +305,6 @@ class Arizona(Jurisdiction):
         "1989 - Thirty-ninth Legislature - First Special Session",
         "1989 - Thirty-ninth Legislature - First Regular Session",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Arizona State Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield Organization("Office of the Governor", classification="executive")
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         session = requests.Session()

@@ -1,7 +1,4 @@
-from pupa.scrape import Jurisdiction, Organization
-
-from openstates.utils import url_xpath
-
+from openstates.utils import url_xpath, State
 from .bills import MDBillScraper
 from .people import MDPersonScraper
 from .events import MDEventScraper
@@ -9,11 +6,7 @@ from .events import MDEventScraper
 # from .committees import MDCommitteeScraper
 
 
-class Maryland(Jurisdiction):
-    division_id = "ocd-division/country:us/state:md"
-    classification = "government"
-    name = "Maryland"
-    url = "http://mgaleg.maryland.gov/webmga/frm1st.aspx?tab=home"
+class Maryland(State):
     scrapers = {
         "bills": MDBillScraper,
         "people": MDPersonScraper,
@@ -166,20 +159,6 @@ class Maryland(Jurisdiction):
         "2006 Regular Session",
         "2006 Special Session 1",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Maryland General Assembly"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield Organization("Office of the Governor", classification="executive")
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         return url_xpath(

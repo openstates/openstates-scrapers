@@ -1,24 +1,17 @@
 import re
 
-from pupa.scrape import Jurisdiction, Organization
-
-from openstates.utils import url_xpath
+from openstates.utils import url_xpath, State
 from .bills import CABillScraper
-
-# from .events import CAEventScraper
 from .people import CAPersonScraper
 
+# from .events import CAEventScraper
 # from .committees import CACommitteeScraper
 
 
 settings = dict(SCRAPELIB_RPM=30)
 
 
-class California(Jurisdiction):
-    division_id = "ocd-division/country:us/state:ca"
-    classification = "government"
-    name = "California"
-    url = "http://www.legislature.ca.gov/"
+class California(State):
     scrapers = {
         "bills": CABillScraper,
         # 'events': CAEventScraper,
@@ -144,22 +137,6 @@ class California(Jurisdiction):
         "1995-1996",
         "1993-1994",
     ]
-
-    def get_organizations(self):
-        legislature_name = "California State Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization(
-            "Assembly", classification="lower", parent_id=legislature._id
-        )
-
-        yield Organization(name="Office of the Governor", classification="executive")
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         sessions = url_xpath(

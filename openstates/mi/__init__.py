@@ -1,5 +1,4 @@
-from pupa.scrape import Jurisdiction, Organization
-from openstates.utils import url_xpath
+from openstates.utils import url_xpath, State
 from .bills import MIBillScraper
 from .events import MIEventScraper
 from .people import MIPersonScraper
@@ -7,11 +6,7 @@ from .people import MIPersonScraper
 # from .committees import MICommitteeScraper
 
 
-class Michigan(Jurisdiction):
-    division_id = "ocd-division/country:us/state:mi"
-    classification = "government"
-    name = "Michigan"
-    url = "http://www.legislature.mi.gov"
+class Michigan(State):
     scrapers = {
         "bills": MIBillScraper,
         "events": MIEventScraper,
@@ -67,19 +62,6 @@ class Michigan(Jurisdiction):
         "1991-1992",
         "1989-1990",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Michigan Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         return [

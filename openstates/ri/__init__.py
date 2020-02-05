@@ -1,20 +1,13 @@
-from pupa.scrape import Jurisdiction, Organization
-
-from openstates.utils import url_xpath
+from openstates.utils import url_xpath, State
 
 from .bills import RIBillScraper
-
-# from .events import RIEventScraper
 from .people import RIPersonScraper
 
+# from .events import RIEventScraper
 # from .committees import RICommitteeScraper
 
 
-class RhodeIsland(Jurisdiction):
-    division_id = "ocd-division/country:us/state:ri"
-    classification = "government"
-    name = "Rhode Island"
-    url = "http://www.ri.gov/"
+class RhodeIsland(State):
     scrapers = {
         "bills": RIBillScraper,
         # 'events': RIEventScraper,
@@ -104,23 +97,6 @@ class RhodeIsland(Jurisdiction):
         "2008",
         "2007",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Rhode Island General Assembly"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        executive = Organization(
-            name="Office of the Governor", classification="executive"
-        )
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield executive
-        yield upper
-        yield lower
 
     def get_session_list(self):
         return url_xpath(

@@ -1,21 +1,15 @@
 import re
-
 import requests
 import lxml.html
-from pupa.scrape import Jurisdiction, Organization
-
+from openstates.utils import State
 from .people import MAPersonScraper
-
-# from .committees import MACommitteeScraper
 from .bills import MABillScraper
 from .events import MAEventScraper
 
+# from .committees import MACommitteeScraper
 
-class Massachusetts(Jurisdiction):
-    division_id = "ocd-division/country:us/state:ma"
-    classification = "government"
-    name = "Massachusetts"
-    url = "http://mass.gov"
+
+class Massachusetts(State):
     scrapers = {
         "people": MAPersonScraper,
         # 'committees': MACommitteeScraper,
@@ -65,19 +59,6 @@ class Massachusetts(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = []
-
-    def get_organizations(self):
-        legislature_name = "Massachusetts General Court"
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield Organization(name="Office of the Governor", classification="executive")
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         doc = lxml.html.fromstring(

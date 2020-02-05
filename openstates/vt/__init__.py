@@ -1,5 +1,4 @@
-from pupa.scrape import Jurisdiction, Organization
-from openstates.utils import url_xpath
+from openstates.utils import url_xpath, State
 from .people import VTPersonScraper
 
 # from .committees import VTCommitteeScraper
@@ -17,11 +16,7 @@ from .events import VTEventScraper
 settings = dict(SCRAPELIB_RPM=20)
 
 
-class Vermont(Jurisdiction):
-    division_id = "ocd-division/country:us/state:vt"
-    classification = "government"
-    name = "Vermont"
-    url = "http://legislature.vermont.gov/"
+class Vermont(State):
     scrapers = {
         "people": VTPersonScraper,
         # 'committees': VTCommitteeScraper,
@@ -82,22 +77,6 @@ class Vermont(Jurisdiction):
 
     def get_year_slug(self, session):
         return self.site_ids.get(session, session[5:])
-
-    def get_organizations(self):
-        legislature_name = "Vermont General Assembly"
-        legislature = Organization(name=legislature_name, classification="legislature")
-        governor = Organization(
-            name="Office of the Governor", classification="executive"
-        )
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield governor
-        yield upper
-        yield lower
 
     def get_session_list(self):
         sessions = url_xpath(

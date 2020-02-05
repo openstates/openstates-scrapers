@@ -1,6 +1,4 @@
-from pupa.scrape import Jurisdiction, Organization
-
-from openstates.utils import url_xpath
+from openstates.utils import url_xpath, State
 from .bills import NJBillScraper
 from .events import NJEventScraper
 from .people import NJPersonScraper
@@ -11,11 +9,7 @@ from .people import NJPersonScraper
 settings = dict(SCRAPELIB_RETRY_ATTEMPTS=0)
 
 
-class NewJersey(Jurisdiction):
-    division_id = "ocd-division/country:us/state:nj"
-    classification = "government"
-    name = "New Jersey"
-    url = "http://www.njleg.state.nj.us/"
+class NewJersey(State):
     scrapers = {
         "bills": NJBillScraper,
         "events": NJEventScraper,
@@ -77,25 +71,6 @@ class NewJersey(Jurisdiction):
         "1998-1999",
         "1996-1997",
     ]
-
-    def get_organizations(self):
-        legislature_name = "New Jersey Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        executive = Organization(
-            name="Governor of New Jersey", classification="executive"
-        )
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization(
-            "Assembly", classification="lower", parent_id=legislature._id
-        )
-
-        yield legislature
-        yield executive
-        yield upper
-        yield lower
 
     def get_session_list(self):
         return url_xpath(
