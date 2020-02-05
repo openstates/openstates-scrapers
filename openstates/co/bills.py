@@ -421,9 +421,10 @@ class COBillScraper(Scraper, LXMLMixin):
                 "17C": "abstain",
             }
             for roll in rolls:
-                voted = roll.xpath(".//td/div/font/text()")[0].strip()
-                voter = roll.xpath(".//td/font/text()")[0].strip()
-                if voted == "V":
-                    continue
-                vote.vote(vote_abrv[voted], voter)
+                if len(roll.xpath(".//td/div/font/text()")) > 0:
+                    voted = roll.xpath(".//td/div/font/text()")[0].strip()
+                    voter = roll.xpath(".//td/font/text()")[0].strip()
+                    if voted == "V":
+                        continue
+                    vote.vote(vote_abrv[voted], voter)
             yield vote
