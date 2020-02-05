@@ -355,7 +355,9 @@ class TNBillScraper(Scraper):
             bill.add_identifier(secondary_bill_id)
 
         if page.xpath('//span[@id="lblCompNumber"]/a'):
-            companion_id = page.xpath('//span[@id="lblCompNumber"]/a')[0].text_content().strip()
+            companion_id = (
+                page.xpath('//span[@id="lblCompNumber"]/a')[0].text_content().strip()
+            )
             bill.add_related_bill(
                 identifier=companion_id,
                 legislative_session=session,
@@ -424,8 +426,9 @@ class TNBillScraper(Scraper):
                 )
 
             # secondary actions
-            cotable = page.xpath("//table[@id='gvCoActionHistory']")[0]
-            actions_from_table(bill, cotable)
+            if page.xpath("//table[@id='gvCoActionHistory']"):
+                cotable = page.xpath("//table[@id='gvCoActionHistory']")[0]
+                actions_from_table(bill, cotable)
 
         # votes
         yield from self.scrape_vote_events(bill, page, bill_url)
