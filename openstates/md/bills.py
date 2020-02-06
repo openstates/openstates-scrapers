@@ -324,7 +324,6 @@ class MDBillScraper(Scraper):
                     classification=atype,
                     related_entities=related,
                 )
-                print(action_text, action_date.strftime("%Y-%m-%d"))
             elif row.xpath("td[4]/a"):
                 link = row.xpath("td[4]/a")[0]
                 link_text = link.text_content().strip()
@@ -420,107 +419,6 @@ class MDBillScraper(Scraper):
 
         # yield from self.parse_bill_votes_new(doc, bill)
         yield bill
-
-    def scrape_documents(self, bill, doc):
-        for td in doc.xpath('//table[@class="billdocs"]//td'):
-            a = td.xpath("a")[0]
-            description = td.xpath("text()")
-            if description:
-                description = self.remove_leading_dash(description[0])
-            whole = "".join(td.itertext())
-
-            if a.text == "Text":
-                bill.add_version_link(
-                    "Bill Text", a.get("href"), media_type="application/pdf"
-                )
-            elif a.text == "Reprint":
-                bill.add_version_link(
-                    description, a.get("href"), media_type="application/pdf"
-                )
-            elif a.text == "Report":
-                bill.add_document_link(
-                    description, a.get("href"), media_type="application/pdf"
-                )
-            elif a.text == "Analysis":
-                bill.add_document_link(
-                    a.tail.replace(" - ", " ").strip(),
-                    a.get("href"),
-                    media_type="application/pdf",
-                )
-            elif a.text in (
-                "Bond Bill Fact Sheet",
-                "Attorney General's Review Letter",
-                "Governor's Veto Letter",
-                "Joint Chairmen's Report",
-                "Conference Committee Summary Report",
-            ):
-                bill.add_document_link(
-                    a.text, a.get("href"), media_type="application/pdf"
-                )
-            elif a.text in (
-                "Amendments",
-                "Conference Committee Amendment",
-                "Conference Committee Report",
-            ):
-                bill.add_document_link(
-                    whole, a.get("href"), media_type="application/pdf"
-                )
-            elif a.text == "Vote - Senate - Committee":
-                bill.add_document_link(
-                    "Senate %s Committee Vote" % a.tail.replace(" - ", " ").strip(),
-                    a.get("href"),
-                    media_type="application/pdf",
-                )
-            elif a.text == "Vote - House - Committee":
-                bill.add_document_link(
-                    "House %s Committee Vote" % a.tail.replace(" - ", " ").strip(),
-                    a.get("href"),
-                    media_type="application/pdf",
-                )
-            elif a.text == "Vote - Senate Floor":
-                # TO DO: Re-write vote scraping
-                # See details on https://github.com/openstates/openstates/issues/2093
-                pass
-            elif a.text == "Vote - House Floor":
-                pass
-            else:
-                raise ValueError("unknown document type: %s", a.text)
-
-    def scrape_actions(self, bill, url):
-        html = self.get(url).text
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
-
-        for row in doc.xpath('//table[@class="billgrid"]/tr')[1:]:
-            new_chamber, cal_date, _leg_date, action, _proceedings = row.xpath("td")
-
-            if new_chamber.text == "Senate":
-                chamber = "upper"
-            elif new_chamber.text == "House":
-                chamber = "lower"
-            elif new_chamber.text == "Post Passage":
-                chamber = "executive"
-            elif new_chamber.text is not None:
-                raise ValueError("unexpected chamber: " + new_chamber.text)
-
-            action = action.text
-            if cal_date.text:
-                action_date = datetime.datetime.strptime(cal_date.text, "%m/%d/%Y")
-
-            atype, committee = _classify_action(action)
-            related = (
-                [{"type": "committee", "name": committee}]
-                if committee is not None
-                else []
-            )
-
-            bill.add_action(
-                action,
-                action_date.strftime("%Y-%m-%d"),
-                chamber=chamber,
-                classification=atype,
-                related_entities=related,
-            )
 
     def remove_leading_dash(self, string):
         string = string[3:] if string.startswith(" - ") else string
