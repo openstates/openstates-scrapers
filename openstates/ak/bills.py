@@ -234,15 +234,13 @@ class AKBillScraper(Scraper):
         doc_list = lxml.html.fromstring(self.get(doc_list_url).text)
         doc_list.make_links_absolute(doc_list_url)
         bill.add_source(doc_list_url)
+        seen = set()
         for href in doc_list.xpath('//a[contains(@href, "get_documents")][@onclick]'):
             h_name = href.text_content()
             h_href = href.attrib["href"]
-            if h_name.strip():
-                try:
-                    bill.add_document_link(h_name, h_href)
-                except KeyError:
-                    self.warning("Duplicate found")
-                    return
+            if h_name.strip() and h_href not in seen:
+                bill.add_document_link(h_name, h_href)
+                seen.add(h_href)
 
         yield bill
 
