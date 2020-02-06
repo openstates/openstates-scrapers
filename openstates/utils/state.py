@@ -1,6 +1,21 @@
 from pupa.scrape import Jurisdiction, Organization
 import openstates_metadata
 
+_name_fixes = {
+    "SouthCarolina": "South Carolina",
+    "NorthCarolina": "North Carolina",
+    "SouthDakota": "South Dakota",
+    "NorthDakota": "North Dakota",
+    "RhodeIsland": "Rhode Island",
+    "NewHampshire": "New Hampshire",
+    "NewJersey": "New Jersey",
+    "NewYork": "New York",
+    "NewMexico": "New Mexico",
+    "WestVirginia": "West Virginia",
+    "PuertoRico": "Puerto Rico",
+    "DistrictOfColumbia": "District of Columbia",
+}
+
 
 # this metaclass is a hack to only add the classification on subclasses
 # pupa checks for a few properties to ensure it has a complete Jurisdiction
@@ -12,6 +27,7 @@ class MetaShim(type):
         if name != "State":
             c.classification = "government"
             # while we're here, load the metadata (formerly on a cached property)
+            name = _name_fixes.get(name, name)
             c.metadata = openstates_metadata.lookup(name=name)
         return c
 
@@ -33,6 +49,7 @@ class State(Jurisdiction, metaclass=MetaShim):
         legislature = Organization(
             name=self.metadata.legislature_name, classification="legislature"
         )
+        yield legislature
         if not self.metadata.unicameral:
             yield Organization(
                 self.metadata.upper.name,

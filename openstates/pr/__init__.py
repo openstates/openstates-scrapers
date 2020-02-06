@@ -1,17 +1,13 @@
-from pupa.scrape import Jurisdiction, Organization
+from openstates.utils import State
 from .people import PRPersonScraper
+from .bills import PRBillScraper
 
 # from .committees import PRCommitteeScraper
-from .bills import PRBillScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
 
-class PuertoRico(Jurisdiction):
-    division_id = "ocd-division/country:us/territory:pr"
-    classification = "government"
-    name = "Puerto Rico"
-    url = "http://www.oslpr.org/"
+class PuertoRico(State):
     scrapers = {
         "people": PRPersonScraper,
         # 'committees': PRCommitteeScraper,
@@ -37,14 +33,6 @@ class PuertoRico(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = ["2005-2008", "2001-2004", "1997-2000", "1993-1996"]
-
-    def get_organizations(self):
-        legislature_name = "Legislative Assembly of Puerto Rico"
-        legislature = Organization(name=legislature_name, classification="legislature")
-        yield legislature
-        yield Organization("Senate", classification="upper", parent_id=legislature._id)
-        yield Organization("House", classification="lower", parent_id=legislature._id)
-        yield Organization(name="Office of the Governor", classification="executive")
 
     def get_session_list(self):
         from openstates.utils import url_xpath

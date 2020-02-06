@@ -1,19 +1,13 @@
-from pupa.scrape import Jurisdiction, Organization
-
-from openstates.utils import url_xpath
+from openstates.utils import url_xpath, State
 from .bills import TXBillScraper
-
-# from .committees import TXCommitteeScraper
 from .events import TXEventScraper
 from .people import TXPersonScraper
 from .votes import TXVoteScraper
 
+# from .committees import TXCommitteeScraper
 
-class Texas(Jurisdiction):
-    division_id = "ocd-division/country:us/state:tx"
-    classification = "government"
-    name = "Texas"
-    url = "https://capitol.texas.gov/"
+
+class Texas(State):
     scrapers = {
         "people": TXPersonScraper,
         # 'committees': TXCommitteeScraper,
@@ -155,17 +149,3 @@ class Texas(Jurisdiction):
         return url_xpath(
             "https://capitol.texas.gov/", '//select[@name="cboLegSess"]/option/text()'
         )
-
-    def get_organizations(self):
-        legislature_name = "Texas Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield Organization(name="Office of the Governor", classification="executive")
-        yield legislature
-        yield upper
-        yield lower

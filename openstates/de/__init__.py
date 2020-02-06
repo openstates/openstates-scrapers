@@ -1,19 +1,12 @@
+from openstates.utils import url_xpath, State
 from .people import DEPersonScraper
 from .bills import DEBillScraper
 
 # from .events import DEEventScraper
 # from .committees import DECommitteeScraper
 
-from openstates.utils import url_xpath
 
-from pupa.scrape import Jurisdiction, Organization
-
-
-class Delaware(Jurisdiction):
-    division_id = "ocd-division/country:us/state:de"
-    classification = "government"
-    name = "Delaware"
-    url = "http://legis.delaware.gov/"
+class Delaware(State):
     scrapers = {
         "people": DEPersonScraper,
         "bills": DEBillScraper,
@@ -82,23 +75,6 @@ class Delaware(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = []
-
-    def get_organizations(self):
-        legislature_name = "Delaware General Assembly"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        executive = Organization(
-            name="Office of the Governor", classification="executive"
-        )
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield executive
-        yield upper
-        yield lower
 
     def get_session_list(self):
         url = "https://legis.delaware.gov/"

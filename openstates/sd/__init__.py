@@ -1,15 +1,11 @@
-from pupa.scrape import Jurisdiction, Organization
 import scrapelib
 import lxml.html
 from .people import SDLegislatorScraper
 from .bills import SDBillScraper
+from openstates.utils import State
 
 
-class SouthDakota(Jurisdiction):
-    division_id = "ocd-division/country:us/state:sd"
-    classification = "government"
-    name = "South Dakota"
-    url = "http://www.sdlegislature.gov/"
+class SouthDakota(State):
     scrapers = {"people": SDLegislatorScraper, "bills": SDBillScraper}
     legislative_sessions = [
         {"_scraped_name": "2009", "identifier": "2009", "name": "2009 Regular Session"},
@@ -92,23 +88,6 @@ class SouthDakota(Jurisdiction):
         "1997",
         "1997 Special",
     ]
-
-    def get_organizations(self):
-        legislature_name = "South Dakota State Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-        executive = Organization(
-            name="Office of the Governor", classification="executive"
-        )
-
-        yield legislature
-        yield executive
-        yield upper
-        yield lower
 
     def get_session_list(self):
         html = (

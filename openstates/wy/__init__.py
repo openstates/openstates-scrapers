@@ -1,5 +1,4 @@
-from pupa.scrape import Jurisdiction, Organization
-
+from openstates.utils import State
 from .bills import WYBillScraper
 from .people import WYPersonScraper
 
@@ -9,11 +8,7 @@ import requests
 import re
 
 
-class Wyoming(Jurisdiction):
-    division_id = "ocd-division/country:us/state:wy"
-    classification = "government"
-    name = "Wyoming"
-    url = "http://legisweb.state.wy.us/"
+class Wyoming(State):
     scrapers = {
         "bills": WYBillScraper,
         "people": WYPersonScraper,
@@ -105,20 +100,6 @@ class Wyoming(Jurisdiction):
         "2002",
         "2001",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Wyoming State Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield Organization(name="Governor of Wyoming", classification="executive")
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         # the sessions list is a JS object buried in a massive file

@@ -1,7 +1,5 @@
 import logging
-from pupa.scrape import Jurisdiction, Organization
-
-from openstates.utils import url_xpath
+from openstates.utils import url_xpath, State
 
 from .people import VaPersonScraper
 from .bills import VaBillScraper
@@ -13,11 +11,7 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 settings = {"SCRAPELIB_RPM": 40}
 
 
-class Virginia(Jurisdiction):
-    division_id = "ocd-division/country:us/state:va"
-    classification = "government"
-    name = "Virginia"
-    url = "http://virginiageneralassembly.gov/"
+class Virginia(State):
     scrapers = {"people": VaPersonScraper, "bills": VaBillScraper}
     legislative_sessions = [
         {
@@ -176,20 +170,6 @@ class Virginia(Jurisdiction):
         "1994 Special Session I",
         "1994 Special Session II",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Virginia General Assembly"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield Organization(name="Office of the Governor", classification="executive")
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         sessions = url_xpath(

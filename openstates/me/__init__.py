@@ -1,6 +1,4 @@
-from pupa.scrape import Jurisdiction, Organization
-from openstates.utils import url_xpath
-
+from openstates.utils import url_xpath, State
 from .bills import MEBillScraper
 from .people import MEPersonScraper
 from .events import MEEventScraper
@@ -8,11 +6,7 @@ from .events import MEEventScraper
 # from .committees import MECommitteeScraper
 
 
-class Maine(Jurisdiction):
-    division_id = "ocd-division/country:us/state:me"
-    classification = "government"
-    name = "Maine"
-    url = "http://legislature.maine.gov"
+class Maine(State):
     scrapers = {
         "bills": MEBillScraper,
         "people": MEPersonScraper,
@@ -71,20 +65,6 @@ class Maine(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = ["2001-2002"]
-
-    def get_organizations(self):
-        legislature_name = "Maine Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield Organization(name="Office of the Governor", classification="executive")
-        yield upper
-        yield lower
 
     def get_session_list(self):
         sessions = url_xpath(

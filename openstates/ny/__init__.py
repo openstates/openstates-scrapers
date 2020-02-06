@@ -1,6 +1,4 @@
-from pupa.scrape import Jurisdiction, Organization
-
-from openstates.utils import url_xpath
+from openstates.utils import url_xpath, State
 
 from .bills import NYBillScraper
 from .events import NYEventScraper
@@ -12,11 +10,7 @@ from .people import NYPersonScraper
 settings = dict(SCRAPELIB_TIMEOUT=120)
 
 
-class NewYork(Jurisdiction):
-    division_id = "ocd-division/country:us/state:ny"
-    classification = "government"
-    name = "New York"
-    url = "http://public.leginfo.state.ny.us/"
+class NewYork(State):
     scrapers = {
         "bills": NYBillScraper,
         "events": NYEventScraper,
@@ -60,21 +54,6 @@ class NewYork(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = []
-
-    def get_organizations(self):
-        legislature_name = "New York Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization(
-            "Assembly", classification="lower", parent_id=legislature._id
-        )
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         return url_xpath(

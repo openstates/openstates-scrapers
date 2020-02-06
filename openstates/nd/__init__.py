@@ -1,16 +1,12 @@
-from pupa.scrape import Jurisdiction, Organization
-
-# from .committees import NDCommitteeScraper
+from openstates.utils import State
 from .votes import NDVoteScraper
 from .people import NDPersonScraper
 from .bills import NDBillScraper
 
+# from .committees import NDCommitteeScraper
 
-class NorthDakota(Jurisdiction):
-    division_id = "ocd-division/country:us/state:nd"
-    classification = "government"
-    name = "North Dakota"
-    url = "http://www.legis.nd.gov/"
+
+class NorthDakota(State):
     scrapers = {
         "people": NDPersonScraper,
         "votes": NDVoteScraper,
@@ -114,19 +110,6 @@ class NorthDakota(Jurisdiction):
         "33rd Legislative Assembly (1953-54)",
         "34th Legislative Assembly (1955-56)",
     ]
-
-    def get_organizations(self):
-        legislature_name = "North Dakota Legislative Assembly"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         import scrapelib

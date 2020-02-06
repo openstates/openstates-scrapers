@@ -1,19 +1,12 @@
-from pupa.scrape import Jurisdiction, Organization
-
-from openstates.utils import url_xpath
-
+from openstates.utils import url_xpath, State
 from .bills import TNBillScraper
-
-# from .committees import TNCommitteeScraper
 from .events import TNEventScraper
 from .people import TNPersonScraper
 
+# from .committees import TNCommitteeScraper
 
-class Tennessee(Jurisdiction):
-    division_id = "ocd-division/country:us/state:tn"
-    classification = "government"
-    name = "Tennessee"
-    url = "http://www.capitol.tn.gov/"
+
+class Tennessee(State):
     scrapers = {
         "bills": TNBillScraper,
         # 'committees': TNCommitteeScraper,
@@ -90,19 +83,6 @@ class Tennessee(Jurisdiction):
         "100th General Assembly",
         "99th General Assembly",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Tennessee General Assembly"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         # Special sessions are available in the archive, but not in current session.

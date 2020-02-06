@@ -1,18 +1,12 @@
 import re
-from pupa.scrape import Jurisdiction, Organization
-
-from openstates.utils import url_xpath
+from openstates.utils import url_xpath, State
 from .people import IAPersonScraper
 from .bills import IABillScraper
 from .votes import IAVoteScraper
 from .events import IAEventScraper
 
 
-class Iowa(Jurisdiction):
-    division_id = "ocd-division/country:us/state:ia"
-    classification = "government"
-    name = "Iowa"
-    url = "https://www.legis.iowa.gov/"
+class Iowa(State):
     scrapers = {
         "people": IAPersonScraper,
         "bills": IABillScraper,
@@ -66,19 +60,6 @@ class Iowa(Jurisdiction):
         "General Assembly: 77",
         "General Assembly: 76",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Iowa General Assembly"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         sessions = url_xpath(
