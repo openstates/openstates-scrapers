@@ -103,20 +103,20 @@ class Minnesota(State):
             "end_date": "2018-05-21",
         },
         {
-            "_scraped_name": "91st Legislature, 2019-2020",
-            "classification": "primary",
-            "identifier": "2019-2020",
-            "name": "2019-2020 Regular Session",
-            "start_date": "2019-01-08",
-            "end_date": "2019-06-20",
-        },
-        {
             "_scraped_name": "91st Legislature, 2019 1st Special Session",
             "classification": "primary",
             "identifier": "2019s1",
             "name": "2019, First Special Session",
             "start_date": "2019-05-24",
             "end_date": "2019-05-29",
+        },
+        {
+            "_scraped_name": "91st Legislature, 2019-2020",
+            "classification": "primary",
+            "identifier": "2019-2020",
+            "name": "2019-2020 Regular Session",
+            "start_date": "2019-01-08",
+            "end_date": "2019-06-20",
         },
     ]
     ignored_scraped_sessions = [
