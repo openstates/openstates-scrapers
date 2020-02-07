@@ -44,6 +44,9 @@ class MDVoteScraper(Scraper, LXMLMixin):
         lines = text.splitlines()
 
         chamber = "upper" if "senate" in url else "lower"
+        if "Maryland" not in text:
+            self.warning(f"empty vote from {url}")
+            return
         date = re.findall(r"Legislative Date: (\w+ \d+, \d{4})", text)[0]
 
         section = "preamble"
