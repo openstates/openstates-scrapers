@@ -1,5 +1,6 @@
 import re
 import scrapelib
+import os
 from collections import defaultdict
 from pytz import timezone
 from datetime import datetime
@@ -147,26 +148,7 @@ class KYBillScraper(Scraper, LXMLMixin):
             self.info("{} Withdrawn, skipping".format(bill_id))
             return
 
-        version = self.parse_bill_field(page, "Bill Documents")
-        source_url = version.xpath("a[1]/@href")[0]
-        version_title = version.xpath("a[1]/text()")[0].strip()
-
-        if version is None:
-            # Bill withdrawn
-            self.logger.warning("Bill withdrawn.")
-            return
-        else:
-            if source_url.endswith(".doc"):
-                mimetype = "application/msword"
-            elif source_url.endswith(".pdf"):
-                mimetype = "application/pdf"
-
         title = self.parse_bill_field(page, "Title").text_content()
-
-        # actions = self.get_nodes(
-        #     page,
-        #     '//div[@class="StandardText leftDivMargin"]/'
-        #     'div[@class="StandardText"][last()]//text()[normalize-space()]')
 
         if "CR" in bill_id:
             bill_type = "concurrent resolution"
@@ -187,10 +169,16 @@ class KYBillScraper(Scraper, LXMLMixin):
         bill.subject = self._subjects[bill_id]
         bill.add_source(url)
 
-        bill.add_version_link(version_title, source_url, media_type=mimetype)
+        version_ct = self.parse_versions(page, bill)
+
+        if version_ct < 1:
+            # Bill withdrawn
+            self.logger.warning("Bill withdrawn.")
+            return
 
         self.parse_actions(page, bill, chamber)
         self.parse_subjects(page, bill)
+        self.parse_proposed_amendments(page, bill)
 
         # LM is "Locally Mandated fiscal impact"
         fiscal_notes = page.xpath('//a[contains(@href, "/LM.pdf")]')
@@ -222,11 +210,47 @@ class KYBillScraper(Scraper, LXMLMixin):
 
         yield bill
 
+    def parse_versions(self, page, bill):
+        xpath_expr = '//tr[th[text()="Bill Documents"]]/td[1]/a'
+        version_count = 0
+        for row in page.xpath(xpath_expr):
+            source_url = row.attrib['href']
+            version_title = row.xpath("text()")[0].strip()
+
+            if source_url.endswith(".doc"):
+                mimetype = "application/msword"
+            elif source_url.endswith(".pdf"):
+                mimetype = "application/pdf"
+            else:
+                self.warning("Unknown mimetype for {}".format(source_url))
+
+            bill.add_version_link(version_title, source_url, media_type=mimetype)
+            version_count += 1
+        return version_count
+
+    def parse_proposed_amendments(self, page, bill):
+        # div.bill-table with an H4 "Proposed Amendments", all a's in the first TD of the first TR
+        # that point to a path including "recorddocuments"
+        xpath = '//div[contains(@class, "bill-table") and descendant::h4[text()="Proposed Amendments"]]' \
+            '//tr[1]/td[1]/a[contains(@href,"recorddocuments")]'
+
+        for link in page.xpath(xpath):
+            note = link.xpath("text()")[0].strip()
+            note = 'Proposed {}'.format(note)
+            url = link.attrib["href"]
+            bill.add_document_link(
+                note=note,
+                url=url
+            )
+
     def scrape_votes(self, vote_url, bill, chamber):
+        filename, response = self.urlretrieve(vote_url)
         # Grabs text from pdf
         pdflines = [
-            line.decode("utf-8") for line in convert_pdf(vote_url, "text").splitlines()
+            line.decode("utf-8") for line in convert_pdf(filename, "text").splitlines()
         ]
+        os.remove(filename)
+
         vote_date = 0
         voters = defaultdict(list)
         for x in range(len(pdflines)):
