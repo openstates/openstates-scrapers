@@ -1,17 +1,12 @@
-from pupa.scrape import Jurisdiction, Organization
-from openstates.utils import url_xpath
+from openstates.utils import url_xpath, State
 from .people import NMPersonScraper
-
-# from .committees import NMCommitteeScraper
 from .bills import NMBillScraper
 from .votes import NMVoteScraper
 
+# from .committees import NMCommitteeScraper
 
-class NewMexico(Jurisdiction):
-    division_id = "ocd-division/country:us/state:nm"
-    classification = "government"
-    name = "New Mexico"
-    url = "https://www.nmlegis.gov"
+
+class NewMexico(State):
     scrapers = {
         "people": NMPersonScraper,
         # 'committees': NMCommitteeScraper,
@@ -147,17 +142,3 @@ class NewMexico(Jurisdiction):
             "http://www.nmlegis.gov/",
             '//select[@name="ctl00$MainContent$ddlSessions"]' "/option/text()",
         )
-
-    def get_organizations(self):
-        legislature_name = "New Mexico Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield Organization(name="Office of the Governor", classification="executive")
-        yield legislature
-        yield upper
-        yield lower

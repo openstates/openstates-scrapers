@@ -1,18 +1,14 @@
-from pupa.scrape import Jurisdiction, Organization
+from openstates.utils import State
 from .people import WAPersonScraper
 from .events import WAEventScraper
+from .bills import WABillScraper
 
 # from .committees import WACommitteeScraper
-from .bills import WABillScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
 
-class Washington(Jurisdiction):
-    division_id = "ocd-division/country:us/state:wa"
-    classification = "government"
-    name = "Washington"
-    url = "http://www.leg.wa.gov"
+class Washington(State):
     scrapers = {
         "people": WAPersonScraper,
         "events": WAEventScraper,
@@ -68,19 +64,6 @@ class Washington(Jurisdiction):
         "1987-88",
         "1985-86",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Washington State Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         from utils.lxmlize import url_xpath

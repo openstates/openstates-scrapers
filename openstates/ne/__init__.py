@@ -1,17 +1,11 @@
-from pupa.scrape import Jurisdiction, Organization
-
-from openstates.utils import url_xpath
+from openstates.utils import url_xpath, State
 from openstates.ne.bills import NEBillScraper
 from openstates.ne.people import NEPersonScraper
 
 # from openstates.ne.committees import NECommitteeScraper
 
 
-class Nebraska(Jurisdiction):
-    division_id = "ocd-division/country:us/state:ne"
-    classification = "government"
-    name = "Nebraska"
-    url = "http://nebraskalegislature.gov/"
+class Nebraska(State):
     scrapers = {
         "bills": NEBillScraper,
         "people": NEPersonScraper,
@@ -67,16 +61,6 @@ class Nebraska(Jurisdiction):
         "100th Legislature 1st and 2nd Sessions",
         "100th Leg. First Special Session",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Nebraska Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        executive = Organization(
-            name="Office of the Governor", classification="executive"
-        )
-        yield legislature
-        yield executive
 
     def get_session_list(self):
         return url_xpath(

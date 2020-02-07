@@ -1,19 +1,13 @@
 import os
-
 import requests
-from pupa.scrape import Jurisdiction, Organization
-
+from openstates.utils import State
 from .people import INPersonScraper
-
-# from .committees import INCommitteeScraper
 from .bills import INBillScraper
 
+# from .committees import INCommitteeScraper
 
-class Indiana(Jurisdiction):
-    division_id = "ocd-division/country:us/state:in"
-    classification = "government"
-    name = "Indiana"
-    url = "http://www.in.gov/"
+
+class Indiana(State):
     scrapers = {
         "people": INPersonScraper,
         # 'committees': INCommitteeScraper,
@@ -114,20 +108,6 @@ class Indiana(Jurisdiction):
         "1998 Regular Session",
         "1997 Regular Session",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Indiana General Assembly"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield Organization(name="Office of the Governor", classification="executive")
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         apikey = os.environ["INDIANA_API_KEY"]

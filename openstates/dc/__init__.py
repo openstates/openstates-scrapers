@@ -1,19 +1,13 @@
-from pupa.scrape import Jurisdiction, Organization
-
+from openstates.utils import State
 from .people import DCPersonScraper
-
-# from .committees import DCCommitteeScraper
 from .bills import DCBillScraper
-
-# from .events import DCEventScraper
 from .utils import api_request
 
+# from .committees import DCCommitteeScraper
+# from .events import DCEventScraper
 
-class DistrictOfColumbia(Jurisdiction):
-    division_id = "ocd-division/country:us/district:dc"
-    classification = "government"
-    name = "District of Columbia"
-    url = "https://dc.gov"
+
+class DistrictOfColumbia(State):
     scrapers = {
         "people": DCPersonScraper,
         # 'committees': DCCommitteeScraper,
@@ -64,14 +58,6 @@ class DistrictOfColumbia(Jurisdiction):
         "9",
         "8",
     ]
-
-    def get_organizations(self):
-        yield Organization(
-            name="Council of the District of Columbia", classification="legislature"
-        )
-        yield Organization(
-            name="Executive Office of the Mayor", classification="executive"
-        )
 
     def get_session_list(self):
         data = api_request("/LIMSLookups")

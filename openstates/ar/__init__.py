@@ -1,6 +1,4 @@
-from pupa.scrape import Jurisdiction, Organization
-from openstates.utils import url_xpath
-
+from openstates.utils import url_xpath, State
 from .people import ARLegislatorScraper
 from .bills import ARBillScraper
 
@@ -8,11 +6,7 @@ from .bills import ARBillScraper
 # from .events import AREventScraper
 
 
-class Arkansas(Jurisdiction):
-    division_id = "ocd-division/country:us/state:ar"
-    classification = "government"
-    name = "Arkansas"
-    url = "http://www.arkleg.state.ar.us"
+class Arkansas(State):
     scrapers = {
         "people": ARLegislatorScraper,
         # 'committees': ARCommitteeScraper,
@@ -188,19 +182,6 @@ class Arkansas(Jurisdiction):
         "Third Extraordinary Session, 1987",
         "Fourth Extraordinary Session, 1987",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Arkansas General Assembly"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         links = url_xpath(

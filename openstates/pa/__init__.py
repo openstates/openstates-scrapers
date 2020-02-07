@@ -1,7 +1,4 @@
-from pupa.scrape import Jurisdiction, Organization
-
-from openstates.utils import url_xpath
-
+from openstates.utils import url_xpath, State
 from .bills import PABillScraper
 from .events import PAEventScraper
 from .people import PALegislatorScraper
@@ -11,11 +8,7 @@ from .people import PALegislatorScraper
 settings = {"SCRAPELIB_RPM": 30}
 
 
-class Pennsylvania(Jurisdiction):
-    division_id = "ocd-division/country:us/state:pa"
-    classification = "government"
-    name = "Pennsylvania"
-    url = "http://www.legis.state.pa.us/"
+class Pennsylvania(State):
     scrapers = {
         "bills": PABillScraper,
         "events": PAEventScraper,
@@ -203,19 +196,6 @@ class Pennsylvania(Jurisdiction):
         "1966 Special Session #1",
         "1966 Special Session #3",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Pennsylvania General Assembly"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         # PA keeps slowly adding backdata, so just ignore it en masse

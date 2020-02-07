@@ -1,17 +1,11 @@
-from pupa.scrape import Jurisdiction, Organization
-from openstates.utils import url_xpath
-
+from openstates.utils import url_xpath, State
 from .people import OHLegislatorScraper
-
-# from .events import OHEventScraper
 from .bills import OHBillScraper
 
+# from .events import OHEventScraper
 
-class Ohio(Jurisdiction):
-    division_id = "ocd-division/country:us/state:oh"
-    classification = "government"
-    name = "Ohio"
-    url = "http://www.legislature.state.oh.us/"
+
+class Ohio(State):
     scrapers = {
         "people": OHLegislatorScraper,
         # 'events': OHEventScraper,
@@ -55,20 +49,6 @@ class Ohio(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = []
-
-    def get_organizations(self):
-        legislature_name = "Ohio General Assembly"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-        yield Organization("Governor of Ohio", classification="executive")
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         sessions = url_xpath(

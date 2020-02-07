@@ -1,19 +1,13 @@
 import re
-from openstates.utils import url_xpath
-
-from pupa.scrape import Jurisdiction, Organization
+from openstates.utils import url_xpath, State
 from .people import COLegislatorScraper
-
-# from .committees import COCommitteeScraper
 from .bills import COBillScraper
 from .events import COEventScraper
 
+# from .committees import COCommitteeScraper
 
-class Colorado(Jurisdiction):
-    division_id = "ocd-division/country:us/state:co"
-    classification = "government"
-    name = "Colorado"
-    url = "http://leg.colorado.gov/"
+
+class Colorado(State):
     scrapers = {
         "people": COLegislatorScraper,
         # 'committees': COCommitteeScraper,
@@ -129,21 +123,6 @@ class Colorado(Jurisdiction):
         "2000 Legislative Session",
         "2010 Regular/Special Session",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Colorado General Assembly"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-        executive = Organization("Office of the Governor", classification="executive")
-
-        yield legislature
-        yield executive
-        yield upper
-        yield lower
 
     def get_session_list(self):
         sessions = []

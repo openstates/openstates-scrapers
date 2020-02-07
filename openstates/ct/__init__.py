@@ -1,7 +1,6 @@
 import lxml.html
 import scrapelib
-from pupa.scrape import Jurisdiction, Organization
-
+from openstates.utils import State
 from .people import CTPersonScraper
 from .bills import CTBillScraper
 from .events import CTEventScraper
@@ -11,11 +10,7 @@ settings = {"SCRAPELIB_RPM": 20}
 SKIP_SESSIONS = {"incoming", "pub", "CGAAudio", "rba", "NCSL", "FOI_1", "stainedglass"}
 
 
-class Connecticut(Jurisdiction):
-    division_id = "ocd-division/country:us/state:ct"
-    classification = "government"
-    name = "Connecticut"
-    url = "http://www.cga.ct.gov/"
+class Connecticut(State):
     scrapers = {
         "people": CTPersonScraper,
         "bills": CTBillScraper,
@@ -74,19 +69,6 @@ class Connecticut(Jurisdiction):
         "2006",
         "2005",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Connecticut General Assembly"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         text = scrapelib.Scraper().get("ftp://ftp.cga.ct.gov").text

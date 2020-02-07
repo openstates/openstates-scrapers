@@ -1,22 +1,12 @@
-from pupa.scrape import Jurisdiction, Organization
 from .people import SCPersonScraper
 from .bills import SCBillScraper
 from .events import SCEventScraper
-
+from openstates.utils import State
 import requests
 import lxml.html
 
 
-class SouthCarolina(Jurisdiction):
-    """
-     Metadata containing information about state and sessions.
-     To be used by scrapers
-    """
-
-    division_id = "ocd-division/country:us/state:sc"
-    classification = "government"
-    name = "South Carolina"
-    url = "http://www.scstatehouse.gov/"
+class SouthCarolina(State):
     scrapers = {
         "people": SCPersonScraper,
         "bills": SCBillScraper,
@@ -81,20 +71,6 @@ class SouthCarolina(Jurisdiction):
         "102 - (1977-1978)",
         "101 - (1975-1976)",
     ]
-
-    def get_organizations(self):
-        """ generator to obtain organization data. """
-        legislature_name = "South Carolina Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         """ Get session list from billsearch page using xpath"""

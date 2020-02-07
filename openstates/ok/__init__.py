@@ -1,16 +1,12 @@
-from pupa.scrape import Jurisdiction, Organization
+from openstates.utils import State
 from .people import OKPersonScraper
+from .bills import OKBillScraper
 
 # from .committees import OKCommitteeScraper
 # from .events import OKEventScraper
-from .bills import OKBillScraper
 
 
-class Oklahoma(Jurisdiction):
-    division_id = "ocd-division/country:us/state:ok"
-    classification = "government"
-    name = "Oklahoma"
-    url = "http://www.oklegislature.gov/"
+class Oklahoma(State):
     scrapers = {
         "people": OKPersonScraper,
         # 'committees': OKCommitteeScraper,
@@ -117,19 +113,6 @@ class Oklahoma(Jurisdiction):
         "1994 Regular Session",
         "1993 Regular Session",
     ]
-
-    def get_organizations(self):
-        legislature_name = "Oklahoma Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         from openstates.utils import url_xpath

@@ -1,16 +1,11 @@
-from pupa.scrape import Jurisdiction, Organization
-
+from openstates.utils import State
 from .people import WVPersonScraper
-
-# from .committees import WVCommitteeScraper
 from .bills import WVBillScraper
 
+# from .committees import WVCommitteeScraper
 
-class WestVirginia(Jurisdiction):
-    division_id = "ocd-division/country:us/state:wv"
-    classification = "government"
-    name = "West Virginia"
-    url = "http://www.legis.state.wv.us/"
+
+class WestVirginia(State):
     scrapers = {
         "people": WVPersonScraper,
         # 'committees': WVCommitteeScraper,
@@ -151,19 +146,6 @@ class WestVirginia(Jurisdiction):
         "1994",
         "1993",
     ]
-
-    def get_organizations(self):
-        legislature_name = "West Virginia Legislature"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         from openstates.utils import url_xpath

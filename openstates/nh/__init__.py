@@ -1,16 +1,12 @@
 import datetime
-from pupa.scrape import Jurisdiction, Organization
+from openstates.utils import State
 from .people import NHPersonScraper
-
-# from .committees import NHCommitteeScraper
 from .bills import NHBillScraper
 
+# from .committees import NHCommitteeScraper
 
-class NewHampshire(Jurisdiction):
-    division_id = "ocd-division/country:us/state:nh"
-    classification = "government"
-    name = "New Hampshire"
-    url = "http://gencourt.state.nh.us"
+
+class NewHampshire(State):
     scrapers = {
         "people": NHPersonScraper,
         # 'committees': NHCommitteeScraper,
@@ -52,17 +48,6 @@ class NewHampshire(Jurisdiction):
         "2013 Session",
         "2017 Session Bill Status Tables Link.txt",
     ]
-
-    def get_organizations(self):
-        legislature_name = "New Hampshire General Court"
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-        lower = Organization("House", classification="lower", parent_id=legislature._id)
-        yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         # no session list on the site, just every year -- hack to force us to add new year

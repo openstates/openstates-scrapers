@@ -1,14 +1,9 @@
-from pupa.scrape import Jurisdiction, Organization
-from openstates.utils import url_xpath
+from openstates.utils import url_xpath, State
 
 # from .bills import VIBillScraper
 
 
-class USVirginIslands(Jurisdiction):
-    division_id = "ocd-division/country:us/state:vi"
-    classification = "government"
-    name = "US Virgin Islands"
-    url = "http://www.legvi.org"
+class USVirginIslands(State):
     scrapers = {
         # 'bills': VIBillScraper,
     }
@@ -35,17 +30,6 @@ class USVirginIslands(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = ["21", "22", "23", "24", "25", "26", "27", "28", "29"]
-
-    def get_organizations(self):
-        legislature_name = "Senate of the Virgin Islands"
-
-        legislature = Organization(name=legislature_name, classification="legislature")
-        upper = Organization(
-            "Senate", classification="upper", parent_id=legislature._id
-        )
-
-        yield legislature
-        yield upper
 
     def get_session_list(self):
         return url_xpath(
