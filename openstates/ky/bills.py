@@ -225,13 +225,14 @@ class KYBillScraper(Scraper, LXMLMixin):
         yield bill
 
     def parse_proposed_amendments(self, page, bill):
+        # div.bill-table with an H4 "Proposed Amendments", all a's in the first TD of the first TR
+        # that point to a path including "recorddocuments"
         xpath = '//div[contains(@class, "bill-table") and descendant::h4[text()="Proposed Amendments"]]' \
             '//tr[1]/td[1]/a[contains(@href,"recorddocuments")]'
 
         for link in page.xpath(xpath):
             note = link.xpath("text()")[0].strip()
             url = link.attrib["href"]
-            print(note, url)
             bill.add_document_link(
                 note=note,
                 url=url
