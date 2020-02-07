@@ -1,5 +1,6 @@
 import re
 import scrapelib
+import os
 from collections import defaultdict
 from pytz import timezone
 from datetime import datetime
@@ -191,6 +192,7 @@ class KYBillScraper(Scraper, LXMLMixin):
 
         self.parse_actions(page, bill, chamber)
         self.parse_subjects(page, bill)
+        self.parse_proposed_amendments(page, bill)
 
         # LM is "Locally Mandated fiscal impact"
         fiscal_notes = page.xpath('//a[contains(@href, "/LM.pdf")]')
@@ -222,11 +224,27 @@ class KYBillScraper(Scraper, LXMLMixin):
 
         yield bill
 
+    def parse_proposed_amendments(self, page, bill):
+        xpath = '//div[contains(@class, "bill-table") and descendant::h4[text()="Proposed Amendments"]]' \
+            '//tr[1]/td[1]/a[contains(@href,"recorddocuments")]'
+
+        for link in page.xpath(xpath):
+            note = link.xpath("text()")[0].strip()
+            url = link.attrib["href"]
+            print(note, url)
+            bill.add_document_link(
+                note=note,
+                url=url
+            )
+
     def scrape_votes(self, vote_url, bill, chamber):
+        filename, response = self.urlretrieve(vote_url)
         # Grabs text from pdf
         pdflines = [
-            line.decode("utf-8") for line in convert_pdf(vote_url, "text").splitlines()
+            line.decode("utf-8") for line in convert_pdf(filename, "text").splitlines()
         ]
+        os.remove(filename)
+
         vote_date = 0
         voters = defaultdict(list)
         for x in range(len(pdflines)):
