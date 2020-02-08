@@ -63,10 +63,14 @@ class MDVoteScraper(Scraper, LXMLMixin):
                 # need to add other motion types -- scraper will fail if we get
                 # a bill_id but no motion, helping us identify these
                 possible_motion = re.findall(
-                    "On Third Reading|ON 2ND RDG|Decision of the Chair", line
+                    "notwithstanding the objections|On Third Reading|ON 2ND RDG|Decision of the Chair",
+                    line,
+                    re.I,
                 )
                 if possible_motion:
                     motion = possible_motion[0]
+                    if motion == "notwithstanding the objections":
+                        motion = "Shall the bill pass notwithstanding the objections of the Executive?"
                 counts = re.findall(
                     r"(\d+) Yeas\s+(\d+) Nays\s+(\d+) Not Voting\s+(\d+) Excused\s+(\d+) Absent",
                     line,
@@ -98,12 +102,15 @@ class MDVoteScraper(Scraper, LXMLMixin):
 
         if not bill_id and not motion:
             return
-        elif bill_id and not motion or motion and not bill_id:
+        elif bill_id and not motion:
             print(
                 f"incomplete scrape of MD vote bill_id={bill_id} motion={motion} "
                 "likely need to expand motion regex"
             )
             raise ValueError()
+        elif motion and not bill_id:
+            self.warning(f"got {motion} but no bill_id, not registering as a vote")
+            return
 
         # bleh - result not indicated anywhere
         result = "pass" if yes_count > no_count else "fail"
