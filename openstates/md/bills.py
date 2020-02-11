@@ -329,7 +329,6 @@ class MDBillScraper(Scraper):
                 link_text = link.text_content().strip()
                 if link_text.startswith("Text"):
                     link_text = link_text.replace("Text - ", "")
-                    print(link_text, link.get("href"))
                     bill.add_version_link(
                         link_text,
                         link.get("href"),
