@@ -235,14 +235,15 @@ class NVBillScraper(Scraper, LXMLMixin):
             # here:
             # &remoteURL=https%3A%2F%2Fwww.leg.state.nv.us%2FSession%2F80th2019%2FBills%2FSB%2FSB1.pdf
 
-            iframe = iframe_page.xpath('//iframe[@id="pdf-viewer"]/@src')[0]
-            parts = iframe.split("remoteURL=")
-            if len(parts) > 1:
-                doc_url = parts[1]
-                doc_url = unquote(doc_url)
-                bill.add_version_link(
-                    document_name, doc_url, media_type="application/pdf"
-                )
+            if iframe_page.xpath('//iframe[@id="pdf-viewer"]/@src'):
+                iframe = iframe_page.xpath('//iframe[@id="pdf-viewer"]/@src')[0]
+                parts = iframe.split("remoteURL=")
+                if len(parts) > 1:
+                    doc_url = parts[1]
+                    doc_url = unquote(doc_url)
+                    bill.add_version_link(
+                        document_name, doc_url, media_type="application/pdf", on_duplicate="ignore"
+                    )
 
     def add_actions(self, page, bill, chamber):
         actor = chamber
@@ -306,7 +307,7 @@ class NVBillScraper(Scraper, LXMLMixin):
             name = link.text_content().strip()
             name = "Fiscal Note: {}".format(name)
             url = link.get("href")
-            bill.add_document_link(note=name, url=url, media_type="application/pdf")
+            bill.add_document_link(note=name, url=url, media_type="application/pdf", on_duplicate="ignore")
 
     # def scrape_votes(self, bill_page, page_url, bill, insert, year):
     #     root = lxml.html.fromstring(bill_page)
