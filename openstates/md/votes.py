@@ -63,7 +63,8 @@ class MDVoteScraper(Scraper, LXMLMixin):
                 # need to add other motion types -- scraper will fail if we get
                 # a bill_id but no motion, helping us identify these
                 possible_motion = re.findall(
-                    "notwithstanding the objections|On Third Reading|ON 2ND RDG|Decision of the Chair",
+                    "notwithstanding the objections|On Third Reading|ON 2ND RDG|Decision of the Chair"
+                    "|Favorable As Amended",
                     line,
                     re.I,
                 )
