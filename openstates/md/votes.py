@@ -64,7 +64,7 @@ class MDVoteScraper(Scraper, LXMLMixin):
                 # a bill_id but no motion, helping us identify these
                 possible_motion = re.findall(
                     "notwithstanding the objections|On Third Reading|ON 2ND RDG|Decision of the Chair"
-                    "|Favorable As Amended",
+                    "|Favorable As Amended|Floor Amendment",
                     line,
                     re.I,
                 )
