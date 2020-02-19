@@ -493,56 +493,69 @@ class HouseBillPage(Page):
 
 class HouseComVote(Page):
     def handle_page(self):
-        (date,) = self.doc.xpath('//span[contains(@id, "lblDate")]/text()')
-        date = format_datetime(
-            datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p"), "US/Eastern"
-        )
+        # Checks to see if any vote totals are provided
+        if (
+            len(
+                self.doc.xpath(
+                    '//span[contains(@id, "ctl00_MainContent_lblTotal")]/text()'
+                )
+            )
+            > 0
+        ):
+            (date,) = self.doc.xpath('//span[contains(@id, "lblDate")]/text()')
+            date = format_datetime(
+                datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p"), "US/Eastern"
+            )
+            # ctl00_MainContent_lblTotal //span[contains(@id, "ctl00_MainContent_lblTotal")]
+            yes_count = int(
+                self.doc.xpath('//span[contains(@id, "lblYeas")]/text()')[0]
+            )
+            no_count = int(self.doc.xpath('//span[contains(@id, "lblNays")]/text()')[0])
+            other_count = int(
+                self.doc.xpath('//span[contains(@id, "lblMissed")]/text()')[0]
+            )
+            result = "pass" if yes_count > no_count else "fail"
 
-        yes_count = int(self.doc.xpath('//span[contains(@id, "lblYeas")]/text()')[0])
-        no_count = int(self.doc.xpath('//span[contains(@id, "lblNays")]/text()')[0])
-        other_count = int(
-            self.doc.xpath('//span[contains(@id, "lblMissed")]/text()')[0]
-        )
-        result = "pass" if yes_count > no_count else "fail"
+            (committee,) = self.doc.xpath(
+                '//span[contains(@id, "lblCommittee")]/text()'
+            )
+            (action,) = self.doc.xpath('//span[contains(@id, "lblAction")]/text()')
+            motion = "{} ({})".format(action, committee)
 
-        (committee,) = self.doc.xpath('//span[contains(@id, "lblCommittee")]/text()')
-        (action,) = self.doc.xpath('//span[contains(@id, "lblAction")]/text()')
-        motion = "{} ({})".format(action, committee)
+            vote = VoteEvent(
+                start_date=date,
+                bill=self.kwargs["bill"],
+                chamber="lower",
+                motion_text=motion,
+                result=result,
+                classification="committee",
+            )
+            vote.add_source(self.url)
+            vote.set_count("yes", yes_count)
+            vote.set_count("no", no_count)
+            vote.set_count("not voting", other_count)
 
-        vote = VoteEvent(
-            start_date=date,
-            bill=self.kwargs["bill"],
-            chamber="lower",
-            motion_text=motion,
-            result=result,
-            classification="committee",
-        )
-        vote.add_source(self.url)
-        vote.set_count("yes", yes_count)
-        vote.set_count("no", no_count)
-        vote.set_count("not voting", other_count)
+            for member_vote in self.doc.xpath('//ul[contains(@class, "vote-list")]/li'):
+                if not member_vote.text_content().strip():
+                    continue
 
-        for member_vote in self.doc.xpath('//ul[contains(@class, "vote-list")]/li'):
-            if not member_vote.text_content().strip():
-                continue
+                (member,) = member_vote.xpath("span[2]//text()")
+                (member_vote,) = member_vote.xpath("span[1]//text()")
 
-            (member,) = member_vote.xpath("span[2]//text()")
-            (member_vote,) = member_vote.xpath("span[1]//text()")
+                if member_vote == "Y":
+                    vote.yes(member)
+                elif member_vote == "N":
+                    vote.no(member)
+                elif member_vote == "-":
+                    vote.vote("not voting", member)
+                # Parenthetical votes appear to not be counted in the
+                # totals for Yea, Nay, _or_ Missed
+                elif re.search(r"\([YN]\)", member_vote):
+                    continue
+                else:
+                    raise ValueError("Unknown vote type found: {}".format(member_vote))
 
-            if member_vote == "Y":
-                vote.yes(member)
-            elif member_vote == "N":
-                vote.no(member)
-            elif member_vote == "-":
-                vote.vote("not voting", member)
-            # Parenthetical votes appear to not be counted in the
-            # totals for Yea, Nay, _or_ Missed
-            elif re.search(r"\([YN]\)", member_vote):
-                continue
-            else:
-                raise ValueError("Unknown vote type found: {}".format(member_vote))
-
-        yield vote
+            yield vote
 
 
 class SubjectPDF(PDF):
