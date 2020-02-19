@@ -214,7 +214,7 @@ class KYBillScraper(Scraper, LXMLMixin):
         xpath_expr = '//tr[th[text()="Bill Documents"]]/td[1]/a'
         version_count = 0
         for row in page.xpath(xpath_expr):
-            source_url = row.attrib['href']
+            source_url = row.attrib["href"]
             version_title = row.xpath("text()")[0].strip()
 
             if source_url.endswith(".doc"):
@@ -231,20 +231,24 @@ class KYBillScraper(Scraper, LXMLMixin):
     def parse_proposed_amendments(self, page, bill):
         # div.bill-table with an H4 "Proposed Amendments", all a's in the first TD of the first TR
         # that point to a path including "recorddocuments"
-        xpath = '//div[contains(@class, "bill-table") and descendant::h4[text()="Proposed Amendments"]]' \
+        xpath = (
+            '//div[contains(@class, "bill-table") and descendant::h4[text()="Proposed Amendments"]]'
             '//tr[1]/td[1]/a[contains(@href,"recorddocuments")]'
+        )
 
         for link in page.xpath(xpath):
             note = link.xpath("text()")[0].strip()
-            note = 'Proposed {}'.format(note)
+            note = "Proposed {}".format(note)
             url = link.attrib["href"]
-            bill.add_document_link(
-                note=note,
-                url=url
-            )
+            bill.add_document_link(note=note, url=url)
 
     def scrape_votes(self, vote_url, bill, chamber):
-        filename, response = self.urlretrieve(vote_url)
+
+        try:
+            filename, response = self.urlretrieve(vote_url)
+        except scrapelib.HTTPError:
+            self.logger.warning("PDF not posted or available")
+            return
         # Grabs text from pdf
         pdflines = [
             line.decode("utf-8") for line in convert_pdf(filename, "text").splitlines()
