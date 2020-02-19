@@ -3,6 +3,10 @@ import re
 import lxml.html
 import datetime
 import itertools
+import pprint
+import sys
+import requests
+import pytz
 from pupa.scrape import Scraper, Bill, VoteEvent as Vote
 
 
@@ -52,14 +56,68 @@ _classifiers = (
 
 
 class PRBillScraper(Scraper):
+    _TZ = pytz.timezone("America/Puerto_Rico")
+    s = requests.Session()
 
     bill_types = {
         "P": "bill",
         "R": "resolution",
         "RK": "concurrent resolution",
         "RC": "joint resolution",
+        "NM": "appointment",
         # 'PR': 'plan de reorganizacion',
     }
+
+    def asp_post(self, url, params):
+        headers = {
+            "User-Agent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36',
+            'referer': url,
+            'origin': 'https://sutra.oslpr.org',
+            'authority': 'sutra.oslpr.org'
+        }
+
+        page = self.s.get(url, headers=headers)
+        page = lxml.html.fromstring(page.content)
+        (viewstate,) = page.xpath('//input[@id="__VIEWSTATE"]/@value')
+        (viewstategenerator,) = page.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
+        (eventvalidation,) = page.xpath('//input[@id="__EVENTVALIDATION"]/@value')
+        
+        hiddenfield_js_url = page.xpath('//script[contains(@src,"?_TSM_HiddenField")]/@src')[0]
+        hiddenfield_js_url = '{}{}'.format('https://sutra.oslpr.org/', hiddenfield_js_url)
+
+        hiddenfield_js = self.s.get(hiddenfield_js_url).text
+
+        before = re.escape('get("ctl00_tsm_HiddenField").value += \'')
+        after = re.escape('\';Sys.Application.remove_load(fn);')
+        token_re = '{}(.*){}'.format(before, after)
+        result = re.search(token_re, hiddenfield_js)
+        hiddenfield = result.group(1)
+        
+        form = {
+            "__VIEWSTATE": viewstate,
+            "__VIEWSTATEGENERATOR": viewstategenerator,
+            "__EVENTTARGET": "",
+            "__EVENTVALIDATION": eventvalidation,
+            "__EVENTARGUMENT": "",
+            "__LASTFOCUS": "",
+            "ctl00_tsm_HiddenField": hiddenfield,
+            '__SCROLLPOSITIONX': '0',
+            '__SCROLLPOSITIONY': '53',
+        }
+
+        form = {**form, **params}
+
+        # self.s.cookies['SUTRASplash'] = 'NoSplash'
+
+        cookie_obj = requests.cookies.create_cookie(domain='sutra.oslpr.org', name='SUTRASplash', value='NoSplash')
+        self.s.cookies.set_cookie(cookie_obj)
+
+        pprint.pprint(form)
+        print("\n\n")
+        pprint.pprint(self.s.cookies)
+        print("\n\n")
+        xml = self.s.post(url, data=form, headers=headers).text
+        return xml
 
     def clean_name(self, name):
         for ch in ["Sr,", "Sr.", "Sra.", "Rep.", "Sen."]:
@@ -76,21 +134,39 @@ class PRBillScraper(Scraper):
             yield from self.scrape_chamber(chamber, session)
 
     def scrape_chamber(self, chamber, session):
-        year = session[0:4]
-        self.base_url = (
-            "http://www.oslpr.org/legislatura/tl%s/tl_medida_print2.asp" % year
-        )
+        # page = lxml.html.fromstring(self.s.get('https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx').content)
+        start_year = session[0:4]
+
         chamber_letter = {"lower": "C", "upper": "S"}[chamber]
-        for code, bill_type in self.bill_types.items():
-            counter = itertools.count(1)
-            for n in counter:
-                bill_id = "%s%s%s" % (code, chamber_letter, str(n).zfill(4))
-                try:
-                    yield from self.scrape_bill(chamber, session, bill_id, bill_type)
-                except NoSuchBill:
-                    if n == 1:
-                        self.warning("Found no bills of type '{}'".format(bill_type))
-                    break
+
+        params = {
+            'ctl00$CPHBody$lovCuatrienio': '2017',
+            'ctl00$CPHBody$lovTipoMedida': '-1',
+            'ctl00$CPHBody$lovCuerpoId': '-1',
+            'ctl00$CPHBody$txt_Medida': '',
+            'ctl00$CPHBody$txt_FechaDesde': '',
+            'ctl00$CPHBody$ME_txt_FechaDesde_ClientState': '',
+            'ctl00$CPHBody$txt_FechaHasta': '',
+            'ctl00$CPHBody$ME_txt_FechaHasta_ClientState': '',
+            'ctl00$CPHBody$txt_Titulo': '',
+            'ctl00$CPHBody$lovLegisladorId': '-1',
+            'ctl00$CPHBody$lovEvento': '-1',
+            'ctl00$CPHBody$lovComision': '-1',
+            'ctl00$CPHBody$btnFilter': 'Buscar',
+            # 'ctl00$CPHBody$ddlPageSize': 50,
+            # 'ctl00_ModuloMenuSide_NavigationTree_ExpandState': '',
+            # 'ctl00_ModuloMenuSide_NavigationTree_SelectedNode': '',
+            # 'ctl00_ModuloMenuSide_NavigationTree_PopulateLog': '',
+        }
+
+        resp = self.asp_post('https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx', params)
+        print(resp)
+
+        page = lxml.html.fromstring(resp)
+
+        # for row in page.xpath('//tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemSyle")]'):
+        #     print(row)
+
 
     def parse_action(self, chamber, bill, action, action_url, date):
         # if action.startswith('Referido'):
@@ -164,25 +240,26 @@ class PRBillScraper(Scraper):
         )
         return atype, action
 
-    def scrape_bill(self, chamber, session, bill_id, bill_type):
-        url = "%s?r=%s" % (self.base_url, bill_id)
+    def classify_bill_type(self, bill_id):
+        for abbr, value  in self.bill_types:
+            if bill_id.startswith(abbr):
+                return value
+        return None
+
+    def scrape_bill(self, chamber, session, url, bill_id, bill_type):
         html = self.get(url).text
-        if "error '80020009'" in html:
-            self.warning("asp error on page, skipping %s", bill_id)
-            return
-        doc = lxml.html.fromstring(html)
+        page = lxml.html.fromstring(html)
         # search for Titulo, accent over i messes up lxml, so use 'tulo'
-        title = doc.xpath(
-            u'//td/b[contains(text(),"tulo")]/../following-sibling::td/text()'
-        )
-        if not title:
-            raise NoSuchBill()
+        title = page.xpath('//span[@id="ctl00_CPHBody_txtTitulo"]/text()')[0].strip()
+        bill_id = page.xpath('//span[@id="ctl00_CPHBody_txt_Medida"]/text()')[0].strip()
+
+        bill_type = self.classify_bill_type(bill_id)
 
         bill = Bill(
             bill_id,
             legislative_session=session,
             chamber=chamber,
-            title=title[0],
+            title=title,
             classification=bill_type,
         )
 

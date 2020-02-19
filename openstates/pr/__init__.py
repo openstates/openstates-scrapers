@@ -39,6 +39,6 @@ class PuertoRico(State):
 
         # this URL should work even for future sessions
         return url_xpath(
-            "http://www.oslpr.org/legislatura/tl2013/buscar_2013.asp",
-            '//select[@name="URL"]/option/text()',
+            "https://sutra.oslpr.org/osl/esutra/",
+            '//select[@id="ctl00_CPHBody_Tramites_lovCuatrienio"]/option/text()',
         )
