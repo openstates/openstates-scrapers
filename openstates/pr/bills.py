@@ -248,14 +248,40 @@ class PRBillScraper(Scraper):
         )
         return atype, action
 
+    def classify_action(self, action_text):
+        for pattern, action_actor, atype in _classifiers:
+            if re.match(pattern, action_text):
+                return [action_actor, atype]
+        return ["", None]
+
     def classify_bill_type(self, bill_id):
         for abbr, value in self.bill_types.items():
             if bill_id.startswith(abbr):
                 return value
         return None
 
+    def clean_broken_html(self, html):
+        return html.strip().replace('&nbsp', '')
+
+    def scrape_action_table(self, bill, page):
+        for row in page.xpath('//table[@id="ctl00_CPHBody_TabEventos_dgResults"]/tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemSyle")]'):
+            action_text = row.xpath('.//label[contains(@class,"DetailFormLbl")]/text()')[0]
+            action_text = self.clean_broken_html(action_text)
+            raw_date = row.xpath('.//span[contains(@class,"smalltxt")]/text()')[0]
+            raw_date = self.clean_broken_html(raw_date)
+            action_date = self._TZ.localize(datetime.datetime.strptime(raw_date, "%m/%d/%Y"))
+            parsed_action = self.classify_action(action_text)
+
+            bill.add_action(
+                description=action_text,
+                date=action_date,
+                chamber=parsed_action[0],
+                classification=parsed_action[1],               
+            )
+
     def scrape_bill(self, chamber, session, url):
         html = self.get(url).text
+        print(html)
         page = lxml.html.fromstring(html)
         # search for Titulo, accent over i messes up lxml, so use 'tulo'
         title = page.xpath('//span[@id="ctl00_CPHBody_txtTitulo"]/text()')[0].strip()
@@ -270,6 +296,10 @@ class PRBillScraper(Scraper):
             title=title,
             classification=bill_type,
         )
+
+        self.scrape_action_table(bill, page)
+        print("donezo")
+
 
         # author = doc.xpath(u'//td/b[contains(text(),"Autor")]/../text()')[0]
         # for aname in author.split(","):
