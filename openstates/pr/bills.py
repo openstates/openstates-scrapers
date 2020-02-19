@@ -153,19 +153,27 @@ class PRBillScraper(Scraper):
             'ctl00$CPHBody$lovEvento': '-1',
             'ctl00$CPHBody$lovComision': '-1',
             'ctl00$CPHBody$btnFilter': 'Buscar',
-            # 'ctl00$CPHBody$ddlPageSize': 50,
-            # 'ctl00_ModuloMenuSide_NavigationTree_ExpandState': '',
-            # 'ctl00_ModuloMenuSide_NavigationTree_SelectedNode': '',
-            # 'ctl00_ModuloMenuSide_NavigationTree_PopulateLog': '',
         }
 
         resp = self.asp_post('https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx', params)
-        print(resp)
+        # print(resp)
 
         page = lxml.html.fromstring(resp)
 
-        # for row in page.xpath('//tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemSyle")]'):
-        #     print(row)
+        for row in page.xpath('//tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemSyle")]/@onclick'):
+            bill_rid = self.extract_bill_rid(row)
+            bill_url = 'https://sutra.oslpr.org/osl/esutra/MedidaReg.aspx?rid={}'.format(bill_rid)
+            yield from self.scrape_bill(chamber, session, bill_url)
+
+            # no links to the resolution page, so we have to extract it from the onclick
+
+    def extract_bill_rid(self, onclick):
+        # bill links look like onclick="javascript:location.replace('MedidaReg.aspx?rid=125217');"
+        before = re.escape('javascript:location.replace(\'MedidaReg.aspx?rid=')
+        after = re.escape('\');')
+        token_re = '{}(.*){}'.format(before, after)
+        result = re.search(token_re, onclick)
+        return result.group(1)
 
 
     def parse_action(self, chamber, bill, action, action_url, date):
@@ -241,12 +249,12 @@ class PRBillScraper(Scraper):
         return atype, action
 
     def classify_bill_type(self, bill_id):
-        for abbr, value  in self.bill_types:
+        for abbr, value in self.bill_types.items():
             if bill_id.startswith(abbr):
                 return value
         return None
 
-    def scrape_bill(self, chamber, session, url, bill_id, bill_type):
+    def scrape_bill(self, chamber, session, url):
         html = self.get(url).text
         page = lxml.html.fromstring(html)
         # search for Titulo, accent over i messes up lxml, so use 'tulo'
@@ -263,111 +271,111 @@ class PRBillScraper(Scraper):
             classification=bill_type,
         )
 
-        author = doc.xpath(u'//td/b[contains(text(),"Autor")]/../text()')[0]
-        for aname in author.split(","):
-            aname = self.clean_name(aname).strip()
-            if aname:
-                bill.add_sponsorship(
-                    aname, classification="primary", entity_type="person", primary=True
-                )
+        # author = doc.xpath(u'//td/b[contains(text(),"Autor")]/../text()')[0]
+        # for aname in author.split(","):
+        #     aname = self.clean_name(aname).strip()
+        #     if aname:
+        #         bill.add_sponsorship(
+        #             aname, classification="primary", entity_type="person", primary=True
+        #         )
 
-        co_authors = doc.xpath(u'//td/b[contains(text(),"Co-autor")]/../text()')
-        if len(co_authors) != 0:
-            for co_author in co_authors[1].split(","):
-                bill.add_sponsorship(
-                    self.clean_name(co_author).strip(),
-                    classification="cosponsor",
-                    entity_type="person",
-                    primary=False,
-                )
+        # co_authors = doc.xpath(u'//td/b[contains(text(),"Co-autor")]/../text()')
+        # if len(co_authors) != 0:
+        #     for co_author in co_authors[1].split(","):
+        #         bill.add_sponsorship(
+        #             self.clean_name(co_author).strip(),
+        #             classification="cosponsor",
+        #             entity_type="person",
+        #             primary=False,
+        #         )
 
-        action_table = doc.xpath("//table")[-1]
-        bill_vote_chamber = None
-        for row in action_table[1:]:
-            tds = row.xpath("td")
-            # ignore row missing date
-            if len(tds) != 2:
-                continue
-            if tds[0].text_content():
-                date = datetime.datetime.strptime(tds[0].text_content(), "%m/%d/%Y")
-            action = tds[1].text_content().strip()
-            # parse the text to see if it's a new version or a unrelated document
-            # if has a hyphen let's assume it's a vote document
+        # action_table = doc.xpath("//table")[-1]
+        # bill_vote_chamber = None
+        # for row in action_table[1:]:
+        #     tds = row.xpath("td")
+        #     # ignore row missing date
+        #     if len(tds) != 2:
+        #         continue
+        #     if tds[0].text_content():
+        #         date = datetime.datetime.strptime(tds[0].text_content(), "%m/%d/%Y")
+        #     action = tds[1].text_content().strip()
+        #     # parse the text to see if it's a new version or a unrelated document
+        #     # if has a hyphen let's assume it's a vote document
 
-            # get url of action
-            action_url = tds[1].xpath("a/@href")
-            atype, action = self.parse_action(chamber, bill, action, action_url, date)
+        #     # get url of action
+        #     action_url = tds[1].xpath("a/@href")
+        #     atype, action = self.parse_action(chamber, bill, action, action_url, date)
 
-            # Some lower-house roll calls could be parsed, but finnicky
-            # Most roll lists are just images embedded within a document,
-            # and offer no alt text to scrape
-            # Instead, just scrape the vote counts
-            regex = r"(?u)^(.*),\s([\s\d]{2})-([\s\d]{2})-([\s\d]{2})-([\s\d]{0,2})$"
-            vote_info = re.search(regex, action)
-            if vote_info and re.search(r"\d{1,2}", action):
-                vote_name = vote_info.group(1)
+        #     # Some lower-house roll calls could be parsed, but finnicky
+        #     # Most roll lists are just images embedded within a document,
+        #     # and offer no alt text to scrape
+        #     # Instead, just scrape the vote counts
+        #     regex = r"(?u)^(.*),\s([\s\d]{2})-([\s\d]{2})-([\s\d]{2})-([\s\d]{0,2})$"
+        #     vote_info = re.search(regex, action)
+        #     if vote_info and re.search(r"\d{1,2}", action):
+        #         vote_name = vote_info.group(1)
 
-                if u"Votación Final" in vote_name:
-                    (vote_chamber, vote_name) = re.search(
-                        r"(?u)^\w+ por (.*?) en (.*)$", vote_name
-                    ).groups()
-                    if "Senado" in vote_chamber:
-                        vote_chamber = "upper"
-                    else:
-                        vote_chamber = "lower"
+        #         if u"Votación Final" in vote_name:
+        #             (vote_chamber, vote_name) = re.search(
+        #                 r"(?u)^\w+ por (.*?) en (.*)$", vote_name
+        #             ).groups()
+        #             if "Senado" in vote_chamber:
+        #                 vote_chamber = "upper"
+        #             else:
+        #                 vote_chamber = "lower"
 
-                elif "Cuerpo de Origen" in vote_name:
-                    vote_name = re.search(
-                        r"(?u)^Cuerpo de Origen (.*)$", vote_name
-                    ).group(1)
-                    vote_chamber = chamber
+        #         elif "Cuerpo de Origen" in vote_name:
+        #             vote_name = re.search(
+        #                 r"(?u)^Cuerpo de Origen (.*)$", vote_name
+        #             ).group(1)
+        #             vote_chamber = chamber
 
-                elif u"informe de Comisión de Conferencia" in vote_name:
-                    (vote_chamber, vote_name) = re.search(
-                        r"(?u)^(\w+) (\w+ informe de Comisi\wn de Conferencia)$",
-                        vote_name,
-                    ).groups()
-                    if vote_chamber == "Senado":
-                        vote_chamber = "upper"
-                    else:
-                        vote_chamber = "lower"
+        #         elif u"informe de Comisión de Conferencia" in vote_name:
+        #             (vote_chamber, vote_name) = re.search(
+        #                 r"(?u)^(\w+) (\w+ informe de Comisi\wn de Conferencia)$",
+        #                 vote_name,
+        #             ).groups()
+        #             if vote_chamber == "Senado":
+        #                 vote_chamber = "upper"
+        #             else:
+        #                 vote_chamber = "lower"
 
-                # TODO replace bill['votes']
-                elif u"Se reconsideró" in vote_name:
-                    if bill_vote_chamber:
-                        vote_chamber = bill_vote_chamber
-                    else:
-                        vote_chamber = chamber
+        #         # TODO replace bill['votes']
+        #         elif u"Se reconsideró" in vote_name:
+        #             if bill_vote_chamber:
+        #                 vote_chamber = bill_vote_chamber
+        #             else:
+        #                 vote_chamber = chamber
 
-                else:
-                    raise AssertionError(
-                        u"Unknown vote text found: {}".format(vote_name)
-                    )
+        #         else:
+        #             raise AssertionError(
+        #                 u"Unknown vote text found: {}".format(vote_name)
+        #             )
 
-                vote_name = vote_name.title()
+        #         vote_name = vote_name.title()
 
-                yes = int(vote_info.group(2))
-                no = int(vote_info.group(3))
-                other = 0
-                if vote_info.group(4).strip():
-                    other += int(vote_info.group(4))
-                if vote_info.group(5).strip():
-                    other += int(vote_info.group(5))
+        #         yes = int(vote_info.group(2))
+        #         no = int(vote_info.group(3))
+        #         other = 0
+        #         if vote_info.group(4).strip():
+        #             other += int(vote_info.group(4))
+        #         if vote_info.group(5).strip():
+        #             other += int(vote_info.group(5))
 
-                vote = Vote(
-                    chamber=vote_chamber,
-                    start_date=date.strftime("%Y-%m-%d"),
-                    motion_text=vote_name,
-                    result="pass" if (yes > no) else "fail",
-                    bill=bill,
-                    classification="passage",
-                )
-                vote.set_count("yes", yes)
-                vote.set_count("no", no)
-                vote.set_count("other", other)
-                vote.add_source(url)
-                yield vote
-                bill_vote_chamber = chamber
+        #         vote = Vote(
+        #             chamber=vote_chamber,
+        #             start_date=date.strftime("%Y-%m-%d"),
+        #             motion_text=vote_name,
+        #             result="pass" if (yes > no) else "fail",
+        #             bill=bill,
+        #             classification="passage",
+        #         )
+        #         vote.set_count("yes", yes)
+        #         vote.set_count("no", no)
+        #         vote.set_count("other", other)
+        #         vote.add_source(url)
+        #         yield vote
+        #         bill_vote_chamber = chamber
 
         bill.add_source(url)
         yield bill
