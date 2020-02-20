@@ -286,13 +286,101 @@ class PRBillScraper(Scraper):
     def clean_broken_html(self, html):
         return html.strip().replace('&nbsp', '')
 
-    def scrape_action_table(self, bill, page):
+
+    def parse_vote_chamber(self, bill_chamber, vote_name):
+        if u"Votación Final" in vote_name:
+            (vote_chamber, vote_name) = re.search(
+                r"(?u)^\w+ por (.*?) en (.*)$", vote_name
+            ).groups()
+            if "Senado" in vote_chamber:
+                vote_chamber = "upper"
+            else:
+                vote_chamber = "lower"
+
+        elif "Cuerpo de Origen" in vote_name:
+            vote_name = re.search(
+                r"(?u)^Cuerpo de Origen (.*)$", vote_name
+            ).group(1)
+            vote_chamber = bill_chamber
+
+        elif u"informe de Comisión de Conferencia" in vote_name:
+            (vote_chamber, vote_name) = re.search(
+                r"(?u)^(\w+) (\w+ informe de Comisi\wn de Conferencia)$",
+                vote_name,
+            ).groups()
+            if vote_chamber == "Senado":
+                vote_chamber = "upper"
+            else:
+                vote_chamber = "lower"
+        # TODO replace bill['votes']
+        elif u"Se reconsideró" in vote_name:
+            if bill_vote_chamber:
+                vote_chamber = bill_vote_chamber
+            else:
+                vote_chamber = chamber
+        else:
+            raise AssertionError(
+                u"Unknown vote text found: {}".format(vote_name)
+            )
+        return vote_chamber
+
+    def parse_vote(self, chamber, bill, row, action_text, action_date, url):
+        yes = int(row.xpath('.//div[label[contains(text(), "A Favor")]]/span[contains(@class,"smalltxt")]/text()')[0])
+        no = int(row.xpath('.//div[label[contains(text(), "En Contra")]]/span[contains(@class,"smalltxt")]/text()')[0])
+        abstain = int(row.xpath('.//div[label[contains(text(), "Abstenido")]]/span[contains(@class,"smalltxt")]/text()')[0])
+        absent = int(row.xpath('.//div[label[contains(text(), "Ausente")]]/span[contains(@class,"smalltxt")]/text()')[0])
+
+        vote_chamber = self.parse_vote_chamber(chamber, action_text)
+
+        vote = Vote(
+            chamber=vote_chamber,
+            start_date=action_date,
+            motion_text=action_text,
+            result="pass" if (yes > no) else "fail",
+            bill=bill,
+            classification="other",
+        )
+        vote.add_source(url)
+        vote.set_count("yes", yes)
+        vote.set_count("no", no)
+        vote.set_count("absent", absent)
+        vote.set_count("abstain", abstain)
+
+        yield vote
+
+
+
+    def parse_version(self, bill, row):
+        # they have empty links in every action, and icon links preceeding the actual link
+        # so only select links with an href set, and skip the icon links
+        for version_row in row.xpath('.//a[contains(@class,"gridlinktxt") and contains(@id, "FileLink") and boolean(@href)]'):
+            version_url = version_row.xpath('@href')[0]
+            # version url is in an onclick handler built into the href
+            version_url = self.extract_version_url(version_url)
+            if version_url.startswith('../SUTRA'):
+                version_url = version_url.replace('../SUTRA/', '')
+                version_url = 'https://sutra.oslpr.org/osl/SUTRA/{}'.format(version_url)
+            elif not version_url.lower().startwith('http'):
+                self.error("Unknown version url in onclick: {}".format(version_url))
+
+            version_title = self.clean_broken_html(version_row.xpath('text()')[0])
+            bill.add_version_link(
+                note=version_title,
+                url=version_url,
+                media_type=self.classify_media_type(version_url),
+                on_duplicate='ignore',
+            )
+
+
+    def scrape_action_table(self, chamber, bill, page, url):
         page.make_links_absolute('https://sutra.oslpr.org/osl/SUTRA/')
 
         for row in page.xpath('//table[@id="ctl00_CPHBody_TabEventos_dgResults"]/tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemSyle")]'):
             action_text = row.xpath('.//label[contains(@class,"DetailFormLbl")]/text()')[0]
             action_text = self.clean_broken_html(action_text)
-            raw_date = row.xpath('.//span[contains(@class,"smalltxt")]/text()')[0]
+            # div with a label containing Fecha, following span.smalltxt
+            # need to be this specific because votes have the same markup
+            raw_date = row.xpath('.//div[label[contains(text(), "Fecha")]]/span[contains(@class,"smalltxt")]/text()')[0]
             raw_date = self.clean_broken_html(raw_date)
             action_date = self._TZ.localize(datetime.datetime.strptime(raw_date, "%m/%d/%Y"))
             parsed_action = self.classify_action(action_text)
@@ -304,18 +392,14 @@ class PRBillScraper(Scraper):
                 classification=parsed_action[1],               
             )
 
-            for version_row in row.xpath('.//a[contains(@class,"gridlinktxt") and contains(@id, "FileLink") and boolean(@href)]'):
-                version_url = version_row.xpath('@href')[0]
-                version_url = self.extract_version_url(version_url)
-                version_url = version_url.replace('../SUTRA/', '')
-                version_url = 'https://sutra.oslpr.org/osl/SUTRA/{}'.format(version_url)
-                version_title = self.clean_broken_html(version_row.xpath('text()')[0])
-                bill.add_version_link(
-                    note=version_title,
-                    url=version_url,
-                    media_type=self.classify_media_type(version_url),
-                    on_duplicate='ignore',
-                )
+            # if it's a vote, we don't want to add the document as a bill version
+            if row.xpath('.//label[contains(text(), "A Favor")]'):
+                print("A FAVOR")
+                yield from self.parse_vote(chamber, bill, row, action_text, action_date, url)
+            else:
+                print("NO A FAVOR")
+                self.parse_version(bill, row)
+
 
     def scrape_bill(self, chamber, session, url):
         html = self.get(url).text
@@ -334,7 +418,7 @@ class PRBillScraper(Scraper):
             classification=bill_type,
         )
 
-        self.scrape_action_table(bill, page)
+        yield from self.scrape_action_table(chamber, bill, page, url)
 
 
         # author = doc.xpath(u'//td/b[contains(text(),"Autor")]/../text()')[0]
