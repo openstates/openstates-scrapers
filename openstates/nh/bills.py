@@ -52,6 +52,8 @@ def extract_amendment_id(action):
 
 
 class NHBillScraper(Scraper):
+    cachebreaker = dt.datetime.now().strftime("%Y%d%d%H%I%s")
+
     def scrape(self, chamber=None, session=None):
         if not session:
             session = self.latest_session()
@@ -170,18 +172,22 @@ class NHBillScraper(Scraper):
         # load legislators
         self.legislators = {}
         for line in (
-            self.get("http://gencourt.state.nh.us/dynamicdatafiles/legislators.txt")
+            self.get(
+                "http://gencourt.state.nh.us/dynamicdatafiles/legislators.txt?x={}".format(
+                    self.cachebreaker
+                )
+            )
             .content.decode("utf-8")
             .split("\n")
         ):
-            if len(line) < 1:
+            if len(line) < 2:
                 continue
 
             line = line.split("|")
             employee_num = line[0]
 
             # first, last, middle
-            if line[3]:
+            if len(line) > 2:
                 name = "%s %s %s" % (line[2], line[3], line[1])
             else:
                 name = "%s %s" % (line[2], line[1])
