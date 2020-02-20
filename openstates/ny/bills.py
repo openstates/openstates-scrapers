@@ -38,7 +38,7 @@ class NYBillScraper(Scraper):
         return (bill_chamber, bill_type)
 
     def _parse_bill_details(self, bill):
-        bill_id = bill["printNo"]
+        bill_id = bill["basePrintNo"]
         assert bill_id
 
         # Parse the bill ID into its prefix and number.
@@ -358,7 +358,7 @@ class NYBillScraper(Scraper):
 
             pdf_version = version + " PDF"
             pdf_url = "http://legislation.nysenate.gov/pdf/bills/{}/{}".format(
-                self.term_start_year, bill_id
+                self.term_start_year, version
             )
             bill.add_version_link(
                 pdf_version,
