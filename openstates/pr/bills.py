@@ -158,10 +158,9 @@ class PRBillScraper(Scraper):
 
         for row in page.xpath('//tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemSyle")]/@onclick'):
             bill_rid = self.extract_bill_rid(row)
+            # bill_rid = 127866 #132106   -- good test bills
             bill_url = 'https://sutra.oslpr.org/osl/esutra/MedidaReg.aspx?rid={}'.format(bill_rid)
             yield from self.scrape_bill(chamber, session, bill_url)
-
-            # no links to the resolution page, so we have to extract it from the onclick
 
     def extract_bill_rid(self, onclick):
         # bill links look like onclick="javascript:location.replace('MedidaReg.aspx?rid=125217');"
@@ -286,9 +285,10 @@ class PRBillScraper(Scraper):
     def clean_broken_html(self, html):
         return html.strip().replace('&nbsp', '')
 
-
     def parse_vote_chamber(self, bill_chamber, vote_name):
-        if u"Votación Final" in vote_name:
+        if u"Confirmado por Senado" in vote_name:
+            vote_chamber = 'upper'
+        elif u"Votación Final" in vote_name:
             (vote_chamber, vote_name) = re.search(
                 r"(?u)^\w+ por (.*?) en (.*)$", vote_name
             ).groups()
@@ -346,8 +346,33 @@ class PRBillScraper(Scraper):
         vote.set_count("absent", absent)
         vote.set_count("abstain", abstain)
 
+        # we don't want to add the attached vote PDF as a version,
+        # so add it as a document
+        # TODO: maybe this should be set as the source?
+        self.parse_document(bill, row)
+
         yield vote
 
+    def parse_document(self, bill, row):
+        # they have empty links in every action, and icon links preceeding the actual link
+        # so only select links with an href set, and skip the icon links
+        for version_row in row.xpath('.//a[contains(@class,"gridlinktxt") and contains(@id, "FileLink") and boolean(@href)]'):
+            version_url = version_row.xpath('@href')[0]
+            # version url is in an onclick handler built into the href
+            version_url = self.extract_version_url(version_url)
+            if version_url.startswith('../SUTRA'):
+                version_url = version_url.replace('../SUTRA/', '')
+                version_url = 'https://sutra.oslpr.org/osl/SUTRA/{}'.format(version_url)
+            elif not version_url.lower().startwith('http'):
+                self.error("Unknown version url in onclick: {}".format(version_url))
+
+            version_title = self.clean_broken_html(version_row.xpath('text()')[0])
+            bill.add_document_link(
+                note=version_title,
+                url=version_url,
+                media_type=self.classify_media_type(version_url),
+                on_duplicate='ignore',
+            )
 
 
     def parse_version(self, bill, row):
@@ -375,7 +400,9 @@ class PRBillScraper(Scraper):
     def scrape_action_table(self, chamber, bill, page, url):
         page.make_links_absolute('https://sutra.oslpr.org/osl/SUTRA/')
 
-        for row in page.xpath('//table[@id="ctl00_CPHBody_TabEventos_dgResults"]/tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemSyle")]'):
+        # note there's a typo in a class, one set is DataGridItemSyle (syle) and the other is DataGridAltItemStyle (style)
+        # if we're ever suddenly missing half the actions, check this
+        for row in page.xpath('//table[@id="ctl00_CPHBody_TabEventos_dgResults"]/tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemStyle")]'):
             action_text = row.xpath('.//label[contains(@class,"DetailFormLbl")]/text()')[0]
             action_text = self.clean_broken_html(action_text)
             # div with a label containing Fecha, following span.smalltxt
