@@ -175,6 +175,13 @@ class PRBillScraper(Scraper):
         result = re.search(token_re, onclick)
         return result.group(1)
 
+    def extract_version_url(self, onclick):
+        before = re.escape('javascript:OpenDoc(\'')
+        after = re.escape('\');')
+        token_re = '{}(.*){}'.format(before, after)
+        result = re.search(token_re, onclick)
+        return result.group(1)
+
 
     def parse_action(self, chamber, bill, action, action_url, date):
         # if action.startswith('Referido'):
@@ -260,6 +267,26 @@ class PRBillScraper(Scraper):
                 return value
         return None
 
+    def classify_media_type(self, url):
+        url = url.lower()
+        if url.endswith((".doc", "dot")):
+            media_type = "application/msword"
+        elif url.endswith(".rtf"):
+            media_type = "application/rtf"
+        elif url.endswith(".pdf"):
+            media_type = "application/pdf"
+        elif url.endswith(("docx", "dotx")):
+            media_type = (
+                "application/vnd.openxmlformats-officedocument"
+                + ".wordprocessingml.document"
+            )
+        elif url.endswith("docm"):
+            self.warning("Erroneous filename found: {}".format(url))
+            return None
+        else:
+            raise Exception("unknown version type: %s" % url)
+        return media_type
+
     def clean_broken_html(self, html):
         return html.strip().replace('&nbsp', '')
 
@@ -278,6 +305,17 @@ class PRBillScraper(Scraper):
                 chamber=parsed_action[0],
                 classification=parsed_action[1],               
             )
+
+            for version_row in row.xpath('.//a[contains(@class,"gridlinktxt") and contains(@id, "FileLink")]'):
+                version_url = version_row.xpath('@href')[0]
+                version_url = self.extract_version_url(version_url)
+                version_url = 'https://sutra.oslpr.org/osl/SUTRA/{}'.format(version_url)
+                version_title = self.clean_broken_html(version_row.xpath('text()')[0])
+                bill.add_version_link(
+                    note=version_title,
+                    url=version_url,
+                    media_type=self.classify_media_type(version_url),
+                )
 
     def scrape_bill(self, chamber, session, url):
         html = self.get(url).text
