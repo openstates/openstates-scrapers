@@ -112,10 +112,6 @@ class PRBillScraper(Scraper):
         cookie_obj = requests.cookies.create_cookie(domain='sutra.oslpr.org', name='SUTRASplash', value='NoSplash')
         self.s.cookies.set_cookie(cookie_obj)
 
-        pprint.pprint(form)
-        print("\n\n")
-        pprint.pprint(self.s.cookies)
-        print("\n\n")
         xml = self.s.post(url, data=form, headers=headers).text
         return xml
 
@@ -291,6 +287,8 @@ class PRBillScraper(Scraper):
         return html.strip().replace('&nbsp', '')
 
     def scrape_action_table(self, bill, page):
+        page.make_links_absolute('https://sutra.oslpr.org/osl/SUTRA/')
+
         for row in page.xpath('//table[@id="ctl00_CPHBody_TabEventos_dgResults"]/tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemSyle")]'):
             action_text = row.xpath('.//label[contains(@class,"DetailFormLbl")]/text()')[0]
             action_text = self.clean_broken_html(action_text)
@@ -306,20 +304,21 @@ class PRBillScraper(Scraper):
                 classification=parsed_action[1],               
             )
 
-            for version_row in row.xpath('.//a[contains(@class,"gridlinktxt") and contains(@id, "FileLink")]'):
+            for version_row in row.xpath('.//a[contains(@class,"gridlinktxt") and contains(@id, "FileLink") and boolean(@href)]'):
                 version_url = version_row.xpath('@href')[0]
                 version_url = self.extract_version_url(version_url)
+                version_url = version_url.replace('../SUTRA/', '')
                 version_url = 'https://sutra.oslpr.org/osl/SUTRA/{}'.format(version_url)
                 version_title = self.clean_broken_html(version_row.xpath('text()')[0])
                 bill.add_version_link(
                     note=version_title,
                     url=version_url,
                     media_type=self.classify_media_type(version_url),
+                    on_duplicate='ignore',
                 )
 
     def scrape_bill(self, chamber, session, url):
         html = self.get(url).text
-        print(html)
         page = lxml.html.fromstring(html)
         # search for Titulo, accent over i messes up lxml, so use 'tulo'
         title = page.xpath('//span[@id="ctl00_CPHBody_txtTitulo"]/text()')[0].strip()
@@ -336,7 +335,6 @@ class PRBillScraper(Scraper):
         )
 
         self.scrape_action_table(bill, page)
-        print("donezo")
 
 
         # author = doc.xpath(u'//td/b[contains(text(),"Autor")]/../text()')[0]
