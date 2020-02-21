@@ -98,7 +98,7 @@ class PRBillScraper(Scraper):
         token_re = '{}(.*){}'.format(before, after)
         result = re.search(token_re, hiddenfield_js)
         hiddenfield = result.group(1)
-        
+
         form = {
             "__VIEWSTATE": viewstate,
             "__VIEWSTATEGENERATOR": viewstategenerator,
@@ -123,28 +123,45 @@ class PRBillScraper(Scraper):
                 name = name.replace(ch, "")
         return name
 
-    def scrape(self, session=None, chamber=None):
+    def scrape(self, session=None, chamber=None, window_start=None, window_end=None):
         if not session:
             session = self.latest_session()
             self.info("no session specified using %s", session)
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber, session)
+            yield from self.scrape_chamber(chamber, session, window_start, window_end)
 
-    def scrape_chamber(self, chamber, session):
+    def scrape_chamber(self, chamber, session, window_start=None, window_end=None):
         # page = lxml.html.fromstring(self.s.get('https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx').content)
         start_year = session[0:4]
 
         chamber_letter = {"lower": "C", "upper": "S"}[chamber]
+
+        # If a window_start is provided, parse it
+        # If a window_end is provided, parse it, if not default to today
+        if window_start is None:
+            window_start = ''
+            window_end = ''
+        else:
+            window_start = datetime.datetime.strptime(window_start, "%Y-%m-%d")
+            window_start = window_start.strftime("%m/%d/%Y")
+
+            if window_end is None:
+                window_end = datetime.datetime.now().strftime("%m/%d/%Y")
+            else:
+                window_end = datetime.datetime.strptime(window_end, "%Y-%m-%d")
+                window_end = window_start.strftime("%m/%d/%Y")            
+
+        print(window_start, window_end)
 
         params = {
             'ctl00$CPHBody$lovCuatrienio': start_year,
             'ctl00$CPHBody$lovTipoMedida': '-1',
             'ctl00$CPHBody$lovCuerpoId': chamber_letter,
             'ctl00$CPHBody$txt_Medida': '',
-            'ctl00$CPHBody$txt_FechaDesde': '',
+            'ctl00$CPHBody$txt_FechaDesde': window_start,
             'ctl00$CPHBody$ME_txt_FechaDesde_ClientState': '',
-            'ctl00$CPHBody$txt_FechaHasta': '',
+            'ctl00$CPHBody$txt_FechaHasta': window_end,
             'ctl00$CPHBody$ME_txt_FechaHasta_ClientState': '',
             'ctl00$CPHBody$txt_Titulo': '',
             'ctl00$CPHBody$lovLegisladorId': '-1',
