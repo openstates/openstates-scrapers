@@ -64,6 +64,8 @@ class PRBillScraper(Scraper):
     _TZ = pytz.timezone("America/Puerto_Rico")
     s = requests.Session()
 
+    last_page = None
+
     bill_types = {
         "P": "bill",
         "R": "resolution",
@@ -133,13 +135,12 @@ class PRBillScraper(Scraper):
             self.info("no session specified using %s", session)
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber, session, 1, window_start, window_end)
+            yield from self.scrape_chamber(chamber, session, window_start, window_end)
 
-    def scrape_chamber(self, chamber, session, page_number=1, window_start=None, window_end=None, page=None):
+    def scrape_chamber(self, chamber, session, window_start=None, window_end=None):
+        page_number = 1
+
         start_year = session[0:4]
-
-        print("Scrape page {}".format(page_number))
-
         chamber_letter = {"lower": "C", "upper": "S"}[chamber]
 
         # If a window_start is provided, parse it
@@ -156,8 +157,6 @@ class PRBillScraper(Scraper):
             else:
                 window_end = datetime.datetime.strptime(window_end, "%Y-%m-%d")
                 end = window_start.strftime("%m/%d/%Y")            
-
-        # javascript:__doPostBack('ctl00$CPHBody$Tramites$dgResults$ctl54$ctl00','')
 
         params = {
             'ctl00$CPHBody$lovCuatrienio': start_year,
@@ -176,36 +175,38 @@ class PRBillScraper(Scraper):
             "__EVENTARGUMENT": "",
         }
 
-        if page_number != 1:
+        # required for page 1, we need a copy of the dict to set Buscar for just this page
+        first_scrape_params = params.copy()
+        first_scrape_params['ctl00$CPHBody$btnFilter'] = 'Buscar'
+        yield from self.scrape_search_results(chamber, session, first_scrape_params)
+
+        page = self.last_page
+        result_count = int(page.xpath('//span[@id="ctl00_CPHBody_lblCount"]/text()')[0])
+        max_page = math.ceil(result_count / 50)
+
+        for page_number in range(2, max_page):
             page_str = str(page_number - 1).rjust(2, '0')
             page_field = 'ctl00$CPHBody$dgResults$ctl54$ctl{}'.format(page_str)
             params['__EVENTTARGET'] = page_field
             params['ctl00$CPHBody$ddlPageSize'] = '50'
-            resp = self.asp_post('https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx', params, page)
-        else:
-            params['ctl00$CPHBody$btnFilter'] = 'Buscar'
-            resp = self.asp_post('https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx', params)
+            print(params)
+            self.info("Chamber: {}, scraping page {} of {}".format(chamber, page_number, max_page))
+            yield from self.scrape_search_results(chamber, session, params, self.last_page)
 
+    def scrape_search_results(self, chamber, session, params, page=None):
+        resp = self.asp_post('https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx', params, page)
         page = lxml.html.fromstring(resp)
+        self.last_page = page
 
-        # note there's a typo in a class, one set is DataGridItemSyle (syle) and the other is DataGridAltItemStyle (style)
-        # if we're ever suddenly missing half the actions, check this
+        # note there's a typo in a css class, one set is DataGridItemSyle (syle)
+        # and the other is DataGridAltItemStyle (style)
+        # if we're ever suddenly missing half the bills, check this
         for row in page.xpath('//tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemStyle")]/@onclick'):
             bill_rid = self.extract_bill_rid(row)
-            # bill_rid = 127866 #132106   -- good test bills
+            # Good test bills: 127866 132106 122472
             # bill_rid = '122472'
             bill_url = 'https://sutra.oslpr.org/osl/esutra/MedidaReg.aspx?rid={}'.format(bill_rid)
             yield from self.scrape_bill(chamber, session, bill_url)
-        
-        result_count = int(page.xpath('//span[@id="ctl00_CPHBody_lblCount"]/text()')[0])
-        max_page = math.ceil(result_count / 50)
-
-        if (page_number < max_page):
-            print("Scraping page {} of {}".format(page_number, max_page))
-
-
-            yield from self.scrape_chamber(chamber, session, (page_number + 1), window_start, window_end, page)
-
 
     def extract_bill_rid(self, onclick):
         # bill links look like onclick="javascript:location.replace('MedidaReg.aspx?rid=125217');"
@@ -221,78 +222,6 @@ class PRBillScraper(Scraper):
         token_re = '{}(.*){}'.format(before, after)
         result = re.search(token_re, onclick)
         return result.group(1)
-
-    def parse_action(self, chamber, bill, action, action_url, date):
-        # if action.startswith('Referido'):
-        # committees = action.split(',',1)
-        # multiple committees
-        if action.startswith("Ley N"):
-            action = action[0:42]
-        elif action.startswith("Res. Conj."):
-            action = action[0:42]
-        action_actor = ""
-        atype = None
-        # check it has a url and is not just text
-        if action_url:
-            action_url = action_url[0]
-            isVersion = False
-            for text_regex in _docVersion:
-                if re.match(text_regex, action):
-                    isVersion = True
-            if isVersion:
-                # versions are mentioned several times, lets use original name
-                erroneous_filename = False
-                action_url = action_url.lower().strip()
-                if action_url.endswith((".doc", "dot")):
-                    media_type = "application/msword"
-                elif action_url.endswith(".rtf"):
-                    media_type = "application/rtf"
-                elif action_url.endswith(".pdf"):
-                    media_type = "application/pdf"
-                elif action_url.endswith(("docx", "dotx")):
-                    media_type = (
-                        "application/vnd.openxmlformats-officedocument"
-                        + ".wordprocessingml.document"
-                    )
-                elif action_url.endswith("docm"):
-                    self.warning("Erroneous filename found: {}".format(action_url))
-                    erroneous_filename = True
-                else:
-                    raise Exception("unknown version type: %s" % action_url)
-                if not erroneous_filename:
-                    bill.add_version_link(
-                        note=action,
-                        url=action_url,
-                        media_type=media_type,
-                        on_duplicate="ignore",
-                    )
-            else:
-                bill.add_document_link(action, action_url, on_duplicate="ignore")
-            for pattern, action_actor, atype in _classifiers:
-                if re.match(pattern, action):
-                    break
-                else:
-                    action_actor = ""
-                    atype = None
-        if action_actor == "":
-            if action.find("SENADO") != -1:
-                action_actor = "upper"
-            elif action.find("CAMARA") != -1:
-                action_actor = "lower"
-            else:
-                action_actor = chamber
-
-        # manual fix for data error on 2017-2020 P S0623
-        if date == datetime.datetime(1826, 8, 1):
-            date = date.replace(year=2018)
-
-        bill.add_action(
-            description=action.replace(".", ""),
-            date=date.strftime("%Y-%m-%d"),
-            chamber=action_actor,
-            classification=atype,
-        )
-        return atype, action
 
     def classify_action(self, action_text):
         for pattern, action_actor, atype in _classifiers:
@@ -362,7 +291,7 @@ class PRBillScraper(Scraper):
                 )                
         # TODO replace bill['votes']
         elif u"Se reconsideró" in vote_name:
-            vote_chamber = chamber
+            vote_chamber = bill_chamber
         elif "por Senado" in vote_name:
             vote_chamber = 'upper'
         else:
@@ -473,6 +402,10 @@ class PRBillScraper(Scraper):
             raw_date = self.clean_broken_html(raw_date)
             action_date = self._TZ.localize(datetime.datetime.strptime(raw_date, "%m/%d/%Y"))
             parsed_action = self.classify_action(action_text)
+
+            # manual fix for data error on 2017-2020 P S0623
+            if action_date == datetime.datetime(1826, 8, 1):
+                action_date = action_date.replace(year=2018)
 
             bill.add_action(
                 description=action_text,
