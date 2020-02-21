@@ -54,6 +54,10 @@ _classifiers = (
     ("Ley N", "executive", "executive-signature"),
 )
 
+# Reports we're not currently using that might come in handy:
+# all bill ranges https://sutra.oslpr.org/osl/esutra/VerSQLReportingPRM.aspx?rpt=SUTRA-015
+# updated since https://sutra.oslpr.org/osl/esutra/VerSQLReportingPRM.aspx?rpt=SUTRA-016
+
 
 class PRBillScraper(Scraper):
     _TZ = pytz.timezone("America/Puerto_Rico")
@@ -106,10 +110,6 @@ class PRBillScraper(Scraper):
         }
 
         form = {**form, **params}
-        pprint.pprint(form['__EVENTTARGET'])
-        pprint.pprint(form['__EVENTARGUMENT'])
-
-        # self.s.cookies['SUTRASplash'] = 'NoSplash'
 
         cookie_obj = requests.cookies.create_cookie(domain='sutra.oslpr.org', name='SUTRASplash', value='NoSplash')
         self.s.cookies.set_cookie(cookie_obj)
@@ -138,9 +138,9 @@ class PRBillScraper(Scraper):
         chamber_letter = {"lower": "C", "upper": "S"}[chamber]
 
         params = {
-            'ctl00$CPHBody$lovCuatrienio': '2017',
-            'ctl00$CPHBody$lovTipoMedida': 'PC',
-            'ctl00$CPHBody$lovCuerpoId': 'C',
+            'ctl00$CPHBody$lovCuatrienio': start_year,
+            'ctl00$CPHBody$lovTipoMedida': '-1',
+            'ctl00$CPHBody$lovCuerpoId': chamber_letter,
             'ctl00$CPHBody$txt_Medida': '',
             'ctl00$CPHBody$txt_FechaDesde': '',
             'ctl00$CPHBody$ME_txt_FechaDesde_ClientState': '',
@@ -156,7 +156,6 @@ class PRBillScraper(Scraper):
         }
 
         resp = self.asp_post('https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx', params)
-        # print(resp)
 
         page = lxml.html.fromstring(resp)
 
@@ -389,8 +388,6 @@ class PRBillScraper(Scraper):
                     on_duplicate='ignore',
                 )
 
-    # all bill ranges https://sutra.oslpr.org/osl/esutra/VerSQLReportingPRM.aspx?rpt=SUTRA-015
-    # updated since https://sutra.oslpr.org/osl/esutra/VerSQLReportingPRM.aspx?rpt=SUTRA-016
     def scrape_author_table(self, year, bill, bill_id):
         report_url = 'https://sutra.oslpr.org/osl/esutra/VerSQLReportingPRM.aspx?rpt=SUTRA-011&Q={}&Medida={}'.format(
             '2017',
@@ -401,9 +398,13 @@ class PRBillScraper(Scraper):
 
         for row in page.xpath('//tr[td/div/div[contains(text(),"Autor")]]')[1:]:
             name = row.xpath('td[2]/div/div/text()')[0].strip()
-            party = row.xpath('td[3]/div/div/text()')[0].strip()
-            #TODO: what about the all the members of X sponsorships?
-            print(name, party)
+            # currently not saving sponsor party, but here's the xpath
+            # party = row.xpath('td[3]/div/div/text()')[0].strip()
+
+            # sometimes there's an extra dummy row beyond the first
+            if name == 'Legislador':
+                continue
+
             bill.add_sponsorship(
                 name,
                 entity_type="person",
