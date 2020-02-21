@@ -68,7 +68,7 @@ class PRBillScraper(Scraper):
         # 'PR': 'plan de reorganizacion',
     }
 
-    def asp_post(self, url, params):
+    def asp_post(self, url, params, page=None):
         headers = {
             "User-Agent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36',
             'referer': url,
@@ -76,8 +76,10 @@ class PRBillScraper(Scraper):
             'authority': 'sutra.oslpr.org'
         }
 
-        page = self.s.get(url, headers=headers)
-        page = lxml.html.fromstring(page.content)
+        if page is None:
+            page = self.s.get(url, headers=headers)
+            page = lxml.html.fromstring(page.content)
+
         (viewstate,) = page.xpath('//input[@id="__VIEWSTATE"]/@value')
         (viewstategenerator,) = page.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
         (eventvalidation,) = page.xpath('//input[@id="__EVENTVALIDATION"]/@value')
@@ -96,16 +98,16 @@ class PRBillScraper(Scraper):
         form = {
             "__VIEWSTATE": viewstate,
             "__VIEWSTATEGENERATOR": viewstategenerator,
-            "__EVENTTARGET": "",
             "__EVENTVALIDATION": eventvalidation,
-            "__EVENTARGUMENT": "",
             "__LASTFOCUS": "",
             "ctl00_tsm_HiddenField": hiddenfield,
             '__SCROLLPOSITIONX': '0',
-            '__SCROLLPOSITIONY': '53',
+            '__SCROLLPOSITIONY': '453',
         }
 
         form = {**form, **params}
+        pprint.pprint(form['__EVENTTARGET'])
+        pprint.pprint(form['__EVENTARGUMENT'])
 
         # self.s.cookies['SUTRASplash'] = 'NoSplash'
 
@@ -137,8 +139,8 @@ class PRBillScraper(Scraper):
 
         params = {
             'ctl00$CPHBody$lovCuatrienio': '2017',
-            'ctl00$CPHBody$lovTipoMedida': '-1',
-            'ctl00$CPHBody$lovCuerpoId': '-1',
+            'ctl00$CPHBody$lovTipoMedida': 'PC',
+            'ctl00$CPHBody$lovCuerpoId': 'C',
             'ctl00$CPHBody$txt_Medida': '',
             'ctl00$CPHBody$txt_FechaDesde': '',
             'ctl00$CPHBody$ME_txt_FechaDesde_ClientState': '',
@@ -149,6 +151,8 @@ class PRBillScraper(Scraper):
             'ctl00$CPHBody$lovEvento': '-1',
             'ctl00$CPHBody$lovComision': '-1',
             'ctl00$CPHBody$btnFilter': 'Buscar',
+            "__EVENTTARGET": "",
+            "__EVENTARGUMENT": "",
         }
 
         resp = self.asp_post('https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx', params)
@@ -159,6 +163,7 @@ class PRBillScraper(Scraper):
         for row in page.xpath('//tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemSyle")]/@onclick'):
             bill_rid = self.extract_bill_rid(row)
             # bill_rid = 127866 #132106   -- good test bills
+            # bill_rid = '122472'
             bill_url = 'https://sutra.oslpr.org/osl/esutra/MedidaReg.aspx?rid={}'.format(bill_rid)
             yield from self.scrape_bill(chamber, session, bill_url)
 
@@ -176,7 +181,6 @@ class PRBillScraper(Scraper):
         token_re = '{}(.*){}'.format(before, after)
         result = re.search(token_re, onclick)
         return result.group(1)
-
 
     def parse_action(self, chamber, bill, action, action_url, date):
         # if action.startswith('Referido'):
@@ -332,13 +336,15 @@ class PRBillScraper(Scraper):
 
         vote_chamber = self.parse_vote_chamber(chamber, action_text)
 
+        classification = "passage" if u"Votación Final" in action_text else "other"
+
         vote = Vote(
             chamber=vote_chamber,
             start_date=action_date,
             motion_text=action_text,
             result="pass" if (yes > no) else "fail",
             bill=bill,
-            classification="other",
+            classification=classification,
         )
         vote.add_source(url)
         vote.set_count("yes", yes)
@@ -349,11 +355,11 @@ class PRBillScraper(Scraper):
         # we don't want to add the attached vote PDF as a version,
         # so add it as a document
         # TODO: maybe this should be set as the source?
-        self.parse_document(bill, row)
+        self.parse_version(bill, row, is_document=True)
 
         yield vote
 
-    def parse_document(self, bill, row):
+    def parse_version(self, bill, row, is_document=False):
         # they have empty links in every action, and icon links preceeding the actual link
         # so only select links with an href set, and skip the icon links
         for version_row in row.xpath('.//a[contains(@class,"gridlinktxt") and contains(@id, "FileLink") and boolean(@href)]'):
@@ -367,37 +373,48 @@ class PRBillScraper(Scraper):
                 self.error("Unknown version url in onclick: {}".format(version_url))
 
             version_title = self.clean_broken_html(version_row.xpath('text()')[0])
-            bill.add_document_link(
-                note=version_title,
-                url=version_url,
-                media_type=self.classify_media_type(version_url),
-                on_duplicate='ignore',
+
+            if is_document:
+                bill.add_document_link(
+                    note=version_title,
+                    url=version_url,
+                    media_type=self.classify_media_type(version_url),
+                    on_duplicate='ignore',
+                )            
+            else:
+                bill.add_version_link(
+                    note=version_title,
+                    url=version_url,
+                    media_type=self.classify_media_type(version_url),
+                    on_duplicate='ignore',
+                )
+
+    # all bill ranges https://sutra.oslpr.org/osl/esutra/VerSQLReportingPRM.aspx?rpt=SUTRA-015
+    # updated since https://sutra.oslpr.org/osl/esutra/VerSQLReportingPRM.aspx?rpt=SUTRA-016
+    def scrape_author_table(self, year, bill, bill_id):
+        report_url = 'https://sutra.oslpr.org/osl/esutra/VerSQLReportingPRM.aspx?rpt=SUTRA-011&Q={}&Medida={}'.format(
+            '2017',
+            bill_id
+        )
+        html = self.get(report_url).text
+        page = lxml.html.fromstring(html)
+
+        for row in page.xpath('//tr[td/div/div[contains(text(),"Autor")]]')[1:]:
+            name = row.xpath('td[2]/div/div/text()')[0].strip()
+            party = row.xpath('td[3]/div/div/text()')[0].strip()
+            #TODO: what about the all the members of X sponsorships?
+            print(name, party)
+            bill.add_sponsorship(
+                name,
+                entity_type="person",
+                classification="primary",
+                primary=True,
             )
-
-
-    def parse_version(self, bill, row):
-        # they have empty links in every action, and icon links preceeding the actual link
-        # so only select links with an href set, and skip the icon links
-        for version_row in row.xpath('.//a[contains(@class,"gridlinktxt") and contains(@id, "FileLink") and boolean(@href)]'):
-            version_url = version_row.xpath('@href')[0]
-            # version url is in an onclick handler built into the href
-            version_url = self.extract_version_url(version_url)
-            if version_url.startswith('../SUTRA'):
-                version_url = version_url.replace('../SUTRA/', '')
-                version_url = 'https://sutra.oslpr.org/osl/SUTRA/{}'.format(version_url)
-            elif not version_url.lower().startwith('http'):
-                self.error("Unknown version url in onclick: {}".format(version_url))
-
-            version_title = self.clean_broken_html(version_row.xpath('text()')[0])
-            bill.add_version_link(
-                note=version_title,
-                url=version_url,
-                media_type=self.classify_media_type(version_url),
-                on_duplicate='ignore',
-            )
-
 
     def scrape_action_table(self, chamber, bill, page, url):
+        # NOTE: in theory this paginates, but it defaults to 50 actions per page
+        # and I couldn't find examples of bills with > 50
+
         page.make_links_absolute('https://sutra.oslpr.org/osl/SUTRA/')
 
         # note there's a typo in a class, one set is DataGridItemSyle (syle) and the other is DataGridAltItemStyle (style)
@@ -421,12 +438,9 @@ class PRBillScraper(Scraper):
 
             # if it's a vote, we don't want to add the document as a bill version
             if row.xpath('.//label[contains(text(), "A Favor")]'):
-                print("A FAVOR")
                 yield from self.parse_vote(chamber, bill, row, action_text, action_date, url)
             else:
-                print("NO A FAVOR")
                 self.parse_version(bill, row)
-
 
     def scrape_bill(self, chamber, session, url):
         html = self.get(url).text
@@ -444,6 +458,8 @@ class PRBillScraper(Scraper):
             title=title,
             classification=bill_type,
         )
+
+        self.scrape_author_table('2017', bill, bill_id)
 
         yield from self.scrape_action_table(chamber, bill, page, url)
 
