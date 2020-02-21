@@ -4,6 +4,7 @@ import lxml.html
 import datetime
 import itertools
 import pprint
+import math
 import sys
 import requests
 import pytz
@@ -123,65 +124,88 @@ class PRBillScraper(Scraper):
                 name = name.replace(ch, "")
         return name
 
+    # Additional options:
+    # window_start / window_end - Show bills updated between start and end. Format Y-m-d
+    # window_end is optional, defaults to today if window_start is set
     def scrape(self, session=None, chamber=None, window_start=None, window_end=None):
         if not session:
             session = self.latest_session()
             self.info("no session specified using %s", session)
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber, session, window_start, window_end)
+            yield from self.scrape_chamber(chamber, session, 1, window_start, window_end)
 
-    def scrape_chamber(self, chamber, session, window_start=None, window_end=None):
-        # page = lxml.html.fromstring(self.s.get('https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx').content)
+    def scrape_chamber(self, chamber, session, page_number=1, window_start=None, window_end=None, page=None):
         start_year = session[0:4]
+
+        print("Scrape page {}".format(page_number))
 
         chamber_letter = {"lower": "C", "upper": "S"}[chamber]
 
         # If a window_start is provided, parse it
         # If a window_end is provided, parse it, if not default to today
         if window_start is None:
-            window_start = ''
-            window_end = ''
+            start = ''
+            end = ''
         else:
             window_start = datetime.datetime.strptime(window_start, "%Y-%m-%d")
-            window_start = window_start.strftime("%m/%d/%Y")
+            start = window_start.strftime("%m/%d/%Y")
 
             if window_end is None:
-                window_end = datetime.datetime.now().strftime("%m/%d/%Y")
+                end = datetime.datetime.now().strftime("%m/%d/%Y")
             else:
                 window_end = datetime.datetime.strptime(window_end, "%Y-%m-%d")
-                window_end = window_start.strftime("%m/%d/%Y")            
+                end = window_start.strftime("%m/%d/%Y")            
 
-        print(window_start, window_end)
+        # javascript:__doPostBack('ctl00$CPHBody$Tramites$dgResults$ctl54$ctl00','')
 
         params = {
             'ctl00$CPHBody$lovCuatrienio': start_year,
             'ctl00$CPHBody$lovTipoMedida': '-1',
             'ctl00$CPHBody$lovCuerpoId': chamber_letter,
             'ctl00$CPHBody$txt_Medida': '',
-            'ctl00$CPHBody$txt_FechaDesde': window_start,
+            'ctl00$CPHBody$txt_FechaDesde': start,
             'ctl00$CPHBody$ME_txt_FechaDesde_ClientState': '',
-            'ctl00$CPHBody$txt_FechaHasta': window_end,
+            'ctl00$CPHBody$txt_FechaHasta': end,
             'ctl00$CPHBody$ME_txt_FechaHasta_ClientState': '',
             'ctl00$CPHBody$txt_Titulo': '',
             'ctl00$CPHBody$lovLegisladorId': '-1',
             'ctl00$CPHBody$lovEvento': '-1',
             'ctl00$CPHBody$lovComision': '-1',
-            'ctl00$CPHBody$btnFilter': 'Buscar',
             "__EVENTTARGET": "",
             "__EVENTARGUMENT": "",
         }
 
-        resp = self.asp_post('https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx', params)
+        if page_number != 1:
+            page_str = str(page_number - 1).rjust(2, '0')
+            page_field = 'ctl00$CPHBody$dgResults$ctl54$ctl{}'.format(page_str)
+            params['__EVENTTARGET'] = page_field
+            params['ctl00$CPHBody$ddlPageSize'] = '50'
+            resp = self.asp_post('https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx', params, page)
+        else:
+            params['ctl00$CPHBody$btnFilter'] = 'Buscar'
+            resp = self.asp_post('https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx', params)
 
         page = lxml.html.fromstring(resp)
 
-        for row in page.xpath('//tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemSyle")]/@onclick'):
+        # note there's a typo in a class, one set is DataGridItemSyle (syle) and the other is DataGridAltItemStyle (style)
+        # if we're ever suddenly missing half the actions, check this
+        for row in page.xpath('//tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemStyle")]/@onclick'):
             bill_rid = self.extract_bill_rid(row)
             # bill_rid = 127866 #132106   -- good test bills
             # bill_rid = '122472'
             bill_url = 'https://sutra.oslpr.org/osl/esutra/MedidaReg.aspx?rid={}'.format(bill_rid)
             yield from self.scrape_bill(chamber, session, bill_url)
+        
+        result_count = int(page.xpath('//span[@id="ctl00_CPHBody_lblCount"]/text()')[0])
+        max_page = math.ceil(result_count / 50)
+
+        if (page_number < max_page):
+            print("Scraping page {} of {}".format(page_number, max_page))
+
+
+            yield from self.scrape_chamber(chamber, session, (page_number + 1), window_start, window_end, page)
+
 
     def extract_bill_rid(self, onclick):
         # bill links look like onclick="javascript:location.replace('MedidaReg.aspx?rid=125217');"
@@ -324,20 +348,23 @@ class PRBillScraper(Scraper):
             vote_chamber = bill_chamber
 
         elif u"informe de Comisión de Conferencia" in vote_name:
-            (vote_chamber, vote_name) = re.search(
-                r"(?u)^(\w+) (\w+ informe de Comisi\wn de Conferencia)$",
-                vote_name,
-            ).groups()
-            if vote_chamber == "Senado":
+            # (vote_chamber, vote_name) = re.search(
+            #     r"(?u)^(\w+) (\w+ informe de Comisi\wn de Conferencia)$",
+            #     vote_name,
+            # ).groups()
+            if "Senado" in vote_name:
                 vote_chamber = "upper"
-            else:
+            elif u"Cámara" in vote_name:
                 vote_chamber = "lower"
+            else:
+                raise AssertionError(
+                    u"Unable to identify vote chamber: {}".format(vote_name)
+                )                
         # TODO replace bill['votes']
         elif u"Se reconsideró" in vote_name:
-            if bill_vote_chamber:
-                vote_chamber = bill_vote_chamber
-            else:
-                vote_chamber = chamber
+            vote_chamber = chamber
+        elif "por Senado" in vote_name:
+            vote_chamber = 'upper'
         else:
             raise AssertionError(
                 u"Unknown vote text found: {}".format(vote_name)
