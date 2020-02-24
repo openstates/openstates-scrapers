@@ -195,6 +195,9 @@ class COBillScraper(Scraper, LXMLMixin):
         actions = page.xpath('//div[@id="bill-documents-tabs7"]//table//tbody//tr')
 
         for action in actions:
+            action_date = action.xpath("td[1]/text()")
+            if action_date is None:
+                continue
             action_date = action.xpath("td[1]/text()")[0]
             action_date = dt.datetime.strptime(action_date, "%m/%d/%Y")
             action_date = self._tz.localize(action_date)
