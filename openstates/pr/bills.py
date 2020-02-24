@@ -12,19 +12,6 @@ class NoSuchBill(Exception):
     pass
 
 
-_voteChambers = (
-    (u"Aprobado por el Senado en Votac", "upper"),
-    (u"Aprobado por C", "lower"),
-)
-
-_docVersion = (
-    ("Entirillado del Informe"),
-    ("Texto de Aprobaci"),
-    # ('Ley N'),
-    ("rendido con enmiendas"),
-    ("Radicado"),
-)
-
 _classifiers = (
     ("Radicado", "", "introduction"),
     (u"Aprobado por Cámara en Votación Final", "lower", "passage"),
