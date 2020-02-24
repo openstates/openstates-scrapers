@@ -2,10 +2,7 @@
 import re
 import lxml.html
 import datetime
-import itertools
-import pprint
 import math
-import sys
 import requests
 import pytz
 from pupa.scrape import Scraper, Bill, VoteEvent as Vote
@@ -80,10 +77,11 @@ class PRBillScraper(Scraper):
 
     def asp_post(self, url, params, page=None):
         headers = {
-            "User-Agent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36',
-            'referer': url,
-            'origin': 'https://sutra.oslpr.org',
-            'authority': 'sutra.oslpr.org'
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/79.0.3945.117 Safari/537.36",
+            "referer": url,
+            "origin": "https://sutra.oslpr.org",
+            "authority": "sutra.oslpr.org",
         }
 
         if page is None:
@@ -93,15 +91,19 @@ class PRBillScraper(Scraper):
         (viewstate,) = page.xpath('//input[@id="__VIEWSTATE"]/@value')
         (viewstategenerator,) = page.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
         (eventvalidation,) = page.xpath('//input[@id="__EVENTVALIDATION"]/@value')
-        
-        hiddenfield_js_url = page.xpath('//script[contains(@src,"?_TSM_HiddenField")]/@src')[0]
-        hiddenfield_js_url = '{}{}'.format('https://sutra.oslpr.org/', hiddenfield_js_url)
+
+        hiddenfield_js_url = page.xpath(
+            '//script[contains(@src,"?_TSM_HiddenField")]/@src'
+        )[0]
+        hiddenfield_js_url = "{}{}".format(
+            "https://sutra.oslpr.org/", hiddenfield_js_url
+        )
 
         hiddenfield_js = self.s.get(hiddenfield_js_url).text
 
         before = re.escape('get("ctl00_tsm_HiddenField").value += \'')
-        after = re.escape('\';Sys.Application.remove_load(fn);')
-        token_re = '{}(.*){}'.format(before, after)
+        after = re.escape("';Sys.Application.remove_load(fn);")
+        token_re = "{}(.*){}".format(before, after)
         result = re.search(token_re, hiddenfield_js)
         hiddenfield = result.group(1)
 
@@ -111,13 +113,15 @@ class PRBillScraper(Scraper):
             "__EVENTVALIDATION": eventvalidation,
             "__LASTFOCUS": "",
             "ctl00_tsm_HiddenField": hiddenfield,
-            '__SCROLLPOSITIONX': '0',
-            '__SCROLLPOSITIONY': '453',
+            "__SCROLLPOSITIONX": "0",
+            "__SCROLLPOSITIONY": "453",
         }
 
         form = {**form, **params}
 
-        cookie_obj = requests.cookies.create_cookie(domain='sutra.oslpr.org', name='SUTRASplash', value='NoSplash')
+        cookie_obj = requests.cookies.create_cookie(
+            domain="sutra.oslpr.org", name="SUTRASplash", value="NoSplash"
+        )
         self.s.cookies.set_cookie(cookie_obj)
 
         xml = self.s.post(url, data=form, headers=headers).text
@@ -149,8 +153,8 @@ class PRBillScraper(Scraper):
         # If a window_start is provided, parse it
         # If a window_end is provided, parse it, if not default to today
         if window_start is None:
-            start = ''
-            end = ''
+            start = ""
+            end = ""
         else:
             window_start = datetime.datetime.strptime(window_start, "%Y-%m-%d")
             start = window_start.strftime("%m/%d/%Y")
@@ -159,28 +163,28 @@ class PRBillScraper(Scraper):
                 end = datetime.datetime.now().strftime("%m/%d/%Y")
             else:
                 window_end = datetime.datetime.strptime(window_end, "%Y-%m-%d")
-                end = window_start.strftime("%m/%d/%Y")            
+                end = window_start.strftime("%m/%d/%Y")
 
         params = {
-            'ctl00$CPHBody$lovCuatrienio': start_year,
-            'ctl00$CPHBody$lovTipoMedida': '-1',
-            'ctl00$CPHBody$lovCuerpoId': chamber_letter,
-            'ctl00$CPHBody$txt_Medida': '',
-            'ctl00$CPHBody$txt_FechaDesde': start,
-            'ctl00$CPHBody$ME_txt_FechaDesde_ClientState': '',
-            'ctl00$CPHBody$txt_FechaHasta': end,
-            'ctl00$CPHBody$ME_txt_FechaHasta_ClientState': '',
-            'ctl00$CPHBody$txt_Titulo': '',
-            'ctl00$CPHBody$lovLegisladorId': '-1',
-            'ctl00$CPHBody$lovEvento': '-1',
-            'ctl00$CPHBody$lovComision': '-1',
+            "ctl00$CPHBody$lovCuatrienio": start_year,
+            "ctl00$CPHBody$lovTipoMedida": "-1",
+            "ctl00$CPHBody$lovCuerpoId": chamber_letter,
+            "ctl00$CPHBody$txt_Medida": "",
+            "ctl00$CPHBody$txt_FechaDesde": start,
+            "ctl00$CPHBody$ME_txt_FechaDesde_ClientState": "",
+            "ctl00$CPHBody$txt_FechaHasta": end,
+            "ctl00$CPHBody$ME_txt_FechaHasta_ClientState": "",
+            "ctl00$CPHBody$txt_Titulo": "",
+            "ctl00$CPHBody$lovLegisladorId": "-1",
+            "ctl00$CPHBody$lovEvento": "-1",
+            "ctl00$CPHBody$lovComision": "-1",
             "__EVENTTARGET": "",
             "__EVENTARGUMENT": "",
         }
 
         # required for page 1, we need a copy of the dict to set Buscar for just this page
         first_scrape_params = params.copy()
-        first_scrape_params['ctl00$CPHBody$btnFilter'] = 'Buscar'
+        first_scrape_params["ctl00$CPHBody$btnFilter"] = "Buscar"
         yield from self.scrape_search_results(chamber, session, first_scrape_params)
 
         page = self.last_page
@@ -188,40 +192,52 @@ class PRBillScraper(Scraper):
         max_page = math.ceil(result_count / 50)
 
         for page_number in range(2, max_page):
-            page_str = str(page_number - 1).rjust(2, '0')
-            page_field = 'ctl00$CPHBody$dgResults$ctl54$ctl{}'.format(page_str)
-            params['__EVENTTARGET'] = page_field
-            params['ctl00$CPHBody$ddlPageSize'] = '50'
-            self.info("Chamber: {}, scraping page {} of {}".format(chamber, page_number, max_page))
-            yield from self.scrape_search_results(chamber, session, params, self.last_page)
+            page_str = str(page_number - 1).rjust(2, "0")
+            page_field = "ctl00$CPHBody$dgResults$ctl54$ctl{}".format(page_str)
+            params["__EVENTTARGET"] = page_field
+            params["ctl00$CPHBody$ddlPageSize"] = "50"
+            self.info(
+                "Chamber: {}, scraping page {} of {}".format(
+                    chamber, page_number, max_page
+                )
+            )
+            yield from self.scrape_search_results(
+                chamber, session, params, self.last_page
+            )
 
     def scrape_search_results(self, chamber, session, params, page=None):
-        resp = self.asp_post('https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx', params, page)
+        resp = self.asp_post(
+            "https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx", params, page
+        )
         page = lxml.html.fromstring(resp)
         self.last_page = page
 
         # note there's a typo in a css class, one set is DataGridItemSyle (syle)
         # and the other is DataGridAltItemStyle (style)
         # if we're ever suddenly missing half the bills, check this
-        for row in page.xpath('//tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemStyle")]/@onclick'):
+        for row in page.xpath(
+            '//tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemStyle")]/@onclick'
+        ):
             bill_rid = self.extract_bill_rid(row)
             # Good test bills: 127866 132106 122472
             # bill_rid = '122472'
-            bill_url = 'https://sutra.oslpr.org/osl/esutra/MedidaReg.aspx?rid={}'.format(bill_rid)
+            bill_url = "https://sutra.oslpr.org/osl/esutra/MedidaReg.aspx?rid={}".format(
+                bill_rid
+            )
             yield from self.scrape_bill(chamber, session, bill_url)
 
     def extract_bill_rid(self, onclick):
         # bill links look like onclick="javascript:location.replace('MedidaReg.aspx?rid=125217');"
-        before = re.escape('javascript:location.replace(\'MedidaReg.aspx?rid=')
-        after = re.escape('\');')
-        token_re = '{}(.*){}'.format(before, after)
+        before = re.escape("javascript:location.replace('MedidaReg.aspx?rid=")
+        after = re.escape("');")
+        token_re = "{}(.*){}".format(before, after)
         result = re.search(token_re, onclick)
         return result.group(1)
 
     def extract_version_url(self, onclick):
-        before = re.escape('javascript:OpenDoc(\'')
-        after = re.escape('\');')
-        token_re = '{}(.*){}'.format(before, after)
+        before = re.escape("javascript:OpenDoc('")
+        after = re.escape("');")
+        token_re = "{}(.*){}".format(before, after)
         result = re.search(token_re, onclick)
         return result.group(1)
 
@@ -258,11 +274,11 @@ class PRBillScraper(Scraper):
         return media_type
 
     def clean_broken_html(self, html):
-        return html.strip().replace('&nbsp', '')
+        return html.strip().replace("&nbsp", "")
 
     def parse_vote_chamber(self, bill_chamber, vote_name):
         if u"Confirmado por Senado" in vote_name:
-            vote_chamber = 'upper'
+            vote_chamber = "upper"
         elif u"Votación Final" in vote_name:
             (vote_chamber, vote_name) = re.search(
                 r"(?u)^\w+ por (.*?) en (.*)$", vote_name
@@ -273,9 +289,7 @@ class PRBillScraper(Scraper):
                 vote_chamber = "lower"
 
         elif "Cuerpo de Origen" in vote_name:
-            vote_name = re.search(
-                r"(?u)^Cuerpo de Origen (.*)$", vote_name
-            ).group(1)
+            vote_name = re.search(r"(?u)^Cuerpo de Origen (.*)$", vote_name).group(1)
             vote_chamber = bill_chamber
 
         elif u"informe de Comisión de Conferencia" in vote_name:
@@ -290,23 +304,37 @@ class PRBillScraper(Scraper):
             else:
                 raise AssertionError(
                     u"Unable to identify vote chamber: {}".format(vote_name)
-                )                
+                )
         # TODO replace bill['votes']
         elif u"Se reconsideró" in vote_name:
             vote_chamber = bill_chamber
         elif "por Senado" in vote_name:
-            vote_chamber = 'upper'
+            vote_chamber = "upper"
         else:
-            raise AssertionError(
-                u"Unknown vote text found: {}".format(vote_name)
-            )
+            raise AssertionError(u"Unknown vote text found: {}".format(vote_name))
         return vote_chamber
 
     def parse_vote(self, chamber, bill, row, action_text, action_date, url):
-        yes = int(row.xpath('.//div[label[contains(text(), "A Favor")]]/span[contains(@class,"smalltxt")]/text()')[0])
-        no = int(row.xpath('.//div[label[contains(text(), "En Contra")]]/span[contains(@class,"smalltxt")]/text()')[0])
-        abstain = int(row.xpath('.//div[label[contains(text(), "Abstenido")]]/span[contains(@class,"smalltxt")]/text()')[0])
-        absent = int(row.xpath('.//div[label[contains(text(), "Ausente")]]/span[contains(@class,"smalltxt")]/text()')[0])
+        yes = int(
+            row.xpath(
+                './/div[label[contains(text(), "A Favor")]]/span[contains(@class,"smalltxt")]/text()'
+            )[0]
+        )
+        no = int(
+            row.xpath(
+                './/div[label[contains(text(), "En Contra")]]/span[contains(@class,"smalltxt")]/text()'
+            )[0]
+        )
+        abstain = int(
+            row.xpath(
+                './/div[label[contains(text(), "Abstenido")]]/span[contains(@class,"smalltxt")]/text()'
+            )[0]
+        )
+        absent = int(
+            row.xpath(
+                './/div[label[contains(text(), "Ausente")]]/span[contains(@class,"smalltxt")]/text()'
+            )[0]
+        )
 
         vote_chamber = self.parse_vote_chamber(chamber, action_text)
 
@@ -336,73 +364,81 @@ class PRBillScraper(Scraper):
     def parse_version(self, bill, row, is_document=False):
         # they have empty links in every action, and icon links preceeding the actual link
         # so only select links with an href set, and skip the icon links
-        for version_row in row.xpath('.//a[contains(@class,"gridlinktxt") and contains(@id, "FileLink") and boolean(@href)]'):
-            version_url = version_row.xpath('@href')[0]
+        for version_row in row.xpath(
+            './/a[contains(@class,"gridlinktxt") and contains(@id, "FileLink") and boolean(@href)]'
+        ):
+            version_url = version_row.xpath("@href")[0]
             # version url is in an onclick handler built into the href
             version_url = self.extract_version_url(version_url)
-            if version_url.startswith('../SUTRA'):
-                version_url = version_url.replace('../SUTRA/', '')
-                version_url = 'https://sutra.oslpr.org/osl/SUTRA/{}'.format(version_url)
-            elif not version_url.lower().startwith('http'):
+            if version_url.startswith("../SUTRA"):
+                version_url = version_url.replace("../SUTRA/", "")
+                version_url = "https://sutra.oslpr.org/osl/SUTRA/{}".format(version_url)
+            elif not version_url.lower().startwith("http"):
                 self.error("Unknown version url in onclick: {}".format(version_url))
 
-            version_title = self.clean_broken_html(version_row.xpath('text()')[0])
+            version_title = self.clean_broken_html(version_row.xpath("text()")[0])
 
             if is_document:
                 bill.add_document_link(
                     note=version_title,
                     url=version_url,
                     media_type=self.classify_media_type(version_url),
-                    on_duplicate='ignore',
-                )            
+                    on_duplicate="ignore",
+                )
             else:
                 bill.add_version_link(
                     note=version_title,
                     url=version_url,
                     media_type=self.classify_media_type(version_url),
-                    on_duplicate='ignore',
+                    on_duplicate="ignore",
                 )
 
     def scrape_author_table(self, year, bill, bill_id):
-        report_url = 'https://sutra.oslpr.org/osl/esutra/VerSQLReportingPRM.aspx?rpt=SUTRA-011&Q={}&Medida={}'.format(
-            '2017',
-            bill_id
+        report_url = "https://sutra.oslpr.org/osl/esutra/VerSQLReportingPRM.aspx?rpt=SUTRA-011&Q={}&Medida={}".format(
+            "2017", bill_id
         )
         html = self.get(report_url).text
         page = lxml.html.fromstring(html)
 
         for row in page.xpath('//tr[td/div/div[contains(text(),"Autor")]]')[1:]:
-            name = row.xpath('td[2]/div/div/text()')[0].strip()
+            name = row.xpath("td[2]/div/div/text()")[0].strip()
             # currently not saving sponsor party, but here's the xpath
             # party = row.xpath('td[3]/div/div/text()')[0].strip()
 
             # sometimes there's an extra dummy row beyond the first
-            if name == 'Legislador':
+            if name == "Legislador":
                 continue
 
             bill.add_sponsorship(
-                name,
-                entity_type="person",
-                classification="primary",
-                primary=True,
+                name, entity_type="person", classification="primary", primary=True,
             )
 
     def scrape_action_table(self, chamber, bill, page, url):
         # NOTE: in theory this paginates, but it defaults to 50 actions per page
         # and I couldn't find examples of bills with > 50
 
-        page.make_links_absolute('https://sutra.oslpr.org/osl/SUTRA/')
+        page.make_links_absolute("https://sutra.oslpr.org/osl/SUTRA/")
 
-        # note there's a typo in a class, one set is DataGridItemSyle (syle) and the other is DataGridAltItemStyle (style)
+        # note there's a typo in a class, one set is
+        # DataGridItemSyle (syle) and the other is DataGridAltItemStyle (style)
         # if we're ever suddenly missing half the actions, check this
-        for row in page.xpath('//table[@id="ctl00_CPHBody_TabEventos_dgResults"]/tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemStyle")]'):
-            action_text = row.xpath('.//label[contains(@class,"DetailFormLbl")]/text()')[0]
+        for row in page.xpath(
+            '//table[@id="ctl00_CPHBody_TabEventos_dgResults"]/'
+            'tr[contains(@class,"DataGridItemSyle") or contains(@class,"DataGridAltItemStyle")]'
+        ):
+            action_text = row.xpath(
+                './/label[contains(@class,"DetailFormLbl")]/text()'
+            )[0]
             action_text = self.clean_broken_html(action_text)
             # div with a label containing Fecha, following span.smalltxt
             # need to be this specific because votes have the same markup
-            raw_date = row.xpath('.//div[label[contains(text(), "Fecha")]]/span[contains(@class,"smalltxt")]/text()')[0]
+            raw_date = row.xpath(
+                './/div[label[contains(text(), "Fecha")]]/span[contains(@class,"smalltxt")]/text()'
+            )[0]
             raw_date = self.clean_broken_html(raw_date)
-            action_date = self._TZ.localize(datetime.datetime.strptime(raw_date, "%m/%d/%Y"))
+            action_date = self._TZ.localize(
+                datetime.datetime.strptime(raw_date, "%m/%d/%Y")
+            )
             parsed_action = self.classify_action(action_text)
 
             # manual fix for data error on 2017-2020 P S0623
@@ -413,12 +449,14 @@ class PRBillScraper(Scraper):
                 description=action_text,
                 date=action_date,
                 chamber=parsed_action[0],
-                classification=parsed_action[1],               
+                classification=parsed_action[1],
             )
 
             # if it's a vote, we don't want to add the document as a bill version
             if row.xpath('.//label[contains(text(), "A Favor")]'):
-                yield from self.parse_vote(chamber, bill, row, action_text, action_date, url)
+                yield from self.parse_vote(
+                    chamber, bill, row, action_text, action_date, url
+                )
             else:
                 self.parse_version(bill, row)
 
