@@ -60,18 +60,12 @@ class MDVoteScraper(Scraper, LXMLMixin):
                 possible_bill_id = re.findall(r"([HS]\w+ \d+)", line)
                 if possible_bill_id:
                     bill_id = possible_bill_id[0]
-                # need to add other motion types -- scraper will fail if we get
-                # a bill_id but no motion, helping us identify these
-                possible_motion = re.findall(
-                    "notwithstanding the objections|On Third Reading|ON 2ND RDG|Decision of the Chair"
-                    "|Favorable As Amended|Floor Amendment",
-                    line,
-                    re.I,
-                )
-                if possible_motion:
-                    motion = possible_motion[0]
-                    if motion == "notwithstanding the objections":
-                        motion = "Shall the bill pass notwithstanding the objections of the Executive?"
+
+                # preamble has metadata, then motion, then counts.  our process then is to
+                # store the last line as the motion, but if the last line looks like a
+                # continuation, append it to the prior line
+
+                line = line.strip()
                 counts = re.findall(
                     r"(\d+) Yeas\s+(\d+) Nays\s+(\d+) Not Voting\s+(\d+) Excused\s+(\d+) Absent",
                     line,
@@ -86,6 +80,12 @@ class MDVoteScraper(Scraper, LXMLMixin):
                     excused_count = int(excused_count)
                     absent_count = int(absent_count)
                     section = "votes"
+                elif line and line != "(Const)":
+                    # questions seem to be split across two lines
+                    if line.endswith("?"):
+                        motion = motion + " " + line
+                    else:
+                        motion = line
             elif section == "votes":
                 if line.startswith("Voting Yea"):
                     how = "yes"
@@ -104,11 +104,7 @@ class MDVoteScraper(Scraper, LXMLMixin):
         if not bill_id and not motion:
             return
         elif bill_id and not motion:
-            print(
-                f"incomplete scrape of MD vote bill_id={bill_id} motion={motion} "
-                "likely need to expand motion regex"
-            )
-            raise ValueError()
+            self.warning(f"got {bill_id} but no motion, not registering as a vote")
         elif motion and not bill_id:
             self.warning(f"got {motion} but no bill_id, not registering as a vote")
             return
