@@ -450,6 +450,10 @@ class INBillScraper(Scraper):
             for subject in subjects:
                 bill.add_subject(subject)
 
+            # Abstract
+            if bill_json["latestVersion"]["digest"]:
+                bill.add_abstract(bill_json["latestVersion"]["digest"], note="Digest")
+
             # versions and votes
             for version in bill_json["versions"][::-1]:
                 try:
