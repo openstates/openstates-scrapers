@@ -196,7 +196,7 @@ class COBillScraper(Scraper, LXMLMixin):
 
         for action in actions:
             action_date = action.xpath("td[1]/text()")
-            if action_date is None:
+            if len(action_date) < 1:
                 continue
             action_date = action.xpath("td[1]/text()")[0]
             action_date = dt.datetime.strptime(action_date, "%m/%d/%Y")
