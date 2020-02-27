@@ -1,6 +1,6 @@
 import re
 import datetime
-
+import scrapelib
 import lxml.html
 
 from pupa.scrape import Scraper, VoteEvent
@@ -56,37 +56,26 @@ class MNVoteScraper(Scraper):
             yield from self.scrape_vote(chamber, session, bill_id, vote_url)
 
     def scrape_vote(self, chamber, session, bill_id, vote_url):
-        NO_VOTE_URL = "http://www.house.leg.state.mn.us/votes/novotefound.asp"
-        resp = self.get(vote_url)
-        html = resp.text
-
-        # sometimes the link is broken, will redirect to NO_VOTE_URL
-        if resp.url == NO_VOTE_URL:
+        try:
+            resp = self.get(vote_url)
+            html = resp.text
+        except scrapelib.HTTPError:
             return
 
         doc = lxml.html.fromstring(html)
-        try:
-            motion = doc.xpath("//div[@id='leg_PageContent']/div/h2/text()")[0]
-        except IndexError:
-            self.logger.warning("Bill was missing a motion number, skipping")
-            return
+        motion = doc.xpath("//p[1]//b[1]/text()")[-1].strip()
+        if len(motion) == 0:
+            print(motion)
+            motion = doc.xpath("//h2[1]/text()")[0].strip()
 
-        vote_count = doc.xpath(".//div[@id='leg_PageContent']/div/h3/text()")[1].split()
+        vote_count = (
+            doc.xpath("//h3[contains(text(),'YEA and ')]/text()")[0].strip().split()
+        )
         yeas = int(vote_count[0])
         nays = int(vote_count[3])
 
-        # second paragraph has date
-        paragraphs = doc.xpath(".//div[@id='leg_PageContent']/div/p/text()")
-        date = None
-        for p in paragraphs:
-            try:
-                date = datetime.datetime.strptime(p.strip(), "%m/%d/%Y").date()
-                break
-            except ValueError:
-                pass
-        if date is None:
-            self.logger.warning("No date could be found for vote on %s" % motion)
-            return
+        date = doc.xpath("//b[contains(text(),'Date:')]/../text()")[1].strip()
+        date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
 
         vote = VoteEvent(
             chamber="lower",
@@ -104,11 +93,11 @@ class MNVoteScraper(Scraper):
         vote.pupa_id = vote_url
 
         # first table has YEAs
-        for name in doc.xpath("//table[1]/tr/td/font/text()"):
+        for name in doc.xpath("//table[1]//font/text()"):
             vote.yes(name.strip())
 
         # second table is nays
-        for name in doc.xpath("//table[2]/tr/td/font/text()"):
+        for name in doc.xpath("//table[2]//font/text()"):
             vote.no(name.strip())
 
         yield vote
