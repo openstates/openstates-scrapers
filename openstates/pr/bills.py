@@ -124,6 +124,8 @@ class PRBillScraper(Scraper):
     # window_start / window_end - Show bills updated between start and end. Format Y-m-d
     # window_end is optional, defaults to today if window_start is set
     def scrape(self, session=None, chamber=None, window_start=None, window_end=None):
+        self.seen_votes = set()
+        self.seen_bills = set()
         if not session:
             session = self.latest_session()
             self.info("no session specified using %s", session)
@@ -211,7 +213,9 @@ class PRBillScraper(Scraper):
             bill_url = "https://sutra.oslpr.org/osl/esutra/MedidaReg.aspx?rid={}".format(
                 bill_rid
             )
-            yield from self.scrape_bill(chamber, session, bill_url)
+            if bill_url not in self.seen_bills:
+                yield from self.scrape_bill(chamber, session, bill_url)
+                self.seen_bills.add(bill_url)
 
     def extract_bill_rid(self, onclick):
         # bill links look like onclick="javascript:location.replace('MedidaReg.aspx?rid=125217');"
@@ -445,9 +449,11 @@ class PRBillScraper(Scraper):
 
             # if it's a vote, we don't want to add the document as a bill version
             if row.xpath('.//label[contains(text(), "A Favor")]'):
-                yield from self.parse_vote(
-                    chamber, bill, row, action_text, action_date, url
-                )
+                if url not in self.seen_votes:
+                    yield from self.parse_vote(
+                        chamber, bill, row, action_text, action_date, url
+                    )
+                    self.seen_votes.add(url)
             else:
                 self.parse_version(bill, row)
 
