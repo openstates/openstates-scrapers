@@ -263,7 +263,9 @@ class VTBillScraper(Scraper, LXMLMixin):
 
                 if (
                     "Passed -- " in vote["FullStatus"]
-                    or "Veto of Governor overridden" in vote["FullStatus"]
+                    # seems like we've seen both
+                    or "Governor overridden" in vote["FullStatus"]
+                    or "Governor overriden" in vote["FullStatus"]
                 ):
                     did_pass = True
                 elif (
@@ -272,7 +274,9 @@ class VTBillScraper(Scraper, LXMLMixin):
                 ):
                     did_pass = False
                 else:
-                    raise AssertionError("Roll call vote result is unclear")
+                    raise AssertionError(
+                        "Roll call vote result is unclear: " + vote["FullStatus"]
+                    )
 
                 # Check vote counts
                 yea_count = int(re.search(r"Yeas = (\d+)", vote["FullStatus"]).group(1))
