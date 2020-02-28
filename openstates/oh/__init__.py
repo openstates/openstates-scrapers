@@ -29,19 +29,19 @@ class Ohio(State):
             "name": "130th Legislature (2013-2014)",
         },
         {
-            "_scraped_name": "131",
+            "_scraped_name": "131 (2015-2016)",
             "identifier": "131",
             "name": "131st Legislature (2015-2016)",
         },
         {
-            "_scraped_name": "132",
+            "_scraped_name": "132 (2017-2018)",
             "identifier": "132",
             "name": "132st Legislature (2017-2018)",
             "start_date": "2017-01-02",
             "end_date": "2017-12-31",
         },
         {
-            "_scraped_name": "133",
+            "_scraped_name": "133 (2019-2020)",
             "identifier": "133",
             "name": "133rd Legislature (2019-2020)",
             "start_date": "2019-01-07",
