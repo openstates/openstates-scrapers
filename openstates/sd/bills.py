@@ -184,7 +184,8 @@ class SDBillScraper(Scraper, LXMLMixin):
             for link in row.xpath("td[2]/a[contains(@href, 'RollCall')]"):
                 yield from self.scrape_vote(bill, date, link.attrib["href"])
 
-            bill.add_action(action, date, chamber=actor, classification=atypes)
+            if action:
+                bill.add_action(action, date, chamber=actor, classification=atypes)
 
         for link in page.xpath("//a[contains(@href, 'Keyword')]"):
             bill.add_subject(link.text.strip())
