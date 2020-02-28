@@ -348,30 +348,34 @@ def get_zip(filename):
 
 
 def get_current_year(contents):
-    newest_file = "2000"
-    newest_file_date = datetime(2000, 1, 1)
+    # newest_file = "2000"
+    # newest_file_date = datetime(2000, 1, 1)
     files_to_get = []
 
     # get file for latest year
-    for filename, date in contents.items():
-        date_part = filename.replace("pubinfo_", "").replace(".zip", "")
-        if date_part.startswith("20") and filename > newest_file:
-            newest_file = filename
-            newest_file_date = date
-    files_to_get.append(newest_file)
+    # for filename, date in contents.items():
+    #     date_part = filename.replace("pubinfo_", "").replace(".zip", "")
+    #     if date_part.startswith("20") and filename > newest_file:
+    #         newest_file = filename
+    #         newest_file_date = date
+    # files_to_get.append(newest_file)
 
     # get files for days since last update
-    days = (
-        "pubinfo_Mon.zip",
-        "pubinfo_Tue.zip",
-        "pubinfo_Wed.zip",
-        "pubinfo_Thu.zip",
-        "pubinfo_Fri.zip",
-        "pubinfo_Sat.zip",
-    )
-    for dayfile in days:
-        if contents[dayfile] > newest_file_date:
-            files_to_get.append(dayfile)
+    day_of_week = datetime.today().strftime("%a")
+    day_of_week_file = f"pubinfo_daily_{day_of_week}.zip"
+    # days = (
+    #     "pubinfo_daily_Mon.zip",
+    #     "pubinfo_daily_Tue.zip",
+    #     "pubinfo_daily_Wed.zip",
+    #     "pubinfo_daily_Thu.zip",
+    #     "pubinfo_daily_Fri.zip",
+    #     "pubinfo_daily_Sat.zip",
+    # )
+    # for dayfile in days:
+    #     if contents[dayfile] > newest_file_date:
+    #         files_to_get.append(dayfile)
+
+    files_to_get.append(day_of_week_file)
 
     for file in files_to_get:
         dirname = get_zip(file)
@@ -382,4 +386,5 @@ if __name__ == "__main__":
     db_drop()
     db_create()
     contents = get_contents()
+    print(contents)
     get_current_year(contents)
