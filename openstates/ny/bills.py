@@ -347,21 +347,19 @@ class NYBillScraper(Scraper):
         for key, amendment in amendments.items():
             version = amendment["printNo"]
 
-            html_version = version + " HTML"
             html_url = (
                 "http://assembly.state.ny.us/leg/?sh=printbill&bn="
                 "{}&term={}&Text=Y".format(bill_id, self.term_start_year)
             )
             bill.add_version_link(
-                html_version, html_url, on_duplicate="ignore", media_type="text/html"
+                version, html_url, on_duplicate="ignore", media_type="text/html"
             )
 
-            pdf_version = version + " PDF"
             pdf_url = "http://legislation.nysenate.gov/pdf/bills/{}/{}".format(
                 self.term_start_year, version
             )
             bill.add_version_link(
-                pdf_version,
+                version,
                 pdf_url,
                 on_duplicate="ignore",
                 media_type="application/pdf",
@@ -424,6 +422,7 @@ class NYBillScraper(Scraper):
                     "ER": "excused",
                     "AB": "absent",
                     "NV": "not voting",
+                    "EL": "other"
                 }
 
                 for vote_pair in votes:
