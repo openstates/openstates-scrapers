@@ -13,6 +13,7 @@ import os.path
 import subprocess
 import logging
 import lxml.html
+import argparse
 from datetime import datetime
 from os.path import join, split
 from functools import partial
@@ -347,26 +348,21 @@ def get_zip(filename):
     return dirname
 
 
-def get_current_year(contents):
+def get_current_year(contents, year):
     newest_file = "2000"
     newest_file_date = datetime(2000, 1, 1)
     files_to_get = []
 
-    # get file for latest year
-    # for filename, date in contents.items():
-    #     date_part = filename.replace("pubinfo_", "").replace(".zip", "")
-    #     if date_part.startswith("20") and filename > newest_file:
-    #         newest_file = filename
-    #         newest_file_date = date
-    # files_to_get.append(newest_file)
-
-    # get file for latest date
-    for filename, date in contents.items():
-        date_part = filename.replace("pubinfo_", "").replace(".zip", "")
-        if date_part.startswith("daily") and date > newest_file_date:
-            newest_file = filename
-            newest_file_date = date
-    files_to_get.append(newest_file)
+    if year:
+        files_to_get.append(f"pubinfo_{year}.zip")
+    else:
+        # get file for latest date
+        for filename, date in contents.items():
+            date_part = filename.replace("pubinfo_", "").replace(".zip", "")
+            if date_part.startswith("daily") and date > newest_file_date:
+                newest_file = filename
+                newest_file_date = date
+        files_to_get.append(newest_file)
 
     for file in files_to_get:
         dirname = get_zip(file)
@@ -374,7 +370,12 @@ def get_current_year(contents):
 
 
 if __name__ == "__main__":
+    my_parser = argparse.ArgumentParser()
+    my_parser.add_argument("--year", action="store", type=int)
+    args = my_parser.parse_args()
+    year = args.year
+
     db_drop()
     db_create()
     contents = get_contents()
-    get_current_year(contents)
+    get_current_year(contents, year)
