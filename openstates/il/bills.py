@@ -484,7 +484,7 @@ class IlBillScraper(Scraper):
 
         bill.add_source(url)
         # sponsors
-        sponsor_list = build_sponsor_list(doc.xpath('//a[@class="content"]'))
+        sponsor_list = build_sponsor_list(doc.xpath('//a[contains(@class, "content")]'))
         # don't add just yet; we can make them better using action data
 
         committee_actors = {}
