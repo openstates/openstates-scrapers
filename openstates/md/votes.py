@@ -23,7 +23,7 @@ class MDVoteScraper(Scraper, LXMLMixin):
         links = doc.xpath("//table[1]/tbody/tr/td[3]/a/@href")
 
         # keep upping this number until we see them paginate
-        if len(links) > 40:
+        if len(links) > 60:
             raise Exception("check for pagination")
 
         seen_urls = set()
