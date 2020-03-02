@@ -53,8 +53,8 @@ bill_types = {
 
 # Return the actor for each action type, or 'chamber' for the bill's home chamber
 action_chamber_map = {
-    "House": "upper",
-    "Senate": "lower",
+    "House": "lower",
+    "Senate": "upper",
     "RequestforEnactment": "chamber",
     "IntroducedDate": "chamber",
     "PreFileDate": "chamber",

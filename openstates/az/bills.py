@@ -56,7 +56,7 @@ class AZBillScraper(Scraper):
         )
         bill.add_source(bill_url)
 
-        self.sort_bill_actions(bill)
+        bill.actions = sorted(bill.actions, key=lambda action: action["date"])
 
         yield bill
 
@@ -143,8 +143,10 @@ class AZBillScraper(Scraper):
         for action in utils.action_map:
             if page[action] and utils.action_map[action]["name"] != "":
                 try:
+                    # Remove miliseconds from date if present
+                    cleaned_date = page[action].split(".")[0]
                     action_date = datetime.datetime.strptime(
-                        page[action], "%Y-%m-%dT%H:%M:%S"
+                        cleaned_date, "%Y-%m-%dT%H:%M:%S"
                     ).strftime("%Y-%m-%d")
 
                     bill.add_action(
@@ -329,47 +331,6 @@ class AZBillScraper(Scraper):
                 yield from self.scrape_bill(chamber, session, bill_id, session_id)
 
         # TODO: MBTable - Non-bill Misc Motions?
-
-    def sort_bill_actions(self, bill):
-        actions = bill.actions
-        actions_list = []
-        out_of_order = []
-        new_list = []
-        if not actions:
-            return bill
-        action_date = actions[0]["date"]
-        actions[0]["description"] = actions[0]["description"].lower()
-        actions_list.append(actions[0])
-        # seperate the actions that are out of order
-        for action in actions[1:]:
-            if action["date"] < action_date:
-                out_of_order.append(action)
-            else:
-                actions_list.append(action)
-                action_date = action["date"]
-            action["description"] = action["description"].lower()
-        action_date = actions_list[0]["date"]
-
-        for action in actions_list:
-            # this takes care of the actions in beween
-            for act in out_of_order:
-                if act["date"] < action_date:
-                    o_index = out_of_order.index(act)
-                    new_list.append(out_of_order.pop(o_index))
-                if act["date"] >= action_date and act["date"] < action["date"]:
-                    o_index = out_of_order.index(act)
-                    new_list.append(out_of_order.pop(o_index))
-            new_list.append(action)
-
-            for act in out_of_order:
-                if act["date"] == action["date"]:
-                    o_index = out_of_order.index(act)
-                    new_list.append(out_of_order.pop(o_index))
-
-        if out_of_order != []:
-            self.info("Unable to sort " + bill.identifier)
-        else:
-            bill.actions = new_list
 
     def get_bill_type(self, bill_id):
         for key in utils.bill_types:
