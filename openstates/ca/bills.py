@@ -292,6 +292,9 @@ class CABillScraper(Scraper):
             .filter_by(measure_type=type_abbr)
         )
 
+        archive_year = int(session[0:4])
+        not_archive_year = archive_year >= 2009
+
         for bill in bills:
             bill_session = session
             if bill.session_num != "0":
@@ -319,8 +322,6 @@ class CABillScraper(Scraper):
                 "billNavClient.xhtml?bill_id=%s"
             ) % bill.bill_id
 
-            print(source_url)
-
             fsbill.add_source(source_url)
             fsbill.add_version_link(bill_id, source_url, media_type="text/html")
 
@@ -331,19 +332,19 @@ class CABillScraper(Scraper):
             summary = ""
 
             # Get digest test (aka "summary") from latest version.
-            # if bill.versions:
-            #     version = bill.versions[-1]
-            #     nsmap = version.xml.nsmap
-            #     print(nsmap)
-            #     xpath = "//caml:DigestText/xhtml:p"
-            #     els = version.xml.xpath(xpath, namespaces=nsmap)
-            #     chunks = []
-            #     for el in els:
-            #         t = etree_text_content(el)
-            #         t = re.sub(r"\s+", " ", t)
-            #         t = re.sub(r"\)(\S)", lambda m: ") %s" % m.group(1), t)
-            #         chunks.append(t)
-            #     summary = "\n\n".join(chunks)
+            if bill.versions and not_archive_year:
+                version = bill.versions[-1]
+                nsmap = version.xml.nsmap
+                print(nsmap)
+                xpath = "//caml:DigestText/xhtml:p"
+                els = version.xml.xpath(xpath, namespaces=nsmap)
+                chunks = []
+                for el in els:
+                    t = etree_text_content(el)
+                    t = re.sub(r"\s+", " ", t)
+                    t = re.sub(r"\)(\S)", lambda m: ") %s" % m.group(1), t)
+                    chunks.append(t)
+                summary = "\n\n".join(chunks)
 
             for version in bill.versions:
                 if not version.bill_xml:
@@ -494,8 +495,8 @@ class CABillScraper(Scraper):
                     if code is not None:
                         code = code.group()
                         kwargs["actor_info"] = {"committee_code": code}
-
-                    assert len(list(committees)) == len(matched_abbrs)
+                    if not_archive_year:
+                        assert len(list(committees)) == len(matched_abbrs)
                     for committee, abbr in zip(committees, matched_abbrs):
                         act_str = act_str.replace("Coms. on ", "")
                         act_str = act_str.replace("Com. on " + abbr, committee)
