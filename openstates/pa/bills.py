@@ -355,7 +355,7 @@ class PABillScraper(Scraper):
         vote.set_count("other", other)
 
         for div in page.xpath('//*[contains(@class, "RollCalls-Vote")]'):
-            name = div.text.strip()
+            name = div[0].tail.strip()
             name = re.sub(r"^[\s,]+", "", name)
             name = re.sub(r"[\s,]+$", "", name)
             class_attr = div.attrib["class"].lower()
