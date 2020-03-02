@@ -281,7 +281,7 @@ class MIBillScraper(Scraper):
             return
 
         # split the file into lines using the <p> tags
-        pieces = [p.text_content().replace(u"\xa0", " ") for p in vote_doc.xpath("//p")]
+        pieces = [p.text_content().replace(u"\xa0", " ").replace("\r\n", " ") for p in vote_doc.xpath("//p")]
 
         # go until we find the roll call
         for i, p in enumerate(pieces):
@@ -305,9 +305,9 @@ class MIBillScraper(Scraper):
             elif p.startswith("In The Chair:"):
                 break
             elif vtype:
-                # split on spaces not preceeded by commas
-                for l in re.split(r"(?<!,)\s+", p):
-                    if l:
+                # split on multiple spaces not preceeded by commas
+                for l in re.split(r"(?<!,)\s{2,}", p):
+                    if l.strip():
                         results[vtype].append(l)
             else:
                 self.warning("piece without vtype set: %s", p)
