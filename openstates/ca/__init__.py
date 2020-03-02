@@ -28,6 +28,12 @@ class California(Jurisdiction):
     legislative_sessions = [
         {
             "classification": "primary",
+            "identifier": "19891990",
+            "name": "1989-1990 Regular Session",
+            "start_date": "1988-12-05",
+        },
+        {
+            "classification": "primary",
             "identifier": "20032004",
             "name": "2003-2004 Regular Session",
             "start_date": "2002-12-02",
