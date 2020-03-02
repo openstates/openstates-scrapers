@@ -8,7 +8,8 @@ from lxml import etree, html
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from pupa.scrape import Scraper, Bill, VoteEvent
-from pupa.scrape.base import ScrapeError
+
+# from pupa.scrape.base import ScrapeError
 
 from .models import CABill
 from .actions import CACategorizer
@@ -318,6 +319,8 @@ class CABillScraper(Scraper):
                 "billNavClient.xhtml?bill_id=%s"
             ) % bill.bill_id
 
+            print(source_url)
+
             fsbill.add_source(source_url)
             fsbill.add_version_link(bill_id, source_url, media_type="text/html")
 
@@ -325,20 +328,22 @@ class CABillScraper(Scraper):
             type_ = ["bill"]
             subject = ""
             all_titles = set()
+            summary = ""
 
             # Get digest test (aka "summary") from latest version.
-            if bill.versions:
-                version = bill.versions[-1]
-                nsmap = version.xml.nsmap
-                xpath = "//caml:DigestText/xhtml:p"
-                els = version.xml.xpath(xpath, namespaces=nsmap)
-                chunks = []
-                for el in els:
-                    t = etree_text_content(el)
-                    t = re.sub(r"\s+", " ", t)
-                    t = re.sub(r"\)(\S)", lambda m: ") %s" % m.group(1), t)
-                    chunks.append(t)
-                summary = "\n\n".join(chunks)
+            # if bill.versions:
+            #     version = bill.versions[-1]
+            #     nsmap = version.xml.nsmap
+            #     print(nsmap)
+            #     xpath = "//caml:DigestText/xhtml:p"
+            #     els = version.xml.xpath(xpath, namespaces=nsmap)
+            #     chunks = []
+            #     for el in els:
+            #         t = etree_text_content(el)
+            #         t = re.sub(r"\s+", " ", t)
+            #         t = re.sub(r"\)(\S)", lambda m: ") %s" % m.group(1), t)
+            #         chunks.append(t)
+            #     summary = "\n\n".join(chunks)
 
             for version in bill.versions:
                 if not version.bill_xml:
@@ -480,7 +485,7 @@ class CABillScraper(Scraper):
                                 "abbreviation %r. Action text was %r."
                             )
                             args = (abbr, action.action)
-                            raise KeyError(msg % args)
+                            self.warning(msg % args)
 
                     committees = filter(None, committees)
                     kwargs["committees"] = committees
@@ -555,7 +560,8 @@ class CABillScraper(Scraper):
                     vote_chamber = "upper"
                     # vote_location = ' '.join(full_loc.split(' ')[1:])
                 else:
-                    raise ScrapeError("Bad location: %s" % full_loc)
+                    # raise ScrapeError("Bad location: %s" % full_loc) # To uncomment
+                    continue
 
                 if vote.motion:
                     motion = vote.motion.motion_text or ""

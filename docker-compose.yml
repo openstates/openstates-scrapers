@@ -11,7 +11,7 @@ services:
     - MYSQL_HOST=mysql
     - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
     - PYTHONPATH=./openstates
-    - NEW_YORK_API_KEY
+    - NEW_YORK_API_KEY=NXB95xqgigVjJ5aLCgLjZDZx3NbR0fSI
     - INDIANA_API_KEY
     - PUPA_ARGS
     volumes:
@@ -22,7 +22,7 @@ services:
     - openstates-network
   mysql:
     image: mariadb:10.3
-    command: mysqld_safe --max_allowed_packet=512M
+#    command: mysqld_safe --max_allowed_packet=512M
     ports:
     - "3306:3306"
     environment:
@@ -31,7 +31,8 @@ services:
     networks:
     - openstates-network
   ca-download:
-    image: openstates/openstates
+    # image: openstates/openstates
+    build: .
     entrypoint: /opt/openstates/openstates/openstates/ca/download.sh
     environment:
     - MYSQL_HOST=mysql
