@@ -89,8 +89,16 @@ class BillDetail(Page):
             self.process_versions()
             self.process_analysis()
             self.process_amendments()
+            self.process_summary()
             yield from self.process_votes()
             yield from self.scrape_page_items(HousePage, bill=self.obj)
+
+    def process_summary(self):
+        summary = self.doc.xpath('string(//p[contains(@class,"width80")])').strip()
+        print("SUMMARY")
+        summary = summary.replace('            ', '')
+        print(summary)
+        self.obj.add_abstract(summary, note="summary")
 
     def process_versions(self):
         try:
