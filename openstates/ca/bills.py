@@ -335,7 +335,6 @@ class CABillScraper(Scraper):
             if bill.versions and not_archive_year:
                 version = bill.versions[-1]
                 nsmap = version.xml.nsmap
-                print(nsmap)
                 xpath = "//caml:DigestText/xhtml:p"
                 els = version.xml.xpath(xpath, namespaces=nsmap)
                 chunks = []
