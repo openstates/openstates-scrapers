@@ -168,11 +168,19 @@ class MABillScraper(Scraper):
 
         # The state website will periodically miss a few bills' titles for a few days
         # These titles will be extant on the bill list page, but missing on the bill detail page
-        # The titles are eventually populated
+        # The titles are eventually populated under one of two markups
         try:
             bill_title = page.xpath('//div[@id="contentContainer"]/div/div/h2/text()')[
                 0
             ]
+        except IndexError:
+            pass
+
+        try:
+            bill_title = page.xpath('//div[contains(@class,"followable")]/h1/text()')[
+                0
+            ]
+            bill_title = bill_title.replace('Bill', '').strip()
         except IndexError:
             self.warning("Couldn't find title for {}; skipping".format(bill_id))
             return False
