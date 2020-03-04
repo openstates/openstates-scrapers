@@ -3,8 +3,10 @@ import re
 import pytz
 import operator
 import itertools
-
 from lxml import etree, html
+from openstates.utils import LXMLMixin
+
+# # import lxml.html
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from pupa.scrape import Scraper, Bill, VoteEvent
@@ -202,7 +204,7 @@ def get_committee_name_regex():
     return _committee_abbr_regex
 
 
-class CABillScraper(Scraper):
+class CABillScraper(Scraper, LXMLMixin):
     categorizer = CACategorizer()
 
     _tz = pytz.timezone("US/Pacific")
@@ -548,109 +550,135 @@ class CABillScraper(Scraper):
             source_url += f"bill_id={session}0{fsbill.identifier}"
             print(source_url)
 
-            print("Total Votes: " + str(len(bill.votes)))
-            for vote_num, vote in enumerate(bill.votes):
-                if vote.vote_result == "(PASS)":
-                    result = True
-                else:
-                    result = False
-
-                if not vote.location:
-                    continue
-
-                full_loc = vote.location.description
-                first_part = full_loc.split(" ")[0].lower()
-                if first_part in ["asm", "assembly"]:
-                    vote_chamber = "lower"
-                    # vote_location = ' '.join(full_loc.split(' ')[1:])
-                elif first_part.startswith("sen"):
-                    vote_chamber = "upper"
-                    # vote_location = ' '.join(full_loc.split(' ')[1:])
-                else:
-                    # raise ScrapeError("Bad location: %s" % full_loc) # To uncomment
-                    continue
-
-                if vote.motion:
-                    motion = vote.motion.motion_text or ""
-                else:
-                    motion = ""
-
-                if "Third Reading" in motion or "3rd Reading" in motion:
-                    vtype = "passage"
-                elif "Do Pass" in motion:
-                    vtype = "passage"
-                else:
-                    vtype = "other"
-
-                motion = motion.strip()
-
-                # Why did it take until 2.7 to get a flags argument on re.sub?
-                motion = re.compile(
-                    r"(\w+)( Extraordinary)? Session$", re.IGNORECASE
-                ).sub("", motion)
-                motion = re.compile(r"^(Senate|Assembly) ", re.IGNORECASE).sub(
-                    "", motion
-                )
-                motion = re.sub(r"^(SCR|SJR|SB|AB|AJR|ACR)\s?\d+ \w+\.?  ", "", motion)
-                motion = re.sub(r" \(\w+\)$", "", motion)
-                motion = re.sub(r"(SCR|SB|AB|AJR|ACR)\s?\d+ \w+\.?$", "", motion)
-                motion = re.sub(
-                    r"(SCR|SJR|SB|AB|AJR|ACR)\s?\d+ \w+\.? " r"Urgency Clause$",
-                    "(Urgency Clause)",
-                    motion,
-                )
-                motion = re.sub(r"\s+", " ", motion)
-
-                if not motion:
-                    self.warning("Got blank motion on vote for %s" % bill_id)
-                    continue
-
-                # XXX this is responsible for all the CA 'committee' votes, not
-                # sure if that's a feature or bug, so I'm leaving it as is...
-                # vote_classification = chamber if (vote_location == 'Floor') else 'committee'
-                # org = {
-                # 'name': vote_location,
-                # 'classification': vote_classification
-                # }
-
-                fsvote = VoteEvent(
-                    motion_text=motion,
-                    start_date=self._tz.localize(vote.vote_date_time),
-                    result="pass" if result else "fail",
-                    classification=vtype,
-                    # organization=org,
-                    chamber=vote_chamber,
-                    bill=fsbill,
-                )
-                fsvote.extras = {"threshold": vote.threshold}
-
-                source_url = (
-                    "http://leginfo.legislature.ca.gov/faces"
-                    "/billVotesClient.xhtml?bill_id={}"
-                ).format(fsbill.identifier)
-                fsvote.add_source(source_url)
-                fsvote.pupa_id = source_url + "#" + str(vote_num)
-
-                rc = {"yes": [], "no": [], "other": []}
-                for record in vote.votes:
-                    if record.vote_code == "AYE":
-                        rc["yes"].append(record.legislator_name)
-                    elif record.vote_code.startswith("NO"):
-                        rc["no"].append(record.legislator_name)
+            # Votes for non archived years
+            if archive_year > 2009:
+                for vote_num, vote in enumerate(bill.votes):
+                    if vote.vote_result == "(PASS)":
+                        result = True
                     else:
-                        rc["other"].append(record.legislator_name)
+                        result = False
 
-                # Handle duplicate votes
-                for key in rc.keys():
-                    rc[key] = list(set(rc[key]))
+                    if not vote.location:
+                        continue
 
-                for key, voters in rc.items():
-                    for voter in voters:
-                        fsvote.vote(key, voter)
-                    # Set counts by summed votes for accuracy
-                    fsvote.set_count(key, len(voters))
+                    full_loc = vote.location.description
+                    first_part = full_loc.split(" ")[0].lower()
+                    if first_part in ["asm", "assembly"]:
+                        vote_chamber = "lower"
+                        # vote_location = ' '.join(full_loc.split(' ')[1:])
+                    elif first_part.startswith("sen"):
+                        vote_chamber = "upper"
+                        # vote_location = ' '.join(full_loc.split(' ')[1:])
+                    else:
+                        # raise ScrapeError("Bad location: %s" % full_loc) # To uncomment
+                        continue
 
-                yield fsvote
+                    if vote.motion:
+                        motion = vote.motion.motion_text or ""
+                    else:
+                        motion = ""
+
+                    if "Third Reading" in motion or "3rd Reading" in motion:
+                        vtype = "passage"
+                    elif "Do Pass" in motion:
+                        vtype = "passage"
+                    else:
+                        vtype = "other"
+
+                    motion = motion.strip()
+
+                    # Why did it take until 2.7 to get a flags argument on re.sub?
+                    motion = re.compile(
+                        r"(\w+)( Extraordinary)? Session$", re.IGNORECASE
+                    ).sub("", motion)
+                    motion = re.compile(r"^(Senate|Assembly) ", re.IGNORECASE).sub(
+                        "", motion
+                    )
+                    motion = re.sub(
+                        r"^(SCR|SJR|SB|AB|AJR|ACR)\s?\d+ \w+\.?  ", "", motion
+                    )
+                    motion = re.sub(r" \(\w+\)$", "", motion)
+                    motion = re.sub(r"(SCR|SB|AB|AJR|ACR)\s?\d+ \w+\.?$", "", motion)
+                    motion = re.sub(
+                        r"(SCR|SJR|SB|AB|AJR|ACR)\s?\d+ \w+\.? " r"Urgency Clause$",
+                        "(Urgency Clause)",
+                        motion,
+                    )
+                    motion = re.sub(r"\s+", " ", motion)
+
+                    if not motion:
+                        self.warning("Got blank motion on vote for %s" % bill_id)
+                        continue
+
+                    # XXX this is responsible for all the CA 'committee' votes, not
+                    # sure if that's a feature or bug, so I'm leaving it as is...
+                    # vote_classification = chamber if (vote_location == 'Floor') else 'committee'
+                    # org = {
+                    # 'name': vote_location,
+                    # 'classification': vote_classification
+                    # }
+
+                    fsvote = VoteEvent(
+                        motion_text=motion,
+                        start_date=self._tz.localize(vote.vote_date_time),
+                        result="pass" if result else "fail",
+                        classification=vtype,
+                        # organization=org,
+                        chamber=vote_chamber,
+                        bill=fsbill,
+                    )
+                    fsvote.extras = {"threshold": vote.threshold}
+
+                    source_url = (
+                        "http://leginfo.legislature.ca.gov/faces"
+                        "/billVotesClient.xhtml?bill_id={}"
+                    ).format(fsbill.identifier)
+                    fsvote.add_source(source_url)
+                    fsvote.pupa_id = source_url + "#" + str(vote_num)
+
+                    rc = {"yes": [], "no": [], "other": []}
+                    for record in vote.votes:
+                        if record.vote_code == "AYE":
+                            rc["yes"].append(record.legislator_name)
+                        elif record.vote_code.startswith("NO"):
+                            rc["no"].append(record.legislator_name)
+                        else:
+                            rc["other"].append(record.legislator_name)
+
+                    # Handle duplicate votes
+                    for key in rc.keys():
+                        rc[key] = list(set(rc[key]))
+
+                    for key, voters in rc.items():
+                        for voter in voters:
+                            fsvote.vote(key, voter)
+                        # Set counts by summed votes for accuracy
+                        fsvote.set_count(key, len(voters))
+
+                    yield fsvote
+            if len(bill.votes) > 0 and archive_year <= 2009:
+                vote_page_url = (
+                    "http://leginfo.legislature.ca.gov/faces/billVotesClient.xhtml?"
+                )
+                vote_page_url += f"bill_id={session}0{fsbill.identifier}"
+                print(vote_page_url)
+                print("Total Votes: " + str(len(bill.votes)))
+
+                # parse the bill data page, finding the latest html text
+                data = self.get(vote_page_url).content
+                doc = html.fromstring(data)
+                doc.make_links_absolute(vote_page_url)
+                num_of_votes = len(doc.xpath("//div[@class='status']"))
+                for vote_section in range(num_of_votes):
+                    print("----" + str(vote_section))
+                    # line = test.xpath("//div[@class='tab_content_sub_non_text']//div")[0].text_content().strip()
+                    lines = doc.xpath(
+                        f"//div[@class='status'][{vote_section}]//div[@class='statusRow']"
+                    )
+                    for line in lines:
+                        print(line.text_content().strip())
+                    print("----")
+                print("num_of_votes:" + str(num_of_votes))
 
             yield fsbill
             self.session.expire_all()
