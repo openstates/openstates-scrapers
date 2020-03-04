@@ -7,6 +7,8 @@ from datetime import datetime
 from pupa.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import LXMLMixin
 from pupa.utils.generic import convert_pdf
+from utils.media import get_media_type
+
 import pytz
 import math
 
@@ -184,10 +186,7 @@ class KYBillScraper(Scraper, LXMLMixin):
         fiscal_notes = page.xpath('//a[contains(@href, "/LM.pdf")]')
         for fiscal_note in fiscal_notes:
             source_url = fiscal_note.attrib["href"]
-            if source_url.endswith(".doc"):
-                mimetype = "application/msword"
-            elif source_url.endswith(".pdf"):
-                mimetype = "application/pdf"
+            mimetype = get_media_type(source_url)
 
             bill.add_document_link("Fiscal Note", source_url, media_type=mimetype)
 
@@ -217,11 +216,8 @@ class KYBillScraper(Scraper, LXMLMixin):
             source_url = row.attrib["href"]
             version_title = row.xpath("text()")[0].strip()
 
-            if source_url.endswith(".doc"):
-                mimetype = "application/msword"
-            elif source_url.endswith(".pdf"):
-                mimetype = "application/pdf"
-            else:
+            mimetype = get_media_type(source_url)
+            if mimetype is None:
                 self.warning("Unknown mimetype for {}".format(source_url))
 
             bill.add_version_link(version_title, source_url, media_type=mimetype)
