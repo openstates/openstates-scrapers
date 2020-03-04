@@ -89,8 +89,18 @@ class BillDetail(Page):
             self.process_versions()
             self.process_analysis()
             self.process_amendments()
+            self.process_summary()
             yield from self.process_votes()
             yield from self.scrape_page_items(HousePage, bill=self.obj)
+
+    def process_summary(self):
+        summary = self.doc.xpath(
+            'string(//div[@id="main"]/div/div/p[contains(@class,"width80")])'
+        ).strip()
+        # The site indents the CLAIM and amount lines when present
+        summary = summary.replace("            ", "")
+        if summary != "":
+            self.obj.add_abstract(summary, note="summary")
 
     def process_versions(self):
         try:
