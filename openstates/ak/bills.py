@@ -106,10 +106,15 @@ class AKBillScraper(Scraper):
         doc.make_links_absolute(url)
 
         title = doc.xpath('//span[text()="Title"]')[0].getparent()
-        if title:
+        short_title = doc.xpath('//span[text()="Short Title "]')[0].getparent()
+
+        if len(title) > 1 and title[1].text:
             title = title[1].text.strip().strip('"')
+        elif len(short_title) > 1 and short_title[1].text:
+            self.warning("Falling back to short title on {}".format(url))
+            title = short_title[1].text.strip().strip('"')
         else:
-            self.warning("skipping bill {url}, no information")
+            self.warning("skipping bill {}, no Title".format(url))
             return
 
         bill = Bill(
