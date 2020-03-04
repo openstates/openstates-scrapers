@@ -210,6 +210,8 @@ class BillDetail(Page):
                     atype.append("reading-2")
                 elif action.startswith("Read 3rd time"):
                     atype.append("reading-3")
+                elif action.startswith("Passed;"):
+                    atype.append("passage")
                 elif action.startswith("Adopted"):
                     atype.append("passage")
                 elif action.startswith("CS passed"):
