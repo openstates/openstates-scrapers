@@ -27,13 +27,13 @@ MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "")
 
 def clean_title(s):
     # replace smart quote characters
-    s = s.replace(u"\xe2\u20ac\u201c", "-")
+    s = s.replace("\xe2\u20ac\u201c", "-")
 
     # Cesar Chavez e
-    s = s.replace(u"\xc3\xa9", u"\u00E9")
+    s = s.replace("\xc3\xa9", "\u00E9")
     # Cesar Chavez a
-    s = s.replace(u"\xc3\xa1", u"\u00E1")
-    s = s.replace(u"\xe2\u20ac\u201c", u"\u2013")
+    s = s.replace("\xc3\xa1", "\u00E1")
+    s = s.replace("\xe2\u20ac\u201c", "\u2013")
 
     s = re.sub(r"[\u2018\u2019]", "'", s)
     s = re.sub(r"[\u201C\u201D]", '"', s)
@@ -47,113 +47,113 @@ committee_data_upper = [
     (
         "Standing Committee on Governance and Finance",
         "CS73",
-        [u"GOV. & F.", u"Gov. & F."],
+        ["GOV. & F.", "Gov. & F."],
     ),
     (
         "Standing Committee on Energy, Utilities and Communications",
         "CS71",
-        [u"E., U., & C."],
+        ["E., U., & C."],
     ),
-    ("Standing Committee on Education", "CS44", [u"ED."]),
-    ("Standing Committee on Appropriations", "CS61", [u"APPR."]),
-    ("Standing Committee on Labor and Industrial Relations", "CS51", [u"L. & I.R."]),
+    ("Standing Committee on Education", "CS44", ["ED."]),
+    ("Standing Committee on Appropriations", "CS61", ["APPR."]),
+    ("Standing Committee on Labor and Industrial Relations", "CS51", ["L. & I.R."]),
     (
         "Standing Committee on Elections and Constitutional Amendments",
         "CS45",
-        [u"E. & C.A."],
+        ["E. & C.A."],
     ),
-    ("Standing Committee on Environmental Quality", "CS64", [u"E.Q."]),
-    ("Standing Committee on Natural Resources And Water", "CS55", [u"N.R. & W."]),
-    ("Standing Committee on Public Employment and Retirement", "CS56", [u"P.E. & R."]),
-    ("Standing Committee on Governmental Organization", "CS48", [u"G.O."]),
-    ("Standing Committee on Insurance", "CS70", [u"INS."]),
-    ("Standing Committee on Public Safety", "CS72", [u"PUB. S."]),
-    ("Standing Committee on Judiciary", "CS53", [u"JUD."]),
-    ("Standing Committee on Health", "CS60", [u"HEALTH"]),
-    ("Standing Committee on Transportation and Housing", "CS59", [u"T. & H."]),
+    ("Standing Committee on Environmental Quality", "CS64", ["E.Q."]),
+    ("Standing Committee on Natural Resources And Water", "CS55", ["N.R. & W."]),
+    ("Standing Committee on Public Employment and Retirement", "CS56", ["P.E. & R."]),
+    ("Standing Committee on Governmental Organization", "CS48", ["G.O."]),
+    ("Standing Committee on Insurance", "CS70", ["INS."]),
+    ("Standing Committee on Public Safety", "CS72", ["PUB. S."]),
+    ("Standing Committee on Judiciary", "CS53", ["JUD."]),
+    ("Standing Committee on Health", "CS60", ["HEALTH"]),
+    ("Standing Committee on Transportation and Housing", "CS59", ["T. & H."]),
     (
         "Standing Committee on Business, Professions and Economic Development",
         "CS42",
-        [u"B., P. & E.D."],
+        ["B., P. & E.D."],
     ),
-    ("Standing Committee on Agriculture", "CS40", [u"AGRI."]),
+    ("Standing Committee on Agriculture", "CS40", ["AGRI."]),
     (
         "Standing Committee on Banking and Financial Institutions",
         "CS69",
-        [u"B. & F.I."],
+        ["B. & F.I."],
     ),
-    ("Standing Committee on Veterans Affairs", "CS66", [u"V.A."]),
-    ("Standing Committee on Budget and Fiscal Review", "CS62", [u"B. & F.R."]),
-    ("Standing Committee on Human Services", "CS74", [u"HUM. S.", u"HUMAN S."]),
-    ("Standing Committee on Rules", "CS58", [u"RLS."]),
+    ("Standing Committee on Veterans Affairs", "CS66", ["V.A."]),
+    ("Standing Committee on Budget and Fiscal Review", "CS62", ["B. & F.R."]),
+    ("Standing Committee on Human Services", "CS74", ["HUM. S.", "HUMAN S."]),
+    ("Standing Committee on Rules", "CS58", ["RLS."]),
     (
         "Extraordinary Committee on Transportation and Infrastructure Development",
         "CS67",
-        [u"T. & I.D."],
+        ["T. & I.D."],
     ),
 ]
 
 committee_data_lower = [
-    ("Standing Committee on Rules", "CX20", [u"RLS."]),
-    ("Standing Committee on Revenue and Taxation", "CX19", [u"REV. & TAX"]),
-    ("Standing Committee on Natural Resources", "CX16", [u"NAT. RES."]),
-    ("Standing Committee on Appropriations", "CX25", [u"APPR."]),
-    ("Standing Committee on Insurance", "CX28", [u"INS."]),
-    ("Standing Committee on Utilities and Commerce", "CX23", [u"U. & C."]),
-    ("Standing Committee on Education", "CX03", [u"ED."]),
-    ("Standing Committee on Public Safety", "CX18", [u"PUB. S."]),
-    ("Standing Committee on Elections and Redistricting", "CX04", [u"E. & R."]),
-    ("Standing Committee on Judiciary", "CX13", [u"JUD."]),
-    ("Standing Committee on Higher Education", "CX09", [u"HIGHER ED."]),
-    ("Standing Committee on Health", "CX08", [u"HEALTH"]),
-    ("Standing Committee on Human Services", "CX11", [u"HUM. S.", u"HUMAN S."]),
+    ("Standing Committee on Rules", "CX20", ["RLS."]),
+    ("Standing Committee on Revenue and Taxation", "CX19", ["REV. & TAX"]),
+    ("Standing Committee on Natural Resources", "CX16", ["NAT. RES."]),
+    ("Standing Committee on Appropriations", "CX25", ["APPR."]),
+    ("Standing Committee on Insurance", "CX28", ["INS."]),
+    ("Standing Committee on Utilities and Commerce", "CX23", ["U. & C."]),
+    ("Standing Committee on Education", "CX03", ["ED."]),
+    ("Standing Committee on Public Safety", "CX18", ["PUB. S."]),
+    ("Standing Committee on Elections and Redistricting", "CX04", ["E. & R."]),
+    ("Standing Committee on Judiciary", "CX13", ["JUD."]),
+    ("Standing Committee on Higher Education", "CX09", ["HIGHER ED."]),
+    ("Standing Committee on Health", "CX08", ["HEALTH"]),
+    ("Standing Committee on Human Services", "CX11", ["HUM. S.", "HUMAN S."]),
     (
         "Standing Committee on Arts, Entertainment, Sports, Tourism, and Internet Media",
         "CX37",
-        [u"A., E., S., T., & I.M."],
+        ["A., E., S., T., & I.M."],
     ),
-    ("Standing Committee on Transportation", "CX22", [u"TRANS."]),
+    ("Standing Committee on Transportation", "CX22", ["TRANS."]),
     (
         "Standing Committee on Business, Professions and Consumer Protection",
         "CX33",
-        [u"B., P., & C.P.", u"B. & P."],
+        ["B., P., & C.P.", "B. & P."],
     ),
-    ("Standing Committee on Water, Parks and Wildlife", "CX24", [u"W., P., & W."]),
-    ("Standing Committee on Local Government", "CX15", [u"L. GOV.", u"L. Gov."]),
-    ("Standing Committee on Aging and Long Term Care", "CX31", [u"AGING & L.T.C."]),
-    ("Standing Committee on Labor and Employment", "CX14", [u"L. & E."]),
-    ("Standing Committee on Governmental Organization", "CX07", [u"G.O."]),
+    ("Standing Committee on Water, Parks and Wildlife", "CX24", ["W., P., & W."]),
+    ("Standing Committee on Local Government", "CX15", ["L. GOV.", "L. Gov."]),
+    ("Standing Committee on Aging and Long Term Care", "CX31", ["AGING & L.T.C."]),
+    ("Standing Committee on Labor and Employment", "CX14", ["L. & E."]),
+    ("Standing Committee on Governmental Organization", "CX07", ["G.O."]),
     (
         "Standing Committee on Public Employees, Retirement and Social Security",
         "CX17",
-        [u"P.E., R., & S.S."],
+        ["P.E., R., & S.S."],
     ),
-    ("Standing Committee on Veterans Affairs", "CX38", [u"V.A."]),
-    ("Standing Committee on Housing and Community Development", "CX10", [u"H. & C.D."]),
+    ("Standing Committee on Veterans Affairs", "CX38", ["V.A."]),
+    ("Standing Committee on Housing and Community Development", "CX10", ["H. & C.D."]),
     (
         "Standing Committee on Environmental Safety and Toxic Materials",
         "CX05",
-        [u"E.S. & T.M."],
+        ["E.S. & T.M."],
     ),
-    ("Standing Committee on Agriculture", "CX01", [u"AGRI."]),
-    ("Standing Committee on Banking and Finance", "CX27", [u"B. & F."]),
+    ("Standing Committee on Agriculture", "CX01", ["AGRI."]),
+    ("Standing Committee on Banking and Finance", "CX27", ["B. & F."]),
     (
         "Standing Committee on Jobs, Economic Development and the Economy",
         "CX34",
-        [u"J., E.D., & E."],
+        ["J., E.D., & E."],
     ),
     (
         "Standing Committee on Accountability and Administrative Review",
         "CX02",
-        [u"A. & A.R."],
+        ["A. & A.R."],
     ),
-    ("Standing Committee on Budget", "CX29", [u"BUDGET"]),
-    ("Standing Committee on Privacy and Consumer Protection", "CX32", [u"P. & C.P."]),
-    ("Extraordinary Committee on Finance", "CX35", [u"FINANCE"]),
+    ("Standing Committee on Budget", "CX29", ["BUDGET"]),
+    ("Standing Committee on Privacy and Consumer Protection", "CX32", ["P. & C.P."]),
+    ("Extraordinary Committee on Finance", "CX35", ["FINANCE"]),
     (
         "Extraordinary Committee on Public Health and Developmental Services",
         "CX30",
-        [u"P.H. & D.S."],
+        ["P.H. & D.S."],
     ),
 ]
 
@@ -542,6 +542,13 @@ class CABillScraper(Scraper):
                     action.add_related_entity(committee, entity_type="organization")
                 seen_actions.add((actor, act_str, date))
 
+            source_url = (
+                "http://leginfo.legislature.ca.gov/faces/billVotesClient.xhtml?"
+            )
+            source_url += f"bill_id={session}0{fsbill.identifier}"
+            print(source_url)
+
+            print("Total Votes: " + str(len(bill.votes)))
             for vote_num, vote in enumerate(bill.votes):
                 if vote.vote_result == "(PASS)":
                     result = True
