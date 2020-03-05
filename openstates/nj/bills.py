@@ -303,6 +303,7 @@ class NJBillScraper(Scraper, MDBMixin):
                 continue
             bill = bill_dict[bill_id]
             name = rec["Sponsor"]
+            name = ' '.join(name.split(", ")[::-1])
             sponsor_type = rec["Type"]
             if sponsor_type == "P":
                 sponsor_type = "primary"

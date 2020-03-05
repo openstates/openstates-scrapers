@@ -183,11 +183,11 @@ class NHBillScraper(Scraper):
             if len(line) < 2:
                 continue
 
-            line = line.split("|")
+            line = [l.strip() for l in line.split("|")]
             employee_num = line[0]
 
             # first, last, middle
-            if len(line) > 2:
+            if line[3]:
                 name = "%s %s %s" % (line[2], line[3], line[1])
             else:
                 name = "%s %s" % (line[2], line[1])

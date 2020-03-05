@@ -118,6 +118,7 @@ class UTBillScraper(Scraper, LXMLMixin):
                 continue
             assert title == "Bill Sponsor:"
             name = name.replace("Sen. ", "").replace("Rep. ", "")
+            name = ' '.join(name.split(", ")[::-1])
             bill.add_sponsorship(
                 name, classification="primary", entity_type="person", primary=True
             )
@@ -129,6 +130,7 @@ class UTBillScraper(Scraper, LXMLMixin):
         elif len(floor_info) == 2:
             assert floor_info[0] == "Floor Sponsor:"
             floor_sponsor = floor_info[1].replace("Sen. ", "").replace("Rep. ", "")
+            floor_sponsor = ' '.join(floor_sponsor.split(", ")[::-1])
             bill.add_sponsorship(
                 floor_sponsor,
                 classification="cosponsor",

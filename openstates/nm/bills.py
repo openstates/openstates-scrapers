@@ -92,7 +92,11 @@ class NMBillScraper(Scraper):
         # read in sponsor & subject mappings
         sponsor_map = {}
         for sponsor in self.access_to_csv("tblSponsors"):
-            sponsor_map[sponsor["SponsorCode"]] = sponsor["FullName"]
+            name = sponsor["FullName"].split(", ")
+            if len(name) == 3:
+                name.insert(0, ", " + name.pop(2))
+            name = ' '.join(name[::-1])
+            sponsor_map[sponsor["SponsorCode"]] = name
 
         # McSorley resigned so they removed him from the API
         # but he is still attached to some bills

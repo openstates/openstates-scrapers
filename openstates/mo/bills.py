@@ -498,6 +498,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         bill.add_source(url)
 
         bill_sponsor = clean_text(table_rows[0][1].text_content())
+        bill_sponsor = ' '.join(bill_sponsor.split(", ")[::-1])
         # try:
         #     bill_sponsor_link = table_rows[0][1][0].attrib['href']
         # except IndexError:

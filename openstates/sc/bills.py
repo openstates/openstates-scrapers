@@ -308,6 +308,10 @@ class SCBillScraper(Scraper):
                 names = re.split(r"\s{3,}", line)
                 for name in names:
                     if name:
+                        name = name.split(", ")
+                        if len(name) == 3:
+                            name.insert(0, ", " + name.pop(2))
+                        name = ' '.join(name[::-1])
                         if not option:
                             current_vfunc(name.strip())
                         else:
