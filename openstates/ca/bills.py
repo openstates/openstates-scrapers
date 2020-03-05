@@ -549,7 +549,6 @@ class CABillScraper(Scraper, LXMLMixin):
                 "http://leginfo.legislature.ca.gov/faces/billVotesClient.xhtml?"
             )
             source_url += f"bill_id={session}0{fsbill.identifier}"
-            # print(source_url)
 
             # Votes for non archived years
             if archive_year > 2009:
@@ -662,8 +661,6 @@ class CABillScraper(Scraper, LXMLMixin):
                     "http://leginfo.legislature.ca.gov/faces/billVotesClient.xhtml?"
                 )
                 vote_page_url += f"bill_id={session}0{fsbill.identifier}"
-                # print(vote_page_url)
-                # print("Total Votes: " + str(len(bill.votes)))
 
                 # parse the bill data page, finding the latest html text
                 data = self.get(vote_page_url).content
@@ -675,7 +672,7 @@ class CABillScraper(Scraper, LXMLMixin):
                         f"//div[@class='status'][{vote_section}]//div[@class='statusRow']"
                     )
                     date, result, motion, vtype, location = "", "", "", "", ""
-                    yeas, noes, nvr = [], [], []
+                    votes = {}
                     for line in lines:
                         line = line.text_content().split()
                         if line[0] == "Date":
@@ -690,11 +687,11 @@ class CABillScraper(Scraper, LXMLMixin):
                             location = " ".join(line[1:])
                         elif len(line) > 1:
                             if line[0] == "Ayes" and line[1] != "Count":
-                                yeas = line[1:]
+                                votes["yes"] = line[1:]
                             elif line[0] == "Noes" and line[1] != "Count":
-                                noes = line[1:]
+                                votes["no"] = line[1:]
                             elif line[0] == "NVR" and line[1] != "Count":
-                                nvr = line[1:]
+                                votes["not voting"] = line[1:]
                     # Determine chamber based on location
                     first_part = location.split(" ")[0].lower()
                     vote_chamber = ""
@@ -721,14 +718,11 @@ class CABillScraper(Scraper, LXMLMixin):
                         fsvote.add_source(vote_page_url)
                         fsvote.pupa_id = vote_page_url + "#" + str(vote_section)
 
-                        for voter in yeas:
-                            fsvote.vote("yes", voter)
-                        for voter in noes:
-                            fsvote.vote("no", voter)
-                        for voter in nvr:
-                            fsvote.vote("not voting", voter)
+                        for how_voted, voters in votes.items():
+                            for voter in voters:
+                                voter = voter.replace(",", "")
+                                fsvote.vote(how_voted, voter)
                         yield fsvote
-                # print("num_of_votes:" + str(num_of_votes))
 
             yield fsbill
             self.session.expire_all()
