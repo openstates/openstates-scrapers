@@ -675,7 +675,7 @@ class CABillScraper(Scraper, LXMLMixin):
                         f"//div[@class='status'][{vote_section}]//div[@class='statusRow']"
                     )
                     date, result, motion, vtype, location = "", "", "", "", ""
-                    yeas, noes = [], []
+                    yeas, noes, nvr = [], [], []
                     for line in lines:
                         line = line.text_content().split()
                         if line[0] == "Date":
@@ -693,6 +693,8 @@ class CABillScraper(Scraper, LXMLMixin):
                                 yeas = line[1:]
                             elif line[0] == "Noes" and line[1] != "Count":
                                 noes = line[1:]
+                            elif line[0] == "NVR" and line[1] != "Count":
+                                nvr = line[1:]
                     # Determine chamber based on location
                     first_part = location.split(" ")[0].lower()
                     vote_chamber = ""
@@ -723,6 +725,8 @@ class CABillScraper(Scraper, LXMLMixin):
                             fsvote.vote("yes", voter)
                         for voter in noes:
                             fsvote.vote("no", voter)
+                        for voter in nvr:
+                            fsvote.vote("not voting", voter)
                         yield fsvote
                 # print("num_of_votes:" + str(num_of_votes))
 
