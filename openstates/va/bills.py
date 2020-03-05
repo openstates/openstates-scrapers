@@ -4,6 +4,7 @@ import datetime
 import collections
 import logging
 
+from itertools import tee
 from spatula import Page, Spatula
 from pupa.scrape import Scraper, Bill, VoteEvent
 from .common import SESSION_SITE_IDS
@@ -201,11 +202,12 @@ class BillDetailPage(Page, Spatula):
                 )
 
         # actions
-        cached_vote = None
-        cached_action = None
-        for ali in self.doc.xpath('//h4[text()="HISTORY"]/following-sibling::ul[1]/li'):
-            vote = None
-
+        seen_next = False
+        for ali, next_ali in pairwise(self.doc.xpath('//h4[text()="HISTORY"]/following-sibling::ul[1]/li')):
+            # If we've used this action text before, we don't need to parse it again
+            if seen_next:
+                seen_next = False
+                continue
             date, action = ali.text_content().split(u" \xa0")
             try:
                 actor, action = action.split(": ", 1)
@@ -240,111 +242,65 @@ class BillDetailPage(Page, Spatula):
                 # do this explicitly as it's excluded from the action
                 # text when there were no abstentions (the only type of
                 # "other" vote encountered thus far).
-                if o is None:
-                    o = 0
-                else:
-                    o = int(o)
+                o = int(o) if o else 0
 
                 vote_url = ali.xpath("a/@href")
 
-                # Caches relevant information from the current action if
+                # Finds relevant information from the current action if
                 # vote count encountered, then searches for the presence
                 # of identical counts in the next entry (we assume that
                 # it's probably there). If matching votes are found, it
-                # pulls the cached data to create a unified vote record.
+                # merges data in both to create a unified vote record.
                 #
                 # This is because Virginia usually publishes two lines
                 # of history data for a single vote, without guaranteed
-                # order, so we cache and unsafely attempt to match on
-                # identical vote counts in the next line.
-                if cached_vote is None:
-                    cached_action = action
-                    cached_vote = VoteEvent(
-                        start_date=date,
-                        chamber=actor,
-                        motion_text=vote_action,
-                        result="pass" if y > n else "fail",
-                        classification="passage",
-                        bill=self.obj,
-                    )
-                    cached_vote.set_count("yes", y)
-                    cached_vote.set_count("no", n)
-                    cached_vote.set_count("other", o)
-                    if vote_url:
-                        list(
-                            self.scrape_page_items(
-                                VotePage, url=vote_url[0], obj=cached_vote
-                            )
-                        )
-                        cached_vote.add_source(vote_url[0])
-                    else:
-                        cached_vote.add_source(self.url)
-                    # continue
-                elif cached_vote is not None:
-                    if vote_action.startswith(u"VOTE:"):
-                        counts = {
-                            count["option"]: count["value"]
-                            for count in cached_vote.counts
-                        }
-                        if (
-                            vote_url
-                            and counts["yes"] == y
-                            and counts["no"] == n
-                            and counts["other"] == o
-                        ):
-                            vote = cached_vote
-                            vote.add_source(vote_url[0])
-                            action = cached_action
-                    elif cached_vote.motion_text.startswith("VOTE:"):
-                        counts = {
-                            count["option"]: count["value"]
-                            for count in cached_vote.counts
-                        }
-                        if (
-                            counts["yes"] == y
-                            and counts["no"] == n
-                            and counts["other"] == o
-                        ):
-                            vote = cached_vote
-                            vote.motion_text = vote_action
-                    else:
-                        # Cached vote doesn't match up to the current
-                        # one. Save, then cache the current vote to
-                        # begin the next search.
-                        yield from add_pupa_id(cached_vote)
-                        cached_vote = VoteEvent(
-                            start_date=date,
-                            chamber=actor,
-                            motion_text=vote_action,
-                            result="pass" if y > n else "fail",
-                            classification="passage",
-                            bill=self.obj,
-                        )
-                        cached_vote.set_count("yes", y)
-                        cached_vote.set_count("no", n)
-                        cached_vote.set_count("other", o)
-                        if vote_url:
-                            cached_vote.add_source(vote_url[0])
-                            list(
-                                self.scrape_page_items(
-                                    VotePage, url=vote_url[0], obj=cached_vote
-                                )
-                            )
+                # order, so we unsafely attempt to match on identical
+                # vote counts in the next line.
+                vote = VoteEvent(
+                    start_date=date,
+                    chamber=actor,
+                    motion_text=vote_action.strip(),
+                    result="pass" if y > n else "fail",
+                    classification="passage",
+                    bill=self.obj,
+                )
+                vote.set_count("yes", y)
+                vote.set_count("no", n)
+                vote.set_count("other", o)
+
+                try:
+                    next_action = next_ali.text_content().split(" \xa0")[1].split(": ", 1)[1]
+                except ValueError:
+                    next_action = ""
+
+                vrematch_next = self.vote_strip_re.match(next_action)
+                if vrematch_next:
+                    vote_action_next, y_next, n_next, o_next = vrematch_next.groups()
+                    y_next = int(y_next)
+                    n_next = int(n_next)
+                    o_next = int(o_next) if o_next else 0
+                    vote_url_next = next_ali.xpath("a/@href")
+                    # Check that the vote counts match and that only one action
+                    # has a URL (otherwise, they're probably different votes).
+                    if [y_next, n_next, o_next] == [y, n, o] and len(vote_url) != len(vote_url_next):
+                        seen_next = True
+                        if not vote_url:
+                            vote_url = vote_url_next
                         else:
-                            cached_vote.add_source(self.url)
-                        cached_action = action
-                        continue
+                            vote.motion_text = vote_action_next.strip()
+                            action = next_action
 
-                if vote is not None:
-                    yield from add_pupa_id(vote)
-            else:
-                # If this action isn't a vote, but the last one was,
-                # there's obviously no additional vote data to match.
-                # Go ahead and save the cached data.
-                if cached_vote is not None:
-                    yield from add_pupa_id(cached_vote)
+                if vote_url:
+                    list(
+                        self.scrape_page_items(
+                            VotePage, url=vote_url[0], obj=vote
+                        )
+                    )
+                    vote.add_source(vote_url[0])
+                else:
+                    vote.add_source(self.url)
 
-            cached_vote = cached_action = None
+                yield from add_pupa_id(vote)
 
             # categorize actions
             for pattern, atype in ACTION_CLASSIFIERS:
@@ -425,6 +381,13 @@ def add_pupa_id(vote):
     else:
         _seen_pupa_ids.add(vote.pupa_id)
         yield vote
+
+
+def pairwise(list_of_items):
+    """ allow looking ahead in a list of items """
+    a, b = tee(list_of_items)
+    next(b, None)
+    return zip(a, b)
 
 
 class VaBillScraper(Scraper, Spatula):
