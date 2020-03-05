@@ -3,6 +3,7 @@ import re
 import pytz
 import operator
 import itertools
+import datetime
 from lxml import etree, html
 from openstates.utils import LXMLMixin
 
@@ -548,7 +549,7 @@ class CABillScraper(Scraper, LXMLMixin):
                 "http://leginfo.legislature.ca.gov/faces/billVotesClient.xhtml?"
             )
             source_url += f"bill_id={session}0{fsbill.identifier}"
-            print(source_url)
+            # print(source_url)
 
             # Votes for non archived years
             if archive_year > 2009:
@@ -661,24 +662,69 @@ class CABillScraper(Scraper, LXMLMixin):
                     "http://leginfo.legislature.ca.gov/faces/billVotesClient.xhtml?"
                 )
                 vote_page_url += f"bill_id={session}0{fsbill.identifier}"
-                print(vote_page_url)
-                print("Total Votes: " + str(len(bill.votes)))
+                # print(vote_page_url)
+                # print("Total Votes: " + str(len(bill.votes)))
 
                 # parse the bill data page, finding the latest html text
                 data = self.get(vote_page_url).content
                 doc = html.fromstring(data)
                 doc.make_links_absolute(vote_page_url)
                 num_of_votes = len(doc.xpath("//div[@class='status']"))
-                for vote_section in range(num_of_votes):
-                    print("----" + str(vote_section))
-                    # line = test.xpath("//div[@class='tab_content_sub_non_text']//div")[0].text_content().strip()
+                for vote_section in range(1, num_of_votes + 1):
                     lines = doc.xpath(
                         f"//div[@class='status'][{vote_section}]//div[@class='statusRow']"
                     )
+                    date, result, motion, vtype, location = "", "", "", "", ""
+                    yeas, noes = [], []
                     for line in lines:
-                        print(line.text_content().strip())
-                    print("----")
-                print("num_of_votes:" + str(num_of_votes))
+                        line = line.text_content().split()
+                        if line[0] == "Date":
+                            date = line[1]
+                            date = datetime.datetime.strptime(date, "%m/%d/%y")
+                            date = self._tz.localize(date)
+                        elif line[0] == "Result":
+                            result = "pass" if "PASS" in line[1] else "fail"
+                        elif line[0] == "Motion":
+                            motion = " ".join(line[1:])
+                        elif line[0] == "Location":
+                            location = " ".join(line[1:])
+                        elif len(line) > 1:
+                            if line[0] == "Ayes" and line[1] != "Count":
+                                yeas = line[1:]
+                            elif line[0] == "Noes" and line[1] != "Count":
+                                noes = line[1:]
+                    # Determine chamber based on location
+                    first_part = location.split(" ")[0].lower()
+                    vote_chamber = ""
+                    if first_part in ["asm", "assembly"]:
+                        vote_chamber = "lower"
+                    elif first_part.startswith("sen"):
+                        vote_chamber = "upper"
+
+                    if "Third Reading" in motion or "3rd Reading" in motion:
+                        vtype = "passage"
+                    elif "Do Pass" in motion:
+                        vtype = "passage"
+                    else:
+                        vtype = "other"
+                    if len(motion) > 0:
+                        fsvote = VoteEvent(
+                            motion_text=motion,
+                            start_date=date,
+                            result=result,
+                            classification=vtype,
+                            chamber=vote_chamber,
+                            bill=fsbill,
+                        )
+                        fsvote.add_source(vote_page_url)
+                        fsvote.pupa_id = vote_page_url + "#" + str(vote_section)
+
+                        for voter in yeas:
+                            fsvote.vote("yes", voter)
+                        for voter in noes:
+                            fsvote.vote("no", voter)
+                        yield fsvote
+                # print("num_of_votes:" + str(num_of_votes))
 
             yield fsbill
             self.session.expire_all()
