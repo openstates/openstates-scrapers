@@ -33,7 +33,7 @@ class IAVoteScraper(Scraper):
         # Therefore, we need to iterate over both years in the session
         session_id = SITE_IDS[session]
         for sub_session in [1, 2]:
-            url = "https://www.legis.iowa.gov/chambers/journals/{}".format(
+            url = "https://www.legis.iowa.gov/legislation/journals/{}".format(
                 "house" if chamber == "lower" else "senate"
             )
             params = {"ga": session_id, "session": sub_session}
