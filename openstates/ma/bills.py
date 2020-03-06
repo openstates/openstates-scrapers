@@ -174,14 +174,16 @@ class MABillScraper(Scraper):
                 0
             ]
         except IndexError:
+            bill_title = None
             pass
 
-        try:
-            bill_title = page.xpath('//div[contains(@class,"followable")]/h1/text()')[0]
-            bill_title = bill_title.replace("Bill", "").strip()
-        except IndexError:
-            self.warning("Couldn't find title for {}; skipping".format(bill_id))
-            return False
+        if bill_title is None:
+            try:
+                bill_title = page.xpath('//div[contains(@class,"followable")]/h1/text()')[0]
+                bill_title = bill_title.replace("Bill", "").strip()
+            except IndexError:
+                self.warning("Couldn't find title for {}; skipping".format(bill_id))
+                return False
 
         bill_types = ["H", "HD", "S", "SD", "SRes"]
         if re.sub("[0-9]", "", bill_id) not in bill_types:
