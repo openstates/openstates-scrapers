@@ -174,16 +174,16 @@ class MABillScraper(Scraper):
                 0
             ]
         except IndexError:
+            bill_title = None
             pass
 
-        try:
-            bill_title = page.xpath('//div[contains(@class,"followable")]/h1/text()')[
-                0
-            ]
-            bill_title = bill_title.replace('Bill', '').strip()
-        except IndexError:
-            self.warning("Couldn't find title for {}; skipping".format(bill_id))
-            return False
+        if bill_title is None:
+            try:
+                bill_title = page.xpath('//div[contains(@class,"followable")]/h1/text()')[0]
+                bill_title = bill_title.replace("Bill", "").strip()
+            except IndexError:
+                self.warning("Couldn't find title for {}; skipping".format(bill_id))
+                return False
 
         bill_types = ["H", "HD", "S", "SD", "SRes"]
         if re.sub("[0-9]", "", bill_id) not in bill_types:
@@ -218,7 +218,13 @@ class MABillScraper(Scraper):
             "following-sibling::dd/descendant-or-self::*/text()[normalize-space()]"
         )
         if sponsor:
-            sponsor = sponsor[0].strip()
+            sponsor = (
+                sponsor[0]
+                .replace("*", "")
+                .replace("%", "")
+                .replace("This sponsor is an original petitioner.", "")
+                .strip()
+            )
             bill.add_sponsorship(
                 sponsor, classification="primary", primary=True, entity_type="person"
             )
@@ -258,7 +264,12 @@ class MABillScraper(Scraper):
             if not any(
                 sponsor["name"] == cosponsor_name for sponsor in bill.sponsorships
             ):
-                cosponsor_name = cosponsor_name.strip()
+                cosponsor_name = (
+                    cosponsor_name.replace("*", "")
+                    .replace("%", "")
+                    .replace("This sponsor is an original petitioner.", "")
+                    .strip()
+                )
                 bill.add_sponsorship(
                     cosponsor_name,
                     classification="cosponsor",
