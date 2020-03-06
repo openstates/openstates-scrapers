@@ -219,6 +219,7 @@ class MABillScraper(Scraper):
             sponsor = (
                 sponsor[0]
                 .replace("*", "")
+                .replace("%", "")
                 .replace("This sponsor is an original petitioner.", "")
                 .strip()
             )
