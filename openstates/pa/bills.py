@@ -60,9 +60,13 @@ class PABillScraper(Scraper):
                 'div[@class="BillInfo-Section-Data"]',
             ]
         )
-        title = page.xpath(xpath).pop().text_content().strip()
-        if not title:
+
+        if page.xpath(xpath):
+            title = page.xpath(xpath).pop().text_content().strip()
+        else:
+            self.warning("Skipping {}, No title found".format(bill_id, url))
             return
+
         bill = Bill(
             bill_id,
             legislative_session=session,
