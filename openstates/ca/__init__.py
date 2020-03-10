@@ -1,5 +1,4 @@
 import re
-
 from openstates.utils import url_xpath, State
 from .bills import CABillScraper
 from .people import CAPersonScraper
@@ -19,6 +18,66 @@ class California(State):
         # 'committees': CACommitteeScraper,
     }
     legislative_sessions = [
+        {
+            "classification": "primary",
+            "identifier": "19891990",
+            "name": "1989-1990 Regular Session",
+            "start_date": "1988-12-05",
+        },
+        {
+            "classification": "primary",
+            "identifier": "19911992",
+            "name": "1991-1992 Regular Session",
+            "start_date": "1990-12-03",
+        },
+        {
+            "classification": "primary",
+            "identifier": "19931994",
+            "name": "1993-1994 Regular Session",
+            "start_date": "1992-12-07",
+        },
+        {
+            "classification": "primary",
+            "identifier": "19951996",
+            "name": "1995-1996 Regular Session",
+            "start_date": "1994-12-05",
+        },
+        {
+            "classification": "primary",
+            "identifier": "19971998",
+            "name": "1997-1998 Regular Session",
+            "start_date": "1996-12-02",
+        },
+        {
+            "classification": "primary",
+            "identifier": "19992000",
+            "name": "1999-2000 Regular Session",
+            "start_date": "1998-12-07",
+        },
+        {
+            "classification": "primary",
+            "identifier": "20012002",
+            "name": "2001-2002 Regular Session",
+            "start_date": "2000-12-04",
+        },
+        {
+            "classification": "primary",
+            "identifier": "20032004",
+            "name": "2003-2004 Regular Session",
+            "start_date": "2002-12-02",
+        },
+        {
+            "classification": "primary",
+            "identifier": "20052006",
+            "name": "2005-2006 Regular Session",
+            "start_date": "2005-12-06",
+        },
+        {
+            "classification": "primary",
+            "identifier": "20072008",
+            "name": "2007-2008 Regular Session",
+            "start_date": "2006-12-04",
+        },
         {
             "classification": "primary",
             "identifier": "20092010",
