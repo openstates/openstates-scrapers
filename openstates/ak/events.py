@@ -51,10 +51,17 @@ class AKEventScraper(Scraper, LXMLMixin):
     def parse_event(self, row, chamber):
         # sample event available at http://www.akleg.gov/apptester.html
         committee_code = row.xpath("string(Sponsor)").strip()
-        committee_name = "{} {}".format(
-            self.COMMITTEES_PRETTY[chamber],
-            self.COMMITTEES[chamber][committee_code]["name"],
-        )
+
+        if committee_code in self.COMMITTEES[chamber]:
+            committee_name = "{} {}".format(
+                self.COMMITTEES_PRETTY[chamber],
+                self.COMMITTEES[chamber][committee_code]["name"],
+            )
+        else:
+            committee_name = "{} {}".format(
+                self.COMMITTEES_PRETTY[chamber],
+                'MISCELLANEOUS',
+            )
 
         name = "{} {}".format(
             self.COMMITTEES_PRETTY[chamber], row.xpath("string(Title)").strip()
@@ -77,7 +84,8 @@ class AKEventScraper(Scraper, LXMLMixin):
 
         event.add_source("http://w3.akleg.gov/index.php#tab4")
 
-        event.add_participant(committee_name, type="committee", note="host")
+        if committee_code in self.COMMITTEES[chamber]:
+            event.add_participant(committee_name, type="committee", note="host")
 
         for item in row.xpath("Agenda/Item"):
             agenda_desc = item.xpath("string(Text)").strip()
