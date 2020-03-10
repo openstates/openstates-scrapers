@@ -263,17 +263,17 @@ class CABillScraper(Scraper, LXMLMixin):
         bill_types = {
             "lower": {
                 "AB": "bill",
-                # "ACA": "constitutional amendment",
-                # "ACR": "concurrent resolution",
-                # "AJR": "joint resolution",
-                # "HR": "resolution",
+                "ACA": "constitutional amendment",
+                "ACR": "concurrent resolution",
+                "AJR": "joint resolution",
+                "HR": "resolution",
             },
             "upper": {
-                #     "SB": "bill",
-                #     "SCA": "constitutional amendment",
-                #     "SCR": "concurrent resolution",
-                #     "SJR": "joint resolution",
-                #     "SR": "resolution",
+                "SB": "bill",
+                "SCA": "constitutional amendment",
+                "SCR": "concurrent resolution",
+                "SJR": "joint resolution",
+                "SR": "resolution",
             },
         }
 
@@ -427,22 +427,13 @@ class CABillScraper(Scraper, LXMLMixin):
             for title in all_titles:
                 fsbill.add_title(title)
 
-            total_sponsors = len(version.authors)
-
-            if bill_id == "AB291" or bill_id == "AB 291":
-                print("Total sponsors:" + str(total_sponsors))
-                print("Find me Homer 2")
-                print(source_url)
-                for author in version.authors:
-                    fsbill.add_sponsorship(
-                        author.name,
-                        classification=SPONSOR_TYPES[author.contribution],
-                        primary=author.primary_author_flg == "Y",
-                        entity_type="person",
-                    )
-                    print(author.name)
-                print("Total number of authors:")
-                print(str(len(fsbill.sponsorships)))
+            for author in version.authors:
+                fsbill.add_sponsorship(
+                    author.name,
+                    classification=SPONSOR_TYPES[author.contribution],
+                    primary=author.primary_author_flg == "Y",
+                    entity_type="person",
+                )
                 # fsbill.sponsorships[-1]['extras'] = {'official_type': author.contribution}
 
             seen_actions = set()
