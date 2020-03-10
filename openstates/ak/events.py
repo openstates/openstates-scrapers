@@ -61,7 +61,7 @@ class AKEventScraper(Scraper, LXMLMixin):
             committee_name = "{} {}".format(
                 self.COMMITTEES_PRETTY[chamber],
                 'MISCELLANEOUS',
-            )            
+            )
 
         name = "{} {}".format(
             self.COMMITTEES_PRETTY[chamber], row.xpath("string(Title)").strip()
