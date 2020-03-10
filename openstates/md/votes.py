@@ -57,7 +57,7 @@ class MDVoteScraper(Scraper, LXMLMixin):
 
         for line in lines:
             if section == "preamble":
-                possible_bill_id = re.findall(r"([HS]\w+ \d+)", line)
+                possible_bill_id = re.findall(r"([HS][BJR] \d+)", line)
                 if possible_bill_id:
                     bill_id = possible_bill_id[0]
 
