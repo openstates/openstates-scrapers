@@ -29,7 +29,14 @@ _categorizer_rules = (
     Rule(r"amendments concurred in", "amendment-passage"),
     Rule(r"refused to concur in Assembly amendments", "amendment-failure"),
     Rule(r"Failed passage in committee", "committee-failure"),
-    Rule(r"(?i)From committee: ((?!Without further action))", "committee-passage"),
+    Rule(
+        r"From committee: Filed with the Chief Clerk pursuant to Joint Rule 56.",
+        "failure",
+    ),
+    Rule(
+        r"(?i)From committee: ((?!Without further action))((?!Filed with the Chief Clerk pursuant to Joint Rule 56))",
+        "committee-passage",
+    ),
     Rule(r"(?i)From committee: Do pass", "committee-passage-favorable"),
     Rule(r"From committee with author\'s amendments", "committee-passage"),
     # Resolutions
@@ -72,6 +79,7 @@ _categorizer_rules = (
     Rule(r"withdrawn from committee", "withdrawal"),
     Rule(r"ordered to third reading", "reading-3"),
     Rule(r"ordered to second reading", "reading-2"),
+    Rule(r"^Died pursuant to", "failure"),
 )
 
 
