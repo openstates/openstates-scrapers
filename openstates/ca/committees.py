@@ -213,7 +213,7 @@ class CACommitteeScraper(Scraper, LXMLMixin):
                 )
                 (subcom_name,) = comm_doc.xpath('//h1[@class="title"]/text()')
                 org = Organization(
-                    name=subcom_name,
+                    name=subcom_name.strip(),
                     classification="committee",
                     parent_id={"name": parent_name, "classification": "upper"},
                 )
