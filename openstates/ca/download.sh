@@ -13,4 +13,4 @@ until mysql -h "${MYSQL_HOST:-"localhost"}" -u "${MYSQL_USER:-"root"}" -e "SHOW 
   fi
 done
 
-poetry run python -m openstates.ca.download
+poetry run python -m openstates.ca.download $@
