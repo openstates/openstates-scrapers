@@ -29,7 +29,7 @@ class CACommitteeScraper(Scraper, LXMLMixin):
     def scrape(self, chamber=None):
         if chamber in ["lower", None]:
             yield from self.scrape_lower()
-        elif chamber in ["upper", None]:
+        if chamber in ["upper", None]:
             # Also captures joint committees
             yield from self.scrape_upper()
 
