@@ -134,6 +134,7 @@ class BillDetail(Page):
             self.process_amendments_table(floor_amend_table, "Floor")
 
     def process_amendments_table(self, table, amend_type):
+        urls = set()
         try:
             version_to_amend = table[0].xpath("string(caption)").strip()
             for tr in table[0].xpath("tbody/tr"):
@@ -144,13 +145,19 @@ class BillDetail(Page):
 
                 for link in tr.xpath("td[5]/a"):
                     version_url = link.attrib["href"]
+
+                    # avoid duplicates
+                    if version_url in urls:
+                        continue
+                    urls.add(version_url)
+
                     if version_url.endswith("PDF"):
                         mimetype = "application/pdf"
 
                     elif version_url.endswith("HTML"):
                         mimetype = "text/html"
 
-                    self.obj.add_version_link(name, version_url, media_type=mimetype)
+                    self.obj.add_document_link(name, version_url, media_type=mimetype)
         except IndexError:
             self.scraper.warning(
                 "No {} amendments table for {}".format(amend_type, self.obj.identifier)
