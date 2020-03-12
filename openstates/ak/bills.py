@@ -454,6 +454,10 @@ class AKBillScraper(Scraper):
             atype.append("committee-failure")
         if action.startswith("PASSED"):
             atype.append("passage")
+        if '(S) TRANSMITTED TO (H)' in action:
+            atype.append("passage")
+        if '(H) TRANSMITTED TO (S)' in action:
+            atype.append("passage")
         if "REFERRED TO" in action:
             atype.append("referral-committee")
             action = action.replace("REFERRED TO", "Referred to")
