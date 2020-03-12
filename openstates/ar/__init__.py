@@ -141,18 +141,18 @@ class Arkansas(State):
             "start_date": "2018-03-13",
         },
         {
-            "_scraped_name": "Regular Session, 2019",
-            "classification": "primary",
-            "identifier": "2019",
-            "name": "2019 Regular Session",
-            "start_date": "2019-01-14",
-        },
-        {
             "_scraped_name": "Fiscal Session, 2020",
             "classification": "special",
             "identifier": "2020F",
             "name": "2020 Fiscal Session",
             "start_date": "2020-04-08",
+        },
+        {
+            "_scraped_name": "Regular Session, 2019",
+            "classification": "primary",
+            "identifier": "2019",
+            "name": "2019 Regular Session",
+            "start_date": "2019-01-14",
         },
     ]
     ignored_scraped_sessions = [
