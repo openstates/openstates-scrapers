@@ -223,51 +223,6 @@ def load(folder, sql_name=partial(re.compile(r"\.dat$").sub, ".sql")):
     logging.info("...Done loading from %s" % folder)
 
 
-def delete_session(session_year):
-    """
-    This is the python equivalent (or at least, is supposed to be)
-    of the deleteSession.bat file included in the pubinfo_load.zip file.
-
-    It deletes all the entries for the specified session.
-    Used before the weekly import of the new database dump on Sunday.
-    """
-    tables = {
-        "bill_id": [
-            "bill_detail_vote_tbl",
-            "bill_history_tbl",
-            "bill_summary_vote_tbl",
-            "bill_analysis_tbl",
-            "bill_tbl",
-            "committee_hearing_tbl",
-            "daily_file_tbl",
-        ],
-        "bill_version_id": ["bill_version_authors_tbl", "bill_version_tbl"],
-        "session_year": ["legislator_tbl", "location_code_tbl"],
-    }
-
-    logger.info("Deleting all data for session year %s..." % session_year)
-
-    connection = MySQLdb.connect(
-        host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD, db="capublic"
-    )
-    connection.autocommit(True)
-    cursor = connection.cursor()
-
-    for token, names in tables.items():
-        for table_name in names:
-            sql = (
-                "DELETE FROM capublic.{table_name} "
-                "where {token} like '{session_year}%';"
-            )
-            sql = sql.format(**locals())
-            logger.debug('executing sql: "%s"' % sql)
-            cursor.execute(sql)
-
-    cursor.close()
-    connection.close()
-    logger.info("...done deleting session data.")
-
-
 def db_create():
     """Create the database"""
 
@@ -306,21 +261,6 @@ def db_create():
 
 def get_contents():
     resp = {}
-    # for line in urllib.urlopen(BASE_URL).read().splitlines()[1:]:
-    #     print line
-    #     date, filename = re.match(
-    #         '[drwx-]{10}\s+\d\s+\d{3}\s+\d{3}\s+\d+ (\w+\s+\d+\s+\d+:?\d*) (\w+.\w+)',
-    #         line,
-    #     ).groups()
-    #     date = date.replace('  ', ' ')
-    #     try:
-    #         date = datetime.strptime(date, '%b %d %Y')
-    #     except ValueError:
-    #         date = ' '.join([date, str(datetime.now().year)])
-    #         date = datetime.strptime(date, '%b %d %H:%M %Y')
-    #     resp[filename] = date
-    # return resp
-
     html = requests.get(BASE_URL).text
     doc = lxml.html.fromstring(html)
     # doc.make_links_absolute(BASE_URL)
@@ -348,7 +288,7 @@ def get_zip(filename):
     return dirname
 
 
-def get_current_year(contents, year):
+def get_data(contents, year):
     newest_file = "2000"
     newest_file_date = datetime(2000, 1, 1)
     files_to_get = []
@@ -378,4 +318,4 @@ if __name__ == "__main__":
     db_drop()
     db_create()
     contents = get_contents()
-    get_current_year(contents, year)
+    get_data(contents, year)
