@@ -166,6 +166,7 @@ class ARBillScraper(Scraper):
         page = self.get(url).text
         bill.add_source(url)
         page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
         for link in page.xpath("//a[contains(@href, 'Amendments')]"):
             num = link.xpath("string(../../td[2])")
             name = "Amendment %s" % num
