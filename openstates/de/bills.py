@@ -342,16 +342,17 @@ class DEBillScraper(Scraper, LXMLMixin):
 
     def scrape_amendments(self, bill, legislation_id):
         # http://legis.delaware.gov/json/BillDetail/GetRelatedAmendmentsByLegislationId?legislationId=47185
-        # http://legis.delaware.gov/json/BillDetail/GetRelatedAmendmentsByLegislationId
-        amds_url = "http://legis.delaware.gov/json/BillDetail/GetRelatedAmendmentsByLegislationId"
-        form = {"legislationId": legislation_id, "sort": "", "group": "", "filter": ""}
+        amds_url = (
+            "https://legis.delaware.gov/json/BillDetail/GetRelatedAmendmentsByLegislationId"
+            f"?legislationId={legislation_id}"
+        )
+        form = {"sort": "", "group": "", "filter": ""}
         self.info("Fetching amendments for {}".format(bill.identifier))
-        # page = self.post(url=amds_url, data=form, allow_redirects=True).json()
-        page = self.post(url=amds_url, data=form, allow_redirects=True).content
-        if page == b"":
+        page = self.post(url=amds_url, data=form, allow_redirects=True)
+        if page.content == b"":
             return
         else:
-            page = json.loads(page)
+            page = json.loads(page.content)
 
         for row in page["Data"]:
             if row["PublicStatusName"] == "Passed":
