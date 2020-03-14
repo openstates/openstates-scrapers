@@ -536,7 +536,7 @@ class CABillScraper(Scraper, LXMLMixin):
             source_url = (
                 "http://leginfo.legislature.ca.gov/faces/billVotesClient.xhtml?"
             )
-            source_url += f"bill_id={session}0{fsbill.identifier}"
+            source_url += f"bill_id={session}{bill.session_num}{fsbill.identifier}"
 
             # Votes for non archived years
             if archive_year > 2009:
@@ -615,10 +615,6 @@ class CABillScraper(Scraper, LXMLMixin):
                     )
                     fsvote.extras = {"threshold": vote.threshold}
 
-                    source_url = (
-                        "http://leginfo.legislature.ca.gov/faces"
-                        "/billVotesClient.xhtml?bill_id={}&session={}"
-                    ).format(fsbill.identifier, fsbill.legislative_session)
                     fsvote.add_source(source_url)
                     fsvote.pupa_id = source_url + "#" + str(vote_num)
 
@@ -646,7 +642,9 @@ class CABillScraper(Scraper, LXMLMixin):
                 vote_page_url = (
                     "http://leginfo.legislature.ca.gov/faces/billVotesClient.xhtml?"
                 )
-                vote_page_url += f"bill_id={session}0{fsbill.identifier}"
+                vote_page_url += (
+                    f"bill_id={session}{bill.session_num}{fsbill.identifier}"
+                )
 
                 # parse the bill data page, finding the latest html text
                 data = self.get(vote_page_url).content
