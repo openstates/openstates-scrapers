@@ -3,7 +3,7 @@ This file defines functions for importing the CA database dumps in mysql.
 
 The workflow is:
  - Drop & recreate the local capublic database.
- - Inspect the FTP site with regex and determine which files have been updated, if any.
+ - Inspect the site with regex and determine which files have been updated, if any.
  - For each such file, unzip it & call import.
 """
 import os

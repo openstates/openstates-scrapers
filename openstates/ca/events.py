@@ -88,7 +88,7 @@ class CAEventScraper(Scraper):
                 item.add_bill(bill_id, note=type_)
 
             event.add_person(committee_name + " Committee", note="host")
-            event.add_source("ftp://www.leginfo.ca.gov/pub/bill/")
+            event.add_source("https://downloads.leginfo.legislature.ca.gov/")
 
             yield event
 
