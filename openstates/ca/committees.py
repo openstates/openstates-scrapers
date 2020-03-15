@@ -62,11 +62,6 @@ class CACommitteeScraper(Scraper, LXMLMixin):
 
             for c, _url in zip(committees, urls):
 
-                if "autism" in _url:
-                    # The autism page takes a stunning 10 minutes to respond
-                    # with a 403. Skip it.
-                    continue
-
                 c = c.replace("Committee on ", "").replace(" Committee", "")
                 org = Organization(name=c, chamber=_chamber, classification="committee")
                 self.info(u"Saving {} committee.".format(c))
@@ -201,11 +196,7 @@ class CACommitteeScraper(Scraper, LXMLMixin):
 
             if comm_name.startswith("Joint"):
                 org = Organization(
-                    chamber="legislature",
-                    classification="committee",
-                    name=comm_name.replace("Joint ", "")
-                    .replace("Committee on ", "")
-                    .replace(" Committee", ""),
+                    chamber="legislature", classification="committee", name=comm_name
                 )
             elif comm_name.startswith("Subcommittee"):
                 (parent_name,) = comm_doc.xpath(
