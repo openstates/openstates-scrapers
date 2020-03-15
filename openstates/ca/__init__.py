@@ -79,6 +79,26 @@ class California(State):
             "start_date": "2006-12-04",
         },
         {
+            "classification": "special",
+            "identifier": "20072008 Special Session 1",
+            "name": "2007-2008, 1st Special Session",
+        },
+        {
+            "classification": "special",
+            "identifier": "20072008 Special Session 2",
+            "name": "2007-2008, 2nd Special Session",
+        },
+        {
+            "classification": "special",
+            "identifier": "20072008 Special Session 3",
+            "name": "2007-2008, 3rd Special Session",
+        },
+        {
+            "classification": "special",
+            "identifier": "20072008 Special Session 4",
+            "name": "2007-2008, 4th Special Session",
+        },
+        {
             "classification": "primary",
             "identifier": "20092010",
             "name": "2009-2010 Regular Session",
