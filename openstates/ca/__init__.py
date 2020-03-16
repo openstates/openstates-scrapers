@@ -67,10 +67,45 @@ class California(State):
             "start_date": "2002-12-02",
         },
         {
+            "classification": "special",
+            "identifier": "20032004 Special Session 1",
+            "name": "2003-2004, 1st Special Session",
+        },
+        {
+            "classification": "special",
+            "identifier": "20032004 Special Session 2",
+            "name": "2003-2004, 2nd Special Session",
+        },
+        {
+            "classification": "special",
+            "identifier": "20032004 Special Session 3",
+            "name": "2003-2004, 3rd Special Session",
+        },
+        {
+            "classification": "special",
+            "identifier": "20032004 Special Session 4",
+            "name": "2003-2004, 4th Special Session",
+        },
+        {
+            "classification": "special",
+            "identifier": "20032004 Special Session 5",
+            "name": "2003-2004, 5th Special Session",
+        },
+        {
             "classification": "primary",
             "identifier": "20052006",
             "name": "2005-2006 Regular Session",
             "start_date": "2005-12-06",
+        },
+        {
+            "classification": "special",
+            "identifier": "20052006 Special Session 1",
+            "name": "2005-2006, 1st Special Session",
+        },
+        {
+            "classification": "special",
+            "identifier": "20052006 Special Session 2",
+            "name": "2005-2006, 2nd Special Session",
         },
         {
             "classification": "primary",
