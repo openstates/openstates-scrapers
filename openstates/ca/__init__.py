@@ -61,6 +61,21 @@ class California(State):
             "start_date": "2000-12-04",
         },
         {
+            "classification": "special",
+            "identifier": "20012002 Special Session 1",
+            "name": "2001-2002, 1st Special Session",
+        },
+        {
+            "classification": "special",
+            "identifier": "20012002 Special Session 2",
+            "name": "2001-2002, 2nd Special Session",
+        },
+        {
+            "classification": "special",
+            "identifier": "20012002 Special Session 3",
+            "name": "2001-2002, 3rd Special Session",
+        },
+        {
             "classification": "primary",
             "identifier": "20032004",
             "name": "2003-2004 Regular Session",
@@ -194,6 +209,7 @@ class California(State):
             "classification": "primary",
             "identifier": "20132014",
             "name": "2013-2014 Regular Session",
+            "start_date": "2013-01-01",
         },
         {
             "classification": "special",
@@ -209,6 +225,7 @@ class California(State):
             "_scraped_name": "2015-2016",
             "classification": "primary",
             "identifier": "20152016",
+            "start_date": "2015-01-01",
             "name": "2015-2016 Regular Session",
         },
         {
