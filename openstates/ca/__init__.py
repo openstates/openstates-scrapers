@@ -37,10 +37,35 @@ class California(State):
             "start_date": "1992-12-07",
         },
         {
+            "classification": "special",
+            "identifier": "19931994 Special Session 1",
+            "name": "1993-1994, 1st Special Session",
+        },
+        {
             "classification": "primary",
             "identifier": "19951996",
             "name": "1995-1996 Regular Session",
             "start_date": "1994-12-05",
+        },
+        {
+            "classification": "special",
+            "identifier": "19951996 Special Session 1",
+            "name": "1995-1996, 1st Special Session",
+        },
+        {
+            "classification": "special",
+            "identifier": "19951996 Special Session 2",
+            "name": "1995-1996, 2nd Special Session",
+        },
+        {
+            "classification": "special",
+            "identifier": "19951996 Special Session 3",
+            "name": "1995-1996, 3rd Special Session",
+        },
+        {
+            "classification": "special",
+            "identifier": "19951996 Special Session 4",
+            "name": "1995-1996, 4th Special Session",
         },
         {
             "classification": "primary",
@@ -49,10 +74,20 @@ class California(State):
             "start_date": "1996-12-02",
         },
         {
+            "classification": "special",
+            "identifier": "19971998 Special Session 1",
+            "name": "1997-1998, 1st Special Session",
+        },
+        {
             "classification": "primary",
             "identifier": "19992000",
             "name": "1999-2000 Regular Session",
             "start_date": "1998-12-07",
+        },
+        {
+            "classification": "special",
+            "identifier": "19992000 Special Session 1",
+            "name": "1999-2000, 1st Special Session",
         },
         {
             "classification": "primary",
