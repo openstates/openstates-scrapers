@@ -54,6 +54,13 @@ class Georgia(State):
             "start_date": "2019-01-14",
             "end_date": "2020-03-31",
         },
+        {
+            "_scraped_name": "2020 Special Session",
+            "identifier": "2020_ss",
+            "name": "2020 Special Session",
+            "start_date": "2020-03-16",
+            "end_date": "2020-03-20",
+        },
     ]
     ignored_scraped_sessions = [
         "2009-2010 Regular Session",
