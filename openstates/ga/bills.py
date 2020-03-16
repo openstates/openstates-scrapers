@@ -198,13 +198,14 @@ class GABillScraper(Scraper):
 
                     methods = {"Yea": "yes", "Nay": "no"}
 
-                    for vdetail in vote_["Votes"][0]:
-                        whom = vdetail["Member"]
-                        how = vdetail["MemberVoted"]
-                        if whom["Name"] == "VACANT":
-                            continue
-                        name, district = vote_name_pattern.search(whom["Name"]).groups()
-                        vote.vote(methods.get(how, "other"), name, note=district)
+                    if vote_["Votes"] is not None:
+                        for vdetail in vote_["Votes"][0]:
+                            whom = vdetail["Member"]
+                            how = vdetail["MemberVoted"]
+                            if whom["Name"] == "VACANT":
+                                continue
+                            name, district = vote_name_pattern.search(whom["Name"]).groups()
+                            vote.vote(methods.get(how, "other"), name, note=district)
 
                     yield vote
 
