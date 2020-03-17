@@ -25,10 +25,25 @@ class California(State):
             "start_date": "1988-12-05",
         },
         {
+            "classification": "special",
+            "identifier": "19891990 Special Session 1",
+            "name": "1989-1990, 1st Special Session",
+        },
+        {
             "classification": "primary",
             "identifier": "19911992",
             "name": "1991-1992 Regular Session",
             "start_date": "1990-12-03",
+        },
+        {
+            "classification": "special",
+            "identifier": "19911992 Special Session 1",
+            "name": "1991-1992, 1st Special Session",
+        },
+        {
+            "classification": "special",
+            "identifier": "19911992 Special Session 2",
+            "name": "1991-1992, 2nd Special Session",
         },
         {
             "classification": "primary",
