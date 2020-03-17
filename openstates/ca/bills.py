@@ -299,6 +299,8 @@ class CABillScraper(Scraper, LXMLMixin):
                 bill_session += " Special Session %s" % bill.session_num
 
             bill_id = bill.short_bill_id
+            if bill_id.strip() == "SB77" and session == "20052006":
+                continue
 
             fsbill = Bill(bill_id, bill_session, title="", chamber=chamber)
             if (bill_id.startswith("S") and chamber == "lower") or (
