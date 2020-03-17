@@ -14,6 +14,29 @@ import re
 class OHBillScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
 
+    _vote_motion_dict = {
+        "confer_713": "Conference report agreed to",
+        "confer_712": "Conference report agreed to",
+        "msg_506": "Refused to concur in Senate amendments",
+        "motion_913": "Passed",
+        "motion_909": "Motion to reconsider",
+        "final_510": "Motion to reconsider",
+        "imm_consid_360": "Adopted",
+        "pass_300": "Pass",
+        "msg_reso_503": "Adopted",
+        "intro_103": "Adopted",
+        "intro_108": "Adopted",
+        "intro_101": "Adopted",
+        "concur_606": "Concurred in Senate amendments",
+        "crpt_301": "Reported - Substitute",
+        "adopt_reso_110": "Adopted",
+        "intro_102": "Adopted",
+        "concur_608": "Refused to concur in House amendments",
+        "msg_507": "Concurred in Senate amendments",
+        "pass_301": "Adopted",
+        "third_407": "Passed - Amended",
+    }
+
     def scrape(self, session=None, chambers=None):
         # Bills endpoint can sometimes take a very long time to load
         self.timeout = 300
@@ -482,7 +505,7 @@ class OHBillScraper(Scraper):
                 vote = VoteEvent(
                     chamber=chamber,
                     start_date=date,
-                    motion_text=motion,
+                    motion_text=self._vote_motion_dict[motion],
                     result="pass" if passed else "fail",
                     # organization=v["committee"],
                     bill=bill,
@@ -492,7 +515,7 @@ class OHBillScraper(Scraper):
                 vote = VoteEvent(
                     chamber=chamber,
                     start_date=date,
-                    motion_text=motion,
+                    motion_text=self._vote_motion_dict[motion],
                     result="pass" if passed else "fail",
                     classification="passed",
                     bill=bill,
