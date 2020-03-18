@@ -248,38 +248,83 @@ class MEBillScraper(Scraper):
                 if not is_bill_text_missing:
                     vdoc.make_links_absolute(ver_url)
 
+                    if (
+                        len(
+                            vdoc.xpath(
+                                "//span[@class='story_heading']/following::a[contains(@href, 'getPDF')]"
+                            )
+                        )
+                        > 1
+                    ):
+                        print("---------- FIND ME -----------------")
+                        print(len(vdoc.xpath('//span[@class="story_heading"]')))
                     # various versions: billtexts, billdocs, billpdfs
-                    bill_text_html = vdoc.xpath(
-                        'string(//a[contains(@href, \
-                        "billtexts/")][1]/@href)'
-                    )
-                    bill_text_rtf = vdoc.xpath(
-                        'string(//a[contains(@href, \
-                        "billdocs/")][1]/@href)'
-                    )
-                    bill_text_pdf = vdoc.xpath(
-                        'string(//a[contains(@href, \
-                        "getPDF.asp")][1]/@href)'
-                    )
+                    for v in range(
+                        0, len(vdoc.xpath('//span[@class="story_heading"]'))
+                    ):
 
-                    if bill_text_html:
-                        bill.add_version_link(
-                            "Initial Version", bill_text_html, media_type="text/html"
+                        version_title = vdoc.xpath('//span[@class="story_heading"]')[
+                            v
+                        ].text
+                        version_pdf = vdoc.xpath(
+                            f"//span[@class='story_heading'][{v}]/following::a[contains(@href, 'getPDF')]/@href"
+                        )
+                        version_html = vdoc.xpath(
+                            f"//span[@class='story_heading'][{v}]/following::a[contains(@class, 'small_html_btn')]"
+                            "[contains(@href, 'asp')]/@href"
+                        )
+                        version_rtf = vdoc.xpath(
+                            f"//span[@class='story_heading'][{v}]/following::a[contains(@href, 'rtf')]/@href"
+                        )
+                        version_fiscal_pdf = vdoc.xpath(
+                            f"//span[@class='story_heading'][{v}]/following::a[contains(@href, 'fiscalpdfs')]/@href"
+                        )
+                        version_fiscal_html = vdoc.xpath(
+                            f"//span[@class='story_heading'][{v}]/following::a[contains(@href, 'fiscalnotes')]/@href"
                         )
 
-                    if bill_text_rtf:
-                        bill.add_version_link(
-                            "Initial Version",
-                            bill_text_rtf,
-                            media_type="application/rtf",
-                        )
+                        if (
+                            len(
+                                vdoc.xpath(
+                                    "//span[@class='story_heading']/following::a[contains(@href, 'getPDF')]"
+                                )
+                            )
+                            > 1
+                        ):
+                            print(version_title)
+                            print(version_pdf)
 
-                    if bill_text_pdf:
-                        bill.add_version_link(
-                            "Initial Version",
-                            bill_text_pdf,
-                            media_type="application/pdf",
-                        )
+                        if version_pdf:
+                            bill.add_version_link(
+                                version_title,
+                                version_pdf[0],
+                                media_type="application/pdf",
+                            )
+
+                        if version_html:
+                            bill.add_version_link(
+                                version_title, version_html[0], media_type="text/html",
+                            )
+                        if version_html:
+                            bill.add_version_link(
+                                version_title,
+                                version_rtf[0],
+                                media_type="application/rtf",
+                            )
+
+                        if version_fiscal_pdf:
+                            bill.add_document_link(
+                                "Fiscal Note PDF",
+                                version_fiscal_pdf[0],
+                                media_type="application/pdf",
+                            )
+
+                        if version_fiscal_html:
+                            bill.add_document_link(
+                                "Fiscal Note HTML",
+                                version_fiscal_html[0],
+                                media_type="text/html",
+                            )
 
     def scrape_votes(self, bill, url):
         page = self.get(url, retry_on_404=True).text
