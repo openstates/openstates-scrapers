@@ -14,6 +14,9 @@ import re
 class OHBillScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
 
+    # Vote Motion Dictionary was created by comparing vote codes to
+    # the actions tables via dates and chambers. If it made sense, the
+    # vote code was added to the below dictionary.
     _vote_motion_dict = {
         "confer_713": "Conference report agreed to",
         "confer_712": "Conference report agreed to",
