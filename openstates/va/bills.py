@@ -4,7 +4,7 @@ import datetime
 import collections
 import logging
 
-from itertools import tee
+from itertools import tee, zip_longest
 from spatula import Page, Spatula
 from pupa.scrape import Scraper, Bill, VoteEvent
 from .common import SESSION_SITE_IDS
@@ -387,7 +387,7 @@ def pairwise(list_of_items):
     """ allow looking ahead in a list of items """
     a, b = tee(list_of_items)
     next(b, None)
-    return zip(a, b)
+    return zip_longest(a, b)
 
 
 class VaBillScraper(Scraper, Spatula):
