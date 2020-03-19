@@ -270,7 +270,7 @@ class BillDetailPage(Page, Spatula):
 
                 try:
                     next_action = next_ali.text_content().split(" \xa0")[1].split(": ", 1)[1]
-                except ValueError:
+                except (AttributeError, ValueError):
                     next_action = ""
 
                 vrematch_next = self.vote_strip_re.match(next_action)
