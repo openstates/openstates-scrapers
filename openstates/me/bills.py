@@ -250,6 +250,7 @@ class MEBillScraper(Scraper):
 
                     # various versions: billtexts, billdocs, billpdfs
                     v_links = []
+
                     for v in range(
                         0, len(vdoc.xpath('//span[@class="story_heading"]')) - 1
                     ):
@@ -257,23 +258,27 @@ class MEBillScraper(Scraper):
                             v
                         ].text
                         version_pdf = vdoc.xpath(
-                            f"//span[@class='story_heading']/following::a[contains(@href, 'getPDF')]/@href"
+                            "//span[@class='story_heading']/following::a[contains(@href, 'getPDF')]/@href"
                         )
                         version_html = vdoc.xpath(
-                            f"//span[@class='story_heading']/following::a[contains(@class, 'small_html_btn')]"
+                            "//span[@class='story_heading']/following::a[contains(@class, 'small_html_btn')]"
                             "[contains(@href, 'asp')]/@href"
                         )
                         version_rtf = vdoc.xpath(
-                            f"//span[@class='story_heading']/following::a[contains(@href, 'rtf')]/@href"
+                            "//span[@class='story_heading']/following::a[contains(@href, 'rtf')]/@href"
                         )
                         version_fiscal_pdf = vdoc.xpath(
-                            f"//span[@class='story_heading']/following::a[contains(@href, 'fiscalpdfs')]/@href"
+                            "//span[@class='story_heading']/following::a[contains(@href, 'fiscalpdfs')]/@href"
                         )
                         version_fiscal_html = vdoc.xpath(
-                            f"//span[@class='story_heading']/following::a[contains(@href, 'fiscalnotes')]/@href"
+                            "//span[@class='story_heading']/following::a[contains(@href, 'fiscalnotes')]/@href"
                         )
 
+                        # If statement is to prevent out of range errors as some
+                        # //span[@class="story_heading"] objects don't include any urls within them
                         if len(version_pdf) > v:
+                            # Checks to see if the pdf url has already been added.
+                            # Some versions have the exact same pdfs on the individual bill pages.
                             if version_pdf[v] in v_links:
                                 continue
                             else:
