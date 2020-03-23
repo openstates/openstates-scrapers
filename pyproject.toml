@@ -19,7 +19,7 @@ opencivicdata = "^3.0"
 requests = {version = "^2.22", extras = ["security"]}
 mysqlclient = "^1.4.6"
 openstates_metadata = "*"
-pupa = "^0.10.0"
+pupa = "^0.10.1"
 
 
 [build-system]
