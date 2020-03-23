@@ -22,6 +22,9 @@ RUN apt update && apt install -y --no-install-recommends \
       wget \
       unzip \
 #     libcrypto1.1 \
+      libmariadb-dev \
+      mariadb-server \
+      mariadb-client \
       mdbtools && \
       rm -rf /var/lib/apt/lists/*
 
@@ -31,6 +34,6 @@ ENV PYTHONPATH=./openstates
 
 RUN set -ex \
     && pip install poetry \
-    && poetry install
+    && poetry install --extras "california"
 
 ENTRYPOINT ["poetry", "run", "pupa", "update"]
