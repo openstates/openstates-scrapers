@@ -166,7 +166,7 @@ source = ["Cython (>=0.29.7)"]
 category = "main"
 description = "Python interface to MySQL"
 name = "mysqlclient"
-optional = false
+optional = true
 python-versions = "*"
 version = "1.4.6"
 
@@ -343,7 +343,7 @@ scrapelib = ">=1.0.0"
 category = "main"
 description = "Database Abstraction Library"
 name = "sqlalchemy"
-optional = false
+optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 version = "1.3.15"
 
@@ -409,8 +409,11 @@ version = "3.1.0"
 docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
+[extras]
+california = ["mysqlclient", "SQLAlchemy"]
+
 [metadata]
-content-hash = "b92370f528f83b2736e98b715f2e2fb80cda4d1b86dcf08013efbda05a88d97c"
+content-hash = "b6e3cc757c3db7c15f52d4574e2c4fbc2c0ca330cfd5d7576e9c662eee8ceece"
 python-versions = "^3.7"
 
 [metadata.files]
