@@ -17,107 +17,81 @@ class Florida(State):
         # "committees": FlCommitteeScraper,
         # "events": FlEventScraper,
     }
-    # Full session list through 2019:
-    # https://www.flsenate.gov/PublishedContent/OFFICES/SECRETARY/SessionsoftheFloridaSenateFromStatehood.pdf
     legislative_sessions = [
         {
             "name": "2011 Regular Session",
             "identifier": "2011",
             "classification": "primary",
-            "start_date": "2011-03-08",
-            "end_date": "2011-05-06",
         },
         {
             "name": "2012 Regular Session",
             "identifier": "2012",
             "classification": "primary",
-            "start_date": "2012-01-10",
-            "end_date": "2012-03-09",
         },
         {
             "name": "2012 Extraordinary Apportionment Session",
             "identifier": "2012B",
             "classification": "special",
-            "start_date": "2012-03-14",
-            "end_date": "2012-03-28",
         },
         {
             "name": "2013 Regular Session",
             "identifier": "2013",
             "classification": "primary",
-            "start_date": "2013-03-05",
-            "end_date": "2013-05-03",
         },
         {
             "name": "2014 Regular Session",
             "identifier": "2014",
             "classification": "primary",
-            "start_date": "2014-03-03",
-            "end_date": "2014-05-05",
         },
         {
             "name": "2014 Special Session A",
             "identifier": "2014A",
             "classification": "special",
-            "start_date": "2014-08-07",
-            "end_date": "2014-08-15",
         },
         # data for the below
         {
             "name": "2015 Regular Session",
             "identifier": "2015",
             "classification": "primary",
-            "start_date": "2015-03-03",
-            "end_date": "2015-05-01",
         },
         {
             "name": "2015 Special Session A",
             "identifier": "2015A",
             "classification": "special",
-            "start_date": "2015-06-01",
-            "end_date": "2015-06-20",
         },
         {
             "name": "2015 Special Session B",
             "identifier": "2015B",
             "classification": "special",
-            "start_date": "2015-08-10",
-            "end_date": "2015-08-21",
         },
         {
             "name": "2015 Special Session C",
             "identifier": "2015C",
             "classification": "special",
-            "start_date": "2015-10-19",
-            "end_date": "2015-11-06",
         },
         {
             "name": "2016 Regular Session",
             "identifier": "2016",
             "classification": "primary",
-            "start_date": "2016-01-12",
-            "end_date": "2016-03-11",
         },
         {
             "name": "2017 Regular Session",
             "identifier": "2017",
             "classification": "primary",
             "start_date": "2017-03-07",
-            "end_date": "2017-05-08",
+            "end_date": "2017-05-05",
         },
         {
             "name": "2017 Special Session A",
             "identifier": "2017A",
             "classification": "special",
-            "start_date": "2017-06-07",
-            "end_date": "2017-06-09",
         },
         {
             "name": "2018 Regular Session",
             "identifier": "2018",
             "classification": "primary",
-            "start_date": "2018-01-09",
-            "end_date": "2018-03-11",
+            "start_date": "2018-01-08",
+            "end_date": "2018-03-09",
         },
         {
             "name": "2019 Regular Session",
@@ -131,7 +105,6 @@ class Florida(State):
             "identifier": "2020",
             "classification": "primary",
             "start_date": "2020-01-14",
-            "end_date": "2020-03-19",
         },
     ]
     ignored_scraped_sessions = [

@@ -16,38 +16,34 @@ class Iowa(State):
     legislative_sessions = [
         {
             "_scraped_name": "General Assembly: 84",
+            "end_date": "2013-01-13",
             "identifier": "2011-2012",
             "name": "2011-2012 Regular Session",
             "start_date": "2011-01-10",
-            "end_date": "2012-05-09",
         },
         {
             "_scraped_name": "General Assembly: 85",
             "identifier": "2013-2014",
             "name": "2013-2014 Regular Session",
-            "start_date": "2013-01-14",
-            "end_date": "2014-05-02",
         },
         {
             "_scraped_name": "General Assembly: 86",
             "identifier": "2015-2016",
             "name": "2015-2016 Regular Session",
-            "start_date": "2015-01-12",
-            "end_date": "2016-04-29",
         },
         {
             "_scraped_name": "General Assembly: 87",
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-09",
-            "end_date": "2018-05-05",
+            "end_date": "2017-04-22",
         },
         {
             "_scraped_name": "General Assembly: 88",
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-14",
-            "end_date": "2020-04-21",
+            "end_date": "2019-05-03",
         },
     ]
     ignored_scraped_sessions = [

@@ -139,7 +139,6 @@ class Arkansas(State):
             "identifier": "2018S2",
             "name": "2018 Second Extraordinary Session",
             "start_date": "2018-03-13",
-            "end_date": "2018-03-20",
         },
         {
             "_scraped_name": "Fiscal Session, 2020",
@@ -154,7 +153,6 @@ class Arkansas(State):
             "identifier": "2019",
             "name": "2019 Regular Session",
             "start_date": "2019-01-14",
-            "end_date": "2019-04-24",
         },
     ]
     ignored_scraped_sessions = [
