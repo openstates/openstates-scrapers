@@ -148,6 +148,7 @@ class Louisiana(State):
             "identifier": "2018 2nd Extraordinary Session",
             "name": "2018, 2nd Extraordinary Session",
             "start_date": "2018-05-22",
+            "end_date": "2018-06-12",
         },
         {
             "_scraped_name": "2018 Third Extraordinary Session",
@@ -155,6 +156,7 @@ class Louisiana(State):
             "identifier": "2018 3rd Extraordinary Session",
             "name": "2018, 3rd Extraordinary Session",
             "start_date": "2018-06-19",
+            "end_date": "2018-06-27",
         },
         {
             "_scraped_name": "2019 Regular Session",
