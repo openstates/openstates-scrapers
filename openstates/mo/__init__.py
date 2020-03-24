@@ -30,6 +30,7 @@ class Missouri(State):
             "identifier": "2019S1",
             "name": "2019 First Extraordinary Session",
             "start_date": "2019-09-09",
+            "end_date": "2019-09-25",
         },
         {
             "_scraped_name": "2020 Regular Session",
@@ -37,6 +38,7 @@ class Missouri(State):
             "identifier": "2020",
             "name": "2020 Regular Session",
             "start_date": "2020-01-08",
+            "end_date": "2020-05-15",
         },
     ]
     ignored_scraped_sessions = [
