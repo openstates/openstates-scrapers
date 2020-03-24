@@ -22,24 +22,28 @@ class NewJersey(State):
             "identifier": "213",
             "name": "2008-2009 Regular Session",
             "start_date": "2008-01-12",
+            "end_date": "2010-01-10",
         },
         {
             "_scraped_name": "2010-2011",
             "identifier": "214",
             "name": "2010-2011 Regular Session",
             "start_date": "2010-01-12",
+            "end_date": "2012-01-09",
         },
         {
             "_scraped_name": "2012-2013",
             "identifier": "215",
             "name": "2012-2013 Regular Session",
             "start_date": "2012-01-10",
+            "end_date": "2014-01-13",
         },
         {
             "_scraped_name": "2014-2015",
             "identifier": "216",
             "name": "2014-2015 Regular Session",
             "start_date": "2014-01-15",
+            "end_date": "2016-01-11",
         },
         {
             "_scraped_name": "2016-2017",
