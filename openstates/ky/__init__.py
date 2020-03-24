@@ -115,7 +115,6 @@ class Kentucky(State):
             "identifier": "2019RS",
             "name": "2019 Regular Session",
             "start_date": "2019-01-08",
-            "end_date": "2019-03-29",
         },
         {
             "_scraped_name": "2019 Special Session",
@@ -123,7 +122,6 @@ class Kentucky(State):
             "identifier": "2019SS",
             "name": "2019 Special Session",
             "start_date": "2019-07-19",
-            "end_date": "2019-07-24",
         },
         {
             "_scraped_name": "2020 Regular Session",

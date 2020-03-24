@@ -25,7 +25,6 @@ class Kansas(State):
             "identifier": "2011-2012",
             "name": "2011-2012 Regular Session",
             "start_date": "2011-01-12",
-            "end_date": "2012-05-14",
         },
         {
             "_scraped_name": "b2013_14",
@@ -33,7 +32,6 @@ class Kansas(State):
             "identifier": "2013-2014",
             "name": "2013-2014 Regular Session",
             "start_date": "2013-01-14",
-            "end_date": "2014-05-30",
         },
         {
             "_scraped_name": "b2015_16",
@@ -41,23 +39,22 @@ class Kansas(State):
             "identifier": "2015-2016",
             "name": "2015-2016 Regular Session",
             "start_date": "2013-01-14",
-            "end_date": "2016-06-01",
         },
         {
             "_scraped_name": "b2017_18",
             "classification": "primary",
+            "end_date": "2017-05-19",
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-09",
-            "end_date": "2018-04-07",
         },
         {
             "_scraped_name": "b2019_20",
             "classification": "primary",
+            "end_date": "2019-05-10",
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-14",
-            "end_date": "2020-05-31",
         },
     ]
     ignored_scraped_sessions = []
