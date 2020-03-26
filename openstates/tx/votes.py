@@ -77,12 +77,8 @@ def names(el):
                 if " — " in n:
                     n = n.split()[-1]
                 names.append(n)
-                print(n)
         else:
             names.append(name)
-
-        # if len(name) > 20:
-        #     print(name)
 
     if names:
         # First item in the list will have stuff to ignore before an mdash
