@@ -19,18 +19,21 @@ class NorthDakota(State):
             "identifier": "62",
             "name": "62nd Legislative Assembly (2011-2012)",
             "start_date": "2011-01-04",
+            "end_date": "2011-04-28",
         },
         {
             "_scraped_name": "63rd Legislative Assembly (2013-14)",
             "identifier": "63",
             "name": "63rd Legislative Assembly (2013-2014)",
             "start_date": "2013-01-08",
+            "end_date": "2013-05-04",
         },
         {
             "_scraped_name": "64th Legislative Assembly (2015-16)",
             "identifier": "64",
             "name": "64th Legislative Assembly (2015-2016)",
             "start_date": "2015-01-08",
+            "end_date": "2015-04-29",
         },
         {
             "_scraped_name": "65th Legislative Assembly (2017-18)",
@@ -44,6 +47,7 @@ class NorthDakota(State):
             "identifier": "66",
             "name": "66th Legislative Assembly (2019-2020)",
             "start_date": "2019-01-03",
+            "end_date": "2019-04-26",
         },
     ]
     ignored_scraped_sessions = [
