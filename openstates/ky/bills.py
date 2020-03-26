@@ -95,7 +95,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                     bill_abbr = match.group(1)
                     bill_id = bill_abbr.upper() + bill_id.replace(" ", "")
                 else:
-                    bill_id = bill_abbr + bill_id
+                    bill_id = bill_abbr.upper() + bill_id
 
                 yield from self.parse_bill(
                     chamber, session, bill_id, link.attrib["href"]
