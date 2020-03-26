@@ -338,19 +338,6 @@ class CABillScraper(Scraper, LXMLMixin):
                     chunks.append(t)
                 summary = "\n\n".join(chunks)
 
-            long_title_source_url = (
-                "http://leginfo.legislature.ca.gov/faces/billStatusClient.xhtml?"
-            )
-            long_title_source_url += (
-                f"bill_id={session}{bill.session_num}{fsbill.identifier}"
-            )
-            long_title_data = self.get(long_title_source_url).content
-            long_title_doc = html.fromstring(long_title_data)
-            long_title_doc.make_links_absolute(long_title_source_url)
-            long_title = long_title_doc.xpath("//span[@id='statusTitle']")[0].text
-            if long_title:
-                fsbill.add_title(long_title.strip())
-
             for version in bill.versions:
                 if not version.bill_xml:
                     continue

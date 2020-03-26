@@ -249,37 +249,89 @@ class MEBillScraper(Scraper):
                     vdoc.make_links_absolute(ver_url)
 
                     # various versions: billtexts, billdocs, billpdfs
-                    bill_text_html = vdoc.xpath(
-                        'string(//a[contains(@href, \
-                        "billtexts/")][1]/@href)'
-                    )
-                    bill_text_rtf = vdoc.xpath(
-                        'string(//a[contains(@href, \
-                        "billdocs/")][1]/@href)'
-                    )
-                    bill_text_pdf = vdoc.xpath(
-                        'string(//a[contains(@href, \
-                        "getPDF.asp")][1]/@href)'
-                    )
+                    v_links = []
 
-                    if bill_text_html:
-                        bill.add_version_link(
-                            "Initial Version", bill_text_html, media_type="text/html"
+                    for v in range(
+                        0, len(vdoc.xpath('//span[@class="story_heading"]')) - 1
+                    ):
+                        version_title = vdoc.xpath('//span[@class="story_heading"]')[
+                            v
+                        ].text
+                        version_pdf = vdoc.xpath(
+                            "//span[@class='story_heading']/following::a[contains(@href, 'getPDF')]/@href"
+                        )
+                        version_html = vdoc.xpath(
+                            "//span[@class='story_heading']/following::a[contains(@class, 'small_html_btn')]"
+                            "[contains(@href, 'asp')]/@href"
+                        )
+                        version_rtf = vdoc.xpath(
+                            "//span[@class='story_heading']/following::a[contains(@href, 'rtf')]/@href"
+                        )
+                        version_fiscal_pdf = vdoc.xpath(
+                            "//span[@class='story_heading']/following::a[contains(@href, 'fiscalpdfs')]/@href"
+                        )
+                        version_fiscal_html = vdoc.xpath(
+                            "//span[@class='story_heading']/following::a[contains(@href, 'fiscalnotes')]/@href"
                         )
 
-                    if bill_text_rtf:
-                        bill.add_version_link(
-                            "Initial Version",
-                            bill_text_rtf,
-                            media_type="application/rtf",
-                        )
+                        # If statement is to prevent out of range errors as some
+                        # //span[@class="story_heading"] objects don't include any urls within them
+                        if len(version_pdf) > v:
+                            # Checks to see if the pdf url has already been added.
+                            # Some versions have the exact same pdfs on the individual bill pages.
+                            if version_pdf[v] in v_links:
+                                continue
+                            else:
+                                bill.add_version_link(
+                                    version_title,
+                                    version_pdf[v],
+                                    media_type="application/pdf",
+                                )
+                                v_links.append(version_pdf[v])
 
-                    if bill_text_pdf:
-                        bill.add_version_link(
-                            "Initial Version",
-                            bill_text_pdf,
-                            media_type="application/pdf",
-                        )
+                        if len(version_html) > v:
+                            if version_html[v] in v_links:
+                                continue
+                            else:
+                                bill.add_version_link(
+                                    version_title,
+                                    version_html[v],
+                                    media_type="text/html",
+                                )
+                                v_links.append(version_html[v])
+
+                        if len(version_rtf) > v:
+                            if version_rtf[v] in v_links:
+                                continue
+                            else:
+                                bill.add_version_link(
+                                    version_title,
+                                    version_rtf[v],
+                                    media_type="application/rtf",
+                                )
+                                v_links.append(version_rtf[v])
+
+                        if len(version_fiscal_pdf) > v:
+                            if version_fiscal_pdf[v] in v_links:
+                                continue
+                            else:
+                                bill.add_document_link(
+                                    version_title + " - Fiscal Note PDF",
+                                    version_fiscal_pdf[v],
+                                    media_type="application/pdf",
+                                )
+                                v_links.append(version_fiscal_pdf[v])
+
+                        if len(version_fiscal_html) > v:
+                            if version_fiscal_html[v] in v_links:
+                                continue
+                            else:
+                                bill.add_document_link(
+                                    version_title + " - Fiscal Note HTML",
+                                    version_fiscal_html[v],
+                                    media_type="text/html",
+                                )
+                                v_links.append(version_fiscal_html[v])
 
     def scrape_votes(self, bill, url):
         page = self.get(url, retry_on_404=True).text
