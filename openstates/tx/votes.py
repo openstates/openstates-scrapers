@@ -69,7 +69,20 @@ def names(el):
             continue
 
         name = clean_name_special_cases(name)
-        names.append(name)
+
+        if ";" in name:
+            names_still_with_semicolon = name.split(";")
+            for n in names_still_with_semicolon:
+                n = n.strip().replace(".", "")
+                if " — " in n:
+                    n = n.split()[-1]
+                names.append(n)
+                print(n)
+        else:
+            names.append(name)
+
+        # if len(name) > 20:
+        #     print(name)
 
     if names:
         # First item in the list will have stuff to ignore before an mdash
