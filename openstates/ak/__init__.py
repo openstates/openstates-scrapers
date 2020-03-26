@@ -13,11 +13,13 @@ class Alaska(State):
             "_scraped_name": "28th Legislature (2013-2014)",
             "identifier": "28",
             "name": "28th Legislature (2013-2014)",
+            "start_date": "2013-01-15",
         },
         {
             "_scraped_name": "29th Legislature (2015-2016)",
             "identifier": "29",
             "name": "29th Legislature (2015-2016)",
+            "start_date": "2015-01-19",
         },
         {
             "_scraped_name": "30th Legislature (2017-2018)",
