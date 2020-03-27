@@ -6,6 +6,7 @@ from collections import defaultdict
 import lxml.html
 from openstates.utils.lxmlize import LXMLMixin
 from pupa.scrape import Scraper, Bill
+import requests
 from urllib.parse import unquote
 
 
@@ -82,27 +83,25 @@ class NVBillScraper(Scraper, LXMLMixin):
                         self.subject_mapping[bill_id].append(subject)
 
     def scrape_bills(self, chamber, session_slug, session, year):
-
         doc_types = {
             "lower": ["AB", "IP", "AJR", "ACR", "AR"],
             "upper": ["SB", "SJR", "SCR", "SR"],
         }
 
-        listing_url_base = (
-            "https://www.leg.state.nv.us/App/NELIS/REL/{}/HomeBill/"
-            "GetBillsForNavSubPanels?startNumber=1&endNumber=9999&documentCode={}&_={}"
-        )
-
         for doc_type in doc_types[chamber]:
-            listing_url = listing_url_base.format(
-                session_slug, doc_type, time.time() * 1000
-            )
-            listing_page = lxml.html.fromstring(self.get(listing_url).text)
-            listing_page.make_links_absolute("https://www.leg.state.nv.us")
-            bill_row_xpath = "//table/tr/td/span"
-            for row in listing_page.xpath(bill_row_xpath):
-                link_url = row.xpath("a/@href")[0]
-                yield self.scrape_bill(session, session_slug, chamber, link_url)
+            bill_list_url = f"https://www.leg.state.nv.us/App/NELIS/REL/{session_slug}/HomeBill/BillsTab?Filters."
+            "SearchText=&Filters.SelectedBillTypes={doc_type}&Filters.DisplayTitles=false&Filters.PageSize=2147483647"
+            try:
+                listing_page = lxml.html.fromstring(self.get(bill_list_url).text)
+                listing_page.make_links_absolute("https://www.leg.state.nv.us")
+                bill_row_xpath = (
+                    "//div[@class='home-listing bill-listing top-margin-med']//a"
+                )
+                for row in listing_page.xpath(bill_row_xpath):
+                    link_url = row.xpath("@href")[0]
+                    yield self.scrape_bill(session, session_slug, chamber, link_url)
+            except requests.exceptions.RequestException:
+                self.warning("failed to fetch bill listing page")
 
     def scrape_bill(self, session, session_slug, chamber, url):
         page = lxml.html.fromstring(self.get(url).text)
@@ -122,7 +121,7 @@ class NVBillScraper(Scraper, LXMLMixin):
         bill_page = lxml.html.fromstring(self.get(bill_data_url).text)
 
         short_title = self.get_header_field(bill_page, "Summary:").text
-        short_title = short_title.replace(u"\u00a0", " ")
+        short_title = short_title.replace("\u00a0", " ")
 
         bill = Bill(
             identifier=bill_no,
@@ -242,7 +241,10 @@ class NVBillScraper(Scraper, LXMLMixin):
                     doc_url = parts[1]
                     doc_url = unquote(doc_url)
                     bill.add_version_link(
-                        document_name, doc_url, media_type="application/pdf", on_duplicate="ignore"
+                        document_name,
+                        doc_url,
+                        media_type="application/pdf",
+                        on_duplicate="ignore",
                     )
 
     def add_actions(self, page, bill, chamber):
@@ -253,7 +255,7 @@ class NVBillScraper(Scraper, LXMLMixin):
             action_date = tr.xpath("td[1]/text()")[0].strip()
             action_date = datetime.strptime(action_date, "%b %d, %Y")
             action_date = self._tz.localize(action_date)
-            action = tr.xpath("td[2]/text()")[0].strip().replace(u"\u00a0", " ")
+            action = tr.xpath("td[2]/text()")[0].strip().replace("\u00a0", " ")
             # catch chamber changes
             if action.startswith("In Assembly"):
                 actor = "lower"
@@ -307,7 +309,9 @@ class NVBillScraper(Scraper, LXMLMixin):
             name = link.text_content().strip()
             name = "Fiscal Note: {}".format(name)
             url = link.get("href")
-            bill.add_document_link(note=name, url=url, media_type="application/pdf", on_duplicate="ignore")
+            bill.add_document_link(
+                note=name, url=url, media_type="application/pdf", on_duplicate="ignore"
+            )
 
     # def scrape_votes(self, bill_page, page_url, bill, insert, year):
     #     root = lxml.html.fromstring(bill_page)
