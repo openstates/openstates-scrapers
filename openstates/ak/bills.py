@@ -130,46 +130,48 @@ class AKBillScraper(Scraper):
         spons_str = (
             doc.xpath('//span[contains(text(), "Sponsor(S)")]')[0].getparent()[1].text
         )
-        sponsors_match = re.match(r"(SENATOR|REPRESENTATIVE)", spons_str)
-        if sponsors_match:
-            sponsors = spons_str.split(",")
-            sponsor = sponsors[0].strip()
+        # Checks if there is a Sponsor string before matching
+        if spons_str:
+            sponsors_match = re.match(r"(SENATOR|REPRESENTATIVE)", spons_str)
+            if sponsors_match:
+                sponsors = spons_str.split(",")
+                sponsor = sponsors[0].strip()
 
-            if sponsor:
-                bill.add_sponsorship(
-                    sponsors[0].split()[1],
-                    entity_type="person",
-                    classification="primary",
-                    primary=True,
-                )
-
-            for sponsor in sponsors[1:]:
-                sponsor = sponsor.strip()
                 if sponsor:
                     bill.add_sponsorship(
-                        sponsor,
+                        sponsors[0].split()[1],
                         entity_type="person",
-                        classification="cosponsor",
-                        primary=False,
+                        classification="primary",
+                        primary=True,
                     )
 
-        else:
-            # Committee sponsorship
-            spons_str = spons_str.strip()
+                for sponsor in sponsors[1:]:
+                    sponsor = sponsor.strip()
+                    if sponsor:
+                        bill.add_sponsorship(
+                            sponsor,
+                            entity_type="person",
+                            classification="cosponsor",
+                            primary=False,
+                        )
 
-            if re.match(r" BY REQUEST OF THE GOVERNOR$", spons_str):
-                spons_str = re.sub(
-                    r" BY REQUEST OF THE GOVERNOR$", "", spons_str
-                ).title()
-                spons_str = spons_str + " Committee (by request of the governor)"
+            else:
+                # Committee sponsorship
+                spons_str = spons_str.strip()
 
-            if spons_str:
-                bill.add_sponsorship(
-                    spons_str,
-                    entity_type="person",
-                    classification="primary",
-                    primary=True,
-                )
+                if re.match(r" BY REQUEST OF THE GOVERNOR$", spons_str):
+                    spons_str = re.sub(
+                        r" BY REQUEST OF THE GOVERNOR$", "", spons_str
+                    ).title()
+                    spons_str = spons_str + " Committee (by request of the governor)"
+
+                if spons_str:
+                    bill.add_sponsorship(
+                        spons_str,
+                        entity_type="person",
+                        classification="primary",
+                        primary=True,
+                    )
 
         # Get actions
         self._current_comm = None
@@ -454,9 +456,9 @@ class AKBillScraper(Scraper):
             atype.append("committee-failure")
         if action.startswith("PASSED"):
             atype.append("passage")
-        if '(S) TRANSMITTED TO (H)' in action:
+        if "(S) TRANSMITTED TO (H)" in action:
             atype.append("passage")
-        if '(H) TRANSMITTED TO (S)' in action:
+        if "(H) TRANSMITTED TO (S)" in action:
             atype.append("passage")
         if "REFERRED TO" in action:
             atype.append("referral-committee")
