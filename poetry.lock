@@ -176,7 +176,7 @@ description = "python opencivicdata library"
 name = "opencivicdata"
 optional = false
 python-versions = "*"
-version = "3.1.0"
+version = "3.2.0"
 
 [package.dependencies]
 Django = ">=2.2"
@@ -547,7 +547,7 @@ mysqlclient = [
     {file = "mysqlclient-1.4.6.tar.gz", hash = "sha256:f3fdaa9a38752a3b214a6fe79d7cae3653731a53e577821f9187e67cbecb2e16"},
 ]
 opencivicdata = [
-    {file = "opencivicdata-3.1.0.tar.gz", hash = "sha256:cbd8693a53ddac867f642963209ae98c21fd565db4df20769c727395eaedafd8"},
+    {file = "opencivicdata-3.2.0.tar.gz", hash = "sha256:367aa2d570fc698cb819574f51799a7f6462d89b396740522d0bf44e295ed5e4"},
 ]
 openstates-metadata = [
     {file = "openstates_metadata-2020.2.2-py3-none-any.whl", hash = "sha256:90ddca1d2b8ea2a3469870d3d0720684e491ac73dd7c478699682ad2fe74be09"},

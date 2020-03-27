@@ -65,6 +65,8 @@ class Alabama(State):
             "classification": "primary",
             "identifier": "2015os",
             "name": "2015 Organizational Session",
+            "start_date": "2015-01-13",
+            "end_date": "2015-01-14",
         },
         {
             "_scraped_name": "Regular Session 2015",
@@ -120,6 +122,7 @@ class Alabama(State):
             "identifier": "2019fs",
             "name": "First Special Session 2019",
             "start_date": "2019-03-08",
+            "end_date": "2019-03-12",
         },
         {
             "_scraped_name": "Regular Session 2019",

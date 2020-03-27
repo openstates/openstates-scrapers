@@ -18,11 +18,15 @@ class PuertoRico(State):
             "_scraped_name": "2009-2012",
             "identifier": "2009-2012",
             "name": "2009-2012 Session",
+            "start_date": "2009-01-14",
+            "end_date": "2013-01-08",
         },
         {
             "_scraped_name": "2013-2016",
             "identifier": "2013-2016",
             "name": "2013-2016 Session",
+            "start_date": "2013-01-14",
+            "end_date": "2017-01-08",
         },
         {
             "_scraped_name": "2017-2020",

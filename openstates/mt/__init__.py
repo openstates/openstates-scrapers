@@ -16,16 +16,22 @@ class Montana(State):
             "_scraped_name": "20111",
             "identifier": "2011",
             "name": "2011 Regular Session",
+            "start_date": "2011-01-03",
+            "end_date": "2011-04-28",
         },
         {
             "_scraped_name": "20131",
             "identifier": "2013",
             "name": "2013 Regular Session",
+            "start_date": "2013-01-07",
+            "end_date": "2013-04-27",
         },
         {
             "_scraped_name": "20151",
             "identifier": "2015",
             "name": "2015 Regular Session",
+            "start_date": "2015-01-05",
+            "end_date": "2015-04-28",
         },
         {
             "_scraped_name": "20171",
@@ -39,7 +45,7 @@ class Montana(State):
             "identifier": "2019",
             "name": "2019 Regular Session",
             "start_date": "2019-01-07",
-            "end_date": "2017-05-01",
+            "end_date": "2019-04-25",
         },
     ]
     ignored_scraped_sessions = [

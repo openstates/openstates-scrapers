@@ -18,7 +18,8 @@ class SouthCarolina(State):
             "classification": "primary",
             "identifier": "119",
             "name": "2011-2012 Regular Session",
-            "start_date": "2010-11-17",
+            "start_date": "2011-01-11",
+            "end_date": "2012-06-02",
         },
         {
             "_scraped_name": "120 - (2013-2014)",
@@ -26,6 +27,7 @@ class SouthCarolina(State):
             "identifier": "2013-2014",
             "name": "2013-2014 Regular Session",
             "start_date": "2013-01-08",
+            "end_date": "2014-06-06",
         },
         {
             "_scraped_name": "121 - (2015-2016)",
@@ -33,22 +35,23 @@ class SouthCarolina(State):
             "identifier": "2015-2016",
             "name": "2015-2016 Regular Session",
             "start_date": "2015-01-13",
+            "end_date": "2016-06-02",
         },
         {
             "_scraped_name": "122 - (2017-2018)",
             "classification": "primary",
-            "end_date": "2018-05-09",
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-10",
+            "end_date": "2018-05-10",
         },
         {
             "_scraped_name": "123 - (2019-2020)",
             "classification": "primary",
-            "end_date": "2019-05-09",
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-09",
+            "end_date": "2020-05-14",
         },
     ]
     ignored_scraped_sessions = [

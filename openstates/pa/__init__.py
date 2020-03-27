@@ -21,30 +21,40 @@ class Pennsylvania(State):
             "classification": "primary",
             "identifier": "2009-2010",
             "name": "2009-2010 Regular Session",
+            "start_date": "2009-01-06",
+            "end_date": "2010-11-30",
         },
         {
             "_scraped_name": "2009-2010 Special Session #1 (Transportation)",
             "classification": "special",
             "identifier": "2009-2010 Special Session #1 (Transportation)",
             "name": "2009-2010, 1st Special Session",
+            "start_date": "2010-09-16",
+            "end_date": "2010-09-16",
         },
         {
             "_scraped_name": "2011-2012 Regular Session",
             "classification": "primary",
             "identifier": "2011-2012",
             "name": "2011-2012 Regular Session",
+            "start_date": "2011-01-04",
+            "end_date": "2012-11-30",
         },
         {
             "_scraped_name": "2013-2014 Regular Session",
             "classification": "primary",
             "identifier": "2013-2014",
             "name": "2013-2014 Regular Session",
+            "start_date": "2013-01-02",
+            "end_date": "2014-11-12",
         },
         {
             "_scraped_name": "2015-2016 Regular Session",
             "classification": "primary",
             "identifier": "2015-2016",
             "name": "2015-2016 Regular Session",
+            "start_date": "2015-01-06",
+            "end_date": "2016-11-30",
         },
         {
             "_scraped_name": "2017-2018 Regular Session",
@@ -52,7 +62,7 @@ class Pennsylvania(State):
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-03",
-            "end_date": "2017-12-31",
+            "end_date": "2018-11-30",
         },
         {
             "_scraped_name": "2019-2020 Regular Session",
@@ -60,7 +70,7 @@ class Pennsylvania(State):
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-01",
-            "end_date": "2019-12-31",
+            "end_date": "2020-11-30",
         },
     ]
     ignored_scraped_sessions = [

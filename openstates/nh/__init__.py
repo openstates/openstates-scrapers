@@ -13,12 +13,42 @@ class NewHampshire(State):
         "bills": NHBillScraper,
     }
     legislative_sessions = [
-        {"identifier": "2011", "name": "2011 Regular Session"},
-        {"identifier": "2012", "name": "2012 Regular Session"},
-        {"identifier": "2013", "name": "2013 Regular Session"},
-        {"identifier": "2014", "name": "2014 Regular Session"},
-        {"identifier": "2015", "name": "2015 Regular Session"},
-        {"identifier": "2016", "name": "2016 Regular Session"},
+        {
+            "identifier": "2011",
+            "name": "2011 Regular Session",
+            "start_date": "2011-01-06",
+            "end_date": "2011-07-01",
+        },
+        {
+            "identifier": "2012",
+            "name": "2012 Regular Session",
+            "start_date": "2012-01-04",
+            "end_date": "2012-06-27",
+        },
+        {
+            "identifier": "2013",
+            "name": "2013 Regular Session",
+            "start_date": "2013-01-02",
+            "end_date": "2013-07-01",
+        },
+        {
+            "identifier": "2014",
+            "name": "2014 Regular Session",
+            "start_date": "2014-01-08",
+            "end_date": "2014-06-13",
+        },
+        {
+            "identifier": "2015",
+            "name": "2015 Regular Session",
+            "start_date": "2015-01-07",
+            "end_date": "2015-07-01",
+        },
+        {
+            "identifier": "2016",
+            "name": "2016 Regular Session",
+            "start_date": "2016-01-06",
+            "end_date": "2016-06-01",
+        },
         {
             "identifier": "2017",
             "name": "2017 Regular Session",
@@ -26,22 +56,22 @@ class NewHampshire(State):
             "end_date": "2017-06-30",
         },
         {
-            "end_date": "2018-06-30",
             "identifier": "2018",
             "name": "2018 Regular Session",
             "start_date": "2018-01-03",
+            "end_date": "2018-06-30",
         },
         {
-            "end_date": "2019-06-30",
             "identifier": "2019",
             "name": "2019 Regular Session",
             "start_date": "2019-01-02",
+            "end_date": "2019-06-30",
         },
         {
-            "end_date": "2020-06-30",
             "identifier": "2020",
             "name": "2020 Regular Session",
             "start_date": "2020-01-02",
+            "end_date": "2020-06-30",
         },
     ]
     ignored_scraped_sessions = [

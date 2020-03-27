@@ -19,18 +19,24 @@ class Michigan(State):
             "classification": "primary",
             "identifier": "2011-2012",
             "name": "2011-2012 Regular Session",
+            "start_date": "2011-01-12",
+            "end_date": "2012-12-27",
         },
         {
             "_scraped_name": "2013-2014",
             "classification": "primary",
             "identifier": "2013-2014",
             "name": "2013-2014 Regular Session",
+            "start_date": "2013-01-09",
+            "end_date": "2014-12-31",
         },
         {
             "_scraped_name": "2015-2016",
             "classification": "primary",
             "identifier": "2015-2016",
             "name": "2015-2016 Regular Session",
+            "start_date": "2015-01-14",
+            "end_date": "2016-12-31",
         },
         {
             "_scraped_name": "2017-2018",
@@ -38,7 +44,7 @@ class Michigan(State):
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-11",
-            "end_date": "2017-12-31",
+            "end_date": "2018-12-31",
         },
         {
             "_scraped_name": "2019-2020",
@@ -46,7 +52,7 @@ class Michigan(State):
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-09",
-            "end_date": "2019-12-31",
+            "end_date": "2020-12-31",
         },
     ]
     ignored_scraped_sessions = [
