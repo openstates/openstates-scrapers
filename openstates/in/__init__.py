@@ -40,7 +40,7 @@ class Indiana(State):
             "identifier": "2012",
             "name": "2012 Regular Session",
             "start_date": "2012-01-04",
-            "end_date": "2012-03-014",
+            "end_date": "2012-03-14",
         },
         {
             "_scraped_name": "First Regular Session 118th General Assembly (2013)",
