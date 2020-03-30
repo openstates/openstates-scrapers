@@ -171,18 +171,27 @@ class SCBillScraper(Scraper):
             try:
                 self.info(url)
                 data = urllib.request.urlopen(url).read()
+
+                doc = lxml.html.fromstring(data)
+                for bill in doc.xpath('//span[@style="font-weight:bold;"]'):
+                    match = re.match(r"(?:H|S) \d{4}", bill.text)
+                    if match:
+                        # remove * and leading zeroes
+                        bill_id = match.group().replace("*", " ")
+                        bill_id = re.sub(" 0*", " ", bill_id)
+                        self._subjects[bill_id].add(subject)
             except (http.client.IncompleteRead) as e:
                 self.warning("Client IncompleteRead error on {}".format(url))
                 data = e.partial
 
-            doc = lxml.html.fromstring(data)
-            for bill in doc.xpath('//span[@style="font-weight:bold;"]'):
-                match = re.match(r"(?:H|S) \d{4}", bill.text)
-                if match:
-                    # remove * and leading zeroes
-                    bill_id = match.group().replace("*", " ")
-                    bill_id = re.sub(" 0*", " ", bill_id)
-                    self._subjects[bill_id].add(subject)
+            # doc = lxml.html.fromstring(data)
+            # for bill in doc.xpath('//span[@style="font-weight:bold;"]'):
+            #     match = re.match(r"(?:H|S) \d{4}", bill.text)
+            #     if match:
+            #         # remove * and leading zeroes
+            #         bill_id = match.group().replace("*", " ")
+            #         bill_id = re.sub(" 0*", " ", bill_id)
+            #         self._subjects[bill_id].add(subject)
 
     def scrape_vote_history(self, bill, vurl):
         """
