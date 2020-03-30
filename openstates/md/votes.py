@@ -130,11 +130,8 @@ class MDVoteScraper(Scraper, LXMLMixin):
         vote.set_count("absent", absent_count)
         for how, names in voters.items():
             for name in names:
-                if (
-                    name.strip()
-                    and "COPY" not in name
-                    and "Indicates Vote Change" not in name
-                ):
-                    vote.vote(how, name.strip())
+                name = name.strip().replace("*", "")
+                if name and "COPY" not in name and "Indicates Vote Change" not in name:
+                    vote.vote(how, name)
         check_counts(vote, raise_error=True)
         return vote
