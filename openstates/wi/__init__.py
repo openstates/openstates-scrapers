@@ -77,7 +77,7 @@ class Wisconsin(State):
             "identifier": "January 2014 Special Session",
             "name": "Jan 2014 Special Session",
             "start_date": "2014-02-11",
-            "end_date": "2014-3-24",
+            "end_date": "2014-03-24",
         },
         {
             "_scraped_name": "June 2009 Special Session",
