@@ -122,7 +122,7 @@ class MSBillScraper(Scraper):
                 type = "primary"
                 bill.add_source(main_sponsor_url)
                 bill.add_sponsorship(
-                    main_sponsor,
+                    self.clean_voter_name(main_sponsor),
                     classification=type,
                     entity_type="person",
                     primary=True,
@@ -138,7 +138,10 @@ class MSBillScraper(Scraper):
                     type = "cosponsor"
                     bill.add_source(leg_url)
                     bill.add_sponsorship(
-                        leg, classification=type, entity_type="person", primary=False
+                        self.clean_voter_name(leg),
+                        classification=type,
+                        entity_type="person",
+                        primary=False,
                     )
             # Versions
             curr_version = details_root.xpath("string(//CURRENT_OTHER" ")").replace(
@@ -414,6 +417,7 @@ class MSBillScraper(Scraper):
                     # strip trailing .
                     if name[-1] == ".":
                         name = name[:-1]
+                    name = self.clean_voter_name(name)
                     cur_array.append(name)
 
         # return vote object
@@ -440,13 +444,24 @@ class MSBillScraper(Scraper):
         vote.set_count("other", other_count)
         vote.add_source(url)
         for yes_vote in yes_votes:
-            vote.vote("yes", yes_vote)
+            vote.vote("yes", self.clean_voter_name(yes_vote))
         for no_vote in no_votes:
-            vote.vote("no", no_vote)
+            vote.vote("no", self.clean_voter_name(no_vote))
         for absent_vote in absent_votes:
-            vote.vote("absent", absent_vote)
+            vote.vote("absent", self.clean_voter_name(absent_vote))
         for not_voting_vote in not_voting_votes:
-            vote.vote("not voting", not_voting_vote)
+            vote.vote("not voting", self.clean_voter_name(not_voting_vote))
         for other_vote in other_votes:
-            vote.vote("other", other_vote)
+            vote.vote("other", self.clean_voter_name(other_vote))
         yield vote
+
+    def clean_voter_name(self, name):
+        if "--" in name:
+            name = " ".join(name.split("--")[1:])
+        if "_" in name:
+            name = name.replace("_", " ")
+        if "Absent or those" in name:
+            name = name.replace("Absent or those", "")
+        if "Absent and those " in name:
+            name = name.replace("Absent and those ", "")
+        return name.strip()
