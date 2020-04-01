@@ -69,8 +69,6 @@ class KSBillScraper(Scraper):
             # An "original sponsor" is the API's expression of "primary sponsor"
             for primary_sponsor in bill_data["ORIGINAL_SPONSOR"]:
                 primary_sponsor = self.clean_sponsor_name(primary_sponsor)
-                if "Committee" in primary_sponsor:
-                    continue
                 bill.add_sponsorship(
                     name=primary_sponsor,
                     entity_type="organization"
@@ -83,8 +81,6 @@ class KSBillScraper(Scraper):
                 if sponsor in bill_data["ORIGINAL_SPONSOR"]:
                     continue
                 sponsor = self.clean_sponsor_name(sponsor)
-                if "Committee" in sponsor:
-                    continue
                 bill.add_sponsorship(
                     name=sponsor,
                     entity_type="organization"
