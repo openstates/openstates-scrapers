@@ -68,6 +68,7 @@ class KSBillScraper(Scraper):
 
             # An "original sponsor" is the API's expression of "primary sponsor"
             for primary_sponsor in bill_data["ORIGINAL_SPONSOR"]:
+                primary_sponsor = self.clean_sponsor_name(primary_sponsor)
                 bill.add_sponsorship(
                     name=primary_sponsor,
                     entity_type="organization"
@@ -79,6 +80,7 @@ class KSBillScraper(Scraper):
             for sponsor in bill_data["SPONSOR_NAMES"]:
                 if sponsor in bill_data["ORIGINAL_SPONSOR"]:
                     continue
+                sponsor = self.clean_sponsor_name(sponsor)
                 bill.add_sponsorship(
                     name=sponsor,
                     entity_type="organization"
@@ -184,6 +186,11 @@ class KSBillScraper(Scraper):
                 bill.add_document_link(
                     _clean_spaces(amendment_name), amendment, on_duplicate="ignore"
                 )
+
+    def clean_sponsor_name(self, sponsor):
+        if sponsor.split()[0] in ["Representative", "Senator"]:
+            sponsor = "".join(sponsor.split()[1:])
+        return sponsor
 
     def parse_vote(self, bill, link):
         # Server sometimes sends proper error headers,
