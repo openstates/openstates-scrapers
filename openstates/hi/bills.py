@@ -286,6 +286,10 @@ class HIBillScraper(Scraper):
                     relation_type="companion",
                 )
         for sponsor in meta["Introducer(s)"]:
+            if "(Introduced by request of another party)" in sponsor:
+                sponsor = sponsor.replace(
+                    " (Introduced by request of another party)", ""
+                )
             b.add_sponsorship(sponsor, "primary", "person", True)
 
         self.parse_bill_versions_table(b, versions)
