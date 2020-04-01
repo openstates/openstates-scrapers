@@ -147,18 +147,29 @@ class HIBillScraper(Scraper):
                 vote.set_count("no", int(v["n_no"] or 0))
                 vote.set_count("not voting", int(v["n_excused"] or 0))
                 for voter in split_specific_votes(v["yes"]):
+                    voter = self.clean_voter_name(voter)
                     vote.yes(voter)
                 for voter in split_specific_votes(v["yes_resv"]):
+                    voter = self.clean_voter_name(voter)
                     vote.yes(voter)
                 for voter in split_specific_votes(v["no"]):
+                    voter = self.clean_voter_name(voter)
                     vote.no(voter)
                 for voter in split_specific_votes(v["excused"]):
+                    voter = self.clean_voter_name(voter)
                     vote.vote("not voting", voter)
 
                 yield vote
 
             elif re.search("reconsider", string, re.IGNORECASE):
                 reconsiderations.add(actor)
+
+    def clean_voter_name(self, name):
+        if name[-1] == ".":
+            name = name[:-2]
+        if name[0] == " ":
+            name = name[1:]
+        return name.strip()
 
     def parse_bill_versions_table(self, bill, versions):
         versions = versions.xpath("./*")
