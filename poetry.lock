@@ -172,18 +172,19 @@ version = "1.4.6"
 
 [[package]]
 category = "main"
-description = "python opencivicdata library"
-name = "opencivicdata"
+description = "core infrastructure for the openstates project"
+name = "openstates-core"
 optional = false
-python-versions = "*"
-version = "3.2.0"
+python-versions = ">=3.7,<4.0"
+version = "2020.4.1"
 
 [package.dependencies]
 Django = ">=2.2"
-psycopg2-binary = "*"
-
-[package.extras]
-dev = ["pytest (>=3.6)", "pytest-cov", "pytest-django", "coveralls", "flake8"]
+dj_database_url = ">=0.5.0,<0.6.0"
+jsonschema = ">=3.2.0,<4.0.0"
+psycopg2-binary = ">=2.8.4,<3.0.0"
+pytz = ">=2019.3,<2020.0"
+scrapelib = ">=1.2.0,<2.0.0"
 
 [[package]]
 category = "main"
@@ -203,26 +204,6 @@ name = "psycopg2-binary"
 optional = false
 python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*"
 version = "2.8.4"
-
-[[package]]
-category = "main"
-description = "scraping framework for muncipal data"
-name = "pupa"
-optional = false
-python-versions = "*"
-version = "0.10.1"
-
-[package.dependencies]
-Django = ">=2.2"
-dj_database_url = ">=0.3.0"
-jsonschema = ">=3.0.0"
-opencivicdata = ">=3.0.0"
-psycopg2-binary = "*"
-pytz = "*"
-scrapelib = ">=1.0"
-
-[package.extras]
-dev = ["mock", "pytest (>=3.6)", "pytest-cov", "pytest-django", "coveralls", "flake8"]
 
 [[package]]
 category = "main"
@@ -413,7 +394,7 @@ testing = ["jaraco.itertools", "func-timeout"]
 california = ["mysqlclient", "SQLAlchemy"]
 
 [metadata]
-content-hash = "b6e3cc757c3db7c15f52d4574e2c4fbc2c0ca330cfd5d7576e9c662eee8ceece"
+content-hash = "86e196fc5e02ab2bcf4798971f02fb61de388faf3a0341acdc912440bb09eeb1"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -546,8 +527,9 @@ mysqlclient = [
     {file = "mysqlclient-1.4.6-cp38-cp38-win_amd64.whl", hash = "sha256:f646f8d17d02be0872291f258cce3813497bc7888cd4712a577fd1e719b2f213"},
     {file = "mysqlclient-1.4.6.tar.gz", hash = "sha256:f3fdaa9a38752a3b214a6fe79d7cae3653731a53e577821f9187e67cbecb2e16"},
 ]
-opencivicdata = [
-    {file = "opencivicdata-3.2.0.tar.gz", hash = "sha256:367aa2d570fc698cb819574f51799a7f6462d89b396740522d0bf44e295ed5e4"},
+openstates-core = [
+    {file = "openstates-core-2020.4.1.tar.gz", hash = "sha256:87768f5b9e9cfc39aec6460395666ce63cba449d5ecb2c2998a91b88a52d4c5f"},
+    {file = "openstates_core-2020.4.1-py3-none-any.whl", hash = "sha256:f497b84adecf51517904d1b039ccfcd10142ecdb864111c6202ad24e4ec7bf9f"},
 ]
 openstates-metadata = [
     {file = "openstates_metadata-2020.2.2-py3-none-any.whl", hash = "sha256:90ddca1d2b8ea2a3469870d3d0720684e491ac73dd7c478699682ad2fe74be09"},
@@ -586,9 +568,6 @@ psycopg2-binary = [
     {file = "psycopg2_binary-2.8.4-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:50446fae5681fc99f87e505d4e77c9407e683ab60c555ec302f9ac9bffa61103"},
     {file = "psycopg2_binary-2.8.4-cp38-cp38-win32.whl", hash = "sha256:98e10634792ac0e9e7a92a76b4991b44c2325d3e7798270a808407355e7bb0a1"},
     {file = "psycopg2_binary-2.8.4-cp38-cp38-win_amd64.whl", hash = "sha256:b8f490f5fad1767a1331df1259763b3bad7d7af12a75b950c2843ba319b2415f"},
-]
-pupa = [
-    {file = "pupa-0.10.1.tar.gz", hash = "sha256:08699671dbbe142b7dd65b022f15c9e405fa212909ef29c058d96bece92da1d1"},
 ]
 pycparser = [
     {file = "pycparser-2.20-py2.py3-none-any.whl", hash = "sha256:7582ad22678f0fcd81102833f60ef8d0e57288b6b5fb00323d101be910e35705"},

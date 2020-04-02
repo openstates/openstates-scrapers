@@ -1,5 +1,5 @@
 import re
-from pupa.scrape import Person, Scraper
+from openstates_core.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 
 base_url = "http://www.nmlegis.gov/Members/Legislator_List"

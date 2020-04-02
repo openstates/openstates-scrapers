@@ -1,7 +1,7 @@
 import datetime as dt
 import lxml.html
 import re
-from pupa.scrape import Scraper, Bill, VoteEvent
+from openstates_core.scrape import Scraper, Bill, VoteEvent
 from .utils import get_short_codes
 from urllib import parse as urlparse
 

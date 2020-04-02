@@ -5,7 +5,7 @@ import scrapelib
 import json
 import math
 import pytz
-from pupa.scrape import Scraper, Bill, VoteEvent
+from openstates_core.scrape import Scraper, Bill, VoteEvent
 
 from openstates.utils import LXMLMixin
 
@@ -32,7 +32,7 @@ class COBillScraper(Scraper, LXMLMixin):
 
     def scrape(self, chamber=None, session=None):
         """
-        Entry point when invoking this from pupa (or really whatever else)
+        Entry point when invoking this (or really whatever else)
         """
         if not session:
             session = self.latest_session()

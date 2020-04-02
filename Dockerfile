@@ -33,4 +33,4 @@ RUN set -ex \
     && pip install poetry \
     && poetry install
 
-ENTRYPOINT ["poetry", "run", "pupa", "update"]
+ENTRYPOINT ["poetry", "run", "os-update"]

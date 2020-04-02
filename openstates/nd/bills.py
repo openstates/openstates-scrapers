@@ -1,6 +1,6 @@
 from datetime import datetime
 import lxml.html
-from pupa.scrape import Scraper, Bill
+from openstates_core.scrape import Scraper, Bill
 from .actions import NDCategorizer
 import re
 from openstates.utils import LXMLMixin

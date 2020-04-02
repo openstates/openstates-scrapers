@@ -5,7 +5,7 @@ import datetime
 import collections
 
 import lxml.html
-from pupa.scrape import Scraper, Bill, VoteEvent
+from openstates_core.scrape import Scraper, Bill, VoteEvent
 import scrapelib
 
 BASE_URL = "http://www.legislature.mi.gov"
@@ -281,7 +281,10 @@ class MIBillScraper(Scraper):
             return
 
         # split the file into lines using the <p> tags
-        pieces = [p.text_content().replace(u"\xa0", " ").replace("\r\n", " ") for p in vote_doc.xpath("//p")]
+        pieces = [
+            p.text_content().replace(u"\xa0", " ").replace("\r\n", " ")
+            for p in vote_doc.xpath("//p")
+        ]
 
         # go until we find the roll call
         for i, p in enumerate(pieces):

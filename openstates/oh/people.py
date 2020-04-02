@@ -1,6 +1,6 @@
 import re
 
-from pupa.scrape import Person, Scraper, Organization
+from openstates_core.scrape import Person, Scraper, Organization
 
 import lxml.html
 

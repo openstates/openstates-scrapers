@@ -4,7 +4,7 @@ import dateutil.parser
 import re
 
 from openstates.utils import LXMLMixin
-from pupa.scrape import Scraper, Event
+from openstates_core.scrape import Scraper, Event
 
 
 class AKEventScraper(Scraper, LXMLMixin):
@@ -59,8 +59,7 @@ class AKEventScraper(Scraper, LXMLMixin):
             )
         else:
             committee_name = "{} {}".format(
-                self.COMMITTEES_PRETTY[chamber],
-                'MISCELLANEOUS',
+                self.COMMITTEES_PRETTY[chamber], "MISCELLANEOUS",
             )
 
         name = "{} {}".format(

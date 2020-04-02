@@ -1,5 +1,5 @@
 import lxml
-from pupa.scrape import Scraper  # , Organization
+from openstates_core.scrape import Scraper  # , Organization
 
 
 class VICommitteeScraper(Scraper):

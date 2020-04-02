@@ -2,7 +2,7 @@ import datetime
 import json
 import pytz
 
-from pupa.scrape import Scraper, Event
+from openstates_core.scrape import Scraper, Event
 
 
 class VTEventScraper(Scraper):

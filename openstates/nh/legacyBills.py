@@ -3,7 +3,7 @@ import re
 import zipfile
 import datetime as dt
 
-from pupa.scrape import Scraper, Bill, VoteEvent as Vote
+from openstates_core.scrape import Scraper, Bill, VoteEvent as Vote
 
 
 zip_urls = {

@@ -1,5 +1,5 @@
 from .utils import xpath
-from pupa.scrape import Scraper, Organization
+from openstates_core.scrape import Scraper, Organization
 
 import lxml.etree
 

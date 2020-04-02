@@ -3,7 +3,7 @@ import datetime as dt
 
 import scrapelib
 from openstates.utils import LXMLMixin
-from pupa.scrape import Scraper, Event
+from openstates_core.scrape import Scraper, Event
 
 
 calurl = "http://committeeschedule.legis.wisconsin.gov/?filter=Upcoming&committeeID=-1"

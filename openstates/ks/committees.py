@@ -1,7 +1,7 @@
 import json
 
 import scrapelib
-from pupa.scrape import Scraper, Organization
+from openstates_core.scrape import Scraper, Organization
 
 from . import ksapi
 

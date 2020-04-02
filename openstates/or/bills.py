@@ -2,7 +2,7 @@ import datetime
 import re
 import logging
 
-from pupa.scrape import Scraper, Bill
+from openstates_core.scrape import Scraper, Bill
 from .apiclient import OregonLegislatorODataClient
 from .utils import index_legislators, get_timezone, SESSION_KEYS
 

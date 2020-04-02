@@ -1,6 +1,6 @@
 import re
 import lxml.html
-from pupa.scrape import Scraper, Organization
+from openstates_core.scrape import Scraper, Organization
 from .utils import LXMLMixinOK
 
 

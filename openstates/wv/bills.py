@@ -6,8 +6,8 @@ from urllib.parse import unquote_plus, parse_qsl, urlparse
 
 import lxml.html
 
-from pupa.utils import convert_pdf
-from pupa.scrape import Scraper, Bill, VoteEvent
+from openstates_core.utils import convert_pdf
+from openstates_core.scrape import Scraper, Bill, VoteEvent
 import scrapelib
 
 from .actions import Categorizer

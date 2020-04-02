@@ -3,7 +3,7 @@ import datetime
 import lxml
 
 from openstates.utils import LXMLMixin
-from pupa.scrape import Scraper, Event
+from openstates_core.scrape import Scraper, Event
 
 
 class NVEventScraper(Scraper, LXMLMixin):

@@ -2,7 +2,7 @@ import datetime as dt
 import lxml
 import re
 
-from pupa.scrape import Scraper, Event
+from openstates_core.scrape import Scraper, Event
 
 import pytz
 

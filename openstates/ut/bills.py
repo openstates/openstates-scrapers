@@ -1,7 +1,7 @@
 import re
 import datetime
 
-from pupa.scrape import Scraper, Bill, VoteEvent as Vote
+from openstates_core.scrape import Scraper, Bill, VoteEvent as Vote
 from openstates.utils import LXMLMixin
 
 import lxml.html

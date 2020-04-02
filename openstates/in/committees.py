@@ -1,6 +1,6 @@
 import lxml.html
 
-from pupa.scrape import Scraper, Organization
+from openstates_core.scrape import Scraper, Organization
 from .apiclient import ApiClient
 from .utils import get_with_increasing_timeout
 from scrapelib import HTTPError

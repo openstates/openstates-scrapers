@@ -1,4 +1,4 @@
-from pupa.scrape import Scraper, Organization
+from openstates_core.scrape import Scraper, Organization
 import lxml.html
 
 from ._committees import COMMITTEES

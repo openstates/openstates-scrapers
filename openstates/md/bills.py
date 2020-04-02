@@ -3,9 +3,9 @@ import datetime
 import pytz
 
 import lxml.html
-from pupa.scrape import Scraper, Bill, VoteEvent
+from openstates_core.scrape import Scraper, Bill, VoteEvent
 
-from pupa.utils.generic import convert_pdf
+from openstates_core.utils import convert_pdf
 
 # http://mgaleg.maryland.gov/mgawebsite/Legislation/Details/hb0060?ys=2019RS&search=True
 # # passed all

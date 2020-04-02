@@ -3,7 +3,7 @@ import lxml.html
 import re
 from collections import namedtuple
 
-from pupa.scrape import Bill, Scraper, VoteEvent
+from openstates_core.scrape import Bill, Scraper, VoteEvent
 
 
 class Rule(namedtuple("Rule", "regex types stop attrs")):

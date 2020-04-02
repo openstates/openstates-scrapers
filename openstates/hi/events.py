@@ -1,6 +1,6 @@
 from openstates.utils import LXMLMixin
 import datetime as dt
-from pupa.scrape import Scraper, Event
+from openstates_core.scrape import Scraper, Event
 from .utils import get_short_codes
 from requests import HTTPError
 import pytz

@@ -1,5 +1,5 @@
 import json
-from pupa.scrape import Person, Scraper
+from openstates_core.scrape import Person, Scraper
 
 
 class NVPeopleScraper(Scraper):

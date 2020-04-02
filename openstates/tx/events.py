@@ -2,7 +2,7 @@ from openstates.utils import LXMLMixin
 import re
 import datetime as dt
 
-from pupa.scrape import Scraper, Event
+from openstates_core.scrape import Scraper, Event
 
 import pytz
 

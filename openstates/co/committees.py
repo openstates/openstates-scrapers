@@ -1,5 +1,5 @@
 from openstates.utils import LXMLMixin
-from pupa.scrape import Scraper, Organization
+from openstates_core.scrape import Scraper, Organization
 
 COMMITTEE_URL = "http://leg.colorado.gov/content/committees"
 

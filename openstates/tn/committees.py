@@ -19,7 +19,7 @@ Urls are inconsistent
 """
 import re
 
-from pupa.scrape import Scraper, Organization
+from openstates_core.scrape import Scraper, Organization
 import lxml.html
 import requests
 

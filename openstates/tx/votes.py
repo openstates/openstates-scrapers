@@ -6,7 +6,7 @@ import scrapelib
 import collections
 
 import lxml.html
-from pupa.scrape import Scraper, VoteEvent
+from openstates_core.scrape import Scraper, VoteEvent
 
 
 def next_tag(el):

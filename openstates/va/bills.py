@@ -6,7 +6,7 @@ import logging
 
 from itertools import tee, zip_longest
 from spatula import Page, Spatula
-from pupa.scrape import Scraper, Bill, VoteEvent
+from openstates_core.scrape import Scraper, Bill, VoteEvent
 from .common import SESSION_SITE_IDS
 
 
@@ -203,7 +203,9 @@ class BillDetailPage(Page, Spatula):
 
         # actions
         seen_next = False
-        for ali, next_ali in pairwise(self.doc.xpath('//h4[text()="HISTORY"]/following-sibling::ul[1]/li')):
+        for ali, next_ali in pairwise(
+            self.doc.xpath('//h4[text()="HISTORY"]/following-sibling::ul[1]/li')
+        ):
             # If we've used this action text before, we don't need to parse it again
             if seen_next:
                 seen_next = False
@@ -269,7 +271,9 @@ class BillDetailPage(Page, Spatula):
                 vote.set_count("other", o)
 
                 try:
-                    next_action = next_ali.text_content().split(" \xa0")[1].split(": ", 1)[1]
+                    next_action = (
+                        next_ali.text_content().split(" \xa0")[1].split(": ", 1)[1]
+                    )
                 except (AttributeError, ValueError):
                     next_action = ""
 
@@ -282,7 +286,9 @@ class BillDetailPage(Page, Spatula):
                     vote_url_next = next_ali.xpath("a/@href")
                     # Check that the vote counts match and that only one action
                     # has a URL (otherwise, they're probably different votes).
-                    if [y_next, n_next, o_next] == [y, n, o] and len(vote_url) != len(vote_url_next):
+                    if [y_next, n_next, o_next] == [y, n, o] and len(vote_url) != len(
+                        vote_url_next
+                    ):
                         seen_next = True
                         if not vote_url:
                             vote_url = vote_url_next
@@ -291,11 +297,7 @@ class BillDetailPage(Page, Spatula):
                             action = next_action
 
                 if vote_url:
-                    list(
-                        self.scrape_page_items(
-                            VotePage, url=vote_url[0], obj=vote
-                        )
-                    )
+                    list(self.scrape_page_items(VotePage, url=vote_url[0], obj=vote))
                     vote.add_source(vote_url[0])
                 else:
                     vote.add_source(self.url)

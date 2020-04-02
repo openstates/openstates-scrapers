@@ -1,6 +1,6 @@
 import lxml.html
 
-from pupa.scrape import Person, Scraper, Organization
+from openstates_core.scrape import Person, Scraper, Organization
 
 
 class SCPersonScraper(Scraper):

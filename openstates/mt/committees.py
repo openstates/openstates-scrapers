@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import re
 from itertools import dropwhile
-from pupa.scrape import Organization, Scraper
-from pupa.utils.generic import convert_pdf
+from openstates_core.scrape import Organization, Scraper
+from openstates_core.utils import convert_pdf
 
 
 committee_urls = {

@@ -4,8 +4,8 @@ import re
 
 import pytz
 
-from pupa.scrape import Scraper, Event
-from pupa.utils.generic import convert_pdf
+from openstates_core.scrape import Scraper, Event
+from openstates_core.utils import convert_pdf
 
 
 class OHEventScraper(Scraper):

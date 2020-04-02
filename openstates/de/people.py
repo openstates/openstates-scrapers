@@ -1,7 +1,7 @@
 import re
 from openstates.utils import LXMLMixin
 
-from pupa.scrape import Person, Scraper
+from openstates_core.scrape import Person, Scraper
 
 PARTY = {"R": "Republican", "D": "Democratic"}
 

@@ -2,7 +2,7 @@ import re
 import datetime as datetime
 
 import lxml.html
-from pupa.scrape import Scraper, Organization
+from openstates_core.scrape import Scraper, Organization
 
 from openstates.utils import LXMLMixin
 

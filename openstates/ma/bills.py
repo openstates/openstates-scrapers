@@ -3,8 +3,8 @@ import requests
 import os
 from datetime import datetime
 import lxml.html
-from pupa.scrape import Scraper, Bill, VoteEvent
-from pupa.utils import convert_pdf
+from openstates_core.scrape import Scraper, Bill, VoteEvent
+from openstates_core.utils import convert_pdf
 
 from .actions import Categorizer
 
@@ -179,7 +179,9 @@ class MABillScraper(Scraper):
 
         if bill_title is None:
             try:
-                bill_title = page.xpath('//div[contains(@class,"followable")]/h1/text()')[0]
+                bill_title = page.xpath(
+                    '//div[contains(@class,"followable")]/h1/text()'
+                )[0]
                 bill_title = bill_title.replace("Bill", "").strip()
             except IndexError:
                 self.warning("Couldn't find title for {}; skipping".format(bill_id))

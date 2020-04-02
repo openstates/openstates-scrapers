@@ -5,7 +5,7 @@ import datetime
 import collections
 
 import lxml.html
-from pupa.scrape import Scraper, Bill, VoteEvent
+from openstates_core.scrape import Scraper, Bill, VoteEvent
 
 from . import utils
 from . import actions

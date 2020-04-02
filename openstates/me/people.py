@@ -1,5 +1,5 @@
 import re
-from pupa.scrape import Person, Scraper
+from openstates_core.scrape import Person, Scraper
 
 import lxml.html
 

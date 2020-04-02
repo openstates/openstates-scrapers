@@ -1,4 +1,4 @@
-from pupa.scrape import Scraper, Organization
+from openstates_core.scrape import Scraper, Organization
 
 from .util import get_client, get_url, backoff, SESSION_SITE_IDS
 

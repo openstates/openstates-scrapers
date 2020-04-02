@@ -8,7 +8,7 @@ from lxml import etree, html
 from openstates.utils import LXMLMixin
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-from pupa.scrape import Scraper, Bill, VoteEvent
+from openstates_core.scrape import Scraper, Bill, VoteEvent
 from .models import CABill
 from .actions import CACategorizer
 

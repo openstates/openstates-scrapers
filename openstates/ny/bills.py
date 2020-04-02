@@ -4,7 +4,7 @@ import lxml.html
 import pytz
 from collections import defaultdict
 
-from pupa.scrape import Scraper, Bill, VoteEvent
+from openstates_core.scrape import Scraper, Bill, VoteEvent
 
 from .apiclient import OpenLegislationAPIClient
 from .actions import Categorizer
@@ -359,10 +359,7 @@ class NYBillScraper(Scraper):
                 self.term_start_year, version
             )
             bill.add_version_link(
-                version,
-                pdf_url,
-                on_duplicate="ignore",
-                media_type="application/pdf",
+                version, pdf_url, on_duplicate="ignore", media_type="application/pdf",
             )
 
         yield bill
@@ -422,7 +419,7 @@ class NYBillScraper(Scraper):
                     "ER": "excused",
                     "AB": "absent",
                     "NV": "not voting",
-                    "EL": "other"
+                    "EL": "other",
                 }
 
                 for vote_pair in votes:

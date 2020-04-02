@@ -4,7 +4,7 @@ import re
 import lxml.etree
 from itertools import izip
 
-from pupa.scrape import Bill, Scraper
+from openstates_core.scrape import Bill, Scraper
 from openstates.utils import LXMLMixin
 
 # Skip Amendment for now, data is included in Bill entry

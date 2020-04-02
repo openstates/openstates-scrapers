@@ -2,8 +2,8 @@ from datetime import datetime
 import re
 
 import pytz
-from pupa.scrape import Scraper
-from pupa.scrape import Event
+from openstates_core.scrape import Scraper
+from openstates_core.scrape import Event
 
 from openstates.utils import LXMLMixin
 

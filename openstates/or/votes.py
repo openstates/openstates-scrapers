@@ -3,7 +3,7 @@ import datetime
 import logging
 from collections import Counter
 
-from pupa.scrape import VoteEvent, Scraper
+from openstates_core.scrape import VoteEvent, Scraper
 from .apiclient import OregonLegislatorODataClient
 from .utils import index_legislators, get_timezone, SESSION_KEYS
 

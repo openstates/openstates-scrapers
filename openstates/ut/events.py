@@ -2,7 +2,7 @@ import re
 import datetime
 import pytz
 from openstates.utils import LXMLMixin
-from pupa.scrape import Scraper, Event
+from openstates_core.scrape import Scraper, Event
 from scrapelib import HTTPError
 
 

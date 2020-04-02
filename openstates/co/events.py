@@ -1,7 +1,7 @@
 import datetime as dt
 import pytz
 
-from pupa.scrape import Scraper, Event
+from openstates_core.scrape import Scraper, Event
 from openstates.utils import LXMLMixin
 
 

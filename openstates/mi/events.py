@@ -3,7 +3,7 @@ import pytz
 import datetime as dt
 
 import lxml.html
-from pupa.scrape import Scraper, Event
+from openstates_core.scrape import Scraper, Event
 
 
 mi_events = "http://legislature.mi.gov/doc.aspx?CommitteeMeetings"

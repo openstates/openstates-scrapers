@@ -1,7 +1,7 @@
 import re
 
 import lxml.html
-from pupa.scrape import Scraper, Person
+from openstates_core.scrape import Scraper, Person
 
 
 PARTY_DICT = {"D": "Democratic", "R": "Republican", "I": "Independent"}

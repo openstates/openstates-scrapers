@@ -4,7 +4,7 @@ import datetime
 
 import lxml.html
 import scrapelib
-from pupa.scrape import Scraper, Bill, VoteEvent
+from openstates_core.scrape import Scraper, Bill, VoteEvent
 from .common import SESSION_SITE_IDS
 
 TIMEZONE = pytz.timezone("US/Eastern")

@@ -3,7 +3,7 @@ import logging
 import lxml.html
 import re
 
-from pupa.scrape import Person, Scraper
+from openstates_core.scrape import Person, Scraper
 from spatula import Page, CSV, Spatula
 from openstates.utils import validate_phone_number, validate_email_address
 
@@ -42,7 +42,7 @@ class SenList(CSV):
             if "mailto:" in email_link.get("href"):
                 leg["email"] = email_link.get("href").replace("mailto:", "")
 
-        logger = logging.getLogger("pupa")
+        logger = logging.getLogger("openstates")
         logger.info(
             "collected preliminary data on {} legislators".format(len(self.extra_info))
         )

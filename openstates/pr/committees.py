@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
-from pupa.scrape import Scraper, Organization
+from openstates_core.scrape import Scraper, Organization
 from openstates.utils import LXMLMixin
 
 

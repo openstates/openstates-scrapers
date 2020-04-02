@@ -1,7 +1,7 @@
 import re
 from collections import defaultdict
 
-from pupa.scrape import Scraper, Bill, VoteEvent
+from openstates_core.scrape import Scraper, Bill, VoteEvent
 
 from .util import get_client, get_url, backoff, SESSION_SITE_IDS
 
@@ -204,7 +204,9 @@ class GABillScraper(Scraper):
                             how = vdetail["MemberVoted"]
                             if whom["Name"] == "VACANT":
                                 continue
-                            name, district = vote_name_pattern.search(whom["Name"]).groups()
+                            name, district = vote_name_pattern.search(
+                                whom["Name"]
+                            ).groups()
                             vote.vote(methods.get(how, "other"), name, note=district)
 
                     yield vote

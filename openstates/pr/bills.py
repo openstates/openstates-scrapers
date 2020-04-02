@@ -5,7 +5,7 @@ import datetime
 import math
 import requests
 import pytz
-from pupa.scrape import Scraper, Bill, VoteEvent as Vote
+from openstates_core.scrape import Scraper, Bill, VoteEvent as Vote
 
 
 class NoSuchBill(Exception):

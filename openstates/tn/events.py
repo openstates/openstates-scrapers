@@ -1,6 +1,6 @@
 import datetime as dt
 
-from pupa.scrape import Event, Scraper
+from openstates_core.scrape import Event, Scraper
 from openstates.utils import LXMLMixin, url_xpath
 
 import pytz

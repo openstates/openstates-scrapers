@@ -13,10 +13,9 @@ services:
     - PYTHONPATH=./openstates
     - NEW_YORK_API_KEY
     - INDIANA_API_KEY
-    - PUPA_ARGS
     volumes:
     - .:/opt/openstates/openstates/
-    entrypoint: ["poetry", "run", "pupa", "update"]
+    entrypoint: ["poetry", "run", "os-update"]
     networks:
     - openstates-network
   mysql:
@@ -39,7 +38,7 @@ services:
     - PYTHONPATH=./openstates
     volumes:
     - .:/opt/openstates/openstates/
-    entrypoint: ["poetry", "run", "pupa", "update"]
+    entrypoint: ["poetry", "run", "os-update"]
     networks:
     - openstates-network
   ca-download:

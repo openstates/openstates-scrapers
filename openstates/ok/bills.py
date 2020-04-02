@@ -4,7 +4,7 @@ import collections
 import lxml.html
 import scrapelib
 from urllib import parse
-from pupa.scrape import Scraper, Bill, VoteEvent as Vote
+from openstates_core.scrape import Scraper, Bill, VoteEvent as Vote
 from .actions import Categorizer
 
 

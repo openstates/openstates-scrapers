@@ -3,7 +3,7 @@ import pytz
 import datetime
 import json
 
-from pupa.scrape import Scraper, Bill, VoteEvent
+from openstates_core.scrape import Scraper, Bill, VoteEvent
 
 from openstates.utils import LXMLMixin
 

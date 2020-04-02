@@ -3,7 +3,7 @@ import csv
 import urllib
 import datetime
 import pytz
-from pupa.scrape import Scraper, Bill, VoteEvent
+from openstates_core.scrape import Scraper, Bill, VoteEvent
 
 import lxml.html
 

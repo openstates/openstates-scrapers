@@ -2,7 +2,7 @@ import re
 import pytz
 import datetime as dt
 
-from pupa.scrape import Scraper, Event
+from openstates_core.scrape import Scraper, Event
 
 from .utils import MDBMixin
 

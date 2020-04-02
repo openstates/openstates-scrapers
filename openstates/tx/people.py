@@ -3,14 +3,14 @@ import logging
 import lxml.html
 import lxml.html.builder
 
-from pupa.scrape import Person, Scraper
+from openstates_core.scrape import Person, Scraper
 
 from openstates.utils import LXMLMixin
 from .utils import extract_phone, extract_fax
 
 # ----------------------------------------------------------------------------
 # Logging config
-logger = logging.getLogger("pupa.tx-people")
+logger = logging.getLogger("openstates.tx-people")
 
 
 class TXPersonScraper(Scraper, LXMLMixin):

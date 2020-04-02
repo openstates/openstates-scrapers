@@ -6,8 +6,8 @@ import datetime as dt
 
 from openstates.utils import LXMLMixin
 
-from pupa.utils.generic import convert_pdf
-from pupa.scrape import Scraper, VoteEvent
+from openstates_core.utils import convert_pdf
+from openstates_core.scrape import Scraper, VoteEvent
 
 motion_re = r"(?i)On motion of .*, .*"
 bill_re = r"(H|S)(C|J)?(R|M|B) (\d+)"

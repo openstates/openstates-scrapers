@@ -5,8 +5,8 @@ import datetime
 import pytz
 import scrapelib
 import lxml.html
-from pupa.scrape import Scraper, Bill, VoteEvent
-from pupa.utils import convert_pdf
+from openstates_core.scrape import Scraper, Bill, VoteEvent
+from openstates_core.utils import convert_pdf
 
 central = pytz.timezone("US/Central")
 

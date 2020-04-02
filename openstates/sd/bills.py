@@ -2,8 +2,8 @@ import re
 import datetime
 import lxml.html
 
-from pupa.scrape import Scraper, Bill, VoteEvent
-from pupa.scrape.base import ScrapeError
+from openstates_core.scrape import Scraper, Bill, VoteEvent
+from openstates_core.scrape.base import ScrapeError
 
 from openstates.utils import LXMLMixin
 

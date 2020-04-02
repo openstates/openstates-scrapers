@@ -3,8 +3,8 @@ import tempfile
 import lxml
 import logging
 from urllib import parse
-from pupa.scrape import Scraper, Person
-from pupa.utils import convert_pdf
+from openstates_core.scrape import Scraper, Person
+from openstates_core.utils import convert_pdf
 from spatula import Spatula, Page
 from .utils import fix_name
 

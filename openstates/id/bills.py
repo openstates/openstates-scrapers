@@ -1,5 +1,5 @@
-from pupa.scrape import Scraper
-from pupa.scrape import Bill, VoteEvent
+from openstates_core.scrape import Scraper
+from openstates_core.scrape import Bill, VoteEvent
 import re
 import datetime
 from collections import defaultdict

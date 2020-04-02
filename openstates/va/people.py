@@ -3,9 +3,9 @@ import pytz
 import datetime
 
 import lxml.html
-from pupa.scrape import Person
-from pupa.scrape import Scraper
-from pupa.scrape import Organization
+from openstates_core.scrape import Person
+from openstates_core.scrape import Scraper
+from openstates_core.scrape import Organization
 from spatula import Page, Spatula
 
 from .common import SESSION_SITE_IDS

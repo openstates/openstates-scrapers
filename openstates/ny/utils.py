@@ -2,7 +2,7 @@ import collections
 
 import lxml.html
 
-from pupa.utils import convert_pdf
+from openstates_core.utils import convert_pdf
 
 
 class CachedAttr(object):

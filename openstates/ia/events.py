@@ -3,7 +3,7 @@ import datetime
 import lxml.html
 import pytz
 
-from pupa.scrape import Scraper, Event
+from openstates_core.scrape import Scraper, Event
 
 
 class IAEventScraper(Scraper):

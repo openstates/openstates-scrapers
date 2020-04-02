@@ -1,6 +1,6 @@
 import lxml.html
 
-from pupa.scrape import Person, Scraper
+from openstates_core.scrape import Person, Scraper
 
 
 class KYPersonScraper(Scraper):
