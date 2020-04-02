@@ -44,9 +44,8 @@ def toggle_http_version(method):
 def action_type(action):
     """
     Used to standardise the bill actions to the terms specified
-    @ https://opencivicdata.readthedocs.io/en/latest/scrape/bills.html
     :param scraped action:
-    :return opencivicdata action:
+    :return action classifier:
     """
     # http://www.scstatehouse.gov/actionsearch.php is very useful for this
     classifiers = (
