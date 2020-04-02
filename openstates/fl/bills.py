@@ -346,6 +346,7 @@ class FloorVote(PDF):
             # [vote code] [member name]-[district number]
             for vtype, member in re.findall(r"\s*(Y|N|EX|AV)\s+(.*?)-\d{1,3}\s*", line):
                 vtype = {"Y": "yes", "N": "no", "EX": "excused", "AV": "abstain"}[vtype]
+                member = member.strip()
                 vote.vote(vtype, member)
 
         # check totals line up
@@ -378,6 +379,7 @@ class FloorVote(PDF):
                 if not line.strip():
                     break
                 for member in re.findall(r"\s{8,}([A-Z][a-z\'].*?)-\d{1,3}", line):
+                    member = member.strip()
                     vote.vote("not voting", member)
         yield vote
 
@@ -461,6 +463,7 @@ class UpperComVote(PDF):
         # set voters
         for vtype, voters in votes.items():
             for voter in voters:
+                voter = voter.strip()
                 vote.vote(vtype, voter)
 
         yield vote
@@ -565,6 +568,7 @@ class HouseComVote(Page):
                 (member,) = member_vote.xpath("span[2]//text()")
                 (member_vote,) = member_vote.xpath("span[1]//text()")
 
+                member = member.strip()
                 if member_vote == "Y":
                     vote.yes(member)
                 elif member_vote == "N":
