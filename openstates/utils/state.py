@@ -18,7 +18,7 @@ _name_fixes = {
 
 
 # this metaclass is a hack to only add the classification on subclasses
-# pupa checks for a few properties to ensure it has a complete Jurisdiction
+# update checks for a few properties to ensure it has a complete Jurisdiction
 # and if they're all present on State it'll try to run with it instead
 # of the appropriate subclass.  this works around that
 class MetaShim(type):

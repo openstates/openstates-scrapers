@@ -51,9 +51,9 @@ class MABillScraper(Scraper):
         return refiner_list
 
     # sort can be set to "latest" to sort by date modified descending
-    # pupa update ma bills --scrape sort=latest
+    # os-update ma bills --scrape sort=latest
     # bill_no can be set to a specific bill (no spaces) to scrape only one
-    # pupa update ma bills --scrape bill_no=H2
+    # os-update ma bills --scrape bill_no=H2
     def scrape(self, chamber=None, session=None, bill_no=None, sort=None):
         if not session:
             session = self.latest_session()

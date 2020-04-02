@@ -453,9 +453,9 @@ class NYBillScraper(Scraper):
 
     # This scrape supports both windowed scraping for
     # bills updated since a datetime, and individual bill scraping
-    # NEW_YORK_API_KEY=key pupa update ny bills --scrape bill_no=S155
+    # NEW_YORK_API_KEY=key os-update ny bills --scrape bill_no=S155
     # or
-    # NEW_YORK_API_KEY=key pupa update ny bills --scrape window=5d1h
+    # NEW_YORK_API_KEY=key os-update ny bills --scrape window=5d1h
     def scrape(self, session=None, bill_no=None, window=None):
         self.api_client = OpenLegislationAPIClient(self)
 

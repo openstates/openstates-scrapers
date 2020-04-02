@@ -32,7 +32,7 @@ BASE_URL = "https://downloads.leginfo.legislature.ca.gov/"
 
 # ----------------------------------------------------------------------------
 # Logging config
-logger = logging.getLogger("pupa.ca-update")
+logger = logging.getLogger("openstates.ca-update")
 # logger.setLevel(logging.INFO)
 
 # ch = logging.StreamHandler()
