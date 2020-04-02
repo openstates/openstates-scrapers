@@ -111,7 +111,7 @@ class MIBillScraper(Scraper):
             else:
                 classification = "primary"
             bill.add_sponsorship(
-                name=name,
+                name=name.strip(),
                 chamber=chamber,
                 entity_type="person",
                 primary=classification == "primary",
@@ -193,13 +193,12 @@ class MIBillScraper(Scraper):
                         vote.set_count("yes", len(results["yes"]))
                         vote.set_count("no", len(results["no"]))
                         vote.set_count("other", len(results["other"]))
-
                         for name in results["yes"]:
-                            vote.yes(name)
+                            vote.yes(name.strip())
                         for name in results["no"]:
-                            vote.no(name)
+                            vote.no(name.strip())
                         for name in results["other"]:
-                            vote.vote("other", name)
+                            vote.vote("other", name.strip())
 
                         vote.add_source(vote_url)
                         yield vote
@@ -281,7 +280,10 @@ class MIBillScraper(Scraper):
             return
 
         # split the file into lines using the <p> tags
-        pieces = [p.text_content().replace(u"\xa0", " ").replace("\r\n", " ") for p in vote_doc.xpath("//p")]
+        pieces = [
+            p.text_content().replace(u"\xa0", " ").replace("\r\n", " ")
+            for p in vote_doc.xpath("//p")
+        ]
 
         # go until we find the roll call
         for i, p in enumerate(pieces):
