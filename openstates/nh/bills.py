@@ -15,9 +15,7 @@ bill_type_map = {
     "CR": "concurrent resolution",
     "JR": "joint resolution",
     "CO": "concurrent order",
-    # really "bill of address";
-    # see https://github.com/opencivicdata/python-opencivicdata/issues/115
-    "A": "bill",
+    "A": "bill of address",
     # special session senate/house bill
     "SSSB": "bill",
     "SSHB": "bill",
