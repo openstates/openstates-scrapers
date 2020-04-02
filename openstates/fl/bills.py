@@ -464,7 +464,10 @@ class UpperComVote(PDF):
         for vtype, voters in votes.items():
             for voter in voters:
                 voter = voter.strip()
-                vote.vote(vtype, voter)
+                if "  VA" in voter:
+                    voter = " ".join(voter.split()[:-2])
+                if len(voter) > 0:
+                    vote.vote(vtype, voter)
 
         yield vote
 
