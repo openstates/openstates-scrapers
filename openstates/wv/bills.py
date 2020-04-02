@@ -347,6 +347,10 @@ class WVBillScraper(Scraper):
 
             for key, values in votes.items():
                 for value in values:
+                    if "Committee" in value:
+                        continue
+                    if "*" in value:
+                        value = value.replace("*", "")
                     vote.vote(key, value)
 
             yield vote
