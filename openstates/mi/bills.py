@@ -161,7 +161,7 @@ class MIBillScraper(Scraper):
                         chamber_name,
                         objectname,
                     )
-                    results = self.parse_roll_call(vote_url, rc_num)
+                    results = self.parse_roll_call(vote_url, rc_num, session)
 
                     if results is not None:
                         vote_passed = len(results["yes"]) > len(results["no"])
@@ -194,11 +194,26 @@ class MIBillScraper(Scraper):
                         vote.set_count("no", len(results["no"]))
                         vote.set_count("other", len(results["other"]))
                         for name in results["yes"]:
-                            vote.yes(name.strip())
+                            if len(name.split()) < 5:
+                                vote.yes(name.strip())
+                            if session == "2017-2018":
+                                names = name.split("\t")
+                                for n in names:
+                                    vote.yes(name.strip())
                         for name in results["no"]:
-                            vote.no(name.strip())
+                            if len(name.split()) < 5:
+                                vote.no(name.strip())
+                            if session == "2017-2018":
+                                names = name.split("\t")
+                                for n in names:
+                                    vote.no(name.strip())
                         for name in results["other"]:
-                            vote.vote("other", name.strip())
+                            if len(name.split()) < 5:
+                                vote.vote("other", name.strip())
+                            if session == "2017-2018":
+                                names = name.split("\t")
+                                for n in names:
+                                    vote.vote("other", name.strip())
 
                         vote.add_source(vote_url)
                         yield vote
@@ -264,7 +279,7 @@ class MIBillScraper(Scraper):
             url = a[0].get("href")
             return name, url
 
-    def parse_roll_call(self, url, rc_num):
+    def parse_roll_call(self, url, rc_num, session):
         try:
             resp = self.get(url)
         except scrapelib.HTTPError:
@@ -310,7 +325,11 @@ class MIBillScraper(Scraper):
                 # split on multiple spaces not preceeded by commas
                 for l in re.split(r"(?<!,)\s{2,}", p):
                     if l.strip():
-                        results[vtype].append(l)
+                        if session == "2017-2018":
+                            for leg in l.split():
+                                results[vtype].append(leg)
+                        else:
+                            results[vtype].append(l)
             else:
                 self.warning("piece without vtype set: %s", p)
 
