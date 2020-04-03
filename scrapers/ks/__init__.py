@@ -1,8 +1,8 @@
 from scrapers.utils import url_xpath, State
-from openstates.ks.bills import KSBillScraper
-from openstates.ks.people import KSPersonScraper
+from .bills import KSBillScraper
+from .people import KSPersonScraper
 
-# from openstates.ks.committees import KSCommitteeScraper
+# from .committees import KSCommitteeScraper
 
 
 # Kansas API's 429 error response includes:

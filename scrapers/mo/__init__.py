@@ -1,10 +1,10 @@
 from scrapers.utils import url_xpath, State
-from openstates.mo.bills import MOBillScraper
-from openstates.mo.events import MOEventScraper
-from openstates.mo.people import MOPersonScraper
+from .bills import MOBillScraper
+from .events import MOEventScraper
+from .people import MOPersonScraper
 
-# from openstates.mo.votes import MOVoteScraper
-# from openstates.mo.committees import MOCommitteeScraper
+# from .votes import MOVoteScraper
+# from .committees import MOCommitteeScraper
 
 
 class Missouri(State):

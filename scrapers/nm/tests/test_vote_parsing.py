@@ -6,7 +6,7 @@ import datetime
 import tempfile
 from nose.tools import ok_, eq_
 import shutil
-from openstates.nm import NMBillScraper, metadata
+from ..nm import NMBillScraper, metadata
 
 here = os.path.dirname(__file__)
 

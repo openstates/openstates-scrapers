@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import unittest
-from openstates.il import metadata
-from openstates.il.bills import DOC_TYPES, ILBillScraper
+from .il import metadata
+from .il.bills import DOC_TYPES, ILBillScraper
 import logging
 
 log = logging.getLogger("openstates.il.tests.test_bill_metadata")

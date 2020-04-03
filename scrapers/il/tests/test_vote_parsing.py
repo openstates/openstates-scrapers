@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *
 import unittest
-from openstates.il import metadata
-from openstates.il.bills import find_columns, find_columns_and_parse
+from .il import metadata
+from .il.bills import find_columns, find_columns_and_parse
 import logging
 
 log = logging.getLogger("openstates.il.tests.test_bill_metadata")

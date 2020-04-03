@@ -1,8 +1,8 @@
 from scrapers.utils import url_xpath, State
-from openstates.ne.bills import NEBillScraper
-from openstates.ne.people import NEPersonScraper
+from .bills import NEBillScraper
+from .people import NEPersonScraper
 
-# from openstates.ne.committees import NECommitteeScraper
+# from .committees import NECommitteeScraper
 
 
 class Nebraska(State):

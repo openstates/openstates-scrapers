@@ -3,7 +3,7 @@ import os
 import unittest
 import lxml.html
 
-from openstates.tx import votes
+from ..tx import votes
 
 here = os.path.dirname(__file__)
 
