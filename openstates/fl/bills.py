@@ -464,6 +464,8 @@ class UpperComVote(PDF):
         for vtype, voters in votes.items():
             for voter in voters:
                 voter = voter.strip()
+                # Removes the few voter names with a ton of extra spaces with  VA at the end.
+                # Ex: Cruz                                                               VA
                 if "  VA" in voter:
                     voter = " ".join(voter.split()[:-2])
                 if len(voter) > 0:
