@@ -267,9 +267,6 @@ class WYBillScraper(Scraper, LXMLMixin):
 
         yield v
 
-    def clean_voter_name(self, name):
-        return name.strip()
-
     def parse_local_date(self, date_str):
         # provided dates are ISO 8601, but in mountain time
         # and occasionally have fractional time at the end
