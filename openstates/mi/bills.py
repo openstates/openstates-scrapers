@@ -193,28 +193,15 @@ class MIBillScraper(Scraper):
                         vote.set_count("yes", len(results["yes"]))
                         vote.set_count("no", len(results["no"]))
                         vote.set_count("other", len(results["other"]))
-                        for name in results["yes"]:
-                            if len(name.split()) < 5:
-                                vote.yes(name.strip())
-                            if session == "2017-2018":
-                                names = name.split("\t")
-                                for n in names:
-                                    vote.yes(name.strip())
-                        for name in results["no"]:
-                            if len(name.split()) < 5:
-                                vote.no(name.strip())
-                            if session == "2017-2018":
-                                names = name.split("\t")
-                                for n in names:
-                                    vote.no(name.strip())
-                        for name in results["other"]:
-                            if len(name.split()) < 5:
-                                vote.vote("other", name.strip())
-                            if session == "2017-2018":
-                                names = name.split("\t")
-                                for n in names:
-                                    vote.vote("other", name.strip())
-
+                        possible_vote_results = ["yes", "no", "other"]
+                        for pvr in possible_vote_results:
+                            for name in results[pvr]:
+                                if len(name.split()) < 5:
+                                    vote.vote(pvr, name.strip())
+                                if session == "2017-2018":
+                                    names = name.split("\t")
+                                    for n in names:
+                                        vote.vote(pvr, name.strip())
                         vote.add_source(vote_url)
                         yield vote
                 else:
