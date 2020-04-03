@@ -209,7 +209,7 @@ class WIBillScraper(Scraper):
                     if extra_a.text:
                         bill.add_document_link(extra_a.text, extra_a.get("href"))
             else:
-                self.warning("unknown document %s %s" % (bill.identifier, a.text))
+                bill.add_document_link(a.text, a.get("href"), media_type="text/html")
 
         # add actions (second history dl is the full list)
         hist_table = doc.xpath('//table[@class="history"]')[1]

@@ -282,15 +282,26 @@ def record_votes(root, session, chamber):
         v.set_count("not voting", mv.present or 0)
 
         for each in mv.votes["yeas"]:
+            each = clean_vote_name(each)
             v.yes(each)
         for each in mv.votes["nays"]:
+            each = clean_vote_name(each)
             v.no(each)
         for each in mv.votes["present"]:
+            each = clean_vote_name(each)
             v.vote("not voting", each)
         for each in mv.votes["absent"]:
+            each = clean_vote_name(each)
             v.vote("absent", each)
 
         yield v
+
+
+def clean_vote_name(name):
+    # Removes extra text like Committee Meeting —  and Excused —
+    if " — " in name:
+        name = " ".join(name.split(" — ")[1:])
+    return name
 
 
 def viva_voce_votes(root, session, chamber):

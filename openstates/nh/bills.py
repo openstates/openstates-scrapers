@@ -207,9 +207,12 @@ class NHBillScraper(Scraper):
             if session_yr == session and lsr in self.bills:
                 sp_type = "primary" if primary == "1" else "cosponsor"
                 try:
+                    # Removes extra spaces in names
+                    sponsor_name = self.legislators[employee]["name"].strip()
+                    sponsor_name = " ".join(sponsor_name.split())
                     self.bills[lsr].add_sponsorship(
                         classification=sp_type,
-                        name=self.legislators[employee]["name"],
+                        name=sponsor_name,
                         entity_type="person",
                         primary=True if sp_type == "primary" else False,
                     )

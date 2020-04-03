@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openstates"
-version = "2019.12"
+version = "2020.4"
 description = ""
 authors = ["James Turk <james@openstates.org>"]
 
