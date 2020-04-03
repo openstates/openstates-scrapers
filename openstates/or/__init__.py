@@ -37,7 +37,7 @@ class Oregon(State):
         },
         {
             "_scraped_name": "2010 Special Session",
-            "identifier": "2012 Special Session",
+            "identifier": "2010 Special Session",
             "name": "2010 Special Session",
             "start_date": "2010-02-01",
             "end_date": "2010-02-25",
