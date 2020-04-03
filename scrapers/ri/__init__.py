@@ -1,4 +1,4 @@
-from openstates.utils import url_xpath, State
+from scrapers.utils import url_xpath, State
 
 from .bills import RIBillScraper
 from .people import RIPersonScraper

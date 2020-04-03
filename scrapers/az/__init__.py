@@ -1,7 +1,7 @@
 import lxml.html
 import re
 import requests
-from openstates.utils import State
+from scrapers.utils import State
 from .people import AZPersonScraper
 from .bills import AZBillScraper
 

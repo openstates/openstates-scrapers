@@ -1,6 +1,6 @@
 from openstates_core.scrape import Person, Scraper
 
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 
 from .util import get_client, get_url, backoff, SESSION_SITE_IDS
 

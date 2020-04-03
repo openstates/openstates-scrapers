@@ -1,4 +1,4 @@
-from openstates.utils import url_xpath, State
+from scrapers.utils import url_xpath, State
 from openstates.ne.bills import NEBillScraper
 from openstates.ne.people import NEPersonScraper
 

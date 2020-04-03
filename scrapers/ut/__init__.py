@@ -1,5 +1,5 @@
 import re
-from openstates.utils import url_xpath, State
+from scrapers.utils import url_xpath, State
 from .people import UTPersonScraper
 from .events import UTEventScraper
 from .bills import UTBillScraper

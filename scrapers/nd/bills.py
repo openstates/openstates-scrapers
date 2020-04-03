@@ -3,7 +3,7 @@ import lxml.html
 from openstates_core.scrape import Scraper, Bill
 from .actions import NDCategorizer
 import re
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 
 
 class NDBillScraper(Scraper, LXMLMixin):

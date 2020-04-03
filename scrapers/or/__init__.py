@@ -1,4 +1,4 @@
-from openstates.utils import State
+from scrapers.utils import State
 from .people import ORPersonScraper
 from .bills import ORBillScraper
 from .votes import ORVoteScraper

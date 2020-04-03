@@ -1,4 +1,4 @@
-from openstates.utils import State
+from scrapers.utils import State
 from .people import WVPersonScraper
 from .bills import WVBillScraper
 
@@ -164,7 +164,7 @@ class WestVirginia(State):
     ]
 
     def get_session_list(self):
-        from openstates.utils import url_xpath
+        from scrapers.utils import url_xpath
 
         return url_xpath(
             "http://www.legis.state.wv.us/Bill_Status/Bill_Status.cfm",

@@ -27,7 +27,7 @@ RUN apt update && apt install -y --no-install-recommends \
 
 ADD . /opt/openstates/openstates
 WORKDIR /opt/openstates/openstates/
-ENV PYTHONPATH=./openstates
+ENV PYTHONPATH=./scrapers
 
 RUN set -ex \
     && pip install poetry \

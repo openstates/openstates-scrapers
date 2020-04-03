@@ -6,7 +6,7 @@ from collections import defaultdict
 import lxml.html
 from openstates_core.scrape import Scraper, Bill, VoteEvent
 
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 
 from .utils import clean_text, house_get_actor_from_action, senate_get_actor_from_action
 

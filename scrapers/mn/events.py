@@ -5,7 +5,7 @@ import pytz
 from openstates_core.scrape import Scraper
 from openstates_core.scrape import Event
 
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 
 url = "http://www.leg.state.mn.us/calendarday.aspx?jday=all"
 

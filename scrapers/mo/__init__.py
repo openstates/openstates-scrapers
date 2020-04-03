@@ -1,4 +1,4 @@
-from openstates.utils import url_xpath, State
+from scrapers.utils import url_xpath, State
 from openstates.mo.bills import MOBillScraper
 from openstates.mo.events import MOEventScraper
 from openstates.mo.people import MOPersonScraper

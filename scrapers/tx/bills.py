@@ -7,7 +7,7 @@ import xml.etree.cElementTree as etree
 
 from openstates_core.scrape import Scraper, Bill
 from openstates_core.scrape.base import ScrapeError
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 
 
 class TXBillScraper(Scraper, LXMLMixin):

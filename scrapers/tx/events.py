@@ -1,4 +1,4 @@
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 import re
 import datetime as dt
 

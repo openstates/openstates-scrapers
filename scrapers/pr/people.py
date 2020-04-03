@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 from openstates_core.scrape import Person, Scraper
-from openstates.utils import LXMLMixin, validate_phone_number
+from scrapers.utils import LXMLMixin, validate_phone_number
 
 
 class PRPersonScraper(Scraper, LXMLMixin):

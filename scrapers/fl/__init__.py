@@ -5,7 +5,7 @@ from .people import FlPersonScraper
 
 # from .committees import FlCommitteeScraper
 # from .events import FlEventScraper
-from openstates.utils import url_xpath, State
+from scrapers.utils import url_xpath, State
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 

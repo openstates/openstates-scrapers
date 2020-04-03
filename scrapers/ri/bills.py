@@ -4,7 +4,7 @@ import re
 
 from openstates_core.scrape import Scraper, Bill, VoteEvent
 
-from openstates.utils import url_xpath
+from scrapers.utils import url_xpath
 
 subjects = None
 bill_subjects = None

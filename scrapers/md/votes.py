@@ -1,8 +1,8 @@
 import re
 import datetime
 from collections import defaultdict
-from openstates.utils import LXMLMixin
-from openstates.utils.votes import check_counts
+from scrapers.utils import LXMLMixin
+from scrapers.utils.votes import check_counts
 from openstates_core.scrape import Scraper, VoteEvent
 from openstates_core.utils import convert_pdf
 

@@ -1,6 +1,6 @@
 from .people import IDPersonScraper
 from .bills import IDBillScraper
-from openstates.utils import url_xpath, State
+from scrapers.utils import url_xpath, State
 
 # from .committees import IDCommitteeScraper
 

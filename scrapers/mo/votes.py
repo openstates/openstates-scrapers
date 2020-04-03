@@ -4,7 +4,7 @@ import pytz
 import collections
 import datetime as dt
 
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 
 from openstates_core.utils import convert_pdf
 from openstates_core.scrape import Scraper, VoteEvent

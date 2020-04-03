@@ -2,7 +2,7 @@ import scrapelib
 import lxml.html
 from .people import SDLegislatorScraper
 from .bills import SDBillScraper
-from openstates.utils import State
+from scrapers.utils import State
 
 
 class SouthDakota(State):

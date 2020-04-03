@@ -5,7 +5,7 @@ import lxml.etree
 from itertools import izip
 
 from openstates_core.scrape import Bill, Scraper
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 
 # Skip Amendment for now, data is included in Bill entry
 _scrapable_types = ["Bill", "Bill&Amend", "CMZ Permit", "Other", "Resolution"]

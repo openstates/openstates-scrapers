@@ -1,4 +1,4 @@
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 from datetime import timedelta
 import datetime
 

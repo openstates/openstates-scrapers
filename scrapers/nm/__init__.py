@@ -1,4 +1,4 @@
-from openstates.utils import url_xpath, State
+from scrapers.utils import url_xpath, State
 from .people import NMPersonScraper
 from .bills import NMBillScraper
 from .votes import NMVoteScraper

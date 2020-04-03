@@ -10,7 +10,7 @@ services:
     environment:
     - MYSQL_HOST=mysql
     - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
-    - PYTHONPATH=./openstates
+    - PYTHONPATH=./scrapers
     - NEW_YORK_API_KEY
     - INDIANA_API_KEY
     volumes:
@@ -35,7 +35,7 @@ services:
     environment:
     - MYSQL_HOST=mysql
     - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
-    - PYTHONPATH=./openstates
+    - PYTHONPATH=./scrapers
     volumes:
     - .:/opt/openstates/openstates/
     entrypoint: ["poetry", "run", "os-update"]

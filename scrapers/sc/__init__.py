@@ -1,7 +1,7 @@
 from .people import SCPersonScraper
 from .bills import SCBillScraper
 from .events import SCEventScraper
-from openstates.utils import State
+from scrapers.utils import State
 import requests
 import lxml.html
 

@@ -7,7 +7,7 @@ import lxml.html
 
 from openstates_core.scrape import Scraper, Bill
 
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 
 # Base URL for the details of a given bill.
 BILL_DETAIL_URL_BASE = "https://www.revisor.mn.gov/bills/"

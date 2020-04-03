@@ -3,7 +3,7 @@ import scrapelib
 
 from openstates_core.scrape import Person, Scraper
 
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 
 
 class NEPersonScraper(Scraper, LXMLMixin):

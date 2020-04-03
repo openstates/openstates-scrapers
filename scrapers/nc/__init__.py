@@ -1,5 +1,5 @@
 import lxml
-from openstates.utils import State
+from scrapers.utils import State
 from .people import NCPersonScraper
 from .bills import NCBillScraper
 
@@ -353,7 +353,7 @@ class NorthCarolina(State):
     ignored_scraped_sessions = []
 
     def get_session_list(self):
-        from openstates.utils.lxmlize import url_xpath
+        from scrapers.utils.lxmlize import url_xpath
 
         # This is the URL that populates the session `<select>` in the
         # state homepage header navigation

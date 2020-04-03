@@ -2,7 +2,7 @@
 
 """
 import re
-from openstates.utils.actions import Rule, BaseCategorizer
+from scrapers.utils.actions import Rule, BaseCategorizer
 
 
 committees = [

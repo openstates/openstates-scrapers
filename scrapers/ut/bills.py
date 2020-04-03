@@ -2,7 +2,7 @@ import re
 import datetime
 
 from openstates_core.scrape import Scraper, Bill, VoteEvent as Vote
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 
 import lxml.html
 import scrapelib

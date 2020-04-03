@@ -5,7 +5,7 @@ import json
 
 from openstates_core.scrape import Scraper, Bill, VoteEvent
 
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 
 
 TIMEZONE = pytz.timezone("US/Mountain")

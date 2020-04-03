@@ -1,7 +1,7 @@
 import datetime as dt
 
 from openstates_core.scrape import Event, Scraper
-from openstates.utils import LXMLMixin, url_xpath
+from scrapers.utils import LXMLMixin, url_xpath
 
 import pytz
 

@@ -5,7 +5,7 @@ import re
 import lxml.etree
 from openstates_core.scrape import Scraper, Bill, VoteEvent
 
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 
 
 class VTBillScraper(Scraper, LXMLMixin):

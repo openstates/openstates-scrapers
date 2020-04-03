@@ -1,4 +1,4 @@
-from openstates.utils import State
+from scrapers.utils import State
 from .votes import NDVoteScraper
 from .people import NDPersonScraper
 from .bills import NDBillScraper

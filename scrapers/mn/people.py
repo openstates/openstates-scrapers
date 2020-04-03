@@ -5,7 +5,7 @@ import re
 
 from openstates_core.scrape import Person, Scraper
 from spatula import Page, CSV, Spatula
-from openstates.utils import validate_phone_number, validate_email_address
+from scrapers.utils import validate_phone_number, validate_email_address
 
 PARTIES = {"DFL": "Democratic-Farmer-Labor", "R": "Republican"}
 

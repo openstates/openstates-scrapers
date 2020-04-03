@@ -13,7 +13,7 @@ from scrapelib import HTTPError
 
 import lxml.html
 
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 from . import actions
 
 

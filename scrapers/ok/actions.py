@@ -1,5 +1,5 @@
 import re
-from openstates.utils.actions import Rule, BaseCategorizer
+from scrapers.utils.actions import Rule, BaseCategorizer
 
 # These are regex patterns that map to action categories.
 _categorizer_rules = (

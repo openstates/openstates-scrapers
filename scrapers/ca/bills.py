@@ -5,7 +5,7 @@ import operator
 import itertools
 import datetime
 from lxml import etree, html
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from openstates_core.scrape import Scraper, Bill, VoteEvent

@@ -1,7 +1,7 @@
 import re
 
 from openstates_core.scrape import Scraper, Organization
-from openstates.utils import LXMLMixin
+from scrapers.utils import LXMLMixin
 
 
 class NHCommitteeScraper(Scraper, LXMLMixin):

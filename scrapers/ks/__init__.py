@@ -1,4 +1,4 @@
-from openstates.utils import url_xpath, State
+from scrapers.utils import url_xpath, State
 from openstates.ks.bills import KSBillScraper
 from openstates.ks.people import KSPersonScraper
 

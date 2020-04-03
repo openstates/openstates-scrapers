@@ -1,4 +1,4 @@
-from openstates.utils import State
+from scrapers.utils import State
 from .people import PRPersonScraper
 from .bills import PRBillScraper
 
@@ -39,7 +39,7 @@ class PuertoRico(State):
     ignored_scraped_sessions = ["2005-2008", "2001-2004", "1997-2000", "1993-1996"]
 
     def get_session_list(self):
-        from openstates.utils import url_xpath
+        from scrapers.utils import url_xpath
 
         # this URL should work even for future sessions
         return url_xpath(
