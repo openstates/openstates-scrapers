@@ -196,11 +196,13 @@ class MIBillScraper(Scraper):
                         possible_vote_results = ["yes", "no", "other"]
                         for pvr in possible_vote_results:
                             for name in results[pvr]:
-                                if len(name.split()) < 5:
-                                    vote.vote(pvr, name.strip())
                                 if session == "2017-2018":
                                     names = name.split("\t")
                                     for n in names:
+                                        vote.vote(pvr, name.strip())
+                                else:
+                                    # Prevents voter names like "House Bill No. 4451, entitled" and other sentences
+                                    if len(name.split()) < 5:
                                         vote.vote(pvr, name.strip())
                         vote.add_source(vote_url)
                         yield vote
