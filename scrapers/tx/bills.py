@@ -5,8 +5,8 @@ import time
 from urllib import parse as urlparse
 import xml.etree.cElementTree as etree
 
-from openstates_core.scrape import Scraper, Bill
-from openstates_core.scrape.base import ScrapeError
+from openstates.scrape import Scraper, Bill
+from openstates.scrape.base import ScrapeError
 from scrapers.utils import LXMLMixin
 
 

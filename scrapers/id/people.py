@@ -1,6 +1,6 @@
 import re
 import lxml.html
-from openstates_core.scrape import Scraper, Person
+from openstates.scrape import Scraper, Person
 
 BASE_URL = "https://legislature.idaho.gov/%s/membership/"
 CHAMBERS = {"upper": "senate", "lower": "house"}

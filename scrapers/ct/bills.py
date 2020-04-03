@@ -3,7 +3,7 @@ import datetime
 from operator import itemgetter
 from collections import defaultdict
 
-from openstates_core.scrape import Scraper, Bill, VoteEvent as Vote
+from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 from .utils import parse_directory_listing, open_csv
 
 import lxml.html

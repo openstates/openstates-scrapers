@@ -1,7 +1,7 @@
 import json
 import re
 
-from openstates_core.scrape import Organization, Scraper
+from openstates.scrape import Organization, Scraper
 
 
 class VTCommitteeScraper(Scraper):

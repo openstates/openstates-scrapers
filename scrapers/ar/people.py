@@ -1,6 +1,6 @@
 import re
 
-from openstates_core.scrape import Person, Scraper
+from openstates.scrape import Person, Scraper
 import lxml.html
 
 from .common import get_slug_for_session

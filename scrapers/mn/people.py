@@ -3,7 +3,7 @@ import logging
 import lxml.html
 import re
 
-from openstates_core.scrape import Person, Scraper
+from openstates.scrape import Person, Scraper
 from spatula import Page, CSV, Spatula
 from scrapers.utils import validate_phone_number, validate_email_address
 

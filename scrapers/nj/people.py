@@ -1,5 +1,5 @@
 import unicodedata
-from openstates_core.scrape import Scraper, Person
+from openstates.scrape import Scraper, Person
 from .utils import MDBMixin
 
 

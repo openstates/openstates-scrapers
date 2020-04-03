@@ -2,7 +2,7 @@ import re
 from urllib import parse
 from collections import defaultdict
 
-from openstates_core.scrape import Person, Scraper
+from openstates.scrape import Person, Scraper
 
 import lxml.html
 

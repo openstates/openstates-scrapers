@@ -1,8 +1,8 @@
 import os
 import datetime
 
-from openstates_core.scrape import Scraper, Bill, VoteEvent
-from openstates_core.scrape.base import ScrapeError
+from openstates.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape.base import ScrapeError
 
 import xlrd
 import scrapelib

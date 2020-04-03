@@ -6,8 +6,8 @@ import re
 from collections import defaultdict
 from functools import wraps
 
-from openstates_core.scrape import Scraper, Bill, VoteEvent
-from openstates_core.utils import convert_pdf
+from openstates.scrape import Scraper, Bill, VoteEvent
+from openstates.utils import convert_pdf
 import lxml.html
 import urllib
 

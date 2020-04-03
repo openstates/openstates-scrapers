@@ -173,7 +173,7 @@ version = "1.4.6"
 [[package]]
 category = "main"
 description = "core infrastructure for the openstates project"
-name = "openstates-core"
+name = "openstates"
 optional = false
 python-versions = ">=3.6,<4.0"
 version = "4.0.0"
@@ -394,7 +394,7 @@ testing = ["jaraco.itertools", "func-timeout"]
 california = ["mysqlclient", "SQLAlchemy"]
 
 [metadata]
-content-hash = "866921d821bde76859823b52aa295c1b3202f04d73150d594c8b9863f7b8e587"
+content-hash = "78d63f4c09660b419f106c50c36f9acf42f9163e6136e0117981d0997152f1de"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -525,9 +525,9 @@ mysqlclient = [
     {file = "mysqlclient-1.4.6-cp38-cp38-win_amd64.whl", hash = "sha256:f646f8d17d02be0872291f258cce3813497bc7888cd4712a577fd1e719b2f213"},
     {file = "mysqlclient-1.4.6.tar.gz", hash = "sha256:f3fdaa9a38752a3b214a6fe79d7cae3653731a53e577821f9187e67cbecb2e16"},
 ]
-openstates-core = [
-    {file = "openstates-core-4.0.0.tar.gz", hash = "sha256:1fe0f4402c5980fa4ca9f2b9026ad6e34c6330f548a368dc860579d2035d560d"},
-    {file = "openstates_core-4.0.0-py3-none-any.whl", hash = "sha256:33b5e06898313fd3a42ce0aded99696addb667b65c7d4f9fc00463c4ec9e10a0"},
+openstates = [
+    {file = "openstates-4.0.0-py3-none-any.whl", hash = "sha256:bf766360a1ec9fcc0a242d76ec5b0a6269288a3b6d4234b4673f41c1018faa23"},
+    {file = "openstates-4.0.0.tar.gz", hash = "sha256:a951fedd197b292f59a813526e993e8d1a049186904e7f26483c9870885d7368"},
 ]
 openstates-metadata = [
     {file = "openstates_metadata-2020.2.2-py3-none-any.whl", hash = "sha256:90ddca1d2b8ea2a3469870d3d0720684e491ac73dd7c478699682ad2fe74be09"},

@@ -4,8 +4,8 @@ import tempfile
 import os
 import re
 from collections import defaultdict
-from openstates_core.scrape import Scraper, Bill, VoteEvent
-from openstates_core.utils import convert_pdf
+from openstates.scrape import Scraper, Bill, VoteEvent
+from openstates.utils import convert_pdf
 from scrapers.utils import LXMLMixin
 
 

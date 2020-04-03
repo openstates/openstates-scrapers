@@ -4,7 +4,7 @@ import lxml.html
 import pytz
 from collections import defaultdict
 
-from openstates_core.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape import Scraper, Bill, VoteEvent
 
 from .apiclient import OpenLegislationAPIClient
 from .actions import Categorizer

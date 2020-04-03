@@ -4,8 +4,8 @@ import re
 import collections
 import lxml.etree
 
-from openstates_core.utils import convert_pdf
-from openstates_core.scrape import Scraper, VoteEvent
+from openstates.utils import convert_pdf
+from openstates.scrape import Scraper, VoteEvent
 
 
 SITE_IDS = {

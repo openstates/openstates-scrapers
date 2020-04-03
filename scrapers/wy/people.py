@@ -1,7 +1,7 @@
 import json
 import datetime
 
-from openstates_core.scrape import Scraper, Person
+from openstates.scrape import Scraper, Person
 
 
 class WYPersonScraper(Scraper):

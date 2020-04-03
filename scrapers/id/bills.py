@@ -1,5 +1,5 @@
-from openstates_core.scrape import Scraper
-from openstates_core.scrape import Bill, VoteEvent
+from openstates.scrape import Scraper
+from openstates.scrape import Bill, VoteEvent
 import re
 import datetime
 from collections import defaultdict

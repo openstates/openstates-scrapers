@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from openstates_core.scrape import Scraper, Event
+from openstates.scrape import Scraper, Event
 
 import pytz
 

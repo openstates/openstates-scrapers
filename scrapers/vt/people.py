@@ -1,6 +1,6 @@
 import json
 
-from openstates_core.scrape import Person, Scraper
+from openstates.scrape import Person, Scraper
 
 from scrapers.utils import LXMLMixin
 

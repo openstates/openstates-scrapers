@@ -3,7 +3,7 @@ import datetime
 import re
 import pytz
 
-from openstates_core.scrape import Scraper, Event
+from openstates.scrape import Scraper, Event
 
 
 class DCEventScraper(Scraper):

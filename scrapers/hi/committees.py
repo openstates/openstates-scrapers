@@ -1,4 +1,4 @@
-from openstates_core.scrape import Scraper, Organization
+from openstates.scrape import Scraper, Organization
 
 import lxml.html
 

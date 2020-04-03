@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from openstates_core.scrape import Person, Scraper, Organization
+from openstates.scrape import Person, Scraper, Organization
 from .utils import open_csv
 
 

@@ -3,7 +3,7 @@ import json
 import re
 
 import lxml.etree
-from openstates_core.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape import Scraper, Bill, VoteEvent
 
 from scrapers.utils import LXMLMixin
 

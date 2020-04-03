@@ -5,7 +5,7 @@ import datetime
 import collections
 
 import lxml.html
-from openstates_core.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape import Scraper, Bill, VoteEvent
 import scrapelib
 
 BASE_URL = "http://www.legislature.mi.gov"

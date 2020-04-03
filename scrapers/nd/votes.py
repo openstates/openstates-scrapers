@@ -3,8 +3,8 @@ import re
 import datetime
 import requests.exceptions
 from scrapers.utils import LXMLMixin
-from openstates_core.utils import convert_pdf
-from openstates_core.scrape import Scraper, VoteEvent as Vote
+from openstates.utils import convert_pdf
+from openstates.scrape import Scraper, VoteEvent as Vote
 
 
 date_re = (

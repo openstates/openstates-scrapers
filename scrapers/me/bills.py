@@ -7,7 +7,7 @@ import requests
 import lxml.html
 import scrapelib
 
-from openstates_core.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape import Scraper, Bill, VoteEvent
 
 from .actions import Categorizer
 

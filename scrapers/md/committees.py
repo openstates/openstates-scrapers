@@ -1,6 +1,6 @@
 import lxml.html
 
-from openstates_core.scrape import Organization, Scraper
+from openstates.scrape import Organization, Scraper
 
 
 def clean_name(com_name):

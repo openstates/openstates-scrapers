@@ -4,7 +4,7 @@ from pytz import timezone as tmz
 
 from lxml import html
 
-from openstates_core.scrape import Event, Scraper
+from openstates.scrape import Event, Scraper
 
 # from . import session_metadata
 

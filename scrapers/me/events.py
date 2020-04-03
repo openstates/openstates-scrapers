@@ -3,7 +3,7 @@ import dateutil.parser
 import datetime
 import json
 from scrapers.utils import LXMLMixin
-from openstates_core.scrape import Scraper, Event
+from openstates.scrape import Scraper, Event
 
 
 class MEEventScraper(Scraper, LXMLMixin):

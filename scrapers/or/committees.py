@@ -1,6 +1,6 @@
 import logging
 
-from openstates_core.scrape import Scraper, Organization
+from openstates.scrape import Scraper, Organization
 from .apiclient import OregonLegislatorODataClient
 from .utils import SESSION_KEYS, index_legislators
 

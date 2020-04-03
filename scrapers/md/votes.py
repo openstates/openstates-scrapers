@@ -3,8 +3,8 @@ import datetime
 from collections import defaultdict
 from scrapers.utils import LXMLMixin
 from scrapers.utils.votes import check_counts
-from openstates_core.scrape import Scraper, VoteEvent
-from openstates_core.utils import convert_pdf
+from openstates.scrape import Scraper, VoteEvent
+from openstates.utils import convert_pdf
 
 
 class MDVoteScraper(Scraper, LXMLMixin):

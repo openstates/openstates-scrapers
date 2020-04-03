@@ -1,7 +1,7 @@
 import datetime as dt
 import lxml.html
 import re
-from openstates_core.scrape import Bill, Scraper, VoteEvent
+from openstates.scrape import Bill, Scraper, VoteEvent
 import pytz
 from collections import defaultdict
 

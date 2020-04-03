@@ -2,7 +2,7 @@ import json
 import datetime
 
 from lxml import html
-from openstates_core.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape import Scraper, Bill, VoteEvent
 
 from . import utils
 from . import session_metadata

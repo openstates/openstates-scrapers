@@ -1,4 +1,4 @@
-from openstates_core.scrape import Jurisdiction, Organization
+from openstates.scrape import Jurisdiction, Organization
 import openstates_metadata
 
 _name_fixes = {

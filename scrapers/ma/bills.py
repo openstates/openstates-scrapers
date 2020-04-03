@@ -3,8 +3,8 @@ import requests
 import os
 from datetime import datetime
 import lxml.html
-from openstates_core.scrape import Scraper, Bill, VoteEvent
-from openstates_core.utils import convert_pdf
+from openstates.scrape import Scraper, Bill, VoteEvent
+from openstates.utils import convert_pdf
 
 from .actions import Categorizer
 

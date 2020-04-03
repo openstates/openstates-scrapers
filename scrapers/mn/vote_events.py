@@ -3,7 +3,7 @@ import datetime
 import scrapelib
 import lxml.html
 
-from openstates_core.scrape import Scraper, VoteEvent
+from openstates.scrape import Scraper, VoteEvent
 
 VOTES_URLS = {
     "2009-2010": "http://www.house.leg.state.mn.us/votes/getVotesls86.asp",

@@ -1,7 +1,7 @@
 import json
 
 import scrapelib
-from openstates_core.scrape import Person, Scraper
+from openstates.scrape import Person, Scraper
 
 from . import ksapi
 from scrapers.utils import LXMLMixin

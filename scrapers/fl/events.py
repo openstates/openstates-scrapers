@@ -1,7 +1,7 @@
 import pytz
 import datetime
 import feedparser
-from openstates_core.scrape import Scraper, Event
+from openstates.scrape import Scraper, Event
 
 
 class FlEventScraper(Scraper):

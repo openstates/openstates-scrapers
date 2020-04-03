@@ -3,7 +3,7 @@ import datetime as dt
 from collections import defaultdict
 import pytz
 
-from openstates_core.scrape import Scraper, Bill, VoteEvent as Vote
+from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 
 from .nh.legacyBills import NHLegacyBillScraper
 

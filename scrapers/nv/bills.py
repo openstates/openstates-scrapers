@@ -5,7 +5,7 @@ from datetime import datetime
 from collections import defaultdict
 import lxml.html
 from scrapers.utils.lxmlize import LXMLMixin
-from openstates_core.scrape import Scraper, Bill
+from openstates.scrape import Scraper, Bill
 import requests
 from urllib.parse import unquote
 

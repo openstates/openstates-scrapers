@@ -1,5 +1,5 @@
-from openstates_core.scrape import Scraper, Bill, VoteEvent
-from openstates_core.utils import convert_pdf
+from openstates.scrape import Scraper, Bill, VoteEvent
+from openstates.utils import convert_pdf
 from datetime import datetime
 from .utils import append_parens
 import lxml.etree

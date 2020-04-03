@@ -6,7 +6,7 @@ import logging
 
 from itertools import tee, zip_longest
 from spatula import Page, Spatula
-from openstates_core.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape import Scraper, Bill, VoteEvent
 from .common import SESSION_SITE_IDS
 
 

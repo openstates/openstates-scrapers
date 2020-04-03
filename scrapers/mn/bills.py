@@ -5,7 +5,7 @@ import scrapelib
 from collections import defaultdict
 import lxml.html
 
-from openstates_core.scrape import Scraper, Bill
+from openstates.scrape import Scraper, Bill
 
 from scrapers.utils import LXMLMixin
 

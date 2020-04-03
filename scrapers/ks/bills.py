@@ -4,7 +4,7 @@ import datetime
 import requests
 
 import lxml.html
-from openstates_core.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape import Scraper, Bill, VoteEvent
 
 from . import ksapi
 

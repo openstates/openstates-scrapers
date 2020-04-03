@@ -8,7 +8,7 @@ from datetime import datetime
 import lxml.html
 import lxml.etree
 
-from openstates_core.scrape import Scraper, Bill
+from openstates.scrape import Scraper, Bill
 
 
 def session_slug(session):

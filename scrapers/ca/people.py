@@ -4,7 +4,7 @@ import unicodedata
 from operator import methodcaller
 
 import lxml.html
-from openstates_core.scrape import Scraper, Person
+from openstates.scrape import Scraper, Person
 
 
 def parse_address(s, split=re.compile(r"[;,]\s{,3}").split):

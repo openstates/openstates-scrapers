@@ -4,8 +4,8 @@ import re
 
 import pytz
 
-from openstates_core.scrape import Scraper, Event
-from openstates_core.utils import convert_pdf
+from openstates.scrape import Scraper, Event
+from openstates.utils import convert_pdf
 
 
 class OHEventScraper(Scraper):

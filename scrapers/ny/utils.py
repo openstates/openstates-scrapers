@@ -2,7 +2,7 @@ import collections
 
 import lxml.html
 
-from openstates_core.utils import convert_pdf
+from openstates.utils import convert_pdf
 
 
 class CachedAttr(object):

@@ -3,7 +3,7 @@ import pytz
 import datetime
 import lxml.html
 
-from openstates_core.scrape import Scraper, Event
+from openstates.scrape import Scraper, Event
 
 
 def normalize_time(time_string):

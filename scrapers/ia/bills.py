@@ -2,7 +2,7 @@ import re
 import datetime
 import lxml.html
 import requests
-from openstates_core.scrape import Scraper, Bill
+from openstates.scrape import Scraper, Bill
 
 
 class IABillScraper(Scraper):

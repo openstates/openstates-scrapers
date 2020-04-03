@@ -5,7 +5,7 @@ import datetime
 import pytz
 import lxml
 
-from openstates_core.scrape import Scraper, Event
+from openstates.scrape import Scraper, Event
 from .utils import xpath
 
 

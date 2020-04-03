@@ -1,7 +1,7 @@
 import re
 import lxml.html
 
-from openstates_core.scrape import Person, Scraper
+from openstates.scrape import Person, Scraper
 
 
 def _get_table_item(doc, name):

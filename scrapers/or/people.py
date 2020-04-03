@@ -1,4 +1,4 @@
-from openstates_core.scrape import Person, Scraper
+from openstates.scrape import Person, Scraper
 from .apiclient import OregonLegislatorODataClient
 from .utils import SESSION_KEYS
 

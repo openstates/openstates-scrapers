@@ -1,6 +1,6 @@
 from scrapelib import HTTPError
 from scrapers.utils import LXMLMixin
-from openstates_core.scrape import Person, Scraper
+from openstates.scrape import Person, Scraper
 
 
 class UTPersonScraper(Scraper, LXMLMixin):

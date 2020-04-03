@@ -8,8 +8,8 @@ import lxml.html
 import lxml.etree
 import scrapelib
 
-from openstates_core.scrape import Scraper, VoteEvent
-from openstates_core.utils import convert_pdf
+from openstates.scrape import Scraper, VoteEvent
+from openstates.utils import convert_pdf
 
 # Senate vote header
 s_vote_header = re.compile(r"(YES)|(NO)|(ABS)|(EXC)|(REC)")

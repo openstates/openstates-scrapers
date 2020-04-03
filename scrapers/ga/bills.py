@@ -1,7 +1,7 @@
 import re
 from collections import defaultdict
 
-from openstates_core.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape import Scraper, Bill, VoteEvent
 
 from .util import get_client, get_url, backoff, SESSION_SITE_IDS
 

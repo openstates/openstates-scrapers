@@ -2,8 +2,8 @@ import re
 import datetime
 from urllib.parse import urlencode
 from collections import defaultdict
-from openstates_core.scrape import Scraper, Bill, VoteEvent
-from openstates_core.utils import format_datetime
+from openstates.scrape import Scraper, Bill, VoteEvent
+from openstates.utils import format_datetime
 from spatula import Page, PDF, Spatula
 
 

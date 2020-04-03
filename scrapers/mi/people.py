@@ -3,7 +3,7 @@ import requests
 
 import lxml.html
 import scrapelib
-from openstates_core.scrape import Person, Scraper
+from openstates.scrape import Person, Scraper
 
 
 abbr = {"D": "Democratic", "R": "Republican"}

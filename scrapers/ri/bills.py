@@ -2,7 +2,7 @@ import datetime as dt
 import lxml.html
 import re
 
-from openstates_core.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape import Scraper, Bill, VoteEvent
 
 from scrapers.utils import url_xpath
 

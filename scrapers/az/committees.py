@@ -1,4 +1,4 @@
-from openstates_core.scrape import Scraper, Organization
+from openstates.scrape import Scraper, Organization
 from .client import AZClient
 from . import session_metadata
 

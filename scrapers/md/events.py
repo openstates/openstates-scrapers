@@ -4,7 +4,7 @@ import datetime
 
 from urllib.parse import urlsplit, parse_qs
 from scrapers.utils import LXMLMixin
-from openstates_core.scrape import Scraper, Event
+from openstates.scrape import Scraper, Event
 
 
 class MDEventScraper(Scraper, LXMLMixin):

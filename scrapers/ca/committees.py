@@ -4,7 +4,7 @@ from operator import methodcaller
 
 import lxml.html
 import requests.exceptions
-from openstates_core.scrape import Scraper, Organization
+from openstates.scrape import Scraper, Organization
 
 from scrapers.utils import LXMLMixin
 

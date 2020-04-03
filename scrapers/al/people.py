@@ -1,7 +1,7 @@
 import re
 from html.parser import HTMLParser
 
-from openstates_core.scrape import Scraper, Person, Organization
+from openstates.scrape import Scraper, Person, Organization
 
 from scrapers.utils import LXMLMixin
 

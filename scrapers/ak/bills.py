@@ -3,7 +3,7 @@ import datetime
 
 import lxml.html
 
-from openstates_core.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape import Scraper, Bill, VoteEvent
 
 
 class AKBillScraper(Scraper):

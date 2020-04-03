@@ -1,4 +1,4 @@
-from openstates_core.scrape import Person, Scraper
+from openstates.scrape import Person, Scraper
 from scrapers.utils import LXMLMixin
 
 CHAMBER_TO_CO_INTERNAL_CHAMBER_ID = {"lower": 1, "upper": 2}

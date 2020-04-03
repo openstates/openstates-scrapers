@@ -1,4 +1,4 @@
-from openstates_core.scrape import Scraper, Organization
+from openstates.scrape import Scraper, Organization
 from spatula import Spatula, Page
 from .utils import fix_name
 

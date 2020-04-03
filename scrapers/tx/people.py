@@ -3,7 +3,7 @@ import logging
 import lxml.html
 import lxml.html.builder
 
-from openstates_core.scrape import Person, Scraper
+from openstates.scrape import Person, Scraper
 
 from scrapers.utils import LXMLMixin
 from .utils import extract_phone, extract_fax

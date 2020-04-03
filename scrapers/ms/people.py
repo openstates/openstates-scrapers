@@ -1,6 +1,6 @@
 import lxml.etree
 
-from openstates_core.scrape import Person, Scraper
+from openstates.scrape import Person, Scraper
 
 import scrapelib
 import os.path

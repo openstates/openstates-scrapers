@@ -3,7 +3,7 @@ import csv
 import datetime
 from io import StringIO
 
-from openstates_core.scrape import Scraper, Event
+from openstates.scrape import Scraper, Event
 
 import pytz
 

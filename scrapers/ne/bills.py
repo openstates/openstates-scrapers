@@ -2,7 +2,7 @@ import pytz
 import urllib
 from datetime import datetime
 
-from openstates_core.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape import Scraper, Bill, VoteEvent
 
 from scrapers.utils import LXMLMixin
 

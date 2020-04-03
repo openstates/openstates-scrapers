@@ -4,7 +4,7 @@ import dateutil.parser
 import datetime
 
 from scrapers.utils import LXMLMixin
-from openstates_core.scrape import Scraper, Event
+from openstates.scrape import Scraper, Event
 
 
 class MAEventScraper(Scraper, LXMLMixin):

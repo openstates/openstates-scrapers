@@ -4,9 +4,9 @@ import os
 from collections import defaultdict
 from pytz import timezone
 from datetime import datetime
-from openstates_core.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape import Scraper, Bill, VoteEvent
 from scrapers.utils import LXMLMixin
-from openstates_core.utils import convert_pdf
+from openstates.utils import convert_pdf
 import pytz
 import math
 

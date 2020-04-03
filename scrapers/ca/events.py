@@ -3,7 +3,7 @@ import re
 import pytz
 from collections import defaultdict
 
-from openstates_core.scrape import Scraper, Event
+from openstates.scrape import Scraper, Event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
