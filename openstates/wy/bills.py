@@ -233,26 +233,31 @@ class WYBillScraper(Scraper, LXMLMixin):
         v.set_count("other", vote_json["conflictVotesCount"])
 
         for name in vote_json["yesVotes"].split(","):
-            if name.strip():
-                v.yes(name.strip())
+            if name:
+                name = name.strip()
+                v.yes(name)
 
         for name in vote_json["noVotes"].split(","):
-            if name.strip():
-                v.no(name.strip())
+            if name:
+                name = name.strip()
+                v.no(name)
 
         # add votes with other classifications
         # option can be 'yes', 'no', 'absent',
         # 'abstain', 'not voting', 'paired', 'excused'
         for name in vote_json["absentVotes"].split(","):
-            if name.strip():
+            if name:
+                name = name.strip()
                 v.vote(option="absent", voter=name)
 
         for name in vote_json["excusedVotes"].split(","):
-            if name.strip():
+            if name:
+                name = name.strip()
                 v.vote(option="excused", voter=name)
 
         for name in vote_json["conflictVotes"].split(","):
-            if name.strip():
+            if name:
+                name = name.strip()
                 v.vote(option="other", voter=name)
 
         source_url = "http://lso.wyoleg.gov/Legislation/{}/{}".format(
