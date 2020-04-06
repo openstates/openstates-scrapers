@@ -16,6 +16,15 @@ class NEBillScraper(Scraper, LXMLMixin):
         if session is None:
             session = self.jurisdiction.legislative_sessions[-1]
             self.info("no session specified, using %s", session["identifier"])
+        else:
+            session = next(
+                (
+                    item
+                    for item in self.jurisdiction.legislative_sessions
+                    if item["identifier"] == session
+                ),
+                None,
+            )
         start_year = datetime.strptime(session["start_date"], "%Y-%m-%d").year
         end_year = datetime.strptime(session["end_date"], "%Y-%m-%d").year
         yield from self.scrape_year(session["identifier"], start_year)
