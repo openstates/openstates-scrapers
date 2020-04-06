@@ -161,6 +161,10 @@ class NVBillScraper(Scraper, LXMLMixin):
         person_sponsors = page.xpath('.//a[@class="bio"]/text()')
         for leg in person_sponsors:
             name = leg.strip()
+            # Removes leg position from name
+            # Example: Assemblywoman Alexis Hansen
+            if name.split()[0] in ["Assemblywoman", "Assemblyman", "Senator"]:
+                name = " ".join(name.split()[1:]).strip()
             if name not in seen:
                 seen.append(name)
                 bill.add_sponsorship(
