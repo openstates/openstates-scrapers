@@ -1,4 +1,4 @@
-from scrapers.utils import State
+from utils import State
 from .bills import WYBillScraper
 from .people import WYPersonScraper
 

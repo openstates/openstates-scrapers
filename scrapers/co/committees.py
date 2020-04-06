@@ -1,4 +1,4 @@
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 from openstates.scrape import Scraper, Organization
 
 COMMITTEE_URL = "http://leg.colorado.gov/content/committees"

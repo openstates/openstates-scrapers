@@ -2,7 +2,7 @@ import json
 
 from openstates.scrape import Person, Scraper
 
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 
 class VTPersonScraper(Scraper, LXMLMixin):

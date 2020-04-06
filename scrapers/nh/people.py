@@ -1,7 +1,7 @@
 import re
 import csv
 from openstates.scrape import Person, Scraper
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 import requests
 
 

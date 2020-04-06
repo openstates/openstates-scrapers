@@ -1,4 +1,4 @@
-from scrapers.utils import State
+from utils import State
 from .people import ORPersonScraper
 from .bills import ORBillScraper
 from .votes import ORVoteScraper

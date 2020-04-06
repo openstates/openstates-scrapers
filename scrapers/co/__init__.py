@@ -1,5 +1,5 @@
 import re
-from scrapers.utils import url_xpath, State
+from utils import url_xpath, State
 from .people import COLegislatorScraper
 from .bills import COBillScraper
 from .events import COEventScraper

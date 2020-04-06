@@ -1,7 +1,7 @@
 import lxml.html
 import re
 import requests
-from scrapers.utils import State
+from utils import State
 from .people import AZPersonScraper
 from .bills import AZBillScraper
 

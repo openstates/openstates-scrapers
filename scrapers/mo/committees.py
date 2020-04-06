@@ -4,7 +4,7 @@ import datetime as datetime
 import lxml.html
 from openstates.scrape import Scraper, Organization
 
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 
 class MOCommitteeScraper(Scraper, LXMLMixin):

@@ -1,6 +1,6 @@
 import collections
 from openstates.scrape import Scraper, Organization
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 base_url = "http://www.nmlegis.gov/Committee/"
 

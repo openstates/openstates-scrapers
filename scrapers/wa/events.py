@@ -1,4 +1,4 @@
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 from datetime import timedelta
 import datetime
 

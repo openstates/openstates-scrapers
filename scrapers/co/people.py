@@ -1,5 +1,5 @@
 from openstates.scrape import Person, Scraper
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 CHAMBER_TO_CO_INTERNAL_CHAMBER_ID = {"lower": 1, "upper": 2}
 UPPER_ROLE = "Senator"

@@ -1,6 +1,6 @@
 from openstates.scrape import Scraper, Person
 import lxml.html
-from scrapers.utils import validate_phone_number
+from utils import validate_phone_number
 
 
 CHAMBER_URLS = {

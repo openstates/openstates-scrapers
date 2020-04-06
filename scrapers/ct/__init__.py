@@ -1,6 +1,6 @@
 import lxml.html
 import scrapelib
-from scrapers.utils import State
+from utils import State
 from .people import CTPersonScraper
 from .bills import CTBillScraper
 from .events import CTEventScraper

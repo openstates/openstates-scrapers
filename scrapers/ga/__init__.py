@@ -1,4 +1,4 @@
-from scrapers.utils import State
+from utils import State
 from .util import get_client, backoff
 from .bills import GABillScraper
 from .people import GAPersonScraper

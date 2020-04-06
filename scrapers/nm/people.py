@@ -1,6 +1,6 @@
 import re
 from openstates.scrape import Person, Scraper
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 base_url = "http://www.nmlegis.gov/Members/Legislator_List"
 

@@ -6,7 +6,7 @@ import re
 from collections import defaultdict
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 
 class LABillScraper(Scraper, LXMLMixin):

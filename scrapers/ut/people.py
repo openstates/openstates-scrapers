@@ -1,5 +1,5 @@
 from scrapelib import HTTPError
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 from openstates.scrape import Person, Scraper
 
 

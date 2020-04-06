@@ -1,7 +1,7 @@
 import re
 import requests
 import lxml.html
-from scrapers.utils import State
+from utils import State
 from .people import MAPersonScraper
 from .bills import MABillScraper
 from .events import MAEventScraper

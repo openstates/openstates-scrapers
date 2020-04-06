@@ -7,7 +7,7 @@ import math
 import pytz
 from openstates.scrape import Scraper, Bill, VoteEvent
 
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 from .actions import Categorizer
 

@@ -7,7 +7,7 @@ from collections import defaultdict
 from .actions import Categorizer
 from .utils import xpath
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 import lxml.etree
 import lxml.html

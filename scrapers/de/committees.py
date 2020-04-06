@@ -1,6 +1,6 @@
 import lxml.html
 from openstates.scrape import Scraper, Organization
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 
 class DECommitteeScraper(Scraper, LXMLMixin):

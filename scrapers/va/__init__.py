@@ -1,5 +1,5 @@
 import logging
-from scrapers.utils import url_xpath, State
+from utils import url_xpath, State
 
 from .people import VaPersonScraper
 from .bills import VaBillScraper

@@ -1,4 +1,4 @@
-from scrapers.utils import State
+from utils import State
 from .people import DCPersonScraper
 from .bills import DCBillScraper
 from .utils import api_request

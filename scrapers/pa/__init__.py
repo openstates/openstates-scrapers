@@ -1,4 +1,4 @@
-from scrapers.utils import url_xpath, State
+from utils import url_xpath, State
 from .bills import PABillScraper
 from .events import PAEventScraper
 from .people import PALegislatorScraper

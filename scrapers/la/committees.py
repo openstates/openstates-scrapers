@@ -1,6 +1,6 @@
 import re
 
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 from openstates.scrape import Scraper, Organization
 
 

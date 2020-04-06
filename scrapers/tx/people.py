@@ -5,7 +5,7 @@ import lxml.html.builder
 
 from openstates.scrape import Person, Scraper
 
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 from .utils import extract_phone, extract_fax
 
 # ----------------------------------------------------------------------------

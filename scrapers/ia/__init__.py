@@ -1,5 +1,5 @@
 import re
-from scrapers.utils import url_xpath, State
+from utils import url_xpath, State
 from .people import IAPersonScraper
 from .bills import IABillScraper
 from .votes import IAVoteScraper

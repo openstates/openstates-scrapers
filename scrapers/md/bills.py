@@ -4,7 +4,6 @@ import pytz
 
 import lxml.html
 from openstates.scrape import Scraper, Bill, VoteEvent
-
 from openstates.utils import convert_pdf
 
 # http://mgaleg.maryland.gov/mgawebsite/Legislation/Details/hb0060?ys=2019RS&search=True

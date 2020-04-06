@@ -1,7 +1,7 @@
 import re
 import lxml
 from openstates.scrape import Person, Scraper
-from scrapers.utils import LXMLMixin, validate_email_address
+from utils import LXMLMixin, validate_email_address
 from .utils import LXMLMixinOK
 
 

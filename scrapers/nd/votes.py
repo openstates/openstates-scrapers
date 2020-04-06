@@ -2,7 +2,7 @@ import os
 import re
 import datetime
 import requests.exceptions
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 from openstates.utils import convert_pdf
 from openstates.scrape import Scraper, VoteEvent as Vote
 

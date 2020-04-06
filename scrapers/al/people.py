@@ -3,7 +3,7 @@ from html.parser import HTMLParser
 
 from openstates.scrape import Scraper, Person, Organization
 
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 
 class ALPersonScraper(Scraper, LXMLMixin):

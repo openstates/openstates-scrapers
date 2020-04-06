@@ -5,7 +5,7 @@ import lxml.html
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.scrape.base import ScrapeError
 
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 
 class SDBillScraper(Scraper, LXMLMixin):

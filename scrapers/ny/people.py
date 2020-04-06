@@ -2,7 +2,7 @@ import re
 import datetime
 
 from openstates.scrape import Person, Scraper
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 
 class NYPersonScraper(Scraper, LXMLMixin):

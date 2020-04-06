@@ -1,4 +1,4 @@
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 import datetime as dt
 from openstates.scrape import Scraper, Event
 from .utils import get_short_codes

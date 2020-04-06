@@ -1,5 +1,5 @@
 import datetime
-from scrapers.utils import State
+from utils import State
 from .people import NHPersonScraper
 from .bills import NHBillScraper
 

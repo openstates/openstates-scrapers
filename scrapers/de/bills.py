@@ -2,7 +2,7 @@ import datetime as dt
 import json
 
 from openstates.scrape import Scraper, Bill, VoteEvent
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 from .actions import Categorizer
 
 

@@ -3,7 +3,7 @@ import dateutil.parser
 import datetime
 
 from urllib.parse import urlsplit, parse_qs
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
 
 

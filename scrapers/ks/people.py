@@ -4,7 +4,7 @@ import scrapelib
 from openstates.scrape import Person, Scraper
 
 from . import ksapi
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 
 class KSPersonScraper(Scraper, LXMLMixin):

@@ -4,7 +4,7 @@ from datetime import datetime
 
 from openstates.scrape import Scraper, Bill, VoteEvent
 
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 
 TIMEZONE = pytz.timezone("US/Central")

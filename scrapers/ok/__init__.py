@@ -1,4 +1,4 @@
-from scrapers.utils import State
+from utils import State
 from .people import OKPersonScraper
 from .bills import OKBillScraper
 
@@ -123,7 +123,7 @@ class Oklahoma(State):
     ]
 
     def get_session_list(self):
-        from scrapers.utils import url_xpath
+        from utils import url_xpath
 
         sessions = url_xpath(
             "http://webserver1.lsb.state.ok.us/WebApplication2/WebForm1.aspx",

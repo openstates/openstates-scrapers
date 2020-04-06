@@ -1,4 +1,4 @@
-from scrapers.utils import url_xpath, State
+from utils import url_xpath, State
 from .people import NVPeopleScraper
 from .bills import NVBillScraper
 from .events import NVEventScraper

@@ -1,7 +1,7 @@
 import re
 import datetime
 import pytz
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
 from scrapelib import HTTPError
 

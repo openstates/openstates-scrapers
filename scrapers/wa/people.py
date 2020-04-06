@@ -1,6 +1,6 @@
 import re
 from openstates.scrape import Person, Scraper
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 
 class WAPersonScraper(Scraper, LXMLMixin):

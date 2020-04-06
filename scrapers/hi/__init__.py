@@ -1,4 +1,4 @@
-from scrapers.utils import url_xpath, State
+from utils import url_xpath, State
 from .people import HIPersonScraper
 from .events import HIEventScraper
 from .bills import HIBillScraper

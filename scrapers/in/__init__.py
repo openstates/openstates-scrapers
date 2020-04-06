@@ -1,6 +1,6 @@
 import os
 import requests
-from scrapers.utils import State
+from utils import State
 from .people import INPersonScraper
 from .bills import INBillScraper
 

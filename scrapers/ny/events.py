@@ -4,7 +4,7 @@ import datetime as dt
 import pytz
 from openstates.scrape import Scraper, Event
 
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 url = "http://assembly.state.ny.us/leg/?sh=hear"
 

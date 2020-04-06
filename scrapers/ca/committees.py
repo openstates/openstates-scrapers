@@ -6,7 +6,7 @@ import lxml.html
 import requests.exceptions
 from openstates.scrape import Scraper, Organization
 
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 
 
 strip = methodcaller("strip")

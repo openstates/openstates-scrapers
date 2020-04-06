@@ -1,4 +1,4 @@
-from scrapers.utils import State, url_xpath
+from utils import State, url_xpath
 
 from .bills import AKBillScraper
 from .events import AKEventScraper

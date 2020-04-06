@@ -1,6 +1,6 @@
 import datetime as dt
 
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 from openstates.scrape import Event, Scraper
 
 import pytz

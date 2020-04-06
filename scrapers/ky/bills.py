@@ -5,7 +5,7 @@ from collections import defaultdict
 from pytz import timezone
 from datetime import datetime
 from openstates.scrape import Scraper, Bill, VoteEvent
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 from openstates.utils import convert_pdf
 import pytz
 import math

@@ -2,7 +2,7 @@ import pytz
 import datetime
 import lxml
 
-from scrapers.utils import LXMLMixin
+from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
 
 

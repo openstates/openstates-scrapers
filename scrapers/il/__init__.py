@@ -1,5 +1,5 @@
 # encoding=utf-8
-from scrapers.utils import url_xpath, State
+from utils import url_xpath, State
 from .bills import IlBillScraper
 from .people import IlPersonScraper
 from .events import IlEventScraper
