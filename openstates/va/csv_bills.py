@@ -14,11 +14,8 @@ class VaCSVBillScraper(Scraper):
 
         reader = csv.reader(resp.splitlines(), delimiter=",")
         for row in reader:
-            chamber = row[0]
-            mbr_mbrno = row[1]
-            name = row[2]
             self._members.append(
-                {"chamber": chamber, "mbr_mbrno": mbr_mbrno, "name": name}
+                {"chamber": row[0], "mbr_mbrno": row[1], "name": row[2]}
             )
         return True
 
