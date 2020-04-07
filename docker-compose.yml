@@ -13,6 +13,8 @@ services:
     - PYTHONPATH=./openstates
     - NEW_YORK_API_KEY
     - INDIANA_API_KEY
+    - VA_USER
+    - VA_PASSWD
     - PUPA_ARGS
     volumes:
     - .:/opt/openstates/openstates/
