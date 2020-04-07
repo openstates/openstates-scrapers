@@ -10,6 +10,7 @@ class VaCSVBillScraper(Scraper):
     _members = []
     _sponsors = defaultdict(list)
     _amendments = defaultdict(list)
+    _history = defaultdict(list)
 
     # Load members of legislative
     def load_members(self):
@@ -47,7 +48,22 @@ class VaCSVBillScraper(Scraper):
                 {"bill_number": row[0].strip(), "txt_docid": row[1].strip()}
             )
 
+    def load_history(self):
+        resp = self.get(self._url_base + "HISTORY.CSV").text
+        reader = csv.reader(resp.splitlines(), delimiter=",")
+        # ['Bill_id', 'History_date', 'History_description', 'History_refid']
+        for row in reader:
+            self._history[row[0]].append(
+                {
+                    "bill_id": row[0],
+                    "history_date": row[1],
+                    "history_description": row[2],
+                    "history_refid": row[3],
+                }
+            )
+
     def scrape(self, session=None):
         self.load_members()
         self.load_sponsors()
         self.load_amendments()
+        self.load_history()
