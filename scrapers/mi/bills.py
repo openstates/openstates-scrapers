@@ -111,7 +111,7 @@ class MIBillScraper(Scraper):
             else:
                 classification = "primary"
             bill.add_sponsorship(
-                name=name,
+                name=name.strip(),
                 chamber=chamber,
                 entity_type="person",
                 primary=classification == "primary",
@@ -161,7 +161,7 @@ class MIBillScraper(Scraper):
                         chamber_name,
                         objectname,
                     )
-                    results = self.parse_roll_call(vote_url, rc_num)
+                    results = self.parse_roll_call(vote_url, rc_num, session)
 
                     if results is not None:
                         vote_passed = len(results["yes"]) > len(results["no"])
@@ -193,14 +193,17 @@ class MIBillScraper(Scraper):
                         vote.set_count("yes", len(results["yes"]))
                         vote.set_count("no", len(results["no"]))
                         vote.set_count("other", len(results["other"]))
-
-                        for name in results["yes"]:
-                            vote.yes(name)
-                        for name in results["no"]:
-                            vote.no(name)
-                        for name in results["other"]:
-                            vote.vote("other", name)
-
+                        possible_vote_results = ["yes", "no", "other"]
+                        for pvr in possible_vote_results:
+                            for name in results[pvr]:
+                                if session == "2017-2018":
+                                    names = name.split("\t")
+                                    for n in names:
+                                        vote.vote(pvr, name.strip())
+                                else:
+                                    # Prevents voter names like "House Bill No. 4451, entitled" and other sentences
+                                    if len(name.split()) < 5:
+                                        vote.vote(pvr, name.strip())
                         vote.add_source(vote_url)
                         yield vote
                 else:
@@ -265,7 +268,7 @@ class MIBillScraper(Scraper):
             url = a[0].get("href")
             return name, url
 
-    def parse_roll_call(self, url, rc_num):
+    def parse_roll_call(self, url, rc_num, session):
         try:
             resp = self.get(url)
         except scrapelib.HTTPError:
@@ -311,7 +314,11 @@ class MIBillScraper(Scraper):
                 # split on multiple spaces not preceeded by commas
                 for l in re.split(r"(?<!,)\s{2,}", p):
                     if l.strip():
-                        results[vtype].append(l)
+                        if session == "2017-2018":
+                            for leg in l.split():
+                                results[vtype].append(leg)
+                        else:
+                            results[vtype].append(l)
             else:
                 self.warning("piece without vtype set: %s", p)
 

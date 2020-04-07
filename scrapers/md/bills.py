@@ -388,6 +388,8 @@ class MDBillScraper(Scraper):
             _type = ["bill"]
         elif "J" in bill_id:
             _type = ["joint resolution"]
+        elif "HS" in bill_id:
+            _type = ["resolution"]
         else:
             raise ValueError("unknown bill type " + bill_id)
 

@@ -89,6 +89,13 @@ class Oklahoma(State):
             "name": "2020 Regular Session",
             "start_date": "2019-02-03",
         },
+        {
+            "_scraped_name": "2020 First Special Session",
+            "identifier": "2020SS1",
+            "name": "2020 First Special Session",
+            "start_date": "2020-04-02",
+            "end_date": "2020-04-03",
+        },
     ]
     ignored_scraped_sessions = [
         "2017 Regular Session",
