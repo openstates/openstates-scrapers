@@ -11,6 +11,7 @@ class VaCSVBillScraper(Scraper):
     _sponsors = defaultdict(list)
     _amendments = defaultdict(list)
     _history = defaultdict(list)
+    _votes = defaultdict(list)
 
     # Load members of legislative
     def load_members(self):
@@ -62,8 +63,29 @@ class VaCSVBillScraper(Scraper):
                 }
             )
 
+    def load_votes(self):
+        resp = self.get(self._url_base + "VOTE.CSV").text.splitlines()
+        for line in resp:
+            line = line.split(",")
+            # First part of the line is always the history_refid number.
+            #   It has extra quotes around it
+            # Next number is the member_id number found in _members
+            # Y and X represent yes or no
+            history_refid = line[0].replace('"', "")
+            # Checks if votes are present
+            if len(line) > 1:
+                # Not every line has the same number of votes.
+                for v in range(1, len(line), 2):
+                    member_id = line[v]
+                    vote_result = line[v + 1]
+                    vote_result = "yes" if vote_result == "Y" else "N"
+                    self._votes[history_refid].append(
+                        {"member_id": member_id, "vote_result": vote_result}
+                    )
+
     def scrape(self, session=None):
         self.load_members()
         self.load_sponsors()
         self.load_amendments()
         self.load_history()
+        self.load_votes()
