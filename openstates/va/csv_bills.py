@@ -7,7 +7,7 @@ from collections import defaultdict
 class VaCSVBillScraper(Scraper):
 
     _url_base = f"ftp://{os.environ['VA_USER']}:{os.environ['VA_PASSWD']}@legis.virginia.gov/fromdlas/csv201/"
-    _members = []
+    _members = defaultdict(list)
     _sponsors = defaultdict(list)
     _amendments = defaultdict(list)
     _history = defaultdict(list)
@@ -18,9 +18,10 @@ class VaCSVBillScraper(Scraper):
         resp = self.get(self._url_base + "Members.csv").text
 
         reader = csv.reader(resp.splitlines(), delimiter=",")
+        # ['MBR_HOU', 'MBR_MBRNO', 'MBR_NAME']
         for row in reader:
-            self._members.append(
-                {"chamber": row[0], "mbr_mbrno": row[1], "name": row[2].strip()}
+            self._members[row[1]].append(
+                {"chamber": row[0], "member_id": row[1], "name": row[2].strip()}
             )
         return True
 
@@ -76,12 +77,13 @@ class VaCSVBillScraper(Scraper):
             if len(line) > 1:
                 # Not every line has the same number of votes.
                 for v in range(1, len(line), 2):
-                    member_id = line[v]
-                    vote_result = line[v + 1]
-                    vote_result = "yes" if vote_result == "Y" else "N"
-                    self._votes[history_refid].append(
-                        {"member_id": member_id, "vote_result": vote_result}
-                    )
+                    if line[v] != '"H0000"':
+                        member = self._members[line[v].replace('"', "")][0]["name"]
+                        vote_result = line[v + 1]
+                        vote_result = "yes" if vote_result == "Y" else "no"
+                        self._votes[history_refid].append(
+                            {"member_id": member, "vote_result": vote_result}
+                        )
 
     def scrape(self, session=None):
         self.load_members()
