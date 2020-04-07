@@ -9,6 +9,7 @@ class VaCSVBillScraper(Scraper):
     _url_base = f"ftp://{os.environ['VA_USER']}:{os.environ['VA_PASSWD']}@legis.virginia.gov/fromdlas/csv201/"
     _members = []
     _sponsors = defaultdict(list)
+    _amendments = defaultdict(list)
 
     # Load members of legislative
     def load_members(self):
@@ -36,6 +37,17 @@ class VaCSVBillScraper(Scraper):
                 }
             )
 
+    def load_amendments(self):
+        resp = self.get(self._url_base + "Amendments.csv").text
+        reader = csv.reader(resp.splitlines(), delimiter=",")
+
+        # ['BILL_NUMBER', 'TXT_DOCID']
+        for row in reader:
+            self._amendments[row[0].strip()].append(
+                {"bill_number": row[0].strip(), "txt_docid": row[1].strip()}
+            )
+
     def scrape(self, session=None):
         self.load_members()
         self.load_sponsors()
+        self.load_amendments()
