@@ -1,7 +1,9 @@
 import os
 import csv
-from pupa.scrape import Scraper  # , Bill, VoteEvent
+from pupa.scrape import Scraper, Bill  # , VoteEvent
 from collections import defaultdict
+
+# from .common import SESSION_SITE_IDS
 
 
 class VaCSVBillScraper(Scraper):
@@ -102,6 +104,8 @@ class VaCSVBillScraper(Scraper):
         #   "Last_conference_actid" (36), "Last_governor_actid" (37), "Chapter_id" (38), "Introduction_date" (39),
         #   "Last_actid" (40)
         for row in reader:
+            if row[0] == "Bill_id":
+                continue
             self._bills[row[0]].append(
                 {
                     "bill_id": row[0],
@@ -120,6 +124,8 @@ class VaCSVBillScraper(Scraper):
         reader = csv.reader(resp.splitlines(), delimiter=",")
         # ["SUM_BILNO", "SUMMARY_DOCID", "SUMMARY_TYPE", "SUMMARY_TEXT"]
         for row in reader:
+            if row[0] == "SUM_BILNO":
+                continue
             self._summaries[row[0]].append(
                 {
                     "bill_id": row[0],
@@ -130,6 +136,11 @@ class VaCSVBillScraper(Scraper):
             )
 
     def scrape(self, session=None):
+        if not session:
+            session = self.jurisdiction.legislative_sessions[-1]["identifier"]
+            self.info("no session specified, using %s", session)
+        # session_id = SESSION_SITE_IDS[session]
+
         self.load_members()
         self.load_sponsors()
         self.load_amendments()
@@ -137,3 +148,21 @@ class VaCSVBillScraper(Scraper):
         self.load_summaries()
         self.load_votes()
         self.load_bills()
+
+        for bill in self._bills:
+            bill = self._bills[bill][0]
+
+            bill_id = bill["bill_id"]
+            chamber = {"H": "lower", "S": "upper"}[bill_id[0]]
+            bill_type = {"B": "bill", "J": "joint resolution", "R": "resolution"}[
+                bill_id[1]
+            ]
+            b = Bill(
+                bill_id,
+                session,
+                bill["bill_description"],
+                chamber=chamber,
+                classification=bill_type,
+            )
+            b.add_source("https://lis.virginia.gov/")
+            yield b
