@@ -165,4 +165,19 @@ class VaCSVBillScraper(Scraper):
                 classification=bill_type,
             )
             b.add_source("https://lis.virginia.gov/")
+
+            # Sponsors
+            for spon in self._sponsors[bill_id]:
+                sponsor_type = spon["patron_type"]
+                if sponsor_type.endswith("Chief Patron"):
+                    sponsor_type = "primary"
+                else:
+                    sponsor_type = "cosponsor"
+                b.add_sponsorship(
+                    spon["member_name"],
+                    classification=sponsor_type,
+                    entity_type="person",
+                    primary=sponsor_type == "primary",
+                )
+
             yield b
