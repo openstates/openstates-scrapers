@@ -3,7 +3,7 @@ import csv
 import re
 import pytz
 import datetime
-from pupa.scrape import Scraper, Bill  # , VoteEvent
+from pupa.scrape import Scraper, Bill, VoteEvent
 from collections import defaultdict
 
 # from .common import SESSION_SITE_IDS
@@ -118,7 +118,7 @@ class VaCSVBillScraper(Scraper):
                 for v in range(1, len(line), 2):
                     if line[v] != '"H0000"':
                         member = self._members[line[v].replace('"', "")][0]["name"]
-                        vote_result = line[v + 1]
+                        vote_result = line[v + 1].replace('"', "")
                         vote_result = "yes" if vote_result == "Y" else "no"
                         self._votes[history_refid].append(
                             {"member_id": member, "vote_result": vote_result}
@@ -227,6 +227,7 @@ class VaCSVBillScraper(Scraper):
                 action_date = hist["history_date"]
                 date = datetime.datetime.strptime(action_date, "%m/%d/%y").date()
                 chamber = chamber_types[action[0]]
+                vote_id = hist["history_refid"]
 
                 # categorize actions
                 for pattern, atype in ACTION_CLASSIFIERS:
@@ -237,5 +238,28 @@ class VaCSVBillScraper(Scraper):
 
                 if atype != SKIP:
                     b.add_action(action, date, chamber=chamber, classification=atype)
+
+                if len(vote_id) > 0:
+                    total_yes = 0
+                    total_no = 0
+                    for v in self._votes[vote_id]:
+                        if v["vote_result"] == "yes":
+                            total_yes += 1
+                        else:
+                            total_no += 1
+                    vote = VoteEvent(
+                        start_date=date,
+                        chamber=chamber,
+                        motion_text=action,
+                        result="pass" if total_yes > total_no else "fail",
+                        classification="passage",
+                        bill=b,
+                    )
+                    vote.set_count("yes", total_yes)
+                    vote.set_count("no", total_no)
+                    vote.add_source("https://lis.virginia.gov/")
+                    for v in self._votes[vote_id]:
+                        vote.vote(v["vote_result"], v["member_id"])
+                    yield vote
 
             yield b
