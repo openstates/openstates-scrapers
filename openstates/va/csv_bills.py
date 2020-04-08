@@ -1,9 +1,44 @@
 import os
 import csv
+import re
+import pytz
+import datetime
 from pupa.scrape import Scraper, Bill  # , VoteEvent
 from collections import defaultdict
 
 # from .common import SESSION_SITE_IDS
+
+tz = pytz.timezone("America/New_York")
+SKIP = "~~~SKIP~~~"
+ACTION_CLASSIFIERS = (
+    ("Enacted, Chapter", "became-law"),
+    ("Approved by Governor", "executive-signature"),
+    ("Vetoed by Governor", "executive-veto"),
+    ("(House|Senate) sustained Governor's veto", "veto-override-failure"),
+    (r"\s*Amendment(s)? .+ agreed", "amendment-passage"),
+    (r"\s*Amendment(s)? .+ withdrawn", "amendment-withdrawal"),
+    (r"\s*Amendment(s)? .+ rejected", "amendment-failure"),
+    ("Subject matter referred", "referral-committee"),
+    ("Rereferred to", "referral-committee"),
+    ("Referred to", "referral-committee"),
+    ("Assigned ", "referral-committee"),
+    ("Reported from", "committee-passage"),
+    ("Read third time and passed", ["passage", "reading-3"]),
+    ("Read third time and agreed", ["passage", "reading-3"]),
+    ("Passed (Senate|House)", "passage"),
+    ("passed (Senate|House)", "passage"),
+    ("Read third time and defeated", "failure"),
+    ("Presented", "introduction"),
+    ("Prefiled and ordered printed", "introduction"),
+    ("Read first time", "reading-1"),
+    ("Read second time", "reading-2"),
+    ("Read third time", "reading-3"),
+    ("Senators: ", SKIP),
+    ("Delegates: ", SKIP),
+    ("Committee substitute printed", "substitution"),
+    ("Bill text as passed", SKIP),
+    ("Acts of Assembly", SKIP),
+)
 
 
 class VaCSVBillScraper(Scraper):
@@ -139,6 +174,12 @@ class VaCSVBillScraper(Scraper):
         if not session:
             session = self.jurisdiction.legislative_sessions[-1]["identifier"]
             self.info("no session specified, using %s", session)
+        chamber_types = {
+            "H": "lower",
+            "S": "upper",
+            "G": "executive",
+            "C": "legislature",
+        }
         # session_id = SESSION_SITE_IDS[session]
 
         self.load_members()
@@ -153,7 +194,7 @@ class VaCSVBillScraper(Scraper):
             bill = self._bills[bill][0]
 
             bill_id = bill["bill_id"]
-            chamber = {"H": "lower", "S": "upper"}[bill_id[0]]
+            chamber = chamber_types[bill_id[0]]
             bill_type = {"B": "bill", "J": "joint resolution", "R": "resolution"}[
                 bill_id[1]
             ]
@@ -179,5 +220,22 @@ class VaCSVBillScraper(Scraper):
                     entity_type="person",
                     primary=sponsor_type == "primary",
                 )
+
+            # History and then votes
+            for hist in self._history[bill_id]:
+                action = hist["history_description"]
+                action_date = hist["history_date"]
+                date = datetime.datetime.strptime(action_date, "%m/%d/%y").date()
+                chamber = chamber_types[action[0]]
+
+                # categorize actions
+                for pattern, atype in ACTION_CLASSIFIERS:
+                    if re.match(pattern, action):
+                        break
+                else:
+                    atype = None
+
+                if atype != SKIP:
+                    b.add_action(action, date, chamber=chamber, classification=atype)
 
             yield b
