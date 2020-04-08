@@ -13,6 +13,7 @@ class VaCSVBillScraper(Scraper):
     _history = defaultdict(list)
     _votes = defaultdict(list)
     _bills = defaultdict(list)
+    _summaries = defaultdict(list)
 
     # Load members of legislative
     def load_members(self):
@@ -104,7 +105,7 @@ class VaCSVBillScraper(Scraper):
             self._bills[row[0]].append(
                 {
                     "bill_id": row[0],
-                    "Bill_description": row[1],
+                    "bill_description": row[1],
                     "passed": row[17],
                     "failed": row[18],
                     "carried_over": row[19],
@@ -114,10 +115,25 @@ class VaCSVBillScraper(Scraper):
                 }
             )
 
+    def load_summaries(self):
+        resp = self.get(self._url_base + "Summaries.csv").text
+        reader = csv.reader(resp.splitlines(), delimiter=",")
+        # ["SUM_BILNO", "SUMMARY_DOCID", "SUMMARY_TYPE", "SUMMARY_TEXT"]
+        for row in reader:
+            self._summaries[row[0]].append(
+                {
+                    "bill_id": row[0],
+                    "summary_doc_id": row[1],
+                    "summary_type": row[2],
+                    "summary_text": row[3],
+                }
+            )
+
     def scrape(self, session=None):
         self.load_members()
         self.load_sponsors()
         self.load_amendments()
         self.load_history()
+        self.load_summaries()
         self.load_votes()
         self.load_bills()
