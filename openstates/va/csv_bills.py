@@ -258,8 +258,19 @@ class VaCSVBillScraper(Scraper):
                     )
                     vote.set_count("yes", total_yes)
                     vote.set_count("no", total_no)
-                    # Need to fix URL. Vote ID needs to have 6 characters to work. Fill in blanks with 0s.
-                    vote_url = f"https://lis.virginia.gov/cgi-bin/legp604.exe?{session_id}+vot+{vote_id}+{bill_id}"
+                    # Bill ID needs to have 6 characters to work with vote urls. Fill in blanks with 0s
+                    bill_id_for_url = bill_id
+                    if len(bill_id) == 3:
+                        bill_id_for_url = bill_id[0:2] + "000" + bill_id[-1]
+                    elif len(bill_id) == 4:
+                        bill_id_for_url = bill_id[0:2] + "00" + bill_id[-2:]
+                    elif len(bill_id) == 5:
+                        bill_id_for_url = bill_id[0:2] + "0" + bill_id[-3:]
+
+                    vote_url = f"https://lis.virginia.gov/cgi-bin/"
+                    vote_url += (
+                        f"legp604.exe?{session_id}+vot+{vote_id}+{bill_id_for_url}"
+                    )
                     vote.add_source(vote_url)
                     for v in self._votes[vote_id]:
                         vote.vote(v["vote_result"], v["member_id"])
