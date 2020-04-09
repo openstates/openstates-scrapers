@@ -6,7 +6,7 @@ import datetime
 from pupa.scrape import Scraper, Bill, VoteEvent
 from collections import defaultdict
 
-# from .common import SESSION_SITE_IDS
+from .common import SESSION_SITE_IDS
 
 tz = pytz.timezone("America/New_York")
 SKIP = "~~~SKIP~~~"
@@ -180,7 +180,7 @@ class VaCSVBillScraper(Scraper):
             "G": "executive",
             "C": "legislature",
         }
-        # session_id = SESSION_SITE_IDS[session]
+        session_id = SESSION_SITE_IDS[session]
 
         self.load_members()
         self.load_sponsors()
@@ -248,6 +248,7 @@ class VaCSVBillScraper(Scraper):
                         else:
                             total_no += 1
                     vote = VoteEvent(
+                        identifier=vote_id,
                         start_date=date,
                         chamber=chamber,
                         motion_text=action,
@@ -257,7 +258,9 @@ class VaCSVBillScraper(Scraper):
                     )
                     vote.set_count("yes", total_yes)
                     vote.set_count("no", total_no)
-                    vote.add_source("https://lis.virginia.gov/")
+                    # Need to fix URL. Vote ID needs to have 6 characters to work. Fill in blanks with 0s.
+                    vote_url = f"https://lis.virginia.gov/cgi-bin/legp604.exe?{session_id}+vot+{vote_id}+{bill_id}"
+                    vote.add_source(vote_url)
                     for v in self._votes[vote_id]:
                         vote.vote(v["vote_result"], v["member_id"])
                     yield vote
