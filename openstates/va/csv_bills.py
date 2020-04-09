@@ -119,7 +119,14 @@ class VaCSVBillScraper(Scraper):
                     if line[v] != '"H0000"':
                         member = self._members[line[v].replace('"', "")][0]["name"]
                         vote_result = line[v + 1].replace('"', "")
-                        vote_result = "yes" if vote_result == "Y" else "no"
+                        if vote_result == "Y":
+                            vote_result = "yes"
+                        elif vote_result == "N":
+                            vote_result = "no"
+                        elif vote_result == "X":
+                            vote_result = "not voting"
+                        elif vote_result == "A":
+                            vote_result = "abstain"
                         self._votes[history_refid].append(
                             {"member_id": member, "vote_result": vote_result}
                         )
@@ -242,11 +249,17 @@ class VaCSVBillScraper(Scraper):
                 if len(vote_id) > 0:
                     total_yes = 0
                     total_no = 0
+                    total_not_voting = 0
+                    total_abstain = 0
                     for v in self._votes[vote_id]:
                         if v["vote_result"] == "yes":
                             total_yes += 1
-                        else:
+                        elif v["vote_result"] == "no":
                             total_no += 1
+                        elif v["vote_result"] == "not voting":
+                            total_not_voting += 1
+                        elif v["vote_result"] == "abstain":
+                            total_abstain += 1
                     vote = VoteEvent(
                         identifier=vote_id,
                         start_date=date,
@@ -258,6 +271,8 @@ class VaCSVBillScraper(Scraper):
                     )
                     vote.set_count("yes", total_yes)
                     vote.set_count("no", total_no)
+                    vote.set_count("not voting", total_not_voting)
+                    vote.set_count("abstain", total_abstain)
                     # Bill ID needs to have 6 characters to work with vote urls. Fill in blanks with 0s
                     bill_id_for_url = bill_id
                     if len(bill_id) == 3:
