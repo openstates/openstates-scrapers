@@ -148,6 +148,14 @@ class VaCSVBillScraper(Scraper):
         for row in reader:
             if row[0] == "Bill_id":
                 continue
+            text_doc_data = [
+                {"doc_abbr": row[22], "doc_date": row[23]},
+                {"doc_abbr": row[24], "doc_date": row[25]},
+                {"doc_abbr": row[26], "doc_date": row[27]},
+                {"doc_abbr": row[28], "doc_date": row[29]},
+                {"doc_abbr": row[30], "doc_date": row[31]},
+                {"doc_abbr": row[32], "doc_date": row[33]},
+            ]
             self._bills[row[0]].append(
                 {
                     "bill_id": row[0],
@@ -158,6 +166,7 @@ class VaCSVBillScraper(Scraper):
                     "approved": row[20],
                     "vetoed": row[21],
                     "introduction_date": row[39],
+                    "text_docs": text_doc_data,
                 }
             )
 
@@ -251,6 +260,23 @@ class VaCSVBillScraper(Scraper):
                 b.add_abstract(sum_text["summary_text"], sum_text["summary_type"])
 
             # Versions
+            for version in bill["text_docs"]:
+                # Checks if abbr is blank as not every bill has multiple versions
+                if len(version["doc_abbr"]) > 0:
+                    version_url = (
+                        bill_url_base
+                        + f"legp604.exe?{session_id}+ful+{version['doc_abbr']}"
+                    )
+                    version_date = datetime.datetime.strptime(
+                        version["doc_date"], "%m/%d/%y"
+                    ).date()
+                    b.add_version_link(
+                        version["doc_abbr"],
+                        version_url,
+                        date=version_date,
+                        media_type="text/html",
+                        on_duplicate="ignore",
+                    )
 
             # History and then votes
             for hist in self._history[bill_id]:
