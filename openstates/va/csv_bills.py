@@ -193,6 +193,7 @@ class VaCSVBillScraper(Scraper):
             "C": "legislature",
         }
         session_id = SESSION_SITE_IDS[session]
+        bill_url_base = "https://lis.virginia.gov/cgi-bin/"
 
         self.load_members()
         self.load_sponsors()
@@ -217,7 +218,8 @@ class VaCSVBillScraper(Scraper):
                 chamber=chamber,
                 classification=bill_type,
             )
-            b.add_source("https://lis.virginia.gov/")
+            bill_url = bill_url_base + f"legp604.exe?{session_id}+sum+{bill_id}"
+            b.add_source(bill_url)
 
             # Long Bill ID needs to have 6 characters to work with vote urls, sponsors, and summaries.
             # Fill in blanks with 0s
@@ -299,8 +301,10 @@ class VaCSVBillScraper(Scraper):
                     vote.set_count("not voting", total_not_voting)
                     vote.set_count("abstain", total_abstain)
 
-                    vote_url = f"https://lis.virginia.gov/cgi-bin/"
-                    vote_url += f"legp604.exe?{session_id}+vot+{vote_id}+{long_bill_id}"
+                    vote_url = (
+                        bill_url_base
+                        + f"legp604.exe?{session_id}+vot+{vote_id}+{long_bill_id}"
+                    )
                     vote.add_source(vote_url)
                     for v in self._votes[vote_id]:
                         vote.vote(v["vote_result"], v["member_id"])
