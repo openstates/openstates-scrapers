@@ -259,6 +259,16 @@ class VaCSVBillScraper(Scraper):
             for sum_text in summary_texts:
                 b.add_abstract(sum_text["summary_text"], sum_text["summary_type"])
 
+            # Amendment docs
+            amendments = self._amendments[bill_id]
+            for amend in amendments:
+                doc_link = (
+                    bill_url_base + f"legp604.exe?{session_id}+amd+{amend['txt_docid']}"
+                )
+                b.add_document_link(
+                    "Amendment: " + amend["txt_docid"], doc_link, media_type="text/html"
+                )
+
             actions_text = []
             # History and then votes
             for hist in self._history[bill_id]:
