@@ -2,7 +2,7 @@ import logging
 from openstates.utils import url_xpath, State
 
 from .people import VaPersonScraper
-from .bills import VaBillScraper
+from .csv_bills import VaCSVBillScraper
 
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -12,7 +12,7 @@ settings = {"SCRAPELIB_RPM": 40}
 
 
 class Virginia(State):
-    scrapers = {"people": VaPersonScraper, "bills": VaBillScraper}
+    scrapers = {"people": VaPersonScraper, "bills": VaCSVBillScraper}
     legislative_sessions = [
         {
             "_scraped_name": "2010 Session",
