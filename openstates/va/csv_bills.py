@@ -170,6 +170,7 @@ class VaCSVBillScraper(Scraper):
                 }
             )
 
+    # Used to clean summary texts
     def remove_html_tags(self, text):
         clean = re.compile("<.*?>")
         return re.sub(clean, "", text)
@@ -269,6 +270,7 @@ class VaCSVBillScraper(Scraper):
                     "Amendment: " + amend["txt_docid"], doc_link, media_type="text/html"
                 )
 
+            # Action text is used to improve version text
             actions_text = []
             # History and then votes
             for hist in self._history[bill_id]:
