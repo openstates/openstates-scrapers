@@ -161,6 +161,10 @@ class VaCSVBillScraper(Scraper):
                 }
             )
 
+    def remove_html_tags(self, text):
+        clean = re.compile("<.*?>")
+        return re.sub(clean, "", text)
+
     def load_summaries(self):
         resp = self.get(self._url_base + "Summaries.csv").text
         reader = csv.reader(resp.splitlines(), delimiter=",")
@@ -168,12 +172,13 @@ class VaCSVBillScraper(Scraper):
         for row in reader:
             if row[0] == "SUM_BILNO":
                 continue
+
             self._summaries[row[0]].append(
                 {
                     "bill_id": row[0],
                     "summary_doc_id": row[1],
                     "summary_type": row[2],
-                    "summary_text": row[3],
+                    "summary_text": self.remove_html_tags(row[3]),
                 }
             )
 
@@ -214,7 +219,7 @@ class VaCSVBillScraper(Scraper):
             )
             b.add_source("https://lis.virginia.gov/")
 
-            # Long Bill ID needs to have 6 characters to work with vote urls and sponsor bill numbers.
+            # Long Bill ID needs to have 6 characters to work with vote urls, sponsors, and summaries.
             # Fill in blanks with 0s
             long_bill_id = bill_id
             if len(bill_id) == 3:
@@ -239,7 +244,9 @@ class VaCSVBillScraper(Scraper):
                 )
 
             # Summary
-            # summary_text = self._summaries[]
+            summary_texts = self._summaries[long_bill_id]
+            for sum_text in summary_texts:
+                b.add_abstract(sum_text["summary_text"], sum_text["summary_type"])
 
             # Versions
 
