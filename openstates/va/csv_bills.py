@@ -257,16 +257,19 @@ class VaCSVBillScraper(Scraper):
                 date = datetime.datetime.strptime(action_date, "%m/%d/%y").date()
                 chamber = chamber_types[action[0]]
                 vote_id = hist["history_refid"]
+                cleaned_action = action[2:]
 
                 # categorize actions
                 for pattern, atype in ACTION_CLASSIFIERS:
-                    if re.match(pattern, action):
+                    if re.match(pattern, cleaned_action):
                         break
                 else:
                     atype = None
 
                 if atype != SKIP:
-                    b.add_action(action, date, chamber=chamber, classification=atype)
+                    b.add_action(
+                        cleaned_action, date, chamber=chamber, classification=atype
+                    )
 
                 if len(vote_id) > 0:
                     total_yes = 0
@@ -286,7 +289,7 @@ class VaCSVBillScraper(Scraper):
                         identifier=vote_id,
                         start_date=date,
                         chamber=chamber,
-                        motion_text=action,
+                        motion_text=cleaned_action,
                         result="pass" if total_yes > total_no else "fail",
                         classification="passage",
                         bill=b,
