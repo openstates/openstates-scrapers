@@ -214,8 +214,18 @@ class VaCSVBillScraper(Scraper):
             )
             b.add_source("https://lis.virginia.gov/")
 
+            # Long Bill ID needs to have 6 characters to work with vote urls and sponsor bill numbers.
+            # Fill in blanks with 0s
+            long_bill_id = bill_id
+            if len(bill_id) == 3:
+                long_bill_id = bill_id[0:2] + "000" + bill_id[-1]
+            elif len(bill_id) == 4:
+                long_bill_id = bill_id[0:2] + "00" + bill_id[-2:]
+            elif len(bill_id) == 5:
+                long_bill_id = bill_id[0:2] + "0" + bill_id[-3:]
+
             # Sponsors
-            for spon in self._sponsors[bill_id]:
+            for spon in self._sponsors[long_bill_id]:
                 sponsor_type = spon["patron_type"]
                 if sponsor_type.endswith("Chief Patron"):
                     sponsor_type = "primary"
@@ -227,6 +237,11 @@ class VaCSVBillScraper(Scraper):
                     entity_type="person",
                     primary=sponsor_type == "primary",
                 )
+
+            # Summary
+            # summary_text = self._summaries[]
+
+            # Versions
 
             # History and then votes
             for hist in self._history[bill_id]:
@@ -273,19 +288,9 @@ class VaCSVBillScraper(Scraper):
                     vote.set_count("no", total_no)
                     vote.set_count("not voting", total_not_voting)
                     vote.set_count("abstain", total_abstain)
-                    # Bill ID needs to have 6 characters to work with vote urls. Fill in blanks with 0s
-                    bill_id_for_url = bill_id
-                    if len(bill_id) == 3:
-                        bill_id_for_url = bill_id[0:2] + "000" + bill_id[-1]
-                    elif len(bill_id) == 4:
-                        bill_id_for_url = bill_id[0:2] + "00" + bill_id[-2:]
-                    elif len(bill_id) == 5:
-                        bill_id_for_url = bill_id[0:2] + "0" + bill_id[-3:]
 
                     vote_url = f"https://lis.virginia.gov/cgi-bin/"
-                    vote_url += (
-                        f"legp604.exe?{session_id}+vot+{vote_id}+{bill_id_for_url}"
-                    )
+                    vote_url += f"legp604.exe?{session_id}+vot+{vote_id}+{long_bill_id}"
                     vote.add_source(vote_url)
                     for v in self._votes[vote_id]:
                         vote.vote(v["vote_result"], v["member_id"])
