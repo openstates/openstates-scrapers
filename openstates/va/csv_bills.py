@@ -43,7 +43,7 @@ ACTION_CLASSIFIERS = (
 
 class VaCSVBillScraper(Scraper):
 
-    _url_base = f"ftp://{os.environ['VA_USER']}:{os.environ['VA_PASSWD']}@legis.virginia.gov/fromdlas/csv201/"
+    _url_base = f"ftp://{os.environ['VA_USER']}:{os.environ['VA_PASSWD']}@legis.virginia.gov/fromdlas/csv"
     _members = defaultdict(list)
     _sponsors = defaultdict(list)
     _amendments = defaultdict(list)
@@ -62,6 +62,7 @@ class VaCSVBillScraper(Scraper):
             self._members[row[1]].append(
                 {"chamber": row[0], "member_id": row[1], "name": row[2].strip()}
             )
+        self.warning("Total Members Loaded: " + str(len(self._members)))
         return True
 
     def load_sponsors(self):
@@ -78,6 +79,7 @@ class VaCSVBillScraper(Scraper):
                     "patron_type": row[3],
                 }
             )
+        self.warning("Total Sponsors Loaded: " + str(len(self._sponsors)))
 
     def load_amendments(self):
         resp = self.get(self._url_base + "Amendments.csv").text
@@ -88,6 +90,7 @@ class VaCSVBillScraper(Scraper):
             self._amendments[row[0].strip()].append(
                 {"bill_number": row[0].strip(), "txt_docid": row[1].strip()}
             )
+        self.warning("Total Amendments Loaded: " + str(len(self._amendments)))
 
     def load_history(self):
         resp = self.get(self._url_base + "HISTORY.CSV").text
@@ -102,6 +105,7 @@ class VaCSVBillScraper(Scraper):
                     "history_refid": row[3],
                 }
             )
+        self.warning("Total Actions Loaded: " + str(len(self._history)))
 
     def load_votes(self):
         resp = self.get(self._url_base + "VOTE.CSV").text.splitlines()
@@ -116,7 +120,10 @@ class VaCSVBillScraper(Scraper):
             if len(line) > 1:
                 # Not every line has the same number of votes.
                 for v in range(1, len(line), 2):
-                    if line[v] != '"H0000"':
+                    if (
+                        line[v] != '"H0000"'
+                        and len(self._members[line[v].replace('"', "")]) > 0
+                    ):
                         member = self._members[line[v].replace('"', "")][0]["name"]
                         vote_result = line[v + 1].replace('"', "")
                         if vote_result == "Y":
@@ -130,6 +137,7 @@ class VaCSVBillScraper(Scraper):
                         self._votes[history_refid].append(
                             {"member_id": member, "vote_result": vote_result}
                         )
+        self.warning("Total Votes Loaded: " + str(len(self._votes)))
 
     def load_bills(self):
         resp = self.get(self._url_base + "BILLS.CSV").text
@@ -169,6 +177,7 @@ class VaCSVBillScraper(Scraper):
                     "text_docs": text_doc_data,
                 }
             )
+        self.warning("Total Bills Loaded: " + str(len(self._bills)))
 
     # Used to clean summary texts
     def remove_html_tags(self, text):
@@ -191,6 +200,7 @@ class VaCSVBillScraper(Scraper):
                     "summary_text": self.remove_html_tags(row[3]),
                 }
             )
+        self.warning("Total Sponsors Loaded: " + str(len(self._summaries)))
 
     def scrape(self, session=None):
         if not session:
@@ -203,6 +213,7 @@ class VaCSVBillScraper(Scraper):
             "C": "legislature",
         }
         session_id = SESSION_SITE_IDS[session]
+        self._url_base += session_id + "/"
         bill_url_base = "https://lis.virginia.gov/cgi-bin/"
 
         self.load_members()
