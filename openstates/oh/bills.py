@@ -250,9 +250,11 @@ class OHBillScraper(Scraper):
                             )
                         )
                         date = "{:%Y-%m-%d}".format(date)
-
                         bill.add_action(
-                            action_desc, date, chamber=actor, classification=action_type
+                            description=action_desc,
+                            date=date,
+                            chamber=actor,
+                            classification=action_type,
                         )
 
                 # attach documents gathered earlier
