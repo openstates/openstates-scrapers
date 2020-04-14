@@ -1,4 +1,4 @@
-import re
+# import re
 
 from pupa.scrape import Person, Scraper
 import lxml.html
@@ -77,7 +77,7 @@ class ARLegislatorScraper(Scraper):
             photo_url = ""
 
         # Need to figure out a cleaner method for this later
-        info_box = root.xpath('string(//div[@id="bodyContent"]/div[2]/div[2])')
+        # info_box = root.xpath('string(//div[@id="bodyContent"]/div[2]/div[2])')
         try:
             district = root.xpath('string(//div[@id="bodyContent"]/div[2]/div[2]/div[3]/div[2])')
         except AttributeError:
