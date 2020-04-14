@@ -281,6 +281,8 @@ class NCBillScraper(Scraper):
                 if votes_names:
                     for name in votes_names:
                         name = name.replace("\r", "")
+                        if "(" in name:
+                            name = name[: name.find("(")]
                         ve.vote(vote_type, name)
 
             yield ve
