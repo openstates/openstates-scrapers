@@ -51,9 +51,6 @@ class CTBillScraper(Scraper):
             if chamber not in chambers:
                 continue
 
-            # assert that the bill data is from this session, CT is tricky
-            assert row["sess_year"] == session
-
             if re.match(r"^(S|H)J", bill_id):
                 bill_type = "joint resolution"
             elif re.match(r"^(S|H)R", bill_id):
@@ -71,8 +68,13 @@ class CTBillScraper(Scraper):
             bill.add_source(info_url)
 
             for introducer in self._introducers[bill_id]:
+                introducer = (
+                    introducer.decode("utf-8").replace("Rep. ", "").replace("Sen. ", "")
+                )
+                if "Dist." in introducer:
+                    introducer = " ".join(introducer.split()[:-2])
                 bill.add_sponsorship(
-                    name=introducer.decode("utf-8"),
+                    name=introducer,
                     classification="primary",
                     primary=True,
                     entity_type="person",
@@ -110,6 +112,9 @@ class CTBillScraper(Scraper):
             for sponsor in page.xpath('//h5[text()="Introduced by: "]/../text()'):
                 sponsor = str(sponsor.strip())
                 if sponsor:
+                    sponsor = sponsor.replace("Rep. ", "").replace("Sen. ", "")
+                    if "Dist." in sponsor:
+                        sponsor = " ".join(sponsor.split()[:-2])
                     bill.add_sponsorship(
                         name=sponsor,
                         classification=spon_type,
