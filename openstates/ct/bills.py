@@ -142,9 +142,10 @@ class CTBillScraper(Scraper):
             # 2011 HJ 31 has a blank vote, others might too
             if link.attrib["href"].endswith(".htm") and link.text:
                 pdf_link = link.getprevious()
-                yield from self.scrape_vote(
-                    bill, pdf_link.text.strip(), link.attrib["href"]
-                )
+                if pdf_link:
+                    yield from self.scrape_vote(
+                        bill, pdf_link.text.strip(), link.attrib["href"]
+                    )
 
     def scrape_vote(self, bill, name, url):
         if "VOTE/h" in url:
