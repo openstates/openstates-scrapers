@@ -52,7 +52,6 @@ class ARLegislatorScraper(Scraper):
         full_name = " ".join(name_and_party[1:-1])
 
         party = name_and_party[-1]
-        self.warning(party)
 
         if party == "(R)":
             party = "Republican"
