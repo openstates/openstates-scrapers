@@ -2,7 +2,7 @@ import re
 import html
 import socket
 import datetime
-
+import string
 import requests
 import lxml.html
 import scrapelib
@@ -177,6 +177,12 @@ class MEBillScraper(Scraper):
                     spon_chamber = {"Senator": "upper", "Representative": "lower"}[
                         chamber_title
                     ]
+                name = string.capwords(name).strip()
+                # # Handles last names like O'Connell
+                # if ("O'" in name) and (name[2] != " "):
+                #     name = name[:2] + name[2].capitalize + name[2:]
+                #     print(name)
+                #     print("HOME SWEET HOME")
                 bill.add_sponsorship(
                     name=name.strip(),
                     chamber=spon_chamber,
@@ -397,9 +403,10 @@ class MEBillScraper(Scraper):
 
         member_cell = page.xpath("//td[text() = 'Member']")[0]
         for row in member_cell.xpath("../../tr")[1:]:
-            name = row.xpath("string(td[2])")
-            # name = name.split(" of ")[0]
-
+            name = string.capwords(row.xpath("string(td[2])"))
+            # Handles last names like O'Connell
+            if ("'" in name) and (name[2] != " "):
+                name = "".join(name[:2]) + name[2].capitalize() + "".join(name[3:])
             vtype = row.xpath("string(td[4])")
             if vtype == "Y":
                 vote.vote("yes", name)
