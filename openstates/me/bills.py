@@ -408,6 +408,8 @@ class MEBillScraper(Scraper):
             if ("'" in name) and (name[2] != " "):
                 name = "".join(name[:2]) + name[2].capitalize() + "".join(name[3:])
             vtype = row.xpath("string(td[4])")
+            if " Of " in name:
+                name = name.split(" Of ")[0]
             if vtype == "Y":
                 vote.vote("yes", name)
             elif vtype == "N":
