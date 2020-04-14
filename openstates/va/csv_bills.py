@@ -43,7 +43,10 @@ ACTION_CLASSIFIERS = (
 
 class VaCSVBillScraper(Scraper):
 
-    _url_base = f"ftp://{os.environ['VA_USER']}:{os.environ['VA_PASSWD']}@legis.virginia.gov/fromdlas/csv"
+    _url_base = (
+        f"ftp://{os.environ['VIRGINIA_FTP_USER']}:{os.environ['VIRGINIA_FTP_PASSWORD']}"
+    )
+    _url_base += "@legis.virginia.gov/fromdlas/csv"
     _members = defaultdict(list)
     _sponsors = defaultdict(list)
     _amendments = defaultdict(list)
