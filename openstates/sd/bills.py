@@ -63,16 +63,36 @@ class SDBillScraper(Scraper, LXMLMixin):
         )
         bill.add_source(url)
 
-        regex_ns = "http://exslt.org/regular-expressions"
-        version_links = page.xpath(
-            r"//a[re:test(@href, 'Bill.aspx\?File=.*\.htm', 'i')]",
-            namespaces={"re": regex_ns},
+        version_rows = page.xpath(
+            "//div[@id=\"ctl00_ContentPlaceHolder1_ctl00_BillVersions\"]"
+            + "/section/table/tbody/tr"
         )
-        for link in version_links:
+        assert len(version_rows) > 0
+        for row in version_rows:
+            (date,) = row.xpath("./td[@data-title=\"Date\"]/text()")
+            date = date.strip()
+            date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
+
+            (html_note,) = row.xpath("./td[@data-title=\"HTML\"]/a/text()")
+            (html_link,) = row.xpath("./td[@data-title=\"HTML\"]/a/@href")
+            (pdf_note,) = row.xpath("./td[@data-title=\"PDF\"]/a/text()")
+            (pdf_link,) = row.xpath("./td[@data-title=\"PDF\"]/a/@href")
+
+            assert html_note == pdf_note
+            note = html_note
+
             bill.add_version_link(
-                link.xpath("string()").strip(),
-                link.attrib["href"],
+                note,
+                html_link,
+                date=date,
                 media_type="text/html",
+                on_duplicate="ignore",
+            )
+            bill.add_version_link(
+                note,
+                pdf_link,
+                date=date,
+                media_type="application/pdf",
                 on_duplicate="ignore",
             )
 

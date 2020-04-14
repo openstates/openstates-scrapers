@@ -280,6 +280,14 @@ class NCBillScraper(Scraper):
                     vote_type = "Not a vote"
                 if votes_names:
                     for name in votes_names:
+                        name = name.replace("\r", "")
+                        # Resolves names that have '(Chair)' in them
+                        if "(" in name:
+                            name = name[: name.find("(")]
+                        # Adds a space to names inbetween initial and last name
+                        # eg: L.Johnson -> L. Johnson
+                        if name[1] == "." and name[2] != " ":
+                            name = name[:2] + " " + name[2:]
                         ve.vote(vote_type, name)
 
             yield ve

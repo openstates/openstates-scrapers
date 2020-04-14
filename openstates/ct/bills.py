@@ -2,7 +2,7 @@ import re
 import datetime
 from operator import itemgetter
 from collections import defaultdict
-
+import string
 from pupa.scrape import Scraper, Bill, VoteEvent as Vote
 from .utils import parse_directory_listing, open_csv
 
@@ -51,9 +51,6 @@ class CTBillScraper(Scraper):
             if chamber not in chambers:
                 continue
 
-            # assert that the bill data is from this session, CT is tricky
-            assert row["sess_year"] == session
-
             if re.match(r"^(S|H)J", bill_id):
                 bill_type = "joint resolution"
             elif re.match(r"^(S|H)R", bill_id):
@@ -71,8 +68,13 @@ class CTBillScraper(Scraper):
             bill.add_source(info_url)
 
             for introducer in self._introducers[bill_id]:
+                introducer = string.capwords(
+                    introducer.decode("utf-8").replace("Rep. ", "").replace("Sen. ", "")
+                )
+                if "Dist." in introducer:
+                    introducer = " ".join(introducer.split()[:-2])
                 bill.add_sponsorship(
-                    name=introducer.decode("utf-8"),
+                    name=introducer,
                     classification="primary",
                     primary=True,
                     entity_type="person",
@@ -110,6 +112,11 @@ class CTBillScraper(Scraper):
             for sponsor in page.xpath('//h5[text()="Introduced by: "]/../text()'):
                 sponsor = str(sponsor.strip())
                 if sponsor:
+                    sponsor = string.capwords(
+                        sponsor.replace("Rep. ", "").replace("Sen. ", "")
+                    )
+                    if "Dist." in sponsor:
+                        sponsor = " ".join(sponsor.split()[:-2])
                     bill.add_sponsorship(
                         name=sponsor,
                         classification=spon_type,
@@ -135,9 +142,10 @@ class CTBillScraper(Scraper):
             # 2011 HJ 31 has a blank vote, others might too
             if link.attrib["href"].endswith(".htm") and link.text:
                 pdf_link = link.getprevious()
-                yield from self.scrape_vote(
-                    bill, pdf_link.text.strip(), link.attrib["href"]
-                )
+                if pdf_link:
+                    yield from self.scrape_vote(
+                        bill, pdf_link.text.strip(), link.attrib["href"]
+                    )
 
     def scrape_vote(self, bill, name, url):
         if "VOTE/h" in url:
@@ -199,7 +207,7 @@ class CTBillScraper(Scraper):
 
                 if not name or name == "VACANT":
                     continue
-
+                name = string.capwords(name)
                 if "Y" in row.xpath("string(td[%d])" % (i + yes_offset)):
                     vote.yes(name)
                 elif "N" in row.xpath("string(td[%d])" % (i + no_offset)):
