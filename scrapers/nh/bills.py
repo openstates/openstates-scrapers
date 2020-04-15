@@ -5,7 +5,7 @@ import pytz
 
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 
-from .nh.legacyBills import NHLegacyBillScraper
+from .legacyBills import NHLegacyBillScraper
 
 
 body_code = {"lower": "H", "upper": "S"}
