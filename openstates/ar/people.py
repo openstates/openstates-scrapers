@@ -115,7 +115,11 @@ class ARLegislatorScraper(Scraper):
             person.add_contact_detail(type="email", value=email, note="District Office")
 
         try:
-            person.extras["occupation"] = root.xpath('string(//div[@id="bodyContent"]/div[2]/div[2]/div[5]/div[2])')
+            occupation_check = root.xpath('string(//div[@id="bodyContent"]/div[2]/div[2]/div[5]/div[1]/b)')
+            if occupation_check == "Occupation:":
+                person.extras["occupation"] = root.xpath('string(//div[@id="bodyContent"]/div[2]/div[2]/div[5]/div[2])')
+            else:
+                raise AttributeError
             if not person.extras["occupation"].strip():
                 raise AttributeError
         except AttributeError:
