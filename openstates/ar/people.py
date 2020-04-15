@@ -29,7 +29,7 @@ class ARLegislatorScraper(Scraper):
             '//table[@class="screenreader"]'
             '/tbody'
             '/tr'
-            "/td"
+            "/td[not(text()[contains(.,'(Deceased)')]) and not(text()[contains(.,'(Removed)')]) and not(text()[contains(.,'(Resigned)')])]"
             "/a[1]"
         ):
             member_url = "https://www.arkleg.state.ar.us" + a.get("href").replace("../", "/")
