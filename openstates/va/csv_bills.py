@@ -144,39 +144,26 @@ class VaCSVBillScraper(Scraper):
 
     def load_bills(self):
         resp = self.get(self._url_base + "BILLS.CSV").text
-        reader = csv.reader(resp.splitlines(), delimiter=",")
-        # ["Bill_id" (0), "Bill_description (1)", "Patron_id (2)", "Patron_name (3)", "Last_house_committee_id (4)",
-        #   "Last_house_action (5)", "Last_house_action_date (6)", "Last_senate_committee_id (7)",
-        #   "Last_senate_action (8)", "Last_senate_action_date (9)", "Last_conference_action (10)",
-        #   "Last_conference_action_date (11)", "Last_governor_action (12)", "Last_governor_action_date (13)",
-        #   "Emergency" (14), "Passed_house" (15), "Passed_senate" (16), "Passed" (17), "Failed" (18),
-        #   "Carried_over" (19), "Approved" (20), "Vetoed" (21), "Full_text_doc1" (22), "Full_text_date1" (23),
-        #   "Full_text_doc2" (24), "Full_text_date2" (25), "Full_text_doc3" (26), "Full_text_date3" (27),
-        #   "Full_text_doc4" (28), "Full_text_date4" (29), "Full_text_doc5" (30), "Full_text_date5" (31),
-        #   "Full_text_doc6" (32), "Full_text_date6" (33),"Last_house_actid" (34), "Last_senate_actid" (35),
-        #   "Last_conference_actid" (36), "Last_governor_actid" (37), "Chapter_id" (38), "Introduction_date" (39),
-        #   "Last_actid" (40)
+        reader = csv.DictReader(resp.splitlines(), delimiter=",")
         for row in reader:
-            if row[0] == "Bill_id":
-                continue
             text_doc_data = [
-                {"doc_abbr": row[22], "doc_date": row[23]},
-                {"doc_abbr": row[24], "doc_date": row[25]},
-                {"doc_abbr": row[26], "doc_date": row[27]},
-                {"doc_abbr": row[28], "doc_date": row[29]},
-                {"doc_abbr": row[30], "doc_date": row[31]},
-                {"doc_abbr": row[32], "doc_date": row[33]},
+                {"doc_abbr": row["Full_text_doc1"], "doc_date": row["Full_text_date1"]},
+                {"doc_abbr": row["Full_text_doc2"], "doc_date": row["Full_text_date2"]},
+                {"doc_abbr": row["Full_text_doc3"], "doc_date": row["Full_text_date3"]},
+                {"doc_abbr": row["Full_text_doc4"], "doc_date": row["Full_text_date4"]},
+                {"doc_abbr": row["Full_text_doc5"], "doc_date": row["Full_text_date5"]},
+                {"doc_abbr": row["Full_text_doc6"], "doc_date": row["Full_text_date6"]},
             ]
-            self._bills[row[0]].append(
+            self._bills[row["Bill_id"]].append(
                 {
-                    "bill_id": row[0],
-                    "bill_description": row[1],
-                    "passed": row[17],
-                    "failed": row[18],
-                    "carried_over": row[19],
-                    "approved": row[20],
-                    "vetoed": row[21],
-                    "introduction_date": row[39],
+                    "bill_id": row["Bill_id"],
+                    "bill_description": row["Bill_description"],
+                    "passed": row["Passed"],
+                    "failed": row["Failed"],
+                    "carried_over": row["Carried_over"],
+                    "approved": row["Approved"],
+                    "vetoed": row["Vetoed"],
+                    "introduction_date": row["Introduction_date"],
                     "text_docs": text_doc_data,
                 }
             )
