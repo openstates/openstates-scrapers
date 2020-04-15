@@ -30,7 +30,7 @@ class ARLegislatorScraper(Scraper):
             '/tbody'
             '/tr'
             '/td[not(text()[contains(.,"(Deceased)")])'
-            'and not(text()[contains(.,"(Removed)")])' 
+            'and not(text()[contains(.,"(Removed)")])'
             'and not(text()[contains(.,"(Resigned)")])]'
             '/a[1]'
         ):
