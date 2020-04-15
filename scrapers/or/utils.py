@@ -1,4 +1,5 @@
 import pytz
+import urllib.parse
 
 
 def index_legislators(scraper, session_key):
@@ -19,6 +20,22 @@ def index_legislators(scraper, session_key):
 
 def get_timezone():
     return pytz.timezone("US/Pacific")
+
+
+def url_fix(s):
+    # Adapted from werkzeug.utils (https://bit.ly/3aPRHjv)
+    """Sometimes you get an URL by a user that just isn't a real URL because
+    it contains unsafe characters like ' ' and so on. This function can fix
+    some of the problems in a similar way browsers handle data entered by the
+    user:
+
+    :param s: the string with the URL to fix.
+    """
+    url = urllib.parse.urlparse(s)
+    path = urllib.parse.quote(url.path, safe="/%+$!*'(),")
+    return urllib.parse.urlunsplit(
+        (url.scheme, url.netloc, path, url.query, url.fragment)
+    )
 
 
 SESSION_KEYS = {

@@ -1,10 +1,10 @@
 import datetime
-import re
 import logging
+import re
 
 from openstates.scrape import Scraper, Bill
 from .apiclient import OregonLegislatorODataClient
-from .utils import index_legislators, get_timezone, SESSION_KEYS
+from .utils import index_legislators, get_timezone, url_fix, SESSION_KEYS
 
 logger = logging.getLogger("openstates")
 
@@ -97,16 +97,15 @@ class ORBillScraper(Scraper):
             )
             for document in measure["MeasureDocuments"]:
                 # TODO: probably mixing documents & versions here - should revisit
+                document_url = url_fix(document["DocumentUrl"])
                 try:
                     bill.add_version_link(
                         document["VersionDescription"],
-                        document["DocumentUrl"],
+                        document_url,
                         media_type="application/pdf",
                     )
                 except ValueError:
-                    logger.warn(
-                        "Duplicate link found for {}".format(document["DocumentUrl"])
-                    )
+                    logger.warn("Duplicate link found for {}".format(document_url))
 
             for agenda_item in measure["CommitteeAgendaItems"]:
                 for document in agenda_item["CommitteeProposedAmendments"]:
@@ -114,9 +113,10 @@ class ORBillScraper(Scraper):
                         amd_name = "{} Amendment {}".format(
                             document["CommitteeCode"], document["AmendmentNumber"]
                         )
+                        amendment_url = url_fix(document["ProposedAmendmentUrl"])
                         bill.add_version_link(
                             amd_name,
-                            document["ProposedAmendmentUrl"],
+                            amendment_url,
                             media_type="application/pdf",
                             on_duplicate="ignore",
                         )
