@@ -171,7 +171,13 @@ class VTBillScraper(Scraper, LXMLMixin):
                 year_slug, internal_bill_id
             )
             actions_json = self.get(actions_url).text
-            actions = json.loads(actions_json)["data"]
+            try:
+                actions = json.loads(actions_json)["data"]
+                if actions == "":
+                    continue
+            except Exception as inst:
+                self.warning(inst)
+                continue
             bill.add_source(actions_url)
 
             chambers_passed = set()
@@ -282,14 +288,20 @@ class VTBillScraper(Scraper, LXMLMixin):
                 yea_count = int(re.search(r"Yeas = (\d+)", vote["FullStatus"]).group(1))
                 nay_count = int(re.search(r"Nays = (\d+)", vote["FullStatus"]).group(1))
 
+                vote_start_date = datetime.datetime.strftime(
+                    datetime.datetime.strptime(vote["StatusDate"], "%m/%d/%Y"),
+                    "%Y-%m-%d",
+                )
+                motion_text = re.sub(HTML_TAGS_RE, "", vote["FullStatus"]).strip()
+                vote_identifer = (
+                    vote["StatusDate"] + "--" + motion_text + "--" + roll_call_url
+                )
                 vote_to_add = VoteEvent(
+                    identifier=vote_identifer,
                     bill=bill,
                     chamber=("lower" if vote["ChamberCode"] == "H" else "upper"),
-                    start_date=datetime.datetime.strftime(
-                        datetime.datetime.strptime(vote["StatusDate"], "%m/%d/%Y"),
-                        "%Y-%m-%d",
-                    ),
-                    motion_text=re.sub(HTML_TAGS_RE, "", vote["FullStatus"]).strip(),
+                    start_date=vote_start_date,
+                    motion_text=motion_text,
                     result="pass" if did_pass else "fail",
                     classification="passage",
                     legislative_session=session,
