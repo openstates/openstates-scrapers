@@ -170,13 +170,15 @@ class VTBillScraper(Scraper, LXMLMixin):
             actions_url = "http://legislature.vermont.gov/bill/loadBillDetailedStatus/{0}/{1}".format(
                 year_slug, internal_bill_id
             )
-            actions_json = self.get(actions_url).text
-            try:
-                actions = json.loads(actions_json)["data"]
+            actions_json = self.get(actions_url)
+
+            # Checks if page actually has json posted
+            if "json" in actions_json.headers.get("Content-Type"):
+                actions = json.loads(actions_json.text)["data"]
+                # Checks to see if any data is actually there
                 if actions == "":
                     continue
-            except Exception as inst:
-                self.warning(inst)
+            else:
                 continue
             bill.add_source(actions_url)
 
