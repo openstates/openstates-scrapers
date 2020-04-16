@@ -230,7 +230,7 @@ class Utah(State):
             "name": "2020 3rd Special Session",
             "start_date": "2020-04-15",
             "end_date": "2020-04-17",
-        },        
+        },
     ]
     ignored_scraped_sessions = [
         "2011 Veto Override Session",
