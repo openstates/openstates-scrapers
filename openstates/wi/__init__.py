@@ -150,7 +150,7 @@ class Wisconsin(State):
             "_scraped_name": "January 2020 Special Session",
             "start_date": "2020-01-18",
             "end_date": "2020-02-27",
-        },        
+        },
         {
             "_scraped_name": "2019 Regular Session",
             "classification": "primary",
