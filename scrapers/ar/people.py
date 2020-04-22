@@ -1,4 +1,4 @@
-import re
+# import re
 
 from openstates.scrape import Person, Scraper
 import lxml.html
@@ -26,11 +26,17 @@ class ARLegislatorScraper(Scraper):
         root = lxml.html.fromstring(page)
 
         for a in root.xpath(
-            '//table[@class="dxgvTable"]'
-            '/tr[contains(@class, "dxgvDataRow")]'
-            "/td[1]/a"
+            '//table[@class="screenreader"]'
+            "/tbody"
+            "/tr"
+            '/td[not(text()[contains(.,"(Deceased)")])'
+            'and not(text()[contains(.,"(Removed)")])'
+            'and not(text()[contains(.,"(Resigned)")])]'
+            "/a[1]"
         ):
-            member_url = a.get("href").replace("../", "/")
+            member_url = "https://www.arkleg.state.ar.us" + a.get("href").replace(
+                "../", "/"
+            )
 
             yield from self.scrape_member(chamber, member_url)
 
@@ -38,7 +44,7 @@ class ARLegislatorScraper(Scraper):
         page = self.get(member_url).text
         root = lxml.html.fromstring(page)
 
-        name_and_party = root.xpath('string(//td[@class="SiteNames"])').split()
+        name_and_party = root.xpath('string(//div[@class="col-md-12"]/h1[1])').split()
 
         title = name_and_party[0]
         # Account for Representative-Elect and Senator-Elect, for incoming class
@@ -67,16 +73,18 @@ class ARLegislatorScraper(Scraper):
             raise AssertionError("Unknown party ({0}) for {1}".format(party, full_name))
 
         try:
-            img = root.xpath('//img[@class="SitePhotos"]')[0]
-            photo_url = img.attrib["src"]
+            img = root.xpath('//img[@class="SitePhotos MemberPhoto"]')[0]
+            photo_url = "https://www.arkleg.state.ar.us" + img.attrib["src"]
         except IndexError:
             self.warning("No member photo found")
             photo_url = ""
 
         # Need to figure out a cleaner method for this later
-        info_box = root.xpath('string(//table[@class="InfoTable"])')
+        # info_box = root.xpath('string(//div[@id="bodyContent"]/div[2]/div[2])')
         try:
-            district = re.search(r"District(.+)\r", info_box).group(1)
+            district = root.xpath(
+                'string(//div[@id="bodyContent"]/div[2]/div[2]/div[3]/div[2])'
+            )
         except AttributeError:
             self.warning("Member has no district listed; skipping them")
             return
@@ -93,14 +101,22 @@ class ARLegislatorScraper(Scraper):
         person.add_source(member_url)
 
         try:
-            phone = re.search(r"Phone(.+)\r", info_box).group(1)
+            phone = root.xpath(
+                'string(//div[@id="bodyContent"]/div[2]/div[2]/div[1]/div[2]/a)'
+            )
+            if not phone.strip():
+                raise AttributeError
         except AttributeError:
             phone = None
         try:
-            email = re.search(r"Email(.+)\r", info_box).group(1)
+            email = root.xpath(
+                'string(//div[@id="bodyContent"]/div[2]/div[2]/div[2]/div[2]/a)'
+            )
+            if not email.strip():
+                raise AttributeError
         except AttributeError:
             email = None
-        address = root.xpath("//nobr/text()")[0].replace(u"\xa0", " ")
+        address = root.xpath('string(//div[@id="bodyContent"]/div[1]/div[1]/p/b)')
 
         person.add_contact_detail(type="address", value=address, note="District Office")
         if phone is not None:
@@ -109,9 +125,17 @@ class ARLegislatorScraper(Scraper):
             person.add_contact_detail(type="email", value=email, note="District Office")
 
         try:
-            person.extras["occupation"] = re.search(
-                r"Occupation(.+)\r", info_box
-            ).group(1)
+            occupation_check = root.xpath(
+                'string(//div[@id="bodyContent"]/div[2]/div[2]/div[5]/div[1]/b)'
+            )
+            if occupation_check == "Occupation:":
+                person.extras["occupation"] = root.xpath(
+                    'string(//div[@id="bodyContent"]/div[2]/div[2]/div[5]/div[2])'
+                )
+            else:
+                raise AttributeError
+            if not person.extras["occupation"].strip():
+                raise AttributeError
         except AttributeError:
             pass
 

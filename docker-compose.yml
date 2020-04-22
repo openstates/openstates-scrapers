@@ -13,6 +13,8 @@ services:
     - PYTHONPATH=./scrapers
     - NEW_YORK_API_KEY
     - INDIANA_API_KEY
+    - VIRGINIA_FTP_USER
+    - VIRGINIA_FTP_PASSWORD
     volumes:
     - .:/opt/openstates/openstates/
     entrypoint: ["poetry", "run", "os-update"]
