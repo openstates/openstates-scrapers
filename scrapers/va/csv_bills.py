@@ -3,7 +3,7 @@ import csv
 import re
 import pytz
 import datetime
-from pupa.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape import Scraper, Bill, VoteEvent
 from collections import defaultdict
 
 from .common import SESSION_SITE_IDS
