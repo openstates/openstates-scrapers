@@ -172,32 +172,28 @@ version = "1.4.6"
 
 [[package]]
 category = "main"
-description = ""
+description = "core infrastructure for the openstates project"
 name = "openstates"
 optional = false
-python-versions = "^3.6"
-version = "4.2.0"
+python-versions = ">=3.6,<4.0"
+version = "4.3.1"
 
 [package.dependencies]
 Django = ">=2.2"
-dj_database_url = "^0.5.0"
-jsonschema = "^3.2.0"
-openstates-metadata = "^2020.4.3"
-psycopg2-binary = "^2.8.4"
-pytz = "^2019.3"
-scrapelib = "^1.2.0"
+dj_database_url = ">=0.5.0,<0.6.0"
+jsonschema = ">=3.2.0,<4.0.0"
+openstates-metadata = ">=2020.4.3,<2021.0.0"
+psycopg2-binary = ">=2.8.4,<3.0.0"
+pytz = ">=2019.3,<2020.0"
+scrapelib = ">=1.2.0,<2.0.0"
 
-[package.source]
-reference = "ecfa7c63bc3f182d8afe911d4d876d2d3e021e9e"
-type = "git"
-url = "https://github.com/openstates/openstates-core.git"
 [[package]]
 category = "main"
 description = "metadata for the openstates project"
 name = "openstates-metadata"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "2020.4.4"
+version = "2020.4.7"
 
 [package.dependencies]
 attrs = ">=19.3,<20.0"
@@ -399,7 +395,7 @@ testing = ["jaraco.itertools", "func-timeout"]
 california = ["mysqlclient", "SQLAlchemy"]
 
 [metadata]
-content-hash = "d2a4c28906b4079cd4b3124a0c4903ddcd6ef7167a531ace937d7406103fd089"
+content-hash = "a5f795810cb0ba48c65dd3eabc67af53300331d1755ca7bf2b842522024e55e6"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -530,10 +526,13 @@ mysqlclient = [
     {file = "mysqlclient-1.4.6-cp38-cp38-win_amd64.whl", hash = "sha256:f646f8d17d02be0872291f258cce3813497bc7888cd4712a577fd1e719b2f213"},
     {file = "mysqlclient-1.4.6.tar.gz", hash = "sha256:f3fdaa9a38752a3b214a6fe79d7cae3653731a53e577821f9187e67cbecb2e16"},
 ]
-openstates = []
+openstates = [
+    {file = "openstates-4.3.1-py3-none-any.whl", hash = "sha256:dcaf28517aebd6ee807ff2e7d4d03b42f64d1570400a3198edcf870a41bbc441"},
+    {file = "openstates-4.3.1.tar.gz", hash = "sha256:6c96c7728299db28c2ad72c601b0580833039a7ef37a23911666ab013591f9b6"},
+]
 openstates-metadata = [
-    {file = "openstates_metadata-2020.4.4-py3-none-any.whl", hash = "sha256:39ae26ff31859c80d11dda2bd010f97f8c628b1004c2707bf20db13de2618a3e"},
-    {file = "openstates_metadata-2020.4.4.tar.gz", hash = "sha256:f12add35f71e1cb8e2cefc234219880c647c695eb984dc246d25edc16e6dd1f2"},
+    {file = "openstates_metadata-2020.4.7-py3-none-any.whl", hash = "sha256:cb9e6a2a55ac3ef4b552fcd1dc6d64eba4949bb8f8732ba1fcf288242535e591"},
+    {file = "openstates_metadata-2020.4.7.tar.gz", hash = "sha256:29d0fbc8ef3117e5e6b8f7da274021e740b6c0c414f98ef722e9b9170274f950"},
 ]
 psycopg2-binary = [
     {file = "psycopg2-binary-2.8.4.tar.gz", hash = "sha256:3a2522b1d9178575acee4adf8fd9f979f9c0449b00b4164bb63c3475ea6528ed"},
