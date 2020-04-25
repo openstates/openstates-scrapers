@@ -52,6 +52,14 @@ version = "3.0.4"
 
 [[package]]
 category = "main"
+description = "Composable command line interface toolkit"
+name = "click"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+version = "7.1.1"
+
+[[package]]
+category = "main"
 description = "cryptography is a package which provides cryptographic recipes and primitives to Python developers."
 name = "cryptography"
 optional = false
@@ -176,10 +184,11 @@ description = "core infrastructure for the openstates project"
 name = "openstates"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "4.3.1"
+version = "4.3.2"
 
 [package.dependencies]
 Django = ">=2.2"
+click = ">=7.1.1,<8.0.0"
 dj_database_url = ">=0.5.0,<0.6.0"
 jsonschema = ">=3.2.0,<4.0.0"
 openstates-metadata = ">=2020.4.3,<2021.0.0"
@@ -445,6 +454,10 @@ chardet = [
     {file = "chardet-3.0.4-py2.py3-none-any.whl", hash = "sha256:fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691"},
     {file = "chardet-3.0.4.tar.gz", hash = "sha256:84ab92ed1c4d4f16916e05906b6b75a6c0fb5db821cc65e70cbd64a3e2a5eaae"},
 ]
+click = [
+    {file = "click-7.1.1-py2.py3-none-any.whl", hash = "sha256:e345d143d80bf5ee7534056164e5e112ea5e22716bbb1ce727941f4c8b471b9a"},
+    {file = "click-7.1.1.tar.gz", hash = "sha256:8a18b4ea89d8820c5d0c7da8a64b2c324b4dabb695804dbfea19b9be9d88c0cc"},
+]
 cryptography = [
     {file = "cryptography-2.9-cp27-cp27m-macosx_10_9_intel.whl", hash = "sha256:ef9a55013676907df6c9d7dd943eb1770d014f68beaa7e73250fb43c759f4585"},
     {file = "cryptography-2.9-cp27-cp27m-manylinux1_x86_64.whl", hash = "sha256:2a2ad24d43398d89f92209289f15265107928f22a8d10385f70def7a698d6a02"},
@@ -527,8 +540,8 @@ mysqlclient = [
     {file = "mysqlclient-1.4.6.tar.gz", hash = "sha256:f3fdaa9a38752a3b214a6fe79d7cae3653731a53e577821f9187e67cbecb2e16"},
 ]
 openstates = [
-    {file = "openstates-4.3.1-py3-none-any.whl", hash = "sha256:dcaf28517aebd6ee807ff2e7d4d03b42f64d1570400a3198edcf870a41bbc441"},
-    {file = "openstates-4.3.1.tar.gz", hash = "sha256:6c96c7728299db28c2ad72c601b0580833039a7ef37a23911666ab013591f9b6"},
+    {file = "openstates-4.3.2-py3-none-any.whl", hash = "sha256:82bbbdf0a576980376ba7b42659a7e6fdc02ee46b590dc0ef71cb2e583f71a08"},
+    {file = "openstates-4.3.2.tar.gz", hash = "sha256:cc5f7f157f72c51007f50af592d54fe9c46ab03dd39a714c3bce36d1b63cc135"},
 ]
 openstates-metadata = [
     {file = "openstates_metadata-2020.4.7-py3-none-any.whl", hash = "sha256:cb9e6a2a55ac3ef4b552fcd1dc6d64eba4949bb8f8732ba1fcf288242535e591"},
