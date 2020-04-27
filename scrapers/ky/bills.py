@@ -42,6 +42,8 @@ class KYBillScraper(Scraper, LXMLMixin):
         ("2nd reading", "reading-2"),
         ("3rd reading", "reading-3"),
         ("passed", "passage"),
+        (r"bill passed", "passage"),
+        ("line items vetoed", "executive-veto-line-item"),
         ("delivered to secretary of state", "became-law"),
         ("veto overridden", "veto-override-passage"),
         ("adopted by voice vote", "passage"),
@@ -53,7 +55,7 @@ class KYBillScraper(Scraper, LXMLMixin):
 
     def classify_action(self, action):
         for regex, classification in self._action_classifiers:
-            if re.match(regex, action):
+            if re.match(regex, action, re.IGNORECASE):
                 return classification
         return None
 
