@@ -47,7 +47,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.california
-    entrypoint: /opt/openstates/openstates/openstates/ca/download.sh
+    entrypoint: /opt/openstates/openstates/scrapers/ca/download.sh
     environment:
     - MYSQL_HOST=mysql
     volumes:
