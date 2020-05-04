@@ -19,7 +19,8 @@ class NJPersonScraper(Scraper, MDBMixin):
         photos = {}
         for rec in bio_csv:
             photos[rec["Roster Key"]] = rec["URLPicture"]
-
+        
+        # Cycle through each record
         for rec in roster_csv:
             first_name = rec["Firstname"]
             middle_name = rec["MidName"]

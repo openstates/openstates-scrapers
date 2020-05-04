@@ -59,6 +59,7 @@ class NJEventScraper(Scraper, MDBMixin):
         year_abr = ((int(session) - 209) * 2) + 2000
         self._init_mdb(year_abr)
         self.initialize_committees(year_abr)
+        # Keep record of all events
         records = self.access_to_csv("Agendas")
         for record in records:
             if record["Status"] != "Scheduled":
@@ -90,7 +91,7 @@ class NJEventScraper(Scraper, MDBMixin):
             for bill in related_bills:
                 item = item or event.add_agenda_item(description)
                 item.add_bill(bill["bill_id"])
-
+            # Add committee to event
             event.add_committee(hr_name, id=record["CommHouse"], note="host")
             event.add_source("http://www.njleg.state.nj.us/downloads.asp")
 
