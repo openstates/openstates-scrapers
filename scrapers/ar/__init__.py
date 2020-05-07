@@ -178,6 +178,7 @@ class Arkansas(State):
         "Regular Session, 2001",
         "First Extraordinary Session, 2002",
         "Regular Session, 1999",
+        "First Extraordinary Session, 1999",
         "First Extraordinary Session, 2000",
         "Second Extraordinary Session, 2000",
         "Regular Session, 1997",
