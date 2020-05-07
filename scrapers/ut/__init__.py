@@ -237,7 +237,7 @@ class Utah(State):
             "identifier": "2020S4",
             "name": "2020 4th Special Session",
             "start_date": "2020-04-27",
-            "end_date": "2019-05-01",
+            "end_date": "2020-05-01",
         },
     ]
     ignored_scraped_sessions = [
