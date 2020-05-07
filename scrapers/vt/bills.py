@@ -84,7 +84,10 @@ class VTBillScraper(Scraper, LXMLMixin):
                     "Unknown bill type found: '{}'".format(info["BillNumber"])
                 )
 
-            bill_id = info["BillNumber"].replace(".", "").replace(" ", "")
+            bill_id_original_format = info["BillNumber"].replace(".", "").replace(" ", "")
+
+            bill_id = bill_id_original_format
+
             # put one space back in between type and number
             bill_id = re.sub(r"([a-zA-Z]+)(\d+)", r"\1 \2", bill_id)
 
@@ -323,12 +326,31 @@ class VTBillScraper(Scraper, LXMLMixin):
 
                 yield vote_to_add
 
-            # Capture extra information-  Not yet implemented
             # Witnesses:
             #   http://legislature.vermont.gov/bill/loadBillWitnessList/{year_slug}/{internal_bill_id}
+            witnesses_doc_link_url = "https://legislature.vermont.gov/bill/print/2020/{0}/witnesses".format(bill_id_original_format)
+            bill.add_document_link(
+                note="Witness List",
+                url=witnesses_doc_link_url,
+                media_type="text/html",
+            )
+
             # Conference committee members:
             #   http://legislature.vermont.gov/bill/loadBillConference/{year_slug}/{bill_number}
+            conferees_doc_link_url = "https://legislature.vermont.gov/bill/print/2020/{0}/conference".format(bill_id_original_format)
+            bill.add_document_link(
+                note="Conference Committee Members",
+                url=conferees_doc_link_url,
+                media_type="text/html",
+            )
+
             # Committee meetings:
             #   http://legislature.vermont.gov/committee/loadHistoryByBill/{year_slug}?LegislationId={internal_bill_id}
+            meetings_doc_link_url = "https://legislature.vermont.gov/bill/print/2020/{0}/meetings".format(bill_id_original_format)
+            bill.add_document_link(
+                note="Committee Meetings",
+                url=meetings_doc_link_url,
+                media_type="text/html",
+            )
 
             yield bill
