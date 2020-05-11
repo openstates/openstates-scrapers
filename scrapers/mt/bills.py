@@ -106,12 +106,11 @@ class MTBillScraper(Scraper, LXMLMixin):
                     yield vote
 
     def parse_bill(self, bill_url, session):
-        chamber = "lower" if "/h" in bill_url.lower() else "upper"
-
+        # chamber = "lower" if "hb" in bill_url.lower() else "upper"
         bill = None
         doc = self.lxmlize(bill_url)
 
-        bill, votes = self.parse_bill_status_page(bill_url, doc, session, chamber)
+        bill, votes = self.parse_bill_status_page(bill_url, doc, session)
 
         # Get versions on the detail page.
         versions = [
@@ -175,7 +174,7 @@ class MTBillScraper(Scraper, LXMLMixin):
 
         return dict(tabledata)
 
-    def parse_bill_status_page(self, url, page, session, chamber):
+    def parse_bill_status_page(self, url, page, session):
         # see 2007 HB 2... weird.
         parsed_url = urllib.parse.urlparse(url)
         parsed_query = dict(urllib.parse.parse_qsl(parsed_url.query))
@@ -199,6 +198,8 @@ class MTBillScraper(Scraper, LXMLMixin):
             classification = "concurrent resolution"
         elif "r" in _bill_id:
             classification = "resolution"
+
+        chamber = "lower" if _bill_id[0] == "h" else "upper"
 
         bill = Bill(
             bill_id,
