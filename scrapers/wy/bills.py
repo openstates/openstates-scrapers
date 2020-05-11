@@ -4,6 +4,7 @@ import datetime
 import json
 
 from openstates.scrape import Scraper, Bill, VoteEvent
+import scrapelib
 
 from utils import LXMLMixin
 
@@ -68,8 +69,11 @@ class WYBillScraper(Scraper, LXMLMixin):
             "http://wyoleg.gov/LsoService/api/BillInformation/{}/"
             "{}?calendarDate=".format(session, bill_num)
         )
-        response = self.get(bill_json_url)
-        bill_json = json.loads(response.content.decode("utf-8"))
+        try:
+            response = self.get(bill_json_url)
+            bill_json = json.loads(response.content.decode("utf-8"))
+        except scrapelib.HTTPError:
+            return None
 
         chamber = "lower" if bill_json["bill"][0] else "upper"
 
