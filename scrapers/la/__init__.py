@@ -2,7 +2,7 @@ from utils import url_xpath, State
 from .people import LAPersonScraper
 
 # from .committees import LACommitteeScraper
-# from .events import LAEventScraper
+from .events import LAEventScraper
 from .bills import LABillScraper
 
 
@@ -10,7 +10,7 @@ class Louisiana(State):
     scrapers = {
         "people": LAPersonScraper,
         # "committees": LACommitteeScraper,
-        # 'events': LAEventScraper,
+        'events': LAEventScraper,
         "bills": LABillScraper,
     }
     legislative_sessions = [
