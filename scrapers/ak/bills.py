@@ -83,6 +83,16 @@ class AKBillScraper(Scraper):
         bill_list_url = f"https://www.akleg.gov/basis/Bill/Range/{session}"
         doc = lxml.html.fromstring(self.get(bill_list_url).text)
         doc.make_links_absolute(bill_list_url)
+
+        conference_committee_list_url = "https://www.akleg.gov/basis/Committee/List/{session}#tabCom5"
+        conference_committee_doc = lxml.html.fromstring(self.get(conference_committee_list_url).text)
+        conference_committee_bills_list = []
+        for link in conference_committee_doc.xpath('//a[contains(@href, "/basis/Committee/Details/")]'):
+            name = link.text_content()
+            if "CONFERENCE COMMITTEE" in str(name):
+                bill_id = re.sub('^.*\((.*?)\)[^\(]*$', '\g<1>', name) # Search for the content between the last set of brackets
+                conference_committee_bills_list.append(bill_id)
+
         for bill_link in doc.xpath("//tr//td[1]//nobr[1]//a[1]"):
             bill_abbr = bill_link.text
             if " " in bill_abbr:
@@ -99,9 +109,14 @@ class AKBillScraper(Scraper):
             else:
                 chamber = "lower"
 
-            yield from self.scrape_bill(chamber, session, bill_id, bill_type, bill_url)
+            if bill_id in conference_committee_bills_list:
+                conference_committee = True
+            else:
+                conference_committee = False
 
-    def scrape_bill(self, chamber, session, bill_id, bill_type, url):
+            yield from self.scrape_bill(chamber, session, bill_id, bill_type, bill_url, conference_committee)
+
+    def scrape_bill(self, chamber, session, bill_id, bill_type, url, conference_committee):
         doc = lxml.html.fromstring(self.get(url).text)
         doc.make_links_absolute(url)
 
@@ -243,11 +258,29 @@ class AKBillScraper(Scraper):
         bill.add_source(doc_list_url)
         seen = set()
         for href in doc_list.xpath('//a[contains(@href, "get_documents")][@onclick]'):
-            h_name = href.text_content()
-            h_href = href.attrib["href"]
-            if h_name.strip() and h_href not in seen:
-                bill.add_document_link(h_name, h_href)
-                seen.add(h_href)
+            h_name = str(href.text_content()).replace('.pdf','')
+            doc_link_url = href.attrib["href"]
+            if h_name.strip() and doc_link_url not in seen:
+                bill.add_document_link(
+                    note=h_name, 
+                    url=doc_link_url,
+                    media_type="pdf",
+                )
+                seen.add(doc_link_url)
+
+        if conference_committee:
+            conferees_house_doc_link_url = "https://www.akleg.gov/basis/Committee/Details/{0}?code=H{1}#tab1_7".format(session, bill_id)
+            bill.add_document_link(
+                note="Conference Committee Members (House)",
+                url=conferees_house_doc_link_url,
+                media_type="text/html",
+            )
+            conferees_senate_doc_link_url = "https://www.akleg.gov/basis/Committee/Details/{0}?code=S{1}#tab1_7".format(session, bill_id)
+            bill.add_document_link(
+                note="Conference Committee Members (Senate)",
+                url=conferees_senate_doc_link_url,
+                media_type="text/html",
+            )
 
         yield bill
 

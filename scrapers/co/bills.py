@@ -119,7 +119,7 @@ class COBillScraper(Scraper, LXMLMixin):
         bill_summary = page.xpath(
             'string(//div[contains(@class,"field-name-field-bill-summary")])'
         )
-        bill_summary = bill_summary.strip()
+        bill_summary = bill_summary.replace('Read More','').strip()
         bill = Bill(
             bill_number, legislative_session=session, chamber=chamber, title=bill_title
         )
@@ -135,7 +135,7 @@ class COBillScraper(Scraper, LXMLMixin):
         self.scrape_committee_report(bill, page)
         self.scrape_amendments(bill, page)
         yield bill
-        yield from self.scrape_votes(bill, page)
+        yield from self.scrape_votes(session, bill, page)
 
     def scrape_sponsors(self, bill, page):
         chamber_map = {"Senator": "upper", "Representative": "lower"}
@@ -319,42 +319,37 @@ class COBillScraper(Scraper, LXMLMixin):
                             amendment_letter,
                         )
 
-    def scrape_votes(self, bill, page):
+    def scrape_votes(self, session, bill, page):
         votes = page.xpath('//div[@id="bill-documents-tabs4"]//table//tbody//tr')
         for vote in votes:
             if vote.xpath(".//a/@href"):
                 vote_url = vote.xpath(".//a/@href")[0]
-
-                parent_committee_row = vote.xpath(
-                    'ancestor::ul[@class="accordion"]/li/'
-                    'a[@class="accordion-title"]/h5/text()'
-                )[0]
-                parent_committee_row = parent_committee_row.strip()
-
+                bill.add_source(vote_url)
+                page = self.lxmlize(vote_url)
+                header = page.xpath('//div[@id="page"]//table//tr//font/text()')[0]
                 # Some vote headers have missing information,
                 # so we cannot save the vote information
-                header = parent_committee_row
                 if not header:
                     self.warning(
                         "No date and committee information available in the vote header."
                     )
                     return
-
-                if "Senate" in header:
+                if "SENATE" in header:
                     chamber = "upper"
-                elif "House" in header:
+                elif "HOUSE" in header:
                     chamber = "lower"
                 else:
                     self.warning("No chamber for %s" % header)
                     chamber = None
-                date = vote.xpath("//span[@class='date-display-single']/text()")[0]
+                date = page.xpath('//div[@id="page"]//table//tr//p//font[last()]/text()')[0]
+                date = date.split(' ', 1)[0]
                 date = dt.datetime.strptime(date, "%m/%d/%Y")
                 if vote_url in BAD_URLS:
                     continue
 
-                yield from self.scrape_vote(bill, vote_url, chamber, date)
+                yield from self.scrape_vote(session, bill, vote_url, chamber, date)
 
-    def scrape_vote(self, bill, vote_url, chamber, date):
+    def scrape_vote(self, session, bill, vote_url, chamber, date):
         page = self.lxmlize(vote_url)
 
         try:
