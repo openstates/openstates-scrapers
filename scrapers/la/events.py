@@ -57,7 +57,7 @@ class LAEventScraper(Scraper, LXMLMixin):
         else:
             all_day = False
             when = datetime.datetime.strptime(
-                "%s %s" % (date, time), "%B %d, %Y %I:%M %p"
+                f"{date} {time}".strip(), "%B %d, %Y %I:%M %p"
             )
 
         # when = self._tz.localize(when)
