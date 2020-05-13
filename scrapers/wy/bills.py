@@ -183,8 +183,10 @@ class WYBillScraper(Scraper, LXMLMixin):
 
         for amendment in bill_json["amendments"]:
             # http://wyoleg.gov/2018/Amends/SF0050H2001.pdf
+            # TODO: There are no special session amendments yet,
+            # but check this url format for specials
             url = "http://wyoleg.gov/{}/Amends/{}.pdf".format(
-                session, amendment["amendmentNumber"]
+                session[0:4], amendment["amendmentNumber"]
             )
 
             if amendment["sponsor"] and amendment["status"]:
