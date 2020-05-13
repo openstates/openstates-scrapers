@@ -64,7 +64,6 @@ class WYBillScraper(Scraper, LXMLMixin):
                 "http://wyoleg.gov/LsoService/api/BillInformation?"
                 "$filter=Year%20eq%202020%20and%20SpecialSessionValue%20ne%20null&$orderby=BillNum".format(session[0:4])
             )
-            print(bill_json_url)
         else:
             bill_json_url = (
                 "http://wyoleg.gov/LsoService/api/BillInformation?"
@@ -96,7 +95,6 @@ class WYBillScraper(Scraper, LXMLMixin):
             response = self.get(bill_json_url)
             bill_json = json.loads(response.content.decode("utf-8"))
         except scrapelib.HTTPError:
-            print("HTTPERROR ON IT")
             return None
 
         chamber = "lower" if bill_json["bill"][0] else "upper"
