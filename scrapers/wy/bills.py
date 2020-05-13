@@ -85,7 +85,7 @@ class WYBillScraper(Scraper, LXMLMixin):
             "{}?calendarDate=".format(session, bill_num)
         )
 
-        if self.is_special == True:
+        if self.is_special:
             bill_json_url = (
                 "http://wyoleg.gov/LsoService/api/BillInformation/{}/"
                 "{}?specialSessionValue=1&calendarDate=".format(session[0:4], bill_num)
@@ -113,7 +113,7 @@ class WYBillScraper(Scraper, LXMLMixin):
             session, bill_json["bill"]
         )
 
-        if self.is_special == True:
+        if self.is_special:
             source_url = "http://lso.wyoleg.gov/Legislation/{}/{}?specialSessionValue=1".format(
                 session[0:4], bill_json["bill"]
             )
