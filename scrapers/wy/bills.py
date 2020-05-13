@@ -233,7 +233,7 @@ class WYBillScraper(Scraper, LXMLMixin):
         bill.extras["wy_bill_id"] = bill_json["id"]
 
         for vote_json in bill_json["rollCalls"]:
-            yield from self.scrape_vote(bill, vote_json, session[0:4])
+            yield from self.scrape_vote(bill, vote_json, session)
 
         yield bill
 
