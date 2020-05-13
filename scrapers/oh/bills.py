@@ -38,6 +38,7 @@ class OHBillScraper(Scraper):
         "msg_507": "Concurred in Senate amendments",
         "pass_301": "Adopted",
         "third_407": "Passed - Amended",
+        "concur_602": "Concurred in Senate amendments",
     }
 
     def scrape(self, session=None, chambers=None):

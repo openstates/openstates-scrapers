@@ -95,9 +95,17 @@ class Wyoming(State):
             "start_date": "2020-02-10",
             "end_date": "2020-03-06",
         },
+        {
+            "_scraped_name": "2020S1",
+            "classification": "special",
+            "identifier": "2020S1",
+            "name": "2020 Special Session",
+            "start_date": "2020-05-07",
+            # Note: End date approximate
+            "end_date": "2020-05-22",
+        },
     ]
     ignored_scraped_sessions = [
-        "2020",
         "2019",
         "2016",
         "2014",

@@ -338,11 +338,14 @@ class VTBillScraper(Scraper, LXMLMixin):
             # Conference committee members:
             #   http://legislature.vermont.gov/bill/loadBillConference/{year_slug}/{bill_number}
             conferees_doc_link_url = "https://legislature.vermont.gov/bill/print/2020/{0}/conference".format(bill_id_original_format)
-            bill.add_document_link(
-                note="Conference Committee Members",
-                url=conferees_doc_link_url,
-                media_type="text/html",
-            )
+            page = self.lxmlize(conferees_doc_link_url)
+            no_data = page.xpath('//div[@class="no-data"]/text()')
+            if not no_data:
+                bill.add_document_link(
+                    note="Conference Committee Members",
+                    url=conferees_doc_link_url,
+                    media_type="text/html",
+                )
 
             # Committee meetings:
             #   http://legislature.vermont.gov/committee/loadHistoryByBill/{year_slug}?LegislationId={internal_bill_id}

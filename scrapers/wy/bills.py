@@ -4,6 +4,7 @@ import datetime
 import json
 
 from openstates.scrape import Scraper, Bill, VoteEvent
+import scrapelib
 
 from utils import LXMLMixin
 
@@ -36,6 +37,7 @@ def categorize_action(action):
 
 class WYBillScraper(Scraper, LXMLMixin):
     chamber_abbrev_map = {"H": "lower", "S": "upper"}
+    is_special = False
 
     def scrape(self, chamber=None, session=None):
         if session is None:
@@ -49,10 +51,24 @@ class WYBillScraper(Scraper, LXMLMixin):
     def scrape_chamber(self, chamber, session):
         chamber_abbrev = {"upper": "S", "lower": "H"}[chamber]
 
-        bill_json_url = (
-            "http://wyoleg.gov/LsoService/api/BillInformation?"
-            "$filter=Year%20eq%20{}&$orderby=BillNum".format(session)
+        # pull the current session's details to tell if it's a special
+        session_details = next(
+            each
+            for each in self.jurisdiction.legislative_sessions
+            if each["identifier"] == session
         )
+
+        if session_details["classification"] == "special":
+            self.is_special = True
+            bill_json_url = (
+                "http://wyoleg.gov/LsoService/api/BillInformation?"
+                "$filter=Year%20eq%202020%20and%20SpecialSessionValue%20ne%20null&$orderby=BillNum".format(session[0:4])
+            )
+        else:
+            bill_json_url = (
+                "http://wyoleg.gov/LsoService/api/BillInformation?"
+                "$filter=Year%20eq%20{}&$orderby=BillNum".format(session)
+            )
 
         response = self.get(bill_json_url)
         bill_list = json.loads(response.content.decode("utf-8"))
@@ -68,8 +84,18 @@ class WYBillScraper(Scraper, LXMLMixin):
             "http://wyoleg.gov/LsoService/api/BillInformation/{}/"
             "{}?calendarDate=".format(session, bill_num)
         )
-        response = self.get(bill_json_url)
-        bill_json = json.loads(response.content.decode("utf-8"))
+
+        if self.is_special:
+            bill_json_url = (
+                "http://wyoleg.gov/LsoService/api/BillInformation/{}/"
+                "{}?specialSessionValue=1&calendarDate=".format(session[0:4], bill_num)
+            )
+
+        try:
+            response = self.get(bill_json_url)
+            bill_json = json.loads(response.content.decode("utf-8"))
+        except scrapelib.HTTPError:
+            return None
 
         chamber = "lower" if bill_json["bill"][0] else "upper"
 
@@ -86,6 +112,12 @@ class WYBillScraper(Scraper, LXMLMixin):
         source_url = "http://lso.wyoleg.gov/Legislation/{}/{}".format(
             session, bill_json["bill"]
         )
+
+        if self.is_special:
+            source_url = "http://lso.wyoleg.gov/Legislation/{}/{}?specialSessionValue=1".format(
+                session[0:4], bill_json["bill"]
+            )
+
         bill.add_source(source_url)
 
         for action_json in bill_json["billActions"]:
@@ -151,8 +183,10 @@ class WYBillScraper(Scraper, LXMLMixin):
 
         for amendment in bill_json["amendments"]:
             # http://wyoleg.gov/2018/Amends/SF0050H2001.pdf
+            # TODO: There are no special session amendments yet,
+            # but check this url format for specials
             url = "http://wyoleg.gov/{}/Amends/{}.pdf".format(
-                session, amendment["amendmentNumber"]
+                session[0:4], amendment["amendmentNumber"]
             )
 
             if amendment["sponsor"] and amendment["status"]:
