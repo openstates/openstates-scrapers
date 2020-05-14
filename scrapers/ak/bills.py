@@ -84,13 +84,21 @@ class AKBillScraper(Scraper):
         doc = lxml.html.fromstring(self.get(bill_list_url).text)
         doc.make_links_absolute(bill_list_url)
 
-        conference_committee_list_url = "https://www.akleg.gov/basis/Committee/List/{session}#tabCom5"
-        conference_committee_doc = lxml.html.fromstring(self.get(conference_committee_list_url).text)
+        conference_committee_list_url = (
+            "https://www.akleg.gov/basis/Committee/List/{session}#tabCom5"
+        )
+        conference_committee_doc = lxml.html.fromstring(
+            self.get(conference_committee_list_url).text
+        )
         conference_committee_bills_list = []
-        for link in conference_committee_doc.xpath('//a[contains(@href, "/basis/Committee/Details/")]'):
+        for link in conference_committee_doc.xpath(
+            '//a[contains(@href, "/basis/Committee/Details/")]'
+        ):
             name = link.text_content()
             if "CONFERENCE COMMITTEE" in str(name):
-                bill_id = re.sub('^.*\((.*?)\)[^\(]*$', '\g<1>', name) # Search for the content between the last set of brackets
+                bill_id = re.sub(
+                    r"^.*\((.*?)\)[^\(]*$", r"\g<1>", name
+                )  # Search for the content between the last set of brackets
                 conference_committee_bills_list.append(bill_id)
 
         for bill_link in doc.xpath("//tr//td[1]//nobr[1]//a[1]"):
@@ -114,9 +122,13 @@ class AKBillScraper(Scraper):
             else:
                 conference_committee = False
 
-            yield from self.scrape_bill(chamber, session, bill_id, bill_type, bill_url, conference_committee)
+            yield from self.scrape_bill(
+                chamber, session, bill_id, bill_type, bill_url, conference_committee
+            )
 
-    def scrape_bill(self, chamber, session, bill_id, bill_type, url, conference_committee):
+    def scrape_bill(
+        self, chamber, session, bill_id, bill_type, url, conference_committee
+    ):
         doc = lxml.html.fromstring(self.get(url).text)
         doc.make_links_absolute(url)
 
@@ -258,24 +270,24 @@ class AKBillScraper(Scraper):
         bill.add_source(doc_list_url)
         seen = set()
         for href in doc_list.xpath('//a[contains(@href, "get_documents")][@onclick]'):
-            h_name = str(href.text_content()).replace('.pdf','')
+            h_name = str(href.text_content()).replace(".pdf", "")
             doc_link_url = href.attrib["href"]
             if h_name.strip() and doc_link_url not in seen:
-                bill.add_document_link(
-                    note=h_name, 
-                    url=doc_link_url,
-                    media_type="pdf",
-                )
+                bill.add_document_link(note=h_name, url=doc_link_url, media_type="pdf")
                 seen.add(doc_link_url)
 
         if conference_committee:
-            conferees_house_doc_link_url = "https://www.akleg.gov/basis/Committee/Details/{0}?code=H{1}#tab1_7".format(session, bill_id)
+            conferees_house_doc_link_url = "https://www.akleg.gov/basis/Committee/Details/{0}?code=H{1}#tab1_7".format(
+                session, bill_id
+            )
             bill.add_document_link(
                 note="Conference Committee Members (House)",
                 url=conferees_house_doc_link_url,
                 media_type="text/html",
             )
-            conferees_senate_doc_link_url = "https://www.akleg.gov/basis/Committee/Details/{0}?code=S{1}#tab1_7".format(session, bill_id)
+            conferees_senate_doc_link_url = "https://www.akleg.gov/basis/Committee/Details/{0}?code=S{1}#tab1_7".format(
+                session, bill_id
+            )
             bill.add_document_link(
                 note="Conference Committee Members (Senate)",
                 url=conferees_senate_doc_link_url,

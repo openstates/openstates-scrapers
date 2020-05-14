@@ -84,7 +84,9 @@ class VTBillScraper(Scraper, LXMLMixin):
                     "Unknown bill type found: '{}'".format(info["BillNumber"])
                 )
 
-            bill_id_original_format = info["BillNumber"].replace(".", "").replace(" ", "")
+            bill_id_original_format = (
+                info["BillNumber"].replace(".", "").replace(" ", "")
+            )
 
             bill_id = bill_id_original_format
 
@@ -328,16 +330,18 @@ class VTBillScraper(Scraper, LXMLMixin):
 
             # Witnesses:
             #   http://legislature.vermont.gov/bill/loadBillWitnessList/{year_slug}/{internal_bill_id}
-            witnesses_doc_link_url = "https://legislature.vermont.gov/bill/print/2020/{0}/witnesses".format(bill_id_original_format)
+            witnesses_doc_link_url = "https://legislature.vermont.gov/bill/print/2020/{0}/witnesses".format(
+                bill_id_original_format
+            )
             bill.add_document_link(
-                note="Witness List",
-                url=witnesses_doc_link_url,
-                media_type="text/html",
+                note="Witness List", url=witnesses_doc_link_url, media_type="text/html"
             )
 
             # Conference committee members:
             #   http://legislature.vermont.gov/bill/loadBillConference/{year_slug}/{bill_number}
-            conferees_doc_link_url = "https://legislature.vermont.gov/bill/print/2020/{0}/conference".format(bill_id_original_format)
+            conferees_doc_link_url = "https://legislature.vermont.gov/bill/print/2020/{0}/conference".format(
+                bill_id_original_format
+            )
             page = self.lxmlize(conferees_doc_link_url)
             no_data = page.xpath('//div[@class="no-data"]/text()')
             if not no_data:
@@ -349,7 +353,9 @@ class VTBillScraper(Scraper, LXMLMixin):
 
             # Committee meetings:
             #   http://legislature.vermont.gov/committee/loadHistoryByBill/{year_slug}?LegislationId={internal_bill_id}
-            meetings_doc_link_url = "https://legislature.vermont.gov/bill/print/2020/{0}/meetings".format(bill_id_original_format)
+            meetings_doc_link_url = "https://legislature.vermont.gov/bill/print/2020/{0}/meetings".format(
+                bill_id_original_format
+            )
             bill.add_document_link(
                 note="Committee Meetings",
                 url=meetings_doc_link_url,

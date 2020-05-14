@@ -119,7 +119,7 @@ class COBillScraper(Scraper, LXMLMixin):
         bill_summary = page.xpath(
             'string(//div[contains(@class,"field-name-field-bill-summary")])'
         )
-        bill_summary = bill_summary.replace('Read More','').strip()
+        bill_summary = bill_summary.replace("Read More", "").strip()
         bill = Bill(
             bill_number, legislative_session=session, chamber=chamber, title=bill_title
         )
@@ -341,8 +341,10 @@ class COBillScraper(Scraper, LXMLMixin):
                 else:
                     self.warning("No chamber for %s" % header)
                     chamber = None
-                date = page.xpath('//div[@id="page"]//table//tr//p//font[last()]/text()')[0]
-                date = date.split(' ', 1)[0]
+                date = page.xpath(
+                    '//div[@id="page"]//table//tr//p//font[last()]/text()'
+                )[0]
+                date = date.split(" ", 1)[0]
                 date = dt.datetime.strptime(date, "%m/%d/%Y")
                 if vote_url in BAD_URLS:
                     continue
