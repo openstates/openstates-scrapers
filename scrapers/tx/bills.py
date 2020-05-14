@@ -58,6 +58,17 @@ class TXBillScraper(Scraper, LXMLMixin):
             else:
                 yield "/".join(["ftp://" + root, dir_, name])
 
+    @staticmethod
+    def _get_bill_id_from_file_path(file_path):
+        bill_id = file_path.split("/")[-1].split(".")[0]
+        identifier, number = re.search(r"([A-Z]{2}R?)0+(\d+)", bill_id).groups()
+        # House and Senate Concurrent and Joint Resolutions files do not contain
+        # the 'R' for resolution in file names. This is required to match
+        # bill ID's later on.
+        if re.match('[HS][CJ]', identifier):
+            identifier += 'R'
+        return ' '.join([identifier, number])
+
     def scrape(self, session=None, chamber=None):
         if not session:
             session = self.latest_session()
@@ -72,8 +83,7 @@ class TXBillScraper(Scraper, LXMLMixin):
             self._FTP_ROOT, "bills/{}/billtext/html".format(session_code)
         )
         for item in version_files:
-            bill_id = item.split("/")[-1].split(".")[0]
-            bill_id = " ".join(re.search(r"([A-Z]{2})R?0+(\d+)", bill_id).groups())
+            bill_id = self._get_bill_id_from_file_path(item)
             self.versions.append((bill_id, item))
 
         self.analyses = []
@@ -81,8 +91,7 @@ class TXBillScraper(Scraper, LXMLMixin):
             self._FTP_ROOT, "bills/{}/analysis/html".format(session_code)
         )
         for item in analysis_files:
-            bill_id = item.split("/")[-1].split(".")[0]
-            bill_id = " ".join(re.search(r"([A-Z]{2})R?0+(\d+)", bill_id).groups())
+            bill_id = self._get_bill_id_from_file_path(item)
             self.analyses.append((bill_id, item))
 
         self.fiscal_notes = []
@@ -90,8 +99,7 @@ class TXBillScraper(Scraper, LXMLMixin):
             self._FTP_ROOT, "bills/{}/fiscalnotes/html".format(session_code)
         )
         for item in fiscal_note_files:
-            bill_id = item.split("/")[-1].split(".")[0]
-            bill_id = " ".join(re.search(r"([A-Z]{2})R?0+(\d+)", bill_id).groups())
+            bill_id = self._get_bill_id_from_file_path(item)
             self.fiscal_notes.append((bill_id, item))
 
         self.witnesses = []
@@ -99,8 +107,7 @@ class TXBillScraper(Scraper, LXMLMixin):
             self._FTP_ROOT, "bills/{}/witlistbill/html".format(session_code)
         )
         for item in witness_files:
-            bill_id = item.split("/")[-1].split(".")[0]
-            bill_id = " ".join(re.search(r"([A-Z]{2})R?0+(\d+)", bill_id).groups())
+            bill_id = self._get_bill_id_from_file_path(item)
             self.witnesses.append((bill_id, item))
 
         history_files = self._get_ftp_files(
