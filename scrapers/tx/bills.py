@@ -78,13 +78,21 @@ class TXBillScraper(Scraper, LXMLMixin):
 
         session_code = self._format_session(session)
 
-        self.versions = []
-        version_files = self._get_ftp_files(
+        self.html_versions = []
+        html_version_files = self._get_ftp_files(
             self._FTP_ROOT, "bills/{}/billtext/html".format(session_code)
         )
-        for item in version_files:
+        for item in html_version_files:
             bill_id = self._get_bill_id_from_file_path(item)
-            self.versions.append((bill_id, item))
+            self.html_versions.append((bill_id, item))
+
+        self.pdf_versions = []
+        pdf_version_files = self._get_ftp_files(
+            self._FTP_ROOT, "bills/{}/billtext/pdf".format(session_code)
+        )
+        for item in pdf_version_files:
+            bill_id = self._get_bill_id_from_file_path(item)
+            self.pdf_versions.append((bill_id, item))
 
         self.analyses = []
         analysis_files = self._get_ftp_files(
@@ -157,12 +165,20 @@ class TXBillScraper(Scraper, LXMLMixin):
         for subject in root.iterfind("subjects/subject"):
             bill.add_subject(subject.text.strip())
 
-        versions = [x for x in self.versions if x[0] == bill_id]
-        for version in versions:
+        html_versions = [x for x in self.html_versions if x[0] == bill_id]
+        for version in html_versions:
             bill.add_version_link(
                 note=self.NAME_SLUGS[version[1][-5]],
                 url=version[1],
                 media_type="text/html",
+            )
+
+        pdf_versions = [x for x in self.pdf_versions if x[0] == bill_id]
+        for version in pdf_versions:
+            bill.add_version_link(
+                note=self.NAME_SLUGS[version[1][-5]],
+                url=version[1],
+                media_type="application/pdf",
             )
 
         analyses = [x for x in self.analyses if x[0] == bill_id]
