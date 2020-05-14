@@ -173,16 +173,15 @@ class HIBillScraper(Scraper):
 
     def parse_bill_versions_table(self, bill, versions):
         versions = versions.xpath("./*")
-
         if versions == []:
             raise Exception("Missing bill versions.")
 
         for version in versions:
-            tds = version.xpath("./*")
+            tds = version.xpath("./td")
             if "No other versions" in tds[0].text_content():
                 return
 
-            if version.xpath("./a"):
+            if version.xpath("./td/a"):
                 http_href = tds[0].xpath("./a")
                 name = http_href[0].text_content().strip()
                 pdf_href = tds[1].xpath("./a")
