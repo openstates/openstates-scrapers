@@ -24,17 +24,17 @@ class TXBillScraper(Scraper, LXMLMixin):
         "https://capitol.texas.gov/BillLookup/Companions.aspx" "?LegSess={}&Bill={}"
     )
 
-    def _get_ftp_files(self, root, dir_):
+    def _get_ftp_files(self, dir_):
         """ Recursively traverse an FTP directory, returning all files """
-
         for i in range(3):
             try:
-                ftp = ftplib.FTP(root)
+                ftp = ftplib.FTP(self._FTP_ROOT)
                 break
             except (EOFError, ftplib.error_temp):
                 time.sleep(2 ** i)
         else:
-            raise
+            raise Exception
+
         ftp.login()
         ftp.cwd("/" + dir_)
         self.info("Searching an FTP folder for files ({})".format(dir_))
@@ -53,10 +53,10 @@ class TXBillScraper(Scraper, LXMLMixin):
                 line,
             ).groups()
             if is_dir:
-                for item in self._get_ftp_files(root, "/".join([dir_, name])):
+                for item in self._get_ftp_files("/".join([dir_, name])):
                     yield item
             else:
-                yield "/".join(["ftp://" + root, dir_, name])
+                yield "/".join(["ftp://" + self._FTP_ROOT, dir_, name])
 
     @staticmethod
     def _get_bill_id_from_file_path(file_path):
@@ -78,48 +78,16 @@ class TXBillScraper(Scraper, LXMLMixin):
 
         session_code = self._format_session(session)
 
-        self.html_versions = []
-        html_version_files = self._get_ftp_files(
-            self._FTP_ROOT, "bills/{}/billtext/html".format(session_code)
-        )
-        for item in html_version_files:
-            bill_id = self._get_bill_id_from_file_path(item)
-            self.html_versions.append((bill_id, item))
-
-        self.pdf_versions = []
-        pdf_version_files = self._get_ftp_files(
-            self._FTP_ROOT, "bills/{}/billtext/pdf".format(session_code)
-        )
-        for item in pdf_version_files:
-            bill_id = self._get_bill_id_from_file_path(item)
-            self.pdf_versions.append((bill_id, item))
-
-        self.analyses = []
-        analysis_files = self._get_ftp_files(
-            self._FTP_ROOT, "bills/{}/analysis/html".format(session_code)
-        )
-        for item in analysis_files:
-            bill_id = self._get_bill_id_from_file_path(item)
-            self.analyses.append((bill_id, item))
-
-        self.fiscal_notes = []
-        fiscal_note_files = self._get_ftp_files(
-            self._FTP_ROOT, "bills/{}/fiscalnotes/html".format(session_code)
-        )
-        for item in fiscal_note_files:
-            bill_id = self._get_bill_id_from_file_path(item)
-            self.fiscal_notes.append((bill_id, item))
-
         self.witnesses = []
         witness_files = self._get_ftp_files(
-            self._FTP_ROOT, "bills/{}/witlistbill/html".format(session_code)
+            "bills/{}/witlistbill/html".format(session_code)
         )
         for item in witness_files:
             bill_id = self._get_bill_id_from_file_path(item)
             self.witnesses.append((bill_id, item))
 
         history_files = self._get_ftp_files(
-            self._FTP_ROOT, "bills/{}/billhistory".format(session_code)
+            "bills/{}/billhistory".format(session_code)
         )
         for bill_url in history_files:
             if "house" in bill_url:
@@ -165,35 +133,42 @@ class TXBillScraper(Scraper, LXMLMixin):
         for subject in root.iterfind("subjects/subject"):
             bill.add_subject(subject.text.strip())
 
-        html_versions = [x for x in self.html_versions if x[0] == bill_id]
-        for version in html_versions:
+        for version in root.iterfind("billtext/docTypes/bill/versions"):
+            note = version.find("version/versionDescription").text
+            html_url = version.find("version/WebHTMLURL").text
             bill.add_version_link(
-                note=self.NAME_SLUGS[version[1][-5]],
-                url=version[1],
+                note=note,
+                url=html_url,
+                media_type="text/html"
+            )
+            pdf_url = version.find("version/WebPDFURL").text
+            bill.add_version_link(
+                note=note,
+                url=pdf_url,
+                media_type="application/pdf"
+            )
+
+        for analysis in root.iterfind("billtext/docTypes/analysis/versions"):
+            if not analysis:
+                continue
+
+            description = analysis.find("version/versionDescription").text
+            html_url = analysis.find("version/WebHTMLURL").text
+            bill.add_document_link(
+                note="Analysis ({})".format(description),
+                url=html_url,
                 media_type="text/html",
             )
 
-        pdf_versions = [x for x in self.pdf_versions if x[0] == bill_id]
-        for version in pdf_versions:
-            bill.add_version_link(
-                note=self.NAME_SLUGS[version[1][-5]],
-                url=version[1],
-                media_type="application/pdf",
-            )
+        for fiscal_note in root.iterfind("billtext/docTypes/fiscalNote/versions"):
+            if not fiscal_note:
+                continue
 
-        analyses = [x for x in self.analyses if x[0] == bill_id]
-        for analysis in analyses:
+            description = fiscal_note.find("version/versionDescription").text
+            html_url = fiscal_note.find("version/WebHTMLURL").text
             bill.add_document_link(
-                note="Analysis ({})".format(self.NAME_SLUGS[analysis[1][-5]]),
-                url=analysis[1],
-                media_type="text/html",
-            )
-
-        fiscal_notes = [x for x in self.fiscal_notes if x[0] == bill_id]
-        for fiscal_note in fiscal_notes:
-            bill.add_document_link(
-                note="Fiscal Note ({})".format(self.NAME_SLUGS[fiscal_note[1][-5]]),
-                url=fiscal_note[1],
+                note="Fiscal Note ({})".format(description),
+                url=html_url,
                 media_type="text/html",
             )
 
