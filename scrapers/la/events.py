@@ -12,7 +12,7 @@ class LAEventScraper(Scraper, LXMLMixin):
     def scrape(self, chamber=None):
         yield from self.scrape_house_weekly_schedule()
 
-        url = "http://www.legis.la.gov/legis/ByCmte.aspx"
+        url = "https://www.legis.la.gov/legis/ByCmte.aspx"
 
         page = self.get(url).text
         page = lxml.html.fromstring(page)
@@ -101,7 +101,7 @@ class LAEventScraper(Scraper, LXMLMixin):
         yield event
 
     def scrape_house_weekly_schedule(self):
-        url = "http://house.louisiana.gov/H_Sched/Hse_MeetingSchedule.aspx"
+        url = "https://house.louisiana.gov/H_Sched/Hse_MeetingSchedule.aspx"
         page = self.lxmlize(url)
 
         meeting_rows = page.xpath('//table[@id = "table229"]/tr')
