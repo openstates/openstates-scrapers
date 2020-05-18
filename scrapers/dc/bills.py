@@ -54,7 +54,50 @@ class DCBillScraper(Scraper):
             resp = requests.post(leg_listing_url, headers=self._headers, verify=False,)
             resp.raise_for_status()
             leg_listing = resp.json()
-            print(leg_listing)
+
+            for leg in leg_listing:
+
+                bill = Bill(
+                    leg["legislationNumber"],
+                    legislative_session=session,
+                    title=leg["title"],
+                    classification=category["name"],
+                )
+                bill.add_source(leg_listing_url)
+
+                # Grabs Legislation details
+                leg_details_url = (
+                    self._API_BASE_URL
+                    + f"LegislationDetails/{leg['legislationNumber']}"
+                )
+                details_resp = requests.get(
+                    leg_details_url, headers=self._headers, verify=False,
+                )
+                details_resp.raise_for_status()
+                leg_details = details_resp.json()
+
+                # Sponsors
+                for i in leg_details["introducers"]:
+                    name = i["memberName"]
+                    bill.add_sponsorship(
+                        name,
+                        classification="primary",
+                        entity_type="person",
+                        primary=True,
+                    )
+
+                # Co-sponsor
+                if leg_details["coSponsors"]:
+                    for cs in leg_details["coSponsors"]:
+                        name = i["memberName"]
+                        bill.add_sponsorship(
+                            name,
+                            classification="cosponsor",
+                            entity_type="person",
+                            primary=True,
+                        )
+
+                yield bill
 
     def old_scrape(self, session=None):
         if not session:
