@@ -2,6 +2,8 @@ import datetime
 import json
 import pytz
 import re
+import os
+import requests
 
 from openstates.scrape import Scraper, Bill, VoteEvent
 
@@ -26,7 +28,35 @@ class DCBillScraper(Scraper):
         ("Referred to", "referral-committee"),
     )
 
+    _API_BASE_URL = "https://lims.dccouncil.us/api/v2/PublicData/"
+
+    _headers = {
+        "Authorization": os.environ["DC_API_KEY"],
+        "Accept": "application/json",
+        "User-Agent": os.getenv("USER_AGENT", "openstates"),
+    }
+
+    # Defined within /api/v2/PublicData/LegislationCategories
+    _categories = [
+        {"categoryId": 1, "name": "bill"},
+        {"categoryId": 6, "name": "resolution"},
+    ]
+
     def scrape(self, session=None):
+        if not session:
+            session = self.latest_session()
+            self.info("no session specified, using %s", session)
+        print(session)
+        for category in self._categories:
+            leg_listing_url = (
+                self._API_BASE_URL + f"BulkData/{category['categoryId']}/{session}"
+            )
+            resp = requests.post(leg_listing_url, headers=self._headers, verify=False,)
+            resp.raise_for_status()
+            leg_listing = resp.json()
+            print(leg_listing)
+
+    def old_scrape(self, session=None):
         if not session:
             session = self.latest_session()
             self.info("no session specified, using %s", session)
