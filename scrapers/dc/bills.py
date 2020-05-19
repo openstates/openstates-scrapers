@@ -116,6 +116,9 @@ class DCBillScraper(Scraper):
                         action_date = self._TZ.localize(action_date)
                         action_class = self.classify_action(action_name)
 
+                        if action_name.split()[0] == "Other":
+                            action_name = " ".join(action_name.split()[1:])
+
                         if "mayor" in action_name.lower():
                             actor = "executive"
                         else:
