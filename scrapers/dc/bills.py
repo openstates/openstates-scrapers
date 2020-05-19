@@ -170,6 +170,59 @@ class DCBillScraper(Scraper):
                                     v.set_count("other", other_count)
                                     yield v
 
+                # Mayoral actions
+                if leg_details["mayoralReview"]:
+                    mayor = leg_details["mayoralReview"]
+
+                    if mayor["transmittedDate"]:
+                        transmitted_date = self.date_format(mayor["transmittedDate"])
+                        response_date = mayor["responseDueDate"][:10]
+                        trasmitted = (
+                            f"Transmitted to Mayor, Response Due on {response_date}"
+                        )
+                        bill.add_action(trasmitted, transmitted_date)
+
+                    if mayor["returnedDate"]:
+                        returned_date = self.date_format(mayor["returnedDate"])
+                        bill.add_action("Returned from Mayor", returned_date)
+
+                    if mayor["vetoDate"]:
+                        veto_date = self.date_format(mayor["vetoDate"])
+                        bill.add_action(
+                            "Vetoed by the Mayor",
+                            veto_date,
+                            chamber="executive",
+                            classification="executive-veto",
+                        )
+
+                    if mayor["signedDate"]:
+                        signed_date = self.date_format(mayor["signedDate"])
+                        signed = f"Signed with Act Number {mayor['actNumber']}"
+                        bill.add_action(
+                            signed, signed_date, classification="executive-signature",
+                        )
+                        # Link to version
+                        if mayor["signedAct"]:
+                            bill.add_version_link(
+                                "Signed Act",
+                                mayor["signedAct"],
+                                media_type="application/pdf",
+                            )
+
+                    if mayor["enactedDate"]:
+                        enacted_date = self.date_format(mayor["enactedDate"])
+                        enacted = f"Enacted with Act Number {mayor['actNumber']}"
+                        bill.add_action(enacted, enacted_date)
+
+                    if mayor["actPublicationDate"]:
+                        act_published_date = self.date_format(
+                            mayor["actPublicationDate"]
+                        )
+                        act_published = (
+                            f"{mayor['actNumber']} Published in DC Register Vol "
+                        )
+                        f"{mayor['actPublicationVolume']}and Page {mayor['actPublicationPageNumber']}"
+                        bill.add_action(act_published, act_published_date)
                 yield bill
 
     def old_scrape(self, session=None):
@@ -711,7 +764,9 @@ class DCBillScraper(Scraper):
 
     def date_format(self, d):
         # the time seems to be 00:00:00 all the time, so ditching it with split
-        return datetime.datetime.strptime(d.split()[0], "%Y/%m/%d").strftime("%Y-%m-%d")
+        d = datetime.datetime.strptime(d[:10], "%Y-%m-%d")
+        return self._TZ.localize(d)
+        # return datetime.datetime.strptime(d[:10], "%Y-%m-%d")
 
     def classify_action(self, action):
         for pattern, types in self._action_classifiers:
