@@ -42,11 +42,18 @@ class DCBillScraper(Scraper):
         {"categoryId": 6, "name": "resolution"},
     ]
 
+    _vote_statuses = {
+        "approved": "pass",
+        "disapproved": "fail",
+        "failed": "fail",
+        "declined": "fail",
+        "passed": "pass",
+    }
+
     def scrape(self, session=None):
         if not session:
             session = self.latest_session()
             self.info("no session specified, using %s", session)
-        print(session)
         for category in self._categories:
             leg_listing_url = (
                 self._API_BASE_URL + f"BulkData/{category['categoryId']}/{session}"
@@ -96,6 +103,72 @@ class DCBillScraper(Scraper):
                             entity_type="person",
                             primary=True,
                         )
+
+                # Actions and Votes
+                if leg_details["actions"]:
+                    # To prevent duplicate votes
+                    vote_ids = []
+                    for act in leg_details["actions"]:
+                        action_name = act["action"]
+                        action_date = datetime.datetime.strptime(
+                            act["actionDate"][:10], "%Y-%m-%d"
+                        )
+                        action_date = self._TZ.localize(action_date)
+                        action_class = self.classify_action(action_name)
+
+                        if "mayor" in action_name.lower():
+                            actor = "executive"
+                        else:
+                            actor = "legislature"
+                        bill.add_action(
+                            action_name,
+                            action_date,
+                            classification=action_class,
+                            chamber=actor,
+                        )
+
+                        # Votes
+                        if act["voteDetails"]:
+                            result = act["voteDetails"]["voteResult"]
+                            if result:
+                                status = self._vote_statuses[result.lower()]
+                                id_text = (
+                                    str(leg["legislationNumber"])
+                                    + "-"
+                                    + action_name
+                                    + "-"
+                                    + result
+                                )
+                                if id_text not in vote_ids:
+                                    vote_ids.append(id_text)
+                                    v = VoteEvent(
+                                        identifier=id_text,
+                                        chamber=actor,
+                                        start_date=action_date,
+                                        motion_text=action_name,
+                                        result=status,
+                                        classification="passage",
+                                        bill=bill,
+                                    )
+                                    v.add_source(leg_listing_url)
+
+                                    yes_count = no_count = other_count = 0
+                                    for leg_vote in act["voteDetails"]["votes"]:
+                                        mem_name = leg_vote["councilMember"]
+                                        if leg_vote["vote"] == "Yes":
+                                            yes_count += 1
+                                            v.yes(mem_name)
+                                        elif leg_vote["vote"] == "No":
+                                            no_count += 1
+                                            v.no(mem_name)
+                                        else:
+                                            other_count += 1
+                                            v.vote("other", mem_name)
+
+                                    v.set_count("yes", yes_count)
+                                    v.set_count("no", no_count)
+                                    v.set_count("other", other_count)
+                                    yield v
 
                 yield bill
 
