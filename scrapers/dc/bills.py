@@ -72,6 +72,61 @@ class DCBillScraper(Scraper):
                 )
                 bill.add_source(leg_listing_url)
 
+                # Actions
+                for hist in leg["legislationHistory"]:
+                    hist_date = datetime.datetime.strptime(
+                        hist["actionDate"], "%b %d, %Y"
+                    )
+                    hist_date = self._TZ.localize(hist_date)
+                    hist_action = hist["actionDescription"]
+                    if hist_action[:4] == "Other":
+                        hist_action = hist_action[4:]
+                    hist_class = self.classify_action(hist_action)
+
+                    if "mayor" in hist_action.lower():
+                        actor = "executive"
+                    else:
+                        actor = "legislature"
+                    bill.add_action(
+                        hist_action, hist_date, classification=hist_class, chamber=actor
+                    )
+
+                    if hist["downloadURL"] and ("download" in hist["downloadURL"]):
+                        download = "https://lims.dccouncil.us/" + hist["downloadURL"]
+                        mimetype = (
+                            "application/pdf" if download.endswith("pdf") else None
+                        )
+                        is_version = False
+                        # figure out if it's a version from type/name
+                        possible_version_types = [
+                            "SignedAct",
+                            "Introduction",
+                            "Enrollment",
+                            "Engrossment",
+                        ]
+                        for vt in possible_version_types:
+                            if vt.lower() in download.lower():
+                                is_version = True
+                                doc_type = vt
+
+                        if "amendment" in download.lower():
+                            doc_type = "Amendment"
+
+                        if is_version:
+                            bill.add_version_link(
+                                doc_type,
+                                download,
+                                media_type=mimetype,
+                                on_duplicate="ignore",
+                            )
+
+                        bill.add_document_link(
+                            doc_type,
+                            download,
+                            media_type=mimetype,
+                            on_duplicate="ignore",
+                        )
+
                 # Grabs Legislation details
                 leg_details_url = (
                     self._API_BASE_URL
@@ -114,7 +169,7 @@ class DCBillScraper(Scraper):
                             act["actionDate"][:10], "%Y-%m-%d"
                         )
                         action_date = self._TZ.localize(action_date)
-                        action_class = self.classify_action(action_name)
+                        # action_class = self.classify_action(action_name)
 
                         if action_name.split()[0] == "Other":
                             action_name = " ".join(action_name.split()[1:])
@@ -123,12 +178,36 @@ class DCBillScraper(Scraper):
                             actor = "executive"
                         else:
                             actor = "legislature"
-                        bill.add_action(
-                            action_name,
-                            action_date,
-                            classification=action_class,
-                            chamber=actor,
-                        )
+                        # bill.add_action(
+                        #     action_name,
+                        #     action_date,
+                        #     classification=action_class,
+                        #     chamber=actor,
+                        # )
+
+                        # Documents
+                        # if act["attachment"]:
+                        #     mimetype = "application/pdf" if act["attachment"].endswith("pdf") else None
+                        #     is_version = False
+                        #     # figure out if it's a version from type/name
+                        #     possible_version_types = [
+                        #         "SignedAct",
+                        #         "Introduction",
+                        #         "Enrollment",
+                        #         "Engrossment",
+                        #     ]
+                        #     for vt in possible_version_types:
+                        #         if vt.lower() in act["attachment"].lower():
+                        #             is_version = True
+                        #             doc_type = vt
+
+                        #     if "amendment" in act["attachment"].lower():
+                        #         doc_type = "Amendment"
+
+                        # if is_version:
+                        # bill.add_version_link(doc_type, act["attachment"], media_type=mimetype, on_duplicate="ignore")
+
+                        # bill.add_document_link(doc_type, act["attachment"], media_type=mimetype, )
 
                         # Votes
                         if act["voteDetails"]:
@@ -173,59 +252,6 @@ class DCBillScraper(Scraper):
                                     v.set_count("other", other_count)
                                     yield v
 
-                # Mayoral actions
-                if leg_details["mayoralReview"]:
-                    mayor = leg_details["mayoralReview"]
-
-                    if mayor["transmittedDate"]:
-                        transmitted_date = self.date_format(mayor["transmittedDate"])
-                        response_date = mayor["responseDueDate"][:10]
-                        trasmitted = (
-                            f"Transmitted to Mayor, Response Due on {response_date}"
-                        )
-                        bill.add_action(trasmitted, transmitted_date)
-
-                    if mayor["returnedDate"]:
-                        returned_date = self.date_format(mayor["returnedDate"])
-                        bill.add_action("Returned from Mayor", returned_date)
-
-                    if mayor["vetoDate"]:
-                        veto_date = self.date_format(mayor["vetoDate"])
-                        bill.add_action(
-                            "Vetoed by the Mayor",
-                            veto_date,
-                            chamber="executive",
-                            classification="executive-veto",
-                        )
-
-                    if mayor["signedDate"]:
-                        signed_date = self.date_format(mayor["signedDate"])
-                        signed = f"Signed with Act Number {mayor['actNumber']}"
-                        bill.add_action(
-                            signed, signed_date, classification="executive-signature",
-                        )
-                        # Link to version
-                        if mayor["signedAct"]:
-                            bill.add_version_link(
-                                "Signed Act",
-                                mayor["signedAct"],
-                                media_type="application/pdf",
-                            )
-
-                    if mayor["enactedDate"]:
-                        enacted_date = self.date_format(mayor["enactedDate"])
-                        enacted = f"Enacted with Act Number {mayor['actNumber']}"
-                        bill.add_action(enacted, enacted_date)
-
-                    if mayor["actPublicationDate"]:
-                        act_published_date = self.date_format(
-                            mayor["actPublicationDate"]
-                        )
-                        act_published = (
-                            f"{mayor['actNumber']} Published in DC Register Vol "
-                        )
-                        f"{mayor['actPublicationVolume']}and Page {mayor['actPublicationPageNumber']}"
-                        bill.add_action(act_published, act_published_date)
                 yield bill
 
     def old_scrape(self, session=None):
