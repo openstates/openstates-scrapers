@@ -91,6 +91,7 @@ class DCBillScraper(Scraper):
                         hist_action, hist_date, classification=hist_class, chamber=actor
                     )
 
+                    # Documents with download links
                     if hist["downloadURL"] and ("download" in hist["downloadURL"]):
                         download = "https://lims.dccouncil.us/" + hist["downloadURL"]
                         mimetype = (
@@ -159,6 +160,25 @@ class DCBillScraper(Scraper):
                             primary=True,
                         )
 
+                # Committee Hearing Doc
+                for commHearing in leg_details["committeeHearing"]:
+                    if commHearing["hearingRecord"]:
+                        bill.add_document_link(
+                            commHearing["hearingType"],
+                            commHearing["hearingRecord"],
+                            media_type="application/pdf",
+                            on_duplicate="ignore",
+                        )
+
+                for committeeMarkup in leg_details["committeeMarkup"]:
+                    if committeeMarkup["committeeReport"]:
+                        bill.add_document_link(
+                            "Committee Markup",
+                            committeeMarkup["committeeReport"],
+                            media_type="application/pdf",
+                            on_duplicate="ignore",
+                        )
+
                 # Actions and Votes
                 if leg_details["actions"]:
                     # To prevent duplicate votes
@@ -178,36 +198,44 @@ class DCBillScraper(Scraper):
                             actor = "executive"
                         else:
                             actor = "legislature"
-                        # bill.add_action(
-                        #     action_name,
-                        #     action_date,
-                        #     classification=action_class,
-                        #     chamber=actor,
-                        # )
 
-                        # Documents
-                        # if act["attachment"]:
-                        #     mimetype = "application/pdf" if act["attachment"].endswith("pdf") else None
-                        #     is_version = False
-                        #     # figure out if it's a version from type/name
-                        #     possible_version_types = [
-                        #         "SignedAct",
-                        #         "Introduction",
-                        #         "Enrollment",
-                        #         "Engrossment",
-                        #     ]
-                        #     for vt in possible_version_types:
-                        #         if vt.lower() in act["attachment"].lower():
-                        #             is_version = True
-                        #             doc_type = vt
+                        # Documents and Versions
+                        if act["attachment"]:
+                            mimetype = (
+                                "application/pdf"
+                                if act["attachment"].endswith("pdf")
+                                else None
+                            )
+                            is_version = False
+                            # figure out if it's a version from type/name
+                            possible_version_types = [
+                                "SignedAct",
+                                "Introduction",
+                                "Enrollment",
+                                "Engrossment",
+                            ]
+                            for vt in possible_version_types:
+                                if vt.lower() in act["attachment"].lower():
+                                    is_version = True
+                                    doc_type = vt
 
-                        #     if "amendment" in act["attachment"].lower():
-                        #         doc_type = "Amendment"
+                            if "amendment" in act["attachment"].lower():
+                                doc_type = "Amendment"
 
-                        # if is_version:
-                        # bill.add_version_link(doc_type, act["attachment"], media_type=mimetype, on_duplicate="ignore")
+                            if is_version:
+                                bill.add_version_link(
+                                    doc_type,
+                                    act["attachment"],
+                                    media_type=mimetype,
+                                    on_duplicate="ignore",
+                                )
 
-                        # bill.add_document_link(doc_type, act["attachment"], media_type=mimetype, )
+                            bill.add_document_link(
+                                doc_type,
+                                act["attachment"],
+                                media_type=mimetype,
+                                on_duplicate="ignore",
+                            )
 
                         # Votes
                         if act["voteDetails"]:
