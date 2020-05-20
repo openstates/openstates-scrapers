@@ -14,7 +14,9 @@ class DCBillScraper(Scraper):
         ("Introduced", "introduction"),
         ("Transmitted to Mayor", "executive-receipt"),
         ("Signed", "executive-signature"),
+        ("Signed by the Mayor ", "executive-signature"),
         ("Enacted", "became-law"),
+        ("Law", "became-law"),
         ("First Reading", "reading-1"),
         ("1st Reading", "reading-1"),
         ("Second Reading", "reading-2"),
@@ -190,7 +192,6 @@ class DCBillScraper(Scraper):
                             act["actionDate"][:10], "%Y-%m-%d"
                         )
                         action_date = self._TZ.localize(action_date)
-                        # action_class = self.classify_action(action_name)
 
                         if action_name.split()[0] == "Other":
                             action_name = " ".join(action_name.split()[1:])
@@ -252,13 +253,14 @@ class DCBillScraper(Scraper):
                                 )
                                 if id_text not in vote_ids:
                                     vote_ids.append(id_text)
+                                    action_class = self.classify_action(action_name)
                                     v = VoteEvent(
                                         identifier=id_text,
                                         chamber=actor,
                                         start_date=action_date,
                                         motion_text=action_name,
                                         result=status,
-                                        classification="passage",
+                                        classification=action_class,
                                         bill=bill,
                                     )
                                     v.add_source(leg_listing_url)
