@@ -71,6 +71,10 @@ class DCBillScraper(Scraper):
                     classification=category["name"],
                 )
                 bill.add_source(leg_listing_url)
+                bill_url = (
+                    f"https://lims.dccouncil.us/Legislation/{leg['legislationNumber']}"
+                )
+                bill.add_source(bill_url)
 
                 # Actions
                 for hist in leg["legislationHistory"]:
