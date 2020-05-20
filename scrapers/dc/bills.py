@@ -79,8 +79,8 @@ class DCBillScraper(Scraper):
                     )
                     hist_date = self._TZ.localize(hist_date)
                     hist_action = hist["actionDescription"]
-                    if hist_action[:4] == "Other":
-                        hist_action = hist_action[4:]
+                    if hist_action.split()[0] == "OtherAmendment":
+                        hist_action = hist_action[5:]
                     hist_class = self.classify_action(hist_action)
 
                     if "mayor" in hist_action.lower():
