@@ -3,9 +3,11 @@ import pytz
 import re
 import os
 import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 from openstates.scrape import Scraper, Bill, VoteEvent
 
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 class DCBillScraper(Scraper):
     _TZ = pytz.timezone("US/Eastern")
@@ -74,6 +76,9 @@ class DCBillScraper(Scraper):
                     f"https://lims.dccouncil.us/Legislation/{leg['legislationNumber']}"
                 )
                 bill.add_source(bill_url)
+
+                if leg['lawNumber']:
+                    bill.extras['lawNumber'] = leg['lawNumber']
 
                 # Actions
                 for hist in leg["legislationHistory"]:
