@@ -265,7 +265,9 @@ class DCBillScraper(Scraper):
                                     )
                                     v.add_source(leg_listing_url)
 
-                                    yes_count = no_count = other_count = 0
+                                    yes_count = (
+                                        no_count
+                                    ) = absent_count = abstain_count = other_count = 0
                                     for leg_vote in act["voteDetails"]["votes"]:
                                         mem_name = leg_vote["councilMember"]
                                         if leg_vote["vote"] == "Yes":
@@ -274,12 +276,24 @@ class DCBillScraper(Scraper):
                                         elif leg_vote["vote"] == "No":
                                             no_count += 1
                                             v.no(mem_name)
+                                        elif leg_vote["vote"] == "Absent":
+                                            absent_count += 1
+                                            v.vote("absent", mem_name)
+                                        elif leg_vote["vote"] == "Recused":
+                                            v.vote("abstain", mem_name)
+                                            abstain_count += 1
+                                        elif leg_vote["vote"] == "Present":
+                                            v.vote("other", mem_name)
+                                            other_count += 1
                                         else:
+                                            # Incase anything new pops up
                                             other_count += 1
                                             v.vote("other", mem_name)
 
                                     v.set_count("yes", yes_count)
                                     v.set_count("no", no_count)
+                                    v.set_count("absent", absent_count)
+                                    v.set_count("abstain", abstain_count)
                                     v.set_count("other", other_count)
                                     yield v
 
