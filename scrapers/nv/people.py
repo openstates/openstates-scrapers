@@ -47,9 +47,9 @@ class NVPeopleScraper(Scraper):
 
             # hack to get the legislator ID
             html = self.get(leg_url).text
-            for l in html.split("\n"):
-                if "GetLegislatorDetails" in l:
-                    leg_id = l.split(",")[1].split("'")[1]
+            for ln in html.split("\n"):
+                if "GetLegislatorDetails" in ln:
+                    leg_id = ln.split(",")[1].split("'")[1]
 
             # fetch the json used by the page
             leg_details_url = (

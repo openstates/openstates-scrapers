@@ -44,7 +44,7 @@ class INPersonScraper(Scraper):
             doc.make_links_absolute(html_link)
             address, phone = doc.xpath("//address")
             address = address.text_content().strip()
-            address = "\n".join([l.strip() for l in address.split("\n")])
+            address = "\n".join([ln.strip() for ln in address.split("\n")])
             phone = phone.text_content().strip()
             try:
                 district = (

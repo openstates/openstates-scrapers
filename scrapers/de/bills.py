@@ -335,8 +335,8 @@ class DEBillScraper(Scraper, LXMLMixin):
                 classification=categorization["classification"],
             )
 
-            for l in categorization["legislators"]:
-                action.add_related_entity(l, "person")
+            for leg in categorization["legislators"]:
+                action.add_related_entity(leg, "person")
             for c in categorization["committees"]:
                 action.add_related_entity(c, "organization")
 

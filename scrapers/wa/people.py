@@ -58,7 +58,7 @@ class WAPersonScraper(Scraper, LXMLMixin):
                 './/div[@class="memberColumnTitle" and'
                 'text()=" Olympia Office"]/parent::div[1]/text()'
             )
-            capitol_office = [l.strip() for l in capitol_office if l.strip()]
+            capitol_office = [s.strip() for s in capitol_office if s.strip()]
 
             capitol_fax = None
             capitol_phone = None
@@ -117,9 +117,9 @@ class WAPersonScraper(Scraper, LXMLMixin):
                     './/div[@class="memberColumnTitle" and'
                     'text()=" District Office"]/parent::div[1]/text()'
                 )
-                district_office = [l.strip() for l in district_office if l.strip()]
+                district_office = [s.strip() for s in district_office if s.strip()]
                 _end_of_first_address = district_office.index(
-                    [l for l in district_office if re.search(r"\,\s*WA\s*\d{5}", l)][0]
+                    [s for s in district_office if re.search(r"\,\s*WA\s*\d{5}", s)][0]
                 )
                 district_address = "\n".join(
                     district_office[0 : (_end_of_first_address + 1)]

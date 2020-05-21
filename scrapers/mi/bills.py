@@ -312,13 +312,13 @@ class MIBillScraper(Scraper):
                 break
             elif vtype:
                 # split on multiple spaces not preceeded by commas
-                for l in re.split(r"(?<!,)\s{2,}", p):
-                    if l.strip():
+                for line in re.split(r"(?<!,)\s{2,}", p):
+                    if line.strip():
                         if session == "2017-2018":
-                            for leg in l.split():
+                            for leg in line.split():
                                 results[vtype].append(leg)
                         else:
-                            results[vtype].append(l)
+                            results[vtype].append(line)
             else:
                 self.warning("piece without vtype set: %s", p)
 

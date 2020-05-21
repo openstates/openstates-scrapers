@@ -59,9 +59,9 @@ def get_actor(
     action_text,
     chamber,
     rgxs=(
-        (re.compile(r"(in|by) senate", re.I), "upper"),
-        (re.compile(r"(in|by) house", re.I), "lower"),
-        (re.compile(r"by governor", re.I), "governor"),
+        (re.compile(r"(in|by) senate", re.IGNORECASE), "upper"),
+        (re.compile(r"(in|by) house", re.IGNORECASE), "lower"),
+        (re.compile(r"by governor", re.IGNORECASE), "governor"),
     ),
 ):
     """Guess the actor for a particular action.

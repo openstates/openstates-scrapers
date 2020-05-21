@@ -80,9 +80,9 @@ class KYCommitteeScraper(Scraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(home_link)
             sub_links = page.xpath("//li/a[contains(@href, '/home.htm')]")
-            for l in sub_links:
-                if "committee" in l.text.lower():
-                    yield from self.scrape_committee(chamber, l, name)
+            for link in sub_links:
+                if "committee" in link.text.lower():
+                    yield from self.scrape_committee(chamber, link, name)
 
     def scrape_members(self, comm, url):
         page = self.get(url).text

@@ -433,9 +433,9 @@ class NMBillScraper(Scraper):
             if action_code in actions_with_committee:
                 # turn A/B/C into Full Name & Full Name 2 & Full Name 3
                 locs = [
-                    com_location_map[l]
-                    for l in action["Referral"].split("/")
-                    if l and l in com_location_map
+                    com_location_map[ln]
+                    for ln in action["Referral"].split("/")
+                    if ln and ln in com_location_map
                 ]
                 action_name %= " & ".join(locs)
 
