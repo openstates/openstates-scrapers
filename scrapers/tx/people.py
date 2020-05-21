@@ -101,7 +101,7 @@ class TXPersonScraper(Scraper, LXMLMixin):
         yield from getattr(self, "_scrape_" + chamber)(roster_page, roster_url)
 
     def _scrape_upper(self, roster_page, roster_url):
-        logger.info(f"Scraping uppper chamber roster")
+        logger.info("Scraping uppper chamber roster")
         """
         Retrieves a list of members of the upper legislative chamber.
         """
@@ -171,7 +171,7 @@ class TXPersonScraper(Scraper, LXMLMixin):
             # A few member pages have broken ids for office listings:
             if len(row) == 0:
                 row = member_page.xpath(
-                    f'//table[@class="memdir"]/tr/td[@headers="dDA1"]'
+                    '//table[@class="memdir"]/tr/td[@headers="dDA1"]'
                 )
             if len(row) > 0:
                 details = " ".join(row[0].xpath("text()")).strip()
@@ -212,7 +212,7 @@ class TXPersonScraper(Scraper, LXMLMixin):
         yield person
 
     def _scrape_lower(self, roster_page, roster_url):
-        logger.info(f"Scraping lower chamber roster")
+        logger.info("Scraping lower chamber roster")
         """
         Retrieves a list of members of the lower legislative chamber.
         """

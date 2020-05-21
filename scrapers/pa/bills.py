@@ -64,7 +64,7 @@ class PABillScraper(Scraper):
         if page.xpath(xpath):
             title = page.xpath(xpath).pop().text_content().strip()
         else:
-            self.warning("Skipping {}, No title found".format(bill_id, url))
+            self.warning("Skipping {} {}, No title found".format(bill_id, url))
             return
 
         bill = Bill(
