@@ -285,12 +285,6 @@ class DCBillScraper(Scraper):
 
                 yield bill
 
-    def date_format(self, d):
-        # the time seems to be 00:00:00 all the time, so ditching it with split
-        d = datetime.datetime.strptime(d[:10], "%Y-%m-%d")
-        return self._TZ.localize(d)
-        # return datetime.datetime.strptime(d[:10], "%Y-%m-%d")
-
     def classify_action(self, action):
         for pattern, types in self._action_classifiers:
             if re.findall(pattern, action):
