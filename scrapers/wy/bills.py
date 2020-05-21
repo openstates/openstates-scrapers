@@ -62,7 +62,9 @@ class WYBillScraper(Scraper, LXMLMixin):
             self.is_special = True
             bill_json_url = (
                 "http://wyoleg.gov/LsoService/api/BillInformation?"
-                "$filter=Year%20eq%202020%20and%20SpecialSessionValue%20ne%20null&$orderby=BillNum".format(session[0:4])
+                "$filter=Year%20eq%20{}%20and%20SpecialSessionValue%20ne%20null&$orderby=BillNum".format(
+                    session[0:4]
+                )
             )
         else:
             bill_json_url = (

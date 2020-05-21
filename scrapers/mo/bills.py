@@ -117,7 +117,7 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         subject_list_url = (
             "http://www.senate.mo.gov/{}info/BTS_Web/"
-            "Keywords.aspx?SessionType=%s".format(
+            "Keywords.aspx?SessionType={}".format(
                 session[2:4], self.session_type(session)
             )
         )

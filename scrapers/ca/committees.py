@@ -140,7 +140,7 @@ class CACommitteeScraper(Scraper, LXMLMixin):
                 else:
                     self.warning(
                         "No members found for {} subcommittee of {} "
-                        "committee".format(org.name)
+                        "committee".format(org.name, org._related)
                     )
 
     def scrape_lower_members(self, url):
