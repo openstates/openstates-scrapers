@@ -422,6 +422,7 @@ class MDBillScraper(Scraper):
         if page.xpath('//div[contains(text(), "Effective Date(s)")]'):
             eff_date = page.xpath('//div[contains(text(), "Effective Date(s)")]/text()')[0].strip()
             eff_date = eff_date.replace('Effective Date(s):', '').strip()
+            # this can contain multiple dates, eg "July 1, 2020, July 1, 2022"
             bill.extras['date_effective'] = eff_date
 
         # yield from self.parse_bill_votes_new(doc, bill)
