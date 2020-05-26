@@ -32,6 +32,7 @@ classifiers = {
     r"Gubernatorial Veto Override": "veto-override-passage",
     r"Veto overridden": "veto-override-passage",
     r"Approved by the Governor": "executive-signature",
+    r"Enacted under Article II": "became-law",
 }
 
 vote_classifiers = {r"third": "passage", r"fla|amend|amd": "amendment"}
@@ -416,6 +417,13 @@ class MDBillScraper(Scraper):
             bill.add_document_link(
                 fiscal_title, fiscal_url, media_type="application/pdf",
             )
+
+        # effective date, where available
+        if page.xpath('//div[contains(text(), "Effective Date(s)")]'):
+            eff_date = page.xpath('//div[contains(text(), "Effective Date(s)")]/text()')[0].strip()
+            eff_date = eff_date.replace('Effective Date(s):', '').strip()
+            # this can contain multiple dates, eg "July 1, 2020, July 1, 2022"
+            bill.extras['date_effective'] = eff_date
 
         # yield from self.parse_bill_votes_new(doc, bill)
         yield bill
