@@ -15,7 +15,13 @@ class WAEventScraper(Scraper, LXMLMixin):
 
     meetings = None
 
-    chambers = {"Senate": "upper", "House": "lower", "Agency": "joint"}
+    chambers = {
+        "Senate": "upper",
+        "House": "lower",
+        "Agency": "joint",
+        "Joint": "joint",
+        "Other": "joint",
+    }
 
     def scrape(self, chamber=None, session=None, start=None, end=None):
         if not session:
