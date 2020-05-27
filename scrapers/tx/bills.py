@@ -58,6 +58,17 @@ class TXBillScraper(Scraper, LXMLMixin):
             else:
                 yield "/".join(["ftp://" + root, dir_, name])
 
+    @staticmethod
+    def _get_bill_id_from_file_path(file_path):
+        bill_id = file_path.split("/")[-1].split(".")[0]
+        identifier, number = re.search(r"([A-Z]{2}R?)0+(\d+)", bill_id).groups()
+        # House and Senate Concurrent and Joint Resolutions files do not contain
+        # the 'R' for resolution in file names. This is required to match
+        # bill ID's later on.
+        if re.match('[HS][CJ]', identifier):
+            identifier += 'R'
+        return ' '.join([identifier, number])
+
     def scrape(self, session=None, chamber=None):
         if not session:
             session = self.latest_session()
@@ -67,22 +78,28 @@ class TXBillScraper(Scraper, LXMLMixin):
 
         session_code = self._format_session(session)
 
-        self.versions = []
-        version_files = self._get_ftp_files(
+        self.html_versions = []
+        html_version_files = self._get_ftp_files(
             self._FTP_ROOT, "bills/{}/billtext/html".format(session_code)
         )
-        for item in version_files:
-            bill_id = item.split("/")[-1].split(".")[0]
-            bill_id = " ".join(re.search(r"([A-Z]{2})R?0+(\d+)", bill_id).groups())
-            self.versions.append((bill_id, item))
+        for item in html_version_files:
+            bill_id = self._get_bill_id_from_file_path(item)
+            self.html_versions.append((bill_id, item))
+
+        self.pdf_versions = []
+        pdf_version_files = self._get_ftp_files(
+            self._FTP_ROOT, "bills/{}/billtext/pdf".format(session_code)
+        )
+        for item in pdf_version_files:
+            bill_id = self._get_bill_id_from_file_path(item)
+            self.pdf_versions.append((bill_id, item))
 
         self.analyses = []
         analysis_files = self._get_ftp_files(
             self._FTP_ROOT, "bills/{}/analysis/html".format(session_code)
         )
         for item in analysis_files:
-            bill_id = item.split("/")[-1].split(".")[0]
-            bill_id = " ".join(re.search(r"([A-Z]{2})R?0+(\d+)", bill_id).groups())
+            bill_id = self._get_bill_id_from_file_path(item)
             self.analyses.append((bill_id, item))
 
         self.fiscal_notes = []
@@ -90,8 +107,7 @@ class TXBillScraper(Scraper, LXMLMixin):
             self._FTP_ROOT, "bills/{}/fiscalnotes/html".format(session_code)
         )
         for item in fiscal_note_files:
-            bill_id = item.split("/")[-1].split(".")[0]
-            bill_id = " ".join(re.search(r"([A-Z]{2})R?0+(\d+)", bill_id).groups())
+            bill_id = self._get_bill_id_from_file_path(item)
             self.fiscal_notes.append((bill_id, item))
 
         self.witnesses = []
@@ -99,8 +115,7 @@ class TXBillScraper(Scraper, LXMLMixin):
             self._FTP_ROOT, "bills/{}/witlistbill/html".format(session_code)
         )
         for item in witness_files:
-            bill_id = item.split("/")[-1].split(".")[0]
-            bill_id = " ".join(re.search(r"([A-Z]{2})R?0+(\d+)", bill_id).groups())
+            bill_id = self._get_bill_id_from_file_path(item)
             self.witnesses.append((bill_id, item))
 
         history_files = self._get_ftp_files(
@@ -150,12 +165,20 @@ class TXBillScraper(Scraper, LXMLMixin):
         for subject in root.iterfind("subjects/subject"):
             bill.add_subject(subject.text.strip())
 
-        versions = [x for x in self.versions if x[0] == bill_id]
-        for version in versions:
+        html_versions = [x for x in self.html_versions if x[0] == bill_id]
+        for version in html_versions:
             bill.add_version_link(
                 note=self.NAME_SLUGS[version[1][-5]],
                 url=version[1],
                 media_type="text/html",
+            )
+
+        pdf_versions = [x for x in self.pdf_versions if x[0] == bill_id]
+        for version in pdf_versions:
+            bill.add_version_link(
+                note=self.NAME_SLUGS[version[1][-5]],
+                url=version[1],
+                media_type="application/pdf",
             )
 
         analyses = [x for x in self.analyses if x[0] == bill_id]
