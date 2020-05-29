@@ -255,7 +255,12 @@ class NYBillScraper(Scraper):
         if bill_data["summary"]:
             bill.add_abstract(bill_data["summary"], note="")
 
-        bill_active_version = bill_data["amendments"]["items"][active_version]
+        bill_active_version = None
+
+        if active_version != '':
+            bill_active_version = bill_data["amendments"]["items"][active_version]
+        else:
+            self.warning("No active version for {}".format(bill_id))
 
         # Parse sponsors.
         if bill_data["sponsor"] is not None:
@@ -275,32 +280,34 @@ class NYBillScraper(Scraper):
                     primary=True,
                 )
 
-                # There *shouldn't* be cosponsors if there is no sponsor.
-                cosponsors = bill_active_version["coSponsors"]["items"]
-                for cosponsor in cosponsors:
-                    bill.add_sponsorship(
-                        cosponsor["shortName"],
-                        entity_type="person",
-                        classification="cosponsor",
-                        primary=False,
-                    )
+                if bill_active_version:
+                    # There *shouldn't* be cosponsors if there is no sponsor.
+                    cosponsors = bill_active_version["coSponsors"]["items"]
+                    for cosponsor in cosponsors:
+                        bill.add_sponsorship(
+                            cosponsor["shortName"],
+                            entity_type="person",
+                            classification="cosponsor",
+                            primary=False,
+                        )
 
-        # List companion bill.
-        same_as = bill_active_version.get("sameAs", {})
-        # Check whether "sameAs" property is populated with at least one bill.
-        if same_as["items"]:
-            # Get companion bill ID.
-            companion_bill_id = same_as["items"][0]["basePrintNo"]
+        if bill_active_version:
+            # List companion bill.
+            same_as = bill_active_version.get("sameAs", {})
+            # Check whether "sameAs" property is populated with at least one bill.
+            if same_as["items"]:
+                # Get companion bill ID.
+                companion_bill_id = same_as["items"][0]["basePrintNo"]
 
-            # Build companion bill session.
-            start_year = same_as["items"][0]["session"]
-            end_year = start_year + 1
-            companion_bill_session = "-".join([str(start_year), str(end_year)])
+                # Build companion bill session.
+                start_year = same_as["items"][0]["session"]
+                end_year = start_year + 1
+                companion_bill_session = "-".join([str(start_year), str(end_year)])
 
-            # Attach companion bill data.
-            bill.add_related_bill(
-                companion_bill_id, companion_bill_session, relation_type="companion"
-            )
+                # Attach companion bill data.
+                bill.add_related_bill(
+                    companion_bill_id, companion_bill_session, relation_type="companion"
+                )
 
         # Parse actions.
         chamber_map = {"senate": "upper", "assembly": "lower"}
