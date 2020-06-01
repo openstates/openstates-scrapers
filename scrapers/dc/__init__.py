@@ -1,7 +1,8 @@
+import os
+import requests
 from utils import State
 from .people import DCPersonScraper
 from .bills import DCBillScraper
-from .utils import api_request
 
 # from .committees import DCCommitteeScraper
 # from .events import DCEventScraper
@@ -66,5 +67,20 @@ class DistrictOfColumbia(State):
     ]
 
     def get_session_list(self):
-        data = api_request("/LIMSLookups")
-        return [c["Prefix"] for c in data["d"]["CouncilPeriods"]]
+        apikey = os.environ["DC_API_KEY"]
+        useragent = os.getenv("USER_AGENT", "openstates")
+        headers = {
+            "Authorization": apikey,
+            "Accept": "application/json",
+            "User-Agent": useragent,
+        }
+        resp = requests.get(
+            "https://lims.dccouncil.us/api/v2/PublicData/CouncilPeriods",
+            headers=headers,
+            verify=False,
+        )
+        resp.raise_for_status()
+        sessions = []
+        for session in resp.json():
+            sessions.append(str(session["councilPeriodId"]))
+        return sessions
