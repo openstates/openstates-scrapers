@@ -520,7 +520,7 @@ class OHBillScraper(Scraper):
                 )
             else:
                 if motion == 'amend_452':
-                    print(bill_url)
+                    print(bill)
                     print(v)
 
                 vote = VoteEvent(
