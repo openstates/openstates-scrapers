@@ -9,6 +9,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
+
 class DCBillScraper(Scraper):
     _TZ = pytz.timezone("US/Eastern")
 
@@ -101,7 +102,10 @@ class DCBillScraper(Scraper):
 
                     # Documents with download links
                     if hist["downloadURL"] and ("download" in hist["downloadURL"]):
-                        download = "https://lims.dccouncil.us/" + hist["downloadURL"]
+                        download = hist["downloadURL"]
+                        if not download.startswith("http"):
+                            download = "https://lims.dccouncil.us/" + download
+
                         mimetype = (
                             "application/pdf" if download.endswith("pdf") else None
                         )
@@ -128,13 +132,13 @@ class DCBillScraper(Scraper):
                                 media_type=mimetype,
                                 on_duplicate="ignore",
                             )
-
-                        bill.add_document_link(
-                            doc_type,
-                            download,
-                            media_type=mimetype,
-                            on_duplicate="ignore",
-                        )
+                        else:
+                            bill.add_document_link(
+                                hist["actionDescription"],
+                                download,
+                                media_type=mimetype,
+                                on_duplicate="ignore",
+                            )
 
                 # Grabs Legislation details
                 leg_details_url = (
@@ -236,13 +240,13 @@ class DCBillScraper(Scraper):
                                     media_type=mimetype,
                                     on_duplicate="ignore",
                                 )
-
-                            bill.add_document_link(
-                                doc_type,
-                                act["attachment"],
-                                media_type=mimetype,
-                                on_duplicate="ignore",
-                            )
+                            else:
+                                bill.add_document_link(
+                                    doc_type,
+                                    act["attachment"],
+                                    media_type=mimetype,
+                                    on_duplicate="ignore",
+                                )
 
                         # Votes
                         if act["voteDetails"]:
