@@ -174,6 +174,14 @@ class Louisiana(State):
             "start_date": "2020-03-09",
             "end_date": "2020-06-01",
         },
+        {
+            "_scraped_name": "2020 First Extraordinary Session",
+            "classification": "special",
+            "identifier": "2020s1",
+            "name": "2020 First Extraordinary Session",
+            "start_date": "2020-06-01",
+            "end_date": "2020-06-30",
+        },
     ]
     ignored_scraped_sessions = [
         "2020 Organizational Session",
