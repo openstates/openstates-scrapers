@@ -126,7 +126,11 @@ class MIBillScraper(Scraper):
             date = tds[0].text_content()
             journal = tds[1].text_content()
             action = tds[2].text_content()
-            date = TIMEZONE.localize(datetime.datetime.strptime(date, "%m/%d/%Y"))
+            try:
+                date = TIMEZONE.localize(datetime.datetime.strptime(date, "%m/%d/%Y"))
+            except ValueError:
+                self.warning("{} has action with invalid date. Skipping Action".format(bill_id))
+                continue
             # instead of trusting upper/lower case, use journal for actor
             actor = "upper" if "SJ" in journal else "lower"
             classification = categorize_action(action)
