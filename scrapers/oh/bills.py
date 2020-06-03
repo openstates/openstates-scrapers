@@ -40,6 +40,7 @@ class OHBillScraper(Scraper):
         "third_407": "Passed - Amended",
         "concur_602": "Concurred in Senate amendments",
         "concur_622": "Concurred in Senate amendments",
+        "amend_452": "Amended",
     }
 
     def scrape(self, session=None, chambers=None):
@@ -117,6 +118,7 @@ class OHBillScraper(Scraper):
                 "third_429": None,
                 "final_501": None,
                 "concur_608": None,
+                "infpass_217": "passage",
             }
 
             base_url = "http://search-prod.lis.state.oh.us"
