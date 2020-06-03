@@ -519,10 +519,6 @@ class OHBillScraper(Scraper):
                     classification="passed",
                 )
             else:
-                if motion == 'amend_452':
-                    print(bill)
-                    print(v)
-
                 vote = VoteEvent(
                     chamber=chamber,
                     start_date=date,
