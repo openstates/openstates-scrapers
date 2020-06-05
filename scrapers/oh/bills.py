@@ -176,7 +176,7 @@ class OHBillScraper(Scraper):
                     )
                 )
                 data = self.get(bill_api_url).json()
-                if len(data["items"]) is 0:
+                if len(data["items"]) == 0:
                     self.logger.warning(
                         "Data for bill {bill_id} has empty 'items' array,"
                         " cannot process related information".format(bill_id=bill_id.lower().replace(" ", ""))
