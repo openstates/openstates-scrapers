@@ -59,6 +59,14 @@ class Kansas(State):
             "start_date": "2019-01-14",
             "end_date": "2020-05-31",
         },
+        {
+            "_scraped_name": "b2020s",
+            "classification": "special",
+            "identifier": "2020S1",
+            "name": "2020 Special Session",
+            "start_date": "2019-06-03",
+            "end_date": "2020-06-05",
+        },        
     ]
     ignored_scraped_sessions = []
 
