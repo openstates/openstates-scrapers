@@ -501,6 +501,12 @@ class OHBillScraper(Scraper):
             except KeyError:
                 motion = v["motiontype"]
 
+            if motion in self._vote_motion_dict:
+                motion_text = self._vote_motion_dict[motion]
+            else:
+                self.warning('Unknown vote code {}, please add to _vote_motion_dict'.format(motion))
+                motion_text = v["results"]
+
             # Sometimes Ohio's SOLAR will only return part of the JSON, so in that case skip
             if not motion and isinstance(v["yeas"], str) and isinstance(v["nays"], str):
                 waringText = 'Malformed JSON found for vote ("revno" of {}); skipping'
@@ -519,7 +525,7 @@ class OHBillScraper(Scraper):
                 vote = VoteEvent(
                     chamber=chamber,
                     start_date=date,
-                    motion_text=self._vote_motion_dict[motion],
+                    motion_text=motion_text,
                     result="pass" if passed else "fail",
                     # organization=v["committee"],
                     bill=bill,
@@ -529,7 +535,7 @@ class OHBillScraper(Scraper):
                 vote = VoteEvent(
                     chamber=chamber,
                     start_date=date,
-                    motion_text=self._vote_motion_dict[motion],
+                    motion_text=motion_text,
                     result="pass" if passed else "fail",
                     classification="passed",
                     bill=bill,
