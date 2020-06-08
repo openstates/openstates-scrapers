@@ -9,6 +9,12 @@ from openstates.scrape import Scraper, Bill
 
 from utils import LXMLMixin
 
+import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
 # Base URL for the details of a given bill.
 BILL_DETAIL_URL_BASE = "https://www.revisor.mn.gov/bills/"
 BILL_DETAIL_URL = "https://www.revisor.mn.gov/bills/bill.php" "?b=%s&f=%s&ssn=0&y=%s"
@@ -51,7 +57,7 @@ class MNBillScraper(Scraper, LXMLMixin):
     # For testing purposes, this will do a lite version of things.  If
     # testing_bills is set, only these bills will be scraped.  Use SF0077
     testing = False
-    testing_bills = ["SF1952"]
+    testing_bills = ["SF0077"]
 
     # Regular expressions to match category of actions
     _categorizers = (
@@ -115,14 +121,14 @@ class MNBillScraper(Scraper, LXMLMixin):
             # If testing and certain bills to test, only test those
             if self.is_testing() and len(self.testing_bills) > 0:
                 for b in self.testing_bills:
-                    bill_url = BILL_DETAIL_URL % (self.search_chamber(chamber), b, 2017)
+                    bill_url = BILL_DETAIL_URL % (self.search_chamber(chamber), b, '2019')
                     version_url = VERSION_URL % (
                         self.search_session(session)[-4:],
                         self.search_session(session)[0],
                         b,
                     )
                     yield self.get_bill_info(chamber, session, bill_url, version_url)
-
+                return
             else:
 
                 # Find list of all bills
@@ -321,6 +327,25 @@ class MNBillScraper(Scraper, LXMLMixin):
                 bill = self.make_bill_id(bill)
                 self._subject_mapping[bill].append(subject)
 
+    # if a date isn't found in the actions table,
+    # check the action text itself
+    def parse_inline_action_date(self, text):
+        inline_date = re.findall(r'\d{2}/\d{2}/\d+', text, re.MULTILINE)
+        if inline_date:
+            return inline_date[0]
+        return False
+
+    # action date formats are inconsistent
+    def parse_dates(self, datestr):
+        date_formats = ['%m/%d/%Y', '%m/%d/%y']
+        for fmt in date_formats:
+            try:
+                return datetime.datetime.strptime(datestr, fmt).date()
+            except ValueError:
+                pass
+
+        raise ValueError("'%s' is not a recognized date/time" % datestr)
+
     def extract_actions(self, bill, doc, current_chamber):
         """
         Extract the actions taken on a bill.
@@ -345,6 +370,8 @@ class MNBillScraper(Scraper, LXMLMixin):
                 # content.
                 action_date = date_col.text_content().strip()
                 action_text = row.xpath("td[2]/div/div")[0].text_content().strip()
+                # Remove large whitespace blocks
+                action_text = re.sub(r'\s+', ' ', action_text)
 
                 committee = the_rest.xpath("a[contains(@href,'committee')]/text()")
                 extra = "".join(the_rest.xpath("span[not(@style)]/text() | a/text()"))
@@ -353,29 +380,18 @@ class MNBillScraper(Scraper, LXMLMixin):
                     "Chapter number",
                     "See also",
                     "See",
-                    "Effective date",
-                    "Secretary of State",
                 ):
                     continue
 
-                # dates are really inconsistent here, sometimes in action_text
-                try:
-                    action_date = datetime.datetime.strptime(
-                        action_date, "%m/%d/%Y"
-                    ).date()
-                except ValueError:
-                    try:
-                        action_date = datetime.datetime.strptime(
-                            extra, "%m/%d/%y"
-                        ).date()
-                    except ValueError:
-                        try:
-                            action_date = datetime.datetime.strptime(
-                                extra, "%m/%d/%Y"
-                            ).date()
-                        except ValueError:
-                            self.warning("ACTION without date: %s" % action_text)
-                            continue
+                if action_date:
+                    action_date = self.parse_dates(action_date)
+                else:
+                    inline_date = self.parse_inline_action_date(action_text)
+                    if inline_date:
+                        action_date = self.parse_dates(inline_date)
+                    else:
+                        self.warning("ACTION without date: %s" % action_text)
+                        continue
 
                 # categorize actions
                 action_type = None
