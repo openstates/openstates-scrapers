@@ -1,4 +1,4 @@
-# API Docs available at 
+# API Docs available at
 # http://kslegislature.org/klois/includes/kliss_restian_interface_guide_v11.pdf
 ksleg = "http://www.kslegislature.org/li"
 url = "%s/api/v11/rev-1/" % ksleg
@@ -74,7 +74,7 @@ action_codes = {
     "intro_iopbc_158": "introduction",
     "intro_iopbc_681": "introduction",
     "intro_ibc_158": "introduction",
-    "intro_iopbc_251": ["introduction", "passage"], # Adopted without roll call
+    "intro_iopbc_251": ["introduction", "passage"],  # Adopted without roll call
     "cr_rsc_291": "committee-passage",
     "fa_fabc_116": "failure",
     "dead_cal_201": "failure",

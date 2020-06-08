@@ -66,7 +66,7 @@ class Kansas(State):
             "name": "2020 Special Session",
             "start_date": "2019-06-03",
             "end_date": "2020-06-05",
-        },        
+        },
     ]
     ignored_scraped_sessions = []
 
