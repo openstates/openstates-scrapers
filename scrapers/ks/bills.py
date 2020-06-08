@@ -14,6 +14,8 @@ def _clean_spaces(title):
 
 
 class KSBillScraper(Scraper):
+    special_slugs = {'2020S1': 'li_2020s'}
+
     def scrape(self, chamber=None, session=None):
         if session is None:
             session = self.latest_session()
@@ -25,10 +27,27 @@ class KSBillScraper(Scraper):
             yield from self.scrape_chamber(chamber, session)
 
     def scrape_chamber(self, chamber, session):
+
+        # Pull the session metadata so we can get the
+        # slug for the API Request
+        meta = next(
+            each
+            for each in self.jurisdiction.legislative_sessions
+            if each["identifier"] == session
+        )
+        if meta["classification"] == "special":
+            list_slug = self.special_slugs[session]
+        else:
+            list_slug = 'li'
+
+        list_url = "http://www.kslegislature.org/{}" \
+                   "/api/v11/rev-1/bill_status"
+        list_url = list_url.format(list_slug)
+
         chamber_name = "Senate" if chamber == "upper" else "House"
         chamber_letter = chamber_name[0]
         # perhaps we should save this data so we can make one request for both?
-        bill_request = self.get(ksapi.url + "bill_status/").text
+        bill_request = self.get(list_url).text
         bill_request_json = json.loads(bill_request)
         bills = bill_request_json["content"]
 
@@ -127,10 +146,22 @@ class KSBillScraper(Scraper):
             if each["identifier"] == session
         )
         slug = meta["_scraped_name"]
+
+        if meta['classification'] == "special":
+            li_slug = self.special_slugs[session]
+        else:
+            li_slug = "li"
+
         # we have to go to the HTML for the versions & votes
-        base_url = "http://www.kslegislature.org/li/%s/measures/" % slug
+        base_url = "http://www.kslegislature.org/{}/{}/measures/".format(
+            li_slug,
+            slug
+        )
         if "resolution" in bill.classification:
-            base_url = "http://www.kslegislature.org/li/%s/year1/measures/" % slug
+            base_url = "http://www.kslegislature.org/{}/{}/year1/measures/".format(
+                li_slug,
+                slug
+            )
 
         url = base_url + bill.identifier.lower() + "/"
         doc = lxml.html.fromstring(self.get(url).text)
