@@ -31,6 +31,7 @@ site/openstates
 *.jar
 +*.sublime*
 venv
+.venv/
 .vscode/
 
 # Binary data files and dumps, from Open States and state websites

@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "openstates"
-version = "2019.12"
+name = "openstates-scrapers"
+version = "2020.4"
 description = ""
 authors = ["James Turk <james@openstates.org>"]
 
@@ -14,12 +14,15 @@ python-dateutil = "^2.8"
 spatula = "^0.0.2"
 chardet = "^3.0"
 suds-py3 = "^1.3"
-SQLAlchemy = "^1.3"
-opencivicdata = "^3.0"
-pupa = "^0.10.0"
 requests = {version = "^2.22", extras = ["security"]}
-mysqlclient = "^1.4.6"
-[tool.poetry.dev-dependencies]
+openstates-metadata = "*"
+openstates = "^4.4.2"
+mysqlclient = {version = "^1.4.6", optional=true}
+SQLAlchemy = {version = "^1.3", optional=true}
+
+[tool.poetry.extras]
+california = ["mysqlclient", "SQLAlchemy"]
+
 
 [build-system]
 requires = ["poetry>=0.12"]

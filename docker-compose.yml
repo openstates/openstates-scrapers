@@ -10,14 +10,15 @@ services:
     environment:
     - MYSQL_HOST=mysql
     - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
-    - PYTHONPATH=./openstates
+    - PYTHONPATH=./scrapers
     - NEW_YORK_API_KEY
     - INDIANA_API_KEY
-    - PUPA_ARGS
+    - DC_API_KEY
+    - VIRGINIA_FTP_USER
+    - VIRGINIA_FTP_PASSWORD
     volumes:
     - .:/opt/openstates/openstates/
-    entrypoint: ["poetry", "run", "pupa", "update"]
-
+    entrypoint: ["poetry", "run", "os-update"]
     networks:
     - openstates-network
   mysql:
@@ -30,9 +31,24 @@ services:
     - MYSQL_ALLOW_EMPTY_PASSWORD=yes
     networks:
     - openstates-network
+  ca-scrape:
+    build:
+      context: .
+      dockerfile: Dockerfile.california
+    environment:
+    - MYSQL_HOST=mysql
+    - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
+    - PYTHONPATH=./scrapers
+    volumes:
+    - .:/opt/openstates/openstates/
+    entrypoint: ["poetry", "run", "os-update"]
+    networks:
+    - openstates-network
   ca-download:
-    image: openstates/openstates
-    entrypoint: /opt/openstates/openstates/openstates/ca/download.sh
+    build:
+      context: .
+      dockerfile: Dockerfile.california
+    entrypoint: /opt/openstates/openstates/scrapers/ca/download.sh
     environment:
     - MYSQL_HOST=mysql
     volumes:
