@@ -2,7 +2,7 @@ import datetime
 import logging
 import pytz
 
-from pupa.scrape import Scraper, Event
+from openstates.scrape import Scraper, Event
 from .apiclient import OregonLegislatorODataClient
 from .utils import SESSION_KEYS
 
