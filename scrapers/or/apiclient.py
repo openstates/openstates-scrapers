@@ -13,6 +13,8 @@ class OregonLegislatorODataClient(object):
         legislators="LegislativeSessions('{session}')/Legislators",
         legislator="Legislators(LegislatorCode='{legislator_code}',SessionKey='{session}')",
         committees="LegislativeSessions('{session}')/Committees",
+        committee_meetings="CommitteeMeetings?$filter=(MeetingDate gt datetime'{start_date}')"
+        " and (SessionKey eq '{session}')&$expand=CommitteeAgendaItems,CommitteeMeetingDocuments",
         committee_members="Committees(CommitteeCode='{committee}',"
         "SessionKey='{session}')/CommitteeMembers",
         measures="LegislativeSessions('{session}')/Measures"
