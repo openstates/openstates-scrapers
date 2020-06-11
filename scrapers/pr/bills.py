@@ -79,27 +79,27 @@ class PRBillScraper(Scraper):
         (viewstategenerator,) = page.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
         (eventvalidation,) = page.xpath('//input[@id="__EVENTVALIDATION"]/@value')
 
-        hiddenfield_js_url = page.xpath(
-            '//script[contains(@src,"?_TSM_HiddenField")]/@src'
-        )[0]
-        hiddenfield_js_url = "{}{}".format(
-            "https://sutra.oslpr.org/", hiddenfield_js_url
-        )
+        # hiddenfield_js_url = page.xpath(
+        #     '//script[contains(@src,"?_TSM_HiddenField")]/@src'
+        # )[0]
+        # hiddenfield_js_url = "{}{}".format(
+        #     "https://sutra.oslpr.org/", hiddenfield_js_url
+        # )
 
-        hiddenfield_js = self.s.get(hiddenfield_js_url).text
+        # hiddenfield_js = self.s.get(hiddenfield_js_url).text
 
         before = re.escape('get("ctl00_tsm_HiddenField").value += \'')
         after = re.escape("';Sys.Application.remove_load(fn);")
         token_re = "{}(.*){}".format(before, after)
-        result = re.search(token_re, hiddenfield_js)
-        hiddenfield = result.group(1)
+        # result = re.search(token_re, hiddenfield_js)
+        # hiddenfield = result.group(1)
 
         form = {
             "__VIEWSTATE": viewstate,
             "__VIEWSTATEGENERATOR": viewstategenerator,
             "__EVENTVALIDATION": eventvalidation,
             "__LASTFOCUS": "",
-            "ctl00_tsm_HiddenField": hiddenfield,
+            # "ctl00_tsm_HiddenField": hiddenfield,
             "__SCROLLPOSITIONX": "0",
             "__SCROLLPOSITIONY": "453",
         }
