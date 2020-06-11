@@ -173,15 +173,16 @@ class PRBillScraper(Scraper):
         max_page = math.ceil(result_count / 50)
 
         for page_number in range(2, max_page):
+            # for the first 11 pages
             # page numbers go 01 (page 2) -> 10 (page 11) 
-            # then loop around to 02 again.
-            # there's no normal link from page 10 -> 11,
-            form_page = page_number.copy()
+            # then page 11 becomes 01
+            # and they go 01-11 again 
+            form_page = page_number
             if (page_number < 12):
                 form_page = form_page - 1
             elif (page_number % 10 == 0):
                 form_page = 10
-            elif (page_number % 11 == 0):
+            elif (page_number % 10 == 1):
                 form_page = 11
             else:
                 form_page = form_page % 10
