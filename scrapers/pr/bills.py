@@ -79,27 +79,11 @@ class PRBillScraper(Scraper):
         (viewstategenerator,) = page.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
         (eventvalidation,) = page.xpath('//input[@id="__EVENTVALIDATION"]/@value')
 
-        hiddenfield_js_url = page.xpath(
-            '//script[contains(@src,"?_TSM_HiddenField")]/@src'
-        )[0]
-        hiddenfield_js_url = "{}{}".format(
-            "https://sutra.oslpr.org/", hiddenfield_js_url
-        )
-
-        hiddenfield_js = self.s.get(hiddenfield_js_url).text
-
-        before = re.escape('get("ctl00_tsm_HiddenField").value += \'')
-        after = re.escape("';Sys.Application.remove_load(fn);")
-        token_re = "{}(.*){}".format(before, after)
-        result = re.search(token_re, hiddenfield_js)
-        hiddenfield = result.group(1)
-
         form = {
             "__VIEWSTATE": viewstate,
             "__VIEWSTATEGENERATOR": viewstategenerator,
             "__EVENTVALIDATION": eventvalidation,
             "__LASTFOCUS": "",
-            "ctl00_tsm_HiddenField": hiddenfield,
             "__SCROLLPOSITIONX": "0",
             "__SCROLLPOSITIONY": "453",
         }
@@ -164,9 +148,12 @@ class PRBillScraper(Scraper):
             "ctl00$CPHBody$txt_FechaHasta": end,
             "ctl00$CPHBody$ME_txt_FechaHasta_ClientState": "",
             "ctl00$CPHBody$txt_Titulo": "",
-            "ctl00$CPHBody$lovLegisladorId": "-1",
             "ctl00$CPHBody$lovEvento": "-1",
             "ctl00$CPHBody$lovComision": "-1",
+            "ctl00$CPHBody$txt_EventoFechaDesde": "",
+            "ctl00$CPHBody$ME_txt_EventoFechaDesde_ClientState": "",
+            "ctl00$CPHBody$txt_EventoFechaHasta": "",
+            "ctl00$CPHBody$ME_txt_EventoFechaHasta_ClientState": "",
             "__EVENTTARGET": "",
             "__EVENTARGUMENT": "",
         }
@@ -181,8 +168,23 @@ class PRBillScraper(Scraper):
         max_page = math.ceil(result_count / 50)
 
         for page_number in range(2, max_page):
+            # for the first 11 pages
+            # page numbers go 01 (page 2) -> 10 (page 11)
+            # then page 11 becomes 01
+            # and they go 01-11 again
+            form_page = page_number
+            if (page_number < 12):
+                form_page = form_page - 1
+            elif (page_number % 10 == 0):
+                form_page = 10
+            elif (page_number % 10 == 1):
+                form_page = 11
+            else:
+                form_page = form_page % 10
+
             page_str = str(page_number - 1).rjust(2, "0")
             page_field = "ctl00$CPHBody$dgResults$ctl54$ctl{}".format(page_str)
+
             params["__EVENTTARGET"] = page_field
             params["ctl00$CPHBody$ddlPageSize"] = "50"
             self.info(
