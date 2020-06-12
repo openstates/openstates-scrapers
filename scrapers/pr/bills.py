@@ -7,7 +7,6 @@ import requests
 import pytz
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 
-import pprint
 
 class NoSuchBill(Exception):
     pass
@@ -100,7 +99,6 @@ class PRBillScraper(Scraper):
         form2 = form.copy()
         form2['__EVENTVALIDATION'] = 'long'
         form2['__VIEWSTATE'] = 'long'
-        pprint.pprint(form2)
         return xml
 
     def clean_name(self, name):
@@ -174,9 +172,9 @@ class PRBillScraper(Scraper):
 
         for page_number in range(2, max_page):
             # for the first 11 pages
-            # page numbers go 01 (page 2) -> 10 (page 11) 
+            # page numbers go 01 (page 2) -> 10 (page 11)
             # then page 11 becomes 01
-            # and they go 01-11 again 
+            # and they go 01-11 again
             form_page = page_number
             if (page_number < 12):
                 form_page = form_page - 1
@@ -189,8 +187,6 @@ class PRBillScraper(Scraper):
 
             page_str = str(page_number - 1).rjust(2, "0")
             page_field = "ctl00$CPHBody$dgResults$ctl54$ctl{}".format(page_str)
-
-            print(page_field)
 
             params["__EVENTTARGET"] = page_field
             params["ctl00$CPHBody$ddlPageSize"] = "50"
