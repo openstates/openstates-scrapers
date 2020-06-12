@@ -96,9 +96,6 @@ class PRBillScraper(Scraper):
         self.s.cookies.set_cookie(cookie_obj)
 
         xml = self.s.post(url, data=form, headers=headers).text
-        form2 = form.copy()
-        form2['__EVENTVALIDATION'] = 'long'
-        form2['__VIEWSTATE'] = 'long'
         return xml
 
     def clean_name(self, name):
