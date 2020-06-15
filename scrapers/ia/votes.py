@@ -140,10 +140,15 @@ class IAVoteScraper(Scraper):
                     {}  # Senate has trailing text
                     \s*$
                     """.format(
-                bill_re, r",?.*?the\svote\swas:" if chamber == "upper" else ""
+                # in at least one case [SF 457 from 2020] the bill number is followed by )0
+                # seemingly just a typo, this gets around that
+                bill_re,
+                r",?.*?the\svote\swas:" if chamber == "upper" else r"\d?",
             )
-            print(line)
-            motion = re.search(motion_re, line, re.VERBOSE | re.IGNORECASE).group(1)
+            # print("motion candidate line:", line)
+            motion = re.search(motion_re, line, re.VERBOSE | re.IGNORECASE)
+            if motion:
+                motion = motion.group(1)
 
             for word, letter in (("Senate", "S"), ("House", "H"), ("File", "F")):
 
