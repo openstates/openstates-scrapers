@@ -185,11 +185,11 @@ class Arkansas(State):
         "Regular Session, 1995",
         "First Extraordinary Session, 1995",
         "Regular Session, 1993",
-        "First Extraordinary Session, 1993",
-        "Second Extraordinary Session, 1993",
+        "First Extraordinary Session, 1994",
+        "Second Extraordinary Session, 1994",
         "Regular Session, 1991",
-        "First Extraordinary Session, 1991",
-        "Second Extraordinary Session, 1991",
+        "First Extraordinary Session, 1992",
+        "Second Extraordinary Session, 1992",
         "Regular Session, 1989",
         "First Extraordinary Session, 1989",
         "Second Extraordinary Session, 1989",
@@ -197,8 +197,8 @@ class Arkansas(State):
         "Regular Session, 1987",
         "First Extraordinary Session, 1987",
         "Second Extraordinary Session, 1987",
-        "Third Extraordinary Session, 1987",
-        "Fourth Extraordinary Session, 1987",
+        "Third Extraordinary Session, 1988",
+        "Fourth Extraordinary Session, 1988",
     ]
 
     def get_session_list(self):
