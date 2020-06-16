@@ -192,10 +192,11 @@ class MNBillScraper(Scraper, LXMLMixin):
             )
 
             # Version link sometimes goes to wrong place, forge it
+            # strip leading zeroes from bill number, because that can cause 404s
             bill["version_url"] = VERSION_URL % (
                 search_session[-4:],
                 search_session[0],
-                bill_details_link.text_content(),
+                re.sub(r"([a-zA-Z]+)(0+)([1-9]+)", r"\1\3", bill_details_link.text_content()),  # SF0120 => SF120
             )
 
             bills.append(bill)
