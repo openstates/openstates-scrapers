@@ -119,8 +119,20 @@ class NewMexico(State):
             "start_date": "2020-01-21",
             "end_date": "2020-02-20",
         },
+        # TODO: Uncomment once the matching files
+        # are on the FTP server
+        # {
+        #     "_scraped_name": "2020 1st Special",
+        #     "classification": "special",
+        #     "identifier": "2020S",
+        #     "name": "2020 Special Session",
+        #     "start_date": "2020-06-18",
+        #     "end_date": "2020-06-20",
+        # },
     ]
     ignored_scraped_sessions = [
+        # TODO: Remove when 2020S goes live
+        "2020 1st Special",
         "2010 2nd Special",
         "2010 Regular",
         "2009 1st Special",
