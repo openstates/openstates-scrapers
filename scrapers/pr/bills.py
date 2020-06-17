@@ -186,14 +186,14 @@ class PRBillScraper(Scraper):
             else:
                 form_page = form_page % 10
 
-            page_str = str(page_number - 1).rjust(2, "0")
+            page_str = str(form_page).rjust(2, "0")
             page_field = "ctl00$CPHBody$dgResults$ctl54$ctl{}".format(page_str)
 
             params["__EVENTTARGET"] = page_field
             params["ctl00$CPHBody$ddlPageSize"] = "50"
             self.info(
-                "Chamber: {}, scraping page {} of {}".format(
-                    chamber, page_number, max_page
+                "Chamber: {}, scraping page {} of {} form_page = {}\nfield = {}".format(
+                    chamber, page_number, max_page, page_str, page_field
                 )
             )
             yield from self.scrape_search_results(
