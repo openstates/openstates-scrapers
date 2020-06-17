@@ -107,7 +107,8 @@ class PRBillScraper(Scraper):
     # Additional options:
     # window_start / window_end - Show bills updated between start and end. Format Y-m-d
     # window_end is optional, defaults to today if window_start is set
-    def scrape(self, session=None, chamber=None, window_start=None, window_end=None):
+    # tipo is leg type: PC, PS, etc. See "Tipo de Medida" on the search form
+    def scrape(self, session=None, chamber=None, window_start=None, window_end=None, tipo=None):
         self.seen_votes = set()
         self.seen_bills = set()
         if not session:
@@ -115,9 +116,9 @@ class PRBillScraper(Scraper):
             self.info("no session specified using %s", session)
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber, session, window_start, window_end)
+            yield from self.scrape_chamber(chamber, session, window_start, window_end, tipo)
 
-    def scrape_chamber(self, chamber, session, window_start=None, window_end=None):
+    def scrape_chamber(self, chamber, session, window_start=None, window_end=None, tipo=None):
         page_number = 1
 
         start_year = session[0:4]
@@ -138,9 +139,12 @@ class PRBillScraper(Scraper):
                 window_end = datetime.datetime.strptime(window_end, "%Y-%m-%d")
                 end = window_start.strftime("%m/%d/%Y")
 
+        if tipo is None:
+            tipo = "-1"
+
         params = {
             "ctl00$CPHBody$lovCuatrienio": start_year,
-            "ctl00$CPHBody$lovTipoMedida": "-1",
+            "ctl00$CPHBody$lovTipoMedida": tipo,
             "ctl00$CPHBody$lovCuerpoId": chamber_letter,
             "ctl00$CPHBody$txt_Medida": "",
             "ctl00$CPHBody$txt_FechaDesde": start,
