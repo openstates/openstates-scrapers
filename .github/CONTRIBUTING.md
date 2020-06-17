@@ -2,5 +2,6 @@
 
 If you're filing an issue:
 
-* Data/Scraper Issues - https://github.com/openstates/openstates/issues/
+* Bill & Vote Data/Scraper Issues - https://github.com/openstates/openstates-scrapers/issues/
+* People Issues - https://github.com/openstates/people/issues/
 * Website Issues - https://github.com/openstates/openstates.org/issues/
