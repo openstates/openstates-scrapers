@@ -136,7 +136,7 @@ class UTBillScraper(Scraper, LXMLMixin):
                 primary=False,
             )
         else:
-            raise AssertionError("Unexpected floor sponsor HTML found")
+            self.warning("Unexpected floor sponsor HTML found")
 
         versions = page.xpath(
             '//b[text()="Bill Text"]/following-sibling::ul/li/'
