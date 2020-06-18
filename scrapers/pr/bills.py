@@ -108,17 +108,23 @@ class PRBillScraper(Scraper):
     # window_start / window_end - Show bills updated between start and end. Format Y-m-d
     # window_end is optional, defaults to today if window_start is set
     # tipo is leg type: PC, PS, etc. See "Tipo de Medida" on the search form
-    def scrape(self, session=None, chamber=None, window_start=None, window_end=None, tipo=None):
+    def scrape(self, session=None, chamber=None, window_start=None, window_end=None, tipo=None, bill_num=None):
         self.seen_votes = set()
         self.seen_bills = set()
         if not session:
             session = self.latest_session()
             self.info("no session specified using %s", session)
-        chambers = [chamber] if chamber is not None else ["upper", "lower"]
-        for chamber in chambers:
-            yield from self.scrape_chamber(chamber, session, window_start, window_end, tipo)
 
-    def scrape_chamber(self, chamber, session, window_start=None, window_end=None, tipo=None):
+        if bill_num:
+            yield from self.scrape_chamber(chamber, session, window_start, window_end, tipo, bill_num)
+        elif tipo:
+            yield from self.scrape_chamber(chamber, session, window_start, window_end, tipo)
+        else:
+            chambers = [chamber] if chamber is not None else ["upper", "lower"]
+            for chamber in chambers:
+                yield from self.scrape_chamber(chamber, session, window_start, window_end)
+
+    def scrape_chamber(self, chamber, session, window_start=None, window_end=None, tipo=None, bill_num=None):
         page_number = 1
 
         start_year = session[0:4]
@@ -139,14 +145,17 @@ class PRBillScraper(Scraper):
                 window_end = datetime.datetime.strptime(window_end, "%Y-%m-%d")
                 end = window_start.strftime("%m/%d/%Y")
 
+        if bill_num is None:
+            bill_num = ""
+
         if tipo is None:
             tipo = "-1"
 
         params = {
             "ctl00$CPHBody$lovCuatrienio": start_year,
-            "ctl00$CPHBody$lovTipoMedida": tipo,
+            "ctl00$CPHBody$lovTipoMedida": tipo.upper(),
             "ctl00$CPHBody$lovCuerpoId": chamber_letter,
-            "ctl00$CPHBody$txt_Medida": "",
+            "ctl00$CPHBody$txt_Medida": bill_num,
             "ctl00$CPHBody$txt_FechaDesde": start,
             "ctl00$CPHBody$ME_txt_FechaDesde_ClientState": "",
             "ctl00$CPHBody$txt_FechaHasta": end,
