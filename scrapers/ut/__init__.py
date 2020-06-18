@@ -239,6 +239,14 @@ class Utah(State):
             "start_date": "2020-04-27",
             "end_date": "2020-05-01",
         },
+        {
+            "_scraped_name": "2020 5th Special Session",
+            "classification": "special",
+            "identifier": "2020S5",
+            "name": "2020 5th Special Session",
+            "start_date": "2020-06-18",
+            "end_date": "2020-06-20",
+        },
     ]
     ignored_scraped_sessions = [
         "2011 Veto Override Session",
