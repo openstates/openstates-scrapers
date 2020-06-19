@@ -310,7 +310,7 @@ class MSBillScraper(Scraper):
         "Passed": ("Passage", True),
         "Adopted": ("Passage", True),
         "Failed": ("Passage", False),
-        "Failed to Concur" ("Failed To Concur", False),
+        "Failed to Concur": ("Failed To Concur", False),
         "Passed As Amended": ("Passage as Amended", True),
         "Adopted As Amended": ("Passage as Amended", True),
         "Appointment Confirmed": ("Appointment Confirmation", True),
