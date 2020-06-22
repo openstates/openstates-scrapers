@@ -179,7 +179,9 @@ class OHBillScraper(Scraper):
                 if len(data["items"]) == 0:
                     self.logger.warning(
                         "Data for bill {bill_id} has empty 'items' array,"
-                        " cannot process related information".format(bill_id=bill_id.lower().replace(" ", ""))
+                        " cannot process related information".format(
+                            bill_id=bill_id.lower().replace(" ", "")
+                        )
                     )
                     yield bill
                     continue
@@ -504,7 +506,11 @@ class OHBillScraper(Scraper):
             if motion in self._vote_motion_dict:
                 motion_text = self._vote_motion_dict[motion]
             else:
-                self.warning('Unknown vote code {}, please add to _vote_motion_dict'.format(motion))
+                self.warning(
+                    "Unknown vote code {}, please add to _vote_motion_dict".format(
+                        motion
+                    )
+                )
                 motion_text = v["results"]
 
             # Sometimes Ohio's SOLAR will only return part of the JSON, so in that case skip
@@ -529,7 +535,7 @@ class OHBillScraper(Scraper):
                     result="pass" if passed else "fail",
                     # organization=v["committee"],
                     bill=bill,
-                    classification="passed",
+                    classification="committee-passage",
                 )
             else:
                 vote = VoteEvent(
@@ -537,7 +543,7 @@ class OHBillScraper(Scraper):
                     start_date=date,
                     motion_text=motion_text,
                     result="pass" if passed else "fail",
-                    classification="passed",
+                    classification="passage",
                     bill=bill,
                 )
             # Concatenate the bill identifier and vote identifier to avoid collisions
@@ -784,7 +790,7 @@ class OHBillScraper(Scraper):
                 motion_text=motion,
                 result="pass" if yes_count > no_count else "fail",
                 bill=bill,
-                classification="passed",
+                classification="passage",
             )
 
             for yes in yeas:

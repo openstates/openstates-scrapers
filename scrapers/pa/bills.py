@@ -313,7 +313,7 @@ class PABillScraper(Scraper):
         elif re.match(r"CONCUR(RENCE)? IN \w+ AMENDMENTS", motion):
             type = "amendment"
         else:
-            type = "other"
+            type = []
             motion = link.text_content()
 
         # Looks like for "YEAS" and "NAYS" counts, PA has multiple HTML

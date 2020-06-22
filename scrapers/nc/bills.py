@@ -332,8 +332,8 @@ class NCBillScraper(Scraper):
                     start_date=vote_date,
                     motion_text=motion_text,
                     bill=bill,
-                    classification="other",  # No indication on classification for archived votes
                     result=action_vote_result,
+                    # No indication on classification for archived votes
                 )
                 ve.add_source(archive_url)
 

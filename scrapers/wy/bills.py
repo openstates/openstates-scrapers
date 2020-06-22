@@ -259,7 +259,6 @@ class WYBillScraper(Scraper, LXMLMixin):
             result=result,
             legislative_session=session,
             bill=bill,
-            classification="other",
         )
 
         v.set_count(option="yes", value=vote_json["yesVotesCount"])

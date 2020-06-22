@@ -484,7 +484,6 @@ class WABillScraper(Scraper, LXMLMixin):
                 start_date=date,
                 motion_text="{} (#{})".format(motion, seq_no),
                 result="pass" if yes_count > (no_count + other_count) else "fail",
-                classification="other",
                 bill=bill,
             )
             vote.set_count("yes", yes_count)
