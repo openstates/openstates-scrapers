@@ -135,6 +135,13 @@ class Oregon(State):
             "start_date": "2020-02-03",
             "end_date": "2020-03-08",
         },
+        {
+            "_scraped_name": "2020 1st Special Session",
+            "identifier": "2020S1",
+            "name": "2020 Special Session",
+            "start_date": "2020-06-24",
+            "end_date": "2020-07-03",
+        },
     ]
     ignored_scraped_sessions = [
         "Mock Session 2020",
