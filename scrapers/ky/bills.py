@@ -350,7 +350,6 @@ class KYBillScraper(Scraper, LXMLMixin):
                     start_date=vote_date,
                     motion_text=motion,
                     result="pass" if passed else "fail",
-                    classification="bill",
                     bill=bill,
                 )
                 ve.add_source(vote_url)
