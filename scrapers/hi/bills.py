@@ -36,6 +36,7 @@ def categorize_action(action):
         ("Floor amendment adopted", "amendment-passage"),
         ("Floor amendment failed", "amendment-failure"),
         (".*Passed Third Reading", "passage"),
+        ("Report and Resolution Adopted", "passage"),
         ("Enrolled to Governor", "executive-receipt"),
         ("Act ", "executive-signature"),
         # Note, occasionally the gov sends intent to veto then doesn't. So use Vetoed not Veto
