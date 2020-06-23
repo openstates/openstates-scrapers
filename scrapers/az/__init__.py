@@ -247,6 +247,7 @@ class Arizona(State):
             "identifier": "54th-2nd-regular",
             "name": "54th Legislature - 2nd Regular Session",
             "start_date": "2020-01-13",
+            "end_date": "2020-05-27",
         },
     ]
     ignored_scraped_sessions = [
