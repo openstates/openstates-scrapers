@@ -23,6 +23,7 @@ class Massachusetts(State):
             "identifier": "186th",
             "name": "186th Legislature (2009-2010)",
             "start_date": "2009-01-07",
+            "end_date": "2010-07-31",
         },
         {
             "_scraped_name": "187th",

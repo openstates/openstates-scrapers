@@ -37,7 +37,7 @@ class Illinois(State):
             "classification": "primary",
             "_scraped_name": "92   (2001-2002)",
             "start_date": "2000-12-08",
-            "end_date": "",
+            "end_date": "2003-01-07",
         },
         {
             "name": "93rd Regular Session",
