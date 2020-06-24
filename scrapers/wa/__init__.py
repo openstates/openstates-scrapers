@@ -56,6 +56,7 @@ class Washington(State):
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-04",
+            "end_date": "2020-03-12",
         },
     ]
     ignored_scraped_sessions = [

@@ -146,6 +146,7 @@ class Virginia(State):
             "identifier": "2020",
             "name": "2020 Regular Session",
             "start_date": "2020-01-08",
+            "end_date": "2020-07-15",
         },
     ]
     ignored_scraped_sessions = [

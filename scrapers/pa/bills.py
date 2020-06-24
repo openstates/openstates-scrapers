@@ -408,7 +408,7 @@ class PABillScraper(Scraper):
                 chamber=chamber,
                 start_date=tz.localize(date),
                 motion_text=motion,
-                classification="other",
+                classification=[],
                 result="pass" if rollcall["passed"] else "fail",
                 bill=bill,
             )

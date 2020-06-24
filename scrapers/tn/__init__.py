@@ -76,6 +76,7 @@ class Tennessee(State):
             "identifier": "111",
             "name": "111th Regular Session (2019-2020)",
             "start_date": "2019-01-09",
+            "end_date": "2020-06-19",
         },
     ]
     ignored_scraped_sessions = [

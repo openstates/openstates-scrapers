@@ -108,7 +108,15 @@ class PRBillScraper(Scraper):
     # window_start / window_end - Show bills updated between start and end. Format Y-m-d
     # window_end is optional, defaults to today if window_start is set
     # tipo is leg type: PC, PS, etc. See "Tipo de Medida" on the search form
-    def scrape(self, session=None, chamber=None, window_start=None, window_end=None, tipo=None, bill_no=None):
+    def scrape(
+        self,
+        session=None,
+        chamber=None,
+        window_start=None,
+        window_end=None,
+        tipo=None,
+        bill_no=None,
+    ):
         self.seen_votes = set()
         self.seen_bills = set()
         if not session:
@@ -116,15 +124,29 @@ class PRBillScraper(Scraper):
             self.info("no session specified using %s", session)
 
         if bill_no:
-            yield from self.scrape_chamber(chamber, session, window_start, window_end, tipo, bill_no)
+            yield from self.scrape_chamber(
+                chamber, session, window_start, window_end, tipo, bill_no
+            )
         elif tipo:
-            yield from self.scrape_chamber(chamber, session, window_start, window_end, tipo)
+            yield from self.scrape_chamber(
+                chamber, session, window_start, window_end, tipo
+            )
         else:
             chambers = [chamber] if chamber is not None else ["upper", "lower"]
             for chamber in chambers:
-                yield from self.scrape_chamber(chamber, session, window_start, window_end)
+                yield from self.scrape_chamber(
+                    chamber, session, window_start, window_end
+                )
 
-    def scrape_chamber(self, chamber, session, window_start=None, window_end=None, tipo=None, bill_no=None):
+    def scrape_chamber(
+        self,
+        chamber,
+        session,
+        window_start=None,
+        window_end=None,
+        tipo=None,
+        bill_no=None,
+    ):
         page_number = 1
 
         start_year = session[0:4]
@@ -186,11 +208,11 @@ class PRBillScraper(Scraper):
             # then page 11 becomes 01
             # and they go 01-11 again
             form_page = page_number
-            if (page_number < 12):
+            if page_number < 12:
                 form_page = form_page - 1
-            elif (page_number % 10 == 0):
+            elif page_number % 10 == 0:
                 form_page = 10
-            elif (page_number % 10 == 1):
+            elif page_number % 10 == 1:
                 form_page = 11
             else:
                 form_page = form_page % 10
@@ -276,7 +298,8 @@ class PRBillScraper(Scraper):
             self.warning("Erroneous filename found: {}".format(url))
             return None
         else:
-            raise Exception("unknown version type: %s" % url)
+            self.warning("unknown version type: %s" % url)
+            return None
         return media_type
 
     def clean_broken_html(self, html):
@@ -348,7 +371,7 @@ class PRBillScraper(Scraper):
 
         vote_chamber = self.parse_vote_chamber(chamber, action_text)
 
-        classification = "passage" if u"Votación Final" in action_text else "other"
+        classification = "passage" if u"Votación Final" in action_text else []
 
         vote = Vote(
             chamber=vote_chamber,

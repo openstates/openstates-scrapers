@@ -334,7 +334,7 @@ class WIBillScraper(Scraper):
         votes = re.findall(r"Ayes,?[\s]?(\d+)[,;]\s+N(?:oes|ays),?[\s]?(\d+)", text)
         yes, no = int(votes[0][0]), int(votes[0][1])
 
-        vtype = "other"
+        vtype = []
         for regex, type in motion_classifiers.items():
             if re.match(regex, text):
                 vtype = type

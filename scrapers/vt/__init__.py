@@ -78,6 +78,7 @@ class Vermont(State):
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-09",
+            "end_date": "2020-05-08",
         },
     ]
     ignored_scraped_sessions = ["2020 Training Session", "2009 Special Session"]

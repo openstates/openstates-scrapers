@@ -573,7 +573,7 @@ class CABillScraper(Scraper, LXMLMixin):
                     elif "Do Pass" in motion:
                         vtype = "passage"
                     else:
-                        vtype = "other"
+                        vtype = []
 
                     motion = motion.strip()
                     motion = re.compile(

@@ -138,6 +138,7 @@ class Alabama(State):
             "identifier": "2020rs",
             "name": "2020 Regular Session",
             "start_date": "2020-02-04",
+            "end_date": "2020-05-18",
         },
     ]
     ignored_scraped_sessions = [

@@ -163,9 +163,9 @@ class LABillScraper(Scraper, LXMLMixin):
         elif motion.startswith("AMENDMENT"):
             type = "amendment"
         elif "ON 3RD READING" in motion:
-            type = "reading:3"
+            type = "reading-3"
         else:
-            type = "other"
+            type = []
 
         (fd, temp_path) = tempfile.mkstemp()
         self.urlretrieve(url, temp_path)

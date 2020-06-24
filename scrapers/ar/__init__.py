@@ -108,6 +108,7 @@ class Arkansas(State):
             "identifier": "2016S3",
             "name": "2016 Third Extraordinary Session",
             "start_date": "2016-05-19",
+            "end_date": "2016-05-23",
         },
         {
             "_scraped_name": "Regular Session, 2017",
@@ -152,10 +153,10 @@ class Arkansas(State):
         {
             "_scraped_name": "First Extraordinary Session, 2020",
             "classification": "special",
-            "end_date": "2020-03-20",
             "identifier": "2020S1",
             "name": "2020 First Extraordinary Session",
             "start_date": "2020-03-20",
+            "end_date": "2020-03-20",
         },
         {
             "_scraped_name": "Fiscal Session, 2020",
@@ -163,6 +164,7 @@ class Arkansas(State):
             "identifier": "2020F",
             "name": "2020 Fiscal Session",
             "start_date": "2020-04-08",
+            "end_date": "2020-04-09",
         },
     ]
     ignored_scraped_sessions = [

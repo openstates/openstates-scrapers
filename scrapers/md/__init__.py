@@ -125,8 +125,8 @@ class Maryland(State):
             "classification": "primary",
             "identifier": "2016",
             "name": "2016 Regular Session",
-            "start_date": "",
-            "end_date": "",
+            "start_date": "2016-01-13",
+            "end_date": "2016-04-11",
         },
         {
             "_scraped_name": "2017 Regular Session",
@@ -158,7 +158,7 @@ class Maryland(State):
             "identifier": "2020",
             "name": "2020 Regular Session",
             "start_date": "2020-01-08",
-            "end_date": "",
+            "end_date": "2020-03-16",
         },
     ]
     ignored_scraped_sessions = [

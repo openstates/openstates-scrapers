@@ -251,7 +251,7 @@ class SDBillScraper(Scraper, LXMLMixin):
             elif motion == "Veto override":
                 type = "veto_override"
             else:
-                type = "other"
+                type = []
 
             vote = VoteEvent(
                 chamber=chamber,

@@ -167,6 +167,7 @@ class Mississippi(State):
             "identifier": "2017",
             "name": "2017 Regular Session",
             "start_date": "2017-01-03",
+            "end_date": "2017-03-29",
         },
         {
             "_scraped_name": "2017 First Extraordinary Session",

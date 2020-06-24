@@ -42,13 +42,15 @@ class Minnesota(State):
             "identifier": "2010 1st Special Session",
             "name": "2010, 1st Special Session",
             "start_date": "2010-05-17",
-            "end_date": "2010-10-18",
+            "end_date": "2010-05-17",
         },
         {
             "_scraped_name": "86th Legislature, 2010 2nd Special Session",
             "classification": "special",
             "identifier": "2010 2nd Special Session",
             "name": "2010, 2nd Special Session",
+            "start_date": "2010-10-18",
+            "end_date": "2010-10-18",
         },
         {
             "_scraped_name": "87th Legislature, 2011-2012",

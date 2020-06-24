@@ -454,7 +454,7 @@ class UpperComVote(PDF):
             bill=self.kwargs["bill"],
             chamber="upper",
             motion_text=motion,
-            classification="committee",
+            classification="committee-passage",
             result=result,
         )
         vote.add_source(self.url)
@@ -561,7 +561,7 @@ class HouseComVote(Page):
                 chamber="lower",
                 motion_text=motion,
                 result=result,
-                classification="committee",
+                classification="committee-passage",
             )
             vote.add_source(self.url)
             vote.set_count("yes", yes_count)
