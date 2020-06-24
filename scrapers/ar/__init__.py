@@ -108,6 +108,7 @@ class Arkansas(State):
             "identifier": "2016S3",
             "name": "2016 Third Extraordinary Session",
             "start_date": "2016-05-19",
+            "end_date": "2016-05-23",
         },
         {
             "_scraped_name": "Regular Session, 2017",
