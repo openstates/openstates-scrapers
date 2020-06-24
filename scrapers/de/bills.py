@@ -240,6 +240,7 @@ class DEBillScraper(Scraper, LXMLMixin):
                 result=vote_passed,
                 bill=bill,
                 legislative_session=session,
+                classification=[],
             )
             vote_pdf_url = (
                 "https://legis.delaware.gov"

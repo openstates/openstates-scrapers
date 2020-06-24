@@ -351,6 +351,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                     motion_text=motion,
                     result="pass" if passed else "fail",
                     bill=bill,
+                    classification="passage",
                 )
                 ve.add_source(vote_url)
                 for how_voted, how_voted_voters in voters.items():
