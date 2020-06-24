@@ -298,7 +298,8 @@ class PRBillScraper(Scraper):
             self.warning("Erroneous filename found: {}".format(url))
             return None
         else:
-            raise Exception("unknown version type: %s" % url)
+            self.warning("unknown version type: %s" % url)
+            return None
         return media_type
 
     def clean_broken_html(self, html):
