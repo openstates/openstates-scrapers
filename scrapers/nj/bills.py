@@ -348,9 +348,9 @@ class NJBillScraper(Scraper, MDBMixin):
                 htm_url = re.sub("X$", "", htm_url)
 
             if rec["DocType"] in self._version_types:
-                if htm_url.endswith("HTM"):
+                if htm_url.lower().endswith("htm"):
                     mimetype = "text/html"
-                elif htm_url.endswith("wpd"):
+                elif htm_url.lower().endswith("wpd"):
                     mimetype = "application/vnd.wordperfect"
                 try:
                     bill.add_version_link(doc_name, htm_url, media_type=mimetype)
