@@ -17,11 +17,41 @@ class Connecticut(State):
         "events": CTEventScraper,
     }
     legislative_sessions = [
-        {"_scraped_name": "2011", "identifier": "2011", "name": "2011 Regular Session"},
-        {"_scraped_name": "2012", "identifier": "2012", "name": "2012 Regular Session"},
-        {"_scraped_name": "2013", "identifier": "2013", "name": "2013 Regular Session"},
-        {"_scraped_name": "2014", "identifier": "2014", "name": "2014 Regular Session"},
-        {"_scraped_name": "2015", "identifier": "2015", "name": "2015 Regular Session"},
+        {
+            "_scraped_name": "2011",
+            "identifier": "2011",
+            "name": "2011 Regular Session",
+            "start_date": "2011-01-05",
+            "end_date": "2011-06-08"
+        },
+        {
+            "_scraped_name": "2012",
+            "identifier": "2012",
+            "name": "2012 Regular Session",
+            "start_date": "2012-02-08",
+            "end_date": "2012-05-09"
+        },
+        {
+            "_scraped_name": "2013",
+            "identifier": "2013",
+            "name": "2013 Regular Session",
+            "start_date": "2013-01-09",
+            "end_date": "2013-06-05"
+        },
+        {
+            "_scraped_name": "2014",
+            "identifier": "2014",
+            "name": "2014 Regular Session",
+            "start_date": "2014-02-05",
+            "end_date": "2014-05-07"
+        },
+        {
+            "_scraped_name": "2015",
+            "identifier": "2015",
+            "name": "2015 Regular Session",
+            "start_date": "2015-01-07",
+            "end_date": "2015-06-03"
+        },
         {
             "_scraped_name": "2016",
             "end_date": "2016-05-04",
