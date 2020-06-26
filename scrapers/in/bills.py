@@ -324,13 +324,13 @@ class INBillScraper(Scraper):
 
             # sponsors
             for s in bill_json["authors"]:
-                self.add_sponsor_if_not_blank(bill, s, classification="author")
+                self._add_sponsor_if_not_blank(bill, s, classification="author")
             for s in bill_json["coauthors"]:
-                self.add_sponsor_if_not_blank(bill, s, classification="coauthor")
+                self._add_sponsor_if_not_blank(bill, s, classification="coauthor")
             for s in bill_json["sponsors"]:
-                self.add_sponsor_if_not_blank(bill, s, classification="sponsor")
+                self._add_sponsor_if_not_blank(bill, s, classification="sponsor")
             for s in bill_json["cosponsors"]:
-                self.add_sponsor_if_not_blank(bill, s, classification="cosponsor")
+                self._add_sponsor_if_not_blank(bill, s, classification="cosponsor")
 
             # actions
             action_link = bill_json["actions"]["link"]
