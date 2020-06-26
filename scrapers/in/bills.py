@@ -23,9 +23,16 @@ class INBillScraper(Scraper):
 
         return (bill_prefix, bill_number)
 
-    def _get_name(self, random_json):
-        # got sick of doing this everywhere
-        return " ".join([random_json["firstName"], random_json["lastName"]])
+    def _add_sponsor_if_not_blank(self, bill, sponsor, classification):
+        primary = classification in ("author", "sponsor")
+        name = " ".join([sponsor["firstName"], sponsor["lastName"]]).strip()
+        if name:
+            bill.add_sponsorship(
+                classification=classification,
+                name=name,
+                entity_type="person",
+                primary=primary,
+            )
 
     def _get_bill_url(self, session, bill_id):
         bill_prefix, bill_number = self._get_bill_id_components(bill_id)
@@ -317,36 +324,13 @@ class INBillScraper(Scraper):
 
             # sponsors
             for s in bill_json["authors"]:
-                bill.add_sponsorship(
-                    classification="author",
-                    name=self._get_name(s),
-                    entity_type="person",
-                    primary=True,
-                )
-
+                self.add_sponsor_if_not_blank(bill, s, classification="author")
             for s in bill_json["coauthors"]:
-                bill.add_sponsorship(
-                    classification="coauthor",
-                    name=self._get_name(s),
-                    entity_type="person",
-                    primary=False,
-                )
-
+                self.add_sponsor_if_not_blank(bill, s, classification="coauthor")
             for s in bill_json["sponsors"]:
-                bill.add_sponsorship(
-                    classification="sponsor",
-                    name=self._get_name(s),
-                    entity_type="person",
-                    primary=True,
-                )
-
+                self.add_sponsor_if_not_blank(bill, s, classification="sponsor")
             for s in bill_json["cosponsors"]:
-                bill.add_sponsorship(
-                    classification="cosponsor",
-                    name=self._get_name(s),
-                    entity_type="person",
-                    primary=False,
-                )
+                self.add_sponsor_if_not_blank(bill, s, classification="cosponsor")
 
             # actions
             action_link = bill_json["actions"]["link"]
