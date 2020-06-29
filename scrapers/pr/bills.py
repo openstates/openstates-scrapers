@@ -343,6 +343,8 @@ class PRBillScraper(Scraper):
             vote_chamber = "lower"
         elif u"Senado aprueba" in vote_name:
             vote_chamber = "upper"
+        elif u"Aprobado mediante votación por lista":
+            vote_chamber = bill_chamber
         else:
             raise AssertionError(u"Unknown vote text found: {}".format(vote_name))
         return vote_chamber
