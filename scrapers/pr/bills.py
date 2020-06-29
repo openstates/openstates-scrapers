@@ -411,18 +411,21 @@ class PRBillScraper(Scraper):
 
             version_title = self.clean_broken_html(version_row.xpath("text()")[0])
 
+            media_type = self.classify_media_type(version_url)
+            if not media_type:
+                continue
             if is_document:
                 bill.add_document_link(
                     note=version_title,
                     url=version_url,
-                    media_type=self.classify_media_type(version_url),
+                    media_type=media_type,
                     on_duplicate="ignore",
                 )
             else:
                 bill.add_version_link(
                     note=version_title,
                     url=version_url,
-                    media_type=self.classify_media_type(version_url),
+                    media_type=media_type,
                     on_duplicate="ignore",
                 )
 
