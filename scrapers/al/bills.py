@@ -410,7 +410,7 @@ class ALBillScraper(Scraper):
                 except AttributeError:
                     action_committee = ""
 
-                if action_date is not None and action_text:
+                if action_date is not None and action_text.strip():
                     act = bill.add_action(
                         action_text,
                         TIMEZONE.localize(action_date),
