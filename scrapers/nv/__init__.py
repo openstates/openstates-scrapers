@@ -95,6 +95,14 @@ class Nevada(State):
             "end_date": "2017-06-06",
         },
         {
+            "_scraped_name": "81st (2021) Session",
+            "classification": "primary",
+            "identifier": "81",
+            "name": "2021 Regular Session",
+            "start_date": "2021-02-01",
+            "end_date": "2021-06-01",
+        },
+        {
             "_scraped_name": "80th (2019) Session",
             "classification": "primary",
             "identifier": "80",
@@ -146,4 +154,5 @@ class Nevada(State):
         "78": "78th2015",
         "79": "79th2017",
         "80": "80th2019",
+        "81": "81st2021",
     }
