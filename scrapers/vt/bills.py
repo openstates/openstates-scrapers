@@ -232,13 +232,19 @@ class VTBillScraper(Scraper, LXMLMixin):
                 # Manual fix for data error in
                 # https://legislature.vermont.gov/bill/status/2020/H.511
                 action["StatusDate"] = action["StatusDate"].replace("/0209", "/2019")
+                action_date = datetime.datetime.strftime(
+                    datetime.datetime.strptime(action["StatusDate"], "%m/%d/%Y"),
+                    "%Y-%m-%d"
+                )
+                # strftime doesn't always pad year value (%Y)  (https://bugs.python.org/issue32195)
+                # and sometimes this state has typos in year part of the StatusDate value
+                # which can cause validation errors, so fix leading zeroes if they are missing
+                if action_date.find("-") < 4:
+                    action_date = ("0" * (4 - action_date.find("-"))) + action_date
 
                 bill.add_action(
                     description=re.sub(HTML_TAGS_RE, "", action["FullStatus"]),
-                    date=datetime.datetime.strftime(
-                        datetime.datetime.strptime(action["StatusDate"], "%m/%d/%Y"),
-                        "%Y-%m-%d",
-                    ),
+                    date=action_date,
                     chamber=actor,
                     classification=action_type,
                 )
