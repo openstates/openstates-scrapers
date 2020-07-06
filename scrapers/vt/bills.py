@@ -41,9 +41,6 @@ class VTBillScraper(Scraper, LXMLMixin):
             # Strip whitespace from strings
             info = {k: v.strip() for k, v in info.items()}
 
-            if info['BillNumber'] != 'H.942':
-                continue
-
             # Identify the bill type and chamber
             if info["BillNumber"].startswith("J.R.H."):
                 bill_type = "joint resolution"
