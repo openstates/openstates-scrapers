@@ -467,10 +467,15 @@ class IlBillScraper(Scraper):
         title = doc.xpath(
             '//span[text()="Short Description:"]/following-sibling::span[1]/' "text()"
         )[0].strip()
-        summary = doc.xpath(
-            '//span[text()="Synopsis As Introduced"]/following-sibling::span[1]/'
+        # 1. Find the heading with "Synopsis As Introduced" for text.
+        # 2. Go to the next heading.
+        # 3. Backtrack and grab everything to, but not including, #1.
+        # 4. Grab text of all, including nested, nodes.
+        summary_nodes = doc.xpath(
+            '//span[text()="Synopsis As Introduced"]/following-sibling::span[contains(@class, "heading2")]/preceding-sibling::*[preceding-sibling::span[text()="Synopsis As Introduced"]]//'
             "text()"
-        )[0].strip()
+        )
+        summary = " ".join([node.strip() for node in summary_nodes])
 
         bill = Bill(
             identifier=bill_id,
