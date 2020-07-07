@@ -475,7 +475,7 @@ class IlBillScraper(Scraper):
             '//span[text()="Synopsis As Introduced"]/following-sibling::span[contains(@class, "heading2")]/preceding-sibling::*[preceding-sibling::span[text()="Synopsis As Introduced"]]//'
             "text()"
         )
-        summary = " ".join([node.strip() for node in summary_nodes])
+        summary = "\n".join([node.strip() for node in summary_nodes])
 
         bill = Bill(
             identifier=bill_id,
