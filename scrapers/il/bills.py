@@ -472,7 +472,8 @@ class IlBillScraper(Scraper):
         # 3. Backtrack and grab everything to, but not including, #1.
         # 4. Grab text of all, including nested, nodes.
         summary_nodes = doc.xpath(
-            '//span[text()="Synopsis As Introduced"]/following-sibling::span[contains(@class, "heading2")]/preceding-sibling::*[preceding-sibling::span[text()="Synopsis As Introduced"]]//'
+            '//span[text()="Synopsis As Introduced"]/following-sibling::span[contains(@class, "heading2")]/'
+            'preceding-sibling::*[preceding-sibling::span[text()="Synopsis As Introduced"]]//'
             "text()"
         )
         summary = "\n".join([node.strip() for node in summary_nodes])
