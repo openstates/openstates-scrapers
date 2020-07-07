@@ -110,7 +110,7 @@ class Nevada(State):
         #     "name": "2021 Regular Session",
         #     "start_date": "2021-02-01",
         #     "end_date": "2021-06-01",
-        # },        
+        # },
     ]
     ignored_scraped_sessions = [
         "81st (2021) Session",
