@@ -232,6 +232,10 @@ class VTBillScraper(Scraper, LXMLMixin):
                 # Manual fix for data error in
                 # https://legislature.vermont.gov/bill/status/2020/H.511
                 action["StatusDate"] = action["StatusDate"].replace("/0209", "/2019")
+                # https://legislature.vermont.gov/bill/status/2020/H.942
+                if bill_id == 'H 942' and session == "2019-2020":
+                    action["StatusDate"] = action["StatusDate"].replace("/0200", "/2020")
+                    
                 action_date = datetime.datetime.strftime(
                     datetime.datetime.strptime(action["StatusDate"], "%m/%d/%Y"),
                     "%Y-%m-%d"

@@ -102,8 +102,18 @@ class Nevada(State):
             "start_date": "2019-02-04",
             "end_date": "2019-06-03",
         },
+        # TODO: Uncomment when session goes live
+        # {
+        #     "_scraped_name": "81st (2021) Session",
+        #     "classification": "primary",
+        #     "identifier": "81",
+        #     "name": "2021 Regular Session",
+        #     "start_date": "2021-02-01",
+        #     "end_date": "2021-06-01",
+        # },
     ]
     ignored_scraped_sessions = [
+        "81st (2021) Session",
         "25th (2008) Special Session",
         "24th (2008) Special Session",
         "23rd (2007) Special Session",
@@ -146,4 +156,6 @@ class Nevada(State):
         "78": "78th2015",
         "79": "79th2017",
         "80": "80th2019",
+        # TODO: Uncomment when session goes live
+        # "81": "81st2021",
     }
