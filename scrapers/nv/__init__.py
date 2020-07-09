@@ -102,6 +102,15 @@ class Nevada(State):
             "start_date": "2019-02-04",
             "end_date": "2019-06-03",
         },
+        {
+            "_scraped_name": "31st (2020) Special Session",
+            "classification": "special",
+            "identifier": "2020Special31",
+            "name": "31st (2020) Special Session",
+            "start_date": "2020-08-08",
+            # TODO: correct end date after special completes
+            "end_date": "2020-08-17",
+        },
         # TODO: Uncomment when session goes live
         # {
         #     "_scraped_name": "81st (2021) Session",
@@ -150,6 +159,7 @@ class Nevada(State):
         "2014Special28": "28th2014Special",
         "2015Special29": "29th2015Special",
         "2016Special30": "30th2016Special",
+        "2020Special31": "31st2020Special",
         "75": "75th2009",
         "76": "76th2011",
         "77": "77th2013",
