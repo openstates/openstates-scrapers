@@ -146,8 +146,16 @@ class Minnesota(State):
             "identifier": "2020s1",
             "name": "2020, First Special Session",
             "start_date": "2020-06-13",
+            "end_date": "2020-06-19",
+        },
+        {
+            "_scraped_name": "91st Legislature, 2020 2nd Special Session",
+            "classification": "primary",
+            "identifier": "2020s2",
+            "name": "2020, Second Special Session",
+            "start_date": "2020-07-13",
             # Just a guess. TODO: set after end of special
-            "end_date": "2020-06-26",
+            "end_date": "2020-07-26",
         },
     ]
     ignored_scraped_sessions = [
