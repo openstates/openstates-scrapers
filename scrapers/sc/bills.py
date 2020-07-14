@@ -97,6 +97,11 @@ class SCBillScraper(Scraper):
      using x-path to find and obtain the information
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.raise_errors = False
+        self.retry_attempts = 5
+
     urls = {
         "lower": {
             "daily-bill-index": "https://www.scstatehouse.gov/hintro/hintros.php",
