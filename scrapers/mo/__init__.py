@@ -40,8 +40,18 @@ class Missouri(State):
             "start_date": "2020-01-08",
             "end_date": "2020-05-15",
         },
+        # {
+        #     "_scraped_name": "2020 1st Extraordinary Session",
+        #     "classification": "primary",
+        #     "identifier": "2020S1",
+        #     "name": "2020 First Extraordinary Session",
+        #     "start_date": "2019-07-27",
+        #     # TODO: real end date when session is over
+        #     "end_date": "2019-07-31",
+        # },
     ]
     ignored_scraped_sessions = [
+        "2020 1st Extraordinary Session",
         "2018 Regular Session",
         "2018 Special Session",
         "2018 1st Extraordinary Session",
