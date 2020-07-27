@@ -474,6 +474,10 @@ class PRBillScraper(Scraper):
                 './/div[label[contains(text(), "Fecha")]]/span[contains(@class,"smalltxt")]/text()'
             )[0]
             raw_date = self.clean_broken_html(raw_date)
+            if raw_date == '':
+                self.warning("No date available for {}, skipping".format(action_text))
+                continue
+            
             action_date = self._TZ.localize(
                 datetime.datetime.strptime(raw_date, "%m/%d/%Y")
             )
