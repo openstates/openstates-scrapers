@@ -148,15 +148,14 @@ class Virginia(State):
             "start_date": "2020-01-08",
             "end_date": "2020-07-15",
         },
-        # TODO: Re-enable august 18 2020
-        # {
-        #     "_scraped_name": "2020 Special Session I",
-        #     "identifier": "2020specialI",
-        #     "name": "2020, 1st Special Session",
-        #     "start_date": "2020-08-18",
-        #     # TODO: set real end date after session
-        #     "end_date": "2020-08-21",
-        # },
+        {
+            "_scraped_name": "2020 Special Session I",
+            "identifier": "2020specialI",
+            "name": "2020, 1st Special Session",
+            "start_date": "2020-08-18",
+            # TODO: set real end date after session
+            "end_date": "2020-08-21",
+        },
     ]
     ignored_scraped_sessions = [
         "2020 Special Session I",
