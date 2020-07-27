@@ -477,7 +477,7 @@ class PRBillScraper(Scraper):
             if raw_date == '':
                 self.warning("No date available for {}, skipping".format(action_text))
                 continue
-            
+
             action_date = self._TZ.localize(
                 datetime.datetime.strptime(raw_date, "%m/%d/%Y")
             )
