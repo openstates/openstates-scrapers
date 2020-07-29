@@ -234,6 +234,9 @@ class NYBillScraper(Scraper):
     def _scrape_bill(self, session, bill_data):
         details = self._parse_bill_details(bill_data)
 
+        if details is None:
+            return
+
         (
             senate_url,
             assembly_url,
