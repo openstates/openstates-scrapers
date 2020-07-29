@@ -132,7 +132,7 @@ class CTBillScraper(Scraper):
             bill.add_document_link(link.text.strip(), link.attrib["href"])
 
         for link in page.xpath(
-            "//a[contains(@href, '/pdf/') and contains(@href, '/TOB/')]"
+            "//a[(contains(@href, '/pdf/') or contains(@href, '/PDF/')) and contains(@href, '/TOB/')]"
         ):
             bill.add_version_link(
                 link.text.strip(), link.attrib["href"], media_type="application/pdf"
