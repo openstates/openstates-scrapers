@@ -446,7 +446,8 @@ class SCBillScraper(Scraper):
         self._seen_vote_ids = set()
 
         # start with subjects
-        self.scrape_subjects(session)
+        # disable subject scraping for now
+        # self.scrape_subjects(session)
 
         # get bill index
         chambers = [chamber] if chamber else ["upper", "lower"]
