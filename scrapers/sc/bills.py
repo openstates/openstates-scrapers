@@ -9,7 +9,6 @@ from functools import wraps
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 import lxml.html
-import urllib
 
 # Workaround to prevent chunking error (thanks @showerst)
 #
@@ -168,16 +167,7 @@ class SCBillScraper(Scraper):
                 code,
             )
 
-            # SC's server is sending some noncomplient server responses
-            # that are confusing self.get
-            # workaround via
-            # https://stackoverflow.com/questions/14442222/how-to-handle-incompleteread-in-python
-            try:
-                self.info(url)
-                data = urllib.request.urlopen(url).read()
-            except (http.client.IncompleteRead) as e:
-                self.warning("Client IncompleteRead error on {}".format(url))
-                data = e.partial
+            data = self.get(url).text
 
             doc = lxml.html.fromstring(data)
             for bill in doc.xpath('//span[@style="font-weight:bold;"]'):
