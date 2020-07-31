@@ -133,6 +133,13 @@ class Florida(State):
             "start_date": "2020-01-14",
             "end_date": "2020-03-19",
         },
+        {
+            "name": "2021 Regular Session",
+            "identifier": "2021",
+            "classification": "primary",
+            "start_date": "2021-03-02",
+            "end_date": "2021-05-01",
+        },
     ]
     ignored_scraped_sessions = [
         *(str(each) for each in range(1997, 2010)),
