@@ -98,6 +98,7 @@ class Connecticut(State):
         "2007",
         "2006",
         "2005",
+        "default",
     ]
 
     def get_session_list(self):
