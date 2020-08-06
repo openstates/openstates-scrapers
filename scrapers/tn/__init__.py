@@ -78,6 +78,15 @@ class Tennessee(State):
             "start_date": "2019-01-09",
             "end_date": "2020-06-19",
         },
+        {
+            "_scraped_name": "FIRST EXTRAORDINARY SESSION (AUGUST 2019)",
+            "classification": "special",
+            "identifier": "111S1",
+            "name": "111th First Extraordinary Session (August 2019)",
+            "start_date": "2020-08-05",
+            # TODO: Add real end date after session
+            "end_date": "2020-08-14",
+        },        
     ]
     ignored_scraped_sessions = [
         "107th General Assembly",
