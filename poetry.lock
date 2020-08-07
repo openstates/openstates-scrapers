@@ -184,7 +184,7 @@ description = "core infrastructure for the openstates project"
 name = "openstates"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "4.5.1"
+version = "4.7.1"
 
 [package.dependencies]
 Django = ">=2.2"
@@ -540,8 +540,8 @@ mysqlclient = [
     {file = "mysqlclient-1.4.6.tar.gz", hash = "sha256:f3fdaa9a38752a3b214a6fe79d7cae3653731a53e577821f9187e67cbecb2e16"},
 ]
 openstates = [
-    {file = "openstates-4.5.1-py3-none-any.whl", hash = "sha256:d6a8a46f4b478710591db1a81e4c0a5a465dd1e1ca6300a0fc85d209853d4caf"},
-    {file = "openstates-4.5.1.tar.gz", hash = "sha256:6a5a5b1946e3256f8783204621300fa8bd3db17f715ec8737a759c24c6470b5e"},
+    {file = "openstates-4.7.1-py3-none-any.whl", hash = "sha256:3fd7eac4695935ea74d6b431f6bad9e5cf2c2288068f1b8335d2a33173be9f8c"},
+    {file = "openstates-4.7.1.tar.gz", hash = "sha256:e580412deb040504cd47049ff0f748f3f5500023972aecbfe1992b218b811707"},
 ]
 openstates-metadata = [
     {file = "openstates_metadata-2020.4.7-py3-none-any.whl", hash = "sha256:cb9e6a2a55ac3ef4b552fcd1dc6d64eba4949bb8f8732ba1fcf288242535e591"},
@@ -599,6 +599,7 @@ pytz = [
     {file = "pytz-2019.3.tar.gz", hash = "sha256:b02c06db6cf09c12dd25137e563b31700d3b80fcc4ad23abb7a315f2789819be"},
 ]
 requests = [
+    {file = "requests-2.23.0-py2.7.egg", hash = "sha256:5d2d0ffbb515f39417009a46c14256291061ac01ba8f875b90cad137de83beb4"},
     {file = "requests-2.23.0-py2.py3-none-any.whl", hash = "sha256:43999036bfa82904b6af1d99e4882b560e5e2c68e5c4b0aa03b655f3d7d73fee"},
     {file = "requests-2.23.0.tar.gz", hash = "sha256:b3f43d496c6daba4493e7c431722aeb7dbc6288f52a6e04e7b6023b0247817e6"},
 ]
