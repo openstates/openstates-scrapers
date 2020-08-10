@@ -445,8 +445,10 @@ class SCBillScraper(Scraper):
 
         self._seen_vote_ids = set()
 
-        # start with subjects
-        # disable subject scraping for now
+        # Subject scraping disabled Summer 2020, openstates/issues#77
+        # Leaving the remnants of this around since it is very possible that SC will
+        # update their web configuration and we can reuse this later, but for now it was
+        # breaking 75% of the time and it isn't worth the cost.
         # self.scrape_subjects(session)
 
         # get bill index
