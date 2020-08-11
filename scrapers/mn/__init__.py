@@ -154,8 +154,7 @@ class Minnesota(State):
             "identifier": "2020s2",
             "name": "2020, Second Special Session",
             "start_date": "2020-07-13",
-            # Just a guess. TODO: set after end of special
-            "end_date": "2020-07-26",
+            "end_date": "2020-07-21",
         },
         {
             "_scraped_name": "91st Legislature, 2020 3rd Special Session",
