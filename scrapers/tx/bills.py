@@ -134,6 +134,9 @@ class TXBillScraper(Scraper, LXMLMixin):
             bill.add_subject(subject.text.strip())
 
         for version in root.iterfind("billtext/docTypes/bill/versions"):
+            if not version:
+                continue
+            
             note = version.find("version/versionDescription").text
             html_url = version.find("version/WebHTMLURL").text
             bill.add_version_link(
