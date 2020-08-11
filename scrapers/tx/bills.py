@@ -65,9 +65,9 @@ class TXBillScraper(Scraper, LXMLMixin):
         # House and Senate Concurrent and Joint Resolutions files do not contain
         # the 'R' for resolution in file names. This is required to match
         # bill ID's later on.
-        if re.match('[HS][CJ]', identifier):
-            identifier += 'R'
-        return ' '.join([identifier, number])
+        if re.match("[HS][CJ]", identifier):
+            identifier += "R"
+        return " ".join([identifier, number])
 
     def scrape(self, session=None, chamber=None):
         if not session:
@@ -86,9 +86,7 @@ class TXBillScraper(Scraper, LXMLMixin):
             bill_id = self._get_bill_id_from_file_path(item)
             self.witnesses.append((bill_id, item))
 
-        history_files = self._get_ftp_files(
-            "bills/{}/billhistory".format(session_code)
-        )
+        history_files = self._get_ftp_files("bills/{}/billhistory".format(session_code))
         for bill_url in history_files:
             if "house" in bill_url:
                 if "lower" in chambers:
@@ -136,20 +134,12 @@ class TXBillScraper(Scraper, LXMLMixin):
         for version in root.iterfind("billtext/docTypes/bill/versions"):
             if not version:
                 continue
-            
+
             note = version.find("version/versionDescription").text
             html_url = version.find("version/WebHTMLURL").text
-            bill.add_version_link(
-                note=note,
-                url=html_url,
-                media_type="text/html"
-            )
+            bill.add_version_link(note=note, url=html_url, media_type="text/html")
             pdf_url = version.find("version/WebPDFURL").text
-            bill.add_version_link(
-                note=note,
-                url=pdf_url,
-                media_type="application/pdf"
-            )
+            bill.add_version_link(note=note, url=pdf_url, media_type="application/pdf")
 
         for analysis in root.iterfind("billtext/docTypes/analysis/versions"):
             if not analysis:
