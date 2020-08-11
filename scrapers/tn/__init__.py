@@ -86,7 +86,7 @@ class Tennessee(State):
             "start_date": "2020-08-05",
             # TODO: Add real end date after session
             "end_date": "2020-08-14",
-        },        
+        },
     ]
     ignored_scraped_sessions = [
         "107th General Assembly",
