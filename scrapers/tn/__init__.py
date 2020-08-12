@@ -78,6 +78,26 @@ class Tennessee(State):
             "start_date": "2019-01-09",
             "end_date": "2020-06-19",
         },
+        {
+            # This is shortened as it's used to find the link within the archive page. That page
+            # has a line break after "Session" so XPath was not finding it.
+            "_scraped_name": "First Extraordinary Session",
+            "classification": "special",
+            "identifier": "111S1",
+            "name": "111th First Extraordinary Session (August 2019)",
+            "start_date": "2020-08-05",
+            # TODO: Add real end date after session
+            "end_date": "2020-08-14",
+        },
+        {
+            "_scraped_name": "Second Extraordinary Session (August 2020)",
+            "classification": "special",
+            "identifier": "111S2",
+            "name": "111th Second Extraordinary Session (August 2020)",
+            "start_date": "2020-08-05",
+            # TODO: Add real end date after session
+            "end_date": "2020-08-14",
+        },
     ]
     ignored_scraped_sessions = [
         "107th General Assembly",
