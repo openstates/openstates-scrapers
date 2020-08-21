@@ -100,6 +100,15 @@ class Idaho(State):
             "start_date": "2020-01-06",
             "end_date": "2020-03-27",
         },
+        {
+            "_scraped_name": "2020 Extraordinary Session",
+            "classification": "special",
+            "identifier": "2020S1",
+            "name": "65th Legislature, First Extraordinary Session (2020)",
+            "start_date": "2020-08-24",
+            # TODO: Set real end date after session completes
+            "end_date": "2020-08-28",
+        },
     ]
     ignored_scraped_sessions = [
         "2020 Session",
