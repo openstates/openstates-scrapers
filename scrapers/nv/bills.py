@@ -89,8 +89,11 @@ class NVBillScraper(Scraper, LXMLMixin):
         }
 
         for doc_type in doc_types[chamber]:
-            bill_list_url = f"https://www.leg.state.nv.us/App/NELIS/REL/{session_slug}/HomeBill/BillsTab?Filters."
-            "SearchText=&Filters.SelectedBillTypes={doc_type}&Filters.DisplayTitles=false&Filters.PageSize=2147483647"
+            bill_list_url = (
+                f"https://www.leg.state.nv.us/App/NELIS/REL/{session_slug}/HomeBill/BillsTab?"
+                f"Filters.SearchText=&Filters.SelectedBillTypes={doc_type}&Filters.DisplayTitles=false&"
+                f"Filters.PageSize=2147483647"
+            )
             try:
                 listing_page = lxml.html.fromstring(self.get(bill_list_url).text)
                 listing_page.make_links_absolute("https://www.leg.state.nv.us")
