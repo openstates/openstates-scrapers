@@ -171,7 +171,13 @@ class IDBillScraper(Scraper):
         if not session:
             session = self.latest_session()
             self.info("no session specified, using %s", session)
-        self.scrape_subjects(session)
+
+        # specials don't have subjects
+        if 'spcl' in session:
+            self._subjects = defaultdict(list)
+        else:
+            self.scrape_subjects(session)
+
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_bill_url(chamber, session)

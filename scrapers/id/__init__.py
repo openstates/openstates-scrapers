@@ -103,7 +103,7 @@ class Idaho(State):
         {
             "_scraped_name": "2020 Extraordinary Session",
             "classification": "special",
-            "identifier": "2020S1",
+            "identifier": "2020spcl",
             "name": "65th Legislature, First Extraordinary Session (2020)",
             "start_date": "2020-08-24",
             # TODO: Set real end date after session completes
