@@ -173,7 +173,7 @@ class IDBillScraper(Scraper):
             self.info("no session specified, using %s", session)
 
         # specials don't have subjects
-        if 'spcl' in session:
+        if "spcl" in session:
             self._subjects = defaultdict(list)
         else:
             self.scrape_subjects(session)
