@@ -255,13 +255,12 @@ class TNBillScraper(Scraper):
         session_details = self.jurisdiction.sessions_by_id[session]
 
         # The index page gives us links to the paginated bill pages
+        index_page = "http://wapp.capitol.tn.gov/apps/indexes/"
         if session_details["classification"] == "special":
-            index_page = "http://wapp.capitol.tn.gov/apps/indexes/SPSession1.aspx"
-            xpath = '//h4[text()="{}"]/following-sibling::table[1]/tbody/tr/td/a'.format(
+            xpath = '//a[contains(text(), "{}")]'.format(
                 session_details["_scraped_name"]
             )
         else:
-            index_page = "http://wapp.capitol.tn.gov/apps/indexes/"
             xpath = '//td[contains(@class,"webindex")]/a'
 
         index_list_page = self.get(index_page).text
@@ -273,7 +272,10 @@ class TNBillScraper(Scraper):
 
             bill_listing = bill_listing.attrib["href"]
 
-            if not listing_matches_chamber(bill_listing, chamber):
+            # This check was failing for the latest specials as they are just links to full
+            # list of special legislation pages. The links themselves do not follow the prefix
+            # pattern.
+            if session_details["classification"] != "special" and not listing_matches_chamber(bill_listing, chamber):
                 self.logger.info(
                     "Skipping bill listing '{bill_listing}' "
                     "Does not match chamber '{chamber}'".format(
@@ -287,12 +289,11 @@ class TNBillScraper(Scraper):
             bill_list_page = lxml.html.fromstring(bill_list_page)
             bill_list_page.make_links_absolute(bill_listing)
 
-            for bill_link in set(
-                bill_list_page.xpath(
-                    '//h1[text()="Legislation"]/following-sibling::div/'
-                    "div/div/div//a/@href"
-                )
-            ):
+            if session_details["classification"] == "special":
+                bill_link_xpath = '//table//a[contains(@href, "BillNumber=")]/@href'
+            else:
+                bill_link_xpath = '//h1[text()="Legislation"]/following-sibling::div/div/div/div//a/@href'
+            for bill_link in set(bill_list_page.xpath(bill_link_xpath)):
                 bill = self.scrape_bill(session, bill_link)
                 if bill:
                     yield bill
