@@ -260,7 +260,7 @@ class NYBillScraper(Scraper):
 
         bill_active_version = None
 
-        if active_version != '':
+        if active_version != "":
             bill_active_version = bill_data["amendments"]["items"][active_version]
         else:
             self.warning("No active version for {}".format(bill_id))
@@ -369,7 +369,7 @@ class NYBillScraper(Scraper):
                 self.term_start_year, version
             )
             bill.add_version_link(
-                version, pdf_url, on_duplicate="ignore", media_type="application/pdf",
+                version, pdf_url, on_duplicate="ignore", media_type="application/pdf"
             )
 
         yield bill

@@ -75,11 +75,7 @@ committee_data_upper = [
         ["B., P. & E.D."],
     ),
     ("Standing Committee on Agriculture", "CS40", ["AGRI."]),
-    (
-        "Standing Committee on Banking and Financial Institutions",
-        "CS69",
-        ["B. & F.I."],
-    ),
+    ("Standing Committee on Banking and Financial Institutions", "CS69", ["B. & F.I."]),
     ("Standing Committee on Veterans Affairs", "CS66", ["V.A."]),
     ("Standing Committee on Budget and Fiscal Review", "CS62", ["B. & F.R."]),
     ("Standing Committee on Human Services", "CS74", ["HUM. S.", "HUMAN S."]),

@@ -30,7 +30,7 @@ class OREventScraper(Scraper):
         if start_date is None:
             start_date = datetime.date.today()
         else:
-            start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+            start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
 
         committees_by_code = {}
 

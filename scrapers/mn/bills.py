@@ -123,7 +123,11 @@ class MNBillScraper(Scraper, LXMLMixin):
             # If testing and certain bills to test, only test those
             if self.is_testing() and len(self.testing_bills) > 0:
                 for b in self.testing_bills:
-                    bill_url = BILL_DETAIL_URL % (self.search_chamber(chamber), b, '2019')
+                    bill_url = BILL_DETAIL_URL % (
+                        self.search_chamber(chamber),
+                        b,
+                        "2019",
+                    )
                     version_url = VERSION_URL % (
                         self.search_session(session)[-4:],
                         self.search_session(session)[0],
@@ -197,7 +201,11 @@ class MNBillScraper(Scraper, LXMLMixin):
             bill["version_url"] = VERSION_URL % (
                 search_session[-4:],
                 search_session[0],
-                re.sub(r"([a-zA-Z]+)(0+)([1-9]+)", r"\1\3", bill_details_link.text_content()),  # SF0120 => SF120
+                re.sub(
+                    r"([a-zA-Z]+)(0+)([1-9]+)",
+                    r"\1\3",
+                    bill_details_link.text_content(),
+                ),  # SF0120 => SF120
             )
 
             bills.append(bill)
@@ -333,14 +341,14 @@ class MNBillScraper(Scraper, LXMLMixin):
     # if a date isn't found in the actions table,
     # check the action text itself
     def parse_inline_action_date(self, text):
-        inline_date = re.findall(r'\d{2}/\d{2}/\d+', text, re.MULTILINE)
+        inline_date = re.findall(r"\d{2}/\d{2}/\d+", text, re.MULTILINE)
         if inline_date:
             return inline_date[0]
         return False
 
     # action date formats are inconsistent
     def parse_dates(self, datestr):
-        date_formats = ['%m/%d/%Y', '%m/%d/%y']
+        date_formats = ["%m/%d/%Y", "%m/%d/%y"]
         for fmt in date_formats:
             try:
                 return datetime.datetime.strptime(datestr, fmt).date()
@@ -374,16 +382,12 @@ class MNBillScraper(Scraper, LXMLMixin):
                 action_date = date_col.text_content().strip()
                 action_text = row.xpath("td[2]/div/div")[0].text_content().strip()
                 # Remove large whitespace blocks
-                action_text = re.sub(r'\s+', ' ', action_text)
+                action_text = re.sub(r"\s+", " ", action_text)
 
                 committee = the_rest.xpath("a[contains(@href,'committee')]/text()")
                 extra = "".join(the_rest.xpath("span[not(@style)]/text() | a/text()"))
                 # skip non-actions (don't have date)
-                if action_text in (
-                    "Chapter number",
-                    "See also",
-                    "See",
-                ):
+                if action_text in ("Chapter number", "See also", "See"):
                     continue
 
                 if action_date:

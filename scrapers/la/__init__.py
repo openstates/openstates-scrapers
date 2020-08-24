@@ -10,7 +10,7 @@ class Louisiana(State):
     scrapers = {
         "people": LAPersonScraper,
         # "committees": LACommitteeScraper,
-        'events': LAEventScraper,
+        "events": LAEventScraper,
         "bills": LABillScraper,
     }
     legislative_sessions = [

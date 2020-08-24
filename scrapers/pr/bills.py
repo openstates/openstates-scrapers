@@ -448,7 +448,7 @@ class PRBillScraper(Scraper):
                 continue
 
             bill.add_sponsorship(
-                name, entity_type="person", classification="primary", primary=True,
+                name, entity_type="person", classification="primary", primary=True
             )
 
     def scrape_action_table(self, chamber, bill, page, url):
@@ -474,7 +474,7 @@ class PRBillScraper(Scraper):
                 './/div[label[contains(text(), "Fecha")]]/span[contains(@class,"smalltxt")]/text()'
             )[0]
             raw_date = self.clean_broken_html(raw_date)
-            if raw_date == '':
+            if raw_date == "":
                 self.warning("No date available for {}, skipping".format(action_text))
                 continue
 

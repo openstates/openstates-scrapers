@@ -415,15 +415,17 @@ class MDBillScraper(Scraper):
             fiscal_url = fiscal_note.get("href")
             fiscal_title = fiscal_note.text_content()
             bill.add_document_link(
-                fiscal_title, fiscal_url, media_type="application/pdf",
+                fiscal_title, fiscal_url, media_type="application/pdf"
             )
 
         # effective date, where available
         if page.xpath('//div[contains(text(), "Effective Date(s)")]'):
-            eff_date = page.xpath('//div[contains(text(), "Effective Date(s)")]/text()')[0].strip()
-            eff_date = eff_date.replace('Effective Date(s):', '').strip()
+            eff_date = page.xpath(
+                '//div[contains(text(), "Effective Date(s)")]/text()'
+            )[0].strip()
+            eff_date = eff_date.replace("Effective Date(s):", "").strip()
             # this can contain multiple dates, eg "July 1, 2020, July 1, 2022"
-            bill.extras['date_effective'] = eff_date
+            bill.extras["date_effective"] = eff_date
 
         # yield from self.parse_bill_votes_new(doc, bill)
         yield bill

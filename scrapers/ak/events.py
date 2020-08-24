@@ -59,7 +59,7 @@ class AKEventScraper(Scraper, LXMLMixin):
             )
         else:
             committee_name = "{} {}".format(
-                self.COMMITTEES_PRETTY[chamber], "MISCELLANEOUS",
+                self.COMMITTEES_PRETTY[chamber], "MISCELLANEOUS"
             )
 
         name = "{} {}".format(

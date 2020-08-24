@@ -393,7 +393,11 @@ class TNBillScraper(Scraper):
             bill.add_document_link("Fiscal Note", fiscal[0].get("href"))
         amendments = page.xpath('//a[contains(@href, "/Amend/")]')
         for amendment in amendments:
-            bill.add_version_link("Amendment " + amendment.text, amendment.get("href"), media_type="application/pdf")
+            bill.add_version_link(
+                "Amendment " + amendment.text,
+                amendment.get("href"),
+                media_type="application/pdf",
+            )
         # amendment notes in image with alt text describing doc inside <a>
         amend_fns = page.xpath('//img[contains(@alt, "Fiscal Memo")]')
         for afn in amend_fns:

@@ -252,7 +252,7 @@ class NHBillScraper(Scraper):
                     self.bills[lsr].add_document_link(
                         note="amendment %s" % amendment_id,
                         url=AMENDMENT_URL % amendment_id,
-                        on_duplicate='ignore'
+                        on_duplicate="ignore",
                     )
 
         yield from self.scrape_votes(session)

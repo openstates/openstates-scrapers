@@ -109,7 +109,7 @@ class LAEventScraper(Scraper, LXMLMixin):
         valid_meetings = [
             row
             for row in meeting_rows
-            if row.xpath("./td[1]")[0].text_content().replace(u"\xa0", "")
+            if row.xpath("./td[1]")[0].text_content().replace("\xa0", "")
             and row.xpath('./td/a/img[contains(@src, "PDF-AGENDA.png")]')
             and "Not Meeting" not in row.xpath("./td[2]")[0].text_content()
         ]

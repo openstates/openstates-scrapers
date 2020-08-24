@@ -60,7 +60,7 @@ class DCBillScraper(Scraper):
             leg_listing_url = (
                 self._API_BASE_URL + f"BulkData/{category['categoryId']}/{session}"
             )
-            resp = requests.post(leg_listing_url, headers=self._headers, verify=False,)
+            resp = requests.post(leg_listing_url, headers=self._headers, verify=False)
             resp.raise_for_status()
             leg_listing = resp.json()
 
@@ -78,8 +78,8 @@ class DCBillScraper(Scraper):
                 )
                 bill.add_source(bill_url)
 
-                if leg['lawNumber']:
-                    bill.extras['lawNumber'] = leg['lawNumber']
+                if leg["lawNumber"]:
+                    bill.extras["lawNumber"] = leg["lawNumber"]
 
                 # Actions
                 for hist in leg["legislationHistory"]:
@@ -146,7 +146,7 @@ class DCBillScraper(Scraper):
                     + f"LegislationDetails/{leg['legislationNumber']}"
                 )
                 details_resp = requests.get(
-                    leg_details_url, headers=self._headers, verify=False,
+                    leg_details_url, headers=self._headers, verify=False
                 )
                 details_resp.raise_for_status()
                 leg_details = details_resp.json()
