@@ -43,6 +43,7 @@ class NCBillScraper(Scraper):
     }
 
     def scrape_bill(self, chamber, session, bill_id):
+        unused = True
         # there will be a space in bill_id if we're doing a one-off bill scrape
         # convert HB 102 into H102
         if " " in bill_id:
