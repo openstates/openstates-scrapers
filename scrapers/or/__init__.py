@@ -142,6 +142,14 @@ class Oregon(State):
             "start_date": "2020-06-24",
             "end_date": "2020-07-03",
         },
+        {
+            "_scraped_name": "2020 2nd Special Session",
+            "identifier": "2020S2",
+            "name": "2020 Special Session 2",
+            "start_date": "2020-08-10",
+            # TODO: real end date when session ends
+            "end_date": "2020-08-14",
+        },
     ]
     ignored_scraped_sessions = [
         "Mock Session 2020",

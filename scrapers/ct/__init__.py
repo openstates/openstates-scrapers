@@ -99,6 +99,7 @@ class Connecticut(State):
         "2006",
         "2005",
         "default",
+        "Committees_Jud_related",
     ]
 
     def get_session_list(self):

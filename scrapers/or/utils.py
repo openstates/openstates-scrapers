@@ -45,4 +45,5 @@ SESSION_KEYS = {
     "2019 Regular Session": "2019R1",
     "2020 Regular Session": "2020R1",
     "2020S1": "2020S1",
+    "2020S2": "2020S2",
 }
