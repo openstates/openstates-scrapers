@@ -80,10 +80,18 @@ class Vermont(State):
             "start_date": "2019-01-09",
             "end_date": "2020-05-08",
         },
+        {
+            "_scraped_name": "2020 Special Session",
+            "classification": "special",
+            "identifier": "2020S1",
+            "name": "2020 Special Session",
+            "start_date": "2020-08-25",
+            "end_date": "2020-08-26",
+        },        
     ]
     ignored_scraped_sessions = ["2020 Training Session", "2009 Special Session"]
 
-    site_ids = {"2018ss1": "2018.1"}
+    site_ids = {"2018ss1": "2018.1", "2020S1": "2020.1"}
 
     def get_year_slug(self, session):
         return self.site_ids.get(session, session[5:])
