@@ -319,6 +319,13 @@ class MABillScraper(Scraper):
             # House votes
             if "Supplement" in action_name:
                 actor = "lower"
+
+                if not re.findall(r"(.+)-\s*\d+\s*YEAS", action_name):
+                    self.warning(
+                        "vote {} did not match regex, skipping".format(action_name)
+                    )
+                    continue
+
                 vote_action = re.findall(r"(.+)-\s*\d+\s*YEAS", action_name)[0].strip()
 
                 y = int(re.findall(r"(\d+)\s*YEAS", action_name)[0])
