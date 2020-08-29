@@ -55,7 +55,9 @@ class MABillScraper(Scraper):
     # bill_no can be set to a specific bill (no spaces) to scrape only one
     # os-update ma bills --scrape bill_no=H2
     # page_limit can be set to stop scraping after a certain number of pages (for each chamber)
-    def scrape(self, chamber=None, session=None, bill_no=None, sort=None, page_limit=None):
+    def scrape(
+        self, chamber=None, session=None, bill_no=None, sort=None, page_limit=None
+    ):
         if not session:
             session = self.latest_session()
 
@@ -345,8 +347,10 @@ class MABillScraper(Scraper):
                 cached_vote.set_count("yes", y)
                 cached_vote.set_count("no", n)
 
-                housevote_pdf = "https://malegislature.gov/Journal/House/{}/{}/RollCalls".format(
-                    bill.legislative_session, action_year
+                housevote_pdf = (
+                    "https://malegislature.gov/Journal/House/{}/{}/RollCalls".format(
+                        bill.legislative_session, action_year
+                    )
                 )
                 self.scrape_house_vote(cached_vote, housevote_pdf, n_supplement)
                 cached_vote.add_source(housevote_pdf)
