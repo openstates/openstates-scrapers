@@ -20,5 +20,5 @@ jobs:
       run: pip install flake8 black
     - name: flake8 check
       run: flake8 scrapers
-    - name: black check
-      run: black --check scrapers
+    # - name: black check
+    #   run: black --check scrapers
