@@ -54,9 +54,15 @@ class MABillScraper(Scraper):
     # os-update ma bills --scrape sort=latest
     # bill_no can be set to a specific bill (no spaces) to scrape only one
     # os-update ma bills --scrape bill_no=H2
-    def scrape(self, chamber=None, session=None, bill_no=None, sort=None):
+    # page_limit can be set to stop scraping after a certain number of pages (for each chamber)
+    def scrape(
+        self, chamber=None, session=None, bill_no=None, sort=None, page_limit=None
+    ):
         if not session:
             session = self.latest_session()
+
+        if page_limit:
+            page_limit = int(page_limit)
 
         if bill_no:
             single_bill_chamber = False
@@ -69,12 +75,12 @@ class MABillScraper(Scraper):
             return
 
         if not chamber:
-            yield from self.scrape_chamber("lower", session, sort)
-            yield from self.scrape_chamber("upper", session, sort)
+            yield from self.scrape_chamber("lower", session, sort, page_limit)
+            yield from self.scrape_chamber("upper", session, sort, page_limit)
         else:
-            yield from self.scrape_chamber(chamber, session)
+            yield from self.scrape_chamber(chamber, session, sort, page_limit)
 
-    def scrape_chamber(self, chamber, session, sort=None):
+    def scrape_chamber(self, chamber, session, sort=None, page_limit=None):
         # for the chamber of the action
 
         # Pull the search page to get the filters
@@ -83,8 +89,12 @@ class MABillScraper(Scraper):
         self.session_filters = self.get_refiners(page, "lawsgeneralcourt")
         self.chamber_filters = self.get_refiners(page, "lawsbranchname")
 
-        lastPage = self.get_max_pages(session, chamber)
-        for pageNumber in range(1, lastPage + 1):
+        if page_limit:
+            last_page = page_limit
+        else:
+            last_page = self.get_max_pages(session, chamber)
+
+        for pageNumber in range(1, last_page + 1):
             bills = self.list_bills(session, chamber, pageNumber, sort)
             for bill in bills:
                 bill = self.format_bill_number(bill).replace(" ", "")
@@ -337,8 +347,10 @@ class MABillScraper(Scraper):
                 cached_vote.set_count("yes", y)
                 cached_vote.set_count("no", n)
 
-                housevote_pdf = "https://malegislature.gov/Journal/House/{}/{}/RollCalls".format(
-                    bill.legislative_session, action_year
+                housevote_pdf = (
+                    "https://malegislature.gov/Journal/House/{}/{}/RollCalls".format(
+                        bill.legislative_session, action_year
+                    )
                 )
                 self.scrape_house_vote(cached_vote, housevote_pdf, n_supplement)
                 cached_vote.add_source(housevote_pdf)
