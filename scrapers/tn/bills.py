@@ -275,7 +275,9 @@ class TNBillScraper(Scraper):
             # This check was failing for the latest specials as they are just links to full
             # list of special legislation pages. The links themselves do not follow the prefix
             # pattern.
-            if session_details["classification"] != "special" and not listing_matches_chamber(bill_listing, chamber):
+            if session_details[
+                "classification"
+            ] != "special" and not listing_matches_chamber(bill_listing, chamber):
                 self.logger.info(
                     "Skipping bill listing '{bill_listing}' "
                     "Does not match chamber '{chamber}'".format(

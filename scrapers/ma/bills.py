@@ -354,10 +354,8 @@ class MABillScraper(Scraper):
                 cached_vote.set_count("yes", y)
                 cached_vote.set_count("no", n)
 
-                housevote_pdf = (
-                    "https://malegislature.gov/Journal/House/{}/{}/RollCalls".format(
-                        bill.legislative_session, action_year
-                    )
+                housevote_pdf = "https://malegislature.gov/Journal/House/{}/{}/RollCalls".format(
+                    bill.legislative_session, action_year
                 )
                 self.scrape_house_vote(cached_vote, housevote_pdf, n_supplement)
                 cached_vote.add_source(housevote_pdf)
