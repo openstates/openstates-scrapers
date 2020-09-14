@@ -38,6 +38,12 @@ class State(Jurisdiction, metaclass=MetaShim):
         return self.metadata.division_id
 
     @property
+    def jurisdiction_id(self):
+        return "{}/government".format(
+            self.division_id.replace("ocd-division", "ocd-jurisdiction"),
+        )
+
+    @property
     def name(self):
         return self.metadata.name
 
