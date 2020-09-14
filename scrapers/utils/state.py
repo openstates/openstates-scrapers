@@ -25,7 +25,7 @@ class MetaShim(type):
     def __new__(cls, name, bases, dct):
         c = super().__new__(cls, name, bases, dct)
         if name != "State":
-            c.classification = "government"
+            c.classification = "state"
             # while we're here, load the metadata (formerly on a cached property)
             name = _name_fixes.get(name, name)
             c.metadata = openstates_metadata.lookup(name=name)
