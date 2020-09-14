@@ -1,5 +1,5 @@
 from openstates.scrape import Jurisdiction, Organization
-import openstates_metadata
+from openstates.metadata import lookup
 
 _name_fixes = {
     "SouthCarolina": "South Carolina",
@@ -28,7 +28,7 @@ class MetaShim(type):
             c.classification = "state"
             # while we're here, load the metadata (formerly on a cached property)
             name = _name_fixes.get(name, name)
-            c.metadata = openstates_metadata.lookup(name=name)
+            c.metadata = lookup(name=name)
         return c
 
 
