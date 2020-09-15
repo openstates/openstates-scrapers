@@ -337,7 +337,12 @@ class MSBillScraper(Scraper):
     }
 
     def scrape_votes(self, url, motion, date, chamber, bill):
-        vote_pdf, resp = self.urlretrieve(url)
+        try:
+            vote_pdf, resp = self.urlretrieve(url)
+        except scrapelib.HTTPError:
+            self.warning("Can't find vote file {}, skipping".format(url))
+            return
+
         text = convert_pdf(vote_pdf, "text")
         os.remove(vote_pdf)
 
