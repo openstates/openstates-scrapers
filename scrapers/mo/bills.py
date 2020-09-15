@@ -110,7 +110,7 @@ class MOBillScraper(Scraper, LXMLMixin):
 
     def session_type(self, session):
         # R or S1
-        return "R" if len(session) == 4 else session[4:]
+        return "R" if len(session) == 4 else "E1"
 
     def _scrape_senate_subjects(self, session):
         self.info("Collecting subject tags from upper house.")
