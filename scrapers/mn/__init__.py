@@ -173,6 +173,24 @@ class Minnesota(State):
             # Just a guess. TODO: set after end of special
             "end_date": "2020-09-11",
         },
+        {
+            "_scraped_name": "91st Legislature, 2020 5th Special Session",
+            "classification": "special",
+            "identifier": "2020s5",
+            "name": "2020, Fifth Special Session",
+            "start_date": "2020-09-16",
+            # Just a guess. TODO: set after end of special
+            "end_date": "2020-09-16",
+        },
+        {
+            "_scraped_name": "92nd Legislature, 2021-2022",
+            "classification": "primary",
+            "identifier": "2021-2022",
+            "name": "2021-2022 Regular Session",
+            "start_date": "2021-01-16",
+            # Just a guess. TODO: set after schedule is posted
+            "end_date": "2021-06-01",
+        },
     ]
     ignored_scraped_sessions = [
         "85th Legislature, 2007-2008",
