@@ -272,12 +272,18 @@ class TNBillScraper(Scraper):
 
             bill_listing = bill_listing.attrib["href"]
 
+            is_special = session_details["classification"] == "special"
+
+            if is_special and chamber == "lower":
+                self.logger.info(
+                    "special sessions do not support scraping by chamber, ignoring lower scrape"
+                )
+                return
+
             # This check was failing for the latest specials as they are just links to full
             # list of special legislation pages. The links themselves do not follow the prefix
             # pattern.
-            if session_details[
-                "classification"
-            ] != "special" and not listing_matches_chamber(bill_listing, chamber):
+            if not is_special and not listing_matches_chamber(bill_listing, chamber):
                 self.logger.info(
                     "Skipping bill listing '{bill_listing}' "
                     "Does not match chamber '{chamber}'".format(
@@ -291,7 +297,7 @@ class TNBillScraper(Scraper):
             bill_list_page = lxml.html.fromstring(bill_list_page)
             bill_list_page.make_links_absolute(bill_listing)
 
-            if session_details["classification"] == "special":
+            if is_special:
                 bill_link_xpath = '//table//a[contains(@href, "BillNumber=")]/@href'
             else:
                 bill_link_xpath = '//h1[text()="Legislation"]/following-sibling::div/div/div/div//a/@href'
