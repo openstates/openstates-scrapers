@@ -97,6 +97,9 @@ class DEBillScraper(Scraper, LXMLMixin):
             if " w/ " in bill_id:
                 self.info("Found amended bill `{}`".format(bill_id))
                 bill_id, amendment = bill_id.split(" w/ ")
+            if " -" in bill_id:
+                self.info("Found amended bill `{}`".format(bill_id))
+                bill_id, amendment = bill_id.split(" -")
             # A bill can _both_ be amended and be substituted
             if " for " in bill_id:
                 self.info("Found substitute to use instead: `{}`".format(bill_id))
