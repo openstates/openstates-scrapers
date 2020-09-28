@@ -31,6 +31,7 @@ class LABillScraper(Scraper, LXMLMixin):
         "2019": "19RS",
         "2020": "20RS",
         "2020s1": "201ES",
+        "2020s2": "202ES",
     }
 
     def pdf_to_lxml(self, filename, type="html"):
@@ -89,7 +90,7 @@ class LABillScraper(Scraper, LXMLMixin):
             tokens = re.match(r".*\(\'(?P<token>.*)\',\'.*", href).groupdict()
 
             page = self.do_post_back(page, tokens["token"], "")
-            if page:
+            if page is not None:
                 yield page
 
     def scrape_bare_page(self, url):
