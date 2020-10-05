@@ -85,6 +85,7 @@ class NYEventScraper(Scraper, LXMLMixin):
                     "Public Hearing:",
                     "Summit:",
                     "Roundtable:",
+                    "Roundtable Meeting:",
                     "Public Roundtable:",
                     "Public Meeting:",
                     "Public Forum:",
