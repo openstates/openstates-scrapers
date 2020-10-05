@@ -140,9 +140,16 @@ class Alabama(State):
             "start_date": "2020-02-04",
             "end_date": "2020-05-18",
         },
+        {
+            "_scraped_name": "Regular Session 2021",
+            "classification": "primary",
+            "identifier": "2021rs",
+            "name": "2020 Regular Session",
+            "start_date": "2021-02-02",
+            "end_date": "2021-05-18",
+        },        
     ]
     ignored_scraped_sessions = [
-        "Regular Session 2021",
         "Regular Session 1998",
         "Organizational Session 1999",
         "Regular Session 1999",
