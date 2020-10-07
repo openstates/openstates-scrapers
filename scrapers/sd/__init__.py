@@ -113,8 +113,17 @@ class SouthDakota(State):
             "start_date": "2020-01-14",
             "end_date": "2020-03-30",
         },
+        {
+            "_scraped_name": "2020 Special",
+            "identifier": "2020s",
+            "name": "2020 Special Session",
+            "start_date": "2020-10-05",
+            # TODO: Replace with real end date
+            "end_date": "2020-10-16",
+        },
     ]
     ignored_scraped_sessions = [
+        "2020s",
         "2008",
         "2007",
         "2006",
