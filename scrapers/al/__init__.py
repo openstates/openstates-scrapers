@@ -144,7 +144,7 @@ class Alabama(State):
             "_scraped_name": "Regular Session 2021",
             "classification": "primary",
             "identifier": "2021rs",
-            "name": "2020 Regular Session",
+            "name": "2021 Regular Session",
             "start_date": "2021-02-02",
             "end_date": "2021-05-18",
         },
