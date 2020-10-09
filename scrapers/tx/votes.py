@@ -315,7 +315,7 @@ def viva_voce_votes(root, session, chamber):
             start_date=None,
             motion_text="passage" if mv.passed else "other",
             result="pass" if mv.passed else "fail",
-            classification="passage" if mv.passed else "other",
+            classification="passage" if mv.passed else None,
             legislative_session=session[0:2],
             bill=mv.bill_id,
             bill_chamber=mv.chamber,
