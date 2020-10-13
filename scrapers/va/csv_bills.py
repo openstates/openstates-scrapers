@@ -3,6 +3,7 @@ import csv
 import re
 import pytz
 import datetime
+import scrapelib
 from openstates.scrape import Scraper, Bill, VoteEvent
 from collections import defaultdict
 
@@ -57,8 +58,11 @@ class VaCSVBillScraper(Scraper):
 
     # Load members of legislative
     def load_members(self):
-        resp = self.get(self._url_base + "Members.csv").text
-
+        try:
+            resp = self.get(self._url_base + "Members.csv").text
+        except scrapelib.FTPError:
+            self.warning(self._url_base + "Members.csv connection failed.")
+            return False
         reader = csv.reader(resp.splitlines(), delimiter=",")
         # ['MBR_HOU', 'MBR_MBRNO', 'MBR_NAME']
         for row in reader:
