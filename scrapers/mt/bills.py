@@ -7,11 +7,6 @@ import urllib
 from datetime import datetime
 from collections import defaultdict
 
-# from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
-import requests
-requests.packages.urllib3.disable_warnings()
-requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
-
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 from scrapelib import HTTPError
@@ -20,6 +15,11 @@ import lxml.html
 
 from utils import LXMLMixin
 from . import actions
+
+# from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
+import requests
+requests.packages.urllib3.disable_warnings()
+requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
 
 
 actor_map = {
