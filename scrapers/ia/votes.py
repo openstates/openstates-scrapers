@@ -102,6 +102,9 @@ class IAVoteScraper(Scraper):
             ]
         )
 
+        # bill_id -> motion -> count
+        motions_per_bill = collections.defaultdict(collections.Counter)
+
         for line in lines:
             # Go through with vote parse if any of
             # these conditions match.
@@ -186,10 +189,17 @@ class IAVoteScraper(Scraper):
             else:
                 result = "fail"
 
+            # check for duplicate motions and number second and up if needed
+            motion_text = re.sub("\xad", "-", motion)
+            motions_per_bill[bill_id][motion_text] += 1
+            new_count = motions_per_bill[bill_id][motion_text]
+            if new_count > 1:
+                motion_text += f" #{new_count}"
+
             vote = VoteEvent(
                 chamber=chamber,
                 start_date=date,
-                motion_text=re.sub("\xad", "-", motion),
+                motion_text=motion_text,
                 result=result,
                 classification="passage",
                 legislative_session=session,
