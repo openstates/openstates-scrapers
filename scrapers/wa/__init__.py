@@ -78,5 +78,7 @@ class Washington(State):
         from utils.lxmlize import url_xpath
 
         return url_xpath(
-            "http://apps.leg.wa.gov/billinfo/", '//select[@id="biennia"]/option/@value'
+            "https://apps.leg.wa.gov/billinfo/",
+            '//select[@id="biennia"]/option/@value',
+            verify=False,
         )
