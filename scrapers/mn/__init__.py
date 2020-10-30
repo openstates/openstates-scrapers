@@ -193,6 +193,7 @@ class Minnesota(State):
         #         },
     ]
     ignored_scraped_sessions = [
+        "91st Legislature, 2020 6th Special Session",
         "92nd Legislature, 2021-2022",
         "85th Legislature, 2007-2008",
         "85th Legislature, 2007 1st Special Session",
