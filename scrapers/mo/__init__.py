@@ -49,6 +49,15 @@ class Missouri(State):
             # TODO: real end date when session is over
             "end_date": "2020-07-31",
         },
+        {
+            "_scraped_name": "2020 2nd Extraordinary Session",
+            "classification": "primary",
+            "identifier": "2020S2",
+            "name": "2020 Second Extraordinary Session",
+            "start_date": "2020-11-04",
+            # TODO: real end date when session is over
+            "end_date": "2020-11-12",
+        },
     ]
     ignored_scraped_sessions = [
         "2021 Regular Session",
