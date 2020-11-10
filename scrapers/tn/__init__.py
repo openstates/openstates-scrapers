@@ -103,7 +103,7 @@ class Tennessee(State):
             "name": "112th Regular Session (2021-2022)",
             "start_date": "2021-01-12",
             "end_date": "2021-05-06",
-        },        
+        },
     ]
     ignored_scraped_sessions = [
         "107th General Assembly",
