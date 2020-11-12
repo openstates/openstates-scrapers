@@ -182,6 +182,15 @@ class Minnesota(State):
             # Just a guess. TODO: set after end of special
             "end_date": "2020-09-16",
         },
+        {
+            "_scraped_name": "91st Legislature, 2020 6th Special Session",
+            "classification": "special",
+            "identifier": "2020s6",
+            "name": "2020, Sixth Special Session",
+            "start_date": "2020-11-12",
+            # Just a guess. TODO: set after end of special
+            "end_date": "2020-11-13",
+        },
         #         {
         #             "_scraped_name": "92nd Legislature, 2021-2022",
         #             "classification": "primary",
@@ -193,7 +202,6 @@ class Minnesota(State):
         #         },
     ]
     ignored_scraped_sessions = [
-        "91st Legislature, 2020 6th Special Session",
         "92nd Legislature, 2021-2022",
         "85th Legislature, 2007-2008",
         "85th Legislature, 2007 1st Special Session",
