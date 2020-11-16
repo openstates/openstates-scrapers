@@ -301,7 +301,7 @@ class TXBillScraper(Scraper, LXMLMixin):
             query = urlparse.parse_qs(parsed.query)
             bill.add_related_bill(
                 identifier=query["Bill"][0],
-                legislative_session=query["LegSess"][0],
+                legislative_session=query["LegSess"][0].replace("R",''),
                 relation_type="companion",
             )
 
