@@ -55,6 +55,7 @@ class SouthCarolina(State):
         },
     ]
     ignored_scraped_sessions = [
+        "124 - (2021-2022)",
         "118 - (2009-2010)",
         "117 - (2007-2008)",
         "116 - (2005-2006)",
