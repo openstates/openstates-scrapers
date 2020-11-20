@@ -72,7 +72,7 @@ class Georgia(State):
         {
             "_scraped_name": "2021-2022 Regular Session",
             "identifier": "2021_22",
-            "name": "2011-2022 Regular Session",
+            "name": "2021-2022 Regular Session",
             "start_date": "2021-01-11",
             "end_date": "2021-04-02",
         },
