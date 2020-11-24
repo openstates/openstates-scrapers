@@ -127,6 +127,14 @@ class NewMexico(State):
             "start_date": "2020-06-18",
             "end_date": "2020-06-20",
         },
+        {
+            "_scraped_name": "2020 2nd Special",
+            "classification": "special",
+            "identifier": "2020S2",
+            "name": "2020 Second Special Session",
+            "start_date": "2020-11-24",
+            "end_date": "2020-11-27",
+        },
     ]
     ignored_scraped_sessions = [
         "2010 2nd Special",
