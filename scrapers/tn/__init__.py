@@ -94,8 +94,15 @@ class Tennessee(State):
             "identifier": "111S2",
             "name": "111th Second Extraordinary Session (August 2020)",
             "start_date": "2020-08-05",
-            # TODO: Add real end date after session
-            "end_date": "2020-08-14",
+            "end_date": "2020-08-27",
+        },
+        {
+            "_scraped_name": "112th General Assembly",
+            "classification": "primary",
+            "identifier": "112",
+            "name": "112th Regular Session (2021-2022)",
+            "start_date": "2021-01-12",
+            "end_date": "2021-05-06",
         },
     ]
     ignored_scraped_sessions = [

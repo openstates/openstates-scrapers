@@ -69,6 +69,13 @@ class Georgia(State):
             "start_date": "2019-01-14",
             "end_date": "2020-04-03",
         },
+        {
+            "_scraped_name": "2021-2022 Regular Session",
+            "identifier": "2021_22",
+            "name": "2021-2022 Regular Session",
+            "start_date": "2021-01-11",
+            "end_date": "2021-04-02",
+        },
     ]
     ignored_scraped_sessions = [
         "2009-2010 Regular Session",
