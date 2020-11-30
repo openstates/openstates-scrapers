@@ -111,6 +111,15 @@ class Colorado(State):
             "start_date": "2020-01-08",
             "end_date": "2020-05-06",
         },
+        {
+            "_scraped_name": "2020 First Extraordinary Session",
+            "classification": "primary",
+            "identifier": "2020B",
+            "name": "2020 First Extraordinary Session",
+            "start_date": "2020-11-30",
+            # TODO: Real end date after session ends
+            "end_date": "2020-12-04",
+        },
     ]
     ignored_scraped_sessions = [
         "2013 Legislative Session",
