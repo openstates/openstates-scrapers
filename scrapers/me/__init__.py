@@ -77,6 +77,13 @@ class Maine(State):
             "start_date": "2018-12-05",
             "end_date": "2019-06-09",
         },
+        {
+            "_scraped_name": "130th Legislature",
+            "identifier": "130",
+            "name": "130th Legislature (2020-2021)",
+            "start_date": "2020-12-02",
+            "end_date": "2021-06-16",
+        },
     ]
     ignored_scraped_sessions = ["2001-2002"]
 
