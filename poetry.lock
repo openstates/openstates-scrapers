@@ -184,7 +184,7 @@ description = "core infrastructure for the openstates project"
 name = "openstates"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "5.2.0"
+version = "5.2.1"
 
 [package.dependencies]
 Django = ">=2.2"
@@ -543,8 +543,8 @@ mysqlclient = [
     {file = "mysqlclient-1.4.6.tar.gz", hash = "sha256:f3fdaa9a38752a3b214a6fe79d7cae3653731a53e577821f9187e67cbecb2e16"},
 ]
 openstates = [
-    {file = "openstates-5.2.0-py3-none-any.whl", hash = "sha256:c036a5ce9a361bf9d6ee30d72fde79be7a20ba6dbb9b43aa421e1a455d8f8aba"},
-    {file = "openstates-5.2.0.tar.gz", hash = "sha256:02413b87da9c5aef2b3408a036f9e6a6ed20cda40d5b9febd573093a96cdf9b4"},
+    {file = "openstates-5.2.1-py3-none-any.whl", hash = "sha256:a0b718338ab53e560c7252b72c9ed798b4a7fb961460cd9cd5ceddc03e4bf753"},
+    {file = "openstates-5.2.1.tar.gz", hash = "sha256:5149974e73587ca43a0b0993ef3325320d9b15ee9f527e281feee13cc91818a0"},
 ]
 psycopg2-binary = [
     {file = "psycopg2-binary-2.8.6.tar.gz", hash = "sha256:11b9c0ebce097180129e422379b824ae21c8f2a6596b159c7659e2e5a00e1aa0"},
@@ -580,6 +580,8 @@ psycopg2-binary = [
     {file = "psycopg2_binary-2.8.6-cp39-cp39-macosx_10_9_x86_64.macosx_10_9_intel.macosx_10_10_intel.macosx_10_10_x86_64.whl", hash = "sha256:89705f45ce07b2dfa806ee84439ec67c5d9a0ef20154e0e475e2b2ed392a5b83"},
     {file = "psycopg2_binary-2.8.6-cp39-cp39-manylinux1_i686.whl", hash = "sha256:42ec1035841b389e8cc3692277a0bd81cdfe0b65d575a2c8862cec7a80e62e52"},
     {file = "psycopg2_binary-2.8.6-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:7312e931b90fe14f925729cde58022f5d034241918a5c4f9797cac62f6b3a9dd"},
+    {file = "psycopg2_binary-2.8.6-cp39-cp39-win32.whl", hash = "sha256:6422f2ff0919fd720195f64ffd8f924c1395d30f9a495f31e2392c2efafb5056"},
+    {file = "psycopg2_binary-2.8.6-cp39-cp39-win_amd64.whl", hash = "sha256:15978a1fbd225583dd8cdaf37e67ccc278b5abecb4caf6b2d6b8e2b948e953f6"},
 ]
 pycparser = [
     {file = "pycparser-2.20-py2.py3-none-any.whl", hash = "sha256:7582ad22678f0fcd81102833f60ef8d0e57288b6b5fb00323d101be910e35705"},
