@@ -13,7 +13,7 @@ class Texas(State):
         # 'committees': TXCommitteeScraper,
         "bills": TXBillScraper,
         # Re-enable vote scraper when adding next regular session
-        "votes": TXVoteScraper,
+        # "votes": TXVoteScraper,
         "events": TXEventScraper,
     }
     legislative_sessions = [
