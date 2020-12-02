@@ -77,7 +77,7 @@ class MEBillScraper(Scraper):
                 )
                 bill_id = bill.text[:2] + " " + bill.text[2:]
 
-                if bill_id in BLACKLISTED_BILL_IDS[session]:
+                if session in BLACKLISTED_BILL_IDS and bill_id in BLACKLISTED_BILL_IDS[session]:
                     continue
 
                 # avoid duplicates
