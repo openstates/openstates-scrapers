@@ -1,7 +1,6 @@
 import datetime
 import lxml
 import pytz
-import re
 
 
 from openstates.scrape import Scraper, Event
@@ -10,14 +9,13 @@ from openstates.scrape import Scraper, Event
 class NEEventScraper(Scraper):
     _tz = pytz.timezone("US/Central")
 
-    # usage: PYTHONPATH=scrapers poetry run os-update ne 
+    # usage: PYTHONPATH=scrapers poetry run os-update ne
     # events --scrape start=2020-02-02 end=2020-03-02
     # or left empty it will default to the next 30 days
     def scrape(self, start=None, end=None):
         LIST_URL = "https://nebraskalegislature.gov/calendar/hearings_range.php"
 
         now = datetime.datetime.now()
-        print_format = "%Y-%m-%d"
 
         if start is None:
             start = now
