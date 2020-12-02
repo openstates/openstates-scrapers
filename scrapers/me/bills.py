@@ -11,7 +11,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 
 from .actions import Categorizer
 
-BLACKLISTED_BILL_IDS = {"128": ("SP 601", "SP 602"), "129": ()}
+BLACKLISTED_BILL_IDS = {"128": ("SP 601", "SP 602"), "129": (), "130": ()}
 
 
 class MEBillScraper(Scraper):
