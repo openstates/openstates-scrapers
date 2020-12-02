@@ -80,7 +80,7 @@ class Maine(State):
         {
             "_scraped_name": "130th Legislature",
             "identifier": "130",
-            "name": "130th Legislature (2020-2021)",
+            "name": "130th Legislature (2021-2022)",
             "start_date": "2020-12-02",
             "end_date": "2021-06-16",
         },
