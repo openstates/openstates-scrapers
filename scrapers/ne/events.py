@@ -6,12 +6,15 @@ import re
 
 from openstates.scrape import Scraper, Event
 
+
 class NEEventScraper(Scraper):
     _tz = pytz.timezone("US/Central")
 
-
+    # usage: PYTHONPATH=scrapers poetry run os-update ne 
+    # events --scrape start=2020-02-02 end=2020-03-02
+    # or left empty it will default to the next 30 days
     def scrape(self, start=None, end=None):
-        LIST_URL = 'https://nebraskalegislature.gov/calendar/hearings_range.php'
+        LIST_URL = "https://nebraskalegislature.gov/calendar/hearings_range.php"
 
         now = datetime.datetime.now()
         print_format = "%Y-%m-%d"
@@ -22,20 +25,18 @@ class NEEventScraper(Scraper):
             start = datetime.datetime.strptime(start, "%Y-%m-%d")
 
         if end is None:
-            end = (now + datetime.timedelta(days=30))
+            end = now + datetime.timedelta(days=30)
         else:
             end = datetime.datetime.strptime(end, "%Y-%m-%d")
 
         args = {
-            'startMonth': start.strftime('%m'),
-            'startDay': start.strftime('%d'),
-            'startYear': start.strftime('%Y'),
-            'endMonth': end.strftime('%m'),
-            'endDay': end.strftime('%d'),
-            'endYear': end.strftime('%Y')
+            "startMonth": start.strftime("%m"),
+            "startDay": start.strftime("%d"),
+            "startYear": start.strftime("%Y"),
+            "endMonth": end.strftime("%m"),
+            "endDay": end.strftime("%d"),
+            "endYear": end.strftime("%Y"),
         }
-
-        print(args)
         page = self.post(LIST_URL, args).content
 
         yield from self.scrape_events(page)
@@ -45,56 +46,47 @@ class NEEventScraper(Scraper):
         page = lxml.html.fromstring(page)
 
         for meeting in page.xpath('//div[@class="card mb-4"]'):
-            com = meeting.xpath('div[contains(@class, "card-header")]/text()')[0].strip()
-            details = meeting.xpath('div[contains(@class, "card-header")]/small/text()')[0].strip()
+            com = meeting.xpath('div[contains(@class, "card-header")]/text()')[
+                0
+            ].strip()
+            details = meeting.xpath(
+                'div[contains(@class, "card-header")]/small/text()'
+            )[0].strip()
 
-            (location, time) = details.split(' - ')
+            (location, time) = details.split(" - ")
 
-            print(com, location, time)
+            # turn room numbers into the full address
+            if location.lower().startswith("room"):
+                location = "1445 K St, Lincoln, NE 68508, {}".format(location)
 
-            day = meeting.xpath("./preceding-sibling::h2[@class='text-center']/text()")[-1].strip()
+            day = meeting.xpath("./preceding-sibling::h2[@class='text-center']/text()")[
+                -1
+            ].strip()
 
-            print(day)
-
-            event = Event(
-                name="tim",
-                start_date="2020-01-01",
-                classification="committee-meeting",
-                description="descr",
-                location_name="where",
+            # Thursday February 27, 2020 1:30 PM
+            date = "{} {}".format(day, time)
+            event_date = self._tz.localize(
+                datetime.datetime.strptime(date, "%A %B %d, %Y %I:%M %p")
             )
 
-            event.add_source('https://nebraskalegislature.gov/calendar/calendar.php')
+            event = Event(
+                name=com,
+                start_date=event_date,
+                classification="committee-meeting",
+                description="Committee Meeting",
+                location_name=location,
+            )
 
-        yield event
+            event.add_committee(com, note="host")
 
-            # when = dt.datetime.strptime(when, "%m/%d/%Y %I:%M %p")
-            # when = TIMEZONE.localize(when)
-            # event = Event(
-            #     name=descr,
-            #     start_date=when,
-            #     classification="committee-meeting",
-            #     description=descr,
-            #     location_name=where,
-            # )
+            for row in meeting.xpath("div/table/tr"):
+                agenda_desc = row.xpath("td[3]/text()")[0].strip()
+                agenda_item = event.add_agenda_item(description=agenda_desc)
 
-            # if "/" in committee:
-            #     committees = committee.split("/")
-            # else:
-            #     committees = [committee]
+                if row.xpath("td[1]/a"):
+                    # bill link
+                    agenda_item.add_bill(row.xpath("td[1]/a/text()")[0].strip())
 
-            # for committee in committees:
-            #     if "INFO" not in committee and committee in self.short_ids:
-            #         committee = "{} {}".format(
-            #             self.chambers[self.short_ids[committee]["chamber"]],
-            #             self.short_ids[committee]["name"],
-            #         )
-            #     event.add_committee(committee, note="host")
+            event.add_source("https://nebraskalegislature.gov/calendar/calendar.php")
 
-            # event.add_source(URL)
-            # event.add_document(notice_name, notice_href, media_type="text/html")
-            # for bill in self.get_related_bills(notice_href):
-            #     a = event.add_agenda_item(description=bill["descr"].strip())
-            #     a.add_bill(bill["bill_id"], note=bill["type"])
-            # yield event
-
+            yield event
