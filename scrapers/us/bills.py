@@ -41,10 +41,16 @@ class USBillScraper(Scraper):
         "SCONRES": "resolution",
     }
 
-    def scrape(self, chamber=None, session=None):
+    # to scrape everything UPDATED after a given date/time, start="2020-01-01 22:01:01"
+    def scrape(self, chamber=None, session=None, start=None):
         if not session:
             session = self.latest_session()
             self.info("no session specified, using %s", session)
+
+        if start:
+            start = datetime.datetime.strptime(start, "%Y-%m-%d %H:%I:%S")
+        else:
+            start = datetime.datetime(1980, 1, 1, 0, 0, 1)
 
         sitemap_url = (
             "https://www.govinfo.gov/sitemap/bulkdata/BILLSTATUS/sitemapindex.xml"
@@ -64,13 +70,25 @@ class USBillScraper(Scraper):
                     continue
 
             if session in link.text:
-                yield from self.parse_bill_list(link.text)
+                yield from self.parse_bill_list(link.text, start)
 
-    def parse_bill_list(self, url):
+    def parse_bill_list(self, url, start):
         sitemap = self.get(url).content
         root = ET.fromstring(sitemap)
-        for bill_url in root.findall("us:url/us:loc", self.ns):
-            yield from self.parse_bill(bill_url.text)
+        for row in root.findall("us:url", self.ns):
+            date = datetime.datetime.fromisoformat(
+                self.get_xpath(row, 'us:lastmod')[:-1]
+            )
+
+            if date > start:
+                self.info(
+                    '{} > {}, scraping'.format(
+                        datetime.datetime.strftime(date, '%c'),
+                        datetime.datetime.strftime(start, '%c')
+                    )
+                )
+                bill_url = self.get_xpath(row, 'us:loc')
+                yield from self.parse_bill(bill_url)
 
     def parse_bill(self, url):
         xml = self.get(url).content
