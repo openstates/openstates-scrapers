@@ -1,11 +1,8 @@
-import re
-
 from openstates.scrape import Jurisdiction, Organization
-
-from utils import url_xpath
 
 from .events import USEventScraper
 from .bills import USBillScraper
+
 
 class Us(Jurisdiction):
     division_id = "ocd-division/country:us"
