@@ -13,9 +13,6 @@ from openstates.scrape import Bill, Scraper, VoteEvent
 
 # TODO: Amendments
 # TODO: Votes
-# TODO: isByRequest
-# TODO: laws
-# TODO: public laws
 # https://www.archives.gov/federal-register/laws/current.html
 
 class USBillScraper(Scraper):
@@ -56,7 +53,7 @@ class USBillScraper(Scraper):
         sitemaps = self.get(sitemap_url).content
         root = ET.fromstring(sitemaps)
 
-        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/116/s/BILLSTATUS-116s4075.xml')
+        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/116/hr/BILLSTATUS-116hr6395.xml')
 
         for link in root.findall('us:sitemap/us:loc', self.ns):
             # split by /, then check for that "116s" matches the chamber
@@ -102,6 +99,7 @@ class USBillScraper(Scraper):
         )
 
         self.scrape_actions(bill, xml)
+        self.scrape_amendments(bill, xml)
         self.scrape_cbo(bill, xml)
         self.scrape_committee_reports(bill, xml)
         self.scrape_cosponsors(bill, xml)
@@ -246,14 +244,40 @@ class USBillScraper(Scraper):
                 actions.append(action_text)
 
     def scrape_amendments(self, bill, xml):
+        slugs = {
+            'HAMDT': 'house-amendment',
+            'SAMDT': 'senate-amendment',
+        }
+        amdt_url = 'https://www.congress.gov/amendment/{session}th-congress/{slug}/{num}'
+        amdt_name = '{type} {num}'
+
         for row in xml.findall('bill/amendments/amendment'):
-            pass
+            session = self.get_xpath(row, 'congress')
+            num = self.get_xpath(row, 'number')
+
+            # 201st not 200th. If congress.gov's url scheme survivess 10 years,
+            # I apologize, future maintainer. 
+            if int(session) > 200:
+                self.warning("Check amendment url ordinals")
+
+            bill.add_document_link(
+                note=amdt_name.format(
+                    type=self.get_xpath(row,'type'),
+                    num=num,
+                ),
+                url=amdt_url.format(
+                    session=session,
+                    slug= slugs[self.get_xpath(row,'type')],
+                    num=num
+                ),
+                media_type='text/html'
+            )
 
     # CBO cost estimates
     def scrape_cbo(self, bill, xml):
         for row in xml.findall('bill/cboCostEstimates/item'):
             bill.add_document_link(
-                note=self.get_xpath(row, 'title'),
+                note='CBO: {}'.format(self.get_xpath(row, 'title')),
                 url=self.get_xpath(row, 'url'),
                 media_type="text/html"
             )
