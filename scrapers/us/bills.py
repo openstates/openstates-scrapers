@@ -13,7 +13,6 @@ from openstates.scrape import Bill, Scraper, VoteEvent
 
 # TODO: Amendments
 # TODO: Votes
-# TODO: committeeReports
 # TODO: isByRequest
 # TODO: laws
 # TODO: summaries
@@ -58,7 +57,7 @@ class USBillScraper(Scraper):
         sitemaps = self.get(sitemap_url).content
         root = ET.fromstring(sitemaps)
 
-        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/116/s/BILLSTATUS-116s3248.xml')
+        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/116/hr/BILLSTATUS-116hr1218.xml')
 
         for link in root.findall('us:sitemap/us:loc', self.ns):
             # split by /, then check for that "116s" matches the chamber
@@ -110,6 +109,7 @@ class USBillScraper(Scraper):
         self.scrape_related_bills(bill, xml)
         self.scrape_sponsors(bill, xml)
         self.scrape_subjects(bill, xml)
+        self.scrape_summaries(bill, xml)
         self.scrape_titles(bill, xml)
         self.scrape_versions(bill, xml)
 
@@ -315,6 +315,13 @@ class USBillScraper(Scraper):
     def scrape_subjects(self, bill, xml):
         for row in xml.findall('bill/subjects/billSubjects/legislativeSubjects/item'):
             bill.add_subject(self.get_xpath(row, 'name'))
+
+    def scrape_summaries(self, bill, xml):
+        for row in xml.findall('bill/summaries/billSummaries/item'):
+            bill.add_abstract(
+                abstract=self.get_xpath(row, 'text'),
+                note=self.get_xpath(row, 'name'),
+            )
 
     def scrape_titles(self, bill, xml):
         all_titles = set()
