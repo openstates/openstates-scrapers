@@ -100,7 +100,6 @@ class Delaware(State):
         },
     ]
     ignored_scraped_sessions = [
-        # "2020 - 2022 (GA 151)"
     ]
 
     def get_session_list(self):
