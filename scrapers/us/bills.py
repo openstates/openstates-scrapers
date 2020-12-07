@@ -5,13 +5,17 @@ import xml.etree.ElementTree as ET
 
 from openstates.scrape import Bill, Scraper, VoteEvent
 
+# NOTE: This is a US federal bill scraper designed to output bills in the 
+# openstates format, for compatibility with systems that already ingest the pupa format.
+
+# If you're looking to just collect federal bill data, you're probably better off with
+# https://github.com/unitedstates/congress which offers more backdata.
+
 # TODO: Amendments
 # TODO: Votes
-# TODO: CBO docs
 # TODO: committeeReports
 # TODO: isByRequest
 # TODO: laws
-# TODO: relatedBills 
 # TODO: summaries
 # TODO: public laws
 # https://www.archives.gov/federal-register/laws/current.html
@@ -98,7 +102,9 @@ class USBillScraper(Scraper):
         )
 
         self.scrape_actions(bill, xml)
+        self.scrape_cbo(bill, xml)
         self.scrape_cosponsors(bill, xml)
+        self.scrape_related_bills(bill, xml)
         self.scrape_sponsors(bill, xml)
         self.scrape_subjects(bill, xml)
         self.scrape_titles(bill, xml)
@@ -133,6 +139,8 @@ class USBillScraper(Scraper):
         return ' '.join(filter(None,[first_name, middle_name, last_name]))
 
     def classify_action_by_code(self, action):
+        if action is None:
+            return None
         # https://github.com/usgpo/bill-status/blob/master/BILLSTATUS-XML_User_User-Guide.md
         # see table 3, Action Code Element Possible Values
 
@@ -183,6 +191,8 @@ class USBillScraper(Scraper):
         return None
 
     def get_xpath(self, xml, xpath):
+        if not xml.findall(xpath, self.ns):
+            return
         return xml.findall(xpath, self.ns)[0].text
 
     def scrape_actions(self, bill, xml):
@@ -236,6 +246,15 @@ class USBillScraper(Scraper):
         for row in xml.findall('bill/amendments/amendment'):
             pass
 
+    # CBO cost estimates
+    def scrape_cbo(self, bill, xml):
+        for row in xml.findall('bill/cboCostEstimates/item'):
+            bill.add_document_link(
+                note=self.get_xpath(row, 'title'),
+                url=self.get_xpath(row, 'url'),
+                media_type="text/html"
+            )
+
     def scrape_cosponsors(self, bill, xml):
         all_sponsors = []
         for row in xml.findall('bill/cosponsors/item'):
@@ -245,6 +264,19 @@ class USBillScraper(Scraper):
                 )
                 all_sponsors.append(self.get_xpath(row, 'bioguideId'))
         bill.extras['cosponsor_bioguides'] = all_sponsors
+
+    def scrape_related_bills(self, bill, xml):
+        for row in xml.findall('bill/relatedBills/item'):
+            identifier = '{type} {num}'.format(
+                type=self.get_xpath(row, 'type'),
+                num=self.get_xpath(row, 'number')
+            )
+
+            bill.add_related_bill(
+                identifier=identifier,
+                legislative_session=self.get_xpath(row, 'congress'),
+                relation_type="companion",
+            )
 
     def scrape_sponsors(self, bill, xml):
         all_sponsors = []
