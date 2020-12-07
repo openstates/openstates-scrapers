@@ -303,7 +303,7 @@ class USBillScraper(Scraper):
     def scrape_cosponsors(self, bill, xml):
         all_sponsors = []
         for row in xml.findall("bill/cosponsors/item"):
-            if not row.findall("sponsorshipWithdrawnDate"):
+            if not self.get_xpath(row, "sponsorshipWithdrawnDate"):
                 bill.add_sponsorship(
                     self.build_sponsor_name(row),
                     classification="cosponsor",
