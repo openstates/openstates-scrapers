@@ -15,7 +15,6 @@ from openstates.scrape import Bill, Scraper, VoteEvent
 # TODO: Votes
 # TODO: isByRequest
 # TODO: laws
-# TODO: summaries
 # TODO: public laws
 # https://www.archives.gov/federal-register/laws/current.html
 
@@ -57,7 +56,7 @@ class USBillScraper(Scraper):
         sitemaps = self.get(sitemap_url).content
         root = ET.fromstring(sitemaps)
 
-        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/116/hr/BILLSTATUS-116hr1218.xml')
+        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/116/s/BILLSTATUS-116s4075.xml')
 
         for link in root.findall('us:sitemap/us:loc', self.ns):
             # split by /, then check for that "116s" matches the chamber
@@ -106,6 +105,7 @@ class USBillScraper(Scraper):
         self.scrape_cbo(bill, xml)
         self.scrape_committee_reports(bill, xml)
         self.scrape_cosponsors(bill, xml)
+        self.scrape_laws(bill, xml)
         self.scrape_related_bills(bill, xml)
         self.scrape_sponsors(bill, xml)
         self.scrape_subjects(bill, xml)
@@ -289,6 +289,18 @@ class USBillScraper(Scraper):
                 all_sponsors.append(self.get_xpath(row, 'bioguideId'))
         bill.extras['cosponsor_bioguides'] = all_sponsors
 
+    def scrape_laws(self, bill, xml):
+        law_format = '{type} {num}'
+        laws = []
+        for row in xml.findall('bill/laws/item'):
+            laws.append(
+                law_format.format(
+                    type=self.get_xpath(row, 'type'),
+                    num=self.get_xpath(row, 'number'),
+                )
+            )
+        bill.extras['laws'] = laws
+
     def scrape_related_bills(self, bill, xml):
         for row in xml.findall('bill/relatedBills/item'):
             identifier = '{type} {num}'.format(
@@ -317,11 +329,16 @@ class USBillScraper(Scraper):
             bill.add_subject(self.get_xpath(row, 'name'))
 
     def scrape_summaries(self, bill, xml):
+        seen_abstracts = set()
         for row in xml.findall('bill/summaries/billSummaries/item'):
-            bill.add_abstract(
-                abstract=self.get_xpath(row, 'text'),
-                note=self.get_xpath(row, 'name'),
-            )
+            abstract = self.get_xpath(row, 'text')
+
+            if abstract not in seen_abstracts:
+                bill.add_abstract(
+                    abstract=abstract,
+                    note=self.get_xpath(row, 'name'),
+                )
+                seen_abstracts.add(abstract)
 
     def scrape_titles(self, bill, xml):
         all_titles = set()
