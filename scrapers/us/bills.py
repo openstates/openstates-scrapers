@@ -58,6 +58,8 @@ class USBillScraper(Scraper):
         sitemaps = self.get(sitemap_url).content
         root = ET.fromstring(sitemaps)
 
+        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/116/s/BILLSTATUS-116s3248.xml')
+
         for link in root.findall('us:sitemap/us:loc', self.ns):
             # split by /, then check for that "116s" matches the chamber
             if chamber:
@@ -103,6 +105,7 @@ class USBillScraper(Scraper):
 
         self.scrape_actions(bill, xml)
         self.scrape_cbo(bill, xml)
+        self.scrape_committee_reports(bill, xml)
         self.scrape_cosponsors(bill, xml)
         self.scrape_related_bills(bill, xml)
         self.scrape_sponsors(bill, xml)
@@ -254,6 +257,27 @@ class USBillScraper(Scraper):
                 url=self.get_xpath(row, 'url'),
                 media_type="text/html"
             )
+
+    # ex: https://www.govinfo.gov/bulkdata/BILLSTATUS/116/hr/BILLSTATUS-116hr1218.xml
+    def scrape_committee_reports(self, bill, xml):
+        crpt_url = 'https://www.congress.gov/{session}/crpt/{chamber}rpt{num}/CRPT-{session}{chamber}rpt{num}.pdf'
+        regex = r'(?P<chamber>[H|S|J])\.\s+Rept\.\s+(?P<session>\d+)-(?P<num>\d+)'
+
+        for row in xml.findall('bill/committeeReports/committeeReport'):
+            report = self.get_xpath(row, 'citation')
+            match = re.search(regex, report)
+
+            url = crpt_url.format(
+                session=match.group('session'),
+                chamber=match.group('chamber').lower(),
+                num=match.group('num')
+            )
+
+            bill.add_document_link(
+                note=report,
+                url=url,
+                media_type="application/pdf"
+            )        
 
     def scrape_cosponsors(self, bill, xml):
         all_sponsors = []
