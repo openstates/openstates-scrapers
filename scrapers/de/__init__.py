@@ -99,8 +99,7 @@ class Delaware(State):
             "end_date": "2022-05-06",
         },
     ]
-    ignored_scraped_sessions = [
-    ]
+    ignored_scraped_sessions = []
 
     def get_session_list(self):
         url = "https://legis.delaware.gov/"
