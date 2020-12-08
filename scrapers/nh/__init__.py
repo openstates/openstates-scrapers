@@ -75,6 +75,7 @@ class NewHampshire(State):
         },
         {
             "identifier": "2021",
+            "classification": "primary",
             "name": "2021 Regular Session",
             "start_date": "2021-01-06",
             "end_date": "2021-06-28",
