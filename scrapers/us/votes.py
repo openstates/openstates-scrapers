@@ -16,6 +16,26 @@ class USVoteScraper(Scraper):
         "Present": "other",
     }
 
+    senate_statuses = {
+        'Agreed to': 'pass',
+        'Bill Passed': 'pass',
+        'Confirmed': 'pass',
+        'Rejected': 'fail',
+        'Passed': 'pass',
+        'Nomination Confirmed': 'pass',
+        'Cloture Motion Agreed to': 'pass',
+        'Cloture Motion Rejected': 'fail',
+        'Cloture on the Motion to Proceed Rejected': 'fail',
+        'Amendment Rejected': 'fail',
+        'Decision of Chair Sustained': 'pass',
+        'Motion Agreed to': 'pass',
+        'Motion to Table Failed': 'fail',
+        'Motion to Table Agreed to': 'pass',
+        'Motion to Table Motion to Recommit Agreed to': 'pass',
+        'Motion to Proceed Agreed to': 'pass',
+        'Motion to Proceed Rejected': 'fail',
+    }
+
     vote_classifiers = (
         (".*Introduction and first reading.*", ["introduction", "reading-1"]),
         (".*First reading.*", ["introduction", "reading-1"]),
@@ -45,13 +65,13 @@ class USVoteScraper(Scraper):
 
         if chamber is None:
             yield from self.scrape_votes(session, "lower", start, year)
-            # yield from self.scrape_votes(session, "upper", start)
+            yield from self.scrape_votes(session, "upper", start, year)
         else:
-            yield from self.scrape_chamber(session, chamber, start)
+            yield from self.scrape_votes(session, chamber, start, year)
 
     def scrape_votes(self, session, chamber, start, year):
         if chamber == 'upper':
-           yield from self.scrape_senate_votes(session, start)
+           yield from self.scrape_senate_votes(session, start, year)
         elif chamber == 'lower':
             yield from self.scrape_house_votes(session, start, year)
 
@@ -120,7 +140,7 @@ class USVoteScraper(Scraper):
 
         roll_call = page.xpath('//rollcall-vote/vote-metadata/rollcall-num/text()')[0]
 
-        vote_id = '{}-lower-{}'.format(when.year, roll_call)
+        vote_id = 'us-{}-lower-{}'.format(when.year, roll_call)
 
         vote = VoteEvent(
             start_date=when,
@@ -156,6 +176,100 @@ class USVoteScraper(Scraper):
             vote.vote(self.vote_codes[choice], name, note=bioguide)
         return vote
 
+    def scrape_senate_votes(self, session, start, year):
+        # odd years are first period of a 2-year congress, even are second
+        period = 1 if int(year) % 2 == 1 else 2
+        # ex: https://www.senate.gov/legislative/LIS/roll_call_lists/vote_menu_116_2.xml
+        index_url = 'https://www.senate.gov/legislative/LIS/roll_call_lists/vote_menu_{}_{}.xml'
+        index_url = index_url.format(session, period)
+        page = lxml.html.fromstring(self.get(index_url).content)
+
+        for row in page.xpath('//vote_summary/votes/vote'):
+            # Dates are in the format of 20-Nov, so add the year 
+            vote_date = row.xpath('vote_date/text()')[0]
+            vote_date = '{}-{}'.format(vote_date, year)
+            vote_date = datetime.datetime.strptime(vote_date, '%d-%b-%Y')
+
+            if vote_date < start:
+                self.info("No more votes found before start date.")
+                return
+
+            roll_call = row.xpath('vote_number/text()')[0]
+            yield from self.scrape_senate_vote(session, period, roll_call)
+
+    def scrape_senate_vote(self, session, period, roll_call):
+        url = 'https://www.senate.gov/legislative/LIS/roll_call_votes/vote{session}{period}/vote_{session}_{period}_{vote_id}.xml'
+        url = url.format(session=session, period=period, vote_id=roll_call)        
+        page = lxml.html.fromstring(self.get(url).content)
+
+        vote_date = page.xpath('//roll_call_vote/vote_date/text()')[0].strip()
+        when = self._TZ.localize(
+            datetime.datetime.strptime(
+                vote_date,
+                '%B %d, %Y, %H:%M %p'
+            )
+        )
+
+        roll_call = page.xpath('//roll_call_vote/vote_number/text()')[0]
+        vote_id = 'us-{}-upper-{}'.format(when.year, roll_call)
+
+        # note: not everthing the senate votes on is a bill, this is OK
+        # non bills include nominations and impeachments
+        doc_type = page.xpath('//roll_call_vote/document/document_type/text()')[0]
+
+        if page.xpath('//roll_call_vote/amendment/amendment_to_document_number/text()'):
+            bill_id = page.xpath('//roll_call_vote/amendment/amendment_to_document_number/text()')[0].replace('.', '')
+        else:
+            bill_id = page.xpath('//roll_call_vote/document/document_name/text()')[0].replace('.', '')
+
+        motion = page.xpath('//roll_call_vote/vote_question_text/text()')[0]
+
+        result_text = page.xpath('//roll_call_vote/vote_result/text()')[0]
+
+        result = self.senate_statuses[result_text]
+
+        vote = VoteEvent(
+            start_date=when,
+            bill_chamber='lower' if doc_type[0] == 'H' else 'upper',
+            motion_text=motion,
+            classification='passage', #TODO
+            result=result,
+            legislative_session=session,
+            identifier=vote_id,
+            bill=bill_id,
+            chamber='upper',
+        )
+
+        vote.add_source(url)
+
+        vote.extras['senate-rollcall-num'] = roll_call
+
+        yeas = page.xpath('//roll_call_vote/count/yeas/text()')[0]
+        nays = page.xpath('//roll_call_vote/count/nays/text()')[0]
+
+        if page.xpath('//roll_call_vote/count/absent/text()'):
+            absents = page.xpath('//roll_call_vote/count/absent/text()')[0]
+        else:
+            absents = 0
+
+        if page.xpath('//roll_call_vote/count/present/text()'):
+            presents = page.xpath('//roll_call_vote/count/present/text()')[0]
+        else:
+            presents = 0
+
+        vote.set_count("yes", int(yeas))
+        vote.set_count("no", int(nays))
+        vote.set_count("absent", int(absents))
+        vote.set_count("abstain", int(presents))
+
+        for row in page.xpath('//roll_call_vote/members/member'):
+            lis_id = row.xpath('lis_member_id/text()')[0]
+            name = row.xpath('member_full/text()')[0]
+            choice = row.xpath('vote_cast/text()')[0]
+
+            vote.vote(self.vote_codes[choice], name, note=lis_id)
+
+        yield vote
     # def scrape_senate_votes(self, session):
     #     classification = self.determine_vote_classifiers(
     #         event["ActionText"]
