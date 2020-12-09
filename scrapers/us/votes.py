@@ -9,12 +9,11 @@ class USVoteScraper(Scraper):
     _TZ = pytz.timezone("US/Eastern")
 
     chamber_code = {"S": "upper", "H": "lower", "J": "legislature"}
-    vote_code = {
-        "Aye": "yes",
+    vote_codes = {
+        "Yea": "yes",
         "Nay": "no",
-        "Excused": "absent",
-        "Excused for Business": "absent",
-        "Absent": "absent",
+        "Not Voting": "not voting",
+        "Present": "other",
     }
 
     vote_classifiers = (
@@ -76,11 +75,11 @@ class USVoteScraper(Scraper):
             # header or special message
             if not row.xpath('td[1]/a'):
                 continue
-            else:
-                vote_url = row.xpath('td[1]/a/@href')[0]
-                vote = self.scrape_house_vote(vote_url)
-
-        yield []
+            
+            vote_url = row.xpath('td[1]/a/@href')[0]
+            vote = self.scrape_house_vote(vote_url)
+            
+            yield vote
 
     def scrape_house_vote(self, url):
         page = lxml.html.fromstring(self.get(url).content)
@@ -89,19 +88,62 @@ class USVoteScraper(Scraper):
         vote_date = page.xpath('//rollcall-vote/vote-metadata/action-date/text()')[0]
         vote_time = page.xpath('//rollcall-vote/vote-metadata/action-time/@time-etz')[0]
 
-        print(vote_date, vote_time)
+        when = self._TZ.localize(
+            datetime.datetime.strptime(
+                '{} {}'.format(vote_date, vote_time),
+                '%d-%b-%Y %H:%M'
+            )
+        )
 
-        return []
-        # vote = VoteEvent(
-        #     start_date=when,
-        #     bill_chamber=self.chamber_code[bid[0]],
-        #     motion_text=event["ActionText"],
-        #     classification=classification,
-        #     result="pass" if passed else "fail",
-        #     legislative_session=session,
-        #     bill=bid,
-        #     chamber=self.chamber_code[event["Chamber"]],
-        # )
+        motion = page.xpath('//rollcall-vote/vote-metadata/vote-question/text()')[0]
+        result = page.xpath('//rollcall-vote/vote-metadata/vote-result/text()')[0]
+        if result == 'Passed':
+            result = 'pass'
+        else:
+            result = 'fail'
+
+        session = page.xpath('//rollcall-vote/vote-metadata/congress/text()')[0]
+
+        bill_id = page.xpath('//rollcall-vote/vote-metadata/legis-num/text()')[0]
+
+        roll_call = page.xpath('//rollcall-vote/vote-metadata/rollcall-num/text()')[0]
+
+        vote_id = '{}-lower-{}'.format(when.year, roll_call)
+
+        vote = VoteEvent(
+            start_date=when,
+            bill_chamber='lower' if bill_id[0] == 'H' else 'upper',
+            motion_text=motion,
+            classification='passage', #TODO
+            result=result,
+            legislative_session=session,
+            identifier=vote_id,
+            bill=bill_id,
+            chamber='lower',
+        )
+        vote.add_source(url)
+
+        vote.extras['house-rollcall-num'] = roll_call
+
+        yeas = page.xpath('//rollcall-vote/vote-metadata/vote-totals/totals-by-vote/yea-total/text()')[0]
+        nays = page.xpath('//rollcall-vote/vote-metadata/vote-totals/totals-by-vote/nay-total/text()')[0]
+        nvs = page.xpath('//rollcall-vote/vote-metadata/vote-totals/totals-by-vote/not-voting-total/text()')[0]
+        presents = page.xpath('//rollcall-vote/vote-metadata/vote-totals/totals-by-vote/present-total/text()')[0]
+
+        vote.set_count("yes", int(yeas))
+        vote.set_count("no", int(nays))
+        vote.set_count("not voting", int(nvs))
+        vote.set_count("abstain", int(presents))
+
+        # vote.yes vote.no vote.vote
+        for row in page.xpath('//rollcall-vote/vote-data/recorded-vote'):
+            bioguide = row.xpath('legislator/@name-id')[0]
+            name = row.xpath('legislator/@sort-field')[0]
+            choice = row.xpath('vote/text()')[0]
+
+            vote.vote(self.vote_codes[choice], name, note=bioguide)
+            # TODO: bioguide would be nice here, how to do it?
+        return vote
 
     # def scrape_senate_votes(self, session):
     #     classification = self.determine_vote_classifiers(
