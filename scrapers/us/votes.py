@@ -106,6 +106,9 @@ class USVoteScraper(Scraper):
 
         bill_id = page.xpath('//rollcall-vote/vote-metadata/legis-num/text()')[0]
 
+        # for some reason these are "H R 123" which nobody uses, so fix to "HR 123"
+        bill_id = re.sub(r"([A-Z])\s([A-Z])", r"\1\2", bill_id)
+
         roll_call = page.xpath('//rollcall-vote/vote-metadata/rollcall-num/text()')[0]
 
         vote_id = '{}-lower-{}'.format(when.year, roll_call)
@@ -142,7 +145,6 @@ class USVoteScraper(Scraper):
             choice = row.xpath('vote/text()')[0]
 
             vote.vote(self.vote_codes[choice], name, note=bioguide)
-            # TODO: bioguide would be nice here, how to do it?
         return vote
 
     # def scrape_senate_votes(self, session):
