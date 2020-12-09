@@ -58,13 +58,14 @@ class Washington(State):
             "start_date": "2019-01-04",
             "end_date": "2020-03-12",
         },
-        # {
-        #     "_scraped_name": "2021-22",
-        #     "identifier": "2021-2022",
-        #     "name": "2021-2022 Regular Session",
-        #     "start_date": "2021-01-11",
-        #     "end_date": "2021-04-25",
-        # },
+        {
+            "_scraped_name": "2021-22",
+            "classification": "primary",
+            "identifier": "2021-2022",
+            "name": "2021-2022 Regular Session",
+            "start_date": "2021-01-11",
+            "end_date": "2021-04-25",
+        },
     ]
     ignored_scraped_sessions = [
         "2021-22",
