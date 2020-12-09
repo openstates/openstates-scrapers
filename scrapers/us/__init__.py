@@ -2,6 +2,7 @@ from openstates.scrape import Jurisdiction, Organization
 
 from .events import USEventScraper
 from .bills import USBillScraper
+from .votes import USVoteScraper
 
 
 class Us(Jurisdiction):
@@ -12,6 +13,7 @@ class Us(Jurisdiction):
     scrapers = {
         "events": USEventScraper,
         "bills": USBillScraper,
+        "votes": USVoteScraper,
     }
     legislative_sessions = [
         {"classification": "primary",
