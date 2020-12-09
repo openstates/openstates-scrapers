@@ -105,6 +105,14 @@ class Indiana(State):
             "start_date": "2020-01-06",
             "end_date": "2020-03-11",
         },
+        {
+            "_scraped_name": "First Regular Session 122nd General Assembly (2021)",
+            "classification": "primary",
+            "identifier": "2021",
+            "name": "2021 Regular Session",
+            "start_date": "2021-01-11",
+            "end_date": "2021-04-29",
+        },
     ]
     ignored_scraped_sessions = [
         "First Regular Session 121st General Assembly (2019)",
