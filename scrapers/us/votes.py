@@ -64,9 +64,9 @@ class USVoteScraper(Scraper):
         page.make_links_absolute(index_url)
 
         for row in page.xpath('//a[contains(@href, "ROLL_")]/@href'):
-            yield from self.scrape_house_rolls_page(session, start, row)
+            yield from self.scrape_house_rolls_page(session, start, year, row)
 
-    def scrape_house_rolls_page(self, session, start, url):
+    def scrape_house_rolls_page(self, session, start, year, url):
         # url eg: https://clerk.house.gov/evs/2020/ROLL_200.asp
         page = lxml.html.fromstring(self.get(url).content)
         page.make_links_absolute(url)
@@ -77,8 +77,17 @@ class USVoteScraper(Scraper):
                 continue
             
             vote_url = row.xpath('td[1]/a/@href')[0]
-            vote = self.scrape_house_vote(vote_url)
             
+            # Dates are in the format of 20-Nov, so add the year 
+            vote_date = row.xpath('td[2]/font/text()')[0]
+            vote_date = '{}-{}'.format(vote_date, year)
+            vote_date = datetime.datetime.strptime(vote_date, '%d-%b-%Y')
+
+            if vote_date < start:
+                self.info("No more votes found before start date.")
+                return
+            
+            vote = self.scrape_house_vote(vote_url)
             yield vote
 
     def scrape_house_vote(self, url):
