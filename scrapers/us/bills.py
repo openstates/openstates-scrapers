@@ -1,6 +1,8 @@
 import datetime
+import lxml
 import pytz
 import re
+import scrapelib
 import xml.etree.ElementTree as ET
 
 from openstates.scrape import Bill, Scraper
@@ -59,7 +61,7 @@ class USBillScraper(Scraper):
         root = ET.fromstring(sitemaps)
 
         # if you want to test a bill:
-        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/116/hr/BILLSTATUS-116hr6395.xml')
+        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/116/hr/BILLSTATUS-116hr3884.xml')
 
         for link in root.findall("us:sitemap/us:loc", self.ns):
             # split by /, then check that "116s" matches the chamber
@@ -117,7 +119,7 @@ class USBillScraper(Scraper):
         )
 
         self.scrape_actions(bill, xml)
-        self.scrape_amendments(bill, xml)
+        self.scrape_amendments(bill, xml, session, chamber, bill_id)
         self.scrape_cbo(bill, xml)
         self.scrape_committee_reports(bill, xml)
         self.scrape_cosponsors(bill, xml)
@@ -265,7 +267,7 @@ class USBillScraper(Scraper):
                 )
                 actions.append(action_text)
 
-    def scrape_amendments(self, bill, xml):
+    def scrape_amendments(self, bill, xml, session, chamber, bill_id):
         slugs = {
             "HAMDT": "house-amendment",
             "SAMDT": "senate-amendment",
@@ -291,6 +293,26 @@ class USBillScraper(Scraper):
                 ),
                 media_type="text/html",
             )
+
+
+        # ex: https://rules.house.gov/bill/116/hr-3884
+        if chamber == 'lower':
+            rules_url = "https://rules.house.gov/bill/{}/{}".format(session, bill_id.replace(' ', '-'))
+            try:
+                page = lxml.html.fromstring(self.get(rules_url).content)
+                for row in page.xpath('//article[contains(@class, "field-name-field-amendment-table")]/div/div/table/tr'):
+                    amdt_num = row.xpath('td[1]/text()')[0].strip()
+                    amdt_sponsor = row.xpath('td[3]/a/text()')[0].strip()
+                    amdt_name = 'House Rules Committee Amendment {} - {}'.format(amdt_num, amdt_sponsor)
+                    amdt_url = row.xpath('td[3]/a/@href')[0].strip()
+                    bill.add_document_link(
+                        note=amdt_name,
+                        url=amdt_url,
+                        media_type="application/pdf",
+                    )
+            except scrapelib.HTTPError:
+                # Not every bill has a rules committee page
+                return
 
     # CBO cost estimates
     def scrape_cbo(self, bill, xml):
