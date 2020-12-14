@@ -1,7 +1,7 @@
 from utils import url_xpath, State
 from .bills import NEBillScraper
 from .people import NEPersonScraper
-
+from .events import NEEventScraper
 # from .committees import NECommitteeScraper
 
 
@@ -10,6 +10,7 @@ class Nebraska(State):
         "bills": NEBillScraper,
         "people": NEPersonScraper,
         # 'committees': NECommitteeScraper,
+        "events": NEEventScraper,
     }
     legislative_sessions = [
         {
