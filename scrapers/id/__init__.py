@@ -109,8 +109,17 @@ class Idaho(State):
             # TODO: Set real end date after session completes
             "end_date": "2020-08-28",
         },
+        # {
+        #     "_scraped_name": "2021 Session",
+        #     "classification": "primary",
+        #     "identifier": "2021",
+        #     "name": "66th Legislature, 1st Regular Session (2021)",
+        #     "start_date": "2020-01-11",
+        #     "end_date": "2020-04-07",
+        # },
     ]
     ignored_scraped_sessions = [
+        "2021 Session",
         "2020 Session",
         "2010 Session",
         "2009 Session",

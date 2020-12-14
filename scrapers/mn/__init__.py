@@ -188,8 +188,16 @@ class Minnesota(State):
             "identifier": "2020s6",
             "name": "2020, Sixth Special Session",
             "start_date": "2020-11-12",
+            "end_date": "2020-11-12",
+        },
+        {
+            "_scraped_name": "91st Legislature, 2020 7th Special Session",
+            "classification": "special",
+            "identifier": "2020s7",
+            "name": "2020, Seventh Special Session",
+            "start_date": "2020-12-12",
             # Just a guess. TODO: set after end of special
-            "end_date": "2020-11-13",
+            "end_date": "2020-12-13",
         },
         #         {
         #             "_scraped_name": "92nd Legislature, 2021-2022",
@@ -226,4 +234,5 @@ class Minnesota(State):
         return url_xpath(
             "https://www.revisor.mn.gov/bills/" "status_search.php?body=House",
             '//select[@name="session"]/option/text()',
+            False  # SSL verification failing in MN due to missing intermediate cert
         )
