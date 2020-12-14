@@ -111,7 +111,7 @@ class Wyoming(State):
             "name": "2021 General Session",
             "start_date": "2021-02-12",
             "end_date": "2021-03-04",
-        },        
+        },
     ]
     ignored_scraped_sessions = [
         "2021",
