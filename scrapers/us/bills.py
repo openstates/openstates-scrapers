@@ -190,10 +190,6 @@ class USBillScraper(Scraper):
             "Intro-H": "introduction",
         }
 
-        if action == "H37300":
-            print("37300!")
-            print(action)
-
         return codes.get(action)
 
     def classify_action_by_name(self, action):
@@ -301,15 +297,17 @@ class USBillScraper(Scraper):
             try:
                 page = lxml.html.fromstring(self.get(rules_url).content)
                 for row in page.xpath('//article[contains(@class, "field-name-field-amendment-table")]/div/div/table/tr'):
-                    amdt_num = row.xpath('td[1]/text()')[0].strip()
-                    amdt_sponsor = row.xpath('td[3]/a/text()')[0].strip()
-                    amdt_name = 'House Rules Committee Amendment {} - {}'.format(amdt_num, amdt_sponsor)
-                    amdt_url = row.xpath('td[3]/a/@href')[0].strip()
-                    bill.add_document_link(
-                        note=amdt_name,
-                        url=amdt_url,
-                        media_type="application/pdf",
-                    )
+                    if row.xpath('td[3]/a'):
+                        amdt_num = row.xpath('td[1]/text()')[0].strip()
+                        amdt_sponsor = row.xpath('td[3]/a/text()')[0].strip()
+                        amdt_name = 'House Rules Committee Amendment {} - {}'.format(amdt_num, amdt_sponsor)
+                        self.info(amdt_name)
+                        amdt_url = row.xpath('td[3]/a/@href')[0].strip()
+                        bill.add_document_link(
+                            note=amdt_name,
+                            url=amdt_url,
+                            media_type="application/pdf",
+                        )
             except scrapelib.HTTPError:
                 # Not every bill has a rules committee page
                 return
