@@ -6,14 +6,19 @@ from openstates.scrape import Scraper, Bill
 
 
 class IABillScraper(Scraper):
-    def scrape(self, session=None, chamber=None):
+    def scrape(self, session=None, chamber=None, prefiles=None):
         if not session:
             session = self.latest_session()
             self.info("no session specified, using %s", session)
 
-        chambers = [chamber] if chamber else ["upper", "lower"]
-        for chamber in chambers:
-            yield from self.scrape_chamber(chamber, session)
+        # to prevent dupes, you want to scrape prefiles OR bills,
+        # not both.
+        if bool(prefiles) is not None:
+            yield from self.scrape_prefiles(session)
+        else:
+            chambers = [chamber] if chamber else ["upper", "lower"]
+            for chamber in chambers:
+                yield from self.scrape_chamber(chamber, session)
 
     def scrape_chamber(self, chamber, session):
         # We need a good bill page to scrape from. Check for "HF " + bill_offset
@@ -39,6 +44,41 @@ class IABillScraper(Scraper):
             bill_url = base_url % (session_id, bill_id)
 
             yield self.scrape_bill(chamber, session, session_id, bill_id, bill_url)
+
+    # IA does prefiles on a seperate page, with no bill numbers,
+    # after introduction they'll link bill numbers to the prefile doc id
+    def scrape_prefiles(self, session):
+        url = 'https://www.legis.iowa.gov/legislation/billTracking/prefiledBills'
+        page = lxml.html.fromstring(self.get(url).content)
+        page.make_links_absolute(url)
+
+        for row in page.xpath('//table[contains(@class, "sortable")]/tr[td]'):
+            filing_date = row.xpath('td[1]/text()')[0].strip()
+            title = row.xpath('td[2]/a/text()')[0].strip()
+            url = row.xpath('td[2]/a/@href')[0]
+
+            bill_id = self.extract_doc_id(title)
+
+            bill = Bill(
+                bill_id,
+                legislative_session=session,
+                chamber='legislature',
+                title=title,
+                classification='proposed bill',
+            )
+
+            if (row.xpath('td[3][a]')):
+                document = row.xpath('td[3]/a/@href')[0]
+                document_title = row.xpath('td[2]/a/text()')[0].strip()
+
+            bill.add_source(url)
+
+            yield bill
+
+    def extract_doc_id(self, title):
+        doc_id = re.findall(r'\((\d{4}\w{2})\)', title)
+        return doc_id[0]
+
 
     def scrape_subjects(self, bill, bill_number, session, req):
 
