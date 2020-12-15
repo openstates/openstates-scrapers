@@ -1,6 +1,26 @@
 import lxml.html
+import lxml.etree
+import re
 
 from openstates.scrape import Person, Scraper, Organization
+
+
+def parse_address(s):
+    s = re.sub(r"<br( /)?>", ";", s)
+    p = s[s.index(">") + 1 : s.index("<", 1)].split(";")
+    p[1] = re.sub(r"(.*)\s(\d{5}(-\d{4})?)$", r"\1, SC \2", p[1])
+    return ", ".join(p)
+
+
+def parse_phone(str):
+    phone_regex = re.compile("([^\s]+)\sPhone\s+(\(?\d{3}(?:\)\s|-)\d{3}-\d{4})")
+    m = phone_regex.match(str)
+    if m:
+        label = m.group(1)
+        number = re.sub(r"[^\d]+", "", m.group(2))
+        return label, number
+    else:
+        return None, None
 
 
 class SCPersonScraper(Scraper):
@@ -69,60 +89,78 @@ class SCPersonScraper(Scraper):
                 image=photo_url,
             )
 
-            # office address / phone
+            # capitol office address
             try:
-                addr_div = leg_doc.xpath(
-                    '//div[@style="float: left; width: 225px;'
-                    ' margin: 10px 5px 0 20px; padding: 0;"]'
-                )[0]
-                capitol_address = addr_div.xpath(
-                    'p[@style="font-size: 13px;' ' margin: 0 0 10px 0; padding: 0;"]'
-                )[0].text_content()
-
-                phone = addr_div.xpath(
-                    'p[@style="font-size: 13px;'
-                    ' margin: 0 0 0 0; padding: 0;"]/text()'
-                )[0]
-                capitol_phone = phone.strip()
-
+                capitol_address = lxml.etree.tostring(
+                    leg_doc.xpath('//h2[text()="Columbia Address"]/../p[1]')[0]
+                ).decode()
                 if capitol_address:
+                    capitol_address = parse_address(capitol_address)
                     person.add_contact_detail(
                         type="address", value=capitol_address, note="Capitol Office"
-                    )
-
-                if capitol_phone:
-                    person.add_contact_detail(
-                        type="voice", value=capitol_phone, note="Capitol Office"
                     )
             except IndexError:
                 self.warning("no capitol address for {0}".format(full_name))
 
-            # home address / phone
+            # capitol office phone
             try:
-                addr_div = leg_doc.xpath(
-                    '//div[@style="float: left;'
-                    ' width: 225px; margin: 10px 0 0 20px;"]'
-                )[0]
-                addr = addr_div.xpath(
-                    'p[@style="font-size: 13px;' ' margin: 0 0 10px 0; padding: 0;"]'
-                )[0].text_content()
-
-                phone = addr_div.xpath(
-                    'p[@style="font-size: 13px;'
-                    ' margin: 0 0 0 0; padding: 0;"]/text()'
-                )[0]
-                phone = phone.strip()
-                if addr:
+                capitol_phone = (
+                    leg_doc.xpath('//h2[text()="Columbia Address"]/../p[2]')[0]
+                    .text_content()
+                    .strip()
+                )
+                label, number = parse_phone(capitol_phone)
+                if number:
                     person.add_contact_detail(
-                        type="address", value=addr, note="District Office"
-                    )
-
-                if phone:
-                    person.add_contact_detail(
-                        type="voice", value=phone, note="District Office"
+                        type="voice", value=number, note="Capitol Office"
                     )
             except IndexError:
-                self.warning("no district address for {0}".format(full_name))
+                self.warning("no capitol phone for {0}".format(full_name))
+
+            # home address
+            try:
+                home_address = lxml.etree.tostring(
+                    leg_doc.xpath('//h2[text()="Home Address"]/../p[1]')[0]
+                ).decode()
+                if home_address:
+                    home_address = parse_address(home_address)
+                    person.add_contact_detail(
+                        type="address", value=home_address, note="District Office"
+                    )
+            except IndexError:
+                self.warning("no home address for {0}".format(full_name))
+
+            # home or business phone
+            try:
+                home_phone = (
+                    leg_doc.xpath('//h2[text()="Home Address"]/../p[2]')[0]
+                    .text_content()
+                    .strip()
+                )
+                label, number = parse_phone(home_phone)
+                if number:
+                    label = (
+                        "Primary Office" if label == "Business" else "District Office"
+                    )
+                    person.add_contact_detail(type="voice", value=number, note=label)
+            except IndexError:
+                self.warning("no home or business phone for {0}".format(full_name))
+
+            # business or home phone
+            try:
+                business_phone = (
+                    leg_doc.xpath('//h2[text()="Home Address"]/../p[3]')[0]
+                    .text_content()
+                    .strip()
+                )
+                label, number = parse_phone(business_phone)
+                if number:
+                    label = (
+                        "Primary Office" if label == "Business" else "District Office"
+                    )
+                    person.add_contact_detail(type="voice", value=number, note=label)
+            except IndexError:
+                pass
 
             person.add_link(leg_url)
             person.add_source(url)
