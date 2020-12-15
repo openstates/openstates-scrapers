@@ -89,33 +89,48 @@ class MTBillScraper(Scraper, LXMLMixin):
         ).format(session_name)
         bills_page = self.lxmlize(bills_url)
 
-        bill_urls = []
-        for bill_url in bills_page.xpath(
-            '//tr//a[contains(@href, "ActionQuery")]/@href'
+        bills = []
+        for bill_row in bills_page.xpath(
+            '//tr'
         ):
+            bill_url_hrefs = bill_row.xpath('td/a[contains(@href, "ActionQuery")]/@href')
+            if len(bill_url_hrefs) == 0:
+                continue  # no URL in this TR, so ignore it
+
+            bill_url = bill_url_hrefs[0]
+            sponsor_results = bill_row.xpath('td[3]/text()')
+            if len(sponsor_results) > 0:
+                sponsor = sponsor_results[0]
+            else:
+                sponsor = ""
+
             if "lower" in chambers and (
                 "HB" in bill_url or "HJ" in bill_url or "HR" in bill_url
             ):
-                bill_urls.append(bill_url)
+                bills.append({"url": bill_url, "sponsor": sponsor})
             if "upper" in chambers and (
                 "SB" in bill_url or "SJ" in bill_url or "SR" in bill_url
             ):
-                bill_urls.append(bill_url)
+                bills.append({"url": bill_url, "sponsor": sponsor})
+            if "LC" in bill_url and "BILL_NO" not in bill_url:
+                # this is a bill proposal, not an actual bill, aka "unintroduced" bill
+                # unintroduced bills don't exactly have a chamber, but we'll use sponsor's chamber to assign one
+                bills.append({"url": bill_url, "sponsor": sponsor})
 
-        for bill_url in bill_urls:
-            bill, votes = self.parse_bill(bill_url, session)
+        for bill_info in bills:
+            bill, votes = self.parse_bill(bill_info["url"], bill_info["sponsor"], session)
             yield bill
             for vote in votes:
                 if vote.pupa_id not in self._seen_vote_ids:
                     self._seen_vote_ids.add(vote.pupa_id)
                     yield vote
 
-    def parse_bill(self, bill_url, session):
-        # chamber = "lower" if "hb" in bill_url.lower() else "upper"
+    def parse_bill(self, bill_url, list_sponsor, session):
+        # list_sponsor passed to support proposed bills (aka "unintroduced") which have "LC XXXX" bill numbers
         bill = None
         doc = self.lxmlize(bill_url)
 
-        bill, votes = self.parse_bill_status_page(bill_url, doc, session)
+        bill, votes = self.parse_bill_status_page(bill_url, doc, list_sponsor, session)
 
         # Get versions on the detail page.
         versions = [
@@ -135,8 +150,10 @@ class MTBillScraper(Scraper, LXMLMixin):
         # self.add_other_versions(bill)
 
         # Add pdf.
-        url = set(doc.xpath('//a/@href[contains(., "billpdf")]')).pop()
-        bill.add_version_link(version_name, url, media_type="application/pdf")
+        pdf_urls = set(doc.xpath('//a/@href[contains(., "billpdf")]'))
+        if len(pdf_urls) > 0:
+            url = pdf_urls.pop()
+            bill.add_version_link(version_name, url, media_type="application/pdf")
 
         new_versions_url = doc.xpath('//a[text()="Previous Version(s)"]/@href')
         if new_versions_url:
@@ -179,13 +196,21 @@ class MTBillScraper(Scraper, LXMLMixin):
 
         return dict(tabledata)
 
-    def parse_bill_status_page(self, url, page, session):
+    def parse_bill_status_page(self, url, page, list_sponsor, session):
+        # list_sponsor passed in to support proposed bills (aka "unintroduced") which have "LC XXXX" bill numbers
         # see 2007 HB 2... weird.
         parsed_url = urllib.parse.urlparse(url)
         parsed_query = dict(urllib.parse.parse_qsl(parsed_url.query))
-        bill_id = "{0} {1}".format(
-            parsed_query["P_BLTP_BILL_TYP_CD"], parsed_query["P_BILL_NO1"]
-        )
+        if "P_BLTP_BILL_TYP_CD" in parsed_query:
+            # normal bill
+            bill_id = "{0} {1}".format(
+                parsed_query["P_BLTP_BILL_TYP_CD"], parsed_query["P_BILL_NO1"]
+            )
+        elif "P_BILL_DFT_NO5" in parsed_query:
+            # proposed bill ("unintroduced")
+            bill_id = "{0} {1}".format(
+                parsed_query["P_BILL_DFT_NO5"][0:2], parsed_query["P_BILL_DFT_NO5"][2:6].lstrip("0")
+            )
 
         try:
             xp = '//b[text()="Short Title:"]/../following-sibling::td/text()'
@@ -203,8 +228,24 @@ class MTBillScraper(Scraper, LXMLMixin):
             classification = "concurrent resolution"
         elif "r" in _bill_id:
             classification = "resolution"
+        elif "lc" in _bill_id:
+            classification = "proposed bill"
 
-        chamber = "lower" if _bill_id[0] == "h" else "upper"
+        # chamber
+        if _bill_id[0] == "h":
+            chamber = "lower"
+        elif _bill_id[0] == "s":
+            chamber = "upper"
+        else:
+            # fall back to using the sponsor's chamber
+            # used for proposed bills aka unintroducd aka LC bills
+            if " HD " in list_sponsor:
+                chamber = "lower"
+            if " SD " in list_sponsor:
+                chamber = "upper"
+            else:
+                # a true fallback: some sponsors are organizations eg "Economic Affairs Interim Committee"
+                chamber = "legislature"
 
         bill = Bill(
             bill_id,
@@ -220,12 +261,33 @@ class MTBillScraper(Scraper, LXMLMixin):
         tabledata = self._get_tabledata(page)
 
         # Add sponsor info.
-        bill.add_sponsorship(
-            tabledata["primary sponsor:"][0],
-            classification="primary",
-            entity_type="person",
-            primary=True,
-        )
+        if "primary sponsor:" in tabledata:
+            bill.add_sponsorship(
+                tabledata["primary sponsor:"][0],
+                classification="primary",
+                entity_type="person",
+                primary=True,
+            )
+        elif "(" in list_sponsor:
+            # use sponsor data from the bill listing, if it contains a party designation eg (R)
+            # used for proposed bills aka unintroducd aka LC bills
+            # grab everything before " (R) SD 30" in "John Esp (R) SD 30"
+            sponsor_name_raw = re.search(r"(.+) \(", list_sponsor)[1]
+            bill.add_sponsorship(
+                ' '.join(sponsor_name_raw.split()),  # eliminate extra whitespace in middle of name parts
+                classification="primary",
+                entity_type="person",
+                primary=True,
+            )
+        elif "lc" in _bill_id:
+            # probably the sponsor is an organization eg a committee, because LC bills can be sponsored by orgs
+            # so just use the sponsor as listed from the index page
+            bill.add_sponsorship(
+                list_sponsor,
+                classification="primary",
+                entity_type="organization",
+                primary=True,
+            )
 
         # A various plus fields MT provides.
         plus_fields = [
