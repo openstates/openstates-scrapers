@@ -13,7 +13,7 @@ def parse_address(s):
 
 
 def parse_phone(str):
-    phone_regex = re.compile("([^\s]+)\sPhone\s+(\(?\d{3}(?:\)\s|-)\d{3}-\d{4})")
+    phone_regex = re.compile(r"([^\s]+)\sPhone\s+(\(?\d{3}(?:\)\s|-)\d{3}-\d{4})")
     m = phone_regex.match(str)
     if m:
         label = m.group(1)
