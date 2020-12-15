@@ -245,7 +245,7 @@ class MTBillScraper(Scraper, LXMLMixin):
                 chamber = "upper"
             else:
                 # a true fallback: some sponsors are organizations eg "Economic Affairs Interim Committee"
-                chamber = "lower"
+                chamber = "legislature"
 
         bill = Bill(
             bill_id,
@@ -269,7 +269,7 @@ class MTBillScraper(Scraper, LXMLMixin):
                 primary=True,
             )
         elif "(" in list_sponsor:
-            # fall back to sponsor data from the bill listing, if it contains a party designation eg (R)
+            # use sponsor data from the bill listing, if it contains a party designation eg (R)
             # used for proposed bills aka unintroducd aka LC bills
             # grab everything before " (R) SD 30" in "John Esp (R) SD 30"
             sponsor_name_raw = re.search(r"(.+) \(", list_sponsor)[1]
@@ -277,6 +277,15 @@ class MTBillScraper(Scraper, LXMLMixin):
                 ' '.join(sponsor_name_raw.split()),  # eliminate extra whitespace in middle of name parts
                 classification="primary",
                 entity_type="person",
+                primary=True,
+            )
+        elif "lc" in _bill_id:
+            # probably the sponsor is an organization eg a committee, because LC bills can be sponsored by orgs
+            # so just use the sponsor as listed from the index page
+            bill.add_sponsorship(
+                list_sponsor,
+                classification="primary",
+                entity_type="organization",
                 primary=True,
             )
 
