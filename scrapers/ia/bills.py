@@ -67,9 +67,23 @@ class IABillScraper(Scraper):
                 classification='proposed bill',
             )
 
-            if (row.xpath('td[3][a]')):
-                document = row.xpath('td[3]/a/@href')[0]
-                document_title = row.xpath('td[2]/a/text()')[0].strip()
+            if (row.xpath('td[3]/a')):
+                document_url = row.xpath('td[3]/a/@href')[0]
+                if '.docx' in document_url:
+                    media_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                elif '.pdf' in document_url:
+                    media_type = 'application/pdf'
+                bill.add_document_link(
+                    note="Backround Statement",
+                    url=document_url,
+                    media_type=media_type
+                )
+
+            bill.add_version_link(
+                note="Prefiled",
+                url=url,
+                media_type="application/pdf"
+            )
 
             bill.add_source(url)
 
