@@ -56,7 +56,7 @@ class Iowa(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-11",
             "end_date": "2021-03-30",
-        },        
+        },
     ]
     ignored_scraped_sessions = [
         "Legislative Assembly: 86",

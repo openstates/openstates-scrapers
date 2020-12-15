@@ -53,7 +53,6 @@ class IABillScraper(Scraper):
         page.make_links_absolute(url)
 
         for row in page.xpath('//table[contains(@class, "sortable")]/tr[td]'):
-            filing_date = row.xpath('td[1]/text()')[0].strip()
             title = row.xpath('td[2]/a/text()')[0].strip()
             url = row.xpath('td[2]/a/@href')[0]
 
@@ -92,7 +91,6 @@ class IABillScraper(Scraper):
     def extract_doc_id(self, title):
         doc_id = re.findall(r'\((\d{4}\w{2})\)', title)
         return doc_id[0]
-
 
     def scrape_subjects(self, bill, bill_number, session, req):
 
