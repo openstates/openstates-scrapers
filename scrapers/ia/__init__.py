@@ -50,7 +50,7 @@ class Iowa(State):
             "end_date": "2020-04-21",
         },
         {
-            "_scraped_name": "General Assembly: 99",
+            "_scraped_name": "General Assembly: 89",
             "classification": "primary",
             "identifier": "2021-2022",
             "name": "2021-2022 Regular Session",

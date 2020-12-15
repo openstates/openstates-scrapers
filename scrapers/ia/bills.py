@@ -13,7 +13,7 @@ class IABillScraper(Scraper):
 
         # to prevent dupes, you want to scrape prefiles OR bills,
         # not both.
-        if bool(prefiles) is not None:
+        if prefiles is not None:
             yield from self.scrape_prefiles(session)
         else:
             chambers = [chamber] if chamber else ["upper", "lower"]
@@ -337,4 +337,5 @@ class IABillScraper(Scraper):
             "2015-2016": "86",
             "2017-2018": "87",
             "2019-2020": "88",
+            "2021-2022": "89"
         }[session]
