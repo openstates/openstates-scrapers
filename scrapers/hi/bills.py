@@ -305,9 +305,7 @@ class HIBillScraper(Scraper):
             if sponsor is not "":
                 b.add_sponsorship(sponsor, "primary", "person", True)
 
-        print(bill_id)
         if "gm" in bill_id.lower():
-            print("ADD GOV")
             b.add_sponsorship('governor', 'primary', 'person', True)
 
         self.parse_bill_versions_table(b, versions)
@@ -344,7 +342,7 @@ class HIBillScraper(Scraper):
             "bill": "bill",
             "cr": "concurrent resolution",
             "r": "resolution",
-            "gm": "bill",
+            "gm": "proclamation",
         }[billtype]
 
         list_html = self.get(report_page_url).text
@@ -358,7 +356,7 @@ class HIBillScraper(Scraper):
         if not session:
             session = self.latest_session()
             self.info("no session specified, using %s", session)
-        bill_types = ["gm", "bill", "cr", "r"]
+        bill_types = ["bill", "cr", "r", "gm"]
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
             for typ in bill_types:
