@@ -18,6 +18,7 @@ from . import actions
 
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
 import requests
+
 requests.packages.urllib3.disable_warnings()
 requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
 
@@ -90,15 +91,15 @@ class MTBillScraper(Scraper, LXMLMixin):
         bills_page = self.lxmlize(bills_url)
 
         bills = []
-        for bill_row in bills_page.xpath(
-            '//tr'
-        ):
-            bill_url_hrefs = bill_row.xpath('td/a[contains(@href, "ActionQuery")]/@href')
+        for bill_row in bills_page.xpath("//tr"):
+            bill_url_hrefs = bill_row.xpath(
+                'td/a[contains(@href, "ActionQuery")]/@href'
+            )
             if len(bill_url_hrefs) == 0:
                 continue  # no URL in this TR, so ignore it
 
             bill_url = bill_url_hrefs[0]
-            sponsor_results = bill_row.xpath('td[3]/text()')
+            sponsor_results = bill_row.xpath("td[3]/text()")
             if len(sponsor_results) > 0:
                 sponsor = sponsor_results[0]
             else:
@@ -118,7 +119,9 @@ class MTBillScraper(Scraper, LXMLMixin):
                 bills.append({"url": bill_url, "sponsor": sponsor})
 
         for bill_info in bills:
-            bill, votes = self.parse_bill(bill_info["url"], bill_info["sponsor"], session)
+            bill, votes = self.parse_bill(
+                bill_info["url"], bill_info["sponsor"], session
+            )
             yield bill
             for vote in votes:
                 if vote.pupa_id not in self._seen_vote_ids:
@@ -209,7 +212,8 @@ class MTBillScraper(Scraper, LXMLMixin):
         elif "P_BILL_DFT_NO5" in parsed_query:
             # proposed bill ("unintroduced")
             bill_id = "{0} {1}".format(
-                parsed_query["P_BILL_DFT_NO5"][0:2], parsed_query["P_BILL_DFT_NO5"][2:6].lstrip("0")
+                parsed_query["P_BILL_DFT_NO5"][0:2],
+                parsed_query["P_BILL_DFT_NO5"][2:6].lstrip("0"),
             )
 
         try:
@@ -274,7 +278,9 @@ class MTBillScraper(Scraper, LXMLMixin):
             # grab everything before " (R) SD 30" in "John Esp (R) SD 30"
             sponsor_name_raw = re.search(r"(.+) \(", list_sponsor)[1]
             bill.add_sponsorship(
-                ' '.join(sponsor_name_raw.split()),  # eliminate extra whitespace in middle of name parts
+                " ".join(
+                    sponsor_name_raw.split()
+                ),  # eliminate extra whitespace in middle of name parts
                 classification="primary",
                 entity_type="person",
                 primary=True,

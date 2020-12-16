@@ -89,7 +89,11 @@ class Vermont(State):
         #     "end_date": "2021-05-15",
         # },
     ]
-    ignored_scraped_sessions = ["2020 Training Session", "2009 Special Session", "2021-2022 Session"]
+    ignored_scraped_sessions = [
+        "2020 Training Session",
+        "2009 Special Session",
+        "2021-2022 Session",
+    ]
 
     site_ids = {"2018ss1": "2018.1"}
 

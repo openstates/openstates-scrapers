@@ -79,17 +79,19 @@ class KYBillScraper(Scraper, LXMLMixin):
                 yield from self.scrape_session(chamber, session)
 
     def scrape_prefiles(self, session):
-        prefile_url = 'https://apps.legislature.ky.gov/record/{}/prefiled/prefiled_bills.html'
+        prefile_url = (
+            "https://apps.legislature.ky.gov/record/{}/prefiled/prefiled_bills.html"
+        )
         prefile_url = prefile_url.format(session[-4:].lower())
         page = self.lxmlize(prefile_url)
 
         for link in page.xpath("//div[contains(@class,'container')]/p/a"):
             if re.search(r"\d{1,4}\.htm", link.attrib.get("href", "")):
                 bill_id = link.text
-                bill_id = 'BR' + bill_id
+                bill_id = "BR" + bill_id
                 self.info(bill_id)
                 yield from self.parse_bill(
-                    'upper', session, bill_id, link.attrib["href"]
+                    "upper", session, bill_id, link.attrib["href"]
                 )
 
     def scrape_session(self, chamber, session):
@@ -158,7 +160,7 @@ class KYBillScraper(Scraper, LXMLMixin):
         if page.xpath(xpath_expr):
             return page.xpath(xpath_expr)[0]
         else:
-            return ''
+            return ""
 
     def parse_bill(self, chamber, session, bill_id, url):
         try:
@@ -167,7 +169,7 @@ class KYBillScraper(Scraper, LXMLMixin):
             self.logger.warning(e)
             return
 
-        if self.parse_bill_field(page, "Last Action") != '':
+        if self.parse_bill_field(page, "Last Action") != "":
             last_action = self.parse_bill_field(page, "Last Action").xpath("text()")[0]
             if "WITHDRAWN" in last_action.upper():
                 self.info("{} Withdrawn, skipping".format(bill_id))
@@ -226,7 +228,7 @@ class KYBillScraper(Scraper, LXMLMixin):
             yield from self.scrape_votes(vote_url, bill, chamber)
 
         bdr_no = self.parse_bill_field(page, "Bill Request Number")
-        if bdr_no != '' and bdr_no.xpath("text()"):
+        if bdr_no != "" and bdr_no.xpath("text()"):
             bdr = bdr_no.xpath("text()")[0].strip()
             bill.extras["BDR"] = bdr
 
@@ -380,7 +382,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                 yield ve
 
     def parse_subjects(self, page, bill):
-        if self.parse_bill_field(page, "Index Headings of Original Version") == '':
+        if self.parse_bill_field(page, "Index Headings of Original Version") == "":
             return
         subject_div = self.parse_bill_field(page, "Index Headings of Original Version")
         subjects = subject_div.xpath("a/text()")

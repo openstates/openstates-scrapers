@@ -234,5 +234,5 @@ class Minnesota(State):
         return url_xpath(
             "https://www.revisor.mn.gov/bills/" "status_search.php?body=House",
             '//select[@name="session"]/option/text()',
-            False  # SSL verification failing in MN due to missing intermediate cert
+            False,  # SSL verification failing in MN due to missing intermediate cert
         )
