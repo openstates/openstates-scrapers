@@ -14,10 +14,7 @@ class SDBillScraper(Scraper, LXMLMixin):
             session = self.latest_session()
             self.info("no session specified, using %s", session)
 
-        url = (
-            "https://sdlegislature.gov/Legislative_Session"
-            "/Bills/Default.aspx?Session={}".format(session)
-        )
+        url = "https://sdlegislature.gov/#/Session/Bills/{}".format(session)
         chambers = [chambers] if chambers else ["upper", "lower"]
 
         for chamber in chambers:
@@ -29,7 +26,7 @@ class SDBillScraper(Scraper, LXMLMixin):
             page = self.lxmlize(url)
 
             for link in page.xpath(
-                "//a[contains(@href, 'Bill.aspx') and"
+                "//a[contains(@href, '/Session/Bill/') and"
                 " starts-with(., '%s')]" % bill_abbr
             ):
                 bill_id = link.text.strip().replace(u"\xa0", " ")
@@ -64,19 +61,28 @@ class SDBillScraper(Scraper, LXMLMixin):
         bill.add_source(url)
 
         version_rows = page.xpath(
-            '//div[@id="ctl00_ContentPlaceHolder1_ctl00_BillVersions"]'
-            + "/section/table/tbody/tr"
+            "//main/div/div/div[2]/div[7]/div[2]/div[2]/div/div/table/tbody/tr"
         )
         assert len(version_rows) > 0
         for row in version_rows:
-            (date,) = row.xpath('./td[@data-title="Date"]/text()')
+            (date,) = row.xpath(
+                './td[1]/div[@class="v-data-table__mobile-row__cell"]/span/text()'
+            )
             date = date.strip()
             date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
 
-            (html_note,) = row.xpath('./td[@data-title="HTML"]/a/text()')
-            (html_link,) = row.xpath('./td[@data-title="HTML"]/a/@href')
-            (pdf_note,) = row.xpath('./td[@data-title="PDF"]/a/text()')
-            (pdf_link,) = row.xpath('./td[@data-title="PDF"]/a/@href')
+            (html_note,) = row.xpath(
+                './td[2]/div[@class="v-data-table__mobile-row__cell"]/a/text()'
+            )
+            (html_link,) = row.xpath(
+                './td[2]/div[@class="v-data-table__mobile-row__cell"]/a/@href'
+            )
+            (pdf_note,) = row.xpath(
+                './td[3]/div[@class="v-data-table__mobile-row__cell"]/a/text()'
+            )
+            (pdf_link,) = row.xpath(
+                './td[2]/div[@class="v-data-table__mobile-row__cell"]/a/@href'
+            )
 
             assert html_note == pdf_note
             note = html_note
@@ -97,9 +103,9 @@ class SDBillScraper(Scraper, LXMLMixin):
             )
 
         sponsor_links = page.xpath(
-            '//div[@id="ctl00_ContentPlaceHolder1_ctl00_BillDetail"]'
-            + '/label[contains(text(), "Sponsors:")]'
-            + "/following-sibling::div[1]/p/a"
+            "//main/div/div/div[2]/div[4]"
+            + '/div/b[contains(text(), "Sponsors:")]'
+            + "/following-sibling::div[1]/div/a"
         )
         for link in sponsor_links:
             if link.attrib["href"].startswith("https://sdlegislature.gov/Legislators/"):
@@ -122,12 +128,9 @@ class SDBillScraper(Scraper, LXMLMixin):
         actor = chamber
         use_row = False
 
-        for row in page.xpath("//table[contains(@id, 'tblBillActions')]//tr"):
-            # Some tables have null rows, that are just `<tr></tr>`
-            # Eg: sdlegislature.gov/Legislative_Session/Bills/Bill.aspx?Bill=1005&Session=2018
-            if row.text_content() == "":
-                self.debug("Skipping action table row that is completely empty")
-                continue
+        for row in page.xpath(
+            "//main/div/div/div[2]/div[7]/div[1]/div/div/div/table/tbody/tr"
+        ):
 
             if "Date" in row.text_content() and "Action" in row.text_content():
                 use_row = True
@@ -194,7 +197,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                 else:
                     actor = "lower"
 
-            date = row.xpath("string(td[1])").strip()
+            date = row.xpath("string(td[1]/div[2]/span/a)").strip()
             match = re.match(r"\d{2}/\d{2}/\d{4}", date)
             if not match:
                 self.warning("Bad date: %s" % date)

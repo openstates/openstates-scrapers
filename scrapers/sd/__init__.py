@@ -1,5 +1,5 @@
-import scrapelib
-import lxml.html
+# import scrapelib
+# import lxml.html
 import json
 import requests
 
@@ -123,18 +123,28 @@ class SouthDakota(State):
             "start_date": "2020-10-05",
             "end_date": "2020-10-05",
         },
+        {
+            "_scraped_name": "2021",
+            "identifier": "2021",
+            "name": "2021 Regular Session",
+            "start_date": "2021-01-12",
+            "end_date": "2021-03-29",
+        },
     ]
-    ignored_scraped_sessions = [
-
-    ]
+    ignored_scraped_sessions = []
 
     def get_session_list(self):
-        api_url = 'https://sdlegislature.gov/api/Sessions/'
+        api_url = "https://sdlegislature.gov/api/Sessions/"
         data = json.loads(requests.get(api_url).content)
 
         sessions = []
         for row in data:
-            if int(row['Year'][0:4]) > 2008:
-                sessions.append(row['Year'].strip())
+            if int(row["Year"][0:4]) > 2008:
+                sessions.append(row["Year"].strip())
 
         return sessions
+
+    # This may need to be tweaked, example 2020 session, since the old site used the initial url:
+    # http://sdlegislature.gov/Legislative_Session/Bills/Bill.aspx?Bill=1008&Session=2020
+    # and the new site uses the SessionId from the api_url above:
+    # https://sdlegislature.gov/#/Session/Bills/44
