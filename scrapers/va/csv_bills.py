@@ -157,6 +157,7 @@ class VaCSVBillScraper(Scraper):
             self._bills[row["Bill_id"]].append(
                 {
                     "bill_id": row["Bill_id"],
+                    "patron_name": row["Patron_name"],
                     "bill_description": row["Bill_description"],
                     "passed": row["Passed"],
                     "failed": row["Failed"],
@@ -243,6 +244,13 @@ class VaCSVBillScraper(Scraper):
                 long_bill_id = bill_id[0:2] + "0" + bill_id[-3:]
 
             # Sponsors
+            if long_bill_id not in self._sponsors:
+                b.add_sponsorship(
+                    bill["patron_name"],
+                    classification="primary",
+                    entity_type="person",
+                    primary=True,
+                )
             for spon in self._sponsors[long_bill_id]:
                 sponsor_type = spon["patron_type"]
                 if sponsor_type.endswith("Chief Patron"):
