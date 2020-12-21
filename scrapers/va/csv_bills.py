@@ -50,6 +50,7 @@ class VaCSVBillScraper(Scraper):
     _members = defaultdict(list)
     _sponsors = defaultdict(list)
     _amendments = defaultdict(list)
+    _fiscal_notes = defaultdict(list)
     _history = defaultdict(list)
     _votes = defaultdict(list)
     _bills = defaultdict(list)
@@ -94,6 +95,15 @@ class VaCSVBillScraper(Scraper):
                 {"bill_number": row[0].strip(), "txt_docid": row[1].strip()}
             )
         self.warning("Total Amendments Loaded: " + str(len(self._amendments)))
+
+    def load_fiscal_notes(self):
+        resp = self.get(self._url_base + "FiscalImpactStatements.csv").text
+        reader = csv.reader(resp.splitlines(), delimiter=",")
+
+        # ['BILL_NUMBER', 'HST_REFID']
+        for row in reader:
+            self._fiscal_notes[row[0].strip()].append({"refid": row[1].strip()})
+        self.warning("Total Fiscal Notes Loaded: " + str(len(self._fiscal_notes)))
 
     def load_history(self):
         resp = self.get(self._url_base + "HISTORY.CSV").text
@@ -210,6 +220,7 @@ class VaCSVBillScraper(Scraper):
         self.load_members()
         self.load_sponsors()
         self.load_amendments()
+        self.load_fiscal_notes()
         self.load_history()
         self.load_summaries()
         self.load_votes()
@@ -277,6 +288,15 @@ class VaCSVBillScraper(Scraper):
                 )
                 b.add_document_link(
                     "Amendment: " + amend["txt_docid"], doc_link, media_type="text/html"
+                )
+
+            # fiscal notes
+            for fn in self._fiscal_notes[long_bill_id]:
+                doc_link = bill_url_base + f"legp604.exe?{session_id}+oth+{fn['refid']}"
+                b.add_document_link(
+                    "Fiscal Impact Statement: " + fn["refid"],
+                    doc_link.replace(".PDF", "+PDF"),
+                    media_type="application/pdf",
                 )
 
             # actions with 8-digit number followed by D are version titles too
