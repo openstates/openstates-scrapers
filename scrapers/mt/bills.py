@@ -265,7 +265,7 @@ class MTBillScraper(Scraper, LXMLMixin):
         tabledata = self._get_tabledata(page)
 
         # Add sponsor info.
-        if "primary sponsor:" in tabledata:
+        if "primary sponsor:" in tabledata and tabledata["primary sponsor:"][0]:
             bill.add_sponsorship(
                 tabledata["primary sponsor:"][0],
                 classification="primary",
@@ -277,23 +277,26 @@ class MTBillScraper(Scraper, LXMLMixin):
             # used for proposed bills aka unintroducd aka LC bills
             # grab everything before " (R) SD 30" in "John Esp (R) SD 30"
             sponsor_name_raw = re.search(r"(.+) \(", list_sponsor)[1]
-            bill.add_sponsorship(
-                " ".join(
-                    sponsor_name_raw.split()
-                ),  # eliminate extra whitespace in middle of name parts
-                classification="primary",
-                entity_type="person",
-                primary=True,
-            )
+            sponsor_name_raw = " ".join(
+                sponsor_name_raw.split()
+            )  # eliminate extra whitespace in middle of name parts
+            if sponsor_name_raw:
+                bill.add_sponsorship(
+                    sponsor_name_raw,
+                    classification="primary",
+                    entity_type="person",
+                    primary=True,
+                )
         elif "lc" in _bill_id:
             # probably the sponsor is an organization eg a committee, because LC bills can be sponsored by orgs
             # so just use the sponsor as listed from the index page
-            bill.add_sponsorship(
-                list_sponsor,
-                classification="primary",
-                entity_type="organization",
-                primary=True,
-            )
+            if list_sponsor:
+                bill.add_sponsorship(
+                    list_sponsor,
+                    classification="primary",
+                    entity_type="organization",
+                    primary=True,
+                )
 
         # A various plus fields MT provides.
         plus_fields = [
