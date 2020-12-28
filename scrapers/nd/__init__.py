@@ -49,9 +49,15 @@ class NorthDakota(State):
             "start_date": "2019-01-03",
             "end_date": "2019-04-26",
         },
+        {
+            "_scraped_name": "67th Legislative Assembly (2021-22)",
+            "identifier": "67",
+            "name": "67th Legislative Assembly (2021-2022)",
+            "start_date": "2021-01-02",
+            "end_date": "2021-04-30",
+        },
     ]
     ignored_scraped_sessions = [
-        "67th Legislative Assembly (2021-22)",
         "61st Legislative Assembly (2009-10)",
         "60th Legislative Assembly (2007-08)",
         "59th Legislative Assembly (2005-06)",
