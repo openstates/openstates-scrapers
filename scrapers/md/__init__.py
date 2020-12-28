@@ -160,15 +160,14 @@ class Maryland(State):
             "start_date": "2020-01-08",
             "end_date": "2020-03-16",
         },
-        # TODO: Enable once filing starts.
-        # {
-        #     "_scraped_name": "2021 Regular Session",
-        #     "classification": "primary",
-        #     "identifier": "2021",
-        #     "name": "2021 Regular Session",
-        #     "start_date": "2021-01-12",
-        #     "end_date": "2021-04-12",
-        # },
+        {
+            "_scraped_name": "2021 Regular Session",
+            "classification": "primary",
+            "identifier": "2021",
+            "name": "2021 Regular Session",
+            "start_date": "2021-01-12",
+            "end_date": "2021-04-12",
+        },
     ]
     ignored_scraped_sessions = [
         "2021 Regular Session",
