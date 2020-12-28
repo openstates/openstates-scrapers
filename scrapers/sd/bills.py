@@ -31,7 +31,7 @@ class SDBillScraper(Scraper, LXMLMixin):
             ):
                 bill_id = link.text.strip().replace(u"\xa0", " ")
 
-                title = link.xpath("string(../../td[2])").strip()
+                title = link.xpath("string(../../td[2]/div[1]/span)").strip()
 
                 yield from self.scrape_bill(
                     chamber, session, bill_id, title, link.attrib["href"]
@@ -60,29 +60,20 @@ class SDBillScraper(Scraper, LXMLMixin):
         )
         bill.add_source(url)
 
-        version_rows = page.xpath(
-            "//main/div/div/div[2]/div[7]/div[2]/div[2]/div/div/table/tbody/tr"
-        )
+        version_rows = page.xpath("//div[2]/div/div/table/tbody/tr")
         assert len(version_rows) > 0
         for row in version_rows:
-            (date,) = row.xpath(
-                './td[1]/div[@class="v-data-table__mobile-row__cell"]/span/text()'
-            )
+            # dates are in first cell, need class to differentiate header from cell
+            (date,) = row.xpath("./td[1]/span/text()")
             date = date.strip()
             date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
 
-            (html_note,) = row.xpath(
-                './td[2]/div[@class="v-data-table__mobile-row__cell"]/a/text()'
-            )
-            (html_link,) = row.xpath(
-                './td[2]/div[@class="v-data-table__mobile-row__cell"]/a/@href'
-            )
-            (pdf_note,) = row.xpath(
-                './td[3]/div[@class="v-data-table__mobile-row__cell"]/a/text()'
-            )
-            (pdf_link,) = row.xpath(
-                './td[2]/div[@class="v-data-table__mobile-row__cell"]/a/@href'
-            )
+            # html in second cell
+            (html_note,) = row.xpath("./td[2]/a/text()")
+            (html_link,) = row.xpath("./td[2]/a/@href")
+            # pdf in third cell
+            (pdf_note,) = row.xpath("./td[3]/a/text()")
+            (pdf_link,) = row.xpath("./td[3]/a/@href")
 
             assert html_note == pdf_note
             note = html_note
@@ -102,11 +93,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                 on_duplicate="ignore",
             )
 
-        sponsor_links = page.xpath(
-            "//main/div/div/div[2]/div[4]"
-            + '/div/b[contains(text(), "Sponsors:")]'
-            + "/following-sibling::div[1]/div/a"
-        )
+        sponsor_links = page.xpath("//div[2]/div[4]/div[2]/div/a")
         for link in sponsor_links:
             if link.attrib["href"].startswith("https://sdlegislature.gov/Legislators/"):
                 sponsor_type = "person"
@@ -128,9 +115,7 @@ class SDBillScraper(Scraper, LXMLMixin):
         actor = chamber
         use_row = False
 
-        for row in page.xpath(
-            "//main/div/div/div[2]/div[7]/div[1]/div/div/div/table/tbody/tr"
-        ):
+        for row in page.xpath("//div[1]/div/div/div/table/tbody/tr"):
 
             if "Date" in row.text_content() and "Action" in row.text_content():
                 use_row = True
@@ -138,7 +123,9 @@ class SDBillScraper(Scraper, LXMLMixin):
             elif not use_row:
                 continue
 
-            action = row.xpath("string(td[2])").strip()
+            action = row.xpath("./td[2]")
+            # fix this
+            # action = span.text.strip() for span in re.find_all('span', actionRow)
 
             atypes = []
             if action.startswith("First read"):
@@ -167,8 +154,9 @@ class SDBillScraper(Scraper, LXMLMixin):
             if "Motion to amend, Passed Amendment" in action:
                 atypes.append("amendment-introduction")
                 atypes.append("amendment-passage")
-                if row.xpath('td[2]/a[contains(@href,"Amendment.aspx")]'):
-                    amd = row.xpath('td[2]/a[contains(@href,"Amendment.aspx")]')[0]
+                # needs updating
+                if row.xpath('td[2]/a[contains(@href,"api/Documents")]'):
+                    amd = row.xpath('td[2]/a[contains(@href,"api/Documents")]')[0]
                     version_name = amd.xpath("string(.)")
                     version_url = amd.xpath("@href")[0]
                     if "htm" in version_url:
@@ -204,7 +192,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                 continue
             date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
 
-            for link in row.xpath("td[2]/a[contains(@href, 'RollCall')]"):
+            for link in row.xpath("td[2]/a[contains(@href, 'Vote')]"):
                 yield from self.scrape_vote(bill, date, link.attrib["href"])
 
             if action:
