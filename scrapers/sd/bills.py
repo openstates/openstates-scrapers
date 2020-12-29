@@ -63,7 +63,7 @@ class SDBillScraper(Scraper, LXMLMixin):
         version_rows = page.xpath("//div[2]/div/div/table/tbody/tr")
         assert len(version_rows) > 0
         for row in version_rows:
-            # dates are in first cell, need class to differentiate header from cell
+            # dates are in first cell
             (date,) = row.xpath("./td[1]/span/text()")
             date = date.strip()
             date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
@@ -113,15 +113,8 @@ class SDBillScraper(Scraper, LXMLMixin):
             )
 
         actor = chamber
-        use_row = False
 
         for row in page.xpath("//div[1]/div/div/div/table/tbody/tr"):
-
-            if "Date" in row.text_content() and "Action" in row.text_content():
-                use_row = True
-                continue
-            elif not use_row:
-                continue
 
             action = row.xpath("./td[2]")
             # fix this
@@ -207,7 +200,7 @@ class SDBillScraper(Scraper, LXMLMixin):
         page = self.get(url).text
         page = lxml.html.fromstring(page)
 
-        header = page.xpath("string(//h3[contains(@id, 'hdVote')])")
+        header = page.xpath("string(//main/div/div/div[2]/div[1]/div)")
 
         if "No Bill Action" in header:
             self.warning("bad vote header -- skipping")
@@ -226,12 +219,10 @@ class SDBillScraper(Scraper, LXMLMixin):
         motion = ", ".join(header.split(", ")[2:]).strip()
         if motion:
             # If we can't detect a motion, skip this vote
-            yes_count = int(page.xpath("string(//span[contains(@id, 'tdAyes')])"))
-            no_count = int(page.xpath("string(//span[contains(@id, 'tdNays')])"))
-            excused_count = int(
-                page.xpath("string(//span[contains(@id, 'tdExcused')])")
-            )
-            absent_count = int(page.xpath("string(//span[contains(@id, 'tdAbsent')])"))
+            yes_count = int(page.xpath("string(//div[2]/div/span[1]/span)"))
+            no_count = int(page.xpath("string(//div[2]/div/span[2]/span)"))
+            excused_count = int(page.xpath("string(//div[2]/div/span[3]/span)"))
+            absent_count = int(page.xpath("string(//div[2]/div/span[4]/span)"))
 
             passed = yes_count > no_count
 
@@ -266,7 +257,7 @@ class SDBillScraper(Scraper, LXMLMixin):
             vote.set_count("excused", excused_count)
             vote.set_count("absent", absent_count)
 
-            for td in page.xpath("//table[@id='tblVoteTotals']/tbody/tr/td"):
+            for td in page.xpath("//div/div/div[2]/div[3]/div/div/div"):
                 option_or_person = td.text.strip()
                 if option_or_person in ("Aye", "Yea"):
                     vote.yes(td.getprevious().text.strip())
