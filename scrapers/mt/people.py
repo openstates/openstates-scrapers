@@ -91,18 +91,19 @@ class MTPersonScraper(Scraper):
         )
 
         legislator = Person(
-            name=name, district=district, party=party, primary_org=chamber
+            name=name.title(), district=district, party=party, primary_org=chamber
         )
 
-        legislator.add_contact_detail(
-            type="address", value=address, note="Capitol Office"
-        )
-        if phone is not None:
+        if address:
+            legislator.add_contact_detail(
+                type="address", value=address, note="Capitol Office"
+            )
+        if phone:
             legislator.add_contact_detail(
                 type="voice", value=phone, note="Capitol Office"
             )
 
-        if email is not None:
+        if email:
             legislator.add_contact_detail(type="email", value=email, note="E-mail")
 
         legislator.add_link(details_url)
