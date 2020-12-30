@@ -347,8 +347,8 @@ class MDBillScraper(Scraper):
     def scrape_bill_sponsors(self, bill, page):
         # TODO: Committees
         sponsors = page.xpath(
-            '//dt[contains(text(), "Sponsored by")]/following-sibling::dd[1]/text()'
-        )[0].strip()
+            '//dt[contains(text(), "Sponsored by")]/following-sibling::dd[1]'
+        )[0].text_content().strip()
 
         sponsors = sponsors.replace("Delegates ", "")
         sponsors = sponsors.replace("Delegate ", "")
