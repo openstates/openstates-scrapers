@@ -22,6 +22,12 @@ class Us(Jurisdiction):
          "start_date": "2019-01-03",
          "end_date": "2021-01-03"
          },
+        {"classification": "primary",
+         "identifier": "117",
+         "name": "117th Congress",
+         "start_date": "2021-01-03",
+         "end_date": "2023-01-02"
+         },         
     ]
     ignored_scraped_sessions = []
 
