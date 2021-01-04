@@ -1,7 +1,5 @@
 import logging
 from utils import url_xpath, State
-
-from .people import VaPersonScraper
 from .csv_bills import VaCSVBillScraper
 
 
@@ -12,7 +10,7 @@ settings = {"SCRAPELIB_RPM": 40}
 
 
 class Virginia(State):
-    scrapers = {"people": VaPersonScraper, "bills": VaCSVBillScraper}
+    scrapers = {"bills": VaCSVBillScraper}
     legislative_sessions = [
         {
             "_scraped_name": "2010 Session",
