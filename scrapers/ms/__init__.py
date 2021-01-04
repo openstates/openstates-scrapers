@@ -209,6 +209,14 @@ class Mississippi(State):
             "start_date": "2020-01-07",
             "end_date": "2020-05-10",
         },
+        {
+            "_scraped_name": "2021 Regular Session",
+            "classification": "primary",
+            "identifier": "2021",
+            "name": "2021 Regular Session",
+            "start_date": "2021-01-05",
+            "end_date": "2021-03-15",
+        },
     ]
     ignored_scraped_sessions = [
         "2008 First Extraordinary Session",
