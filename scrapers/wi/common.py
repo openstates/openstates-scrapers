@@ -16,6 +16,7 @@ SESSION_TERMS = {
     "January 2018 Special Session": "2017-2018",
     "March 2018 Special Session": "2017-2018",
     "2019": "2019-2020",
+    "2021": "2021-2022",
 }
 
 
