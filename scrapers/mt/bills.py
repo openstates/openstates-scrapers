@@ -156,6 +156,7 @@ class MTBillScraper(Scraper, LXMLMixin):
         pdf_urls = set(doc.xpath('//a/@href[contains(., "billpdf")]'))
         if len(pdf_urls) > 0:
             url = pdf_urls.pop()
+            url = url.replace('http:', 'https:')
             bill.add_version_link(version_name, url, media_type="application/pdf")
 
         new_versions_url = doc.xpath('//a[text()="Previous Version(s)"]/@href')
@@ -172,6 +173,7 @@ class MTBillScraper(Scraper, LXMLMixin):
         for link in page.xpath('//div[contains(@class,"container white")]/a'):
             link_text = link.xpath("text()")[0].strip()
             link_url = link.xpath("@href")[0]
+            link_url = link_url.replace('http:', 'https:')
             bill.add_version_link(
                 link_text, link_url, media_type="application/pdf", on_duplicate="ignore"
             )
@@ -431,6 +433,7 @@ class MTBillScraper(Scraper, LXMLMixin):
                     name += " (clerical corrections made)"
                 try:
                     url = version_urls.pop(str(next(count)))
+                    url = url.replace('http:', 'https:')
                 except KeyError:
                     msg = "No url found for version: %r" % name
                     self.warning(msg)
@@ -442,6 +445,7 @@ class MTBillScraper(Scraper, LXMLMixin):
 
                 try:
                     url = version_urls["x" + str(next(xcount))]
+                    url = url.replace('http:', 'https:')
                 except KeyError:
                     continue
 
