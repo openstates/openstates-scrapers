@@ -189,22 +189,28 @@ class INBillScraper(Scraper):
         # ex: stageVerbose being House Bill (H)
         # and printVersionName being HB1189.03.COMS and the link
         # being for HB1189.03.COMS which is the Senate bill
+        # some example bills in 2020 are HB1189, SB241, SB269, HC18
         versions_match = True
         # get version chamber and api name, check chamber
         version_chamber = version["printVersionName"][-1]
         api_version_name = version["stageVerbose"]
+        # check any versions not enrolled or introduced which are correct
         api_name_chamber = re.search(
-            r"^(?:House|Senate) Bill \((.)\)", api_version_name
+            r"^(?:Engrossed |)(?:House|Senate) (?:Bill|Resolution) \((.)\)",
+            api_version_name,
         )
         if version_chamber != api_name_chamber[1]:
             versions_match = False
 
         link = proxy["url"] + version["link"]
+        # if the chambers don't match, swap the chamber on version name
+        # ex: Engrossed Senate Bill (S) to Engrossed Senate Bill (H)
         name = (
             api_version_name
             if versions_match
             else api_version_name[:-2] + version_chamber + api_version_name[-1:]
         )
+
         if link not in urls_seen:
             urls_seen.append(link)
             update_date = version["updated"]
