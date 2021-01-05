@@ -175,7 +175,7 @@ class OHBillScraper(Scraper):
                         bill_id.lower().replace(" ", ""),
                     )
                 )
-                data = self.get(bill_api_url).json()
+                data = self.get(bill_api_url, verify=False).json()
                 if len(data["items"]) == 0:
                     self.logger.warning(
                         "Data for bill {bill_id} has empty 'items' array,"
@@ -457,7 +457,7 @@ class OHBillScraper(Scraper):
         legislators = {}
         for chamber in ["House", "Senate"]:
             url = base_url + "chamber/{chamber}/legislators?per_page=100"
-            doc = self.get(url.format(chamber=chamber))
+            doc = self.get(url.format(chamber=chamber), verify=False)
             leg_json = doc.json()
             for leg in leg_json["items"]:
                 if leg["med_id"]:
