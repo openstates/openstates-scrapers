@@ -199,8 +199,9 @@ class INBillScraper(Scraper):
             r"^(?:Engrossed |)(?:House|Senate) (?:Bill|Resolution) \((.)\)",
             api_version_name,
         )
-        if version_chamber != api_name_chamber[1]:
-            versions_match = False
+        if api_name_chamber is not None:
+            if version_chamber != api_name_chamber[1]:
+                versions_match = False
 
         link = proxy["url"] + version["link"]
         # if the chambers don't match, swap the chamber on version name
