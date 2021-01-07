@@ -97,12 +97,14 @@ class CTPersonScraper(Scraper):
                     email = None
                 else:
                     raise ValueError("Problematic email found: {}".format(email))
-            leg.add_contact_detail(
-                type="address", value=office_address, note="Capitol Office"
-            )
-            leg.add_contact_detail(
-                type="voice", value=row["capitol phone"], note="Capitol Office"
-            )
+            if office_address.strip():
+                leg.add_contact_detail(
+                    type="address", value=office_address, note="Capitol Office"
+                )
+            if row["capitol phone"].strip():
+                leg.add_contact_detail(
+                    type="voice", value=row["capitol phone"], note="Capitol Office"
+                )
             if email:
                 leg.add_contact_detail(type="email", value=email)
 
