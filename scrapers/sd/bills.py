@@ -116,9 +116,13 @@ class SDBillScraper(Scraper, LXMLMixin):
 
         for row in page.xpath("//div[1]/div/div/div/table/tbody/tr"):
 
-            action = row.xpath("./td[2]")
-            # fix this
-            # action = span.text.strip() for span in re.find_all('span', actionRow)
+            action_row = row.xpath("./td[2]")
+            # Fix me!
+            # action is now spans inside of the row, sometimes with spans inside
+            # pull text and append to string
+            action = ""
+            for span in action_row:
+                action += span.strip
 
             atypes = []
             if action.startswith("First read"):
