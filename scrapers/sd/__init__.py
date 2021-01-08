@@ -125,7 +125,7 @@ class SouthDakota(State):
         },
         {
             "_scraped_name": "2021",
-            "identifier": "2021",
+            "identifier": "44",
             "name": "2021 Regular Session",
             "start_date": "2021-01-12",
             "end_date": "2021-03-29",

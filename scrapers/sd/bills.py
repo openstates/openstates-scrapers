@@ -14,7 +14,7 @@ class SDBillScraper(Scraper, LXMLMixin):
             session = self.latest_session()
             self.info("no session specified, using %s", session)
 
-        url = "https://sdlegislature.gov/#/Session/Bills/{}".format(session)
+        url = "https://sdlegislature.gov/Session/Bills/{}".format(session)
         chambers = [chambers] if chambers else ["upper", "lower"]
 
         for chamber in chambers:
