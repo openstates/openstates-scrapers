@@ -255,6 +255,7 @@ class MABillScraper(Scraper):
 
         # yield back votes and bill
         # XXX  yield from
+        # DISABLED 2021-01-08 pending site HTML change
         # self.scrape_actions(bill, bill_url, session)
         yield bill
 
@@ -272,7 +273,6 @@ class MABillScraper(Scraper):
             # # if row.xpath('td[2]/text()'):
             #     cosponsor_district = row.xpath('td[2]/text()')[0]
 
-            print(cosponsor_name)
             # Filter the sponsor out of the petitioners list
             if not any(
                 sponsor["name"] == cosponsor_name for sponsor in bill.sponsorships
