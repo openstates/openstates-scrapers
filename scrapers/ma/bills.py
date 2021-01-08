@@ -255,7 +255,7 @@ class MABillScraper(Scraper):
 
         # yield back votes and bill
         # XXX  yield from
-        self.scrape_actions(bill, bill_url, session)
+        # self.scrape_actions(bill, bill_url, session)
         yield bill
 
     def scrape_cosponsors(self, bill, bill_url):
@@ -267,11 +267,12 @@ class MABillScraper(Scraper):
         for row in cosponsor_rows:
             # careful, not everyone is a linked representative
             # https://malegislature.gov/Bills/189/S740/CoSponsor
-            cosponsor_name = row.xpath("string(td[1])")
+            cosponsor_name = row.xpath("string(td[1])").strip()
             # cosponsor_district = ''
             # # if row.xpath('td[2]/text()'):
             #     cosponsor_district = row.xpath('td[2]/text()')[0]
 
+            print(cosponsor_name)
             # Filter the sponsor out of the petitioners list
             if not any(
                 sponsor["name"] == cosponsor_name for sponsor in bill.sponsorships
