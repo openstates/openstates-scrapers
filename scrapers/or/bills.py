@@ -69,6 +69,10 @@ class ORBillScraper(Scraper):
             )
             bill.add_abstract(measure["MeasureSummary"].strip(), note="summary")
 
+            if measure["RelatingTo"] is None:
+                self.warning("No bill title for {}, skipping.".format(bid))
+                continue
+
             for sponsor in measure["MeasureSponsors"]:
                 legislator_code = sponsor["LegislatoreCode"]  # typo in API
                 if legislator_code:
