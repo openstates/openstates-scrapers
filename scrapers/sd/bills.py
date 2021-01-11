@@ -7,6 +7,8 @@ from openstates.scrape.base import ScrapeError
 
 from utils import LXMLMixin
 
+SESSION_IDS = {"2021": "44"}
+
 
 class SDBillScraper(Scraper, LXMLMixin):
     def scrape(self, chambers=None, session=None):
@@ -14,7 +16,7 @@ class SDBillScraper(Scraper, LXMLMixin):
             session = self.latest_session()
             self.info("no session specified, using %s", session)
 
-        url = "https://sdlegislature.gov/Session/Bills/{}".format(session)
+        url = f"https://sdlegislature.gov/Session/Bills/{SESSION_IDS[session]}"
         chambers = [chambers] if chambers else ["upper", "lower"]
 
         for chamber in chambers:
@@ -29,7 +31,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                 "//a[contains(@href, '/Session/Bill/') and"
                 " starts-with(., '%s')]" % bill_abbr
             ):
-                bill_id = link.text.strip().replace(u"\xa0", " ")
+                bill_id = link.text.strip().replace("\xa0", " ")
 
                 title = link.xpath("string(../../td[2]/div[1]/span)").strip()
 
