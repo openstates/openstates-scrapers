@@ -16,7 +16,10 @@ class SDBillScraper(Scraper, LXMLMixin):
             session = self.latest_session()
             self.info("no session specified, using %s", session)
 
-        url = f"https://sdlegislature.gov/Session/Bills/{SESSION_IDS[session]}"
+        # removing Light here adds more info, maybe useful
+        url = (
+            f"https://sdlegislature.gov/api/Bills/Session/Light/{SESSION_IDS[session]}"
+        )
         chambers = [chambers] if chambers else ["upper", "lower"]
 
         for chamber in chambers:
@@ -25,19 +28,20 @@ class SDBillScraper(Scraper, LXMLMixin):
             else:
                 bill_abbr = "H"
 
-            page = self.lxmlize(url)
+            data = self.get(url).json()
+            for item in data:
+                bill_id = item["BillType"] + item["BillNumber"]
+                title = item["Title"]
+                link = f"https://sdlegislature.gov/Session/Bill/{item['BillId']}"
 
-            for link in page.xpath(
-                "//a[contains(@href, '/Session/Bill/') and"
-                " starts-with(., '%s')]" % bill_abbr
-            ):
-                bill_id = link.text.strip().replace("\xa0", " ")
+                # skip bills from opposite chamber
+                if not bill_id.startswith(bill_abbr):
+                    continue
 
-                title = link.xpath("string(../../td[2]/div[1]/span)").strip()
-
-                yield from self.scrape_bill(
-                    chamber, session, bill_id, title, link.attrib["href"]
-                )
+                # TODO: remove this and replace it with something that hits the appropriate
+                # API endpoints for item['BillId']
+                print(bill_id, link)
+                yield from self.scrape_bill(chamber, session, bill_id, title, link)
 
     def scrape_bill(self, chamber, session, bill_id, title, url):
         page = self.lxmlize(url)
