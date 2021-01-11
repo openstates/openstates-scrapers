@@ -144,8 +144,20 @@ class NHBillScraper(Scraper):
                         )
                     )
 
+                    pdf_version_url = (
+                        "http://www.gencourt.state.nh.us/bill_status/"
+                        "billText.aspx?sy={}&id={}&txtFormat=pdf&v=current".format(
+                            session, version_id
+                        )
+                    )
+                    latest_version_name = "latest version"
                     self.bills[lsr].add_version_link(
-                        note="latest version", url=version_url, media_type="text/html"
+                        note=latest_version_name, url=version_url, media_type="text/html"
+                    )
+                    self.bills[lsr].add_version_link(
+                        note=latest_version_name,
+                        url=pdf_version_url,
+                        media_type="application/pdf",
                     )
 
                 # http://gencourt.state.nh.us/bill_status/billtext.aspx?sy=2017&txtFormat=amend&id=2017-0464S
@@ -273,7 +285,10 @@ class NHBillScraper(Scraper):
     def scrape_version_ids(self):
 
         for line in (
-            self.get("http://gencourt.state.nh.us/dynamicdatafiles/LsrsOnly.txt")
+            self.get("http://gencourt.state.nh.us/dynamicdatafiles/LsrsOnly.txt?x={}".format(
+                    self.cachebreaker
+                )
+            )
             .content.decode("utf-8")
             .split("\n")
         ):
@@ -291,7 +306,10 @@ class NHBillScraper(Scraper):
 
     def scrape_amendments(self):
         for line in (
-            self.get("http://gencourt.state.nh.us/dynamicdatafiles/Docket.txt")
+            self.get("http://gencourt.state.nh.us/dynamicdatafiles/Docket.txt?x={}".format(
+                    self.cachebreaker
+                )
+            )
             .content.decode("utf-8")
             .split("\n")
         ):

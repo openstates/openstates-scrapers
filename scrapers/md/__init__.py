@@ -1,6 +1,5 @@
 from utils import url_xpath, State
 from .bills import MDBillScraper
-from .people import MDPersonScraper
 from .events import MDEventScraper
 from .votes import MDVoteScraper
 
@@ -10,7 +9,6 @@ from .votes import MDVoteScraper
 class Maryland(State):
     scrapers = {
         "bills": MDBillScraper,
-        "people": MDPersonScraper,
         "events": MDEventScraper,
         "votes": MDVoteScraper,
         # 'committees': MDCommitteeScraper,
@@ -159,6 +157,14 @@ class Maryland(State):
             "name": "2020 Regular Session",
             "start_date": "2020-01-08",
             "end_date": "2020-03-16",
+        },
+        {
+            "_scraped_name": "2021 Regular Session",
+            "classification": "primary",
+            "identifier": "2021",
+            "name": "2021 Regular Session",
+            "start_date": "2021-01-12",
+            "end_date": "2021-04-12",
         },
     ]
     ignored_scraped_sessions = [

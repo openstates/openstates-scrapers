@@ -1,5 +1,4 @@
 from utils import url_xpath, State
-from .people import MTPersonScraper
 from .bills import MTBillScraper
 
 # from .committees import MTCommitteeScraper
@@ -7,7 +6,6 @@ from .bills import MTBillScraper
 
 class Montana(State):
     scrapers = {
-        "people": MTPersonScraper,
         # 'committees': MTCommitteeScraper,
         "bills": MTBillScraper,
     }
@@ -47,17 +45,15 @@ class Montana(State):
             "start_date": "2019-01-07",
             "end_date": "2019-04-25",
         },
-        # TODO: Restore when they turn some LC's into bills
-        # {
-        #     "_scraped_name": "20211",
-        #     "identifier": "2021",
-        #     "name": "2021 Regular Session",
-        #     "start_date": "2021-01-04",
-        #     "end_date": "2021-04-25",
-        # },
+        {
+            "_scraped_name": "20211",
+            "identifier": "2021",
+            "name": "2021 Regular Session",
+            "start_date": "2021-01-04",
+            "end_date": "2021-04-25",
+        },
     ]
     ignored_scraped_sessions = [
-        "20211",
         "20172",
         "20091",
         "20072",

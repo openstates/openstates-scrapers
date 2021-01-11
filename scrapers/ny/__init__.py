@@ -60,6 +60,13 @@ class NewYork(State):
             "start_date": "2019-01-03",
             "end_date": "2020-12-31",
         },
+        {
+            "_scraped_name": "2021",
+            "identifier": "2021-2022",
+            "name": "2021 Regular Session",
+            "start_date": "2021-01-06",
+            "end_date": "2022-12-31",
+        },
     ]
     ignored_scraped_sessions = []
 

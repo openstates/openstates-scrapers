@@ -182,18 +182,34 @@ class Minnesota(State):
             # Just a guess. TODO: set after end of special
             "end_date": "2020-09-16",
         },
-        #         {
-        #             "_scraped_name": "92nd Legislature, 2021-2022",
-        #             "classification": "primary",
-        #             "identifier": "2021-2022",
-        #             "name": "2021-2022 Regular Session",
-        #             "start_date": "2021-01-16",
-        #             # Just a guess. TODO: set after schedule is posted
-        #             "end_date": "2021-06-01",
-        #         },
+        {
+            "_scraped_name": "91st Legislature, 2020 6th Special Session",
+            "classification": "special",
+            "identifier": "2020s6",
+            "name": "2020, Sixth Special Session",
+            "start_date": "2020-11-12",
+            "end_date": "2020-11-12",
+        },
+        {
+            "_scraped_name": "91st Legislature, 2020 7th Special Session",
+            "classification": "special",
+            "identifier": "2020s7",
+            "name": "2020, Seventh Special Session",
+            "start_date": "2020-12-12",
+            # Just a guess. TODO: set after end of special
+            "end_date": "2020-12-13",
+        },
+        {
+            "_scraped_name": "92nd Legislature, 2021-2022",
+            "classification": "primary",
+            "identifier": "2021-2022",
+            "name": "2021-2022 Regular Session",
+            "start_date": "2021-01-05",
+            # Just a guess. TODO: set after schedule is posted
+            "end_date": "2021-06-01",
+        },
     ]
     ignored_scraped_sessions = [
-        "92nd Legislature, 2021-2022",
         "85th Legislature, 2007-2008",
         "85th Legislature, 2007 1st Special Session",
         "84th Legislature, 2005-2006",
@@ -217,4 +233,5 @@ class Minnesota(State):
         return url_xpath(
             "https://www.revisor.mn.gov/bills/" "status_search.php?body=House",
             '//select[@name="session"]/option/text()',
+            False,  # SSL verification failing in MN due to missing intermediate cert
         )

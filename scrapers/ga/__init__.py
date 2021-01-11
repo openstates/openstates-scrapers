@@ -1,7 +1,6 @@
 from utils import State
 from .util import get_client, backoff
 from .bills import GABillScraper
-from .people import GAPersonScraper
 
 # from .committees import GACommitteeScraper
 
@@ -9,7 +8,6 @@ from .people import GAPersonScraper
 class Georgia(State):
     scrapers = {
         "bills": GABillScraper,
-        "people": GAPersonScraper,
         # 'committee': GACommitteeScraper,
     }
     legislative_sessions = [
@@ -68,6 +66,13 @@ class Georgia(State):
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-14",
             "end_date": "2020-04-03",
+        },
+        {
+            "_scraped_name": "2021-2022 Regular Session",
+            "identifier": "2021_22",
+            "name": "2021-2022 Regular Session",
+            "start_date": "2021-01-11",
+            "end_date": "2021-04-02",
         },
     ]
     ignored_scraped_sessions = [

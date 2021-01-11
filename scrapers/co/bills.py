@@ -12,6 +12,9 @@ from utils import LXMLMixin
 from .actions import Categorizer
 
 CO_URL_BASE = "http://leg.colorado.gov"
+
+# from select#edit-field-sessions on
+# https://leg.colorado.gov/bill-search
 SESSION_DATA_ID = {
     "2016A": "30",
     "2017A": "10171",
@@ -19,6 +22,7 @@ SESSION_DATA_ID = {
     "2018A": "45771",
     "2019A": "57701",
     "2020A": "64656",
+    "2020B": "66691",
 }
 
 BAD_URLS = [
@@ -345,7 +349,11 @@ class COBillScraper(Scraper, LXMLMixin):
                     '//div[@id="page"]//table//tr//p//font[last()]/text()'
                 )[0]
                 date = date.split(" ", 1)[0]
-                date = dt.datetime.strptime(date, "%m/%d/%Y")
+                try:
+                    date = dt.datetime.strptime(date, "%m/%d/%Y")
+                except ValueError:
+                    date = dt.datetime.strptime(date, "%Y-%m-%d")
+
                 if vote_url in BAD_URLS:
                     continue
 

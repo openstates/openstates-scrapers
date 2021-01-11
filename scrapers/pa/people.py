@@ -122,11 +122,11 @@ class PALegislatorScraper(Scraper):
                 address = "\n".join(address)
                 note = "Capitol Office" if "17120" in address else "District Office"
                 person.add_contact_detail(type="address", value=address, note=note)
-                if phone is not None:
+                if phone:
                     person.add_contact_detail(type="voice", value=phone, note=note)
-                if fax is not None:
+                if fax:
                     person.add_contact_detail(type="fax", value=fax, note=note)
-                if email is not None:
+                if email:
                     person.add_contact_detail(type="email", value=email, note=note)
                 offices = True
 

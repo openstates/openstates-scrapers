@@ -1,5 +1,4 @@
 from utils import State
-from .people import OKPersonScraper
 from .bills import OKBillScraper
 
 # from .committees import OKCommitteeScraper
@@ -8,7 +7,6 @@ from .bills import OKBillScraper
 
 class Oklahoma(State):
     scrapers = {
-        "people": OKPersonScraper,
         # 'committees': OKCommitteeScraper,
         # 'events': OKEventScraper,
         "bills": OKBillScraper,
@@ -99,9 +97,15 @@ class Oklahoma(State):
             "start_date": "2019-02-03",
             "end_date": "2020-05-22",
         },
+        {
+            "_scraped_name": "2021 Regular Session",
+            "identifier": "2021",
+            "name": "2021 Regular Session",
+            "start_date": "2021-02-01",
+            "end_date": "2021-05-28",
+        },
     ]
     ignored_scraped_sessions = [
-        "2021 Regular Session",
         "2020 Regular Session (web)",
         "2017 Regular Session",
         "2015 Regular Session",

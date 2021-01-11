@@ -11,7 +11,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 
 from .actions import Categorizer
 
-BLACKLISTED_BILL_IDS = {"128": ("SP 601", "SP 602"), "129": ()}
+BLACKLISTED_BILL_IDS = {"128": ("SP 601", "SP 602"), "129": (), "130": ()}
 
 
 class MEBillScraper(Scraper):
@@ -77,7 +77,10 @@ class MEBillScraper(Scraper):
                 )
                 bill_id = bill.text[:2] + " " + bill.text[2:]
 
-                if bill_id in BLACKLISTED_BILL_IDS[session]:
+                if (
+                    session in BLACKLISTED_BILL_IDS
+                    and bill_id in BLACKLISTED_BILL_IDS[session]
+                ):
                     continue
 
                 # avoid duplicates

@@ -3,46 +3,6 @@ import lxml.html
 from openstates.scrape import Person, Scraper
 
 
-def clean_district(district):
-    mappings = {
-        1: "First",
-        2: "Second",
-        3: "Third",
-        4: "Fourth",
-        5: "Fifth",
-        6: "Sixth",
-        7: "Seventh",
-        8: "Eighth",
-        9: "Ninth",
-        10: "Tenth",
-        11: "Eleventh",
-        12: "Twelfth",
-        13: "Thirteenth",
-        14: "Fourteenth",
-        15: "Fifteenth",
-        16: "Sixteenth",
-        17: "Seventeenth",
-        18: "Eighteenth",
-        19: "Nineteenth",
-        20: "Twentieth",
-    }
-    pieces = re.match(r"(\d+)\w\w\s(.+)", district)
-    if pieces:
-        ordinal, rest = pieces.groups()
-        ordinal = int(ordinal)
-        if ordinal <= 20:
-            ordinal = mappings[ordinal]
-        elif ordinal < 30:
-            ordinal = "Twenty-" + mappings[ordinal - 20]
-        elif ordinal == 30:
-            ordinal = "Thirtieth"
-        elif ordinal < 40:
-            ordinal = "Thirty-" + mappings[ordinal - 30]
-        district = "{} {}".format(ordinal, rest)
-
-    return district
-
-
 class MAPersonScraper(Scraper):
     def scrape(self, chamber=None):
         if not chamber:
@@ -86,7 +46,7 @@ class MAPersonScraper(Scraper):
 
         party, district = root.xpath("//h1/span")[1].text.split("-")
         party = party.strip()
-        district = clean_district(district.strip())
+        district = district.strip()
 
         if "Vacant" in full_name:
             self.info("skipping %s %s", full_name, district)

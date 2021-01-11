@@ -87,27 +87,46 @@ class Connecticut(State):
             "start_date": "2020-02-05",
             "end_date": "2020-05-06",
         },
+        {
+            "_scraped_name": "2021",
+            "identifier": "2021",
+            "name": "2021 Regular Session",
+            "start_date": "2021-01-06",
+            # TODO: fill out actual end date
+            "end_date": "2022-05-06",
+        },
     ]
     ignored_scraped_sessions = [
-        "test.txt",
-        "20xx",
-        "2021",
-        "2010",
-        "2009",
-        "2008",
-        "2007",
-        "2006",
+        "1991",
+        "1992",
+        "1993",
+        "1994",
+        "1995",
+        "1996",
+        "1997",
+        "1998",
+        "1999",
+        "2000",
+        "2001",
+        "2002",
+        "2003",
+        "2004",
         "2005",
-        "default",
-        "Committees_Jud_related",
+        "2006",
+        "2007",
+        "2008",
+        "2009",
+        "2010",
     ]
 
     def get_session_list(self):
-        text = scrapelib.Scraper().get("ftp://ftp.cga.ct.gov").text
-        sessions = [line.split()[-1] for line in text.splitlines()]
-        return [session for session in sessions if session not in SKIP_SESSIONS]
-
-    def get_extract_text(self, doc, data):
-        doc = lxml.html.fromstring(data)
-        text = " ".join(p.text_content() for p in doc.xpath("//body/p"))
-        return text
+        from utils.lxmlize import url_xpath
+        return set(
+            [
+                x.strip()
+                for x in url_xpath(
+                    "https://search.cga.state.ct.us/r/basic/Fbuttons.asp",
+                    "//select[@name='which_year']/option/text()",
+                )
+            ]
+        )

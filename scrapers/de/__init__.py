@@ -91,6 +91,13 @@ class Delaware(State):
             "start_date": "2019-01-08",
             "end_date": "2020-05-06",
         },
+        {
+            "_scraped_name": "2020 - 2022 (GA 151)",
+            "identifier": "151",
+            "name": "151st General Assembly (2021-2022)",
+            "start_date": "2021-01-12",
+            "end_date": "2022-05-06",
+        },
     ]
     ignored_scraped_sessions = []
 

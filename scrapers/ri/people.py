@@ -36,13 +36,13 @@ class RIPersonScraper(Scraper, LXMLMixin):
 
     def scrape_chamber(self, chamber=None):
         if chamber == "upper":
-            url = "http://webserver.rilin.state.ri.us/Documents/Senators.xls"
+            url = "http://www.rilegislature.gov/SiteAssets/MailingLists/Senators.xls"
             rep_type = "Senator"
             contact_url = (
                 "http://webserver.rilin.state.ri.us/Email/SenEmailListDistrict.asp"
             )
         elif chamber == "lower":
-            url = "http://webserver.rilin.state.ri.us/Documents/Representatives.xls"
+            url = "http://www.rilegislature.gov/SiteAssets/MailingLists/Representatives.xls"
             rep_type = "Representative"
             contact_url = (
                 "http://webserver.rilin.state.ri.us/Email/RepEmailListDistrict.asp"
@@ -95,7 +95,10 @@ class RIPersonScraper(Scraper, LXMLMixin):
             # Note - if we ever need to speed this up, it looks like photo_url can be mapped
             # from the detail_link a la /senators/Paolino/ -> /senators/pictures/Paolino.jpg
             detail_page = self.lxmlize(contact_info["detail_link"])
-            (photo_url,) = detail_page.xpath('//div[@class="ms-WPBody"]//img/@src')
+            try:
+                (photo_url,) = detail_page.xpath('//div[@class="ms-WPBody"]//img/@src')
+            except ValueError:
+                photo_url = ""
 
             person = Person(
                 primary_org=chamber,

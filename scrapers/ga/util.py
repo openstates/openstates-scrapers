@@ -46,7 +46,10 @@ def backoff(function, *args, **kwargs):
     raise ValueError("The server's not playing nice. We can't keep slamming it.")
 
 
+# available via the session dropdown on
+# http://www.legis.ga.gov/Legislation/en-US/Search.aspx
 SESSION_SITE_IDS = {
+    "2021_22": 1029,
     "2020_ss": "1027",
     "2019_20": 27,
     "2018_ss": 26,
