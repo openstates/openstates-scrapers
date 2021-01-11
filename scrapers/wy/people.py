@@ -5,7 +5,12 @@ from openstates.scrape import Scraper, Person
 
 
 class WYPersonScraper(Scraper):
-    party_map = {"R": "Republican", "D": "Democratic", "I": "Independent"}
+    party_map = {
+        "R": "Republican",
+        "D": "Democratic",
+        "I": "Independent",
+        "L": "Libertarian",
+    }
 
     def scrape(self, chamber=None, session=None):
         if session is None:
@@ -37,7 +42,7 @@ class WYPersonScraper(Scraper):
 
             party = self.party_map[row["party"]]
 
-            if details["dob"] is not None:
+            if details["dob"].strip():
                 dob = datetime.datetime.strptime(details["dob"], "%m/%d/%Y %I:%M:%S %p")
                 dob_str = datetime.datetime.strftime(dob, "%Y-%m-%d")
             else:
