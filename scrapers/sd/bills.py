@@ -29,7 +29,7 @@ class SDBillScraper(Scraper, LXMLMixin):
 
             data = self.get(url).json()
             for item in data:
-                bill_id = f'{item["BillType"]} {item["BillNumber"]}'
+                bill_id = f'{item["BillType"]} {item["BillNumberOnly"]}'
                 title = item["Title"]
                 link = f"https://sdlegislature.gov/Session/Bill/{item['BillId']}"
                 api_link = f"https://sdlegislature.gov/api/Bills/{item['BillId']}"
