@@ -143,8 +143,3 @@ class SouthDakota(State):
                 sessions.append(row["Year"].strip())
 
         return sessions
-
-    # This may need to be tweaked, example 2020 session, since the old site used the initial url:
-    # http://sdlegislature.gov/Legislative_Session/Bills/Bill.aspx?Bill=1008&Session=2020
-    # and the new site uses the SessionId from the api_url above:
-    # https://sdlegislature.gov/#/Session/Bills/44
