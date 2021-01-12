@@ -68,13 +68,19 @@ class WYPersonScraper(Scraper):
                     details["state"],
                     details["zip"],
                 )
-                person.add_contact_detail(type="address", value=address)
+                person.add_contact_detail(
+                    type="address", value=address, note="District Office"
+                )
 
             if row["eMail"]:
-                person.add_contact_detail(type="email", value=row["eMail"])
+                person.add_contact_detail(
+                    type="email", value=row["eMail"], note="District Office"
+                )
 
             if row["phone"]:
-                person.add_contact_detail(type="voice", value=row["phone"])
+                person.add_contact_detail(
+                    type="voice", value=row["phone"], note="District Office"
+                )
 
             person.extras["wy_leg_id"] = row["legID"]
             person.extras["county"] = row["county"]
