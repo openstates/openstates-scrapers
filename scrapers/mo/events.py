@@ -105,11 +105,16 @@ class MOEventScraper(Scraper, LXMLMixin):
 
         # fix some broken times, e.g. '12 :00'
         when_time = when_time.replace(" :", ":")
+        # a.m. and p.m. seem to confuse dateutil.parser
+        when_time = when_time.replace("A.M.", "AM").replace("P.M.", "PM")
 
         # some times have extra info after the AM/PM
         if "upon" in when_time:
             when_time = when_time.split("AM", 1)[0]
             when_time = when_time.split("PM", 1)[0]
+
+        # fix - Upcoming in dates
+        when_date = when_date.replace("- Upcoming", "").strip()
 
         start_date = self._TZ.localize(
             dateutil.parser.parse("{} {}".format(when_date, when_time))
