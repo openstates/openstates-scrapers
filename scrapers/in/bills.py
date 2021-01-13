@@ -300,13 +300,7 @@ class INBillScraper(Scraper):
         all_pages = client.unpaginate(r)
         for b in all_pages:
             bill_id = b["billName"]
-            for idx, char in enumerate(bill_id):
-                try:
-                    int(char)
-                except ValueError:
-                    continue
-                disp_bill_id = bill_id[:idx] + " " + str(int(bill_id[idx:]))
-                break
+            disp_bill_id = b["displayName"]
 
             bill_link = b["link"]
             api_source = api_base_url + bill_link
