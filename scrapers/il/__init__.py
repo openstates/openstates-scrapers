@@ -130,6 +130,7 @@ class Illinois(State):
             "classification": "primary",
             "start_date": "2016-12-05",
             "end_date": "2019-04-05",
+            "_scraped_name": "101   (2019-2020)",
         },
         {
             "name": "101st Regular Session",
