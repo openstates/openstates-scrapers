@@ -54,6 +54,14 @@ class Michigan(State):
             "start_date": "2019-01-09",
             "end_date": "2020-12-31",
         },
+        {
+            "_scraped_name": "2021-2022",
+            "classification": "primary",
+            "identifier": "2021-2022",
+            "name": "2021-2022 Regular Session",
+            "start_date": "2021-01-13",
+            "end_date": "2022-12-31",
+        },
     ]
     ignored_scraped_sessions = [
         "2009-2010",
