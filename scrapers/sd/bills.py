@@ -133,8 +133,6 @@ class SDBillScraper(Scraper, LXMLMixin):
 
         for action in actions:
             action_text = action["StatusText"]
-            # This value is for synthesize full action text like site, will be added to
-            full_action = action_text
             atypes = []
             if action_text.startswith("First read"):
                 atypes.append("introduction")
@@ -161,22 +159,6 @@ class SDBillScraper(Scraper, LXMLMixin):
             if "referred to" in action_text.lower():
                 atypes.append("referral-committee")
 
-            if action_text == "Motion to amend" and action["Result"] == "P":
-                atypes.append("amendment-introduction")
-                atypes.append("amendment-passage")
-                if action["Amendment"]:
-                    amd = action["Amendment"]["DocumentId"]
-                    version_name = action["Amendment"]["Filename"]
-                    version_url = (
-                        f"https://mylrc.sdlegislature.gov/api/Documents/{amd}.pdf"
-                    )
-                    bill.add_version_link(
-                        version_name,
-                        version_url,
-                        media_type="application/pdf",
-                        on_duplicate="ignore",
-                    )
-
             if "Veto override" in action_text:
                 if action["Result"] == "P":
                     second = "passage"
@@ -189,7 +171,6 @@ class SDBillScraper(Scraper, LXMLMixin):
 
             match = re.match("First read in (Senate|House)", action_text)
             if match:
-                full_action.append(match.group(1))
                 if match.group(1) == "Senate":
                     actor = "upper"
                 else:
@@ -208,8 +189,72 @@ class SDBillScraper(Scraper, LXMLMixin):
                 )
                 yield from self.scrape_vote(bill, date, vote_link)
 
+            # full_action is to synthesize the action text like it appears on the site
+            # tried to replicate site logic found in Bill.html
+            if (
+                action_text == "Do Pass"
+                or action_text == "Tabled"
+                or "ShowCommitteeName" in action
+            ):
+                full_action = action["ActionCommittee"]["Name"]
+            if (
+                action_text == "Signed by the Governor"
+                or action_text == "Delivered to the Governor"
+            ):
+                full_action = f"{action_text} on {date}"
+                if "ActionCommittee" in action:
+                    full_action.append(
+                        f"{action['ActionCommittee']['Body']}.J. {action['JournalPage']}"
+                    )
+            elif action["ShowPassed"] or action["ShowFailed"]:
+                if action["ShowPassed"]:
+                    binary = "Passed,"
+                else:
+                    binary = "Failed,"
+                full_action = f"{action_text}, {binary}"
+                if (
+                    "Vote" in action
+                    and action_text != "Certified uncontested, placed on consent"
+                ):
+                    vote_action = (
+                        f"YEAS {action['Vote']['Yeas']}, NAYS {action['Vote']['Nays']}"
+                    )
+                    full_action.append(vote_action)
+                if "ActionCommittee" in action and "JournalPage":
+                    journal_number = f"{action['ActionCommittee']['Name']}.J. {action['JournalPage']}"
+                    full_action.append(journal_number)
+            else:
+                full_action = action_text
+                if "AssignedCommittee" in action:
+                    full_action.append(action["AssignedCommittee"]["FullName"])
+                elif "ActionCommittee" in action and action["JournalPage"] > 0:
+                    full_action.append(
+                        f"{action['ActionCommittee']['Body']}.J. {action['JournalPage']}"
+                    )
+
+            if action_text == "Motion to amend" and action["Result"] == "P":
+                atypes.append("amendment-introduction")
+                atypes.append("amendment-passage")
+                if "Amendment" in action:
+                    amd = action["Amendment"]["DocumentId"]
+                    version_name = action["Amendment"]["Filename"]
+                    version_url = (
+                        f"https://mylrc.sdlegislature.gov/api/Documents/{amd}.pdf"
+                    )
+                    bill.add_version_link(
+                        version_name,
+                        version_url,
+                        media_type="application/pdf",
+                        on_duplicate="ignore",
+                    )
+                    full_action.append(f"Amendment {version_name}")
+
             if action_text:
                 bill.add_action(full_action, date, chamber=actor, classification=atypes)
+            else:
+                bill.add_action(
+                    action["Description"], date, chamber=actor, classification=atypes
+                )
 
             yield action
 
