@@ -139,12 +139,12 @@ class IlPersonScraper(Scraper):
             email = leg_doc.xpath('//b[text()="Email: "]')
             if email:
                 p.add_contact_detail(
-                    type="email", value=email[0].tail.strip(), note="capitol"
+                    type="email", value=email[0].tail.strip(), note="Capitol Office"
                 )
 
             offices = {
-                "capitol": '//table[contains(string(), "Springfield Office")]',
-                "district": '//table[contains(string(), "District Office")]',
+                "Capitol Office": '//table[contains(string(), "Springfield Office")]',
+                "District Office": '//table[contains(string(), "District Office")]',
             }
 
             for location, xpath in offices.items():
