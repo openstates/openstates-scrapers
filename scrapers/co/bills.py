@@ -55,12 +55,16 @@ class COBillScraper(Scraper, LXMLMixin):
             for bill_url in bill_list:
                 yield from self.scrape_bill(session, chamber, bill_url)
 
-            pagination_str = page.xpath(
-                '//div[contains(@class, "view-header")]/text()'
-            )[0]
-            max_results = re.search(r"of (\d+) results", pagination_str)
-            max_results = int(max_results.group(1))
-            max_page = int(math.ceil(max_results / 25.0))
+            try:
+                pagination_str = page.xpath(
+                    '//div[contains(@class, "view-header")]/text()'
+                )[0]
+                max_results = re.search(r"of (\d+) results", pagination_str)
+                max_results = int(max_results.group(1))
+                max_page = int(math.ceil(max_results / 25.0))
+            except IndexError:
+                self.warning(f"No bills for {chamber}")
+                return
 
             # We already have the first page load, so just grab later pages
             if max_page > 1:
