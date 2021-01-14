@@ -6,7 +6,7 @@ from openstates.scrape.base import ScrapeError
 
 from utils import LXMLMixin
 
-SESSION_IDS = {"2021": "44"}
+SESSION_IDS = {"2021": "44", "2020": "43"}
 
 
 class SDBillScraper(Scraper, LXMLMixin):
@@ -121,14 +121,13 @@ class SDBillScraper(Scraper, LXMLMixin):
         for keyword in page["Keywords"]:
             bill.add_subject(keyword["Keyword"]["Keyword"])
 
-        if "Actions" in page:
-            actions_url = f"https://sdlegislature.gov/api/Bills/ActionLog/{api_id}"
-            yield from self.scrape_action(self, api_id, actions_url, chamber)
+        actions_url = f"https://sdlegislature.gov/api/Bills/ActionLog/{api_id}"
+        yield from self.scrape_action(bill, actions_url, chamber)
 
         yield bill
 
-    def scrape_action(self, bill, url, chamber):
-        actions = self.get(url).json()
+    def scrape_action(self, bill, actions_url, chamber):
+        actions = self.get(actions_url).json()
         actor = chamber
 
         for action in actions:
@@ -191,17 +190,18 @@ class SDBillScraper(Scraper, LXMLMixin):
 
             # full_action is to synthesize the action text like it appears on the site
             # tried to replicate site logic found in Bill.html
+            full_action = []
             if (
                 action_text == "Do Pass"
                 or action_text == "Tabled"
                 or "ShowCommitteeName" in action
             ):
-                full_action = action["ActionCommittee"]["Name"]
+                full_action.append(f'{action["ActionCommittee"]["Name"]}')
             if (
                 action_text == "Signed by the Governor"
                 or action_text == "Delivered to the Governor"
             ):
-                full_action = f"{action_text} on {date}"
+                full_action = [f"{action_text} on {date}"]
                 if "ActionCommittee" in action:
                     full_action.append(
                         f"{action['ActionCommittee']['Body']}.J. {action['JournalPage']}"
@@ -211,7 +211,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                     binary = "Passed,"
                 else:
                     binary = "Failed,"
-                full_action = f"{action_text}, {binary}"
+                full_action.append(f"{action_text}, {binary}")
                 if (
                     "Vote" in action
                     and action_text != "Certified uncontested, placed on consent"
@@ -224,7 +224,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                     journal_number = f"{action['ActionCommittee']['Name']}.J. {action['JournalPage']}"
                     full_action.append(journal_number)
             else:
-                full_action = action_text
+                full_action.append(f"{action_text}")
                 if "AssignedCommittee" in action:
                     full_action.append(action["AssignedCommittee"]["FullName"])
                 elif "ActionCommittee" in action and action["JournalPage"] > 0:
@@ -249,8 +249,16 @@ class SDBillScraper(Scraper, LXMLMixin):
                     )
                     full_action.append(f"Amendment {version_name}")
 
+            separator = " "
+            (full_action_text,) = separator.join(full_action)
+
             if action_text:
-                bill.add_action(full_action, date, chamber=actor, classification=atypes)
+                bill.add_action(
+                    description=full_action_text,
+                    date=date,
+                    chamber=actor,
+                    classification=atypes,
+                )
             else:
                 bill.add_action(
                     action["Description"], date, chamber=actor, classification=atypes
