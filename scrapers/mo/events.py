@@ -38,6 +38,12 @@ class MOEventScraper(Scraper, LXMLMixin):
 
             when_date = self.row_content(page, "Date:")
             when_time = self.row_content(page, "Time:")
+
+            # fix for upon adjournment
+            when_time = when_time.replace("or upon morning adjournment whichever is later", "").strip()
+            # a.m. and p.m. seem to confuse dateutil.parser
+            when_time = when_time.replace("A.M.", "AM").replace("P.M.", "PM")
+
             location = self.row_content(page, "Room:")
 
             location = "{}, {}".format(
