@@ -288,6 +288,11 @@ class IlBillScraper(Scraper):
         else:
             session_id = self.latest_session()
 
+        # scrape a single bill for debug
+        # yield from self.scrape_bill(
+        #     'lower', '101st', 'HB', 'https://ilga.gov/legislation/BillStatus.asp?DocNum=2488&GAID=15&DocTypeID=HB&LegId=118516&SessionID=108&GA=101'
+        # )
+
         # Sessions that run from 1997 - 2002. Last few sessiosn before bills were PDFs
         if session in ["90th", "91st", "92nd"]:
             yield from self.scrape_archive_bills(session)
@@ -576,7 +581,7 @@ class IlBillScraper(Scraper):
             # Ignore the "Printer-friendly version" link
             # That link is a "latest version" alias for an actual, distinct version
             if "print=true" not in url:
-                if name in VERSION_TYPES:
+                if name in VERSION_TYPES or "amendment" in name.lower():
                     if pdf_only:
                         # eed to visit the version's page, and get PDF link from there
                         # otherwise get a faulty "latest version"/"LV" alias/duplicate
@@ -589,9 +594,8 @@ class IlBillScraper(Scraper):
                     else:
                         url = "{}&print=true".format(url)
                         mimetype = "text/html"
-
                     bill.add_version_link(name, url, media_type=mimetype)
-                elif "Amendment" in name or name in FULLTEXT_DOCUMENT_TYPES:
+                elif name in FULLTEXT_DOCUMENT_TYPES:
                     bill.add_document_link(name, url)
                 elif "Printer-Friendly" in name:
                     pass
