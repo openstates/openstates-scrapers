@@ -1,7 +1,6 @@
 from utils import url_xpath, State
 from .bills import MIBillScraper
 from .events import MIEventScraper
-from .people import MIPersonScraper
 
 # from .committees import MICommitteeScraper
 
@@ -10,7 +9,6 @@ class Michigan(State):
     scrapers = {
         "bills": MIBillScraper,
         "events": MIEventScraper,
-        "people": MIPersonScraper,
         # 'committees': MICommitteeScraper,
     }
     legislative_sessions = [
