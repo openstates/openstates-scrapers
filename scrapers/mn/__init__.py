@@ -1,7 +1,6 @@
 from utils import url_xpath, State
 
 from .bills import MNBillScraper
-from .people import MNPersonScraper
 from .vote_events import MNVoteScraper
 
 # from .committees import MNCommitteeScraper
@@ -23,7 +22,6 @@ class Minnesota(State):
     scrapers = {
         "bills": MNBillScraper,
         # "committees": MNCommitteeScraper,
-        "people": MNPersonScraper,
         "votes": MNVoteScraper,
         # "events": MNEventScraper,
     }
