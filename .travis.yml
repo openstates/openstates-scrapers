@@ -1,8 +1,0 @@
-language: python
-sudo: false
-python: 3.6
-install: pip install flake8
-script: flake8 openstates
-notifications:
-    email:
-        - james@openstates.org
