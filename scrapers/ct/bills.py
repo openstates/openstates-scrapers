@@ -45,6 +45,8 @@ class CTBillScraper(Scraper):
         chamber_map = {"H": "lower", "S": "upper"}
 
         for row in page:
+            if row["sess_year"] != session:
+                continue
             bill_id = row["bill_num"]
             chamber = chamber_map[bill_id[0]]
 

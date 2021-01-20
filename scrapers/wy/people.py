@@ -5,7 +5,12 @@ from openstates.scrape import Scraper, Person
 
 
 class WYPersonScraper(Scraper):
-    party_map = {"R": "Republican", "D": "Democratic", "I": "Independent"}
+    party_map = {
+        "R": "Republican",
+        "D": "Democratic",
+        "I": "Independent",
+        "L": "Libertarian",
+    }
 
     def scrape(self, chamber=None, session=None):
         if session is None:
@@ -37,7 +42,7 @@ class WYPersonScraper(Scraper):
 
             party = self.party_map[row["party"]]
 
-            if details["dob"] is not None:
+            if details["dob"].strip():
                 dob = datetime.datetime.strptime(details["dob"], "%m/%d/%Y %I:%M:%S %p")
                 dob_str = datetime.datetime.strftime(dob, "%Y-%m-%d")
             else:
@@ -63,13 +68,19 @@ class WYPersonScraper(Scraper):
                     details["state"],
                     details["zip"],
                 )
-                person.add_contact_detail(type="address", value=address)
+                person.add_contact_detail(
+                    type="address", value=address, note="District Office"
+                )
 
             if row["eMail"]:
-                person.add_contact_detail(type="email", value=row["eMail"])
+                person.add_contact_detail(
+                    type="email", value=row["eMail"], note="District Office"
+                )
 
             if row["phone"]:
-                person.add_contact_detail(type="voice", value=row["phone"])
+                person.add_contact_detail(
+                    type="voice", value=row["phone"], note="District Office"
+                )
 
             person.extras["wy_leg_id"] = row["legID"]
             person.extras["county"] = row["county"]

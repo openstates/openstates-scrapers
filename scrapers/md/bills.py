@@ -345,26 +345,27 @@ class MDBillScraper(Scraper):
             bill.add_subject(row[0])
 
     def scrape_bill_sponsors(self, bill, page):
-        # TODO: Committees
         sponsors = page.xpath(
-            '//dt[contains(text(), "Sponsored by")]/following-sibling::dd[1]/text()'
-        )[0].strip()
-
-        sponsors = sponsors.replace("Delegates ", "")
-        sponsors = sponsors.replace("Delegate ", "")
-        sponsors = sponsors.replace("Senator ", "")
-        sponsors = sponsors.replace("Senators ", "")
+            '//dt[contains(text(), "Sponsored by")]/following-sibling::dd[1]/a'
+        )
         sponsor_type = "primary"
 
-        for sponsor in re.split(", (?:and )?", sponsors):
-            sponsor = sponsor.strip()
+        for sponsor in sponsors:
+            sponsor = sponsor.text.strip()
+            entity_type = "organization" if "Committee" in sponsor else "person"
             if not sponsor:
                 continue
+            if sponsor == "Departmental":
+                # there seems to be meta information about the requestor, but that
+                # doesn't really fit our definition of sponsor.  once we get to this
+                # sponsor the list is done
+                # (e.g. http://mgaleg.maryland.gov/mgawebsite/Legislation/Details/sb0125?ys=2021RS)
+                break
             bill.add_sponsorship(
                 sponsor,
                 sponsor_type,
                 primary=sponsor_type == "primary",
-                entity_type="person",
+                entity_type=entity_type,
             )
 
     def scrape_bill(self, chamber, session, url):
@@ -389,7 +390,7 @@ class MDBillScraper(Scraper):
             _type = ["bill"]
         elif "J" in bill_id:
             _type = ["joint resolution"]
-        elif "HS" in bill_id:
+        elif "HS" in bill_id or "SS" in bill_id:
             _type = ["resolution"]
         else:
             raise ValueError("unknown bill type " + bill_id)

@@ -1,12 +1,14 @@
-import scrapelib
-import lxml.html
-from .people import SDLegislatorScraper
+# import scrapelib
+# import lxml.html
+import json
+import requests
+
 from .bills import SDBillScraper
 from utils import State
 
 
 class SouthDakota(State):
-    scrapers = {"people": SDLegislatorScraper, "bills": SDBillScraper}
+    scrapers = {"bills": SDBillScraper}
     legislative_sessions = [
         {
             "_scraped_name": "2009",
@@ -30,7 +32,7 @@ class SouthDakota(State):
             "end_date": "2011-03-28",
         },
         {
-            "_scraped_name": "2011 Special",
+            "_scraped_name": "2011s",
             "identifier": "2011s",
             "name": "2011 Special Session",
             "start_date": "2011-10-24",
@@ -79,7 +81,7 @@ class SouthDakota(State):
             "end_date": "2017-03-27",
         },
         {
-            "_scraped_name": "2017 Special",
+            "_scraped_name": "2017s",
             "identifier": "2017s",
             "name": "2017 Special Session",
             "start_date": "2017-06-12",
@@ -93,7 +95,7 @@ class SouthDakota(State):
             "end_date": "2018-03-26",
         },
         {
-            "_scraped_name": "2018 Special",
+            "_scraped_name": "2018s",
             "identifier": "2018s",
             "name": "2018 Special Session",
             "start_date": "2018-09-12",
@@ -114,54 +116,29 @@ class SouthDakota(State):
             "end_date": "2020-03-30",
         },
         {
-            "_scraped_name": "2020 Special",
+            "_scraped_name": "2020s",
             "identifier": "2020s",
             "name": "2020 Special Session",
             "start_date": "2020-10-05",
-            # TODO: Replace with real end date
-            "end_date": "2020-10-16",
+            "end_date": "2020-10-05",
+        },
+        {
+            "_scraped_name": "2021",
+            "identifier": "2021",
+            "name": "2021 Regular Session",
+            "start_date": "2021-01-12",
+            "end_date": "2021-03-29",
         },
     ]
-    ignored_scraped_sessions = [
-        "2020s",
-        "2008",
-        "2007",
-        "2006",
-        "2005",
-        "2005 Special",
-        "2004",
-        "2003",
-        "2003 Special",
-        "2002",
-        "2001",
-        "2001 Special",
-        "2000",
-        "2000 Special",
-        "1999",
-        "1998",
-        "1997",
-        "1997 Special",
-    ]
+    ignored_scraped_sessions = []
 
     def get_session_list(self):
-        html = (
-            scrapelib.Scraper()
-            .get("http://www.sdlegislature.gov/" "Legislative_Session/archive.aspx")
-            .text
-        )
-        doc = lxml.html.fromstring(html)
-        sessions = [
-            x.strip() for x in doc.xpath('//table//td[@data-title="Year"]/text()')
-        ]
+        api_url = "https://sdlegislature.gov/api/Sessions/"
+        data = json.loads(requests.get(api_url).content)
 
-        # Archive page lacks the latest session
-        current_session_url = doc.xpath(
-            '//*[@id="ctl00_divHeader_mnuMain"]/li[6]/ul/li[1]/a/@href'
-        )[0]
-        current_session = current_session_url.replace(
-            "/Legislative_Session/Bills/Default.aspx?Session=", ""
-        )
-        if current_session not in sessions:
-            sessions.append(current_session)
+        sessions = []
+        for row in data:
+            if int(row["Year"][0:4]) > 2008:
+                sessions.append(row["Year"].strip())
 
         return sessions

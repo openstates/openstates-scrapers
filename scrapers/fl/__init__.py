@@ -1,7 +1,6 @@
 # encoding=utf-8
 import logging
 from .bills import FlBillScraper
-from .people import FlPersonScraper
 
 # from .committees import FlCommitteeScraper
 # from .events import FlEventScraper
@@ -13,7 +12,6 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 class Florida(State):
     scrapers = {
         "bills": FlBillScraper,
-        "people": FlPersonScraper,
         # "committees": FlCommitteeScraper,
         # "events": FlEventScraper,
     }
@@ -188,6 +186,7 @@ class Florida(State):
     def get_session_list(self):
         # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
         import requests
+
         requests.packages.urllib3.disable_warnings()
         requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
         return url_xpath("http://flsenate.gov", "//option/text()")

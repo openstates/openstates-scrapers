@@ -256,6 +256,15 @@ class Utah(State):
             # TODO: Proper end date after session
             "end_date": "2020-08-28",
         },
+        {
+            "_scraped_name": "2021 General Session",
+            "classification": "primary",
+            "identifier": "2021",
+            "name": "2021 General Session",
+            "start_date": "2021-01-19",
+            # TODO: proper end date after session
+            "end_date": "2021-03-12",
+        },
     ]
     ignored_scraped_sessions = [
         "2011 Veto Override Session",

@@ -1,7 +1,6 @@
 from utils import url_xpath, State
 from .bills import MIBillScraper
 from .events import MIEventScraper
-from .people import MIPersonScraper
 
 # from .committees import MICommitteeScraper
 
@@ -10,7 +9,6 @@ class Michigan(State):
     scrapers = {
         "bills": MIBillScraper,
         "events": MIEventScraper,
-        "people": MIPersonScraper,
         # 'committees': MICommitteeScraper,
     }
     legislative_sessions = [
@@ -53,6 +51,14 @@ class Michigan(State):
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-09",
             "end_date": "2020-12-31",
+        },
+        {
+            "_scraped_name": "2021-2022",
+            "classification": "primary",
+            "identifier": "2021-2022",
+            "name": "2021-2022 Regular Session",
+            "start_date": "2021-01-13",
+            "end_date": "2022-12-31",
         },
     ]
     ignored_scraped_sessions = [

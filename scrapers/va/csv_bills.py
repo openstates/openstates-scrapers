@@ -50,6 +50,7 @@ class VaCSVBillScraper(Scraper):
     _members = defaultdict(list)
     _sponsors = defaultdict(list)
     _amendments = defaultdict(list)
+    _fiscal_notes = defaultdict(list)
     _history = defaultdict(list)
     _votes = defaultdict(list)
     _bills = defaultdict(list)
@@ -94,6 +95,15 @@ class VaCSVBillScraper(Scraper):
                 {"bill_number": row[0].strip(), "txt_docid": row[1].strip()}
             )
         self.warning("Total Amendments Loaded: " + str(len(self._amendments)))
+
+    def load_fiscal_notes(self):
+        resp = self.get(self._url_base + "FiscalImpactStatements.csv").text
+        reader = csv.reader(resp.splitlines(), delimiter=",")
+
+        # ['BILL_NUMBER', 'HST_REFID']
+        for row in reader:
+            self._fiscal_notes[row[0].strip()].append({"refid": row[1].strip()})
+        self.warning("Total Fiscal Notes Loaded: " + str(len(self._fiscal_notes)))
 
     def load_history(self):
         resp = self.get(self._url_base + "HISTORY.CSV").text
@@ -157,6 +167,7 @@ class VaCSVBillScraper(Scraper):
             self._bills[row["Bill_id"]].append(
                 {
                     "bill_id": row["Bill_id"],
+                    "patron_name": row["Patron_name"],
                     "bill_description": row["Bill_description"],
                     "passed": row["Passed"],
                     "failed": row["Failed"],
@@ -209,6 +220,7 @@ class VaCSVBillScraper(Scraper):
         self.load_members()
         self.load_sponsors()
         self.load_amendments()
+        self.load_fiscal_notes()
         self.load_history()
         self.load_summaries()
         self.load_votes()
@@ -243,6 +255,13 @@ class VaCSVBillScraper(Scraper):
                 long_bill_id = bill_id[0:2] + "0" + bill_id[-3:]
 
             # Sponsors
+            if long_bill_id not in self._sponsors:
+                b.add_sponsorship(
+                    bill["patron_name"],
+                    classification="primary",
+                    entity_type="person",
+                    primary=True,
+                )
             for spon in self._sponsors[long_bill_id]:
                 sponsor_type = spon["patron_type"]
                 if sponsor_type.endswith("Chief Patron"):
@@ -271,8 +290,17 @@ class VaCSVBillScraper(Scraper):
                     "Amendment: " + amend["txt_docid"], doc_link, media_type="text/html"
                 )
 
-            # Action text is used to improve version text
-            actions_text = []
+            # fiscal notes
+            for fn in self._fiscal_notes[long_bill_id]:
+                doc_link = bill_url_base + f"legp604.exe?{session_id}+oth+{fn['refid']}"
+                b.add_document_link(
+                    "Fiscal Impact Statement: " + fn["refid"],
+                    doc_link.replace(".PDF", "+PDF"),
+                    media_type="application/pdf",
+                )
+
+            # actions with 8-digit number followed by D are version titles too
+            doc_actions = defaultdict(list)
             # History and then votes
             for hist in self._history[bill_id]:
                 action = hist["history_description"]
@@ -281,7 +309,9 @@ class VaCSVBillScraper(Scraper):
                 chamber = chamber_types[action[0]]
                 vote_id = hist["history_refid"]
                 cleaned_action = action[2:]
-                actions_text.append(cleaned_action)
+
+                if re.findall(r"\d{8}D", cleaned_action):
+                    doc_actions[action_date].append(cleaned_action)
 
                 # categorize actions
                 for pattern, atype in ACTION_CLASSIFIERS:
@@ -335,7 +365,7 @@ class VaCSVBillScraper(Scraper):
             # Versions
             for version in bill["text_docs"]:
                 # Checks if abbr is blank as not every bill has multiple versions
-                if len(version["doc_abbr"]) > 0:
+                if version["doc_abbr"]:
                     version_url = (
                         bill_url_base
                         + f"legp604.exe?{session_id}+ful+{version['doc_abbr']}"
@@ -343,10 +373,12 @@ class VaCSVBillScraper(Scraper):
                     version_date = datetime.datetime.strptime(
                         version["doc_date"], "%m/%d/%y"
                     ).date()
+                    # version text will default to abbreviation provided in CSV
+                    # but if there is an unambiguous action from that date with
+                    # a version, we'll use that as the document title
                     version_text = version["doc_abbr"]
-                    for act in actions_text:
-                        if version_text in act:
-                            version_text = act
+                    if len(doc_actions[version["doc_date"]]) == 1:
+                        version_text = doc_actions[version["doc_date"]][0]
                     b.add_version_link(
                         version_text,
                         version_url,

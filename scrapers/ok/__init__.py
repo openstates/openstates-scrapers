@@ -1,5 +1,4 @@
 from utils import State
-from .people import OKPersonScraper
 from .bills import OKBillScraper
 
 # from .committees import OKCommitteeScraper
@@ -8,7 +7,6 @@ from .bills import OKBillScraper
 
 class Oklahoma(State):
     scrapers = {
-        "people": OKPersonScraper,
         # 'committees': OKCommitteeScraper,
         # 'events': OKEventScraper,
         "bills": OKBillScraper,

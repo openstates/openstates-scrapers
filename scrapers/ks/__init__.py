@@ -67,6 +67,15 @@ class Kansas(State):
             "start_date": "2019-06-03",
             "end_date": "2020-06-05",
         },
+        {
+            "_scraped_name": "b2021_22",
+            "classification": "primary",
+            "identifier": "2021-2022",
+            "name": "2021-2022 Regular Session",
+            "start_date": "2021-01-11",
+            # TODO: set real end date
+            "end_date": "2022-05-31",
+        },
     ]
     ignored_scraped_sessions = []
 

@@ -23,6 +23,9 @@ class WABillScraper(Scraper, LXMLMixin):
 
     _chamber_map = {"House": "lower", "Senate": "upper", "Joint": "joint"}
 
+    _bill_id_list = []
+    versions = {}
+
     _TZ = pytz.timezone("US/Eastern")
 
     ORDINALS = {
@@ -55,7 +58,6 @@ class WABillScraper(Scraper, LXMLMixin):
                     self._subjects[match.group()].append(subject)
 
     def _load_versions(self, chamber):
-        self.versions = {}
         base_url = "http://lawfilesext.leg.wa.gov/Biennium/{}/Htm/Bills/".format(
             self.biennium
         )
@@ -69,11 +71,13 @@ class WABillScraper(Scraper, LXMLMixin):
         chamber = {"lower": "House", "upper": "Senate"}[chamber]
 
         for bill_type in bill_types.keys():
-            doc = self.lxmlize(base_url + chamber + " " + bill_type)
+            try:
+                doc = self.lxmlize(base_url + chamber + " " + bill_type)
+            except scrapelib.HTTPError:
+                return
             documents = doc.xpath("//a")[1:]
             for document in documents:
                 (link,) = document.xpath("@href")
-
                 (text,) = document.xpath("text()")
                 (
                     bill_num,
@@ -119,7 +123,11 @@ class WABillScraper(Scraper, LXMLMixin):
                 self.biennium, document_type, chamber
             )
 
-            doc = self.lxmlize(url)
+            try:
+                doc = self.lxmlize(url)
+            except scrapelib.HTTPError:
+                return
+
             documents = doc.xpath("//a")[1:]
             for document in documents:
 
@@ -179,7 +187,6 @@ class WABillScraper(Scraper, LXMLMixin):
                 )
 
     def get_prefiles(self, chamber, session, year):
-        bill_id_list = []
         url = "http://apps.leg.wa.gov/billinfo/prefiled.aspx?year={}".format(year)
         page = self.lxmlize(url)
 
@@ -187,9 +194,9 @@ class WABillScraper(Scraper, LXMLMixin):
         for row in bill_rows[1:]:
             if row.xpath("td[1]/a"):
                 bill_id = row.xpath("td[1]/a/text()")[0]
-                bill_id_list.append(bill_id)
+                self._bill_id_list.append(bill_id)
 
-        return bill_id_list
+        return self._bill_id_list
 
     def scrape(self, chamber=None, session=None):
         if not session:
@@ -197,8 +204,16 @@ class WABillScraper(Scraper, LXMLMixin):
             self.info("no session specified, using %s", session)
         chambers = [chamber] if chamber else ["upper", "lower"]
 
+        year = int(session[0:4])
+
+        self._bill_id_list = self.get_prefiles(chamber, session, year)
+
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber, session)
+            self.scrape_chamber(chamber, session)
+
+        # de-dup bill_id
+        for bill_id in list(set(self._bill_id_list)):
+            yield from self.scrape_bill(chamber, session, bill_id)
 
     def scrape_chamber(self, chamber, session):
         self.biennium = "%s-%s" % (session[0:4], session[7:9])
@@ -208,10 +223,7 @@ class WABillScraper(Scraper, LXMLMixin):
         # to test a specific bill...
         # yield from self.scrape_bill('lower', '2019-2020', 'HB 2217')
 
-        bill_id_list = []
         year = int(session[0:4])
-
-        bill_id_list = self.get_prefiles(chamber, session, year)
 
         # first go through API response and get bill list
         max_year = year if int(datetime.date.today().year) < year + 1 else year + 1
@@ -247,11 +259,7 @@ class WABillScraper(Scraper, LXMLMixin):
                     self.warning("illegal bill_id %s" % bill_id)
                     continue
 
-                bill_id_list.append(bill_id_norm[0])
-
-        # de-dup bill_id
-        for bill_id in list(set(bill_id_list)):
-            yield from self.scrape_bill(chamber, session, bill_id)
+                self._bill_id_list.append(bill_id_norm[0])
 
     def scrape_bill(self, chamber, session, bill_id):
         bill_num = bill_id.split()[1]

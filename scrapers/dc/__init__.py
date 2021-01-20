@@ -51,6 +51,13 @@ class DistrictOfColumbia(State):
             "start_date": "2019-01-02",
             "end_date": "2020-12-31",
         },
+        {
+            "_scraped_name": "24",
+            "identifier": "24",
+            "name": "24th Council Period (2021-2022)",
+            "start_date": "2021-01-02",
+            "end_date": "2022-12-31",
+        },
     ]
     ignored_scraped_sessions = [
         "18",

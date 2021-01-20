@@ -104,6 +104,14 @@ class Wyoming(State):
             # Note: End date approximate
             "end_date": "2020-05-22",
         },
+        {
+            "_scraped_name": "2021",
+            "classification": "primary",
+            "identifier": "2021",
+            "name": "2021 General Session",
+            "start_date": "2021-02-12",
+            "end_date": "2021-03-04",
+        },
     ]
     ignored_scraped_sessions = [
         "2021",

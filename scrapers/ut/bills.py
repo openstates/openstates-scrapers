@@ -96,7 +96,7 @@ class UTBillScraper(Scraper, LXMLMixin):
         for flag in SUB_BLACKLIST:
             if flag in bill_id:
                 bill_id = bill_id.replace(flag, " ")
-        bill_id = re.sub(r"\s+", " ", bill_id).strip()
+        bill_id = re.sub(r"\s+", " ", bill_id).strip().replace(".", "")
 
         bill = Bill(
             bill_id,

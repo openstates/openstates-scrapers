@@ -1,5 +1,6 @@
-import pytz
 import datetime
+import pytz
+import re
 
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
@@ -20,8 +21,15 @@ class ALEventScraper(Scraper, LXMLMixin):
         for row in rows[1:]:
             date = row.xpath("td")[0].text_content().strip()
             time = row.xpath("td")[1].text_content().strip()
+            details = row.xpath("td")[4].text_content().strip()
 
-            date_with_time = "{} {}".format(date, time)
+            if time != "":
+                date_with_time = "{} {}".format(date, time)
+            else:
+                # sometimes the time is the first part of the decription
+                match = re.match(r'\s*\d+:\d+\s*[ap]m', details, flags=re.I)
+                if match:
+                    date_with_time = "{} {}".format(date, match.group())
 
             location = row.xpath("td")[2].text_content().strip()
 
@@ -33,7 +41,6 @@ class ALEventScraper(Scraper, LXMLMixin):
 
             # host = row.xpath('td')[3].text_content().strip()
             name = row.xpath("td")[3].text_content().strip()
-            details = row.xpath("td")[4].text_content().strip()
 
             event = Event(
                 start_date=self._TZ.localize(
