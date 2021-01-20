@@ -191,8 +191,10 @@ class HIBillScraper(Scraper):
                 http_link = http_href[0].attrib["href"]
                 pdf_link = pdf_href[0].attrib["href"]
 
-                bill.add_version_link(name, http_link, media_type="text/html")
-                bill.add_version_link(name, pdf_link, media_type="application/pdf")
+                # some bills (and GMs) swap the order or double-link to the same format
+                # so detect the type, and ignore dupes
+                bill.add_version_link(name, http_link, media_type=self.classify_media(http_link))
+                bill.add_version_link(name, pdf_link, media_type=self.classify_media(pdf_link), on_duplicate='ignore')
 
     def classify_media(self, url):
         media_type = None
