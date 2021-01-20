@@ -15,6 +15,7 @@ def create_bill_report_url(chamber, year, bill_type):
         "bill": "intro%sb" % (cname),
         "cr": "%sCR" % (cname.upper()),
         "r": "%sR" % (cname.upper()),
+        "gm": "GM",
     }
 
     return HI_URL_BASE + "/report.aspx?type=" + bill_slug[bill_type] + "&year=" + year
@@ -301,7 +302,11 @@ class HIBillScraper(Scraper):
                 sponsor = sponsor.replace(
                     " (Introduced by request of another party)", ""
                 )
-            b.add_sponsorship(sponsor, "primary", "person", True)
+            if sponsor is not "":
+                b.add_sponsorship(sponsor, "primary", "person", True)
+
+        if "gm" in bill_id.lower():
+            b.add_sponsorship('governor', 'primary', 'person', True)
 
         self.parse_bill_versions_table(b, versions)
         self.parse_testimony(b, bill_page)
@@ -337,6 +342,7 @@ class HIBillScraper(Scraper):
             "bill": "bill",
             "cr": "concurrent resolution",
             "r": "resolution",
+            "gm": "proclamation",
         }[billtype]
 
         list_html = self.get(report_page_url).text
@@ -350,7 +356,7 @@ class HIBillScraper(Scraper):
         if not session:
             session = self.latest_session()
             self.info("no session specified, using %s", session)
-        bill_types = ["bill", "cr", "r"]
+        bill_types = ["bill", "cr", "r", "gm"]
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
             for typ in bill_types:
