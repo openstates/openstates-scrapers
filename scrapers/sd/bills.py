@@ -93,6 +93,8 @@ class SDBillScraper(Scraper, LXMLMixin):
                     media_type="application/pdf",
                     on_duplicate="ignore",
                 )
+            else:
+                self.warning("Version listed but no date or documents")
 
         sponsors = page["BillSponsor"]
         if sponsors:
