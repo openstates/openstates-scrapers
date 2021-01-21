@@ -135,34 +135,47 @@ class SDBillScraper(Scraper, LXMLMixin):
         for action in actions:
             action_text = action["StatusText"]
             # This value is for synthesize full action text like site, will be added to
-            full_action = action_text
+            # tried to replicate site logic found in Bill.html on source site
+            full_action = [action_text]
             atypes = []
             if action_text.startswith("First read"):
                 atypes.append("introduction")
                 atypes.append("reading-1")
 
-            if re.match(r"Signed by (?:the\s)*Governor", action_text, re.IGNORECASE):
-                atypes.append("executive-signature")
-                actor = "executive"
-
             if action_text == "Do Pass":
-                if not re.match(
+                if re.match(
                     r"(Senate|House of Representatives)",
                     action["ActionCommittee"]["Name"],
                 ):
-                    first = "committee-"
-                else:
                     first = ""
+                else:
+                    first = "committee-"
                 if action["Result"] == "P":
                     second = "passage"
+                # D is "deferred"
                 elif action["Result"] == "F" or action["Result"] == "D":
                     second = "failure"
                 else:
                     self.error("Unknown vote code: {}".format(action["Result"]))
                 atypes.append("%s%s" % (first, second))
 
+            if (
+                action_text == "Do Pass"
+                or action_text == "Tabled"
+                or "ShowCommitteeName" in action
+            ):
+                full_action.insert(0, f'{action["ActionCommittee"]["Name"]}')
+
+            if action["ShowPassed"] or action["ShowFailed"]:
+                if action["ShowPassed"]:
+                    binary = ", Passed,"
+                else:
+                    binary = ", Failed,"
+                full_action.append(binary)
+
             if "referred to" in action_text.lower():
                 atypes.append("referral-committee")
+                full_action.append(action["AssignedCommittee"]["FullName"])
 
             if "Veto override" in action_text:
                 if action["Result"] == "P":
@@ -171,12 +184,8 @@ class SDBillScraper(Scraper, LXMLMixin):
                     second = "failure"
                 atypes.append("%s%s" % ("veto-override-", second))
 
-            if "Delivered to the Governor" in action_text:
-                atypes.append("executive-receipt")
-
             match = re.match("First read in (Senate|House)", action_text)
             if match:
-                full_action += match.group(1)
                 if match.group(1) == "Senate":
                     actor = "upper"
                 else:
@@ -189,11 +198,30 @@ class SDBillScraper(Scraper, LXMLMixin):
                 continue
             date = datetime.datetime.strptime(date_match.group(0), "%Y-%m-%d").date()
 
+            if re.match(r"Signed by (?:the\s)*Governor", action_text, re.IGNORECASE):
+                atypes.append("executive-signature")
+                actor = "executive"
+                full_action.append(f"on {date}")
+
+            if "Delivered to the Governor" in action_text:
+                atypes.append("executive-receipt")
+                full_action.append(f"on {date}")
+
             if action["Vote"]:
                 vote_link = (
                     f"https://sdlegislature.gov/api/Votes/{action['Vote']['VoteId']}"
                 )
                 yield from self.scrape_vote(bill, date, vote_link)
+                if action_text != "Certified uncontested, placed on consent":
+                    vote_action = (
+                        f"YEAS {action['Vote']['Yeas']}, NAYS {action['Vote']['Nays']}"
+                    )
+                    full_action.append(vote_action)
+
+            if action["ActionCommittee"] and action["JournalPage"]:
+                full_action.append(
+                    f"{action['ActionCommittee']['Body']}.J. {action['JournalPage']}"
+                )
 
             if action_text == "Motion to amend" and action["Result"] == "P":
                 atypes.append("amendment-introduction")
@@ -210,8 +238,10 @@ class SDBillScraper(Scraper, LXMLMixin):
                         media_type="application/pdf",
                         on_duplicate="ignore",
                     )
+                    full_action.append(f"Amendment {version_name}")
 
-            bill.add_action(full_action, date, chamber=actor, classification=atypes)
+            description = " ".join(full_action)
+            bill.add_action(description, date, chamber=actor, classification=atypes)
 
     def scrape_vote(self, bill, date, url):
         page = self.get(url).json()
