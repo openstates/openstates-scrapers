@@ -40,7 +40,7 @@ class SDBillScraper(Scraper, LXMLMixin):
 
                 # TODO: remove this and replace it with something that hits the appropriate
                 # API endpoints for item['BillId']
-                print(bill_id, link)
+                self.info(f"{bill_id} {link}")
                 yield from self.scrape_bill(chamber, session, bill_id, title, api_link)
 
     def scrape_bill(self, chamber, session, bill_id, title, url):
@@ -121,9 +121,8 @@ class SDBillScraper(Scraper, LXMLMixin):
         for keyword in page["Keywords"]:
             bill.add_subject(keyword["Keyword"]["Keyword"])
 
-        if "Actions" in page:
-            actions_url = f"https://sdlegislature.gov/api/Bills/ActionLog/{api_id}"
-            yield from self.scrape_action(self, api_id, actions_url, chamber)
+        actions_url = f"https://sdlegislature.gov/api/Bills/ActionLog/{api_id}"
+        yield from self.scrape_action(bill, actions_url, chamber)
 
         yield bill
 
@@ -154,8 +153,11 @@ class SDBillScraper(Scraper, LXMLMixin):
                     first = "committee-"
                 if action["Result"] == "P":
                     second = "passage"
-                elif action["Result"] == "F":
+                # D is "deferred"
+                elif action["Result"] == "F" or action["Result"] == "D":
                     second = "failure"
+                else:
+                    self.error("Unknown vote code: {}".format(action["Result"]))
                 atypes.append("%s%s" % (first, second))
 
             if "referred to" in action_text.lower():
@@ -189,7 +191,7 @@ class SDBillScraper(Scraper, LXMLMixin):
 
             match = re.match("First read in (Senate|House)", action_text)
             if match:
-                full_action.append(match.group(1))
+                full_action += match.group(1)
                 if match.group(1) == "Senate":
                     actor = "upper"
                 else:
@@ -210,8 +212,6 @@ class SDBillScraper(Scraper, LXMLMixin):
 
             if action_text:
                 bill.add_action(full_action, date, chamber=actor, classification=atypes)
-
-            yield action
 
     def scrape_vote(self, bill, date, url):
         page = self.get(url).json()
