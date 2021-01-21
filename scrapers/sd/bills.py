@@ -79,6 +79,8 @@ class SDBillScraper(Scraper, LXMLMixin):
             if date is not None:
                 match = re.match(r"\d{4}-\d{2}-\d{2}", date)
                 date = datetime.datetime.strptime(match.group(0), "%Y-%m-%d").date()
+            else:
+                date = ""
 
             bill.add_version_link(
                 note,
