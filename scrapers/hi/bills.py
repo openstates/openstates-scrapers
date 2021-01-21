@@ -193,8 +193,15 @@ class HIBillScraper(Scraper):
 
                 # some bills (and GMs) swap the order or double-link to the same format
                 # so detect the type, and ignore dupes
-                bill.add_version_link(name, http_link, media_type=self.classify_media(http_link))
-                bill.add_version_link(name, pdf_link, media_type=self.classify_media(pdf_link), on_duplicate='ignore')
+                bill.add_version_link(
+                    name, http_link, media_type=self.classify_media(http_link)
+                )
+                bill.add_version_link(
+                    name,
+                    pdf_link,
+                    media_type=self.classify_media(pdf_link),
+                    on_duplicate="ignore",
+                )
 
     def classify_media(self, url):
         media_type = None
@@ -304,11 +311,11 @@ class HIBillScraper(Scraper):
                 sponsor = sponsor.replace(
                     " (Introduced by request of another party)", ""
                 )
-            if sponsor is not "":
+            if sponsor != "":
                 b.add_sponsorship(sponsor, "primary", "person", True)
 
         if "gm" in bill_id.lower():
-            b.add_sponsorship('governor', 'primary', 'person', True)
+            b.add_sponsorship("governor", "primary", "person", True)
 
         self.parse_bill_versions_table(b, versions)
         self.parse_testimony(b, bill_page)
@@ -358,7 +365,7 @@ class HIBillScraper(Scraper):
         if not session:
             session = self.latest_session()
             self.info("no session specified, using %s", session)
-        bill_types = ["bill", "cr", "r", "gm"]
+        bill_types = ["bill", "cr", "r"]
         chambers = [chamber] if chamber else ["lower", "upper"]
         for chamber in chambers:
             # only scrape GMs once
