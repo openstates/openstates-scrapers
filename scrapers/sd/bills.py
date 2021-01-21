@@ -153,8 +153,11 @@ class SDBillScraper(Scraper, LXMLMixin):
                     first = "committee-"
                 if action["Result"] == "P":
                     second = "passage"
-                elif action["Result"] == "F":
+                # D is "deferred"
+                elif action["Result"] == "F" or action["Result"] == "D":
                     second = "failure"
+                else:
+                    self.error("Unknown vote code: {}".format(action["Result"]))
                 atypes.append("%s%s" % (first, second))
 
             if "referred to" in action_text.lower():
