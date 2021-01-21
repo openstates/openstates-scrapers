@@ -121,7 +121,6 @@ class SDBillScraper(Scraper, LXMLMixin):
         for keyword in page["Keywords"]:
             bill.add_subject(keyword["Keyword"]["Keyword"])
 
-        # if "Actions" in page:
         actions_url = f"https://sdlegislature.gov/api/Bills/ActionLog/{api_id}"
         yield from self.scrape_action(bill, actions_url, chamber)
 
@@ -210,8 +209,6 @@ class SDBillScraper(Scraper, LXMLMixin):
 
             if action_text:
                 bill.add_action(full_action, date, chamber=actor, classification=atypes)
-
-            # yield action
 
     def scrape_vote(self, bill, date, url):
         page = self.get(url).json()
