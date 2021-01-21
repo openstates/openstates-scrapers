@@ -70,14 +70,15 @@ class SDBillScraper(Scraper, LXMLMixin):
         version_rows = page["Documents"]
         assert len(version_rows) > 0
         for version in version_rows:
-            date = version["DocumentDate"]
-            match = re.match(r"\d{4}-\d{2}-\d{2}", date)
-            date = datetime.datetime.strptime(match.group(0), "%Y-%m-%d").date()
-
             html_link = f"https://sdlegislature.gov/Session/Bill/{api_id}/{version['DocumentId']}"
             pdf_link = f"https://mylrc.sdlegislature.gov/api/Documents/{version['DocumentId']}.pdf"
 
             note = version["BillVersion"]
+
+            date = version["DocumentDate"]
+            if date is not None:
+                match = re.match(r"\d{4}-\d{2}-\d{2}", date)
+                date = datetime.datetime.strptime(match.group(0), "%Y-%m-%d").date()
 
             bill.add_version_link(
                 note,
