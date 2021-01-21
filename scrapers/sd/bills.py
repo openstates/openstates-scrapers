@@ -40,7 +40,7 @@ class SDBillScraper(Scraper, LXMLMixin):
 
                 # TODO: remove this and replace it with something that hits the appropriate
                 # API endpoints for item['BillId']
-                print(bill_id, link)
+                self.info(f"{bill_id} {link}")
                 yield from self.scrape_bill(chamber, session, bill_id, title, api_link)
 
     def scrape_bill(self, chamber, session, bill_id, title, url):
@@ -79,7 +79,6 @@ class SDBillScraper(Scraper, LXMLMixin):
                 pdf_link = f"https://mylrc.sdlegislature.gov/api/Documents/{version['DocumentId']}.pdf"
 
                 note = version["BillVersion"]
-
                 bill.add_version_link(
                     note,
                     html_link,
@@ -133,6 +132,8 @@ class SDBillScraper(Scraper, LXMLMixin):
 
         for action in actions:
             action_text = action["StatusText"]
+            # This value is for synthesize full action text like site, will be added to
+            full_action = action_text
             atypes = []
             if action_text.startswith("First read"):
                 atypes.append("introduction")
@@ -152,8 +153,10 @@ class SDBillScraper(Scraper, LXMLMixin):
                     first = ""
                 if action["Result"] == "P":
                     second = "passage"
-                else:
+                elif action["Result"] == "F" or action["Result"] == "D":
                     second = "failure"
+                else:
+                    self.error("Unknown vote code: {}".format(action["Result"]))
                 atypes.append("%s%s" % (first, second))
 
             if "referred to" in action_text.lower():
@@ -171,6 +174,7 @@ class SDBillScraper(Scraper, LXMLMixin):
 
             match = re.match("First read in (Senate|House)", action_text)
             if match:
+                full_action += match.group(1)
                 if match.group(1) == "Senate":
                     actor = "upper"
                 else:
@@ -184,11 +188,10 @@ class SDBillScraper(Scraper, LXMLMixin):
             date = datetime.datetime.strptime(date_match.group(0), "%Y-%m-%d").date()
 
             if action["Vote"]:
-                vote_id = action["Vote"]["VoteId"]
-                vote_link = f"https://sdlegislature.gov/api/Votes/{vote_id}"
+                vote_link = (
+                    f"https://sdlegislature.gov/api/Votes/{action['Vote']['VoteId']}"
+                )
                 yield from self.scrape_vote(bill, date, vote_link)
-
-            # Would be nice to synthesize the action text like it appears on the site
 
             if action_text == "Motion to amend" and action["Result"] == "P":
                 atypes.append("amendment-introduction")
@@ -206,7 +209,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                         on_duplicate="ignore",
                     )
 
-            bill.add_action(action_text, date, chamber=actor, classification=atypes)
+            bill.add_action(full_action, date, chamber=actor, classification=atypes)
 
     def scrape_vote(self, bill, date, url):
         page = self.get(url).json()

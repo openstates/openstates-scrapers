@@ -77,6 +77,13 @@ class Hawaii(State):
             "start_date": "2020-01-15",
             "end_date": "2020-05-07",
         },
+        {
+            "_scraped_name": "2021",
+            "identifier": "2021 Regular Session",
+            "name": "2021 Regular Session",
+            "start_date": "2021-01-20",
+            "end_date": "2021-05-09",
+        },        
     ]
     ignored_scraped_sessions = [
         "2011",

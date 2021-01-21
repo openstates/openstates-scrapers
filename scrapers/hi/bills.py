@@ -15,6 +15,7 @@ def create_bill_report_url(chamber, year, bill_type):
         "bill": "intro%sb" % (cname),
         "cr": "%sCR" % (cname.upper()),
         "r": "%sR" % (cname.upper()),
+        "gm": "GM",
     }
 
     return HI_URL_BASE + "/report.aspx?type=" + bill_slug[bill_type] + "&year=" + year
@@ -190,8 +191,17 @@ class HIBillScraper(Scraper):
                 http_link = http_href[0].attrib["href"]
                 pdf_link = pdf_href[0].attrib["href"]
 
-                bill.add_version_link(name, http_link, media_type="text/html")
-                bill.add_version_link(name, pdf_link, media_type="application/pdf")
+                # some bills (and GMs) swap the order or double-link to the same format
+                # so detect the type, and ignore dupes
+                bill.add_version_link(
+                    name, http_link, media_type=self.classify_media(http_link)
+                )
+                bill.add_version_link(
+                    name,
+                    pdf_link,
+                    media_type=self.classify_media(pdf_link),
+                    on_duplicate="ignore",
+                )
 
     def classify_media(self, url):
         media_type = None
@@ -301,7 +311,11 @@ class HIBillScraper(Scraper):
                 sponsor = sponsor.replace(
                     " (Introduced by request of another party)", ""
                 )
-            b.add_sponsorship(sponsor, "primary", "person", True)
+            if sponsor != "":
+                b.add_sponsorship(sponsor, "primary", "person", True)
+
+        if "gm" in bill_id.lower():
+            b.add_sponsorship("governor", "primary", "person", True)
 
         self.parse_bill_versions_table(b, versions)
         self.parse_testimony(b, bill_page)
@@ -337,6 +351,7 @@ class HIBillScraper(Scraper):
             "bill": "bill",
             "cr": "concurrent resolution",
             "r": "resolution",
+            "gm": "proclamation",
         }[billtype]
 
         list_html = self.get(report_page_url).text
@@ -351,7 +366,10 @@ class HIBillScraper(Scraper):
             session = self.latest_session()
             self.info("no session specified, using %s", session)
         bill_types = ["bill", "cr", "r"]
-        chambers = [chamber] if chamber else ["upper", "lower"]
+        chambers = [chamber] if chamber else ["lower", "upper"]
         for chamber in chambers:
+            # only scrape GMs once
+            if chamber == "upper":
+                bill_types.append("gm")
             for typ in bill_types:
                 yield from self.scrape_type(chamber, session, typ)
