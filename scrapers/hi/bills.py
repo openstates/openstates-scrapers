@@ -359,7 +359,10 @@ class HIBillScraper(Scraper):
             session = self.latest_session()
             self.info("no session specified, using %s", session)
         bill_types = ["bill", "cr", "r", "gm"]
-        chambers = [chamber] if chamber else ["upper", "lower"]
+        chambers = [chamber] if chamber else ["lower", "upper"]
         for chamber in chambers:
+            # only scrape GMs once
+            if chamber == "upper":
+                bill_types.append("gm")
             for typ in bill_types:
                 yield from self.scrape_type(chamber, session, typ)
