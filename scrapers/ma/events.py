@@ -10,6 +10,7 @@ from openstates.scrape import Scraper, Event
 class MAEventScraper(Scraper, LXMLMixin):
     _TZ = pytz.timezone("US/Eastern")
     date_format = "%m/%d/%Y"
+    verify = False
 
     def scrape(self, chamber=None, start=None, end=None):
         if start is None:
@@ -38,7 +39,7 @@ class MAEventScraper(Scraper, LXMLMixin):
             "X-Requested-With": "XMLHttpRequest",
         }
 
-        page = self.post(url, params)
+        page = self.post(url, params, verify=False)
         page = lxml.html.fromstring(page.content)
         page.make_links_absolute("https://malegislature.gov/")
 
@@ -74,6 +75,11 @@ class MAEventScraper(Scraper, LXMLMixin):
         location = page.xpath(
             'string(//dl[contains(@class,"eventInformation")]/dd[4]//a)'
         ).strip()
+
+        if location == "":
+            location = page.xpath(
+                'string(//dl[contains(@class,"eventInformation")]/dd[4])'
+            ).strip()
 
         description = page.xpath(
             'string(//dl[contains(@class,"eventInformation")]/dd[5])'
