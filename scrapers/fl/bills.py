@@ -1,6 +1,6 @@
 import re
+import datetime
 
-# import datetime
 # from urllib.parse import urlencode
 from collections import defaultdict
 
@@ -9,7 +9,7 @@ from openstates.scrape import Bill
 
 # from openstates.utils import format_datetime
 
-from spatula import HtmlListPage, XPath, SelectorError, PDFPage
+from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage
 
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
 import requests
@@ -18,41 +18,11 @@ requests.packages.urllib3.disable_warnings()
 requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
 
 
-# class StartPage(Page):
-#     def handle_page(self):
-#         try:
-#             pages = int(
-#                 self.doc.xpath("//a[contains(., 'Next')][1]/preceding::a[1]/text()")[0]
-#             )
-#         except IndexError:
-#             if not self.doc.xpath('//div[@class="ListPagination"]/span'):
-#                 raise AssertionError("No bills found for the session")
-#             elif set(
-#                 self.doc.xpath('//div[@class="ListPagination"]/span/text()')
-#             ) != set(["1"]):
-#                 raise AssertionError("Bill list pagination needed but not used")
-#             else:
-#                 self.scraper.warning(
-#                     "Pagination not used; "
-#                     "make sure there are only a few bills for this session"
-#                 )
-#             pages = 1
-
-#         for page_number in range(1, pages + 1):
-#             page_url = self.url + "&PageNumber={}".format(page_number)
-#             yield from self.scrape_page_items(
-#                 BillList,
-#                 url=page_url,
-#                 session=self.kwargs["session"],
-#                 subjects=self.kwargs["subjects"],
-#             )
-
-
 class PaginationError(Exception):
     pass
 
 
-class SubjectPDF(PDFPage):
+class SubjectPDF(PdfPage):
     def get_source_from_input(self):
         return f"http://www.leg.state.fl.us/data/session/{self.input['session']}/citator/Daily/subindex.pdf"
 
@@ -87,7 +57,6 @@ class BillList(HtmlListPage):
     selector = XPath("//a[contains(@href, '/Session/Bill/')]")
     source = ("https://flsenate.gov/Session/Bills/2021?chamber=both",)
     next_page_selector = XPath("//a[@class='next']/@href")
-
     dependencies = {"subjects": SubjectPDF}
 
     def get_next_source(self):
@@ -147,168 +116,180 @@ class BillList(HtmlListPage):
         return bill
 
 
-# class BillDetail(Page):
-#     def handle_page(self):
-#         if self.doc.xpath("//div[@id = 'tabBodyBillHistory']//table"):
-#             self.process_history()
-#             self.process_versions()
-#             self.process_analysis()
-#             self.process_amendments()
-#             self.process_summary()
-#             yield from self.process_votes()
-#             yield from self.scrape_page_items(HousePage, bill=self.obj)
+class BillDetail(HtmlPage):
+    input_type = Bill
+    example_input = Bill(
+        "HB X", "2021", "title", chamber="upper", classification="bill"
+    )
+    example_source = "https://flsenate.gov/Session/Bill/2021/1"
 
-#     def process_summary(self):
-#         summary = self.doc.xpath(
-#             'string(//div[@id="main"]/div/div/p[contains(@class,"width80")])'
-#         ).strip()
-#         # The site indents the CLAIM and amount lines when present
-#         summary = summary.replace("            ", "")
-#         if summary != "":
-#             self.obj.add_abstract(summary, note="summary")
+    def process_page(self):
+        if self.root.xpath("//div[@id = 'tabBodyBillHistory']//table"):
+            self.process_history()
+            self.process_versions()
+            self.process_analysis()
+            self.process_amendments()
+            self.process_summary()
+        return self.input
+        # yield from self.process_votes()
+        # yield from self.scrape_page_items(HousePage, bill=self.obj)
 
-#     def process_versions(self):
-#         try:
-#             version_table = self.doc.xpath("//div[@id = 'tabBodyBillText']/table")[0]
-#             for tr in version_table.xpath("tbody/tr"):
-#                 name = tr.xpath("string(td[1])").strip()
-#                 version_url = tr.xpath("td/a[1]")[0].attrib["href"]
-#                 if version_url.endswith("PDF"):
-#                     mimetype = "application/pdf"
-#                 elif version_url.endswith("HTML"):
-#                     mimetype = "text/html"
+    def process_summary(self):
+        summary = self.root.xpath(
+            'string(//div[@id="main"]/div/div/p[contains(@class,"width80")])'
+        ).strip()
+        # The site indents the CLAIM and amount lines when present
+        summary = summary.replace("            ", "")
+        if summary != "":
+            self.input.add_abstract(summary, note="summary")
 
-#                 self.obj.add_version_link(
-#                     name, version_url, media_type=mimetype, on_duplicate="ignore"
-#                 )
-#         except IndexError:
-#             self.obj.extras["places"] = []  # set places to something no matter what
-#             self.scraper.warning("No version table for {}".format(self.obj.identifier))
+    def process_versions(self):
+        try:
+            version_table = self.root.xpath("//div[@id = 'tabBodyBillText']/table")[0]
+            for tr in version_table.xpath("tbody/tr"):
+                name = tr.xpath("string(td[1])").strip()
+                version_url = tr.xpath("td/a[1]")[0].attrib["href"]
+                if version_url.endswith("PDF"):
+                    mimetype = "application/pdf"
+                elif version_url.endswith("HTML"):
+                    mimetype = "text/html"
 
-#     # 2020 SB 230 is a Bill with populated amendments:
-#     # http://flsenate.gov/Session/Bill/2020/230/?Tab=Amendments
-#     def process_amendments(self):
-#         commmittee_amend_table = self.doc.xpath(
-#             "//div[@id = 'tabBodyAmendments']" "//div[@id='CommitteeAmendment']//table"
-#         )
-#         if commmittee_amend_table:
-#             self.process_amendments_table(commmittee_amend_table, "Committee")
+                self.input.add_version_link(
+                    name, version_url, media_type=mimetype, on_duplicate="ignore"
+                )
+        except IndexError:
+            self.input.extras["places"] = []  # set places to something no matter what
+            self.scraper.warning(
+                "No version table for {}".format(self.input.identifier)
+            )
 
-#         floor_amend_table = self.doc.xpath(
-#             "//div[@id = 'tabBodyAmendments']" "//div[@id='FloorAmendment']//table"
-#         )
-#         if floor_amend_table:
-#             self.process_amendments_table(floor_amend_table, "Floor")
+    # 2020 SB 230 is a Bill with populated amendments:
+    # http://flsenate.gov/Session/Bill/2020/230/?Tab=Amendments
+    def process_amendments(self):
+        commmittee_amend_table = self.root.xpath(
+            "//div[@id = 'tabBodyAmendments']" "//div[@id='CommitteeAmendment']//table"
+        )
+        if commmittee_amend_table:
+            self.process_amendments_table(commmittee_amend_table, "Committee")
 
-#     def process_amendments_table(self, table, amend_type):
-#         urls = set()
-#         try:
-#             version_to_amend = table[0].xpath("string(caption)").strip()
-#             for tr in table[0].xpath("tbody/tr"):
-#                 name = tr.xpath("string(td[1])").strip().split("\n")[0].strip()
+        floor_amend_table = self.root.xpath(
+            "//div[@id = 'tabBodyAmendments']" "//div[@id='FloorAmendment']//table"
+        )
+        if floor_amend_table:
+            self.process_amendments_table(floor_amend_table, "Floor")
 
-#                 # Amendment titles don't show which version they're amending, so add that
-#                 name = "{} to {}".format(name, version_to_amend)
+    def process_amendments_table(self, table, amend_type):
+        urls = set()
+        try:
+            version_to_amend = table[0].xpath("string(caption)").strip()
+            for tr in table[0].xpath("tbody/tr"):
+                name = tr.xpath("string(td[1])").strip().split("\n")[0].strip()
 
-#                 for link in tr.xpath("td[5]/a"):
-#                     version_url = link.attrib["href"]
+                # Amendment titles don't show which version they're amending, so add that
+                name = "{} to {}".format(name, version_to_amend)
 
-#                     # avoid duplicates
-#                     if version_url in urls:
-#                         continue
-#                     urls.add(version_url)
+                for link in tr.xpath("td[5]/a"):
+                    version_url = link.attrib["href"]
 
-#                     if version_url.endswith("PDF"):
-#                         mimetype = "application/pdf"
+                    # avoid duplicates
+                    if version_url in urls:
+                        continue
+                    urls.add(version_url)
 
-#                     elif version_url.endswith("HTML"):
-#                         mimetype = "text/html"
+                    if version_url.endswith("PDF"):
+                        mimetype = "application/pdf"
 
-#                     self.obj.add_document_link(
-#                         name, version_url, media_type=mimetype, on_duplicate="ignore"
-#                     )
-#         except IndexError:
-#             self.scraper.warning(
-#                 "No {} amendments table for {}".format(amend_type, self.obj.identifier)
-#             )
+                    elif version_url.endswith("HTML"):
+                        mimetype = "text/html"
 
-#     def process_analysis(self):
-#         try:
-#             analysis_table = self.doc.xpath("//div[@id = 'tabBodyAnalyses']/table")[0]
-#             for tr in analysis_table.xpath("tbody/tr"):
-#                 name = tr.xpath("string(td[1])").strip()
-#                 name += " -- " + tr.xpath("string(td[3])").strip()
-#                 name = re.sub(r"\s+", " ", name)
-#                 date = tr.xpath("string(td[4])").strip()
-#                 if date:
-#                     name += " (%s)" % date
-#                 analysis_url = tr.xpath("td/a")[0].attrib["href"]
-#                 self.obj.add_document_link(name, analysis_url, on_duplicate="ignore")
-#         except IndexError:
-#             self.scraper.warning("No analysis table for {}".format(self.obj.identifier))
+                    self.obj.add_document_link(
+                        name, version_url, media_type=mimetype, on_duplicate="ignore"
+                    )
+        except IndexError:
+            self.scraper.warning(
+                "No {} amendments table for {}".format(amend_type, self.obj.identifier)
+            )
 
-#     def process_history(self):
-#         hist_table = self.doc.xpath("//div[@id = 'tabBodyBillHistory']//table")[0]
+    def process_analysis(self):
+        try:
+            analysis_table = self.root.xpath("//div[@id = 'tabBodyAnalyses']/table")[0]
+            for tr in analysis_table.xpath("tbody/tr"):
+                name = tr.xpath("string(td[1])").strip()
+                name += " -- " + tr.xpath("string(td[3])").strip()
+                name = re.sub(r"\s+", " ", name)
+                date = tr.xpath("string(td[4])").strip()
+                if date:
+                    name += " (%s)" % date
+                analysis_url = tr.xpath("td/a")[0].attrib["href"]
+                self.input.add_document_link(name, analysis_url, on_duplicate="ignore")
+        except IndexError:
+            self.scraper.warning(
+                "No analysis table for {}".format(self.input.identifier)
+            )
 
-#         for tr in hist_table.xpath("tbody/tr"):
-#             date = tr.xpath("string(td[1])")
-#             date = datetime.datetime.strptime(date, "%m/%d/%Y").date().isoformat()
+    def process_history(self):
+        hist_table = self.root.xpath("//div[@id = 'tabBodyBillHistory']//table")[0]
 
-#             actor = tr.xpath("string(td[2])")
-#             if not actor:
-#                 actor = None
-#             chamber = {"Senate": "upper", "House": "lower"}.get(actor, None)
-#             if chamber:
-#                 actor = None
+        for tr in hist_table.xpath("tbody/tr"):
+            date = tr.xpath("string(td[1])")
+            date = datetime.datetime.strptime(date, "%m/%d/%Y").date().isoformat()
 
-#             act_text = tr.xpath("string(td[3])").strip()
-#             for action in act_text.split(u"\u2022"):
-#                 action = action.strip()
-#                 if not action:
-#                     continue
+            actor = tr.xpath("string(td[2])")
+            if not actor:
+                actor = None
+            chamber = {"Senate": "upper", "House": "lower"}.get(actor, None)
+            if chamber:
+                actor = None
 
-#                 action = re.sub(r"-(H|S)J\s+(\d+)$", "", action)
+            act_text = tr.xpath("string(td[3])").strip()
+            for action in act_text.split("\u2022"):
+                action = action.strip()
+                if not action:
+                    continue
 
-#                 atype = []
-#                 if action.startswith("Referred to"):
-#                     atype.append("referral-committee")
-#                 elif action.startswith("Favorable by"):
-#                     atype.append("committee-passage-favorable")
-#                 elif action == "Filed":
-#                     atype.append("filing")
-#                 elif action.startswith("Withdrawn"):
-#                     atype.append("withdrawal")
-#                 elif action.startswith("Died"):
-#                     atype.append("failure")
-#                 elif action.startswith("Introduced"):
-#                     atype.append("introduction")
-#                 elif action.startswith("Read 2nd time"):
-#                     atype.append("reading-2")
-#                 elif action.startswith("Read 3rd time"):
-#                     atype.append("reading-3")
-#                 elif action.startswith("Passed;"):
-#                     atype.append("passage")
-#                 elif action.startswith("Passed as amended"):
-#                     atype.append("passage")
-#                 elif action.startswith("Adopted"):
-#                     atype.append("passage")
-#                 elif action.startswith("CS passed"):
-#                     atype.append("passage")
-#                 elif action == "Approved by Governor":
-#                     atype.append("executive-signature")
-#                 elif action == "Vetoed by Governor":
-#                     atype.append("executive-veto")
+                action = re.sub(r"-(H|S)J\s+(\d+)$", "", action)
 
-#                 self.obj.add_action(
-#                     action,
-#                     date,
-#                     organization=actor,
-#                     chamber=chamber,
-#                     classification=atype,
-#                 )
+                atype = []
+                if action.startswith("Referred to"):
+                    atype.append("referral-committee")
+                elif action.startswith("Favorable by"):
+                    atype.append("committee-passage-favorable")
+                elif action == "Filed":
+                    atype.append("filing")
+                elif action.startswith("Withdrawn"):
+                    atype.append("withdrawal")
+                elif action.startswith("Died"):
+                    atype.append("failure")
+                elif action.startswith("Introduced"):
+                    atype.append("introduction")
+                elif action.startswith("Read 2nd time"):
+                    atype.append("reading-2")
+                elif action.startswith("Read 3rd time"):
+                    atype.append("reading-3")
+                elif action.startswith("Passed;"):
+                    atype.append("passage")
+                elif action.startswith("Passed as amended"):
+                    atype.append("passage")
+                elif action.startswith("Adopted"):
+                    atype.append("passage")
+                elif action.startswith("CS passed"):
+                    atype.append("passage")
+                elif action == "Approved by Governor":
+                    atype.append("executive-signature")
+                elif action == "Vetoed by Governor":
+                    atype.append("executive-veto")
+
+                self.input.add_action(
+                    action,
+                    date,
+                    organization=actor,
+                    chamber=chamber,
+                    classification=atype,
+                )
+
 
 #     def process_votes(self):
-#         vote_tables = self.doc.xpath("//div[@id='tabBodyVoteHistory']//table")
+#         vote_tables = self.root.xpath("//div[@id='tabBodyVoteHistory']//table")
 
 #         for vote_table in vote_tables:
 #             for tr in vote_table.xpath("tbody/tr"):
@@ -595,30 +576,30 @@ class BillList(HtmlListPage):
 #         # Checks to see if any vote totals are provided
 #         if (
 #             len(
-#                 self.doc.xpath(
+#                 self.root.xpath(
 #                     '//span[contains(@id, "ctl00_MainContent_lblTotal")]/text()'
 #                 )
 #             )
 #             > 0
 #         ):
-#             (date,) = self.doc.xpath('//span[contains(@id, "lblDate")]/text()')
+#             (date,) = self.root.xpath('//span[contains(@id, "lblDate")]/text()')
 #             date = format_datetime(
 #                 datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p"), "US/Eastern"
 #             )
 #             # ctl00_MainContent_lblTotal //span[contains(@id, "ctl00_MainContent_lblTotal")]
 #             yes_count = int(
-#                 self.doc.xpath('//span[contains(@id, "lblYeas")]/text()')[0]
+#                 self.root.xpath('//span[contains(@id, "lblYeas")]/text()')[0]
 #             )
-#             no_count = int(self.doc.xpath('//span[contains(@id, "lblNays")]/text()')[0])
+#             no_count = int(self.root.xpath('//span[contains(@id, "lblNays")]/text()')[0])
 #             other_count = int(
-#                 self.doc.xpath('//span[contains(@id, "lblMissed")]/text()')[0]
+#                 self.root.xpath('//span[contains(@id, "lblMissed")]/text()')[0]
 #             )
 #             result = "pass" if yes_count > no_count else "fail"
 
-#             (committee,) = self.doc.xpath(
+#             (committee,) = self.root.xpath(
 #                 '//span[contains(@id, "lblCommittee")]/text()'
 #             )
-#             (action,) = self.doc.xpath('//span[contains(@id, "lblAction")]/text()')
+#             (action,) = self.root.xpath('//span[contains(@id, "lblAction")]/text()')
 #             motion = "{} ({})".format(action, committee)
 
 #             vote = VoteEvent(
@@ -634,7 +615,7 @@ class BillList(HtmlListPage):
 #             vote.set_count("no", no_count)
 #             vote.set_count("not voting", other_count)
 
-#             for member_vote in self.doc.xpath('//ul[contains(@class, "vote-list")]/li'):
+#             for member_vote in self.root.xpath('//ul[contains(@class, "vote-list")]/li'):
 #                 if not member_vote.text_content().strip():
 #                     continue
 
