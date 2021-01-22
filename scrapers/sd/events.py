@@ -15,13 +15,12 @@ class SDEventScraper(Scraper):
     com_agendas = {}
 
     def scrape(self):
+        # SD is weird because they don't have individual 'events' that have their own IDs.
+        # instead we hit all the various document URLs, and combine them into synthetic events based on date.
+
         # there is a unified URL at https://sdlegislature.gov/api/Documents/Schedule?all=true
         # but it only shows future meetings, so we wouldn't be able to scrape minutes and audio
         # so instead, do it by committee page
-
-        #  https://sdlegislature.gov/api/SessionCommittees/Documents/503?Type=3&Type=5
-        # schedule_url = 'https://sdlegislature.gov/api/Documents/Schedule?all=true'
-        # page = self.get(schedule_url).json()
 
         session_id = self.get_current_session_id()
 
@@ -34,22 +33,19 @@ class SDEventScraper(Scraper):
             # because the state lists all the various bits seperately
             events_by_date = {}
 
-            # Skip the chamber meetings
+            # Skip the floor sessions
             if com['FullName'] == 'House of Representatives' or com['FullName'] == 'Senate':
                 continue
 
-            pprint.pprint(com)
-            # https://sdlegislature.gov/api/Documents/SessionCommittee/486
-            meetings_url = f"https://sdlegislature.gov/api/SessionCommittees/Documents/{com['SessionCommitteeId']}?Type=5&Type=4&Type=3"
+            meetings_url = f"https://sdlegislature.gov/api/SessionCommittees/Documents/{com['SessionCommitteeId']}?Type=5&Type=3"
             documents = self.get(meetings_url).json()
 
-            # We need to loop through this list multiple times.
-            # once to grab DocumentTypeId = 3, which are the agendas for the actual meetings
-            # then again for DocumentTypeId = 4, which are the minutes
-            # then again for DocumentTypeId = 5, which are the attached documents
+            # Because the list of docs isn't ordered, We need to loop through this list multiple times.
+            # once to grab DocumentTypeId = 5, which are the agendas for the actual meetings
+            # then after we've created the events, again for DocumentTypeId = 4, which are the minutes
+            # we can skip the other DocumentTypeIds becase they're included in the /Documents endpoint,
+            # or audio which is duplicated in DocumentTypeId 5
             for row in documents:
-                pprint.pprint(row)
-
                 if row['NoMeeting'] is True:
                     continue
 
@@ -59,22 +55,11 @@ class SDEventScraper(Scraper):
                 event = self.create_event(com, row)
 
                 if row['AudioLink'] is not None and row['AudioLink']['Url'] is not None:
-                    print(row['AudioLink'])
                     event.add_media_link(
                         "Audio of Hearing", row['AudioLink']['Url'], 'audio/mpeg'
                     )
 
                 self.scrape_agendas_and_bills(event, row['DocumentId'])
-
-                # when = dt.datetime.strptime(when, "%m/%d/%Y %I:%M %p")
-                # when = self.TIMEZONE.localize(when)
-                # event = Event(
-                #     name=descr,
-                #     start_date=when,
-                #     classification="committee-meeting",
-                #     description=descr,
-                #     location_name=where,
-                # )
 
                 meeting_documents_url = f"https://sdlegislature.gov/api/Documents/Meeting/{row['DocumentId']}"
                 meeting_docs = self.get(meeting_documents_url).json()
@@ -88,48 +73,52 @@ class SDEventScraper(Scraper):
                         media_type="application/pdf"
                     )
 
-                event.add_source('https://sdlegislature.gov/Session/Schedule')
+                event.add_source(f"https://sdlegislature.gov/Session/Committee/{com['SessionCommitteeId']}/Detail")
 
-                # event.add_source(URL)
-                # event.add_document(notice_name, notice_href, media_type="text/html")
-                # for bill in self.get_related_bills(notice_href):
-                #     a = event.add_agenda_item(description=bill["descr"].strip())
-                #     a.add_bill(bill["bill_id"], note=bill["type"])
-                # yield event
                 events_by_date[event.start_date.date().strftime("%Y%m%d")] = event
-
-            pprint.pprint(events_by_date)
 
             for row in documents:
                 if row['DocumentTypeId'] != 4:
                     continue
 
                 doc_date = dateutil.parser.parse(row['DocumentDate'])
-                minutes_url  = "https://mylrc.sdlegislature.gov/api/Documents/{row['DocumentId']}.pdf"
-                events_by_date[doc_date.date().strftime("%Y%m%d")].add_document(
-                    "Hearing Minutes",
-                    minutes_url,
-                    media_type='application/pdf'
-                )
+                minutes_url  = f"https://mylrc.sdlegislature.gov/api/Documents/{row['DocumentId']}.pdf"
+
+                date_key = doc_date.date().strftime("%Y%m%d")
+
+                # sometimes there are random docs like bill versions, that aren't linked to a specific hearing
+                if date_key in events_by_date:
+                    events_by_date[date_key].add_document(
+                        "Hearing Minutes",
+                        minutes_url,
+                        media_type='application/pdf'
+                    )
 
             other_docs_url = f"https://sdlegislature.gov/api/Documents/SessionCommittee/{com['SessionCommitteeId']}"
             other_docs = self.get(other_docs_url).json()
 
             for other_doc in other_docs:
                 doc_date = dateutil.parser.parse(other_doc['DocumentDate'])
+                date_key = doc_date.date().strftime("%Y%m%d")
+
                 other_doc_url  = f"https://mylrc.sdlegislature.gov/api/Documents/{other_doc['DocumentId']}.pdf"
-                events_by_date[doc_date.date().strftime("%Y%m%d")].add_document(
-                    other_doc['Title'],
-                    other_doc_url,
-                    media_type='application/pdf',
-                    on_duplicate='ignore'
-                )
 
-            # https://sdlegislature.gov/api/Documents/Meeting/211275
-            # https://sdlegislature.gov/api/Documents/SessionCommittee/486
+                 # sometimes there are random docs like bill versions, that aren't linked to a specific hearing
+                if date_key in events_by_date:
+                    events_by_date[date_key].add_document(
+                        other_doc['Title'],
+                        other_doc_url,
+                        media_type='application/pdf',
+                        on_duplicate='ignore'
+                    )
 
-            for event in events_by_date:
-                yield event
+            # subcoms don't differentiate the chamber, so skip them
+            if com['Committee']['Body'] != 'A':
+                com_name = f"{com['Committee']['BodyName']} {com['Committee']['Name']}"
+                event.add_participant(com_name, type="committee", note="host")
+
+            for key in events_by_date:
+                yield events_by_date[key]
 
 
     def create_event(self, committee, agenda_document):
@@ -170,18 +159,6 @@ class SDEventScraper(Scraper):
         agenda_page = lxml.html.fromstring(agenda_page)
 
         for link in agenda_page.xpath('//a[contains(@href, "/Bill/")]'):
-            bill_number = link.xpath('string(.)').replace("\r\n", " ").strip()
+            bill_number = link.xpath('string(.)').replace("\r\n", " ").replace("\t","").strip()
             a = event.add_agenda_item(description=bill_number)
             a.add_bill(bill_number)
-
-    def scrape_documents(self, event, document_id):
-        doc_list_url = "https://sdlegislature.gov/api/Documents/Meeting/{document_id}.html"
-        page = self.get(doc_list_url).json()
-
-        for row in page:
-            doc_url = f"https://mylrc.sdlegislature.gov/api/Documents/{row['document_id']}.pdf"
-            event.add_document(
-                note=row['Title'],
-                url=url,
-                media_type="application/pdf",
-            )
