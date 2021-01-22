@@ -28,9 +28,14 @@ class PAEventScraper(Scraper):
                 'ancestor::div[@class="CMS-MeetingDetail"]/div/a/@name'
             )[0]
             for row in table.xpath("tr"):
-                time_string = row.xpath('td[@class="CMS-MeetingDetail-Time"]/text()')[
+                title = row.xpath('.//div[contains(@class,"CMS-MeetingDetail-Agenda-CommitteeName")]')[0].text_content().strip()
+
+                time_string = row.xpath('td[@class="CMS-MeetingDetail-Time"]')[
                     0
-                ].strip()
+                ].text_content().strip()
+
+                time_string = time_string.replace("*", '').strip()
+
                 description = (
                     row.xpath('td[@class="CMS-MeetingDetail-Agenda"]/div/div')[-1]
                     .text_content()
@@ -51,10 +56,17 @@ class PAEventScraper(Scraper):
                         "{} {}".format(date_string, time_string), "%m/%d/%Y %I:%M %p"
                     )
                 except ValueError:
-                    break
+                    try:
+                        start_date = datetime.datetime.strptime(
+                            date_string, "%m/%d/%Y"
+                        )
+                    except ValueError:
+                        self.warning(f"Could not parse date {date_string} {time_string}, skipping")
+                        break
 
                 event = Event(
-                    name=description,
+                    name=title,
+                    description=description,
                     start_date=self._tz.localize(start_date),
                     location_name=location,
                 )
