@@ -1,14 +1,10 @@
 import re
 import datetime
-
-# from urllib.parse import urlencode
+from dataclasses import dataclass
+from urllib.parse import urlencode
 from collections import defaultdict
-
-# from openstates.scrape import Scraper, Bill, VoteEvent
-from openstates.scrape import Bill
-
-# from openstates.utils import format_datetime
-
+from openstates.scrape import Bill, VoteEvent
+from openstates.utils import format_datetime
 from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage
 
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
@@ -119,7 +115,7 @@ class BillList(HtmlListPage):
 class BillDetail(HtmlPage):
     input_type = Bill
     example_input = Bill(
-        "HB X", "2021", "title", chamber="upper", classification="bill"
+        "HB 1", "2021", "title", chamber="upper", classification="bill"
     )
     example_source = "https://flsenate.gov/Session/Bill/2021/1"
 
@@ -132,7 +128,7 @@ class BillDetail(HtmlPage):
             self.process_summary()
         return self.input
         # yield from self.process_votes()
-        # yield from self.scrape_page_items(HousePage, bill=self.obj)
+        # yield from self.scrape_page_items(HouseSearchPage, bill=self.obj)
 
     def process_summary(self):
         summary = self.root.xpath(
@@ -522,121 +518,144 @@ class BillDetail(HtmlPage):
 #         yield vote
 
 
-# class HousePage(Page):
-#     """
-#     House committee roll calls are not available on the Senate's
-#     website. Furthermore, the House uses an internal ID system in
-#     its URLs, making accessing those pages non-trivial.
-
-#     This will fetch all the House committee votes for the
-#     given bill, and add the votes to that object.
-#     """
-
-#     url = "http://www.myfloridahouse.gov/Sections/Bills/bills.aspx"
-#     list_xpath = '//a[contains(@href, "/Bills/billsdetail.aspx?BillId=")]/@href'
-
-#     def do_request(self):
-#         # Keep the digits and all following characters in the bill's ID
-#         bill_number = re.search(
-#             r"^\w+\s(\d+\w*)$", self.kwargs["bill"].identifier
-#         ).group(1)
-#         session_number = {
-#             "2021": "90",
-#             "2020": "89",
-#             "2019": "87",
-#             "2018": "86",
-#             "2017A": "85",
-#             "2017": "83",
-#             "2016": "80",
-#             "2015C": "82",
-#             "2015B": "81",
-#             "2015A": "79",
-#             "2015": "76",
-#             "2014O": "78",
-#             "2014A": "77",
-#             "2016O": "84",
-#         }[self.kwargs["bill"].legislative_session]
-
-#         form = {"Chamber": "B", "SessionId": session_number, "BillNumber": bill_number}
-#         return self.scraper.get(self.url + "?" + urlencode(form))
-
-#     def handle_list_item(self, item):
-#         yield from self.scrape_page_items(HouseBillPage, item, bill=self.kwargs["bill"])
+@dataclass
+class BillAugmentation:
+    bill: Bill
+    url: str
 
 
-# class HouseBillPage(Page):
-#     list_xpath = '//a[text()="See Votes"]/@href'
+class HouseSearchPage(HtmlListPage):
+    """
+    House committee roll calls are not available on the Senate's
+    website. Furthermore, the House uses an internal ID system in
+    its URLs, making accessing those pages non-trivial.
 
-#     def handle_list_item(self, item):
-#         yield from self.scrape_page_items(HouseComVote, item, bill=self.kwargs["bill"])
+    This will fetch all the House committee votes for the
+    given bill, and add the votes to that object.
+    """
+
+    input_type = Bill
+    example_input = Bill(
+        "HB 1", "2020", "title", chamber="upper", classification="bill"
+    )
+    selector = XPath('//a[contains(@href, "/Bills/billsdetail.aspx?BillId=")]/@href')
+
+    def get_source_from_input(self):
+        url = "http://www.myfloridahouse.gov/Sections/Bills/bills.aspx"
+        # Keep the digits and all following characters in the bill's ID
+        bill_number = re.search(r"^\w+\s(\d+\w*)$", self.input.identifier).group(1)
+        session_number = {
+            "2021": "90",
+            "2020": "89",
+            "2019": "87",
+            "2018": "86",
+            "2017A": "85",
+            "2017": "83",
+            "2016": "80",
+            "2015C": "82",
+            "2015B": "81",
+            "2015A": "79",
+            "2015": "76",
+            "2014O": "78",
+            "2014A": "77",
+            "2016O": "84",
+        }[self.input.legislative_session]
+
+        form = {"Chamber": "B", "SessionId": session_number, "BillNumber": bill_number}
+        return url + "?" + urlencode(form)
+
+    def process_item(self, item):
+        return BillAugmentation(self.input, item)
 
 
-# class HouseComVote(Page):
-#     def handle_page(self):
-#         # Checks to see if any vote totals are provided
-#         if (
-#             len(
-#                 self.root.xpath(
-#                     '//span[contains(@id, "ctl00_MainContent_lblTotal")]/text()'
-#                 )
-#             )
-#             > 0
-#         ):
-#             (date,) = self.root.xpath('//span[contains(@id, "lblDate")]/text()')
-#             date = format_datetime(
-#                 datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p"), "US/Eastern"
-#             )
-#             # ctl00_MainContent_lblTotal //span[contains(@id, "ctl00_MainContent_lblTotal")]
-#             yes_count = int(
-#                 self.root.xpath('//span[contains(@id, "lblYeas")]/text()')[0]
-#             )
-#             no_count = int(self.root.xpath('//span[contains(@id, "lblNays")]/text()')[0])
-#             other_count = int(
-#                 self.root.xpath('//span[contains(@id, "lblMissed")]/text()')[0]
-#             )
-#             result = "pass" if yes_count > no_count else "fail"
+class HouseBillPage(HtmlListPage):
+    selector = XPath('//a[text()="See Votes"]/@href')
+    input_type = BillAugmentation
+    example_input = BillAugmentation(
+        Bill("HB 1", "2020", "title", chamber="upper", classification="bill"),
+        "http://www.myfloridahouse.gov/Sections/Bills/billsdetail.aspx?BillId=69746",
+    )
 
-#             (committee,) = self.root.xpath(
-#                 '//span[contains(@id, "lblCommittee")]/text()'
-#             )
-#             (action,) = self.root.xpath('//span[contains(@id, "lblAction")]/text()')
-#             motion = "{} ({})".format(action, committee)
+    def process_item(self, item):
+        return BillAugmentation(self.input, item)
 
-#             vote = VoteEvent(
-#                 start_date=date,
-#                 bill=self.kwargs["bill"],
-#                 chamber="lower",
-#                 motion_text=motion,
-#                 result=result,
-#                 classification="committee-passage",
-#             )
-#             vote.add_source(self.url)
-#             vote.set_count("yes", yes_count)
-#             vote.set_count("no", no_count)
-#             vote.set_count("not voting", other_count)
 
-#             for member_vote in self.root.xpath('//ul[contains(@class, "vote-list")]/li'):
-#                 if not member_vote.text_content().strip():
-#                     continue
+class HouseComVote(HtmlPage):
+    input_type = BillAugmentation
+    example_input = BillAugmentation(
+        Bill("HB 1", "2020", "title", chamber="upper", classification="bill"),
+        "http://www.myfloridahouse.gov/Sections/Committees/billvote.aspx?VoteId=54381&IsPCB=0&BillId=69746",
+    )
 
-#                 (member,) = member_vote.xpath("span[2]//text()")
-#                 (member_vote,) = member_vote.xpath("span[1]//text()")
+    def process_page(self):
+        # Checks to see if any vote totals are provided
+        if (
+            len(
+                self.root.xpath(
+                    '//span[contains(@id, "ctl00_MainContent_lblTotal")]/text()'
+                )
+            )
+            > 0
+        ):
+            (date,) = self.root.xpath('//span[contains(@id, "lblDate")]/text()')
+            date = format_datetime(
+                datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p"), "US/Eastern"
+            )
+            # ctl00_MainContent_lblTotal //span[contains(@id, "ctl00_MainContent_lblTotal")]
+            yes_count = int(
+                self.root.xpath('//span[contains(@id, "lblYeas")]/text()')[0]
+            )
+            no_count = int(
+                self.root.xpath('//span[contains(@id, "lblNays")]/text()')[0]
+            )
+            other_count = int(
+                self.root.xpath('//span[contains(@id, "lblMissed")]/text()')[0]
+            )
+            result = "pass" if yes_count > no_count else "fail"
 
-#                 member = member.strip()
-#                 if member_vote == "Y":
-#                     vote.yes(member)
-#                 elif member_vote == "N":
-#                     vote.no(member)
-#                 elif member_vote == "-":
-#                     vote.vote("not voting", member)
-#                 # Parenthetical votes appear to not be counted in the
-#                 # totals for Yea, Nay, _or_ Missed
-#                 elif re.search(r"\([YN]\)", member_vote):
-#                     continue
-#                 else:
-#                     raise ValueError("Unknown vote type found: {}".format(member_vote))
+            (committee,) = self.root.xpath(
+                '//span[contains(@id, "lblCommittee")]/text()'
+            )
+            (action,) = self.root.xpath('//span[contains(@id, "lblAction")]/text()')
+            motion = "{} ({})".format(action, committee)
 
-#             yield vote
+            vote = VoteEvent(
+                start_date=date,
+                bill=self.input.bill,
+                chamber="lower",
+                motion_text=motion,
+                result=result,
+                classification="committee-passage",
+            )
+            vote.add_source(self.source.url)
+            vote.set_count("yes", yes_count)
+            vote.set_count("no", no_count)
+            vote.set_count("not voting", other_count)
+
+            for member_vote in self.root.xpath(
+                '//ul[contains(@class, "vote-list")]/li'
+            ):
+                if not member_vote.text_content().strip():
+                    continue
+
+                (member,) = member_vote.xpath("span[2]//text()")
+                (member_vote,) = member_vote.xpath("span[1]//text()")
+
+                member = member.strip()
+                if member_vote == "Y":
+                    vote.yes(member)
+                elif member_vote == "N":
+                    vote.no(member)
+                elif member_vote == "-":
+                    vote.vote("not voting", member)
+                # Parenthetical votes appear to not be counted in the
+                # totals for Yea, Nay, _or_ Missed
+                elif re.search(r"\([YN]\)", member_vote):
+                    continue
+                else:
+                    raise ValueError("Unknown vote type found: {}".format(member_vote))
+
+            return vote
 
 
 # class FlBillScraper(Scraper, Spatula):
