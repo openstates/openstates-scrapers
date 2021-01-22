@@ -162,7 +162,7 @@ class SDBillScraper(Scraper, LXMLMixin):
             if (
                 action_text == "Do Pass"
                 or action_text == "Tabled"
-                or "ShowCommitteeName" in action
+                or action["ShowCommitteeName"]
             ):
                 full_action.insert(0, f'{action["ActionCommittee"]["Name"]}')
 
