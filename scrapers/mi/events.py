@@ -6,8 +6,8 @@ import lxml.html
 from openstates.scrape import Scraper, Event
 
 
-mi_events = "http://legislature.mi.gov/doc.aspx?CommitteeMeetings"
-
+# mi_events = "http://legislature.mi.gov/doc.aspx?CommitteeMeetings"
+mi_events = 'http://legislature.mi.gov/(S(sz5mhvrylsnkncnq4j4f21b0))/mileg.aspx?page=MCommitteeMeetings'
 
 class MIEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
@@ -15,7 +15,7 @@ class MIEventScraper(Scraper):
     def scrape_event_page(self, url, chamber):
         html = self.get(url).text
         page = lxml.html.fromstring(html)
-        trs = page.xpath("//table[@id='frg_committeemeeting_MeetingTable']/tr")
+        trs = page.xpath("//table[@id='frg_mcommitteemeeting_MeetingTable']/tr")
         metainf = {}
         for tr in trs:
             tds = tr.xpath(".//td")
@@ -64,7 +64,7 @@ class MIEventScraper(Scraper):
         except ValueError:
             datetime = dt.datetime.strptime(datetime, "%A, %m/%d/%Y %I %p")
         where = metainf["Location"]["txt"]
-        title = metainf["Committee"]["txt"]  # XXX: Find a better title
+        title = metainf["Committee(s)"]["txt"]  # XXX: Find a better title
 
         if chamber == "other":
             chamber = "joint"
@@ -82,7 +82,7 @@ class MIEventScraper(Scraper):
             self.warning("No chair found for event '{}'".format(title))
 
         event.add_participant(
-            metainf["Committee"]["txt"], type="committee", note="host"
+            metainf["Committee(s)"]["txt"], type="committee", note="host"
         )
 
         agenda = metainf["Agenda"]["obj"]
@@ -106,9 +106,9 @@ class MIEventScraper(Scraper):
         page = lxml.html.fromstring(html)
         page.make_links_absolute(mi_events)
         xpaths = {
-            "lower": "//span[@id='frg_committeemeetings_HouseMeetingsList']",
-            "upper": "//span[@id='frg_committeemeetings_SenateMeetingsList']",
-            "other": "//span[@is='frg_committeemeetings_JointMeetingsList']",
+            "lower": "//span[@id='frg_mcommitteemeetings_HouseMeetingsList']",
+            "upper": "//span[@id='frg_mcommitteemeetings_SenateMeetingsList']",
+            "other": "//span[@is='frg_mcommitteemeetings_JointMeetingsList']",
         }
         for chamber in chambers:
             span = page.xpath(xpaths[chamber])
