@@ -83,7 +83,7 @@ class ARLegislatorScraper(Scraper):
         # info_box = root.xpath('string(//div[@id="bodyContent"]/div[2]/div[2])')
         try:
             district = root.xpath(
-                'string(//div[@id="bodyContent"]/div[2]/div[2]/div[3]/div[2])'
+                'string(//div[@id="bodyContent"]/div[2]/div[2]/div[3]/div[3])'
             )
         except AttributeError:
             self.warning("Member has no district listed; skipping them")
