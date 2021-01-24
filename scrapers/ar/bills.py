@@ -174,6 +174,32 @@ class ARBillScraper(Scraper):
                 name, link.attrib["href"], media_type="application/pdf"
             )
 
+        other_primary_sponsors_path = page.xpath(
+            "//div[text()[contains(.,'Other Primary Sponsor:')]]/../div[2]/a"
+        )
+        for a in other_primary_sponsors_path:
+            other_primary_sponsors = a.text_content().strip()
+            print(other_primary_sponsors)
+            bill.add_sponsorship(
+                other_primary_sponsors,
+                classification="primary",
+                entity_type="person",
+                primary=True,
+            )
+
+        cosponsor_path = page.xpath(
+            "//div[text()[contains(.,'CoSponsors:')]]/../div[2]/a"
+        )
+        for a in cosponsor_path:
+            cosponsor = a.text_content().strip()
+            print(cosponsor)
+            bill.add_sponsorship(
+                cosponsor,
+                classification="cosponsor",
+                entity_type="person",
+                primary=False,
+            )
+
         try:
             cosponsor_link = page.xpath("//a[contains(@href, 'CoSponsors')]")[0]
             self.scrape_cosponsors(bill, cosponsor_link.attrib["href"])
