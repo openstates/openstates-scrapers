@@ -20,7 +20,7 @@ class VaEventScraper(Scraper):
         session = self.latest_session()
         session_id = SESSION_SITE_IDS[session]
 
-        # yield from self.scrape_lower()
+        yield from self.scrape_lower()
         yield from self.scrape_upper(session_id)
 
     def scrape_lower(self):
@@ -55,17 +55,12 @@ class VaEventScraper(Scraper):
                 ].strip()
                 event_type = "other"
 
-            print(title)
-
             date_link = row.xpath(".//a[@title='Add to Calendar']/@href")[0]
             parsed = parse.parse_qs(parse.urlparse(date_link).query)
             date_raw = parsed["dt"][0]
             location = parsed["loc"][0]
-            print(date_raw)
 
             start = dateutil.parser.parse(date_raw)
-            print(start)
-            print(location)
 
             # If there's a chair in parentheticals, remove them from the title
             # and add as a person instead
@@ -122,40 +117,29 @@ class VaEventScraper(Scraper):
             ):
                 agenda.add_bill(bill)
 
-        #             event.add_document(
-        #                 meeting_doc["Title"],
-        #                 meeting_doc_url,
-        #                 media_type="application/pdf",
-        #             )
-
-        #         event.add_source(
-        #             f"https://sdlegislature.gov/Session/Committee/{com['SessionCommitteeId']}/Detail"
-        #         )
-
-        #     a = event.add_agenda_item(description=bill_number)
-        #     a.add_bill(bill_number)
-
     def scrape_upper(self, session_id):
         list_url = f"https://lis.virginia.gov/cgi-bin/legp604.exe?{session_id}+oth+MTG&{session_id}+oth+MTG"
         page = self.get(list_url).content
         page = lxml.html.fromstring(page)
-        page.make_links_absolute(list_url) 
+        page.make_links_absolute(list_url)
 
         date = None
         # note the [td] at the end, they have some empty tr-s so skip them
         for row in page.xpath("//div[@id='mainC']/center/table/tr[td]"):
-            print("row")
-            if row.xpath('td[1]/text()')[0].strip() != '':
-                date = row.xpath('td[1]/text()')[0].strip()
+            if row.xpath("td[1]/text()")[0].strip() != "":
+                date = row.xpath("td[1]/text()")[0].strip()
 
-            description = row.xpath('td[3]/text()')[0].strip()
-            print(description)
+            description = row.xpath("td[3]/text()")[0].strip()
 
             # data on the house page is better
-            if 'senate' not in description.lower():
+            if "senate" not in description.lower():
                 continue
 
-            time = row.xpath('td[2]/text()')[0].strip()
+            time = row.xpath("td[2]/text()")[0].strip()
+
+            status = "tentative"
+            if "CANCELLED" in time.lower():
+                status = "cancelled"
 
             try:
                 when = dateutil.parser.parse(f"{date} {time}")
@@ -164,13 +148,18 @@ class VaEventScraper(Scraper):
 
             when = self._tz.localize(when)
 
-            print(description)
-            print(when)
+            # TODO: Post covid figure out how they post locations
+            if "virtual" in description.lower():
+                location = "Virtual"
+            else:
+                location = "Unknown"
+
             event = Event(
                 name=description,
                 start_date=when,
                 classification="committee-meeting",
-                location_name="TODO"
+                location_name=location,
+                status=status,
             )
 
             event.add_source(list_url)
