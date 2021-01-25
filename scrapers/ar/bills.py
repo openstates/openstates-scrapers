@@ -179,7 +179,6 @@ class ARBillScraper(Scraper):
         )
         for a in other_primary_sponsors_path:
             other_primary_sponsors = a.text_content().strip()
-            print(other_primary_sponsors)
             bill.add_sponsorship(
                 other_primary_sponsors,
                 classification="primary",
@@ -192,7 +191,6 @@ class ARBillScraper(Scraper):
         )
         for a in cosponsor_path:
             cosponsor = a.text_content().strip()
-            print(cosponsor)
             bill.add_sponsorship(
                 cosponsor,
                 classification="cosponsor",
