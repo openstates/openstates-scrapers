@@ -4,6 +4,7 @@ import dateutil.parser
 import re
 import pytz
 from urllib import parse
+from dateutil.tz import gettz
 
 from .common import SESSION_SITE_IDS
 
@@ -13,6 +14,7 @@ from .common import SESSION_SITE_IDS
 # You don't need a valid u/p for events, the env vars just need to be set.
 class VaEventScraper(Scraper):
     _tz = pytz.timezone("America/New_York")
+    tzinfos = {"EDT": gettz("America/New_York"), "EST": gettz("America/New_York")}
 
     def scrape(self):
         session = self.latest_session()
@@ -58,7 +60,7 @@ class VaEventScraper(Scraper):
             date_raw = parsed["dt"][0]
             location = parsed["loc"][0]
 
-            start = dateutil.parser.parse(date_raw)
+            start = dateutil.parser.parse(date_raw, tzinfos=self.tzinfos)
 
             # If there's a chair in parentheticals, remove them from the title
             # and add as a person instead
