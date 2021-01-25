@@ -95,7 +95,7 @@ class ARLegislatorScraper(Scraper):
 
         try:
             phone = root.xpath(
-                'string(//div[@id="bodyContent"]/div[2]/div[2]/div[1]/div[2]/a)'
+                'string(//div[@id="bodyContent"]/div[2]/div[2]/div[1]/div[3])'
             )
             if not phone.strip():
                 raise AttributeError
@@ -103,7 +103,7 @@ class ARLegislatorScraper(Scraper):
             phone = None
         try:
             email = root.xpath(
-                'string(//div[@id="bodyContent"]/div[2]/div[2]/div[2]/div[2]/a)'
+                'string(//div[@id="bodyContent"]/div[2]/div[2]/div[2]/div[3])'
             )
             if not email.strip():
                 raise AttributeError
@@ -123,7 +123,7 @@ class ARLegislatorScraper(Scraper):
             )
             if occupation_check == "Occupation:":
                 person.extras["occupation"] = root.xpath(
-                    'string(//div[@id="bodyContent"]/div[2]/div[2]/div[5]/div[2])'
+                    'string(//div[@id="bodyContent"]/div[2]/div[2]/div[5]/div[3])'
                 )
             else:
                 raise AttributeError
