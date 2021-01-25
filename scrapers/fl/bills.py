@@ -5,7 +5,8 @@ from urllib.parse import urlencode
 from collections import defaultdict
 from openstates.scrape import Bill, VoteEvent
 from openstates.utils import format_datetime
-from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage
+from scrapelib import Scraper
+from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage, Workflow
 
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
 import requests
@@ -51,9 +52,15 @@ class SubjectPDF(PdfPage):
 
 class BillList(HtmlListPage):
     selector = XPath("//a[contains(@href, '/Session/Bill/')]")
-    source = ("https://flsenate.gov/Session/Bills/2021?chamber=both",)
     next_page_selector = XPath("//a[@class='next']/@href")
-    dependencies = {"subjects": SubjectPDF}
+    # TODO: fix error message when passing SubjectPDF w/o invocation here
+    # dependencies = {"subjects": SubjectPDF}
+    subjects = defaultdict(list)
+
+    def get_source_from_input(self):
+        return (
+            f"https://flsenate.gov/Session/Bills/{self.input['session']}?chamber=both"
+        )
 
     def get_next_source(self):
         # eliminate duplicates, not uncommon to have multiple "Next->" links
@@ -128,7 +135,6 @@ class BillDetail(HtmlPage):
             self.process_summary()
         return self.input
         # yield from self.process_votes()
-        # yield from self.scrape_page_items(HouseSearchPage, bill=self.obj)
 
     def process_summary(self):
         summary = self.root.xpath(
@@ -658,23 +664,20 @@ class HouseComVote(HtmlPage):
             return vote
 
 
-# class FlBillScraper(Scraper, Spatula):
-#     def scrape(self, session=None):
-#         # FL published a bad bill in 2019, #143
-#         self.raise_errors = False
-#         self.retry_attempts = 1
-#         self.retry_wait_seconds = 3
+class FlBillScraper(Scraper):
+    def scrape(self, session=None):
+        # FL published a bad bill in 2019, #143
+        self.raise_errors = False
+        self.retry_attempts = 1
+        self.retry_wait_seconds = 3
 
-#         if not session:
-#             session = self.latest_session()
-#             self.info("no session specified, using %s", session)
+        if not session:
+            session = self.latest_session()
+            self.info("no session specified, using %s", session)
 
-#         subject_url = "http://www.leg.state.fl.us/data/session/{}/citator/Daily/subindex.pdf".format(
-#             session
-#         )
-#         subjects = self.scrape_page(SubjectPDF, subject_url)
-
-#         url = "http://flsenate.gov/Session/Bills/{}?chamber=both".format(session)
-#         yield from self.scrape_page_items(
-#             StartPage, url, session=session, subjects=subjects
-#         )
+        workflow = Workflow(BillList(), [BillDetail, HouseSearchPage])
+        for bill in workflow.yield_items():
+            yield bill
+            yield from Workflow(
+                HouseSearchPage(), [HouseBillPage, HouseComVote]
+            ).yield_items()
