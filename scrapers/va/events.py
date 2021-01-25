@@ -12,8 +12,6 @@ from .common import SESSION_SITE_IDS
 # VIRGINIA_FTP_USER="" VIRGINIA_FTP_PASSWORD="" PYTHONPATH=scrapers poetry run os-update va events --scrape
 # You don't need a valid u/p for events, the env vars just need to be set.
 class VaEventScraper(Scraper):
-    # chambers = {"lower": "House", "upper": "Senate", "joint": "Joint"}
-    chamber_codes = {"H": "lower", "S": "upper", "J": "joint"}
     _tz = pytz.timezone("America/New_York")
 
     def scrape(self):
