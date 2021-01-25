@@ -35,6 +35,13 @@ class PuertoRico(State):
             "start_date": "2017-01-02",
             "end_date": "2021-01-01",
         },
+        {
+            "_scraped_name": "2021-2024",
+            "identifier": "2021-2024",
+            "name": "2021-2024 Session",
+            "start_date": "2021-01-01",
+            "end_date": "2025-01-01",
+        },
     ]
     ignored_scraped_sessions = ["2005-2008", "2001-2004", "1997-2000", "1993-1996"]
 

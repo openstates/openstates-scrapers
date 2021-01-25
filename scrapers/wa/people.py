@@ -87,11 +87,14 @@ class WAPersonScraper(Scraper, LXMLMixin):
 
             # Need to get the email from the email page by matching -
             # with the member's district and position
-            email = self.get_node(
-                email_doc,
-                './/tr/td/a[contains(@href, "memberEmail/{}/{}")]/parent::td/'
-                "following-sibling::td[1]/text()".format(district_num, position),
-            ).strip()
+            try:
+                email = self.get_node(
+                    email_doc,
+                    './/tr/td/a[contains(@href, "memberEmail/{}/{}")]/parent::td/'
+                    "following-sibling::td[1]/text()".format(district_num, position),
+                ).strip()
+            except AttributeError:
+                email = ""
 
             if capitol_address:
                 leg.add_contact_detail(

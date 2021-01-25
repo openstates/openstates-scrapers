@@ -1,5 +1,4 @@
 from utils import url_xpath, State
-from .people import MTPersonScraper
 from .bills import MTBillScraper
 
 # from .committees import MTCommitteeScraper
@@ -7,7 +6,6 @@ from .bills import MTBillScraper
 
 class Montana(State):
     scrapers = {
-        "people": MTPersonScraper,
         # 'committees': MTCommitteeScraper,
         "bills": MTBillScraper,
     }

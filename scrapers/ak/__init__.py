@@ -37,6 +37,13 @@ class Alaska(State):
             "start_date": "2019-01-15",
             "end_date": "2020-05-20",
         },
+        {
+            "_scraped_name": "32nd Legislature (2021-2022)",
+            "identifier": "32",
+            "name": "32nd Legislature (2021-2022)",
+            "start_date": "2021-01-19",
+            "end_date": "2021-04-19",
+        },        
     ]
     ignored_scraped_sessions = [
         "27th Legislature (2011-2012)",

@@ -125,15 +125,6 @@ class Kentucky(State):
             "start_date": "2019-07-19",
             "end_date": "2019-07-24",
         },
-        # note, use session=2021RS prefiles=True flag to scrape this session
-        {
-            "_scraped_name": "2021 Regular Session",
-            "classification": "primary",
-            "identifier": "2021RS",
-            "name": "2021 Regular Session",
-            "start_date": "2021-01-05",
-            "end_date": "2021-03-30",
-        },
         {
             "_scraped_name": "2020 Regular Session",
             "classification": "primary",
@@ -141,6 +132,14 @@ class Kentucky(State):
             "name": "2020 Regular Session",
             "start_date": "2020-01-07",
             "end_date": "2020-04-15",
+        },
+        {
+            "_scraped_name": "2021 Regular Session",
+            "classification": "primary",
+            "identifier": "2021RS",
+            "name": "2021 Regular Session",
+            "start_date": "2021-01-05",
+            "end_date": "2021-03-30",
         },
     ]
     ignored_scraped_sessions = [

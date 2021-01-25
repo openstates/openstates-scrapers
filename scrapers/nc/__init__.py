@@ -349,6 +349,15 @@ class NorthCarolina(State):
             "start_date": "2019-01-03",
             "end_date": "2020-08-01",
         },
+        {
+            "_scraped_name": "2021-2022 Session",
+            "classification": "primary",
+            "identifier": "2021",
+            "name": "2021-2022 Session",
+            "start_date": "2021-01-04",
+            # TODO: fix this when session ends
+            "end_date": "2022-08-01",
+        },
     ]
     ignored_scraped_sessions = []
 

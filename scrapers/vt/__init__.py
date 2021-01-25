@@ -80,19 +80,18 @@ class Vermont(State):
             "start_date": "2019-01-09",
             "end_date": "2020-05-08",
         },
-        # {
-        #     "_scraped_name": "2021-2022 Session",
-        #     "classification": "primary",
-        #     "identifier": "2021-2022",
-        #     "name": "2021-2022 Regular Session",
-        #     "start_date": "2021-01-06",
-        #     "end_date": "2021-05-15",
-        # },
+        {
+            "_scraped_name": "2021-2022 Session",
+            "classification": "primary",
+            "identifier": "2021-2022",
+            "name": "2021-2022 Regular Session",
+            "start_date": "2021-01-06",
+            "end_date": "2021-05-15",
+        },
     ]
     ignored_scraped_sessions = [
         "2020 Training Session",
         "2009 Special Session",
-        "2021-2022 Session",
     ]
 
     site_ids = {"2018ss1": "2018.1"}

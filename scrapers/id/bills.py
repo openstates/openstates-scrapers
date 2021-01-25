@@ -5,8 +5,8 @@ import datetime
 from collections import defaultdict
 import lxml.html
 
-BILLS_URL = "http://legislature.idaho.gov/sessioninfo/%s/legislation/minidata/"
-BILL_URL = "http://legislature.idaho.gov/sessioninfo/%s/legislation/%s/"
+BILLS_URL = "https://legislature.idaho.gov/sessioninfo/%s/legislation/minidata/"
+BILL_URL = "https://legislature.idaho.gov/sessioninfo/%s/legislation/%s/"
 
 _CHAMBERS = {"upper": "Senate", "lower": "House"}
 _OTHER_CHAMBERS = {"upper": "lower", "lower": "upper"}
@@ -209,7 +209,7 @@ class IDBillScraper(Scraper):
         bill_page = self.get(url).text
         html = lxml.html.fromstring(bill_page)
         html.make_links_absolute(
-            "http://legislature.idaho.gov/legislation/%s/" % session
+            "https://legislature.idaho.gov/legislation/%s/" % session
         )
         bill_tables = html.xpath('//table[contains(@class, "bill-table")]')
         title = bill_tables[1].text_content().strip()

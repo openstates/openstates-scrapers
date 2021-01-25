@@ -1,7 +1,7 @@
 name: Build and push Docker images
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
     tags:
       - '*'
 jobs: 

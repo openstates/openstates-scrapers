@@ -120,6 +120,8 @@ class OKBillScraper(Scraper):
 
         for link in page.xpath("//a[contains(@id, 'Auth')]"):
             name = link.xpath("string()").strip()
+            if 'author not found' in name.lower():
+                continue
 
             if ":" in name:
                 raise Exception(name)

@@ -1,7 +1,6 @@
 from utils import State
 from .util import get_client, backoff
 from .bills import GABillScraper
-from .people import GAPersonScraper
 
 # from .committees import GACommitteeScraper
 
@@ -9,7 +8,6 @@ from .people import GAPersonScraper
 class Georgia(State):
     scrapers = {
         "bills": GABillScraper,
-        "people": GAPersonScraper,
         # 'committee': GACommitteeScraper,
     }
     legislative_sessions = [

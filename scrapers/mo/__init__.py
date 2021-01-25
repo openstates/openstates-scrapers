@@ -1,7 +1,6 @@
 from utils import url_xpath, State
 from .bills import MOBillScraper
 from .events import MOEventScraper
-from .people import MOPersonScraper
 
 # from .votes import MOVoteScraper
 # from .committees import MOCommitteeScraper
@@ -12,7 +11,6 @@ class Missouri(State):
         "bills": MOBillScraper,
         # 'votes': MOVoteScraper,
         "events": MOEventScraper,
-        "people": MOPersonScraper,
         # 'committees': MOCommitteeScraper,
     }
     legislative_sessions = [

@@ -4,17 +4,6 @@ from utils import LXMLMixin
 from openstates.scrape import Event, Scraper
 
 import pytz
-import json
-
-chamber_urls = {
-    "other": "http://legis.delaware.gov/json/CommitteeMeetings/"
-    "GetUpcomingCommitteeMeetingsByCommitteeTypeId?committeeTypeId=3",
-    "lower": "http://legis.delaware.gov/json/CommitteeMeetings/"
-    "GetUpcomingCommitteeMeetingsByCommitteeTypeId?committeeTypeId=2",
-    "upper": "http://legis.delaware.gov/json/CommitteeMeetings/"
-    "GetUpcomingCommitteeMeetingsByCommitteeTypeId?committeeTypeId=1",
-}
-chambers = {"Senate": "upper", "House": "lower", "Joint": "legislature"}
 
 
 class DEEventScraper(Scraper, LXMLMixin):
@@ -22,9 +11,14 @@ class DEEventScraper(Scraper, LXMLMixin):
 
     _tz = pytz.timezone("US/Eastern")
 
-    def scrape_meeting_notice(self, chamber, item, url):
+    def scrape_meeting_notice(self, item, url):
         # Since Event Name is not provided for all mettings.
-        event_name = str(item["CommitteeName"])
+        if "Joint" in str(item["CommitteeName"]):
+            event_name = str(item["CommitteeName"])
+        else:
+            event_name = "{} {}".format(
+                str(item["CommitteeTypeName"]), str(item["CommitteeName"])
+            )
         # 04/25/2012 03:00:00 PM
         fmt = "%m/%d/%y %I:%M %p"
         start_time = dt.datetime.strptime(str(item["MeetingDateTime"]), fmt)
@@ -38,20 +32,18 @@ class DEEventScraper(Scraper, LXMLMixin):
             ),
         )
 
-        event.add_source(url)
         event.add_committee(name=str(item["CommitteeName"]), id=item["CommitteeId"])
 
-        page_url = (
-            "http://legis.delaware.gov/json/MeetingNotice/"
-            "GetCommitteeMeetingItems?committeeMeetingId={}".format(
-                item["CommitteeMeetingId"]
-            )
-        )
+        html_url = f'https://legis.delaware.gov/MeetingNotice?committeeMeetingId={item["CommitteeMeetingId"]}'
+        event.add_source(html_url)
 
-        event.add_source(page_url)
+        page_url = f'https://legis.delaware.gov/json/MeetingNotice/GetCommitteeMeetingItems?committeeMeetingId={item["CommitteeMeetingId"]}'
         page_data = self.post(page_url).json()["Data"]
         for item in page_data:
-            event.add_agenda_item(description=str(item["ItemDescription"]))
+            a = event.add_agenda_item(description=str(item["ItemDescription"]))
+            if item["LegislationDisplayText"] is not None:
+                a.add_bill(item["LegislationDisplayText"])
+
             event.add_person(
                 name=str(item["PrimarySponsorShortName"]),
                 id=str(item["PrimarySponsorPersonId"]),
@@ -60,15 +52,8 @@ class DEEventScraper(Scraper, LXMLMixin):
 
         yield event
 
-    def scrape(self, chamber=None):
-        chambers_ = [chamber] if chamber is not None else ["upper", "lower", "other"]
-        # self.log(chamber)
-        for chamber in chambers_:
-            url = chamber_urls[chamber]
-            try:
-                data = self.post(url).json()["Data"]
-                for item in data:
-                    yield from self.scrape_meeting_notice(chamber, item, url)
-            except json.decoder.JSONDecodeError:
-                # didn't get any data
-                pass
+    def scrape(self):
+        url = "https://legis.delaware.gov/json/CommitteeMeetings/GetUpcomingCommitteeMeetings"
+        data = self.post(url).json()["Data"]
+        for item in data:
+            yield from self.scrape_meeting_notice(item, url)
