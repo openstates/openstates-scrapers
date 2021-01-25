@@ -2,6 +2,7 @@ from openstates.scrape import Scraper, Event
 import lxml
 import dateutil.parser
 import re
+import pytz
 from urllib import parse
 
 from .common import SESSION_SITE_IDS
@@ -13,18 +14,14 @@ from .common import SESSION_SITE_IDS
 class VaEventScraper(Scraper):
     # chambers = {"lower": "House", "upper": "Senate", "joint": "Joint"}
     chamber_codes = {"H": "lower", "S": "upper", "J": "joint"}
+    _tz = pytz.timezone("America/New_York")
 
     def scrape(self):
         session = self.latest_session()
         session_id = SESSION_SITE_IDS[session]
-        list_url = f"https://lis.virginia.gov/cgi-bin/legp604.exe?{session_id}+oth+MTG&{session_id}+oth+MTG"
 
-        # page = self.get(list_url).contet
-        # page = lxml.html.fromstring(page)
-
-        yield from self.scrape_lower()
-
-        yield {}
+        # yield from self.scrape_lower()
+        yield from self.scrape_upper(session_id)
 
     def scrape_lower(self):
         list_url = (
@@ -137,3 +134,44 @@ class VaEventScraper(Scraper):
 
         #     a = event.add_agenda_item(description=bill_number)
         #     a.add_bill(bill_number)
+
+    def scrape_upper(self, session_id):
+        list_url = f"https://lis.virginia.gov/cgi-bin/legp604.exe?{session_id}+oth+MTG&{session_id}+oth+MTG"
+        page = self.get(list_url).content
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(list_url) 
+
+        date = None
+        # note the [td] at the end, they have some empty tr-s so skip them
+        for row in page.xpath("//div[@id='mainC']/center/table/tr[td]"):
+            print("row")
+            if row.xpath('td[1]/text()')[0].strip() != '':
+                date = row.xpath('td[1]/text()')[0].strip()
+
+            description = row.xpath('td[3]/text()')[0].strip()
+            print(description)
+
+            # data on the house page is better
+            if 'senate' not in description.lower():
+                continue
+
+            time = row.xpath('td[2]/text()')[0].strip()
+
+            try:
+                when = dateutil.parser.parse(f"{date} {time}")
+            except dateutil.parser._parser.ParserError:
+                when = dateutil.parser.parse(date)
+
+            when = self._tz.localize(when)
+
+            print(description)
+            print(when)
+            event = Event(
+                name=description,
+                start_date=when,
+                classification="committee-meeting",
+                location_name="TODO"
+            )
+
+            event.add_source(list_url)
+            yield event
