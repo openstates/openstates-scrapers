@@ -130,9 +130,7 @@ class VTBillScraper(Scraper, LXMLMixin):
                     .replace("Sen.", "")
                     .strip()
                 )
-                if sponsor_name and not (
-                    sponsor_name[:5] == "Less" and len(sponsor_name) == 5
-                ):
+                if sponsor_name and sponsor_name != "Less…":
                     bill.add_sponsorship(
                         name=sponsor_name,
                         classification=sponsor_type,
