@@ -8,6 +8,7 @@ from openstates.scrape import Scraper, Event
 
 class IAEventScraper(Scraper):
     _tz = pytz.timezone("US/Central")
+    chambers = {"upper": "Senate", "lower": "House"}
 
     def scrape(self, chamber=None, session=None):
         if not session:
@@ -61,13 +62,12 @@ class IAEventScraper(Scraper):
 
             if "cancelled" in when.lower() or "upon" in when.lower():
                 status = "cancelled"
-                continue
             if "To Be Determined" in when:
                 continue
 
+            # sometimes they say cancelled, sometimes they do a red strikethrough
             if link.xpath("./td[1]/span[contains(@style,'line-through')]"):
                 status = "cancelled"
-                continue
 
             if "AM" in when:
                 when = when.split("AM")[0] + " AM"
@@ -91,32 +91,35 @@ class IAEventScraper(Scraper):
                     except ValueError:
                         self.warning("error parsing timestamp %s", when)
                         continue
-            print(chamber, desc, location, status)
+
+            pretty_name = f"{self.chambers[chamber]} {desc}"
+
             event = Event(
-                name=desc,
+                name=pretty_name,
                 description=desc,
                 start_date=self._tz.localize(when),
                 location_name=location,
-                status=status
+                status=status,
             )
 
-            if link.xpath('td[4]/span/a'):
-                video_link = link.xpath('td[4]/span/a/@href')[0]
+            if link.xpath("td[4]/span/a"):
+                video_link = link.xpath("td[4]/span/a/@href")[0]
                 event.add_media_link("Video of Hearing", video_link, "text/html")
 
-            if status != 'cancelled' and link.xpath('.//a[contains(text(),"Agenda")]'):
-                agenda_tr = link.xpath('following-sibling::*/td/div[contains(@class,"agenda")]')[0]
-                print("Agenda:")
-                agenda_text = agenda_tr.xpath('string(.)')
-                print(agenda_text)
-                agenda = event.add_agenda_item(agenda_text)
+            if status != "cancelled" and link.xpath('.//a[contains(text(),"Agenda")]'):
+                agenda_rows = link.xpath(
+                    'following-sibling::tr[1]/td/div[contains(@class,"agenda")]/p'
+                )
 
-                for bill_row in agenda_tr.xpath('.//a[contains(@href, "/BillBook")]/text()'):
-                    print(bill_row)
-                    agenda.add_bill(bill_row)
+                for agenda_row in agenda_rows:
+                    agenda_text = agenda_row.xpath("string(.)")
+                    if agenda_text.strip() != "":
+                        agenda = event.add_agenda_item(agenda_text)
 
-
-
+                        for bill_row in agenda_row.xpath(
+                            './/a[contains(@href, "/BillBook")]/text()'
+                        ):
+                            agenda.add_bill(bill_row)
 
             event.add_source(url)
             event.add_participant(comm, note="host", type="committee")
