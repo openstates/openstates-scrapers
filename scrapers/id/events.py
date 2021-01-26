@@ -48,7 +48,25 @@ class IDEventScraper(Scraper):
 
             event.add_participant(com, type="committee", note="host")
 
-            print(month, day, time, loc, com)
+            agenda_url = row.xpath('.//a[contains(text(), "Full Agenda")]/@href')[0]
+            event.add_document("Agenda", agenda_url, media_type="application/pdf")
+
+            agenda_rows = row.xpath('.//div[contains(@class,"card")]/div[contains(@id, "Agenda")]/div/table/tbody/tr')[1:]
+
+            for agenda_row in agenda_rows:
+                subject = agenda_row.xpath('string(td[1])').strip()
+                description = agenda_row.xpath('string(td[2])').strip()
+                presenter = agenda_row.xpath('string(td[3])').strip()
+                if presenter != '':
+                    agenda_text = f"{subject} {description} Presenter: {presenter}".strip()
+                    event.add_participant(agenda_text, type="person", note="Presenter")
+                else:
+                    agenda_text = f"{subject} {description}".strip()
+
+                agenda = event.add_agenda_item(agenda_text)
+
+                if agenda_row.xpath('td[1]/a[contains(@href,"/legislation/")]'):
+                    agenda.add_bill(agenda_row.xpath('td[1]/a[contains(@href,"/legislation/")]/text()')[0].strip())
 
             event.add_source(url)
             yield event
