@@ -31,8 +31,12 @@ class DCEventScraper(Scraper):
             )[0].text_content()
 
             # fix special chars
-            description = description.replace('\n\u2013', ' ').replace('\n', ' ').replace('\u203a', '')
-            description = description.replace('More about this event','').strip()
+            description = (
+                description.replace("\n\u2013", " ")
+                .replace("\n", " ")
+                .replace("\u203a", "")
+            )
+            description = description.replace("More about this event", "").strip()
 
             location = row.xpath(
                 "header/div/div[contains(@class,'large-8')]/div/div[contains(@class,'text-right')]/p"
