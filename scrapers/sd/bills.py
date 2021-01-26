@@ -133,7 +133,12 @@ class SDBillScraper(Scraper, LXMLMixin):
         actor = chamber
 
         for action in actions:
-            action_text = action["StatusText"]
+            if action["StatusText"] is None and action["Description"] is None:  # properties can be null
+                action_text = ""
+            elif action["StatusText"] is None:  # fallback to Description if available, and no StatusText
+                action_text = action["Description"]
+            else:
+                action_text = action["StatusText"]
             # This value is for synthesize full action text like site, will be added to
             # tried to replicate site logic found in Bill.html on source site
             full_action = [action_text]
@@ -153,7 +158,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                 if action["Result"] == "P":
                     second = "passage"
                 # D is "deferred"
-                elif action["Result"] == "F" or action["Result"] == "D":
+                elif action["Result"] == "F" or action["Result"] == "D" or action["Result"] == "N":
                     second = "failure"
                 else:
                     self.error("Unknown vote code: {}".format(action["Result"]))
