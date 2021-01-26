@@ -50,16 +50,23 @@ class IAEventScraper(Scraper):
             "//div[contains(@class, 'meetings')]/table[1]/"
             "tbody/tr[not(contains(@class, 'hidden'))]"
         ):
-            comm = link.xpath("string(./td[2]/a[1]/text())").strip()
+            status = "tentative"
+
+            comm = link.xpath("string(./td[2]/a[1]/span/text())").strip()
             desc = comm + " Committee Hearing"
 
-            location = link.xpath("string(./td[3]/text())").strip()
+            location = link.xpath("string(./td[3]/span/text())").strip()
 
             when = link.xpath("string(./td[1]/span[1]/text())").strip()
 
             if "cancelled" in when.lower() or "upon" in when.lower():
+                status = "cancelled"
                 continue
             if "To Be Determined" in when:
+                continue
+
+            if link.xpath("./td[1]/span[contains(@style,'line-through')]"):
+                status = "cancelled"
                 continue
 
             if "AM" in when:
@@ -84,13 +91,32 @@ class IAEventScraper(Scraper):
                     except ValueError:
                         self.warning("error parsing timestamp %s", when)
                         continue
-
+            print(chamber, desc, location, status)
             event = Event(
                 name=desc,
                 description=desc,
                 start_date=self._tz.localize(when),
                 location_name=location,
+                status=status
             )
+
+            if link.xpath('td[4]/span/a'):
+                video_link = link.xpath('td[4]/span/a/@href')[0]
+                event.add_media_link("Video of Hearing", video_link, "text/html")
+
+            if status != 'cancelled' and link.xpath('.//a[contains(text(),"Agenda")]'):
+                agenda_tr = link.xpath('following-sibling::*/td/div[contains(@class,"agenda")]')[0]
+                print("Agenda:")
+                agenda_text = agenda_tr.xpath('string(.)')
+                print(agenda_text)
+                agenda = event.add_agenda_item(agenda_text)
+
+                for bill_row in agenda_tr.xpath('.//a[contains(@href, "/BillBook")]/text()'):
+                    print(bill_row)
+                    agenda.add_bill(bill_row)
+
+
+
 
             event.add_source(url)
             event.add_participant(comm, note="host", type="committee")
