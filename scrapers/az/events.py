@@ -63,10 +63,13 @@ class AZEventScraper(Scraper):
                 # fix for dateutil parser confusion
                 row["Time"] = row["Time"].replace("A.M.", "AM").replace("P.M.", "PM")
 
-                time = re.findall(r"(\d+:\d+\s+[A|P]M)", row["Time"])
-                time = time[0]
+                if 'upon rec' not in row['Time'].lower():
+                    time = re.findall(r"(\d+:\d+\s+[A|P]M)", row["Time"])
+                    time = time[0]
 
-                time = time.replace(r"\s+", " ")
+                    time = time.replace(r"\s+", " ")
+                else:
+                    time = ''
 
                 when = dateutil.parser.parse(f"{row['Date']} {time}")
                 when = self._tz.localize(when)
