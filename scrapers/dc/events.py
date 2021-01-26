@@ -30,6 +30,10 @@ class DCEventScraper(Scraper):
                 "section/div[contains(@class,'large-8')]/div[contains(@class,'base')]"
             )[0].text_content()
 
+            # fix special chars
+            description = description.replace('\n\u2013', ' ').replace('\n', ' ').replace('\u203a', '')
+            description = description.replace('More about this event','').strip()
+
             location = row.xpath(
                 "header/div/div[contains(@class,'large-8')]/div/div[contains(@class,'text-right')]/p"
             )[0].text_content()
@@ -48,7 +52,6 @@ class DCEventScraper(Scraper):
                 event.add_document(
                     "Details and Agenda", agenda_url[0], media_type="text/html"
                 )
-                print(agenda_url[0])
 
             if "committee meeting" in title.lower():
                 com_name = title.replace("Committee Meeting", "").strip()
@@ -57,3 +60,7 @@ class DCEventScraper(Scraper):
             event.add_source(url)
 
             yield event
+
+        if page.xpath("//a[contains(text(), 'Upcoming Events')]"):
+            next_url = page.xpath("//a[contains(text(), 'Upcoming Events')]/@href")[0]
+            yield from self.scrape_cal_page(next_url)
