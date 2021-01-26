@@ -6,14 +6,14 @@ from .people import AZPersonScraper
 from .bills import AZBillScraper
 
 # from .committees import AZCommitteeScraper
-# from .events import AZEventScraper
+from .events import AZEventScraper
 
 
 class Arizona(State):
     scrapers = {
         "people": AZPersonScraper,
         # 'committees': AZCommitteeScraper,
-        # 'events': AZEventScraper,
+        'events': AZEventScraper,
         "bills": AZBillScraper,
     }
     legislative_sessions = [
