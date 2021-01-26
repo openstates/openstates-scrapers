@@ -223,7 +223,7 @@ class ARBillScraper(Scraper):
             bill.add_document_link(
                 note=study_number,
                 url=study_url,
-                classification="analysis",
+                classification="fiscal-note",
                 date=date,
                 media_type="application/pdf",
             )
