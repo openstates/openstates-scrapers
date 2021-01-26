@@ -133,8 +133,10 @@ class SDBillScraper(Scraper, LXMLMixin):
         actor = chamber
 
         for action in actions:
-            if action["StatusText"] is None:  # StatusText can be null
+            if action["StatusText"] is None and action["Description"]:  # properties can be null
                 action_text = ""
+            elif action["StatusText"] is None:  # fallback to Description if available, and no StatusText
+                action_text = action["Description"]
             else:
                 action_text = action["StatusText"]
             # This value is for synthesize full action text like site, will be added to
