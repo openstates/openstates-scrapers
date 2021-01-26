@@ -24,20 +24,28 @@ class IDEventScraper(Scraper):
         page = lxml.html.fromstring(page)
 
         for row in page.xpath('//div[@id="ai1ec-container"]/div'):
-            month = row.xpath(".//div[contains(@class,'calendarHeader')]/div[contains(@class,'date')]/text()")[0].strip()
-            day = row.xpath(".//div[contains(@class,'calendarHeader')]/div[contains(@class,'date')]/span/text()")[0].strip()
+            month = row.xpath(
+                ".//div[contains(@class,'calendarHeader')]/div[contains(@class,'date')]/text()"
+            )[0].strip()
+            day = row.xpath(
+                ".//div[contains(@class,'calendarHeader')]/div[contains(@class,'date')]/span/text()"
+            )[0].strip()
 
-            time_and_loc = row.xpath(".//div[contains(@class,'calendarHeader')]/div[contains(@class,'abbr')]/h2/text()")
+            time_and_loc = row.xpath(
+                ".//div[contains(@class,'calendarHeader')]/div[contains(@class,'abbr')]/h2/text()"
+            )
             time = time_and_loc[0].strip()
             loc = time_and_loc[1].strip()
 
-            if 'not meet' in time.lower():
+            if "not meet" in time.lower():
                 continue
 
             start = dateutil.parser.parse(f"{month} {day} {time}")
             start = self._tz.localize(start)
 
-            com = row.xpath(".//div[contains(@class,'calendarHeader')]/div[contains(@class,'day')]/h2/a/text()")[0].strip()
+            com = row.xpath(
+                ".//div[contains(@class,'calendarHeader')]/div[contains(@class,'day')]/h2/a/text()"
+            )[0].strip()
 
             event = Event(
                 name=com,
@@ -51,14 +59,18 @@ class IDEventScraper(Scraper):
             agenda_url = row.xpath('.//a[contains(text(), "Full Agenda")]/@href')[0]
             event.add_document("Agenda", agenda_url, media_type="application/pdf")
 
-            agenda_rows = row.xpath('.//div[contains(@class,"card")]/div[contains(@id, "Agenda")]/div/table/tbody/tr')[1:]
+            agenda_rows = row.xpath(
+                './/div[contains(@class,"card")]/div[contains(@id, "Agenda")]/div/table/tbody/tr'
+            )[1:]
 
             for agenda_row in agenda_rows:
-                subject = agenda_row.xpath('string(td[1])').strip()
-                description = agenda_row.xpath('string(td[2])').strip()
-                presenter = agenda_row.xpath('string(td[3])').strip()
-                if presenter != '':
-                    agenda_text = f"{subject} {description} Presenter: {presenter}".strip()
+                subject = agenda_row.xpath("string(td[1])").strip()
+                description = agenda_row.xpath("string(td[2])").strip()
+                presenter = agenda_row.xpath("string(td[3])").strip()
+                if presenter != "":
+                    agenda_text = (
+                        f"{subject} {description} Presenter: {presenter}".strip()
+                    )
                     event.add_participant(agenda_text, type="person", note="Presenter")
                 else:
                     agenda_text = f"{subject} {description}".strip()
@@ -66,7 +78,11 @@ class IDEventScraper(Scraper):
                 agenda = event.add_agenda_item(agenda_text)
 
                 if agenda_row.xpath('td[1]/a[contains(@href,"/legislation/")]'):
-                    agenda.add_bill(agenda_row.xpath('td[1]/a[contains(@href,"/legislation/")]/text()')[0].strip())
+                    agenda.add_bill(
+                        agenda_row.xpath(
+                            'td[1]/a[contains(@href,"/legislation/")]/text()'
+                        )[0].strip()
+                    )
 
             event.add_source(url)
             yield event
