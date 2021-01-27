@@ -14,6 +14,7 @@ _name_fixes = {
     "WestVirginia": "West Virginia",
     "PuertoRico": "Puerto Rico",
     "DistrictOfColumbia": "District of Columbia",
+    "UnitedStates": "United States",
 }
 
 
@@ -27,7 +28,9 @@ class MetaShim(type):
         if name != "State":
             c.classification = "state"
             # while we're here, load the metadata (formerly on a cached property)
+            print(name)
             name = _name_fixes.get(name, name)
+            print("NAME: ", name)
             c.metadata = lookup(name=name)
         return c
 
