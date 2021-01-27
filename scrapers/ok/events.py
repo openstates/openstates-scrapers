@@ -3,45 +3,73 @@ import datetime
 import time
 import pytz
 import lxml.html
+import requests
+import pprint
 from openstates.scrape import Scraper, Event
 
 
 class OKEventScraper(Scraper):
     _tz = pytz.timezone("CST6CDT")
+    session = requests.Session()
 
     def scrape(self, chamber=None):
-        chambers = [chamber] if chamber is not None else ["upper"]
-        for chamber in chambers:
-            yield from self.scrape_upper()
+        
+        # we need to GET the page once to set up the ASP.net vars
+        # then POST to it to set it to monthly
+        url = "https://www.okhouse.gov/Committees/MeetingNotices.aspx"
 
-    def scrape_upper(self):
-        url = "http://www.oksenate.gov/Committees/meetingnotices.htm"
-        page = lxml.html.fromstring(self.get(url).text)
-        page.make_links_absolute(url)
+        params = {
+            '__EVENTTARGET': 'ctl00$ContentPlaceHolder1$cbMonthly',
+            'ctl00$ScriptManager1': 'ctl00$ContentPlaceHolder1$ctl00$ContentPlaceHolder1$RadAjaxPanel1Panel|ctl00$ContentPlaceHolder1$cbMonthly',
+            'ctl00_FormDecorator1_ClientState': '',
+            'ctl00_RadToolTipManager1_ClientState': '',
+            'ctl00_mainNav_ClientState': '',
+            'ctl00$ContentPlaceHolder1$cbToday': 'on',
+            'ctl00$ContentPlaceHolder1$cbMonthly': 'on',
+            'ctl00_ContentPlaceHolder1_dgrdNotices_ClientState': '',
+            '__ASYNCPOST': 'true',
+            'RadAJAXControlID': 'ctl00_ContentPlaceHolder1_RadAjaxPanel1',
+        }
 
-        text = page.text_content()
-        _, text = text.split("MEETING NOTICES")
-        re_date = r"[A-Z][a-z]+,\s+[A-Z][a-z]+ \d+, \d{4}"
-        chunks = zip(re.finditer(re_date, text), re.split(re_date, text)[1:])
+        page = self.get(url).content
+        page = lxml.html.fromstring(page)
 
-        for match, data in chunks:
-            when = match.group()
-            when = datetime.datetime.strptime(when, "%A, %B %d, %Y")
+        html = self.asp_post(url, page, params)
+        print(html)
 
-            lines = filter(None, [x.strip() for x in data.splitlines()])
-            time_ = re.search(r"^\s*TIME:\s+(.+?)\s+\x96", data, re.M).group(1)
-            time_ = time_.replace("a.m.", "AM").replace("p.m.", "PM")
-            time_ = time.strptime(time_, "%I:%M %p")
-            when += datetime.timedelta(hours=time_.tm_hour, minutes=time_.tm_min)
+        page = lxml.html.fromstring(html)
 
-            title = lines[0]
+        for row in page.xpath('//tr[contains(@id,"_dgrdNotices_")]'):
+            print(row.text_content())
+        
+        yield {}
 
-            where = re.search(r"^\s*PLACE:\s+(.+)", data, re.M).group(1)
-            where = where.strip()
+    def asp_post(self, url, page, params):
+        page = self.session.get(url)
+        page = lxml.html.fromstring(page.content)
+        (viewstate,) = page.xpath('//input[@id="__VIEWSTATE"]/@value')
+        (viewstategenerator,) = page.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
+        (eventvalidation,) = page.xpath('//input[@id="__EVENTVALIDATION"]/@value')
+        (scriptmanager,) = page.xpath('//input[@id="ctl00_ScriptManager1_TSM"]/@value')
 
-            event = Event(
-                name=title, start_date=self._tz.localize(when), location_name=where
-            )
-            event.add_source(url)
+        headers = {
+            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36',
+            'x-microsoftajax': 'Delta=true',
+            'referer': 'https://www.okhouse.gov/Committees/MeetingNotices.aspx',
+            'origin': 'https://www.okhouse.gov',
+        }
 
-            yield event
+        form = {
+            "__VIEWSTATE": viewstate,
+            "__VIEWSTATEGENERATOR": viewstategenerator,
+            "__EVENTVALIDATION": eventvalidation,
+            "__EVENTARGUMENT": "",
+            "__LASTFOCUS": "",
+        }
+
+        form = {**form, **params}
+
+
+        pprint.pprint(form)
+        response = self.session.post(url, form, headers=headers).content
+        return response
