@@ -1,5 +1,6 @@
 from .people import IDPersonScraper
 from .bills import IDBillScraper
+from .events import IDEventScraper
 from utils import url_xpath, State
 
 # from .committees import IDCommitteeScraper
@@ -10,6 +11,7 @@ class Idaho(State):
         "people": IDPersonScraper,
         # 'committees': IDCommitteeScraper,
         "bills": IDBillScraper,
+        "events": IDEventScraper,
     }
     legislative_sessions = [
         {

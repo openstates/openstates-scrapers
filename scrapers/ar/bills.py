@@ -174,6 +174,30 @@ class ARBillScraper(Scraper):
                 name, link.attrib["href"], media_type="application/pdf"
             )
 
+        other_primary_sponsors_path = page.xpath(
+            "//div[text()[contains(.,'Other Primary Sponsor:')]]/../div[2]/a"
+        )
+        for a in other_primary_sponsors_path:
+            other_primary_sponsors = a.text_content().strip()
+            bill.add_sponsorship(
+                other_primary_sponsors,
+                classification="primary",
+                entity_type="person",
+                primary=True,
+            )
+
+        cosponsor_path = page.xpath(
+            "//div[text()[contains(.,'CoSponsors:')]]/../div[2]/a"
+        )
+        for a in cosponsor_path:
+            cosponsor = a.text_content().strip()
+            bill.add_sponsorship(
+                cosponsor,
+                classification="cosponsor",
+                entity_type="person",
+                primary=False,
+            )
+
         try:
             cosponsor_link = page.xpath("//a[contains(@href, 'CoSponsors')]")[0]
             self.scrape_cosponsors(bill, cosponsor_link.attrib["href"])
@@ -181,8 +205,59 @@ class ARBillScraper(Scraper):
             # No cosponsor link is OK
             pass
 
-        for link in page.xpath("//a[contains(@href, 'votes.aspx')]"):
-            date = link.xpath("string(../../td[2])")
+        FI_path = page.xpath(
+            "//h3[text()[contains(.,'DFA Fiscal Impacts')"
+            " or contains(.,'BLR Fiscal Impacts')"
+            " or contains(.,'Other Fiscal Impacts')]]"
+            "/../../../div/div[contains(@class, 'row tableRow')]"
+        )
+        for row in FI_path:
+            div = list(row)
+            FI_number = div[0].text_content().replace("FI Number:", "").strip()
+            for a in div[3]:
+                FI_url = a.attrib["href"].strip()
+            FI_date = div[2].text_content().replace("Date Issued:", "").strip()
+            date = TIMEZONE.localize(datetime.datetime.strptime(FI_date, "%m/%d/%Y"))
+            date = "{:%Y-%m-%d}".format(date)
+            print(FI_number, FI_url, FI_date)
+            bill.add_document_link(
+                note=FI_number,
+                url=FI_url,
+                classification="fiscal-note",
+                date=date,
+                media_type="application/pdf",
+            )
+
+        study_path = page.xpath(
+            "//h3[text()[contains(.,'Actuarial Cost Studies')]]"
+            "/../../../div/following::div[contains(@class, 'row tableRow')"
+            " and descendant::div[contains(span, 'Study Number')]]"
+        )
+        for row in study_path:
+            div = list(row)
+            study_number = div[0].text_content().replace("Study Number:", "").strip()
+            for a in div[2]:
+                study_url = a.attrib["href"].strip()
+            study_date = div[1].text_content().replace("Date Issued:", "").strip()
+            date = TIMEZONE.localize(
+                datetime.datetime.strptime(study_date, "%m/%d/%Y %I:%M:%S %p")
+            )
+            date = "{:%Y-%m-%d}".format(date)
+            print(study_number, study_url, study_date)
+            bill.add_document_link(
+                note=study_number,
+                url=study_url,
+                classification="fiscal-note",
+                date=date,
+                media_type="application/pdf",
+            )
+
+        for link in page.xpath(
+            "//table[@class=\"screenreader\"]//a[contains(@href, '/Bills/Votes?id=')]"
+        ):
+            date = link.xpath(
+                "normalize-space(substring-after(string(../../td[2]), 'Date:'))"
+            )
             date = TIMEZONE.localize(
                 datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
             )
@@ -199,17 +274,26 @@ class ARBillScraper(Scraper):
         else:
             page = lxml.html.fromstring(page)
 
-            if url.endswith("Senate"):
+            if "Senate" in url:
                 actor = "upper"
             else:
                 actor = "lower"
 
             votevals = ["yes", "no", "not voting", "other"]
-            count_path = "string(//td[@align = 'center' and contains(., '%s: ')])"
-            yes_count = int(page.xpath(count_path % "Yeas").split()[-1])
-            no_count = int(page.xpath(count_path % "Nays").split()[-1])
-            not_voting_count = int(page.xpath(count_path % "Non Voting").split()[-1])
-            other_count = int(page.xpath(count_path % "Present").split()[-1])
+            yes_count = int(
+                page.xpath("substring-after(//h3[contains(text(), 'Yeas')], ': ')")
+            )
+            no_count = int(
+                page.xpath("substring-after(//h3[contains(text(), 'Nays')], ': ')")
+            )
+            not_voting_count = int(
+                page.xpath(
+                    "substring-after(//h3[contains(text(), 'Non Voting')], ': ')"
+                )
+            )
+            other_count = int(
+                page.xpath("substring-after(//h3[contains(text(), 'Present')], ': ')")
+            )
             passed = yes_count > no_count + not_voting_count + other_count
             vote = VoteEvent(
                 start_date=date,
@@ -220,7 +304,11 @@ class ARBillScraper(Scraper):
                 bill=bill,
             )
             try:
-                excused_count = int(page.xpath(count_path % "Excused").split()[-1])
+                excused_count = int(
+                    page.xpath(
+                        "substring-after(//h3[contains(text(), 'Excused')], ': ')"
+                    )
+                )
                 vote.set_count("excused", excused_count)
                 votevals.append("excused")
             except (ValueError, IndexError):
@@ -232,13 +320,20 @@ class ARBillScraper(Scraper):
             vote.add_source(url)
 
             xpath = (
-                '//*[contains(@class, "ms-standardheader")]/' "following-sibling::table"
+                '//h3[contains(text(), "Yeas")]/'
+                'following::div[(contains(@class, "row")'
+                'and descendant::div/a[contains(@href, "/Legislators/")])'
+                'or (contains(@class, "row") and not(div))]'
             )
+
             divs = page.xpath(xpath)
 
             for (voteval, div) in zip(votevals, divs):
                 for a in div.xpath(".//a"):
-                    name = a.text_content().strip()
+                    name_path = a.attrib["href"].strip()
+                    first_split = name_path.split("=")[1]
+                    second_split = first_split.split("&")[0]
+                    name = second_split.replace("+", " ")
                     if not name:
                         continue
                     else:
