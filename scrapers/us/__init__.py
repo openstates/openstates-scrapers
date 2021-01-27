@@ -5,10 +5,6 @@ from .votes import USVoteScraper
 
 
 class UnitedStates(State):
-    # division_id = "ocd-division/country:us"
-    # classification = "government"
-    # name = "US Congress"
-    # url = "http://congress.gov/"
     scrapers = {
         "events": USEventScraper,
         "bills": USBillScraper,
@@ -34,18 +30,3 @@ class UnitedStates(State):
 
     def get_session_list(self):
         return ["116"]
-
-
-#
-#    def get_organizations(self):
-#        legislature_name = "United States Congress"
-#
-#        legislature = Organization(name=legislature_name, classification="legislature")
-#        upper = Organization("Senate", classification="upper", parent_id=legislature._id)
-#        lower = Organization("House", classification="lower", parent_id=legislature._id)
-#
-#        yield legislature
-#        yield Organization("Office of the President", classification="executive")
-#        yield upper
-#        yield lower
-#
