@@ -2,11 +2,13 @@
 
 from utils import LXMLMixin
 import datetime as dt
+import dateutil.parser
 from openstates.scrape import Scraper, Event
 from requests import HTTPError
 import pytz
 import json
 import pprint
+import lxml
 
 
 class NHEventScraper(Scraper, LXMLMixin):
@@ -39,8 +41,25 @@ class NHEventScraper(Scraper, LXMLMixin):
 
     #     return ret
 
-    def scrape(self):
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            chambers = ["upper", "lower"]
+            for chamber in chambers:
+                yield from self.scrape_chamber(chamber)
 
+
+    def scrape_chamber(self, chamber):
+        if chamber == 'upper':
+            yield from self.scrape_upper()
+        elif chamber == 'lower':
+            yield from self.scrape_lower()
+
+    def scrape_lower(self):
+        yield {}
+
+    def scrape_upper(self):
         # http://gencourt.state.nh.us/dynamicdatafiles/Committees.txt?x=20201216031749
         url = 'http://gencourt.state.nh.us/senate/schedule/CalendarWS.asmx/GetEvents'
         page = self.get(
@@ -54,7 +73,6 @@ class NHEventScraper(Scraper, LXMLMixin):
                 }
         )
 
-
         page = json.loads(page.content)
         # real data is double-json encoded string in the 'd' key
         page = json.loads(page['d'])
@@ -62,13 +80,39 @@ class NHEventScraper(Scraper, LXMLMixin):
         event_root = 'http://gencourt.state.nh.us/senate/schedule'
 
         for row in page:
-            print(row)
-            print(row['title'])
             event_url = '{}/{}'.format(event_root, row['url'])
-            print(event_url)
 
-        yield []
+            start = dateutil.parser.parse(row['start'])
+            start = self._tz.localize(start)
+            end = dateutil.parser.parse(row['end'])
+            end = self._tz.localize(end)
 
+            title = row['title'].strip()
+
+            event = Event(
+                name=title,
+                start_date=start,
+                end_date=end,
+                location_name="See Source",
+            )
+
+            event.add_source(event_url)
+
+            self.scrape_upper_details(event, event_url)
+            yield event
+
+    def scrape_upper_details(self, event, url):
+        page = self.get(url).content
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+
+        for row in page.xpath('//table[@id="gvDetails"]/tr'):
+            when = row.xpath('td[1]')[0].text_content().strip()
+            item = row.xpath('td[3]')[0].text_content().strip()
+            bill_id = row.xpath('.//a[contains(@href, "bill_Status/bill_docket")]/text()')[0]
+            agenda = event.add_agenda_item(f'{when} {item}')
+            agenda.add_bill(bill_id)
+        #  //a[contains(@href, "bill_Status/bill_docket")]
 
 
         # get_short_codes(self)
