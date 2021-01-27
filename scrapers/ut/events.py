@@ -1,5 +1,6 @@
 import re
 import datetime
+import dateutil.parser
 import pytz
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
@@ -8,59 +9,65 @@ from scrapelib import HTTPError
 
 class UTEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("MST7MDT")
+    base_url = 'https://le.utah.gov'
 
     def scrape(self, chamber=None):
-        URL = "http://utahlegislature.granicus.com/ViewPublisherRSS.php?view_id=2&mode=agendas"
-        doc = self.lxmlize(URL)
-        events = doc.xpath("//item")
+        url = 'https://le.utah.gov/CalServ/CalServ?month={}&year={}'
 
-        for info in events:
-            title_and_date = info.xpath("title/text()")[0].split(" - ")
-            title = title_and_date[0]
-            when = title_and_date[-1]
-            # if not when.endswith(session[ :len("20XX")]):
-            #    continue
+        year = datetime.datetime.today().year
 
-            event = Event(
-                name=title,
-                start_date=self._tz.localize(
-                    datetime.datetime.strptime(when, "%b %d, %Y")
-                ),
-                location_name="State Capitol",
-            )
-            event.add_source(URL)
+        for i in range(0,12):
+            page = self.get(url.format(i, year)).json()
+            if 'days' in page:
+                for day_row in page['days']:
+                    for row in day_row['events']:
+                        # ignore 'note', 'housefloor', 'senatefloor'
+                        if row['type'] == 'meeting':
+                            status = 'tentative'
+                            title = row['desc']
+                            where = row['location']
 
-            url = re.search(r"(http://.*?)\s", info.text_content()).group(1)
-            try:
-                doc = self.lxmlize(url)
-            except HTTPError:
-                self.logger.warning("Page missing, skipping")
-                continue
-            event.add_source(url)
+                            when = dateutil.parser.parse(
+                                f"{day_row['year']}-{str(int(day_row['month'])+1)}-{day_row['day']} {row['time']}"
+                            )
 
-            committee = doc.xpath('//a[text()="View committee page"]/@href')
-            if committee:
-                committee_doc = self.lxmlize(committee[0])
-                committee_name = committee_doc.xpath(
-                    '//h3[@class="heading committee"]/text()'
-                )[0].strip()
-                event.add_participant(committee_name, type="committee", note="host")
+                            when = self._tz.localize(when)
 
-            documents = doc.xpath(".//td")
-            for document in documents:
-                url = re.search(r"(http://.*?pdf)", document.xpath("@onclick")[0])
-                if url is None:
-                    continue
-                url = url.group(1)
-                event.add_document(
-                    note=document.xpath("text()")[0],
-                    url=url,
-                    media_type="application/pdf",
-                )
-                bills = document.xpath("@onclick")
-                for bill in bills:
-                    if "bills/static" in bill:
-                        bill_name = bill.split("/")[-1].split(".")[0]
-                        item = event.add_agenda_item("Bill up for discussion")
-                        item.add_bill(bill_name)
-            yield event
+                            if row['status'] == 'C':
+                                status = 'cancelled'
+
+                            print(title, when, where, status)
+                            event = Event(
+                                name=title,
+                                location_name=where,
+                                start_date=when,
+                                classification="committee-meeting",
+                                status=status
+                            )
+
+
+                            if 'agenda' in row:
+                                event.add_document('Agenda', f"{self.base_url}{row['agenda']}", media_type="text/html")
+
+                            if 'minutes' in row:
+                                event.add_document('Minutes', f"{self.base_url}{row['minutes']}", media_type="text/html")
+                      
+                            if 'mediaurl' in row:
+                                event.add_media_link("Media",  f"{self.base_url}{row['mediaurl']}", media_type="text/html")
+                                print(row['mediaurl'])
+                                if re.findall(r'mtgID=(\d+)', row['mediaurl']):
+                                    hearing_id = re.findall(r'mtgID=(\d+)', row['mediaurl'])[0]
+                                    print(hearing_id)
+                                    docs_url = f"https://glen.le.utah.gov/committees/meeting/{hearing_id}/1234"
+                                    docs_page = self.get(docs_url).json()
+                                    if 'meetingMaterials' in docs_page:
+                                        for mat in docs_page['meetingMaterials']:
+                                            agenda = event.add_agenda_item(mat['description'])
+                                            event.add_document(mat['description'], f"{self.base_url}{mat['docUrl']}", media_type="application/pdf")
+                                            print(mat)
+
+                            source_url = f"{self.base_url}{row['itemurl']}"
+                            event.add_source(source_url)
+                            print(source_url)
+
+                            yield event
