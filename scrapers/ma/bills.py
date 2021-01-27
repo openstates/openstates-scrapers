@@ -253,10 +253,7 @@ class MABillScraper(Scraper):
                 "Bill Text", version_url, media_type="application/pdf"
             )
 
-        # yield back votes and bill
-        # XXX  yield from
-        # DISABLED 2021-01-08 pending site HTML change
-        # self.scrape_actions(bill, bill_url, session)
+        self.scrape_actions(bill, bill_url, session)
         yield bill
 
     def scrape_cosponsors(self, bill, bill_url):
