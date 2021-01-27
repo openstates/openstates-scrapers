@@ -1,10 +1,8 @@
 import re
-import datetime
-import time
+import dateutil.parser
 import pytz
 import lxml.html
 import requests
-import pprint
 from openstates.scrape import Scraper, Event
 
 
@@ -13,36 +11,62 @@ class OKEventScraper(Scraper):
     session = requests.Session()
 
     def scrape(self, chamber=None):
-        
+
         # we need to GET the page once to set up the ASP.net vars
         # then POST to it to set it to monthly
         url = "https://www.okhouse.gov/Committees/MeetingNotices.aspx"
 
         params = {
-            '__EVENTTARGET': 'ctl00$ContentPlaceHolder1$cbMonthly',
-            'ctl00$ScriptManager1': 'ctl00$ContentPlaceHolder1$ctl00$ContentPlaceHolder1$RadAjaxPanel1Panel|ctl00$ContentPlaceHolder1$cbMonthly',
-            'ctl00_FormDecorator1_ClientState': '',
-            'ctl00_RadToolTipManager1_ClientState': '',
-            'ctl00_mainNav_ClientState': '',
-            'ctl00$ContentPlaceHolder1$cbToday': 'on',
-            'ctl00$ContentPlaceHolder1$cbMonthly': 'on',
-            'ctl00_ContentPlaceHolder1_dgrdNotices_ClientState': '',
-            '__ASYNCPOST': 'true',
-            'RadAJAXControlID': 'ctl00_ContentPlaceHolder1_RadAjaxPanel1',
+            "__EVENTTARGET": "ctl00$ContentPlaceHolder1$cbMonthly",
+            "ctl00$ScriptManager1": "ctl00$ContentPlaceHolder1$ctl00$ContentPlaceHolder1$RadAjaxPanel1Panel|ctl00$ContentPlaceHolder1$cbMonthly",
+            "ctl00_FormDecorator1_ClientState": "",
+            "ctl00_RadToolTipManager1_ClientState": "",
+            "ctl00_mainNav_ClientState": "",
+            "ctl00$ContentPlaceHolder1$cbToday": "on",
+            "ctl00$ContentPlaceHolder1$cbMonthly": "on",
+            "ctl00_ContentPlaceHolder1_dgrdNotices_ClientState": "",
+            "__ASYNCPOST": "true",
+            "RadAJAXControlID": "ctl00_ContentPlaceHolder1_RadAjaxPanel1",
         }
 
         page = self.get(url).content
         page = lxml.html.fromstring(page)
 
         html = self.asp_post(url, page, params)
-        print(html)
-
         page = lxml.html.fromstring(html)
 
         for row in page.xpath('//tr[contains(@id,"_dgrdNotices_")]'):
-            print(row.text_content())
-        
-        yield {}
+            status = "tentative"
+            agenda_link = row.xpath('.//a[@id="hlMeetAgenda"]')[0]
+            title = agenda_link.xpath("text()")[0].strip()
+            agenda_url = agenda_link.xpath("@href")[0]
+            location = row.xpath("td[3]")[0].text_content().strip()
+
+            # swap in a space for the <br/>
+            when = row.xpath("td[4]")[0]
+            for br in when.xpath(".//br"):
+                br.tail = " " + br.tail if br.tail else " "
+
+            when = when.text_content().strip()
+            if "cancelled" in when.lower():
+                status = "cancelled"
+
+            when = re.sub("CANCELLED", "", when, re.IGNORECASE)
+            when = self._tz.localize(dateutil.parser.parse(when))
+
+            event = Event(
+                name=title,
+                location_name=location,
+                start_date=when,
+                classification="committee-meeting",
+                status=status,
+            )
+
+            event.add_source(url)
+
+            event.add_document("Agenda", agenda_url, media_type="application/pdf")
+
+            yield event
 
     def asp_post(self, url, page, params):
         page = self.session.get(url)
@@ -53,10 +77,10 @@ class OKEventScraper(Scraper):
         (scriptmanager,) = page.xpath('//input[@id="ctl00_ScriptManager1_TSM"]/@value')
 
         headers = {
-            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36',
-            'x-microsoftajax': 'Delta=true',
-            'referer': 'https://www.okhouse.gov/Committees/MeetingNotices.aspx',
-            'origin': 'https://www.okhouse.gov',
+            "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36",
+            "x-microsoftajax": "Delta=true",
+            "referer": "https://www.okhouse.gov/Committees/MeetingNotices.aspx",
+            "origin": "https://www.okhouse.gov",
         }
 
         form = {
@@ -69,7 +93,5 @@ class OKEventScraper(Scraper):
 
         form = {**form, **params}
 
-
-        pprint.pprint(form)
         response = self.session.post(url, form, headers=headers).content
         return response
