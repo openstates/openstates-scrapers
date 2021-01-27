@@ -27,14 +27,19 @@ class NMEventScraper(Scraper):
 
         ch_name = self.chambers[chamber]
 
+        # agenda PDFs are linked on the index pages but not
+        # on the chamber hearing pages for some reason
+        # so save them as [chamber][committee name][day] = pdf_link
         agenda_xpath = f"//a[contains(@id,'MainContent_dataList{ch_name}CalendarCommittees_linkCommitteeCalendar')]"
         for row in page.xpath(agenda_xpath):
             agenda_content = row.text_content().split("(PDF) - ")
             com = agenda_content[0].strip()
             agenda_date = agenda_content[1].split('Last update')[0].strip()
             link = row.xpath('@href')[0].strip()
-            self.agenda_urls[chamber][agenda_date] = link
-            print(com, agenda_date, link)
+            if com not in self.agenda_urls[chamber]:
+                self.agenda_urls[chamber][com] = {}
+
+            self.agenda_urls[chamber][com][agenda_date] = link
 
         yield from self.scrape_calendar(chamber)
 
@@ -65,8 +70,6 @@ class NMEventScraper(Scraper):
                         when = dateutil.parser.parse(f"{date} {time}")
                         when = self._tz.localize(when)
 
-                        print(com, date, time, where, host, when)
-
                         event = Event(
                             name=com,
                             location_name=where,
@@ -74,7 +77,25 @@ class NMEventScraper(Scraper):
                             classification="committee-meeting",
                         )
 
+                        host = host.replace(', CHAIRMAN','').replace(', CHAIR','').strip()
+                        event.add_participant(host, type="person", note="host")
+
                         event.add_source(url)
+
+                        for row in page.xpath(f'//table[@id="MainContent_{ch_name}Content_repeaterCommittees_repeaterDates_{i}_gridViewBills_{j}"]/tr'):
+                            bill_id = row.xpath('td[1]')[0].text_content().strip()
+                            bill_id = bill_id.replace('*', '')
+                            bill_id = re.sub(r"\s+", ' ', bill_id)
+                            bill_title = row.xpath('td[2]')[0].text_content().strip()
+                            agenda = event.add_agenda_item(bill_title)
+                            agenda.add_bill(bill_id)
+
+                        # check for an agenda PDF from the index page, from the same committee/date
+                        lookup_date = when.strftime('%m/%d/%Y').lstrip("0")
+                        lookup_com = com.replace('Committee','').replace(' and ', ' & ').strip()
+
+                        if lookup_com in self.agenda_urls[chamber] and lookup_date in self.agenda_urls[chamber][lookup_com]:
+                            event.add_document("Agenda", self.agenda_urls[chamber][lookup_com][lookup_date], media_type="application/pdf")
 
                         yield event
                     else:
