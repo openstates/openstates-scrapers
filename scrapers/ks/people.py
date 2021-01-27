@@ -34,6 +34,7 @@ class KSPersonScraper(Scraper, LXMLMixin):
             "2015-2016": "b2015_16",
             "2017-2018": "b2017_18",
             "2019-2020": "b2019_20",
+            "2021-2022": "b2021_22",
         }[session]
         leg_url = "http://www.kslegislature.org/li/%s/members/%s/" % (slug, kpid)
 

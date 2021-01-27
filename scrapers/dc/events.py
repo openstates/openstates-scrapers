@@ -1,6 +1,5 @@
 import lxml.html
-import datetime
-import re
+import dateutil.parser
 import pytz
 
 from openstates.scrape import Scraper, Event
@@ -10,66 +9,62 @@ class DCEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
 
     def scrape(self):
-        calendar_url = "http://dccouncil.us/calendar"
-        data = self.get(calendar_url).text
-        doc = lxml.html.fromstring(data)
+        url = "https://dccouncil.us/events/list/"
 
-        committee_regex = re.compile("(Committee .*?)will")
+        yield from self.scrape_cal_page(url)
 
-        event_list = doc.xpath("//div[@class='event-description-dev']")
-        for event in event_list:
-            place_and_time = event.xpath(
-                ".//div[@class='event-description-dev-metabox']/p/text()"
+    def scrape_cal_page(self, url):
+        page = self.get(url).content
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+
+        for row in page.xpath("//article[contains(@class,'accordion')]"):
+            when = row.xpath(".//time/@datetime")[0]
+            when = dateutil.parser.parse(when)
+
+            title = row.xpath(".//h3[contains(@class,'heading-link')]/text()")[
+                0
+            ].strip()
+
+            description = row.xpath(
+                "section/div[contains(@class,'large-8')]/div[contains(@class,'base')]"
+            )[0].text_content()
+
+            # fix special chars
+            description = (
+                description.replace("\n\u2013", " ")
+                .replace("\n", " ")
+                .replace("\u203a", "")
             )
-            when = " ".join([place_and_time[0].strip(), place_and_time[1].strip()])
-            if len(place_and_time) > 2:
-                location = place_and_time[2]
-            else:
-                location = "unknown"
-            # when is now of the following format:
-            # Wednesday, 2/25/2015 9:30am
-            when = datetime.datetime.strptime(when, "%A, %m/%d/%Y %I:%M%p")
-            description_content = event.xpath(
-                ".//div[@class='event-description-content-dev']"
-            )[0]
-            description_lines = description_content.xpath("./*")
-            name = description_lines[0].text_content()
-            desc_without_title = " ".join(
-                d.text_content() for d in description_lines[1:]
-            )
-            description = re.sub(
-                r"\s+", " ", description_content.text_content()
-            ).strip()
-            potential_bills = description_content.xpath(".//li")
+            description = description.replace("More about this event", "").strip()
 
-            committee = committee_regex.search(desc_without_title)
-            event_type = "other"
-            if committee is not None:
-                committee = committee.group(1).strip()
-                event_type = "committee:meeting"
+            location = row.xpath(
+                "header/div/div[contains(@class,'large-8')]/div/div[contains(@class,'text-right')]/p"
+            )[0].text_content()
 
-            e = Event(
-                name=name,
+            event = Event(
+                name=title,
                 description=description,
-                start_date=self._tz.localize(when),
+                start_date=when,
                 location_name=location,
-                classification=event_type,
             )
 
-            for b in potential_bills:
-                bill = b.xpath("./a/text()")
-                if len(bill) == 0:
-                    continue
-                bill = bill[0]
-                bill_desc = b.text_content().replace(bill, "").strip(", ").strip()
-                ses, num = bill.split("-")
-                bill = ses.replace(" ", "") + "-" + num.zfill(4)
-                item = e.add_agenda_item(bill_desc)
-                item.add_bill(bill)
+            agenda_url = row.xpath(
+                ".//a[contains(text(),'More about this event')]/@href"
+            )
+            if agenda_url != []:
+                event.add_document(
+                    "Details and Agenda", agenda_url[0], media_type="text/html"
+                )
 
-            e.add_source(calendar_url)
+            if "committee meeting" in title.lower():
+                com_name = title.replace("Committee Meeting", "").strip()
+                event.add_participant(com_name, type="commitee", note="host")
 
-            if committee:
-                e.add_participant(committee, type="organization", note="host")
+            event.add_source(url)
 
-            yield e
+            yield event
+
+        if page.xpath("//a[contains(text(), 'Upcoming Events')]"):
+            next_url = page.xpath("//a[contains(text(), 'Upcoming Events')]/@href")[0]
+            yield from self.scrape_cal_page(next_url)

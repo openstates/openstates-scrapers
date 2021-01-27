@@ -7,7 +7,6 @@ from .common import get_slug_for_session
 
 
 class ARLegislatorScraper(Scraper):
-    _remove_special_case = True
     latest_only = True
 
     def scrape(self, chamber=None, session=None):
@@ -79,15 +78,9 @@ class ARLegislatorScraper(Scraper):
             self.warning("No member photo found")
             photo_url = ""
 
-        # Need to figure out a cleaner method for this later
-        # info_box = root.xpath('string(//div[@id="bodyContent"]/div[2]/div[2])')
-        try:
-            district = root.xpath(
-                'string(//div[@id="bodyContent"]/div[2]/div[2]/div[3]/div[2])'
-            )
-        except AttributeError:
-            self.warning("Member has no district listed; skipping them")
-            return
+        district = root.xpath(
+            "(//b[text()='District:'])[2]/parent::div/parent::div/div[3]"
+        )[0].text_content()
 
         person = Person(
             name=full_name,
@@ -102,7 +95,7 @@ class ARLegislatorScraper(Scraper):
 
         try:
             phone = root.xpath(
-                'string(//div[@id="bodyContent"]/div[2]/div[2]/div[1]/div[2]/a)'
+                'string(//div[@id="bodyContent"]/div[2]/div[2]/div[1]/div[3])'
             )
             if not phone.strip():
                 raise AttributeError
@@ -110,7 +103,7 @@ class ARLegislatorScraper(Scraper):
             phone = None
         try:
             email = root.xpath(
-                'string(//div[@id="bodyContent"]/div[2]/div[2]/div[2]/div[2]/a)'
+                'string(//div[@id="bodyContent"]/div[2]/div[2]/div[2]/div[3])'
             )
             if not email.strip():
                 raise AttributeError
@@ -130,7 +123,7 @@ class ARLegislatorScraper(Scraper):
             )
             if occupation_check == "Occupation:":
                 person.extras["occupation"] = root.xpath(
-                    'string(//div[@id="bodyContent"]/div[2]/div[2]/div[5]/div[2])'
+                    'string(//div[@id="bodyContent"]/div[2]/div[2]/div[5]/div[3])'
                 )
             else:
                 raise AttributeError

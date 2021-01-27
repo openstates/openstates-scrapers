@@ -1,88 +1,86 @@
 import re
-import csv
 import datetime
-from io import StringIO
-
+import dateutil.parser
+import lxml
+import pytz
 from openstates.scrape import Scraper, Event
 
-import pytz
 
-# ftp://www.arkleg.state.ar.us/dfadooas/ReadMeScheduledMeetings.txt
-_TIMECODES = {
-    "12:34 PM": "Upon Recess of the House",
-    "12:36 PM": "10 Minutes Upon Adjournment of",
-    "12:37 PM": "Upon Adjournment of Afternoon Joint Budget Committee",
-    "12:38 PM": "15 Minutes Upon Adjournment of Senate",
-    "12:39 PM": "15 Minutes Upon Adjournment of House",
-    "12:40 PM": "Upon Adjournment of Senate",
-    "12:41 PM": "Upon Adjournment of House",
-    "12:42 PM": "Upon Adjournment of",
-    "12:43 PM": "Upon Adjournment of Both Chambers",
-    "12:44 PM": "10 Minutes upon Adjournment",
-    "12:46 PM": "Upon Adjournment of House Rules",
-    "12:47 PM": "Rescheduled",
-    "12:48 PM": "Upon Adjournment of Joint Budget",
-    "12:49 PM": "15 Minutes upon Adjournment",
-    "12:50 PM": "30 Minutes upon Adjournment",
-    "12:51 PM": "1 Hour prior to Senate convening",
-    "12:52 PM": "1 Hour prior to House convening",
-    "12:53 PM": "30 Minutes prior to Senate convening",
-    "12:54 PM": "30 Minutes prior to House convening",
-    "12:55 PM": "Meeting Cancelled",
-    "12:56 PM": "No Meeting Scheduled",
-    "12:57 PM": "Call of Chair",
-    "12:58 PM": "To Be Announced",
-    "12:59 PM": "Upon Adjournment",
-}
-
-
+# usage:
+#  PYTHONPATH=scrapers poetry run os-update va events --scrape start=YYYY-mm-dd end=YYYY-mm-dd
 class AREventScraper(Scraper):
     _tz = pytz.timezone("America/Chicago")
+    date_format = "%Y-%m-%d"
 
-    def scrape(self, session=None, chamber=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
+    def scrape(self, start=None, end=None):
+        if start is None:
+            start_date = datetime.datetime.now().strftime(self.date_format)
 
-        url = "ftp://www.arkleg.state.ar.us/dfadooas/ScheduledMeetings.txt"
-        page = self.get(url)
-        page = csv.reader(StringIO(page.text), delimiter="|")
+        # default to 90 days if no end
+        if end is None:
+            dtdelta = datetime.timedelta(days=90)
+            end_date = datetime.datetime.now() + dtdelta
+            end_date = end_date.strftime(self.date_format)
 
-        for row in page:
-            # Deal with embedded newline characters, which cause fake new rows
-            LINE_LENGTH = 11
-            while len(row) < LINE_LENGTH:
-                row += next(page)
+        url = f"https://www.arkleg.state.ar.us/Calendars/Meetings?tbType=&meetingStartDate={start_date}&meetingEndDate={end_date}"
 
-            desc = row[7].strip()
+        page = self.get(url).content
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            match = re.match(r"^(.*)- (HOUSE|SENATE)$", desc)
-            if match:
+        for row in page.xpath(
+            "//div[@id='meetingBodyWrapper']/div[contains(@class,'row')]"
+        ):
+            row_class = row.xpath("@class")[0]
+            if "tableSectionHeader" in row_class:
+                day = row.xpath("div/text()")[0].strip()
+                continue
 
-                comm = match.group(1).strip()
-                comm = re.sub(r"\s+", " ", comm)
-                location = row[5].strip() or "Unknown"
-                when = datetime.datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S")
-                when = self._tz.localize(when)
-                # Only assign events to a session if they are in the same year
-                # Given that session metadata have some overlap and
-                # missing end dates, this is the best option available
-                session_year = int(session[:4])
-                if session_year != when.year:
-                    continue
+            time = row.xpath("div[contains(@class,'timeRow')]/b/text()")[0].strip()
+            if "no meeting" in time.lower() or "cancelled" in time.lower():
+                continue
 
-                description = "%s MEETING" % comm
-                event = Event(
-                    name=description,
-                    start_date=when,
-                    location_name=location,
-                    description=description,
+            if time == "Upon Adjournment Whichever is Later":
+                time = "1:00 PM"
+
+            title = row.xpath("div[2]/b")[0].text_content().strip()
+
+            times = re.findall(r"\d+:\d+\s*[A|P]M", time)
+            time = times[0]
+
+            when = dateutil.parser.parse(f"{day} {time}")
+            when = self._tz.localize(when)
+
+            location = row.xpath("div[2]/text()")[1].strip()
+
+            event = Event(
+                name=title, start_date=when, location_name=location, description="",
+            )
+            event.add_source(url)
+
+            if row.xpath(".//a[@aria-label='Agenda']"):
+                agenda_url = row.xpath(".//a[@aria-label='Agenda']/@href")[0]
+                event.add_document("Agenda", agenda_url, media_type="application/pdf")
+
+            if row.xpath(".//a[@aria-label='Play Video']"):
+                video_url = row.xpath(".//a[@aria-label='Play Video']/@href")[0]
+                event.add_media_link(
+                    "Video of Hearing", video_url, media_type="text/html"
                 )
-                event.add_source(url)
 
-                event.add_participant(comm, type="committee", note="host")
-                # time = row[3].strip()
-                # if time in _TIMECODES:
-                #     event['notes'] = TIMECODES[time]
+            if row.xpath(".//a[@aria-label='Referred']"):
+                bill_url = row.xpath(".//a[@aria-label='Referred']/@href")[0]
+                self.scrape_referred_bills(event, bill_url)
 
-                yield event
+            yield event
+
+    def scrape_referred_bills(self, event, url):
+        page = self.get(url).content
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+
+        if page.xpath("//div[contains(@class,'billSubtitle')]"):
+            agenda = event.add_agenda_item("Referred Bills")
+
+            for row in page.xpath("//div[contains(@class,'measureTitle')]/a/text()"):
+                agenda.add_bill(row.strip())

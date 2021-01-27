@@ -3,14 +3,14 @@ from utils import url_xpath, State
 from .bills import RIBillScraper
 from .people import RIPersonScraper
 
-# from .events import RIEventScraper
+from .events import RIEventScraper
 # from .committees import RICommitteeScraper
 
 
 class RhodeIsland(State):
     scrapers = {
         "bills": RIBillScraper,
-        # 'events': RIEventScraper,
+        'events': RIEventScraper,
         "people": RIPersonScraper,
         # 'committees': RICommitteeScraper,
     }
@@ -86,6 +86,14 @@ class RhodeIsland(State):
             "name": "2020 Regular Session",
             "start_date": "2020-01-07",
             "end_date": "2020-06-30",
+        },
+        {
+            "_scraped_name": "2021",
+            "classification": "primary",
+            "identifier": "2021",
+            "name": "2021 Regular Session",
+            "start_date": "2021-01-05",
+            "end_date": "2021-06-30",
         },
     ]
     ignored_scraped_sessions = [

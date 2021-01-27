@@ -3,7 +3,7 @@ from .people import ARLegislatorScraper
 from .bills import ARBillScraper
 
 # from .committees import ARCommitteeScraper
-# from .events import AREventScraper
+from .events import AREventScraper
 
 
 class Arkansas(State):
@@ -11,7 +11,7 @@ class Arkansas(State):
         "people": ARLegislatorScraper,
         # 'committees': ARCommitteeScraper,
         "bills": ARBillScraper,
-        # 'events': AREventScraper
+        'events': AREventScraper
     }
     legislative_sessions = [
         {

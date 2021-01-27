@@ -24,6 +24,7 @@ class WABillScraper(Scraper, LXMLMixin):
     _chamber_map = {"House": "lower", "Senate": "upper", "Joint": "joint"}
 
     _bill_id_list = []
+    versions = {}
 
     _TZ = pytz.timezone("US/Eastern")
 
@@ -57,7 +58,6 @@ class WABillScraper(Scraper, LXMLMixin):
                     self._subjects[match.group()].append(subject)
 
     def _load_versions(self, chamber):
-        self.versions = {}
         base_url = "http://lawfilesext.leg.wa.gov/Biennium/{}/Htm/Bills/".format(
             self.biennium
         )
@@ -78,7 +78,6 @@ class WABillScraper(Scraper, LXMLMixin):
             documents = doc.xpath("//a")[1:]
             for document in documents:
                 (link,) = document.xpath("@href")
-
                 (text,) = document.xpath("text()")
                 (
                     bill_num,

@@ -1,7 +1,6 @@
 from utils import url_xpath, State
 
 from .bills import MNBillScraper
-from .people import MNPersonScraper
 from .vote_events import MNVoteScraper
 
 # from .committees import MNCommitteeScraper
@@ -23,7 +22,6 @@ class Minnesota(State):
     scrapers = {
         "bills": MNBillScraper,
         # "committees": MNCommitteeScraper,
-        "people": MNPersonScraper,
         "votes": MNVoteScraper,
         # "events": MNEventScraper,
     }
@@ -199,18 +197,17 @@ class Minnesota(State):
             # Just a guess. TODO: set after end of special
             "end_date": "2020-12-13",
         },
-        #         {
-        #             "_scraped_name": "92nd Legislature, 2021-2022",
-        #             "classification": "primary",
-        #             "identifier": "2021-2022",
-        #             "name": "2021-2022 Regular Session",
-        #             "start_date": "2021-01-16",
-        #             # Just a guess. TODO: set after schedule is posted
-        #             "end_date": "2021-06-01",
-        #         },
+        {
+            "_scraped_name": "92nd Legislature, 2021-2022",
+            "classification": "primary",
+            "identifier": "2021-2022",
+            "name": "2021-2022 Regular Session",
+            "start_date": "2021-01-05",
+            # Just a guess. TODO: set after schedule is posted
+            "end_date": "2021-06-01",
+        },
     ]
     ignored_scraped_sessions = [
-        "92nd Legislature, 2021-2022",
         "85th Legislature, 2007-2008",
         "85th Legislature, 2007 1st Special Session",
         "84th Legislature, 2005-2006",

@@ -477,7 +477,8 @@ class NYBillScraper(Scraper):
 
         for bill in self._generate_bills(session, window):
             if bill_no:
-                yield from self._scrape_bill(session, bill)
-                return
+                if bill['basePrintNo'] == bill_no.upper():
+                    yield from self._scrape_bill(session, bill)
+                    return
             else:
                 yield from self._scrape_bill(session, bill)

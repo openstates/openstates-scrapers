@@ -2,6 +2,7 @@ from utils import url_xpath, State
 from .people import NMPersonScraper
 from .bills import NMBillScraper
 from .votes import NMVoteScraper
+from .events import NMEventScraper
 
 # from .committees import NMCommitteeScraper
 
@@ -11,6 +12,7 @@ class NewMexico(State):
         "people": NMPersonScraper,
         # 'committees': NMCommitteeScraper,
         "bills": NMBillScraper,
+        "events": NMEventScraper,
         "votes": NMVoteScraper,
     }
     legislative_sessions = [
@@ -134,6 +136,15 @@ class NewMexico(State):
             "name": "2020 Second Special Session",
             "start_date": "2020-11-24",
             "end_date": "2020-11-27",
+        },
+        {
+            "_scraped_name": "2021 Regular",
+            "classification": "primary",
+            "identifier": "2021",
+            "name": "2021 Regular Session",
+            "start_date": "2021-01-19",
+            # TODO: real end date
+            "end_date": "2022-02-20",
         },
     ]
     ignored_scraped_sessions = [

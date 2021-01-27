@@ -6,7 +6,7 @@ import requests
 
 
 class NHPersonScraper(Scraper, LXMLMixin):
-    members_url = "http://www.gencourt.state.nh.us/downloads/Members.csv"
+    members_url = "http://gencourt.state.nh.us/downloads/Members.txt"
     lookup_url = "http://www.gencourt.state.nh.us/house/members/memberlookup.aspx"
     house_profile_url = (
         "http://www.gencourt.state.nh.us/house/members/member.aspx?member={}"
@@ -122,7 +122,8 @@ class NHPersonScraper(Scraper, LXMLMixin):
 
     def _parse_members_txt(self):
         response = requests.get(self.members_url)
-        lines = csv.reader(response.text.strip().split("\n"), delimiter=",")
+        print(self.members_url)
+        lines = csv.reader(response.text.strip().split("\n"), delimiter="\t")
 
         header = next(lines)
 
@@ -149,7 +150,6 @@ class NHPersonScraper(Scraper, LXMLMixin):
         seat_map = self._parse_seat_map()
         for chamber in chambers:
             for row in self._parse_members_txt():
-                print(row["electedStatus"])
                 if self.chamber_map[row["LegislativeBody"]] == chamber:
                     person = self._parse_person(row, chamber, seat_map)
 

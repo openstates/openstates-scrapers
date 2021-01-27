@@ -67,26 +67,16 @@ class DCPersonScraper(Scraper):
             faxes = doc.xpath('//p[@class="byline"]/text()')
             fax = faxes[-1].strip()
 
-            email = (
-                doc.xpath('//p[@class="byline"]/a[@class="contact-link"]')[0]
-                .text_content()
-                .strip()
-            )
-            phone = (
-                doc.xpath('//p[@class="byline"]/a[@class="contact-link"]')[1]
-                .text_content()
-                .strip()
-            )
+            contact_links = doc.xpath('//p[@class="byline"]/a[@class="contact-link"]')
+
+            if len(contact_links) >= 1:
+                email = contact_links[0].text_content().strip()
+            if len(contact_links) == 2:
+                phone = contact_links[1].text_content().strip()
 
             bio = "\n".join(
                 doc.xpath('//div[contains(@class,"js-hide")]/p/text()')
             ).strip()
-            if doc.xpath('//p[contains(@class,"page-summary")]'):
-                short_bio = (
-                    doc.xpath('//p[contains(@class,"page-summary")]')[0]
-                    .text_content()
-                    .strip()
-                )
 
             person = Person(
                 name=name,
@@ -95,7 +85,7 @@ class DCPersonScraper(Scraper):
                 primary_org="legislature",
                 district=str(district),
                 biography=bio,
-                summary=short_bio,
+                # summary=short_bio,
             )
 
             person.add_source(url)

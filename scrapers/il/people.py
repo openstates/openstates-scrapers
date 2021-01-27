@@ -88,12 +88,11 @@ class IlPersonScraper(Scraper):
             detail_url = name.xpath("a/@href")[0]
 
             if party.text_content().strip() == "":
-                self.warning("Garbage party: Skipping!")
-                continue
-
-            party = {"D": "Democratic", "R": "Republican", "I": "Independent"}[
-                party.text
-            ]
+                party = "Independent"
+            else:
+                party = {"D": "Democratic", "R": "Republican", "I": "Independent"}[
+                    party.text
+                ]
             name = name.text_content().strip()
 
             # inactive legislator, skip them for now
@@ -140,12 +139,12 @@ class IlPersonScraper(Scraper):
             email = leg_doc.xpath('//b[text()="Email: "]')
             if email:
                 p.add_contact_detail(
-                    type="email", value=email[0].tail.strip(), note="capitol"
+                    type="email", value=email[0].tail.strip(), note="Capitol Office"
                 )
 
             offices = {
-                "capitol": '//table[contains(string(), "Springfield Office")]',
-                "district": '//table[contains(string(), "District Office")]',
+                "Capitol Office": '//table[contains(string(), "Springfield Office")]',
+                "District Office": '//table[contains(string(), "District Office")]',
             }
 
             for location, xpath in offices.items():
@@ -190,7 +189,7 @@ class IlPersonScraper(Scraper):
             yield "address", "\n".join(addr)
 
     def _memberships(self, latest_only):
-        CURRENT_TERM = 101
+        CURRENT_TERM = 102
 
         terms = [CURRENT_TERM] if latest_only else range(93, CURRENT_TERM + 1)
 

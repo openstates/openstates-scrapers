@@ -1,9 +1,7 @@
 import logging
 from utils import url_xpath, State
-
-from .people import VaPersonScraper
 from .csv_bills import VaCSVBillScraper
-
+from .events import VaEventScraper
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -12,7 +10,10 @@ settings = {"SCRAPELIB_RPM": 40}
 
 
 class Virginia(State):
-    scrapers = {"people": VaPersonScraper, "bills": VaCSVBillScraper}
+    scrapers = {
+        "events": VaEventScraper,
+        "bills": VaCSVBillScraper,
+    }
     legislative_sessions = [
         {
             "_scraped_name": "2010 Session",
@@ -155,6 +156,14 @@ class Virginia(State):
             "start_date": "2020-08-18",
             # TODO: set real end date after session
             "end_date": "2020-08-21",
+        },
+        {
+            "_scraped_name": "2021 Session",
+            "identifier": "2021",
+            "name": "2021 Regular Session",
+            "start_date": "2021-01-13",
+            # TODO: set real end date after session
+            "end_date": "2021-07-15",
         },
     ]
     ignored_scraped_sessions = [

@@ -1,6 +1,5 @@
 from utils import url_xpath, State
 from .bills import NEBillScraper
-from .people import NEPersonScraper
 from .events import NEEventScraper
 
 # from .committees import NECommitteeScraper
@@ -9,7 +8,6 @@ from .events import NEEventScraper
 class Nebraska(State):
     scrapers = {
         "bills": NEBillScraper,
-        "people": NEPersonScraper,
         # 'committees': NECommitteeScraper,
         "events": NEEventScraper,
     }
@@ -55,6 +53,13 @@ class Nebraska(State):
             "identifier": "106",
             "name": "106th Legislature (2019-2020)",
             "start_date": "2019-01-04",
+        },
+        {
+            "_scraped_name": "107th Legislature 1st and 2nd Sessions",
+            "identifier": "107",
+            "name": "107th Legislature (2021-2022)",
+            "start_date": "2021-01-06",
+            "end_date": "2021-12-31",
         },
     ]
     ignored_scraped_sessions = [

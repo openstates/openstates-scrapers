@@ -137,6 +137,14 @@ class Illinois(State):
             "start_date": "2019-01-09",
             "end_date": "2019-12-31",
             "classification": "primary",
+            "_scraped_name": "101   (2019-2020)",
+        },
+        {
+            "name": "102nd Regular Session",
+            "identifier": "102nd",
+            "start_date": "2021-01-13",
+            "end_date": "2021-12-31",
+            "classification": "primary",
         },
     ]
 
