@@ -1,13 +1,12 @@
 import pytz
 import dateutil.parser
 import datetime
-import sys
 
-from urllib.parse import urlsplit, parse_qs
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
 
 # http://mgaleg.maryland.gov/mgawebsite/Meetings/Day/0128202102282021?budget=show&cmte=allcommittees&updates=show&ys=2021rs
+
 
 class MDEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Eastern")
@@ -39,25 +38,44 @@ class MDEventScraper(Scraper, LXMLMixin):
 
         page = self.lxmlize(url)
         for row in page.xpath('//div[@id="divAllHearings"]/hr'):
-            meta = row.xpath('preceding-sibling::div[contains(@class,"hearsched-hearing-header")]')[-1]
+            meta = row.xpath(
+                'preceding-sibling::div[contains(@class,"hearsched-hearing-header")]'
+            )[-1]
             data = row.xpath('preceding-sibling::div[contains(@class,"row")]')[-1]
-            # com_meta = row.xpath('preceding-sibling::div[div[div[contains(@class,"hearsched-committee-banner")]]]')[-1]
-            # print(meta.text_content().strip())
-            # print("--data--")
-            # print(data.text_content().strip())
-            # # print(com_meta.text_content().strip())
-            # print("--break--")
 
-            when = meta.xpath('.//div[contains(@class,"font-weight-bold text-center")]/text()')[0].strip()
-
-            com_row = meta.xpath('.//div[contains(@class,"font-weight-bold text-center")]/text()')[1].strip()
-            time_loc =  meta.xpath(
-                './/div[contains(@class,"font-weight-bold text-center")'
-                'and (contains(text(),"AM") or contains(text(),"PM"))]/text()'
+            when = meta.xpath(
+                './/div[contains(@class,"font-weight-bold text-center")]/text()'
             )[0].strip()
 
-            time = time_loc.split("-")[0].strip()
-            where = time_loc.split("-")[1].strip()
+            com_row = meta.xpath(
+                './/div[contains(@class,"font-weight-bold text-center")]/text()'
+            )[1].strip()
+
+            # if they strike all the header rows, its cancelled
+            unstruck_count = len(
+                meta.xpath(
+                    './/div[contains(@class,"font-weight-bold text-center") and(not(contains(@class,"hearsched-strike")))]'
+                )
+            )
+            if unstruck_count == 0:
+                self.info(f"Skipping {com_row} {when} -- it appears cancelled")
+                continue
+
+            # find the first unstruck time row
+            time_loc = meta.xpath(
+                './/div[contains(@class,"font-weight-bold text-center")'
+                'and(contains(text(),"AM") or contains(text(),"PM")) and(not(contains(@class,"hearsched-strike")))]/text()'
+            )[0].strip()
+
+            if "-" in time_loc:
+                time = time_loc.split("-")[0].strip()
+                where = time_loc.split("-")[1].strip()
+            else:
+                time = time_loc
+                where = "See Committee Site"
+
+            if com_row == "":
+                continue
 
             when = dateutil.parser.parse(f"{when} {time}")
             when = self._tz.localize(when)
@@ -69,22 +87,23 @@ class MDEventScraper(Scraper, LXMLMixin):
                 classification="committee-meeting",
             )
 
-            event.add_source('https://mgaleg.maryland.gov/mgawebsite/Meetings/Week/')
+            event.add_source("https://mgaleg.maryland.gov/mgawebsite/Meetings/Week/")
 
-            for agenda_row in data.xpath("div/div/div[contains(@class,'hearsched-table')]"):
-                children = agenda_row.xpath('div')
+            for agenda_row in data.xpath(
+                "div/div/div[contains(@class,'hearsched-table')]"
+            ):
+                children = agenda_row.xpath("div")
                 # bill row
                 if len(children) == 4:
-                    agenda = event.add_agenda_item(agenda_row.xpath('div[4]/text()')[0].strip())
-                    bill_num = agenda_row.xpath('div[1]/a/text()')[0].strip()
-                    agenda.add_bill(bill_num)
-                    print(bill_num, agenda)
+                    if agenda_row.xpath("div[1]/a"):
+                        agenda = event.add_agenda_item(
+                            agenda_row.xpath("div[4]/text()")[0].strip()
+                        )
+                        bill_num = agenda_row.xpath("div[1]/a/text()")[0].strip()
+                        agenda.add_bill(bill_num)
                 elif len(children) == 1:
-                    agenda = event.add_agenda_item(agenda_row.xpath('div[1]')[0].text_content().strip())
-                    print(agenda)
+                    agenda = event.add_agenda_item(
+                        agenda_row.xpath("div[1]")[0].text_content().strip()
+                    )
 
-            print(when, com_row, time_loc)
-            print("--break--")
             yield event
-            sys.exit()
-        yield {}
