@@ -53,9 +53,6 @@ class WYEventScraper(Scraper):
                             doc["title"], f"{self.base_url}{doc['documentUrl']}"
                         )
 
-                    # for doc in row['budgetMeetingDocuments']:
-                    #     event.add_document(doc['title'], f"{self.base_url}{doc['documentUrl']}")
-
                     for item in row["meetingAgendas"]:
                         self.parse_agenda_item(event, item)
 
