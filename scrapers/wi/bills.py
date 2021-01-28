@@ -161,6 +161,7 @@ class WIBillScraper(Scraper):
             yield bill
 
     def scrape_bill_history(self, bill, url, chamber):
+        seen_votes = set()
         body = self.get(url).text
         doc = lxml.html.fromstring(body)
         doc.make_links_absolute(url)
@@ -272,8 +273,9 @@ class WIBillScraper(Scraper):
                 vote_url = action_td.xpath("a/@href")
                 if "committee" in action.lower():
                     vote_url = journal.xpath("a/@href")
-                if vote_url:
+                if vote_url and vote_url[0] not in seen_votes:
                     yield self.add_vote(bill, actor, date, action, vote_url[0])
+                    seen_votes.add(vote_url[0])
 
         bill.add_source(url)
 
