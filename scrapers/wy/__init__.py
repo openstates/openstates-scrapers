@@ -135,7 +135,7 @@ class Wyoming(State):
         js = session.get("http://wyoleg.gov/js/site.min.js").content.decode("utf-8")
         # seriously, there must be a better way to do this
         sessions_regex = r"constant\(\"YEAR_VALUES\",\[(.*)\)}\(\),function\(w"
-        sessions_string = re.search(sessions_regex, js)
+        sessions_string = re.search(sessions_regex, js, re.DOTALL)
         # once we have the big string, pull out year:2001, etc
         year_regex = r"year\:(\d+)"
         years = re.findall(year_regex, sessions_string.groups(0)[0])
