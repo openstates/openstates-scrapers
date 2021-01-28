@@ -191,6 +191,14 @@ class Louisiana(State):
             # TODO, set to real one after session end
             "end_date": "2020-10-28",
         },
+        {
+            "_scraped_name": "2021 Regular Session",
+            "classification": "primary",
+            "identifier": "2021",
+            "name": "2021 Regular Session",
+            "start_date": "2021-03-12",
+            "end_date": "2021-06-10",
+        },
     ]
     ignored_scraped_sessions = [
         "2020 Organizational Session",
