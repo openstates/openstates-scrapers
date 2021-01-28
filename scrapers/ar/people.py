@@ -93,6 +93,12 @@ class ARLegislatorScraper(Scraper):
         person.add_link(member_url)
         person.add_source(member_url)
 
+        vote_name_path = member_url
+        first_split = vote_name_path.split("=")[1]
+        second_split = first_split.split("&")[0]
+        vote_name = second_split.replace("+", " ")
+        person.add_name(vote_name)
+
         try:
             phone = root.xpath(
                 'string(//div[@id="bodyContent"]/div[2]/div[2]/div[1]/div[3])'
