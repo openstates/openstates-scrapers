@@ -11,15 +11,16 @@ class WYEventScraper(Scraper):
     def scrape(self):
         today = datetime.datetime.today()
 
-        url = "https://web.wyoleg.gov/LsoService/api/Calendar/Events/{year}{month}01"
+        url = "https://web.wyoleg.gov/LsoService/api/Calendar/Events/{}{}01"
 
         # this month and the next 2 months
         for add in [0, 1, 2]:
             test_date = today + relativedelta.relativedelta(months=+add)
-            url = url.format(
-                year=str(test_date.year), month=str(test_date.month).zfill(2)
+            month_url = url.format(
+                str(test_date.year),
+                str(test_date.month).zfill(2)
             )
-            page = self.get(url).json()
+            page = self.get(month_url).json()
             for row in page:
                 if row["meetingKind"] == 2:
                     com = f"{row['meetingType']} {row['committee']['fullName']}"
