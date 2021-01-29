@@ -267,8 +267,11 @@ class NMBillScraper(Scraper):
             # these two are recomendations but not reported yet
             "6601": ("Recommended DO PASS committee report adopted.", ""),
             "6602": ("Recommended DO PASS, as amended, committee report adopted.", ""),
-            "6605": ("Recommended DO NOT PASS, Committee substitute DO PASS",""),
-            "6621": ("Recommended DO PASS, On the Speaker’s table by rule (temporary calendar).",""),
+            "6605": ("Recommended DO NOT PASS, Committee substitute DO PASS", ""),
+            "6621": (
+                "Recommended DO PASS, On the Speaker’s table by rule (temporary calendar).",
+                "",
+            ),
             # committee results
             "7601": ("DO PASS committee report adopted", "committee-passage-favorable"),
             "7602": (
