@@ -181,6 +181,11 @@ class NMBillScraper(Scraper):
 
         yield from bills.values()
 
+        # uncomment this code to debug missing actions
+        # for row in self.access_to_csv('tblActions'):
+        #     print(row)
+        #     print('\n')
+
     def check_other_documents(self, session, chamber, bills):
         """ check for documents that reside in their own directory """
 
@@ -253,7 +258,17 @@ class NMBillScraper(Scraper):
         # combination of tblActions and
         # http://www.nmlegis.gov/Legislation/Action_Abbreviations
         # table will break when new actions are encountered
+
+        # if you need to find a missing action code,
+        # uncomment the block and the end of scrape_chamber
+        # with the comment '# uncomment this code to debug missing actions'
+        # then look up the abbrs in http://www.nmlegis.gov/Legislation/Action_Abbreviations
         action_map = {
+            # these two are recomendations but not reported yet
+            "6601": ("Recommended DO PASS committee report adopted.", ""),
+            "6602": ("Recommended DO PASS, as amended, committee report adopted.", ""),
+            "6605": ("Recommended DO NOT PASS, Committee substitute DO PASS",""),
+            "6621": ("Recommended DO PASS, On the Speaker’s table by rule (temporary calendar).",""),
             # committee results
             "7601": ("DO PASS committee report adopted", "committee-passage-favorable"),
             "7602": (
