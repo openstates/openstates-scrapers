@@ -231,7 +231,7 @@ class SDBillScraper(Scraper, LXMLMixin):
             if action_text == "Motion to amend" and action["Result"] == "P":
                 atypes.append("amendment-introduction")
                 atypes.append("amendment-passage")
-                if action["Amendment"]:
+                if action["Amendment"] and type(action["Amendment"]) is dict and "DocumentId" in action["Amendment"]:
                     amd = action["Amendment"]["DocumentId"]
                     version_name = action["Amendment"]["Filename"]
                     version_url = (
