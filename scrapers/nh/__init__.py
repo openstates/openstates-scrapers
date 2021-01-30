@@ -2,6 +2,7 @@ import datetime
 from utils import State
 from .people import NHPersonScraper
 from .bills import NHBillScraper
+from .events import NHEventScraper
 
 # from .committees import NHCommitteeScraper
 
@@ -11,6 +12,7 @@ class NewHampshire(State):
         "people": NHPersonScraper,
         # 'committees': NHCommitteeScraper,
         "bills": NHBillScraper,
+        "events": NHEventScraper,
     }
     legislative_sessions = [
         {
