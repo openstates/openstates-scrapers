@@ -3,10 +3,9 @@ import datetime
 from dataclasses import dataclass
 from urllib.parse import urlencode
 from collections import defaultdict
-from openstates.scrape import Bill, VoteEvent
+from openstates.scrape import Bill, VoteEvent, Scraper
 from openstates.utils import format_datetime
-from scrapelib import Scraper
-from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage, Workflow
+from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage, page_to_items
 
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
 import requests
@@ -114,9 +113,7 @@ class BillList(HtmlListPage):
             sp = sp.strip()
             bill.add_sponsorship(sp, "primary", "person", True)
 
-        # yield from self.scrape_page_items(BillDetail, url=bill_url, obj=bill)
-
-        return bill
+        return BillDetail(input_val=bill)
 
 
 class BillDetail(HtmlPage):
@@ -126,6 +123,9 @@ class BillDetail(HtmlPage):
     )
     example_source = "https://flsenate.gov/Session/Bill/2021/1"
 
+    def get_source_from_input(self):
+        return self.input.sources[0]["url"]
+
     def process_page(self):
         if self.root.xpath("//div[@id = 'tabBodyBillHistory']//table"):
             self.process_history()
@@ -133,7 +133,8 @@ class BillDetail(HtmlPage):
             self.process_analysis()
             self.process_amendments()
             self.process_summary()
-        return self.input
+        yield self.input
+        yield HouseSearchPage(input_val=self.input)
         # yield from self.process_votes()
 
     def process_summary(self):
@@ -161,9 +162,7 @@ class BillDetail(HtmlPage):
                 )
         except IndexError:
             self.input.extras["places"] = []  # set places to something no matter what
-            self.scraper.warning(
-                "No version table for {}".format(self.input.identifier)
-            )
+            self.logger.warning("No version table for {}".format(self.input.identifier))
 
     # 2020 SB 230 is a Bill with populated amendments:
     # http://flsenate.gov/Session/Bill/2020/230/?Tab=Amendments
@@ -204,12 +203,14 @@ class BillDetail(HtmlPage):
                     elif version_url.endswith("HTML"):
                         mimetype = "text/html"
 
-                    self.obj.add_document_link(
+                    self.input.add_document_link(
                         name, version_url, media_type=mimetype, on_duplicate="ignore"
                     )
         except IndexError:
-            self.scraper.warning(
-                "No {} amendments table for {}".format(amend_type, self.obj.identifier)
+            self.logger.warning(
+                "No {} amendments table for {}".format(
+                    amend_type, self.input.identifier
+                )
             )
 
     def process_analysis(self):
@@ -225,7 +226,7 @@ class BillDetail(HtmlPage):
                 analysis_url = tr.xpath("td/a")[0].attrib["href"]
                 self.input.add_document_link(name, analysis_url, on_duplicate="ignore")
         except IndexError:
-            self.scraper.warning(
+            self.logger.warning(
                 "No analysis table for {}".format(self.input.identifier)
             )
 
@@ -303,7 +304,7 @@ class BillDetail(HtmlPage):
 #                         vote_date, "%m/%d/%Y %H:%M %p"
 #                     )
 #                 except ValueError:
-#                     self.scraper.logger.warning("bad vote date: {}".format(vote_date))
+#                     self.logger.logger.warning("bad vote date: {}".format(vote_date))
 
 #                 vote_date = format_datetime(vote_date, "US/Eastern")
 
@@ -329,7 +330,7 @@ class BillDetail(HtmlPage):
 #                         UpperComVote, vote_url, date=vote_date, bill=self.obj
 #                     )
 #         else:
-#             self.scraper.warning("No vote table for {}".format(self.obj.identifier))
+#             self.logger.warning("No vote table for {}".format(self.obj.identifier))
 
 
 # class FloorVote(PDF):
@@ -339,7 +340,7 @@ class BillDetail(HtmlPage):
 #         VOTE_START_INDEX = 9
 
 #         if len(self.lines) < 2:
-#             self.scraper.warning("Bad PDF! " + self.url)
+#             self.logger.warning("Bad PDF! " + self.url)
 #             return
 
 #         motion = self.lines[MOTION_INDEX].strip()
@@ -424,7 +425,7 @@ class BillDetail(HtmlPage):
 #             # On a rare occasion, a member won't have a vote code,
 #             # which indicates that they didn't vote. The totals reflect
 #             # this.
-#             self.scraper.info("Votes don't add up; looking for additional ones")
+#             self.logger.info("Votes don't add up; looking for additional ones")
 #             for line in self.lines[VOTE_START_INDEX:]:
 #                 if not line.strip():
 #                     break
@@ -439,7 +440,7 @@ class BillDetail(HtmlPage):
 #         (_, motion) = self.lines[5].split("FINAL ACTION:")
 #         motion = motion.strip()
 #         if not motion:
-#             self.scraper.warning("Vote appears to be empty")
+#             self.logger.warning("Vote appears to be empty")
 #             return
 
 #         vote_top_row = [
@@ -571,27 +572,27 @@ class HouseSearchPage(HtmlListPage):
         return url + "?" + urlencode(form)
 
     def process_item(self, item):
-        return BillAugmentation(self.input, item)
+        return HouseBillPage(input_val=self.input, source=item)
 
 
 class HouseBillPage(HtmlListPage):
-    selector = XPath('//a[text()="See Votes"]/@href')
-    input_type = BillAugmentation
-    example_input = BillAugmentation(
-        Bill("HB 1", "2020", "title", chamber="upper", classification="bill"),
-        "http://www.myfloridahouse.gov/Sections/Bills/billsdetail.aspx?BillId=69746",
+    selector = XPath('//a[text()="See Votes"]/@href', min_items=0)
+    example_input = Bill(
+        "HB 1", "2020", "title", chamber="upper", classification="bill"
+    )
+    example_source = (
+        "http://www.myfloridahouse.gov/Sections/Bills/billsdetail.aspx?BillId=69746"
     )
 
     def process_item(self, item):
-        return BillAugmentation(self.input, item)
+        return HouseComVote(input_val=self.input, source=item)
 
 
 class HouseComVote(HtmlPage):
-    input_type = BillAugmentation
-    example_input = BillAugmentation(
-        Bill("HB 1", "2020", "title", chamber="upper", classification="bill"),
-        "http://www.myfloridahouse.gov/Sections/Committees/billvote.aspx?VoteId=54381&IsPCB=0&BillId=69746",
+    example_input = Bill(
+        "HB 1", "2020", "title", chamber="upper", classification="bill"
     )
+    example_source = "http://www.myfloridahouse.gov/Sections/Committees/billvote.aspx?VoteId=54381&IsPCB=0&BillId=69746"
 
     def process_page(self):
         # Checks to see if any vote totals are provided
@@ -627,7 +628,7 @@ class HouseComVote(HtmlPage):
 
             vote = VoteEvent(
                 start_date=date,
-                bill=self.input.bill,
+                bill=self.input,
                 chamber="lower",
                 motion_text=motion,
                 result=result,
@@ -675,9 +676,5 @@ class FlBillScraper(Scraper):
             session = self.latest_session()
             self.info("no session specified, using %s", session)
 
-        workflow = Workflow(BillList(), [BillDetail, HouseSearchPage])
-        for bill in workflow.yield_items():
-            yield bill
-            yield from Workflow(
-                HouseSearchPage(), [HouseBillPage, HouseComVote]
-            ).yield_items()
+        bill_list = BillList(input_val={"session": session})
+        yield from page_to_items(self, bill_list)
