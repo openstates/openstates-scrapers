@@ -1,6 +1,6 @@
 import re
+import logging
 import datetime
-from dataclasses import dataclass
 from urllib.parse import urlencode
 from collections import defaultdict
 from openstates.scrape import Bill, VoteEvent, Scraper
@@ -135,7 +135,7 @@ class BillDetail(HtmlPage):
             self.process_analysis()
             self.process_amendments()
             self.process_summary()
-        yield self.input
+        yield self.input  # the bill, now augmented
         yield HouseSearchPage(input_val=self.input)
         yield from self.process_votes()
 
@@ -531,12 +531,6 @@ class UpperComVote(PdfPage):
         yield vote
 
 
-@dataclass
-class BillAugmentation:
-    bill: Bill
-    url: str
-
-
 class HouseSearchPage(HtmlListPage):
     """
     House committee roll calls are not available on the Senate's
@@ -682,5 +676,7 @@ class FlBillScraper(Scraper):
             session = self.latest_session()
             self.info("no session specified, using %s", session)
 
+        # spatula's logging is better than scrapelib's
+        logging.getLogger("scrapelib").setLevel(logging.WARNING)
         bill_list = BillList(input_val={"session": session})
         yield from page_to_items(self, bill_list)
