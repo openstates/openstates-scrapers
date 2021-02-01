@@ -115,7 +115,7 @@ class BillList(HtmlListPage):
             sp = sp.strip()
             bill.add_sponsorship(sp, "primary", "person", True)
 
-        return BillDetail(input_val=bill)
+        return BillDetail(bill)
 
 
 class BillDetail(HtmlPage):
@@ -136,7 +136,7 @@ class BillDetail(HtmlPage):
             self.process_amendments()
             self.process_summary()
         yield self.input  # the bill, now augmented
-        yield HouseSearchPage(input_val=self.input)
+        yield HouseSearchPage(self.input)
         yield from self.process_votes()
 
     def process_summary(self):
@@ -312,21 +312,17 @@ class BillDetail(HtmlPage):
                 vote_url = tr.xpath("td[4]/a")[0].attrib["href"]
                 if "SenateVote" in vote_url:
                     yield FloorVote(
+                        dict(date=vote_date, chamber="upper", bill=self.input),
                         source=vote_url,
-                        input_val=dict(
-                            date=vote_date, chamber="upper", bill=self.input
-                        ),
                     )
                 elif "HouseVote" in vote_url:
                     yield FloorVote(
+                        dict(date=vote_date, chamber="lower", bill=self.input,),
                         source=vote_url,
-                        input_val=dict(
-                            date=vote_date, chamber="lower", bill=self.input,
-                        ),
                     )
                 else:
                     yield UpperComVote(
-                        source=vote_url, input_val=dict(date=vote_date, bill=self.input)
+                        dict(date=vote_date, bill=self.input), source=vote_url,
                     )
         else:
             self.logger.warning("No vote table for {}".format(self.input.identifier))
@@ -572,7 +568,7 @@ class HouseSearchPage(HtmlListPage):
         return url + "?" + urlencode(form)
 
     def process_item(self, item):
-        return HouseBillPage(input_val=self.input, source=item)
+        return HouseBillPage(self.input, source=item)
 
 
 class HouseBillPage(HtmlListPage):
@@ -585,7 +581,7 @@ class HouseBillPage(HtmlListPage):
     )
 
     def process_item(self, item):
-        return HouseComVote(input_val=self.input, source=item)
+        return HouseComVote(self.input, source=item)
 
 
 class HouseComVote(HtmlPage):
@@ -678,5 +674,5 @@ class FlBillScraper(Scraper):
 
         # spatula's logging is better than scrapelib's
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
-        bill_list = BillList(input_val={"session": session})
+        bill_list = BillList({"session": session})
         yield from page_to_items(self, bill_list)
