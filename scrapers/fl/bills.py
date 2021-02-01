@@ -19,6 +19,8 @@ class PaginationError(Exception):
 
 
 class SubjectPDF(PdfPage):
+    preserve_layout = False
+
     def get_source_from_input(self):
         return f"http://www.leg.state.fl.us/data/session/{self.input['session']}/citator/Daily/subindex.pdf"
 
@@ -135,7 +137,7 @@ class BillDetail(HtmlPage):
             self.process_summary()
         yield self.input
         yield HouseSearchPage(input_val=self.input)
-        # yield from self.process_votes()
+        yield from self.process_votes()
 
     def process_summary(self):
         summary = self.root.xpath(
@@ -290,239 +292,243 @@ class BillDetail(HtmlPage):
                     classification=atype,
                 )
 
+    def process_votes(self):
+        vote_tables = self.root.xpath("//div[@id='tabBodyVoteHistory']//table")
 
-#     def process_votes(self):
-#         vote_tables = self.root.xpath("//div[@id='tabBodyVoteHistory']//table")
+        for vote_table in vote_tables:
+            for tr in vote_table.xpath("tbody/tr"):
+                vote_date = tr.xpath("string(td[3])").strip()
+                if vote_date.isalpha():
+                    vote_date = tr.xpath("string(td[2])").strip()
+                try:
+                    vote_date = datetime.datetime.strptime(
+                        vote_date, "%m/%d/%Y %H:%M %p"
+                    )
+                except ValueError:
+                    self.logger.logger.warning("bad vote date: {}".format(vote_date))
 
-#         for vote_table in vote_tables:
-#             for tr in vote_table.xpath("tbody/tr"):
-#                 vote_date = tr.xpath("string(td[3])").strip()
-#                 if vote_date.isalpha():
-#                     vote_date = tr.xpath("string(td[2])").strip()
-#                 try:
-#                     vote_date = datetime.datetime.strptime(
-#                         vote_date, "%m/%d/%Y %H:%M %p"
-#                     )
-#                 except ValueError:
-#                     self.logger.logger.warning("bad vote date: {}".format(vote_date))
+                vote_date = format_datetime(vote_date, "US/Eastern")
 
-#                 vote_date = format_datetime(vote_date, "US/Eastern")
-
-#                 vote_url = tr.xpath("td[4]/a")[0].attrib["href"]
-#                 if "SenateVote" in vote_url:
-#                     yield from self.scrape_page_items(
-#                         FloorVote,
-#                         vote_url,
-#                         date=vote_date,
-#                         chamber="upper",
-#                         bill=self.obj,
-#                     )
-#                 elif "HouseVote" in vote_url:
-#                     yield from self.scrape_page_items(
-#                         FloorVote,
-#                         vote_url,
-#                         date=vote_date,
-#                         chamber="lower",
-#                         bill=self.obj,
-#                     )
-#                 else:
-#                     yield from self.scrape_page_items(
-#                         UpperComVote, vote_url, date=vote_date, bill=self.obj
-#                     )
-#         else:
-#             self.logger.warning("No vote table for {}".format(self.obj.identifier))
+                vote_url = tr.xpath("td[4]/a")[0].attrib["href"]
+                if "SenateVote" in vote_url:
+                    yield FloorVote(
+                        source=vote_url,
+                        input_val=dict(
+                            date=vote_date, chamber="upper", bill=self.input
+                        ),
+                    )
+                elif "HouseVote" in vote_url:
+                    yield FloorVote(
+                        source=vote_url,
+                        input_val=dict(
+                            date=vote_date, chamber="lower", bill=self.input,
+                        ),
+                    )
+                else:
+                    yield UpperComVote(
+                        source=vote_url, input_val=dict(date=vote_date, bill=self.input)
+                    )
+        else:
+            self.logger.warning("No vote table for {}".format(self.input.identifier))
 
 
-# class FloorVote(PDF):
-#     def handle_page(self):
-#         MOTION_INDEX = 4
-#         TOTALS_INDEX = 6
-#         VOTE_START_INDEX = 9
+class FloorVote(PdfPage):
+    preserve_layout = True
 
-#         if len(self.lines) < 2:
-#             self.logger.warning("Bad PDF! " + self.url)
-#             return
+    def process_page(self):
+        MOTION_INDEX = 4
+        TOTALS_INDEX = 6
+        VOTE_START_INDEX = 9
 
-#         motion = self.lines[MOTION_INDEX].strip()
-#         # Sometimes there is no motion name, only "Passage" in the line above
-#         if not motion and not self.lines[MOTION_INDEX - 1].startswith("Calendar Page:"):
-#             motion = self.lines[MOTION_INDEX - 1]
-#             MOTION_INDEX -= 1
-#             TOTALS_INDEX -= 1
-#             VOTE_START_INDEX -= 1
-#         else:
-#             assert motion, "Floor vote's motion name appears to be empty"
+        lines = self.text.splitlines()
 
-#         for _extra_motion_line in range(2):
-#             MOTION_INDEX += 1
-#             if self.lines[MOTION_INDEX].strip():
-#                 motion = "{}, {}".format(motion, self.lines[MOTION_INDEX].strip())
-#                 TOTALS_INDEX += 1
-#                 VOTE_START_INDEX += 1
-#             else:
-#                 break
+        if len(lines) < 2:
+            self.logger.warning("Bad PDF! " + self.source.url)
+            return
 
-#         (yes_count, no_count, nv_count) = [
-#             int(x)
-#             for x in re.search(
-#                 r"^\s+Yeas - (\d+)\s+Nays - (\d+)\s+Not Voting - (\d+)\s*$",
-#                 self.lines[TOTALS_INDEX],
-#             ).groups()
-#         ]
-#         result = "pass" if yes_count > no_count else "fail"
+        motion = lines[MOTION_INDEX].strip()
+        # Sometimes there is no motion name, only "Passage" in the line above
+        if not motion and not lines[MOTION_INDEX - 1].startswith("Calendar Page:"):
+            motion = lines[MOTION_INDEX - 1]
+            MOTION_INDEX -= 1
+            TOTALS_INDEX -= 1
+            VOTE_START_INDEX -= 1
+        else:
+            assert motion, "Floor vote's motion name appears to be empty"
 
-#         vote = VoteEvent(
-#             start_date=self.kwargs["date"],
-#             chamber=self.kwargs["chamber"],
-#             bill=self.kwargs["bill"],
-#             motion_text=motion,
-#             result=result,
-#             classification="passage",
-#         )
-#         vote.add_source(self.url)
-#         vote.set_count("yes", yes_count)
-#         vote.set_count("no", no_count)
-#         vote.set_count("not voting", nv_count)
+        for _extra_motion_line in range(2):
+            MOTION_INDEX += 1
+            if lines[MOTION_INDEX].strip():
+                motion = "{}, {}".format(motion, lines[MOTION_INDEX].strip())
+                TOTALS_INDEX += 1
+                VOTE_START_INDEX += 1
+            else:
+                break
 
-#         for line in self.lines[VOTE_START_INDEX:]:
-#             if not line.strip():
-#                 break
+        (yes_count, no_count, nv_count) = [
+            int(x)
+            for x in re.search(
+                r"^\s+Yeas - (\d+)\s+Nays - (\d+)\s+Not Voting - (\d+)\s*$",
+                lines[TOTALS_INDEX],
+            ).groups()
+        ]
+        result = "pass" if yes_count > no_count else "fail"
 
-#             if " President " in line:
-#                 line = line.replace(" President ", " ")
-#             elif " Speaker " in line:
-#                 line = line.replace(" Speaker ", " ")
+        vote = VoteEvent(
+            start_date=self.input["date"],
+            chamber=self.input["chamber"],
+            bill=self.input["bill"],
+            motion_text=motion,
+            result=result,
+            classification="passage",
+        )
+        vote.add_source(self.url)
+        vote.set_count("yes", yes_count)
+        vote.set_count("no", no_count)
+        vote.set_count("not voting", nv_count)
 
-#             # Votes follow the pattern of:
-#             # [vote code] [member name]-[district number]
-#             for vtype, member in re.findall(r"\s*(Y|N|EX|AV)\s+(.*?)-\d{1,3}\s*", line):
-#                 vtype = {"Y": "yes", "N": "no", "EX": "excused", "AV": "abstain"}[vtype]
-#                 member = member.strip()
-#                 vote.vote(vtype, member)
+        for line in lines[VOTE_START_INDEX:]:
+            if not line.strip():
+                break
 
-#         # check totals line up
-#         yes_count = no_count = nv_count = 0
-#         for vc in vote.counts:
-#             if vc["option"] == "yes":
-#                 yes_count = vc["value"]
-#             elif vc["option"] == "no":
-#                 no_count = vc["value"]
-#             else:
-#                 nv_count += vc["value"]
+            if " President " in line:
+                line = line.replace(" President ", " ")
+            elif " Speaker " in line:
+                line = line.replace(" Speaker ", " ")
 
-#         for vr in vote.votes:
-#             if vr["option"] == "yes":
-#                 yes_count -= 1
-#             elif vr["option"] == "no":
-#                 no_count -= 1
-#             else:
-#                 nv_count -= 1
+            # Votes follow the pattern of:
+            # [vote code] [member name]-[district number]
+            for vtype, member in re.findall(r"\s*(Y|N|EX|AV)\s+(.*?)-\d{1,3}\s*", line):
+                vtype = {"Y": "yes", "N": "no", "EX": "excused", "AV": "abstain"}[vtype]
+                member = member.strip()
+                vote.vote(vtype, member)
 
-#         if yes_count != 0 or no_count != 0:
-#             raise ValueError("vote count incorrect: " + self.url)
+        # check totals line up
+        yes_count = no_count = nv_count = 0
+        for vc in vote.counts:
+            if vc["option"] == "yes":
+                yes_count = vc["value"]
+            elif vc["option"] == "no":
+                no_count = vc["value"]
+            else:
+                nv_count += vc["value"]
 
-#         if nv_count != 0:
-#             # On a rare occasion, a member won't have a vote code,
-#             # which indicates that they didn't vote. The totals reflect
-#             # this.
-#             self.logger.info("Votes don't add up; looking for additional ones")
-#             for line in self.lines[VOTE_START_INDEX:]:
-#                 if not line.strip():
-#                     break
-#                 for member in re.findall(r"\s{8,}([A-Z][a-z\'].*?)-\d{1,3}", line):
-#                     member = member.strip()
-#                     vote.vote("not voting", member)
-#         yield vote
+        for vr in vote.votes:
+            if vr["option"] == "yes":
+                yes_count -= 1
+            elif vr["option"] == "no":
+                no_count -= 1
+            else:
+                nv_count -= 1
+
+        if yes_count != 0 or no_count != 0:
+            raise ValueError("vote count incorrect: " + self.url)
+
+        if nv_count != 0:
+            # On a rare occasion, a member won't have a vote code,
+            # which indicates that they didn't vote. The totals reflect
+            # this.
+            self.logger.info("Votes don't add up; looking for additional ones")
+            for line in lines[VOTE_START_INDEX:]:
+                if not line.strip():
+                    break
+                for member in re.findall(r"\s{8,}([A-Z][a-z\'].*?)-\d{1,3}", line):
+                    member = member.strip()
+                    vote.vote("not voting", member)
+        yield vote
 
 
-# class UpperComVote(PDF):
-#     def handle_page(self):
-#         (_, motion) = self.lines[5].split("FINAL ACTION:")
-#         motion = motion.strip()
-#         if not motion:
-#             self.logger.warning("Vote appears to be empty")
-#             return
+class UpperComVote(PdfPage):
+    preserve_layout = True
 
-#         vote_top_row = [
-#             self.lines.index(x)
-#             for x in self.lines
-#             if re.search(r"^\s+Yea\s+Nay.*?(?:\s+Yea\s+Nay)+$", x)
-#         ][0]
-#         yea_columns_end = self.lines[vote_top_row].index("Yea") + len("Yea")
-#         nay_columns_begin = self.lines[vote_top_row].index("Nay")
+    def process_page(self):
+        lines = self.text.splitlines()
+        (_, motion) = lines[5].split("FINAL ACTION:")
+        motion = motion.strip()
+        if not motion:
+            self.logger.warning("Vote appears to be empty")
+            return
 
-#         votes = {"yes": [], "no": [], "other": []}
-#         for line in self.lines[(vote_top_row + 1) :]:
-#             if line.strip():
-#                 member = re.search(
-#                     r"""(?x)
-#                         ^\s+(?:[A-Z\-]+)?\s+    # Possible vote indicator
-#                         ([A-Z][a-z]+            # Name must have lower-case characters
-#                         [\w\-\s]+)              # Continue looking for the rest of the name
-#                         (?:,[A-Z\s]+?)?         # Leadership has an all-caps title
-#                         (?:\s{2,}.*)?           # Name ends when many spaces are seen
-#                         """,
-#                     line,
-#                 ).group(1)
-#                 # sometimes members have trailing X's from other motions in the
-#                 # vote sheet we aren't collecting
-#                 member = re.sub(r"(\s+X)+", "", member)
-#                 # Usually non-voting members won't even have a code listed
-#                 # Only a couple of codes indicate an actual vote:
-#                 # "VA" (vote after roll call) and "VC" (vote change)
-#                 did_vote = bool(re.search(r"^\s+(X|VA|VC)\s+[A-Z][a-z]", line))
-#                 if did_vote:
-#                     # Check where the "X" or vote code is on the page
-#                     vote_column = len(line) - len(line.lstrip())
-#                     if vote_column <= yea_columns_end:
-#                         votes["yes"].append(member)
-#                     elif vote_column >= nay_columns_begin:
-#                         votes["no"].append(member)
-#                     else:
-#                         raise ValueError(
-#                             "Unparseable vote found for {0} in {1}:\n{2}".format(
-#                                 member, self.url, line
-#                             )
-#                         )
-#                 else:
-#                     votes["other"].append(member)
+        vote_top_row = [
+            lines.index(x)
+            for x in lines
+            if re.search(r"^\s+Yea\s+Nay.*?(?:\s+Yea\s+Nay)+$", x)
+        ][0]
+        yea_columns_end = lines[vote_top_row].index("Yea") + len("Yea")
+        nay_columns_begin = lines[vote_top_row].index("Nay")
 
-#             # End loop as soon as no more members are found
-#             else:
-#                 break
+        votes = {"yes": [], "no": [], "other": []}
+        for line in lines[(vote_top_row + 1) :]:
+            if line.strip():
+                member = re.search(
+                    r"""(?x)
+                        ^\s+(?:[A-Z\-]+)?\s+    # Possible vote indicator
+                        ([A-Z][a-z]+            # Name must have lower-case characters
+                        [\w\-\s]+)              # Continue looking for the rest of the name
+                        (?:,[A-Z\s]+?)?         # Leadership has an all-caps title
+                        (?:\s{2,}.*)?           # Name ends when many spaces are seen
+                        """,
+                    line,
+                ).group(1)
+                # sometimes members have trailing X's from other motions in the
+                # vote sheet we aren't collecting
+                member = re.sub(r"(\s+X)+", "", member)
+                # Usually non-voting members won't even have a code listed
+                # Only a couple of codes indicate an actual vote:
+                # "VA" (vote after roll call) and "VC" (vote change)
+                did_vote = bool(re.search(r"^\s+(X|VA|VC)\s+[A-Z][a-z]", line))
+                if did_vote:
+                    # Check where the "X" or vote code is on the page
+                    vote_column = len(line) - len(line.lstrip())
+                    if vote_column <= yea_columns_end:
+                        votes["yes"].append(member)
+                    elif vote_column >= nay_columns_begin:
+                        votes["no"].append(member)
+                    else:
+                        raise ValueError(
+                            "Unparseable vote found for {} in {}:\n{}".format(
+                                member, self.source.url, line
+                            )
+                        )
+                else:
+                    votes["other"].append(member)
 
-#         totals = re.search(
-#             r"(?msu)\s+(\d{1,3})\s+(\d{1,3})\s+.*?TOTALS", self.text
-#         ).groups()
-#         yes_count = int(totals[0])
-#         no_count = int(totals[1])
-#         result = "pass" if (yes_count > no_count) else "fail"
+            # End loop as soon as no more members are found
+            else:
+                break
 
-#         vote = VoteEvent(
-#             start_date=self.kwargs["date"],
-#             bill=self.kwargs["bill"],
-#             chamber="upper",
-#             motion_text=motion,
-#             classification="committee-passage",
-#             result=result,
-#         )
-#         vote.add_source(self.url)
-#         vote.set_count("yes", yes_count)
-#         vote.set_count("no", no_count)
-#         vote.set_count("other", len(votes["other"]))
+        totals = re.search(
+            r"(?msu)\s+(\d{1,3})\s+(\d{1,3})\s+.*?TOTALS", self.text
+        ).groups()
+        yes_count = int(totals[0])
+        no_count = int(totals[1])
+        result = "pass" if (yes_count > no_count) else "fail"
 
-#         # set voters
-#         for vtype, voters in votes.items():
-#             for voter in voters:
-#                 voter = voter.strip()
-#                 # Removes the few voter names with a ton of extra spaces with  VA at the end.
-#                 # Ex: Cruz                                                               VA
-#                 if "  VA" in voter:
-#                     voter = " ".join(voter.split()[:-2])
-#                 if len(voter) > 0:
-#                     vote.vote(vtype, voter)
+        vote = VoteEvent(
+            start_date=self.input["date"],
+            bill=self.input["bill"],
+            chamber="upper",
+            motion_text=motion,
+            classification="committee-passage",
+            result=result,
+        )
+        vote.add_source(self.source.url)
+        vote.set_count("yes", yes_count)
+        vote.set_count("no", no_count)
+        vote.set_count("other", len(votes["other"]))
 
-#         yield vote
+        # set voters
+        for vtype, voters in votes.items():
+            for voter in voters:
+                voter = voter.strip()
+                # Removes the few voter names with a ton of extra spaces with  VA at the end.
+                # Ex: Cruz                                                               VA
+                if "  VA" in voter:
+                    voter = " ".join(voter.split()[:-2])
+                if len(voter) > 0:
+                    vote.vote(vtype, voter)
+
+        yield vote
 
 
 @dataclass
