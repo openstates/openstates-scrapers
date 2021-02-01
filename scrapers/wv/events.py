@@ -41,6 +41,8 @@ class WVEventScraper(Scraper, LXMLMixin):
             if len(row.xpath('text()')) == 0:
                 continue
 
+            # meeting pages show events going back years
+            # so just grab this cal year and later
             when = row.xpath('text()')[0].strip()
             when = when.split('-')[0]
             when = dateutil.parser.parse(when)
@@ -90,6 +92,5 @@ class WVEventScraper(Scraper, LXMLMixin):
         
         
         event.add_source(url)
-        print(com, when, where, desc)
 
         yield event
