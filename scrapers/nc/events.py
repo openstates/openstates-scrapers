@@ -68,6 +68,8 @@ class NCEventScraper(Scraper, LXMLMixin):
                 )
                 event.add_source(com_url)
 
+                event.add_participant(com_name, type="committee", note="host")
+
                 # NOTE: if you follow the committee link, there are agenda PDF links
                 # but they don't load at all as of 2021-02-01 -- showerst
 
