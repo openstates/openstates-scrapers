@@ -340,7 +340,7 @@ class MABillScraper(Scraper):
                 n = int(re.findall(r"(\d+)\s*NAYS", action_name)[0])
 
                 # get supplement number
-                n_supplement = int(re.findall(r"No\.\s*(\d+)", action_name)[0])
+                n_supplement = int(re.findall(r"No\.\s*(\d+)", action_name, re.IGNORECASE)[0])
                 cached_vote = VoteEvent(
                     chamber=actor,
                     start_date=action_date,
