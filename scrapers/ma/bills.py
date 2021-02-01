@@ -253,10 +253,7 @@ class MABillScraper(Scraper):
                 "Bill Text", version_url, media_type="application/pdf"
             )
 
-        # yield back votes and bill
-        # XXX  yield from
-        # DISABLED 2021-01-08 pending site HTML change
-        # self.scrape_actions(bill, bill_url, session)
+        self.scrape_actions(bill, bill_url, session)
         yield bill
 
     def scrape_cosponsors(self, bill, bill_url):
@@ -343,7 +340,7 @@ class MABillScraper(Scraper):
                 n = int(re.findall(r"(\d+)\s*NAYS", action_name)[0])
 
                 # get supplement number
-                n_supplement = int(re.findall(r"No\.\s*(\d+)", action_name)[0])
+                n_supplement = int(re.findall(r"No\.\s*(\d+)", action_name, re.IGNORECASE)[0])
                 cached_vote = VoteEvent(
                     chamber=actor,
                     start_date=action_date,
