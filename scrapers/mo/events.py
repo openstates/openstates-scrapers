@@ -1,6 +1,7 @@
 import pytz
 import lxml
 import dateutil.parser
+import re
 
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
@@ -38,6 +39,7 @@ class MOEventScraper(Scraper, LXMLMixin):
 
             when_date = self.row_content(page, "Date:")
             when_time = self.row_content(page, "Time:")
+            when_time = re.sub('or upon .* recess', '', when_time)
 
             # fix for upon adjournment
             when_time = when_time.replace("or upon morning adjournment whichever is later", "").strip()
