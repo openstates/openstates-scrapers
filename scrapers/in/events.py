@@ -40,13 +40,11 @@ class INEventScraper(Scraper):
             date = meta.xpath('text()')[0].strip()
 
             time_and_loc = meta.xpath('span/text()')[0].strip()
-            time_and_loc = "\n".split(time_and_loc)
+            time_and_loc = time_and_loc.split("\n")
             time = time_and_loc[0]
             loc = time_and_loc[1]
 
-            print(time_and_loc)
-
-            print(time, loc)
+            print(com, date, time, loc)
 
             if 'cancelled' in time.lower():
                 continue
