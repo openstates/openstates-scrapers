@@ -54,9 +54,7 @@ class SubjectPDF(PdfPage):
 class BillList(HtmlListPage):
     selector = XPath("//a[contains(@href, '/Session/Bill/')]")
     next_page_selector = XPath("//a[@class='next']/@href")
-    # TODO: fix error message when passing SubjectPDF w/o invocation here
-    # dependencies = {"subjects": SubjectPDF}
-    subjects = defaultdict(list)
+    dependencies = {"subjects": SubjectPDF}
 
     def get_source_from_input(self):
         return (
