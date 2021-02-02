@@ -121,7 +121,7 @@ class OHBillScraper(Scraper):
                 "infpass_217": "passage",
             }
 
-            base_url = "http://search-prod.lis.state.oh.us"
+            base_url = "https://search-prod.lis.state.oh.us"
             first_page = base_url
             first_page += "/solarapi/v1/general_assembly_{session}/".format(
                 session=session
@@ -168,7 +168,7 @@ class OHBillScraper(Scraper):
 
                 # get bill from API
                 bill_api_url = (
-                    "http://search-prod.lis.state.oh.us/solarapi/v1/"
+                    "https://search-prod.lis.state.oh.us/solarapi/v1/"
                     "general_assembly_{}/{}/{}/".format(
                         session,
                         "bills" if "B" in bill_id else "resolutions",
