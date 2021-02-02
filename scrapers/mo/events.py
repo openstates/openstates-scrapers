@@ -43,6 +43,8 @@ class MOEventScraper(Scraper, LXMLMixin):
 
             # fix for upon adjournment
             when_time = when_time.replace("or upon morning adjournment whichever is later", "").strip()
+            # 15/30/45 minutes/hours upon adjournment/recess
+            when_time = re.sub(r"\d+ \w+ upon \w+", '', when_time, flags=re.IGNORECASE)
             # a.m. and p.m. seem to confuse dateutil.parser
             when_time = when_time.replace("A.M.", "AM").replace("P.M.", "PM")
 
