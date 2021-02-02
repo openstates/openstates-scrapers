@@ -1,10 +1,19 @@
 import re
-from spatula import ExcelListPage
+from dataclasses import dataclass
+from spatula import ExcelListPage, HtmlPage, JsonPage, CSS
 
 # from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.scrape import Bill
 
 CLASSIFICATIONS = {"B": "bill", "R": "resolution", "CR": "concurrent resolution"}
+
+
+@dataclass
+class PartialBill:
+    session: str
+    bill_type: str
+    number: str
+    title: str
 
 
 class BillStatusReport(ExcelListPage):
@@ -32,18 +41,116 @@ class BillStatusReport(ExcelListPage):
             self.skip()
 
         bill_type = re.sub(r"\W", "", item["Type"])
-        identifier = f'{bill_type} {item["Number"]}'
-        subject = item.get("Subject", "")
-        classification = CLASSIFICATIONS[bill_type[1:]]
-        chamber = "upper" if bill_type[0] == "S" else "lower"
+        return PartialBill(self.input["session"], bill_type, item["Number"], title)
+
+
+class BillApiResponse(JsonPage):
+    input_type = PartialBill
+    example_input = PartialBill(
+        "134", "SB", "1", "Regards teaching financial literacy in high school"
+    )
+
+    def get_source_from_input(self):
+        # get bill from API
+        bill_api_url = (
+            "http://search-prod.lis.state.oh.us/solarapi/v1/"
+            "general_assembly_{}/{}/{}{}/".format(
+                self.input.session,
+                "bills" if "B" in self.input.bill_type else "resolutions",
+                self.input.bill_type,
+                self.input.number,
+            )
+        )
+        return bill_api_url
+
+    def process_page(self):
+        pass
+        # if len(data["items"]) == 0:
+        #     self.logger.warning(
+        #         "Data for bill {bill_id} has empty 'items' array,"
+        #         " cannot process related information".format(
+        #             bill_id=bill_id.lower().replace(" ", "")
+        #         )
+        #     )
+        #     yield bill
+
+        # # add title if no short title
+        # if not bill.title:
+        #     bill.title = data["items"][0]["longtitle"]
+        # bill.add_title(data["items"][0]["longtitle"], "long title")
+
+        # # this stuff is version-specific
+        # for version in data["items"]:
+        #     version_name = version["version"]
+        #     version_link = base_url + version["pdfDownloadLink"]
+        #     bill.add_version_link(
+        #         version_name, version_link, media_type="application/pdf"
+        #     )
+
+        # # we'll use latest bill_version for everything else
+        # bill_version = data["items"][0]
+        # bill.add_source(bill_api_url)
+
+        # # subjects
+        # for subj in bill_version["subjectindexes"]:
+        #     try:
+        #         bill.add_subject(subj["primary"])
+        #     except KeyError:
+        #         pass
+        #     try:
+        #         secondary_subj = subj["secondary"]
+        #     except KeyError:
+        #         secondary_subj = ""
+        #     if secondary_subj:
+        #         bill.add_subject(secondary_subj)
+
+        # # sponsors
+        # sponsors = bill_version["sponsors"]
+        # for sponsor in sponsors:
+        #     sponsor_name = self.get_sponsor_name(sponsor)
+        #     bill.add_sponsorship(
+        #         sponsor_name,
+        #         classification="primary",
+        #         entity_type="person",
+        #         primary=True,
+        #     )
+
+        # cosponsors = bill_version["cosponsors"]
+        # for sponsor in cosponsors:
+        #     sponsor_name = self.get_sponsor_name(sponsor)
+        #     bill.add_sponsorship(
+        #         sponsor_name,
+        #         classification="cosponsor",
+        #         entity_type="person",
+        #         primary=False,
+        #     )
+
+
+class SummaryPage(HtmlPage):
+    input_type = PartialBill
+    example_input = PartialBill(
+        "134", "SB", "1", "Regards teaching financial literacy in high school"
+    )
+
+    def get_source_from_input(self):
+        site_id = f"GA{self.input.session}-{self.input.bill_type}-{self.input.number}"
+        return f"https://www.legislature.ohio.gov/legislation/legislation-summary?id={site_id}"
+
+    def process_page(self):
+        identifier = f"{self.input.bill_type} {self.input.number}"
+        classification = CLASSIFICATIONS[self.input.bill_type[1:]]
+        chamber = "upper" if self.input.bill_type[0] == "S" else "lower"
 
         bill = Bill(
             identifier,
-            legislative_session=self.input["session"],
+            legislative_session=self.input.session,
             chamber=chamber,
-            title=title,
+            title=self.input.title,
             classification=classification,
         )
-        bill.add_subject(subject)
+
+        subjects = CSS(".legislationSubjects a").match(self.root)
+        for subject in subjects:
+            bill.add_subject(subject.text)
 
         return bill
