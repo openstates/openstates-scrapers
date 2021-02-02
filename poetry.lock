@@ -34,10 +34,10 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [package.extras]
-dev = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.interface", "furo", "sphinx", "pre-commit"]
 docs = ["furo", "sphinx", "zope.interface"]
 tests = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.interface"]
 tests_no_zope = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six"]
+dev = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.interface", "furo", "sphinx", "pre-commit"]
 
 [[package]]
 name = "babel"
@@ -110,15 +110,15 @@ optional = false
 python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*"
 
 [package.dependencies]
-cffi = ">=1.8,<1.11.3 || >1.11.3"
 six = ">=1.4.1"
+cffi = ">=1.8,<1.11.3 || >1.11.3"
 
 [package.extras]
-docs = ["sphinx (>=1.6.5,!=1.8.0,!=3.1.0,!=3.1.1)", "sphinx-rtd-theme"]
-docstest = ["doc8", "pyenchant (>=1.6.11)", "twine (>=1.12.0)", "sphinxcontrib-spelling (>=4.0.1)"]
-pep8test = ["black", "flake8", "flake8-import-order", "pep8-naming"]
-ssh = ["bcrypt (>=3.1.5)"]
 test = ["pytest (>=3.6.0,!=3.9.0,!=3.9.1,!=3.9.2)", "pretend", "iso8601", "pytz", "hypothesis (>=1.11.4,!=3.79.2)"]
+pep8test = ["black", "flake8", "flake8-import-order", "pep8-naming"]
+docstest = ["doc8", "pyenchant (>=1.6.11)", "twine (>=1.12.0)", "sphinxcontrib-spelling (>=4.0.1)"]
+ssh = ["bcrypt (>=3.1.5)"]
+docs = ["sphinx (>=1.6.5,!=1.8.0,!=3.1.0,!=3.1.1)", "sphinx-rtd-theme"]
 
 [[package]]
 name = "cssselect"
@@ -153,9 +153,9 @@ optional = false
 python-versions = ">=3.6"
 
 [package.dependencies]
-asgiref = ">=3.2.10,<3.3.0"
-pytz = "*"
 sqlparse = ">=0.2.2"
+pytz = "*"
+asgiref = ">=3.2.10,<3.3.0"
 
 [package.extras]
 argon2 = ["argon2-cffi (>=16.1.0)"]
@@ -217,27 +217,27 @@ optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
-appnope = {version = "*", markers = "sys_platform == \"darwin\""}
 backcall = "*"
-colorama = {version = "*", markers = "sys_platform == \"win32\""}
-decorator = "*"
-jedi = ">=0.16"
+appnope = {version = "*", markers = "sys_platform == \"darwin\""}
 pexpect = {version = ">4.3", markers = "sys_platform != \"win32\""}
-pickleshare = "*"
-prompt-toolkit = ">=2.0.0,<3.0.0 || >3.0.0,<3.0.1 || >3.0.1,<3.1.0"
-pygments = "*"
 traitlets = ">=4.2"
+jedi = ">=0.16"
+pygments = "*"
+colorama = {version = "*", markers = "sys_platform == \"win32\""}
+prompt-toolkit = ">=2.0.0,<3.0.0 || >3.0.0,<3.0.1 || >3.0.1,<3.1.0"
+pickleshare = "*"
+decorator = "*"
 
 [package.extras]
-all = ["Sphinx (>=1.3)", "ipykernel", "ipyparallel", "ipywidgets", "nbconvert", "nbformat", "nose (>=0.10.1)", "notebook", "numpy (>=1.14)", "pygments", "qtconsole", "requests", "testpath"]
-doc = ["Sphinx (>=1.3)"]
-kernel = ["ipykernel"]
-nbconvert = ["nbconvert"]
 nbformat = ["nbformat"]
+all = ["Sphinx (>=1.3)", "ipykernel", "ipyparallel", "ipywidgets", "nbconvert", "nbformat", "nose (>=0.10.1)", "notebook", "numpy (>=1.14)", "pygments", "qtconsole", "requests", "testpath"]
+kernel = ["ipykernel"]
+doc = ["Sphinx (>=1.3)"]
 notebook = ["notebook", "ipywidgets"]
-parallel = ["ipyparallel"]
+nbconvert = ["nbconvert"]
 qtconsole = ["qtconsole"]
 test = ["nose (>=0.10.1)", "requests", "testpath", "pygments", "nbformat", "ipykernel", "numpy (>=1.14)"]
+parallel = ["ipyparallel"]
 
 [[package]]
 name = "ipython-genutils"
@@ -285,14 +285,14 @@ optional = false
 python-versions = "*"
 
 [package.dependencies]
-attrs = ">=17.4.0"
 importlib-metadata = {version = "*", markers = "python_version < \"3.8\""}
 pyrsistent = ">=0.14.0"
 six = ">=1.11.0"
+attrs = ">=17.4.0"
 
 [package.extras]
-format = ["idna", "jsonpointer (>1.13)", "rfc3987", "strict-rfc3339", "webcolors"]
 format_nongpl = ["idna", "jsonpointer (>1.13)", "webcolors", "rfc3986-validator (>0.1.0)", "rfc3339-validator"]
+format = ["idna", "jsonpointer (>1.13)", "rfc3987", "strict-rfc3339", "webcolors"]
 
 [[package]]
 name = "lxml"
@@ -303,10 +303,10 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, != 3.4.*"
 
 [package.extras]
+source = ["Cython (>=0.29.7)"]
 cssselect = ["cssselect (>=0.7)"]
 html5 = ["html5lib"]
 htmlsoup = ["beautifulsoup4"]
-source = ["Cython (>=0.29.7)"]
 
 [[package]]
 name = "markupsafe"
@@ -333,14 +333,14 @@ optional = false
 python-versions = ">=3.6,<4.0"
 
 [package.dependencies]
-attrs = ">=20.2.0,<21.0.0"
-click = ">=7.1.1,<8.0.0"
-dj_database_url = ">=0.5.0,<0.6.0"
-Django = ">=2.2"
-jsonschema = ">=3.2.0,<4.0.0"
 psycopg2-binary = ">=2.8.4,<3.0.0"
+Django = ">=2.2"
 pytz = ">=2019.3,<2020.0"
 scrapelib = ">=1.2.0,<2.0.0"
+jsonschema = ">=3.2.0,<4.0.0"
+dj_database_url = ">=0.5.0,<0.6.0"
+click = ">=7.1.1,<8.0.0"
+attrs = ">=20.2.0,<21.0.0"
 
 [[package]]
 name = "packaging"
@@ -444,12 +444,12 @@ optional = false
 python-versions = "*"
 
 [package.dependencies]
-cryptography = ">=2.8"
 six = ">=1.5.2"
+cryptography = ">=2.8"
 
 [package.extras]
-docs = ["sphinx", "sphinx-rtd-theme"]
 test = ["flaky", "pretend", "pytest (>=3.0.1)"]
+docs = ["sphinx", "sphinx-rtd-theme"]
 
 [[package]]
 name = "pyparsing"
@@ -495,12 +495,12 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [package.dependencies]
-certifi = ">=2017.4.17"
-chardet = ">=3.0.2,<4"
 cryptography = {version = ">=1.3.4", optional = true, markers = "extra == \"security\""}
-idna = ">=2.5,<3"
 pyOpenSSL = {version = ">=0.14", optional = true, markers = "extra == \"security\""}
 urllib3 = ">=1.21.1,<1.25.0 || >1.25.0,<1.25.1 || >1.25.1,<1.26"
+chardet = ">=3.0.2,<4"
+certifi = ">=2017.4.17"
+idna = ">=2.5,<3"
 
 [package.extras]
 security = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)"]
@@ -538,22 +538,22 @@ python-versions = "*"
 
 [[package]]
 name = "spatula"
-version = "0.4.0"
+version = "0.4.1"
 description = "lightweight structured scraping toolkit"
 category = "main"
 optional = false
 python-versions = ">=3.7,<4.0"
 
 [package.dependencies]
-attrs = {version = ">=20.3.0,<21.0.0", extras = ["attrs"]}
-click = ">=7.1.2,<8.0.0"
-cssselect = ">=1.1.0,<2.0.0"
-ipython = {version = ">=7.19.0,<8.0.0", extras = ["shell"]}
 lxml = ">=4.6.2,<5.0.0"
-scrapelib = ">=1.2.0,<2.0.0"
 Sphinx = {version = ">=3.4.3,<4.0.0", extras = ["docs"]}
-sphinx-click = {version = ">=2.5.0,<3.0.0", extras = ["docs"]}
 sphinx-rtd-theme = {version = ">=0.5.1,<0.6.0", extras = ["docs"]}
+scrapelib = ">=1.2.0,<2.0.0"
+attrs = {version = ">=20.3.0,<21.0.0", extras = ["attrs"]}
+ipython = {version = ">=7.19.0,<8.0.0", extras = ["shell"]}
+cssselect = ">=1.1.0,<2.0.0"
+click = ">=7.1.2,<8.0.0"
+sphinx-click = {version = ">=2.5.0,<3.0.0", extras = ["docs"]}
 
 [[package]]
 name = "sphinx"
@@ -564,28 +564,28 @@ optional = false
 python-versions = ">=3.5"
 
 [package.dependencies]
-alabaster = ">=0.7,<0.8"
-babel = ">=1.3"
-colorama = {version = ">=0.3.5", markers = "sys_platform == \"win32\""}
-docutils = ">=0.12"
+sphinxcontrib-qthelp = "*"
 imagesize = "*"
-Jinja2 = ">=2.3"
-packaging = "*"
-Pygments = ">=2.0"
-requests = ">=2.5.0"
-snowballstemmer = ">=1.1"
-sphinxcontrib-applehelp = "*"
 sphinxcontrib-devhelp = "*"
+snowballstemmer = ">=1.1"
+babel = ">=1.3"
+alabaster = ">=0.7,<0.8"
+sphinxcontrib-serializinghtml = "*"
+packaging = "*"
+docutils = ">=0.12"
+Pygments = ">=2.0"
+Jinja2 = ">=2.3"
+sphinxcontrib-websupport = {version = "*", optional = true, markers = "extra == \"docs\""}
+colorama = {version = ">=0.3.5", markers = "sys_platform == \"win32\""}
+requests = ">=2.5.0"
+sphinxcontrib-applehelp = "*"
 sphinxcontrib-htmlhelp = "*"
 sphinxcontrib-jsmath = "*"
-sphinxcontrib-qthelp = "*"
-sphinxcontrib-serializinghtml = "*"
-sphinxcontrib-websupport = {version = "*", optional = true, markers = "extra == \"docs\""}
 
 [package.extras]
+test = ["pytest", "pytest-cov", "html5lib", "cython", "typed-ast"]
 docs = ["sphinxcontrib-websupport"]
 lint = ["flake8 (>=3.5.0)", "isort", "mypy (>=0.790)", "docutils-stubs"]
-test = ["pytest", "pytest-cov", "html5lib", "cython", "typed-ast"]
 
 [[package]]
 name = "sphinx-click"
@@ -596,8 +596,8 @@ optional = false
 python-versions = "*"
 
 [package.dependencies]
-pbr = ">=2.0"
 sphinx = ">=1.5,<4.0"
+pbr = ">=2.0"
 
 [[package]]
 name = "sphinx-rtd-theme"
@@ -622,8 +622,8 @@ optional = false
 python-versions = ">=3.5"
 
 [package.extras]
-lint = ["flake8", "mypy", "docutils-stubs"]
 test = ["pytest"]
+lint = ["flake8", "mypy", "docutils-stubs"]
 
 [[package]]
 name = "sphinxcontrib-devhelp"
@@ -634,8 +634,8 @@ optional = false
 python-versions = ">=3.5"
 
 [package.extras]
-lint = ["flake8", "mypy", "docutils-stubs"]
 test = ["pytest"]
+lint = ["flake8", "mypy", "docutils-stubs"]
 
 [[package]]
 name = "sphinxcontrib-htmlhelp"
@@ -646,8 +646,8 @@ optional = false
 python-versions = ">=3.5"
 
 [package.extras]
-lint = ["flake8", "mypy", "docutils-stubs"]
 test = ["pytest", "html5lib"]
+lint = ["flake8", "mypy", "docutils-stubs"]
 
 [[package]]
 name = "sphinxcontrib-jsmath"
@@ -669,8 +669,8 @@ optional = false
 python-versions = ">=3.5"
 
 [package.extras]
-lint = ["flake8", "mypy", "docutils-stubs"]
 test = ["pytest"]
+lint = ["flake8", "mypy", "docutils-stubs"]
 
 [[package]]
 name = "sphinxcontrib-serializinghtml"
@@ -681,8 +681,8 @@ optional = false
 python-versions = ">=3.5"
 
 [package.extras]
-lint = ["flake8", "mypy", "docutils-stubs"]
 test = ["pytest"]
+lint = ["flake8", "mypy", "docutils-stubs"]
 
 [[package]]
 name = "sphinxcontrib-websupport"
@@ -696,8 +696,8 @@ python-versions = ">=3.5"
 sphinxcontrib-serializinghtml = "*"
 
 [package.extras]
-lint = ["flake8"]
 test = ["pytest", "sqlalchemy", "whoosh", "sphinx"]
+lint = ["flake8"]
 
 [[package]]
 name = "sqlalchemy"
@@ -708,16 +708,16 @@ optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [package.extras]
-mssql = ["pyodbc"]
-mssql_pymssql = ["pymssql"]
-mssql_pyodbc = ["pyodbc"]
-mysql = ["mysqlclient"]
-oracle = ["cx-oracle"]
-postgresql = ["psycopg2"]
 postgresql_pg8000 = ["pg8000"]
-postgresql_psycopg2binary = ["psycopg2-binary"]
+postgresql = ["psycopg2"]
 postgresql_psycopg2cffi = ["psycopg2cffi"]
 pymysql = ["pymysql"]
+mssql_pymssql = ["pymssql"]
+postgresql_psycopg2binary = ["psycopg2-binary"]
+mysql = ["mysqlclient"]
+oracle = ["cx-oracle"]
+mssql = ["pyodbc"]
+mssql_pyodbc = ["pyodbc"]
 
 [[package]]
 name = "sqlparse"
@@ -796,7 +796,7 @@ california = ["mysqlclient", "SQLAlchemy"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "ac7759d39ec4d801ac316a2eaf7a4d3fdf4fb262d0901691d6bb77492aba451d"
+content-hash = "a098388c94181af0749da37fa6540c13305882883e2e6c6e521943c78cbcefd6"
 
 [metadata.files]
 alabaster = [
@@ -1151,8 +1151,8 @@ snowballstemmer = [
     {file = "snowballstemmer-2.1.0.tar.gz", hash = "sha256:e997baa4f2e9139951b6f4c631bad912dfd3c792467e2f03d7239464af90e914"},
 ]
 spatula = [
-    {file = "spatula-0.4.0-py3-none-any.whl", hash = "sha256:ba78b122551952084ce09755f1fd39072da5c1b1ee5e84f46ae9b0b6085d8594"},
-    {file = "spatula-0.4.0.tar.gz", hash = "sha256:bddb091dc48e4edbe26d55ec53120fccd87ef4b6c4d50a9c4628fa8c35bf569a"},
+    {file = "spatula-0.4.1-py3-none-any.whl", hash = "sha256:0cead55aa4a8c9a551ab075f59d9024d7b5d8f29e1b6fc9b633bea2a62b286f5"},
+    {file = "spatula-0.4.1.tar.gz", hash = "sha256:271c88bb81100ee1fb58ddf600f6594f4bdbb24de750f89b9c86cafa2adc1e7d"},
 ]
 sphinx = [
     {file = "Sphinx-3.4.3-py3-none-any.whl", hash = "sha256:c314c857e7cd47c856d2c5adff514ac2e6495f8b8e0f886a8a37e9305dfea0d8"},
