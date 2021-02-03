@@ -105,9 +105,10 @@ class BillList(HtmlListPage):
 
     def process_item(self, item):
         link = item.get("href")
-        return BillTabDetail(
-            BillStub(link, item.text.replace("*", ""), self.input["session"])
-        )
+        if "*" in item.text:
+            # previous session bills
+            self.skip()
+        return BillTabDetail(BillStub(link, item.text, self.input["session"]))
 
 
 class BillTabDetail(HtmlPage):
@@ -132,13 +133,13 @@ class BillTabDetail(HtmlPage):
         # followeed by a <div class='col'>
         # with interesting content in the latter element
         return XPath(
-            f"//div[text()='{name}']/following-sibling::div[@class='col']"
+            f"//div[contains(text(),'{name}')]/following-sibling::div[@class='col']"
         ).match_one(self.root)
 
     def add_sponsors(self, bill, sponsor_links):
         seen = set()
         for link in sponsor_links:
-            name = link.text.strip()
+            name = link.text_content().strip()
             # Removes leg position from name
             # Example: Assemblywoman Alexis Hansen
             if name.split()[0] in ["Assemblywoman", "Assemblyman", "Senator"]:
@@ -211,11 +212,11 @@ class BillTabDetail(HtmlPage):
         if bdr:
             bill.extras["BDR"] = bdr
 
-        bill.subject = list(
-            self.subject_mapping[self.input.identifier.replace(" ", "")]
-        )
+        # bill.subject = list(
+        #     self.subject_mapping[self.input.identifier.replace(" ", "")]
+        # )
 
-        text_url = self.source.url.replace("Detail", "Text")
+        text_url = self.source.url.replace("Overview", "Text")
         yield BillTabText(bill, source=text_url)
 
 
@@ -227,8 +228,9 @@ class BillTabText(HtmlPage):
 
     def process_page(self):
         bill = self.input
-        for row in CSS(".d-md-none a").match(self.root):
-            title = row.text
+        # some BDRs have no text link
+        for row in CSS(".d-md-none a").match(self.root, min_items=0):
+            title = row.text_content()
             link = row.get("href")
             bill.add_version_link(
                 title, link, media_type="application/pdf", on_duplicate="ignore"
