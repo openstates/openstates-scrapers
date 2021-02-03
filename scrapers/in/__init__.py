@@ -3,6 +3,7 @@ import requests
 from utils import State
 from .people import INPersonScraper
 from .bills import INBillScraper
+from .events import INEventScraper
 
 # from .committees import INCommitteeScraper
 
@@ -12,6 +13,7 @@ class Indiana(State):
         "people": INPersonScraper,
         # 'committees': INCommitteeScraper,
         "bills": INBillScraper,
+        "events": INEventScraper,
     }
     legislative_sessions = [
         {
