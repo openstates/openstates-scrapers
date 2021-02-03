@@ -11,10 +11,12 @@ from openstates.scrape import Scraper, Event
 class INEventScraper(Scraper):
     _tz = pytz.timezone("America/Indianapolis")
     # avoid cloudflare blocks for no UA
-    cf_headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
+    cf_headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+    }
 
     def scrape(self):
-        list_url = 'http://iga.in.gov/legislative/2021/committees/standing'
+        list_url = "http://iga.in.gov/legislative/2021/committees/standing"
         page = requests.get(list_url, headers=self.cf_headers).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(list_url)
@@ -27,105 +29,55 @@ class INEventScraper(Scraper):
         page = self.get(url, headers=self.cf_headers).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
-        com = page.xpath('//div[contains(@class, "pull-left span8")]/h1/text()')[0].strip()
+        com = page.xpath('//div[contains(@class, "pull-left span8")]/h1/text()')[
+            0
+        ].strip()
         print(com)
 
         if com == "(S) Corrections and Criminal Law":
             sys.exit()
 
         for row in page.xpath('//div[contains(@id, "agenda-item")]'):
-            status = 'tentative'
+            status = "tentative"
             meta = row.xpath('div[contains(@class,"accordion-heading-agenda")]/a')[0]
 
-            date = meta.xpath('text()')[0].strip()
+            date = meta.xpath("text()")[0].strip()
 
-            time_and_loc = meta.xpath('span/text()')[0].strip()
+            time_and_loc = meta.xpath("span/text()")[0].strip()
             time_and_loc = time_and_loc.split("\n")
             time = time_and_loc[0]
             loc = time_and_loc[1]
 
-            print(com, date, time, loc)
+            com = com.replace("(S)", "Senate").replace("(H)", "House")
 
-            if 'cancelled' in time.lower():
+            when = dateutil.parser.parse(f"{time} {date}")
+            when = self._tz.localize(when)
+
+            if "cancelled" in time.lower():
                 continue
 
+            event = Event(
+                name=com,
+                start_date=when,
+                location_name=loc,
+                classification="committee-meeting",
+            )
 
+            event.add_source(url)
+            event.add_participant(com, type="committee", note="host")
 
-        yield {}
+            if row.xpath('.//a[contains(text(), "View Agenda")]'):
+                agenda_url = row.xpath('.//a[contains(text(), "View Agenda")]/@href')[0]
+                event.add_document("Agenda", agenda_url, media_type="application/pdf")
 
-    #     chambers = [chamber] if chamber is not None else ["upper", "lower"]
-    #     for chamber in chambers:
-    #         yield from self.scrape_chamber(chamber)
+            if row.xpath('.//a[contains(text(), "Watch")]'):
+                vid_url = row.xpath('.//a[contains(text(), "Watch")]/@href')[0]
+                event.add_media_link("Video of Hearing", vid_url, media_type="text/html")
 
-    # def scrape_chamber(self, chamber):
-    #     if chamber == "upper":
-    #         url = "http://iga.in.gov/legislative/2021/committees/standing"
-    #     elif chamber == "lower":
-    #         url = "https://legislature.idaho.gov/sessioninfo/agenda/hagenda/"
+            if row.xpath('.//tr[contains(@class,"bill-container")]/td'):
+                agenda = event.add_agenda_item("Bills under consideration")
+                for bill_row in row.xpath('.//tr[contains(@class,"bill-container")]'):
+                    bill_id = bill_row.xpath(".//a[contains(@class,'bill-name-link')]/text()")[0]
+                    agenda.add_bill(bill_id)
 
-    #     page = self.get(url).content
-    #     page = lxml.html.fromstring(page)
-
-    #     for row in page.xpath('//div[@id="ai1ec-container"]/div'):
-    #         month = row.xpath(
-    #             ".//div[contains(@class,'calendarHeader')]/div[contains(@class,'date')]/text()"
-    #         )[0].strip()
-    #         day = row.xpath(
-    #             ".//div[contains(@class,'calendarHeader')]/div[contains(@class,'date')]/span/text()"
-    #         )[0].strip()
-
-    #         time_and_loc = row.xpath(
-    #             ".//div[contains(@class,'calendarHeader')]/div[contains(@class,'abbr')]/h2/text()"
-    #         )
-    #         time = time_and_loc[0].strip()
-    #         loc = time_and_loc[1].strip()
-
-    #         if "not meet" in time.lower():
-    #             continue
-
-    #         start = dateutil.parser.parse(f"{month} {day} {time}")
-    #         start = self._tz.localize(start)
-
-    #         com = row.xpath(
-    #             ".//div[contains(@class,'calendarHeader')]/div[contains(@class,'day')]/h2/a/text()"
-    #         )[0].strip()
-
-    #         event = Event(
-    #             name=com,
-    #             start_date=start,
-    #             location_name=loc,
-    #             classification="committee-meeting",
-    #         )
-
-    #         event.add_participant(com, type="committee", note="host")
-
-    #         agenda_url = row.xpath('.//a[contains(text(), "Full Agenda")]/@href')[0]
-    #         event.add_document("Agenda", agenda_url, media_type="application/pdf")
-
-    #         agenda_rows = row.xpath(
-    #             './/div[contains(@class,"card")]/div[contains(@id, "Agenda")]/div/table/tbody/tr'
-    #         )[1:]
-
-    #         for agenda_row in agenda_rows:
-    #             subject = agenda_row.xpath("string(td[1])").strip()
-    #             description = agenda_row.xpath("string(td[2])").strip()
-    #             presenter = agenda_row.xpath("string(td[3])").strip()
-    #             if presenter != "":
-    #                 agenda_text = (
-    #                     f"{subject} {description} Presenter: {presenter}".strip()
-    #                 )
-    #                 event.add_participant(agenda_text, type="person", note="Presenter")
-    #             else:
-    #                 agenda_text = f"{subject} {description}".strip()
-
-    #             agenda = event.add_agenda_item(agenda_text)
-
-    #             if agenda_row.xpath('td[1]/a[contains(@href,"/legislation/")]'):
-    #                 agenda.add_bill(
-    #                     agenda_row.xpath(
-    #                         'td[1]/a[contains(@href,"/legislation/")]/text()'
-    #                     )[0].strip()
-    #                 )
-
-    #         event.add_source(url)
-    #         yield event
+            yield event
