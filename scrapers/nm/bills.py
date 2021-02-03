@@ -181,11 +181,6 @@ class NMBillScraper(Scraper):
 
         yield from bills.values()
 
-        # uncomment this code to debug missing actions
-        # for row in self.access_to_csv('tblActions'):
-        #     print(row)
-        #     print('\n')
-
     def check_other_documents(self, session, chamber, bills):
         """ check for documents that reside in their own directory """
 
@@ -260,9 +255,7 @@ class NMBillScraper(Scraper):
         # table will break when new actions are encountered
 
         # if you need to find a missing action code,
-        # uncomment the block and the end of scrape_chamber
-        # with the comment '# uncomment this code to debug missing actions'
-        # then look up the abbrs in http://www.nmlegis.gov/Legislation/Action_Abbreviations
+        # look up the abbrs in http://www.nmlegis.gov/Legislation/Action_Abbreviations
         action_map = {
             # these two are recomendations but not reported yet
             "6601": ("Recommended DO PASS committee report adopted.", ""),
@@ -449,6 +442,12 @@ class NMBillScraper(Scraper):
                 self.warning(
                     "unknown action code {} on {}".format(action_code, bill_key)
                 )
+                for row in self.access_to_csv("tblActions"):
+                    if action_code == row["ActionCode"]:
+                        self.warning(row)
+                        self.warning(
+                            "look up at http://www.nmlegis.gov/Legislation/Action_Abbreviations"
+                        )
                 raise
 
             # if there's room in this action for a location name, map locations
@@ -472,8 +471,8 @@ class NMBillScraper(Scraper):
             )
 
     def scrape_documents(self, session, doc_type, chamber, bills, chamber_name=None):
-        """ most document types (+ Votes) are in this common directory go
-        through it and attach them to their related bills """
+        """most document types (+ Votes) are in this common directory go
+        through it and attach them to their related bills"""
         session_path = session_slug(session)
 
         if chamber_name is None:
