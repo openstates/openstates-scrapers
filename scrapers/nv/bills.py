@@ -52,6 +52,7 @@ class BillStub:
     source_url: str
     identifier: str
     session: str
+    subjects: list
 
 
 class SubjectMapping(HtmlPage):
@@ -105,10 +106,19 @@ class BillList(HtmlListPage):
 
     def process_item(self, item):
         link = item.get("href")
-        if "*" in item.text:
+        identifier = item.text
+        if "*" in identifier:
             # previous session bills
-            self.skip()
-        return BillTabDetail(BillStub(link, item.text, self.input["session"]))
+            self.skip(f"skipping prior session {identifier}")
+
+        return BillTabDetail(
+            BillStub(
+                link,
+                identifier,
+                self.input["session"],
+                list(self.subject_mapping[identifier]),
+            )
+        )
 
 
 class BillTabDetail(HtmlPage):
@@ -116,6 +126,7 @@ class BillTabDetail(HtmlPage):
         "https://www.leg.state.nv.us/App/NELIS/REL/81st2021/Bill/7262/Overview",
         "AB20",
         "81",
+        ["test subject"],
     )
 
     def get_source_from_input(self):
@@ -200,6 +211,7 @@ class BillTabDetail(HtmlPage):
             title=short_title,
             chamber=chamber,
         )
+        bill.subject = self.input.subjects
         # use the pretty source URL
         bill.add_source(self.input.source_url)
         bill.add_title(long_title)
@@ -211,10 +223,6 @@ class BillTabDetail(HtmlPage):
         bdr = extract_bdr(short_title)
         if bdr:
             bill.extras["BDR"] = bdr
-
-        # bill.subject = list(
-        #     self.subject_mapping[self.input.identifier.replace(" ", "")]
-        # )
 
         text_url = self.source.url.replace("Overview", "Text")
         yield BillTabText(bill, source=text_url)
