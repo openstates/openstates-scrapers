@@ -362,7 +362,7 @@ jdcal = "*"
 
 [[package]]
 name = "openstates"
-version = "5.4.1"
+version = "5.5.1"
 description = "core infrastructure for the openstates project"
 category = "main"
 optional = false
@@ -1130,8 +1130,8 @@ openpyxl = [
     {file = "openpyxl-3.0.6.tar.gz", hash = "sha256:b229112b46e158b910a5d1b270b212c42773d39cab24e8db527f775b82afc041"},
 ]
 openstates = [
-    {file = "openstates-5.4.1-py3-none-any.whl", hash = "sha256:e578256ea8a17eb8291146524e12e336235117121f0a5ef9ab2812c67a704110"},
-    {file = "openstates-5.4.1.tar.gz", hash = "sha256:f5b48893ea66489ddb345abc1674abfa24c386bfb8a975d3e18f1fea1bca4b1d"},
+    {file = "openstates-5.5.1-py3-none-any.whl", hash = "sha256:6d4051fa8d2f05c8b5e001581b8310464f3ae02ee1eb83ac45da9344db6ddb56"},
+    {file = "openstates-5.5.1.tar.gz", hash = "sha256:92beeaf6479f5c2010b85e02dc9560f0c4d296511916f033eee2da296de63131"},
 ]
 packaging = [
     {file = "packaging-20.9-py2.py3-none-any.whl", hash = "sha256:67714da7f7bc052e064859c05c595155bd1ee9f69f76557e21f051443c20947a"},
