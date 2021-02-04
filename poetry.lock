@@ -170,6 +170,14 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
+name = "et-xmlfile"
+version = "1.0.1"
+description = "An implementation of lxml.xmlfile for the standard library"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "feedparser"
 version = "5.2.1"
 description = "Universal feed parser, handles RSS 0.9x, RSS 1.0, RSS 2.0, CDF, Atom 0.3, and Atom 1.0 feeds"
@@ -243,6 +251,14 @@ test = ["nose (>=0.10.1)", "requests", "testpath", "pygments", "nbformat", "ipyk
 name = "ipython-genutils"
 version = "0.2.0"
 description = "Vestigial utilities from IPython"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
+name = "jdcal"
+version = "1.4.1"
+description = "Julian dates from proleptic Gregorian and Julian calendars."
 category = "main"
 optional = false
 python-versions = "*"
@@ -331,6 +347,18 @@ description = "Python interface to MySQL"
 category = "main"
 optional = true
 python-versions = "*"
+
+[[package]]
+name = "openpyxl"
+version = "3.0.6"
+description = "A Python library to read/write Excel 2010 xlsx/xlsm files"
+category = "main"
+optional = false
+python-versions = ">=3.6,"
+
+[package.dependencies]
+et-xmlfile = "*"
+jdcal = "*"
 
 [[package]]
 name = "openstates"
@@ -556,7 +584,7 @@ python-versions = "*"
 
 [[package]]
 name = "spatula"
-version = "0.4.1"
+version = "0.5.0"
 description = "lightweight structured scraping toolkit"
 category = "main"
 optional = false
@@ -568,6 +596,7 @@ click = ">=7.1.2,<8.0.0"
 cssselect = ">=1.1.0,<2.0.0"
 ipython = {version = ">=7.19.0,<8.0.0", extras = ["shell"]}
 lxml = ">=4.6.2,<5.0.0"
+openpyxl = ">=3.0.6,<4.0.0"
 scrapelib = ">=1.2.0,<2.0.0"
 Sphinx = {version = ">=3.4.3,<4.0.0", extras = ["docs"]}
 sphinx-click = {version = ">=2.5.0,<3.0.0", extras = ["docs"]}
@@ -825,7 +854,7 @@ california = ["mysqlclient", "SQLAlchemy"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "62c614dbea1ed26c9bb4e97574542ede8fa54f71766f06555c88f83d0dbe2af2"
+content-hash = "5646abc141c75a81413306900fa20544e86629cf31b5dd4076744c4b7bf4f6cb"
 
 [metadata.files]
 alabaster = [
@@ -950,6 +979,9 @@ docutils = [
     {file = "docutils-0.16-py2.py3-none-any.whl", hash = "sha256:0c5b78adfbf7762415433f5515cd5c9e762339e23369dbe8000d84a4bf4ab3af"},
     {file = "docutils-0.16.tar.gz", hash = "sha256:c2de3a60e9e7d07be26b7f2b00ca0309c207e06c100f9cc2a94931fc75a478fc"},
 ]
+et-xmlfile = [
+    {file = "et_xmlfile-1.0.1.tar.gz", hash = "sha256:614d9722d572f6246302c4491846d2c393c199cfa4edc9af593437691683335b"},
+]
 feedparser = [
     {file = "feedparser-5.2.1.tar.bz2", hash = "sha256:ce875495c90ebd74b179855449040003a1beb40cd13d5f037a0654251e260b02"},
     {file = "feedparser-5.2.1.tar.gz", hash = "sha256:bd030652c2d08532c034c27fcd7c85868e7fa3cb2b17f230a44a6bbc92519bf9"},
@@ -974,6 +1006,10 @@ ipython = [
 ipython-genutils = [
     {file = "ipython_genutils-0.2.0-py2.py3-none-any.whl", hash = "sha256:72dd37233799e619666c9f639a9da83c34013a73e8bbc79a7a6348d93c61fab8"},
     {file = "ipython_genutils-0.2.0.tar.gz", hash = "sha256:eb2e116e75ecef9d4d228fdc66af54269afa26ab4463042e33785b887c628ba8"},
+]
+jdcal = [
+    {file = "jdcal-1.4.1-py2.py3-none-any.whl", hash = "sha256:1abf1305fce18b4e8aa248cf8fe0c56ce2032392bc64bbd61b5dff2a19ec8bba"},
+    {file = "jdcal-1.4.1.tar.gz", hash = "sha256:472872e096eb8df219c23f2689fc336668bdb43d194094b5cc1707e1640acfc8"},
 ]
 jedi = [
     {file = "jedi-0.18.0-py2.py3-none-any.whl", hash = "sha256:18456d83f65f400ab0c2d3319e48520420ef43b23a086fdc05dff34132f0fb93"},
@@ -1088,6 +1124,10 @@ mysqlclient = [
     {file = "mysqlclient-1.4.6-cp37-cp37m-win_amd64.whl", hash = "sha256:9e6080a7aee4cc6a06b58b59239f20f1d259c1d2fddf68ddeed242d2311c7087"},
     {file = "mysqlclient-1.4.6-cp38-cp38-win_amd64.whl", hash = "sha256:f646f8d17d02be0872291f258cce3813497bc7888cd4712a577fd1e719b2f213"},
     {file = "mysqlclient-1.4.6.tar.gz", hash = "sha256:f3fdaa9a38752a3b214a6fe79d7cae3653731a53e577821f9187e67cbecb2e16"},
+]
+openpyxl = [
+    {file = "openpyxl-3.0.6-py2.py3-none-any.whl", hash = "sha256:1a4b3869c2500b5c713e8e28341cdada49ecfcff1b10cd9006945f5bcefc090d"},
+    {file = "openpyxl-3.0.6.tar.gz", hash = "sha256:b229112b46e158b910a5d1b270b212c42773d39cab24e8db527f775b82afc041"},
 ]
 openstates = [
     {file = "openstates-5.4.1-py3-none-any.whl", hash = "sha256:e578256ea8a17eb8291146524e12e336235117121f0a5ef9ab2812c67a704110"},
@@ -1225,8 +1265,8 @@ snowballstemmer = [
     {file = "snowballstemmer-2.1.0.tar.gz", hash = "sha256:e997baa4f2e9139951b6f4c631bad912dfd3c792467e2f03d7239464af90e914"},
 ]
 spatula = [
-    {file = "spatula-0.4.1-py3-none-any.whl", hash = "sha256:0cead55aa4a8c9a551ab075f59d9024d7b5d8f29e1b6fc9b633bea2a62b286f5"},
-    {file = "spatula-0.4.1.tar.gz", hash = "sha256:271c88bb81100ee1fb58ddf600f6594f4bdbb24de750f89b9c86cafa2adc1e7d"},
+    {file = "spatula-0.5.0-py3-none-any.whl", hash = "sha256:a4fe747e3eb884f87f9eab27ecd1793d81249b4c07dd4a3b50bc694a25f2bb26"},
+    {file = "spatula-0.5.0.tar.gz", hash = "sha256:d70cdf761a83308b74d1fd43bb41c9cec0a073e5af2108498991044a733e1b0f"},
 ]
 sphinx = [
     {file = "Sphinx-3.4.3-py3-none-any.whl", hash = "sha256:c314c857e7cd47c856d2c5adff514ac2e6495f8b8e0f886a8a37e9305dfea0d8"},
