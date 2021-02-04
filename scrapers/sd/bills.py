@@ -11,6 +11,7 @@ SESSION_IDS = {"2021": "44", "2020": "43"}
 
 class SDBillScraper(Scraper, LXMLMixin):
     def scrape(self, chambers=None, session=None):
+        self.seen_votes = set()
         if not session:
             session = self.latest_session()
             self.info("no session specified, using %s", session)
@@ -133,9 +134,13 @@ class SDBillScraper(Scraper, LXMLMixin):
         actor = chamber
 
         for action in actions:
-            if action["StatusText"] is None and action["Description"] is None:  # properties can be null
+            if (
+                action["StatusText"] is None and action["Description"] is None
+            ):  # properties can be null
                 action_text = ""
-            elif action["StatusText"] is None:  # fallback to Description if available, and no StatusText
+            elif (
+                action["StatusText"] is None
+            ):  # fallback to Description if available, and no StatusText
                 action_text = action["Description"]
             else:
                 action_text = action["StatusText"]
@@ -158,7 +163,11 @@ class SDBillScraper(Scraper, LXMLMixin):
                 if action["Result"] == "P":
                     second = "passage"
                 # D is "deferred"
-                elif action["Result"] == "F" or action["Result"] == "D" or action["Result"] == "N":
+                elif (
+                    action["Result"] == "F"
+                    or action["Result"] == "D"
+                    or action["Result"] == "N"
+                ):
                     second = "failure"
                 else:
                     self.error("Unknown vote code: {}".format(action["Result"]))
@@ -216,7 +225,9 @@ class SDBillScraper(Scraper, LXMLMixin):
                 vote_link = (
                     f"https://sdlegislature.gov/api/Votes/{action['Vote']['VoteId']}"
                 )
-                yield from self.scrape_vote(bill, date, vote_link)
+                if vote_link not in self.seen_votes:
+                    yield from self.scrape_vote(bill, date, vote_link)
+                    self.seen_votes.add(vote_link)
                 if action_text != "Certified uncontested, placed on consent":
                     vote_action = (
                         f"YEAS {action['Vote']['Yeas']}, NAYS {action['Vote']['Nays']}"
@@ -231,7 +242,11 @@ class SDBillScraper(Scraper, LXMLMixin):
             if action_text == "Motion to amend" and action["Result"] == "P":
                 atypes.append("amendment-introduction")
                 atypes.append("amendment-passage")
-                if action["Amendment"] and type(action["Amendment"]) is dict and "DocumentId" in action["Amendment"]:
+                if (
+                    action["Amendment"]
+                    and type(action["Amendment"]) is dict
+                    and "DocumentId" in action["Amendment"]
+                ):
                     amd = action["Amendment"]["DocumentId"]
                     version_name = action["Amendment"]["Filename"]
                     version_url = (
@@ -286,6 +301,8 @@ class SDBillScraper(Scraper, LXMLMixin):
                 classification=vtype,
                 bill=bill,
             )
+            # differentiate nearly identical votes
+            vote.pupa_id = url
 
             vote.add_source(url)
             vote.set_count("yes", yes_count)
