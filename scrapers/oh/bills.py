@@ -157,6 +157,9 @@ class OHBillScraper(Scraper):
                 chamber = "lower" if "H" in bill_id else "upper"
                 classification = "bill" if "B" in bill_id else "resolution"
 
+                if not title:
+                    self.warning(f"no title for {bill_id}, skipping")
+                    continue
                 bill = Bill(
                     bill_id,
                     legislative_session=session,
