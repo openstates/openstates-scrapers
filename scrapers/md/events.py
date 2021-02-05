@@ -1,6 +1,7 @@
 import pytz
 import dateutil.parser
 import datetime
+import re
 
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
@@ -77,7 +78,9 @@ class MDEventScraper(Scraper, LXMLMixin):
             if com_row == "":
                 continue
 
-            when = dateutil.parser.parse(f"{when} {time}")
+            # remove end dates
+            when = re.sub(r"to \d+:\d+\s*\w+", "", f"{when} {time}").strip()
+            when = dateutil.parser.parse(when)
             when = self._tz.localize(when)
 
             event = Event(
