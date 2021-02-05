@@ -277,10 +277,10 @@ class SDBillScraper(Scraper, LXMLMixin):
         motion = page["actionLog"]["StatusText"]
         if motion:
             # If we can't detect a motion, skip this vote
-            yes_count = page["x"]["Yeas"]
-            no_count = page["x"]["Nays"]
-            excused_count = page["x"]["Excused"]
-            absent_count = page["x"]["Absent"]
+            yes_count = page["Yeas"]
+            no_count = page["Nays"]
+            excused_count = page["Excused"]
+            absent_count = page["Absent"]
 
             passed = yes_count > no_count
 
