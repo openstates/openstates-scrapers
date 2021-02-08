@@ -123,12 +123,15 @@ class MOEventScraper(Scraper, LXMLMixin):
             when_time = when_time.split("AM", 1)[0]
             when_time = when_time.split("PM", 1)[0]
 
-        # fix - Upcoming in dates
-        when_date = when_date.replace("- Upcoming", "").strip()
+        # fix '- Upcoming', '- In Progress'  in dates
+        when_date = re.sub(r"- (.*)", "", when_date).strip()
 
-        start_date = self._TZ.localize(
-            dateutil.parser.parse("{} {}".format(when_date, when_time))
-        )
+        try:
+            start_date = dateutil.parser.parse(f"{when_date} {when_time}")
+        except dateutil.parser._parser.ParserError:
+            start_date = dateutil.parser.parse(when_date)
+
+        start_date = self._TZ.localize(start_date)
 
         event = Event(start_date=start_date, name=com, location_name=location)
 
