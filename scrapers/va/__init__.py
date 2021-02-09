@@ -165,10 +165,18 @@ class Virginia(State):
             # TODO: set real end date after session
             "end_date": "2021-07-15",
         },
+        # TODO: uncomment when they start posting bulk data
+        # {
+        #     "_scraped_name": "2021 Special Session I",
+        #     "identifier": "2021s1",
+        #     "name": "2021, 1st Special Session",
+        #     "start_date": "2021-02-10",
+        #     # TODO: set real end date after session
+        #     "end_date": "2021-02-19",
+        # },
     ]
     ignored_scraped_sessions = [
-        "2020 Special Session I",
-        "2021 Session",
+        "2021 Special Session I",
         "2015 Special Session I",
         "2015 Session",
         "2014 Special Session I",
