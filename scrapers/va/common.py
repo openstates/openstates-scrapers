@@ -1,3 +1,5 @@
+# found at https://lis.virginia.gov/lis.htm
+# in the OTHER SESSIONS select box
 SESSION_SITE_IDS = {
     "2010": "101",
     "2011": "111",
@@ -19,4 +21,5 @@ SESSION_SITE_IDS = {
     "2020": "201",
     "2020specialI": "202",
     "2021": "211",
+    "2021s1": "212",
 }
