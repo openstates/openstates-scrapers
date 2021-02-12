@@ -221,8 +221,10 @@ class VaCSVBillScraper(Scraper):
         self.load_sponsors()
         self.load_amendments()
         self.load_fiscal_notes()
-        self.load_history()
         self.load_summaries()
+        if session == '2021':
+            self._url_base = self._url_base.replace("211", "212")
+        self.load_history()
         self.load_votes()
         self.load_bills()
 
