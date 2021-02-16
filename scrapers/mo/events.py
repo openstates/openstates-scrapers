@@ -60,9 +60,12 @@ class MOEventScraper(Scraper, LXMLMixin):
             )[0]
             com = com.split(", Senator")[0].strip()
 
-            start_date = self._TZ.localize(
-                dateutil.parser.parse("{} {}".format(when_date, when_time))
-            )
+            try:
+                start_date = dateutil.parser.parse(f"{when_date} {when_time}")
+            except dateutil.parser._parser.ParserError:
+                start_date = dateutil.parser.parse(when_date)
+
+            start_date = self._TZ.localize(start_date)
 
             event = Event(start_date=start_date, name=com, location_name=location)
 
