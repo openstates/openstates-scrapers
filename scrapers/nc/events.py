@@ -43,6 +43,10 @@ class NCEventScraper(Scraper, LXMLMixin):
                     )[0].strip()
                     chamber = chamber.replace(":", "")
 
+                # sometimes there are unlinked events, usually just press conferences
+                if not event_row.xpath('a[contains(@href,"/Committees/")]'):
+                    continue
+
                 com_link = event_row.xpath('a[contains(@href,"/Committees/")]')[0]
                 com_name = com_link.text_content().strip()
                 com_name = f"{chamber} {com_name}".strip()
