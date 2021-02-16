@@ -92,8 +92,9 @@ class COEventScraper(Scraper, LXMLMixin):
                             start_date=self._tz.localize(date),
                             location_name=location,
                         )
-                        if agenda:
+                        if agenda.strip():
                             event.add_agenda_item(agenda)
+
                         event.add_source(link)
                         bills = page.xpath('//td[@data-label="Hearing Item"]/a')
                         for bill in bills:
