@@ -64,6 +64,8 @@ class WVEventScraper(Scraper, LXMLMixin):
             when = re.sub("time to be announced", "", when, flags=re.IGNORECASE)
             when = re.sub("TBA", "", when, flags=re.IGNORECASE)
 
+        when = re.sub(r"or\s+conclusion\s+(.*)", "", when, flags=re.IGNORECASE)
+
         when = when.split("-")[0]
         when = dateutil.parser.parse(when)
         when = self._tz.localize(when)
