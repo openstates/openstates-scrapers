@@ -1,8 +1,6 @@
 import pytz
-import datetime
 import dateutil.parser
 import lxml
-import re
 from openstates.scrape import Scraper, Event
 
 
@@ -40,7 +38,11 @@ class IDEventScraper(Scraper):
             if "not meet" in time.lower():
                 continue
 
-            start = dateutil.parser.parse(f"{month} {day} {time}")
+            try:
+                start = dateutil.parser.parse(f"{month} {day} {time}")
+            except dateutil.parser._parser.ParserError:
+                start = dateutil.parser.parse(f"{month} {day}")
+
             start = self._tz.localize(start)
 
             com = row.xpath(
