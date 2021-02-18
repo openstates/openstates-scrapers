@@ -160,6 +160,16 @@ class Wisconsin(State):
             # TODO: set a better end date once session ends
             "end_date": "2022-05-23",
         },
+        {
+            "_scraped_name": "January 2021 Special Session",
+            "classification": "special",
+            "identifier": "2021S1",
+            "name": "January 2021 Special Session",
+            # Despite being the January session, it started mid-Feb
+            "start_date": "2021-02-17",
+            # TODO: set a better end date once session ends
+            "end_date": "2022-02-26",
+        },
     ]
     ignored_scraped_sessions = [
         "January 2020 Special Session",
