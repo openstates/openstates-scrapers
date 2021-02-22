@@ -39,7 +39,7 @@ def categorize_action(action):
         (".*Passed Third Reading", "passage"),
         ("Report and Resolution Adopted", "passage"),
         ("Enrolled to Governor", "executive-receipt"),
-        ("Act ", "executive-signature"),
+        (" Act ", "became-law"),
         # Note, occasionally the gov sends intent to veto then doesn't. So use Vetoed not Veto
         ("Vetoed .* line-item", "executive-veto-line-item"),
         ("Vetoed", "executive-veto"),
