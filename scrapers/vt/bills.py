@@ -202,6 +202,9 @@ class VTBillScraper(Scraper, LXMLMixin):
                 if "Signed by Governor" in action["FullStatus"]:
                     # assert chambers_passed == set("HS")
                     action_type = "executive-signature"
+                elif "become law without signature of governor" in action["FullStatus"].lower():
+                    action_type = "became-law"
+                    actor = "executive"
                 elif "Vetoed by the Governor" in action["FullStatus"]:
                     action_type = "executive-veto"
                 elif (
