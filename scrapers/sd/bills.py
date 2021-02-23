@@ -10,7 +10,7 @@ SESSION_IDS = {"2021": "44", "2020": "43"}
 
 
 class SDBillScraper(Scraper, LXMLMixin):
-    def scrape(self, chambers=None, session=None):
+    def scrape(self, chamber=None, session=None):
         self.seen_votes = set()
         if not session:
             session = self.latest_session()
@@ -20,7 +20,7 @@ class SDBillScraper(Scraper, LXMLMixin):
         url = (
             f"https://sdlegislature.gov/api/Bills/Session/Light/{SESSION_IDS[session]}"
         )
-        chambers = [chambers] if chambers else ["upper", "lower"]
+        chambers = [chamber] if chamber else ["upper", "lower"]
 
         for chamber in chambers:
             if chamber == "upper":
@@ -189,7 +189,8 @@ class SDBillScraper(Scraper, LXMLMixin):
 
             if "referred to" in action_text.lower():
                 atypes.append("referral-committee")
-                full_action.append(action["AssignedCommittee"]["FullName"])
+                if 'AssignedCommittee' in full_action:
+                    full_action.append(action["AssignedCommittee"]["FullName"])
 
             if "Veto override" in action_text:
                 if action["Result"] == "P":
