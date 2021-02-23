@@ -99,6 +99,10 @@ class MNEventScraper(Scraper, LXMLMixin):
                     parsed_url = urlparse(doc_url)
                     doc_name = os.path.basename(parsed_url)
 
+                # sometimes broken links to .msg files (emails?) are attached,
+                # they always 404.
+                if doc_url.endswith('.msg'):
+                    continue
                 media_type = get_media_type(doc_url)
                 event.add_document(doc_name, doc_url, media_type=media_type)
 
