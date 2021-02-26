@@ -46,7 +46,8 @@ class USBillScraper(Scraper):
     # to scrape everything UPDATED after a given date/time, start="2020-01-01 22:01:01"
     def scrape(self, chamber=None, session=None, start=None):
         if not session:
-            session = self.latest_session()
+            # session = self.latest_session()
+            session = "116"
             self.info("no session specified, using %s", session)
 
         if start:
@@ -79,17 +80,17 @@ class USBillScraper(Scraper):
         root = ET.fromstring(sitemap)
         for row in root.findall("us:url", self.ns):
             date = datetime.datetime.fromisoformat(
-                self.get_xpath(row, 'us:lastmod')[:-1]
+                self.get_xpath(row, "us:lastmod")[:-1]
             )
 
             if date > start:
                 self.info(
-                    '{} > {}, scraping'.format(
-                        datetime.datetime.strftime(date, '%c'),
-                        datetime.datetime.strftime(start, '%c')
+                    "{} > {}, scraping".format(
+                        datetime.datetime.strftime(date, "%c"),
+                        datetime.datetime.strftime(start, "%c"),
                     )
                 )
-                bill_url = self.get_xpath(row, 'us:loc')
+                bill_url = self.get_xpath(row, "us:loc")
                 yield from self.parse_bill(bill_url)
 
     def parse_bill(self, url):
@@ -283,26 +284,34 @@ class USBillScraper(Scraper):
                 self.warning("Check amendment url ordinals")
 
             bill.add_document_link(
-                note=amdt_name.format(type=self.get_xpath(row, "type"), num=num,),
+                note=amdt_name.format(
+                    type=self.get_xpath(row, "type"),
+                    num=num,
+                ),
                 url=amdt_url.format(
                     session=session, slug=slugs[self.get_xpath(row, "type")], num=num
                 ),
                 media_type="text/html",
             )
 
-
         # ex: https://rules.house.gov/bill/116/hr-3884
-        if chamber == 'lower':
-            rules_url = "https://rules.house.gov/bill/{}/{}".format(session, bill_id.replace(' ', '-'))
+        if chamber == "lower":
+            rules_url = "https://rules.house.gov/bill/{}/{}".format(
+                session, bill_id.replace(" ", "-")
+            )
             try:
                 page = lxml.html.fromstring(self.get(rules_url).content)
-                for row in page.xpath('//article[contains(@class, "field-name-field-amendment-table")]/div/div/table/tr'):
-                    if row.xpath('td[3]/a'):
-                        amdt_num = row.xpath('td[1]/text()')[0].strip()
-                        amdt_sponsor = row.xpath('td[3]/a/text()')[0].strip()
-                        amdt_name = 'House Rules Committee Amendment {} - {}'.format(amdt_num, amdt_sponsor)
+                for row in page.xpath(
+                    '//article[contains(@class, "field-name-field-amendment-table")]/div/div/table/tr'
+                ):
+                    if row.xpath("td[3]/a"):
+                        amdt_num = row.xpath("td[1]/text()")[0].strip()
+                        amdt_sponsor = row.xpath("td[3]/a/text()")[0].strip()
+                        amdt_name = "House Rules Committee Amendment {} - {}".format(
+                            amdt_num, amdt_sponsor
+                        )
                         self.info(amdt_name)
-                        amdt_url = row.xpath('td[3]/a/@href')[0].strip()
+                        amdt_url = row.xpath("td[3]/a/@href")[0].strip()
                         bill.add_document_link(
                             note=amdt_name,
                             url=amdt_url,
@@ -357,7 +366,8 @@ class USBillScraper(Scraper):
         for row in xml.findall("bill/laws/item"):
             laws.append(
                 law_format.format(
-                    type=self.get_xpath(row, "type"), num=self.get_xpath(row, "number"),
+                    type=self.get_xpath(row, "type"),
+                    num=self.get_xpath(row, "number"),
                 )
             )
         bill.extras["laws"] = laws
@@ -398,7 +408,8 @@ class USBillScraper(Scraper):
 
             if abstract not in seen_abstracts:
                 bill.add_abstract(
-                    abstract=abstract, note=self.get_xpath(row, "name"),
+                    abstract=abstract,
+                    note=self.get_xpath(row, "name"),
                 )
                 seen_abstracts.add(abstract)
 
@@ -421,6 +432,7 @@ class USBillScraper(Scraper):
 
             for version in row.findall("formats/item"):
                 url = self.get_xpath(version, "url")
+                print(f"Version URL: {url}")
                 bill.add_version_link(
                     note=version_title, url=url, media_type="text/xml"
                 )

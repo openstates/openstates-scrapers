@@ -62,7 +62,7 @@ class RIEventScraper(Scraper, LXMLMixin):
             event_desc = "Meeting Notice: Starting at {}".format(time)
         else:
             datetime = "%s %s" % (date, time)
-        if "CANCELLED" in datetime.upper():
+        if "CANCELLED" in datetime.upper() or "CANCELED" in datetime.upper():
             return
 
         transtable = {
@@ -95,7 +95,7 @@ class RIEventScraper(Scraper, LXMLMixin):
         for bill in bills:
             bill_ft = bill.attrib["href"]
             event.add_document(
-                bill.text_content(), bill_ft, media_type="application/pdf"
+                bill.text_content(), bill_ft, media_type="application/pdf", on_duplicate="ignore"
             )
             root = bill.xpath("../../*")
             root = [x.text_content() for x in root]
@@ -117,9 +117,9 @@ class RIEventScraper(Scraper, LXMLMixin):
             item = event.add_agenda_item(descr)
             item.add_bill(bill_id)
 
-        committee = page.xpath("//span[@id='lblSession']")[0].text_content()
-
-        event.add_participant(committee, "committee", note="host")
+        if page.xpath("//span[@id='lblSession']"):
+            committee = page.xpath("//span[@id='lblSession']")[0].text_content()
+            event.add_participant(committee, "committee", note="host")
 
         yield event
 

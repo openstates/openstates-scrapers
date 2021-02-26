@@ -189,7 +189,7 @@ class WVBillScraper(Scraper):
         primary = strip_sponsors("", values.get("LEAD SPONSOR:", ""))
         if primary:
             bill.add_sponsorship(
-                name=primary,
+                name=primary.strip(),
                 classification="primary",
                 entity_type="person",
                 primary=True,
@@ -207,14 +207,14 @@ class WVBillScraper(Scraper):
                     if match:
                         for name in match.groups():
                             bill.add_sponsorship(
-                                name=name,
+                                name=name.strip(),
                                 classification="cosponsor",
                                 entity_type="person",
                                 primary=False,
                             )
                     else:
                         bill.add_sponsorship(
-                            name=name,
+                            name=name.strip(),
                             classification="cosponsor",
                             entity_type="person",
                             primary=False,

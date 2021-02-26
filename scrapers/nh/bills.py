@@ -81,7 +81,9 @@ class NHBillScraper(Scraper):
 
         last_line = []
         for line in (
-            self.get("http://gencourt.state.nh.us/dynamicdatafiles/LSRs.txt")
+            self.get(
+                f"http://gencourt.state.nh.us/dynamicdatafiles/LSRs.txt?x={self.cachebreaker}"
+            )
             .content.decode("utf-8")
             .split("\n")
         ):
@@ -152,7 +154,9 @@ class NHBillScraper(Scraper):
                     )
                     latest_version_name = "latest version"
                     self.bills[lsr].add_version_link(
-                        note=latest_version_name, url=version_url, media_type="text/html"
+                        note=latest_version_name,
+                        url=version_url,
+                        media_type="text/html",
                     )
                     self.bills[lsr].add_version_link(
                         note=latest_version_name,
@@ -207,7 +211,9 @@ class NHBillScraper(Scraper):
 
         # sponsors
         for line in (
-            self.get("http://gencourt.state.nh.us/dynamicdatafiles/LsrSponsors.txt")
+            self.get(
+                f"http://gencourt.state.nh.us/dynamicdatafiles/LsrSponsors.txt?x={self.cachebreaker}"
+            )
             .content.decode("utf-8")
             .split("\n")
         ):
@@ -236,7 +242,9 @@ class NHBillScraper(Scraper):
 
         # actions
         for line in (
-            self.get("http://gencourt.state.nh.us/dynamicdatafiles/Docket.txt")
+            self.get(
+                f"http://gencourt.state.nh.us/dynamicdatafiles/Docket.txt?x={self.cachebreaker}"
+            )
             .content.decode("utf-8")
             .split("\n")
         ):
@@ -285,7 +293,8 @@ class NHBillScraper(Scraper):
     def scrape_version_ids(self):
 
         for line in (
-            self.get("http://gencourt.state.nh.us/dynamicdatafiles/LsrsOnly.txt?x={}".format(
+            self.get(
+                "http://gencourt.state.nh.us/dynamicdatafiles/LsrsOnly.txt?x={}".format(
                     self.cachebreaker
                 )
             )
@@ -306,7 +315,8 @@ class NHBillScraper(Scraper):
 
     def scrape_amendments(self):
         for line in (
-            self.get("http://gencourt.state.nh.us/dynamicdatafiles/Docket.txt?x={}".format(
+            self.get(
+                "http://gencourt.state.nh.us/dynamicdatafiles/Docket.txt?x={}".format(
                     self.cachebreaker
                 )
             )
@@ -331,7 +341,7 @@ class NHBillScraper(Scraper):
         votes = {}
         other_counts = defaultdict(int)
         last_line = []
-        vote_url = "http://gencourt.state.nh.us/dynamicdatafiles/RollCallSummary.txt"
+        vote_url = f"http://gencourt.state.nh.us/dynamicdatafiles/RollCallSummary.txt?x={self.cachebreaker}"
         lines = self.get(vote_url).content.decode("utf-8").splitlines()
 
         for line in lines:
@@ -382,7 +392,9 @@ class NHBillScraper(Scraper):
                 votes[body + vote_num] = vote
 
         for line in (
-            self.get("http://gencourt.state.nh.us/dynamicdatafiles/RollCallHistory.txt")
+            self.get(
+                f"http://gencourt.state.nh.us/dynamicdatafiles/RollCallHistory.txt?x={self.cachebreaker}"
+            )
             .content.decode("utf-8")
             .splitlines()
         ):

@@ -167,8 +167,7 @@ class Virginia(State):
         },
     ]
     ignored_scraped_sessions = [
-        "2020 Special Session I",
-        "2021 Session",
+        "2021 Special Session I",
         "2015 Special Session I",
         "2015 Session",
         "2014 Special Session I",

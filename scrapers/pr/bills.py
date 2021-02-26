@@ -2,7 +2,6 @@
 import re
 import lxml.html
 import datetime
-import math
 import requests
 import pytz
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
@@ -147,8 +146,6 @@ class PRBillScraper(Scraper):
         tipo=None,
         bill_no=None,
     ):
-        page_number = 1
-
         start_year = session[0:4]
         chamber_letter = {"lower": "C", "upper": "S"}[chamber]
 
@@ -198,38 +195,10 @@ class PRBillScraper(Scraper):
         first_scrape_params["ctl00$CPHBody$btnFilter"] = "Buscar"
         yield from self.scrape_search_results(chamber, session, first_scrape_params)
 
-        page = self.last_page
-        result_count = int(page.xpath('//span[@id="ctl00_CPHBody_lblCount"]/text()')[0])
-        max_page = math.ceil(result_count / 50)
-
-        for page_number in range(2, max_page):
-            # for the first 11 pages
-            # page numbers go 01 (page 2) -> 10 (page 11)
-            # then page 11 becomes 01
-            # and they go 01-11 again
-            form_page = page_number
-            if page_number < 12:
-                form_page = form_page - 1
-            elif page_number % 10 == 0:
-                form_page = 10
-            elif page_number % 10 == 1:
-                form_page = 11
-            else:
-                form_page = form_page % 10
-
-            page_str = str(form_page).rjust(2, "0")
-            page_field = "ctl00$CPHBody$dgResults$ctl54$ctl{}".format(page_str)
-
-            params["__EVENTTARGET"] = page_field
-            params["ctl00$CPHBody$ddlPageSize"] = "50"
-            self.info(
-                "Chamber: {}, scraping page {} of {} form_page = {}\nfield = {}".format(
-                    chamber, page_number, max_page, page_str, page_field
-                )
-            )
-            yield from self.scrape_search_results(
-                chamber, session, params, self.last_page
-            )
+        page_field = "ctl00$CPHBody$dgResults$ctl54$ctl01"
+        params["__EVENTTARGET"] = page_field
+        params["ctl00$CPHBody$ddlPageSize"] = "-1"
+        yield from self.scrape_search_results(chamber, session, params, self.last_page)
 
     def scrape_search_results(self, chamber, session, params, page=None):
         resp = self.asp_post(

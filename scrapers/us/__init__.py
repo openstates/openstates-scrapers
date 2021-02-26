@@ -5,16 +5,40 @@ from .votes import USVoteScraper
 
 
 class UnitedStates(State):
-    # division_id = "ocd-division/country:us"
-    # classification = "government"
-    # name = "US Congress"
-    # url = "http://congress.gov/"
     scrapers = {
         "events": USEventScraper,
         "bills": USBillScraper,
         "votes": USVoteScraper,
     }
     legislative_sessions = [
+        {
+            "classification": "primary",
+            "identifier": "115",
+            "name": "115th Congress",
+            "start_date": "2017-01-03",
+            "end_date": "2019-01-02",
+        },
+        {
+            "classification": "primary",
+            "identifier": "114",
+            "name": "114th Congress",
+            "start_date": "2015-01-03",
+            "end_date": "2017-01-03",
+        },
+        {
+            "classification": "primary",
+            "identifier": "113",
+            "name": "113th Congress",
+            "start_date": "2013-01-03",
+            "end_date": "2015-01-03",
+        },
+        {
+            "classification": "primary",
+            "identifier": "112",
+            "name": "112th Congress",
+            "start_date": "2011-01-03",
+            "end_date": "2013-01-03",
+        },
         {
             "classification": "primary",
             "identifier": "116",
@@ -33,19 +57,4 @@ class UnitedStates(State):
     ignored_scraped_sessions = []
 
     def get_session_list(self):
-        return ["116"]
-
-
-#
-#    def get_organizations(self):
-#        legislature_name = "United States Congress"
-#
-#        legislature = Organization(name=legislature_name, classification="legislature")
-#        upper = Organization("Senate", classification="upper", parent_id=legislature._id)
-#        lower = Organization("House", classification="lower", parent_id=legislature._id)
-#
-#        yield legislature
-#        yield Organization("Office of the President", classification="executive")
-#        yield upper
-#        yield lower
-#
+        return ["115"]

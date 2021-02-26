@@ -1,20 +1,25 @@
-name: Build and push Docker image
+name: Build and push California Docker image
 on:
   push:
     branches: [ main ]
     tags:
       - '*'
+    paths:
+      - "pyproject.toml"
+      - "poetry.lock"
+      - "Dockerfile.california"
+      - "scrapers/ca/*"
 jobs: 
   publish:
     steps: 
       - uses: actions/checkout@v2
-      - name: build docker image
+      - name: build california docker image
         uses: docker/build-push-action@v1.1.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: openstates/scrapers
-          dockerfile: /github/workspace/Dockerfile
+          repository: openstates/scrapers-california
+          dockerfile: /github/workspace/Dockerfile.california
           tag_with_ref: true
           tags: latest
     runs-on: ubuntu-18.04

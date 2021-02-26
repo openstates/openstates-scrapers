@@ -284,7 +284,7 @@ class ARBillScraper(Scraper):
 
     def scrape_vote(self, bill, date, motion, url):
         page = self.get(url).text
-        if "not yet official" in page:
+        if "not yet official" in page or "No data found for the vote" in page:
             # Sometimes they link to vote pages before they go live
             pass
 

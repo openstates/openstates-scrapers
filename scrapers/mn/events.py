@@ -1,7 +1,9 @@
 import dateutil.parser
 import pytz
+import os
 from openstates.scrape import Scraper
 from openstates.scrape import Event
+from urllib.parse import urlparse
 
 from utils import LXMLMixin
 from utils.media import get_media_type
@@ -92,6 +94,15 @@ class MNEventScraper(Scraper, LXMLMixin):
             for attachment in row.xpath(".//ul/li/div/a"):
                 doc_url = attachment.xpath("@href")[0]
                 doc_name = attachment.xpath("text()")[0].strip()
+                # if they don't provide a name just use the filename
+                if doc_name == '':
+                    parsed_url = urlparse(doc_url)
+                    doc_name = os.path.basename(parsed_url)
+
+                # sometimes broken links to .msg files (emails?) are attached,
+                # they always 404.
+                if doc_url.endswith('.msg'):
+                    continue
                 media_type = get_media_type(doc_url)
                 event.add_document(doc_name, doc_url, media_type=media_type)
 
@@ -160,9 +171,17 @@ class MNEventScraper(Scraper, LXMLMixin):
 
                     if "files" in agenda_row:
                         for file_row in agenda_row["files"]:
+                            doc_name = file_row["filename"]
+                            doc_url = file_row['file_path']
+
+                            # if they don't provide a name just use the filename
+                            if doc_name == '':
+                                parsed_url = urlparse(doc_url)
+                                doc_name = os.path.basename(parsed_url.path)
+
                             event.add_document(
-                                file_row["filename"],
-                                f"https://www.senate.mn/{file_row['file_path']}",
+                                doc_name,
+                                f"https://www.senate.mn/{doc_url}",
                                 media_type="text/html",
                             )
 
