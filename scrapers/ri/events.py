@@ -18,15 +18,17 @@ replace = {
     "Senate Resolution No.": "SR",
     "Senate Bill No.": "SB",
     u"\xa0": " ",
+    u"\u00a0": " ",
     "SUB A": "",
     "SUB A as amended": "",
+    "PROPOSED SUBSTITUTE": "",
 }
 
 
 class RIEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Eastern")
 
-    def scrape_agenda(self, url):
+    def scrape_agenda(self, chamber, url):
         page = self.lxmlize(url)
         # Get the date/time info:
         date_time = page.xpath("//table[@class='time_place']")
@@ -60,7 +62,7 @@ class RIEventScraper(Scraper, LXMLMixin):
             event_desc = "Meeting Notice: Starting at {}".format(time)
         else:
             datetime = "%s %s" % (date, time)
-        if "CANCELLED" in datetime.upper():
+        if "CANCELLED" in datetime.upper() or "CANCELED" in datetime.upper():
             return
 
         transtable = {
@@ -93,11 +95,11 @@ class RIEventScraper(Scraper, LXMLMixin):
         for bill in bills:
             bill_ft = bill.attrib["href"]
             event.add_document(
-                bill.text_content(), bill_ft, media_type="application/pdf"
+                bill.text_content(), bill_ft, media_type="application/pdf", on_duplicate="ignore"
             )
             root = bill.xpath("../../*")
             root = [x.text_content() for x in root]
-            bill_id = "".join(root)
+            bill_id = "".join(root).replace("\u00a0", "")
 
             if "SCHEDULED FOR" in bill_id:
                 continue
@@ -105,30 +107,28 @@ class RIEventScraper(Scraper, LXMLMixin):
             descr = (
                 bill.getparent()
                 .getparent()
-                .getparent()
-                .getnext()
-                .getnext()
                 .text_content()
+                .replace(u"\u00a0", " ")
             )
 
             for thing in replace:
                 bill_id = bill_id.replace(thing, replace[thing])
 
             item = event.add_agenda_item(descr)
-            item.add_bill(bill.text_content())
+            item.add_bill(bill_id)
 
-        committee = page.xpath("//span[@id='lblSession']")[0].text_content()
-
-        event.add_participant(committee, "committee", note="host")
+        if page.xpath("//span[@id='lblSession']"):
+            committee = page.xpath("//span[@id='lblSession']")[0].text_content()
+            event.add_participant(committee, "committee", note="host")
 
         yield event
 
-    def scrape_agenda_dir(self, url):
+    def scrape_agenda_dir(self, chamber, url):
         page = self.lxmlize(url)
-        rows = page.xpath("//table[@class='agenda_table']/tr")[2:]
+        rows = page.xpath("//table[@class='agenda_table']/tr")[1:]
         for row in rows:
             url = row.xpath("./td")[-1].xpath(".//a")[0]
-            yield from self.scrape_agenda(url.attrib["href"])
+            yield from self.scrape_agenda(chamber, url.attrib["href"])
 
     def scrape(self, chamber=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
@@ -143,4 +143,4 @@ class RIEventScraper(Scraper, LXMLMixin):
             ctty = row.xpath("./td")[offset]
             to_scrape = ctty.xpath("./a")
             for page in to_scrape:
-                yield from self.scrape_agenda_dir(page.attrib["href"])
+                yield from self.scrape_agenda_dir(chamber, page.attrib["href"])

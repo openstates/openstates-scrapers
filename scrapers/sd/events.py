@@ -80,6 +80,11 @@ class SDEventScraper(Scraper):
                     f"https://sdlegislature.gov/Session/Committee/{com['SessionCommitteeId']}/Detail"
                 )
 
+                # subcoms don't differentiate the chamber, so skip them
+                if com["Committee"]["Body"] != "A":
+                    com_name = f"{com['Committee']['BodyName']} {com['Committee']['Name']}"
+                    event.add_participant(com_name, type="committee", note="host")
+
                 events_by_date[event.start_date.date().strftime("%Y%m%d")] = event
 
             for row in documents:
@@ -114,11 +119,6 @@ class SDEventScraper(Scraper):
                         media_type="application/pdf",
                         on_duplicate="ignore",
                     )
-
-            # subcoms don't differentiate the chamber, so skip them
-            if com["Committee"]["Body"] != "A":
-                com_name = f"{com['Committee']['BodyName']} {com['Committee']['Name']}"
-                event.add_participant(com_name, type="committee", note="host")
 
             for key in events_by_date:
                 yield events_by_date[key]

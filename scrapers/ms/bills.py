@@ -99,6 +99,10 @@ class MSBillScraper(Scraper):
             title = details_root.xpath("string(//SHORTTITLE)")
             longtitle = details_root.xpath("string(//LONGTITLE)")
 
+            if title == '':
+                self.warning(f"No title yet for {bill_id}, skipping")
+                return
+
             bill = Bill(
                 bill_id,
                 legislative_session=session,

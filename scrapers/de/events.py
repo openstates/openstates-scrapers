@@ -2,7 +2,7 @@ import datetime as dt
 
 from utils import LXMLMixin
 from openstates.scrape import Event, Scraper
-
+import json
 import pytz
 
 
@@ -38,7 +38,14 @@ class DEEventScraper(Scraper, LXMLMixin):
         event.add_source(html_url)
 
         page_url = f'https://legis.delaware.gov/json/MeetingNotice/GetCommitteeMeetingItems?committeeMeetingId={item["CommitteeMeetingId"]}'
-        page_data = self.post(page_url).json()["Data"]
+
+        page_data = []
+        try:
+            page_data = self.post(page_url).json()["Data"]
+        except json.decoder.JSONDecodeError:
+            # No agenda items
+            self.info(f"POST returned nothing on {page_url}")
+
         for item in page_data:
             a = event.add_agenda_item(description=str(item["ItemDescription"]))
             if item["LegislationDisplayText"] is not None:

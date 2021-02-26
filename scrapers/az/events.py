@@ -60,12 +60,20 @@ class AZEventScraper(Scraper):
                 ):
                     continue
 
+                title = "{} {}".format(
+                    self.code_chambers[chamber_abbr], row["CommitteeName"]
+                )
+
                 # fix for dateutil parser confusion
                 row["Time"] = row["Time"].replace("A.M.", "AM").replace("P.M.", "PM")
 
                 if 'upon rec' not in row['Time'].lower():
                     time = re.findall(r"(\d+:\d+\s+[A|P]M)", row["Time"])
-                    time = time[0]
+                    if len(time) == 0:
+                        self.warning(f"Unable to get time for {row['Time']} on {title}")
+                        time = '00:00:00'
+                    else:
+                        time = time[0]
 
                     time = time.replace(r"\s+", " ")
                 else:
@@ -73,10 +81,6 @@ class AZEventScraper(Scraper):
 
                 when = dateutil.parser.parse(f"{row['Date']} {time}")
                 when = self._tz.localize(when)
-
-                title = "{} {}".format(
-                    self.code_chambers[chamber_abbr], row["CommitteeName"]
-                )
 
                 where = "{}, Room {}".format(self.address, row["Room"])
 

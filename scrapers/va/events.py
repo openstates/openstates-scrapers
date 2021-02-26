@@ -50,10 +50,14 @@ class VaEventScraper(Scraper):
                 source = row.xpath(".//a[1]/@href")[0]
                 event_type = "committee-meeting"
             else:
-                title = row.xpath("td[contains(@class, 'COCommType')]/text()")[
-                    0
-                ].strip()
-                event_type = "other"
+                # skip unlinked misc events
+                if row.xpath("td[contains(@class, 'COCommType')]/text()"):
+                    title = row.xpath("td[contains(@class, 'COCommType')]/text()")[
+                        0
+                    ].strip()
+                    event_type = "other"
+                else:
+                    continue
 
             date_link = row.xpath(".//a[@title='Add to Calendar']/@href")[0]
             parsed = parse.parse_qs(parse.urlparse(date_link).query)

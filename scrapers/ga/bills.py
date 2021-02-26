@@ -253,7 +253,9 @@ class GABillScraper(Scraper):
                 if "Sponsors" in instrument and instrument["Sponsors"]:
                     sponsors += instrument["Sponsors"]["Sponsorship"]
 
-            sponsors = [(x["Type"], self.get_member(x["MemberId"])) for x in sponsors]
+            # 4976 is Sheila McNeill
+            # whose profile is currently causing 500 errors 
+            sponsors = [(x["Type"], self.get_member(x["MemberId"])) for x in sponsors if x["MemberId"] != 4976]
 
             for typ, sponsor in sponsors:
                 name = "{First} {Last}".format(**dict(sponsor["Name"]))

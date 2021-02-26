@@ -1,10 +1,11 @@
 import re
+import logging
 import datetime
 from urllib.parse import urlencode
 from collections import defaultdict
-from openstates.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape import Bill, VoteEvent, Scraper
 from openstates.utils import format_datetime
-from spatula import Page, PDF, Spatula
+from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage, page_to_items
 
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
 import requests
@@ -13,40 +14,69 @@ requests.packages.urllib3.disable_warnings()
 requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
 
 
-class StartPage(Page):
-    def handle_page(self):
+class PaginationError(Exception):
+    pass
+
+
+class SubjectPDF(PdfPage):
+    preserve_layout = False
+
+    def get_source_from_input(self):
+        return f"http://www.leg.state.fl.us/data/session/{self.input['session']}/citator/Daily/subindex.pdf"
+
+    def process_page(self):
+        """
+        sort of a state machine
+
+        after a blank line if there's an all caps phrase that's the new subject
+
+        if a line contains (H|S)(\\d+) that bill gets current subject
+        """
+        subjects = defaultdict(set)
+
+        SUBJ_RE = re.compile("^[A-Z ,()]+$")
+        BILL_RE = re.compile(r"[HS]\d+(?:-[A-Z])?")
+
+        subject = None
+
+        for line in self.text.splitlines():
+            if SUBJ_RE.match(line):
+                subject = line.lower().strip()
+            elif subject and BILL_RE.findall(line):
+                for bill in BILL_RE.findall(line):
+                    # normalize bill id to [SH]#
+                    bill = bill.replace("-", "")
+                    subjects[bill].add(subject)
+
+        return subjects
+
+
+class BillList(HtmlListPage):
+    selector = XPath("//a[contains(@href, '/Session/Bill/')]")
+    next_page_selector = XPath("//a[@class='next']/@href")
+    dependencies = {"subjects": SubjectPDF}
+
+    def get_source_from_input(self):
+        return (
+            f"https://flsenate.gov/Session/Bills/{self.input['session']}?chamber=both"
+        )
+
+    def get_next_source(self):
+        # eliminate duplicates, not uncommon to have multiple "Next->" links
         try:
-            pages = int(
-                self.doc.xpath("//a[contains(., 'Next')][1]/preceding::a[1]/text()")[0]
-            )
-        except IndexError:
-            if not self.doc.xpath('//div[@class="ListPagination"]/span'):
-                raise AssertionError("No bills found for the session")
-            elif set(
-                self.doc.xpath('//div[@class="ListPagination"]/span/text()')
-            ) != set(["1"]):
-                raise AssertionError("Bill list pagination needed but not used")
-            else:
-                self.scraper.warning(
-                    "Pagination not used; "
-                    "make sure there are only a few bills for this session"
-                )
-            pages = 1
+            next_urls = self.next_page_selector.match(self.root)
+        except SelectorError:
+            return
 
-        for page_number in range(1, pages + 1):
-            page_url = self.url + "&PageNumber={}".format(page_number)
-            yield from self.scrape_page_items(
-                BillList,
-                url=page_url,
-                session=self.kwargs["session"],
-                subjects=self.kwargs["subjects"],
-            )
+        # TODO: automatically reduce <a> elements to hrefs?
 
+        # non-unique options
+        if len(set(next_urls)) > 1:
+            raise PaginationError("get_next_page returned multiple links: {next_urls}")
 
-class BillList(Page):
-    list_xpath = "//a[contains(@href, '/Session/Bill/')]"
+        return next_urls[0]
 
-    def handle_list_item(self, item):
+    def process_item(self, item):
         bill_id = item.text.strip()
         title = item.xpath("string(../following-sibling::td[1])").strip()
         sponsor = item.xpath("string(../following-sibling::td[2])").strip()
@@ -67,7 +97,7 @@ class BillList(Page):
 
         bill = Bill(
             bill_id,
-            self.kwargs["session"],
+            self.input["session"],
             title,
             chamber="lower" if bill_id[0] == "H" else "upper",
             classification=bill_type,
@@ -76,41 +106,49 @@ class BillList(Page):
 
         # normalize id from HB 0004 to H4
         subj_bill_id = re.sub(r"(H|S)\w+ 0*(\d+)", r"\1\2", bill_id)
-        bill.subject = list(self.kwargs["subjects"][subj_bill_id])
+        bill.subject = list(self.subjects[subj_bill_id])
 
         sponsor = re.sub(r"^(?:Rep|Sen)\.\s", "", sponsor)
         for sp in sponsor.split(", "):
             sp = sp.strip()
             bill.add_sponsorship(sp, "primary", "person", True)
 
-        yield from self.scrape_page_items(BillDetail, url=bill_url, obj=bill)
-
-        yield bill
+        return BillDetail(bill)
 
 
-class BillDetail(Page):
-    def handle_page(self):
-        if self.doc.xpath("//div[@id = 'tabBodyBillHistory']//table"):
+class BillDetail(HtmlPage):
+    input_type = Bill
+    example_input = Bill(
+        "HB 1", "2021", "title", chamber="upper", classification="bill"
+    )
+    example_source = "https://flsenate.gov/Session/Bill/2021/1"
+
+    def get_source_from_input(self):
+        return self.input.sources[0]["url"]
+
+    def process_page(self):
+        if self.root.xpath("//div[@id = 'tabBodyBillHistory']//table"):
             self.process_history()
             self.process_versions()
             self.process_analysis()
             self.process_amendments()
             self.process_summary()
-            yield from self.process_votes()
-            yield from self.scrape_page_items(HousePage, bill=self.obj)
+        yield self.input  # the bill, now augmented
+        yield HouseSearchPage(self.input)
+        yield from self.process_votes()
 
     def process_summary(self):
-        summary = self.doc.xpath(
+        summary = self.root.xpath(
             'string(//div[@id="main"]/div/div/p[contains(@class,"width80")])'
         ).strip()
         # The site indents the CLAIM and amount lines when present
         summary = summary.replace("            ", "")
         if summary != "":
-            self.obj.add_abstract(summary, note="summary")
+            self.input.add_abstract(summary, note="summary")
 
     def process_versions(self):
         try:
-            version_table = self.doc.xpath("//div[@id = 'tabBodyBillText']/table")[0]
+            version_table = self.root.xpath("//div[@id = 'tabBodyBillText']/table")[0]
             for tr in version_table.xpath("tbody/tr"):
                 name = tr.xpath("string(td[1])").strip()
                 version_url = tr.xpath("td/a[1]")[0].attrib["href"]
@@ -119,23 +157,23 @@ class BillDetail(Page):
                 elif version_url.endswith("HTML"):
                     mimetype = "text/html"
 
-                self.obj.add_version_link(
+                self.input.add_version_link(
                     name, version_url, media_type=mimetype, on_duplicate="ignore"
                 )
         except IndexError:
-            self.obj.extras["places"] = []  # set places to something no matter what
-            self.scraper.warning("No version table for {}".format(self.obj.identifier))
+            self.input.extras["places"] = []  # set places to something no matter what
+            self.logger.warning("No version table for {}".format(self.input.identifier))
 
     # 2020 SB 230 is a Bill with populated amendments:
     # http://flsenate.gov/Session/Bill/2020/230/?Tab=Amendments
     def process_amendments(self):
-        commmittee_amend_table = self.doc.xpath(
+        commmittee_amend_table = self.root.xpath(
             "//div[@id = 'tabBodyAmendments']" "//div[@id='CommitteeAmendment']//table"
         )
         if commmittee_amend_table:
             self.process_amendments_table(commmittee_amend_table, "Committee")
 
-        floor_amend_table = self.doc.xpath(
+        floor_amend_table = self.root.xpath(
             "//div[@id = 'tabBodyAmendments']" "//div[@id='FloorAmendment']//table"
         )
         if floor_amend_table:
@@ -165,17 +203,19 @@ class BillDetail(Page):
                     elif version_url.endswith("HTML"):
                         mimetype = "text/html"
 
-                    self.obj.add_document_link(
+                    self.input.add_document_link(
                         name, version_url, media_type=mimetype, on_duplicate="ignore"
                     )
         except IndexError:
-            self.scraper.warning(
-                "No {} amendments table for {}".format(amend_type, self.obj.identifier)
+            self.logger.warning(
+                "No {} amendments table for {}".format(
+                    amend_type, self.input.identifier
+                )
             )
 
     def process_analysis(self):
         try:
-            analysis_table = self.doc.xpath("//div[@id = 'tabBodyAnalyses']/table")[0]
+            analysis_table = self.root.xpath("//div[@id = 'tabBodyAnalyses']/table")[0]
             for tr in analysis_table.xpath("tbody/tr"):
                 name = tr.xpath("string(td[1])").strip()
                 name += " -- " + tr.xpath("string(td[3])").strip()
@@ -184,12 +224,14 @@ class BillDetail(Page):
                 if date:
                     name += " (%s)" % date
                 analysis_url = tr.xpath("td/a")[0].attrib["href"]
-                self.obj.add_document_link(name, analysis_url, on_duplicate="ignore")
+                self.input.add_document_link(name, analysis_url, on_duplicate="ignore")
         except IndexError:
-            self.scraper.warning("No analysis table for {}".format(self.obj.identifier))
+            self.logger.warning(
+                "No analysis table for {}".format(self.input.identifier)
+            )
 
     def process_history(self):
-        hist_table = self.doc.xpath("//div[@id = 'tabBodyBillHistory']//table")[0]
+        hist_table = self.root.xpath("//div[@id = 'tabBodyBillHistory']//table")[0]
 
         for tr in hist_table.xpath("tbody/tr"):
             date = tr.xpath("string(td[1])")
@@ -203,7 +245,7 @@ class BillDetail(Page):
                 actor = None
 
             act_text = tr.xpath("string(td[3])").strip()
-            for action in act_text.split(u"\u2022"):
+            for action in act_text.split("\u2022"):
                 action = action.strip()
                 if not action:
                     continue
@@ -240,7 +282,7 @@ class BillDetail(Page):
                 elif action == "Vetoed by Governor":
                     atype.append("executive-veto")
 
-                self.obj.add_action(
+                self.input.add_action(
                     action,
                     date,
                     organization=actor,
@@ -249,7 +291,7 @@ class BillDetail(Page):
                 )
 
     def process_votes(self):
-        vote_tables = self.doc.xpath("//div[@id='tabBodyVoteHistory']//table")
+        vote_tables = self.root.xpath("//div[@id='tabBodyVoteHistory']//table")
 
         for vote_table in vote_tables:
             for tr in vote_table.xpath("tbody/tr"):
@@ -261,49 +303,47 @@ class BillDetail(Page):
                         vote_date, "%m/%d/%Y %H:%M %p"
                     )
                 except ValueError:
-                    self.scraper.logger.warning("bad vote date: {}".format(vote_date))
+                    self.logger.logger.warning("bad vote date: {}".format(vote_date))
 
                 vote_date = format_datetime(vote_date, "US/Eastern")
 
                 vote_url = tr.xpath("td[4]/a")[0].attrib["href"]
                 if "SenateVote" in vote_url:
-                    yield from self.scrape_page_items(
-                        FloorVote,
-                        vote_url,
-                        date=vote_date,
-                        chamber="upper",
-                        bill=self.obj,
+                    yield FloorVote(
+                        dict(date=vote_date, chamber="upper", bill=self.input),
+                        source=vote_url,
                     )
                 elif "HouseVote" in vote_url:
-                    yield from self.scrape_page_items(
-                        FloorVote,
-                        vote_url,
-                        date=vote_date,
-                        chamber="lower",
-                        bill=self.obj,
+                    yield FloorVote(
+                        dict(date=vote_date, chamber="lower", bill=self.input,),
+                        source=vote_url,
                     )
                 else:
-                    yield from self.scrape_page_items(
-                        UpperComVote, vote_url, date=vote_date, bill=self.obj
+                    yield UpperComVote(
+                        dict(date=vote_date, bill=self.input), source=vote_url,
                     )
         else:
-            self.scraper.warning("No vote table for {}".format(self.obj.identifier))
+            self.logger.warning("No vote table for {}".format(self.input.identifier))
 
 
-class FloorVote(PDF):
-    def handle_page(self):
+class FloorVote(PdfPage):
+    preserve_layout = True
+
+    def process_page(self):
         MOTION_INDEX = 4
         TOTALS_INDEX = 6
         VOTE_START_INDEX = 9
 
-        if len(self.lines) < 2:
-            self.scraper.warning("Bad PDF! " + self.url)
+        lines = self.text.splitlines()
+
+        if len(lines) < 2:
+            self.logger.warning("Bad PDF! " + self.source.url)
             return
 
-        motion = self.lines[MOTION_INDEX].strip()
+        motion = lines[MOTION_INDEX].strip()
         # Sometimes there is no motion name, only "Passage" in the line above
-        if not motion and not self.lines[MOTION_INDEX - 1].startswith("Calendar Page:"):
-            motion = self.lines[MOTION_INDEX - 1]
+        if not motion and not lines[MOTION_INDEX - 1].startswith("Calendar Page:"):
+            motion = lines[MOTION_INDEX - 1]
             MOTION_INDEX -= 1
             TOTALS_INDEX -= 1
             VOTE_START_INDEX -= 1
@@ -312,8 +352,8 @@ class FloorVote(PDF):
 
         for _extra_motion_line in range(2):
             MOTION_INDEX += 1
-            if self.lines[MOTION_INDEX].strip():
-                motion = "{}, {}".format(motion, self.lines[MOTION_INDEX].strip())
+            if lines[MOTION_INDEX].strip():
+                motion = "{}, {}".format(motion, lines[MOTION_INDEX].strip())
                 TOTALS_INDEX += 1
                 VOTE_START_INDEX += 1
             else:
@@ -323,15 +363,15 @@ class FloorVote(PDF):
             int(x)
             for x in re.search(
                 r"^\s+Yeas - (\d+)\s+Nays - (\d+)\s+Not Voting - (\d+)\s*$",
-                self.lines[TOTALS_INDEX],
+                lines[TOTALS_INDEX],
             ).groups()
         ]
         result = "pass" if yes_count > no_count else "fail"
 
         vote = VoteEvent(
-            start_date=self.kwargs["date"],
-            chamber=self.kwargs["chamber"],
-            bill=self.kwargs["bill"],
+            start_date=self.input["date"],
+            chamber=self.input["chamber"],
+            bill=self.input["bill"],
             motion_text=motion,
             result=result,
             classification="passage",
@@ -341,7 +381,7 @@ class FloorVote(PDF):
         vote.set_count("no", no_count)
         vote.set_count("not voting", nv_count)
 
-        for line in self.lines[VOTE_START_INDEX:]:
+        for line in lines[VOTE_START_INDEX:]:
             if not line.strip():
                 break
 
@@ -382,8 +422,8 @@ class FloorVote(PDF):
             # On a rare occasion, a member won't have a vote code,
             # which indicates that they didn't vote. The totals reflect
             # this.
-            self.scraper.info("Votes don't add up; looking for additional ones")
-            for line in self.lines[VOTE_START_INDEX:]:
+            self.logger.info("Votes don't add up; looking for additional ones")
+            for line in lines[VOTE_START_INDEX:]:
                 if not line.strip():
                     break
                 for member in re.findall(r"\s{8,}([A-Z][a-z\'].*?)-\d{1,3}", line):
@@ -392,24 +432,27 @@ class FloorVote(PDF):
         yield vote
 
 
-class UpperComVote(PDF):
-    def handle_page(self):
-        (_, motion) = self.lines[5].split("FINAL ACTION:")
+class UpperComVote(PdfPage):
+    preserve_layout = True
+
+    def process_page(self):
+        lines = self.text.splitlines()
+        (_, motion) = lines[5].split("FINAL ACTION:")
         motion = motion.strip()
         if not motion:
-            self.scraper.warning("Vote appears to be empty")
+            self.logger.warning("Vote appears to be empty")
             return
 
         vote_top_row = [
-            self.lines.index(x)
-            for x in self.lines
+            lines.index(x)
+            for x in lines
             if re.search(r"^\s+Yea\s+Nay.*?(?:\s+Yea\s+Nay)+$", x)
         ][0]
-        yea_columns_end = self.lines[vote_top_row].index("Yea") + len("Yea")
-        nay_columns_begin = self.lines[vote_top_row].index("Nay")
+        yea_columns_end = lines[vote_top_row].index("Yea") + len("Yea")
+        nay_columns_begin = lines[vote_top_row].index("Nay")
 
         votes = {"yes": [], "no": [], "other": []}
-        for line in self.lines[(vote_top_row + 1) :]:
+        for line in lines[(vote_top_row + 1) :]:
             if line.strip():
                 member = re.search(
                     r"""(?x)
@@ -437,8 +480,8 @@ class UpperComVote(PDF):
                         votes["no"].append(member)
                     else:
                         raise ValueError(
-                            "Unparseable vote found for {0} in {1}:\n{2}".format(
-                                member, self.url, line
+                            "Unparseable vote found for {} in {}:\n{}".format(
+                                member, self.source.url, line
                             )
                         )
                 else:
@@ -456,14 +499,14 @@ class UpperComVote(PDF):
         result = "pass" if (yes_count > no_count) else "fail"
 
         vote = VoteEvent(
-            start_date=self.kwargs["date"],
-            bill=self.kwargs["bill"],
+            start_date=self.input["date"],
+            bill=self.input["bill"],
             chamber="upper",
             motion_text=motion,
             classification="committee-passage",
             result=result,
         )
-        vote.add_source(self.url)
+        vote.add_source(self.source.url)
         vote.set_count("yes", yes_count)
         vote.set_count("no", no_count)
         vote.set_count("other", len(votes["other"]))
@@ -482,7 +525,7 @@ class UpperComVote(PDF):
         yield vote
 
 
-class HousePage(Page):
+class HouseSearchPage(HtmlListPage):
     """
     House committee roll calls are not available on the Senate's
     website. Furthermore, the House uses an internal ID system in
@@ -492,14 +535,16 @@ class HousePage(Page):
     given bill, and add the votes to that object.
     """
 
-    url = "http://www.myfloridahouse.gov/Sections/Bills/bills.aspx"
-    list_xpath = '//a[contains(@href, "/Bills/billsdetail.aspx?BillId=")]/@href'
+    input_type = Bill
+    example_input = Bill(
+        "HB 1", "2020", "title", chamber="upper", classification="bill"
+    )
+    selector = XPath('//a[contains(@href, "/Bills/billsdetail.aspx?BillId=")]/@href')
 
-    def do_request(self):
+    def get_source_from_input(self):
+        url = "http://www.myfloridahouse.gov/Sections/Bills/bills.aspx"
         # Keep the digits and all following characters in the bill's ID
-        bill_number = re.search(
-            r"^\w+\s(\d+\w*)$", self.kwargs["bill"].identifier
-        ).group(1)
+        bill_number = re.search(r"^\w+\s(\d+\w*)$", self.input.identifier).group(1)
         session_number = {
             "2021": "90",
             "2020": "89",
@@ -515,67 +560,82 @@ class HousePage(Page):
             "2014O": "78",
             "2014A": "77",
             "2016O": "84",
-        }[self.kwargs["bill"].legislative_session]
+        }[self.input.legislative_session]
 
         form = {"Chamber": "B", "SessionId": session_number, "BillNumber": bill_number}
-        return self.scraper.get(self.url + "?" + urlencode(form))
+        return url + "?" + urlencode(form)
 
-    def handle_list_item(self, item):
-        yield from self.scrape_page_items(HouseBillPage, item, bill=self.kwargs["bill"])
-
-
-class HouseBillPage(Page):
-    list_xpath = '//a[text()="See Votes"]/@href'
-
-    def handle_list_item(self, item):
-        yield from self.scrape_page_items(HouseComVote, item, bill=self.kwargs["bill"])
+    def process_item(self, item):
+        return HouseBillPage(self.input, source=item)
 
 
-class HouseComVote(Page):
-    def handle_page(self):
+class HouseBillPage(HtmlListPage):
+    selector = XPath('//a[text()="See Votes"]/@href', min_items=0)
+    example_input = Bill(
+        "HB 1", "2020", "title", chamber="upper", classification="bill"
+    )
+    example_source = (
+        "http://www.myfloridahouse.gov/Sections/Bills/billsdetail.aspx?BillId=69746"
+    )
+
+    def process_item(self, item):
+        return HouseComVote(self.input, source=item)
+
+
+class HouseComVote(HtmlPage):
+    example_input = Bill(
+        "HB 1", "2020", "title", chamber="upper", classification="bill"
+    )
+    example_source = "http://www.myfloridahouse.gov/Sections/Committees/billvote.aspx?VoteId=54381&IsPCB=0&BillId=69746"
+
+    def process_page(self):
         # Checks to see if any vote totals are provided
         if (
             len(
-                self.doc.xpath(
+                self.root.xpath(
                     '//span[contains(@id, "ctl00_MainContent_lblTotal")]/text()'
                 )
             )
             > 0
         ):
-            (date,) = self.doc.xpath('//span[contains(@id, "lblDate")]/text()')
+            (date,) = self.root.xpath('//span[contains(@id, "lblDate")]/text()')
             date = format_datetime(
                 datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p"), "US/Eastern"
             )
             # ctl00_MainContent_lblTotal //span[contains(@id, "ctl00_MainContent_lblTotal")]
             yes_count = int(
-                self.doc.xpath('//span[contains(@id, "lblYeas")]/text()')[0]
+                self.root.xpath('//span[contains(@id, "lblYeas")]/text()')[0]
             )
-            no_count = int(self.doc.xpath('//span[contains(@id, "lblNays")]/text()')[0])
+            no_count = int(
+                self.root.xpath('//span[contains(@id, "lblNays")]/text()')[0]
+            )
             other_count = int(
-                self.doc.xpath('//span[contains(@id, "lblMissed")]/text()')[0]
+                self.root.xpath('//span[contains(@id, "lblMissed")]/text()')[0]
             )
             result = "pass" if yes_count > no_count else "fail"
 
-            (committee,) = self.doc.xpath(
+            (committee,) = self.root.xpath(
                 '//span[contains(@id, "lblCommittee")]/text()'
             )
-            (action,) = self.doc.xpath('//span[contains(@id, "lblAction")]/text()')
+            (action,) = self.root.xpath('//span[contains(@id, "lblAction")]/text()')
             motion = "{} ({})".format(action, committee)
 
             vote = VoteEvent(
                 start_date=date,
-                bill=self.kwargs["bill"],
+                bill=self.input,
                 chamber="lower",
                 motion_text=motion,
                 result=result,
                 classification="committee-passage",
             )
-            vote.add_source(self.url)
+            vote.add_source(self.source.url)
             vote.set_count("yes", yes_count)
             vote.set_count("no", no_count)
             vote.set_count("not voting", other_count)
 
-            for member_vote in self.doc.xpath('//ul[contains(@class, "vote-list")]/li'):
+            for member_vote in self.root.xpath(
+                '//ul[contains(@class, "vote-list")]/li'
+            ):
                 if not member_vote.text_content().strip():
                     continue
 
@@ -596,40 +656,10 @@ class HouseComVote(Page):
                 else:
                     raise ValueError("Unknown vote type found: {}".format(member_vote))
 
-            yield vote
+            return vote
 
 
-class SubjectPDF(PDF):
-    pdftotext_type = "text-nolayout"
-
-    def handle_page(self):
-        """
-            sort of a state machine
-
-            after a blank line if there's an all caps phrase that's the new subject
-
-            if a line contains (H|S)(\\d+) that bill gets current subject
-        """
-        subjects = defaultdict(set)
-
-        SUBJ_RE = re.compile("^[A-Z ,()]+$")
-        BILL_RE = re.compile(r"[HS]\d+(?:-[A-Z])?")
-
-        subject = None
-
-        for line in self.lines:
-            if SUBJ_RE.match(line):
-                subject = line.lower().strip()
-            elif subject and BILL_RE.findall(line):
-                for bill in BILL_RE.findall(line):
-                    # normalize bill id to [SH]#
-                    bill = bill.replace("-", "")
-                    subjects[bill].add(subject)
-
-        return subjects
-
-
-class FlBillScraper(Scraper, Spatula):
+class FlBillScraper(Scraper):
     def scrape(self, session=None):
         # FL published a bad bill in 2019, #143
         self.raise_errors = False
@@ -640,12 +670,7 @@ class FlBillScraper(Scraper, Spatula):
             session = self.latest_session()
             self.info("no session specified, using %s", session)
 
-        subject_url = "http://www.leg.state.fl.us/data/session/{}/citator/Daily/subindex.pdf".format(
-            session
-        )
-        subjects = self.scrape_page(SubjectPDF, subject_url)
-
-        url = "http://flsenate.gov/Session/Bills/{}?chamber=both".format(session)
-        yield from self.scrape_page_items(
-            StartPage, url, session=session, subjects=subjects
-        )
+        # spatula's logging is better than scrapelib's
+        logging.getLogger("scrapelib").setLevel(logging.WARNING)
+        bill_list = BillList({"session": session})
+        yield from page_to_items(self, bill_list)

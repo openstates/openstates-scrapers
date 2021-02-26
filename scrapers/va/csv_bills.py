@@ -219,12 +219,17 @@ class VaCSVBillScraper(Scraper):
 
         self.load_members()
         self.load_sponsors()
-        self.load_amendments()
         self.load_fiscal_notes()
-        self.load_history()
         self.load_summaries()
+        # in 2021 VA held a special to avoid a crossover deadline
+        # it carried over all the regular bills, so rather
+        # than duping them in a new session, just scrape the 2021S1 data
+        if session == "2021":
+            self._url_base = self._url_base.replace("211", "212")
+        self.load_history()
         self.load_votes()
         self.load_bills()
+        self.load_amendments()
 
         for bill in self._bills:
             bill = self._bills[bill][0]
@@ -256,13 +261,17 @@ class VaCSVBillScraper(Scraper):
 
             # Sponsors
             if long_bill_id not in self._sponsors:
-                b.add_sponsorship(
-                    bill["patron_name"],
-                    classification="primary",
-                    entity_type="person",
-                    primary=True,
-                )
+                if "patron_name" in bill and bill["patron_name"].strip() != "":
+                    b.add_sponsorship(
+                        bill["patron_name"],
+                        classification="primary",
+                        entity_type="person",
+                        primary=True,
+                    )
             for spon in self._sponsors[long_bill_id]:
+                if spon["member_name"].strip() == "":
+                    continue
+
                 sponsor_type = spon["patron_type"]
                 if sponsor_type.endswith("Chief Patron"):
                     sponsor_type = "primary"

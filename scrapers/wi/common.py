@@ -17,6 +17,7 @@ SESSION_TERMS = {
     "March 2018 Special Session": "2017-2018",
     "2019": "2019-2020",
     "2021": "2021-2022",
+    "2021S1": "2021-2022",
 }
 
 
@@ -33,4 +34,5 @@ SESSION_SITE_IDS = {
     "August 2017 Special Session": "au7",
     "January 2018 Special Session": "jr8",
     "March 2018 Special Session": "mr8",
+    "2021S1": "jr1"
 }

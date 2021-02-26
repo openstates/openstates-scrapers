@@ -51,14 +51,23 @@ class IAEventScraper(Scraper):
             "//div[contains(@class, 'meetings')]/table[1]/"
             "tbody/tr[not(contains(@class, 'hidden'))]"
         ):
+            comm = None
+            desc = None
+            pretty_name = None
             status = "tentative"
 
             comm = link.xpath("string(./td[2]/a[1]/span/text())").strip()
+            if comm == "":
+                comm = link.xpath("string(./td[2]/a[1]/text())").strip()
             desc = comm + " Committee Hearing"
 
             location = link.xpath("string(./td[3]/span/text())").strip()
+            if location == "":
+                location = link.xpath("string(./td[3]/text())").strip()
 
             when = link.xpath("string(./td[1]/span[1]/text())").strip()
+            if when == "":
+                when = link.xpath("string(./td[1]/text())").strip()
 
             if "cancelled" in when.lower() or "upon" in when.lower():
                 status = "cancelled"
@@ -68,15 +77,14 @@ class IAEventScraper(Scraper):
             # sometimes they say cancelled, sometimes they do a red strikethrough
             if link.xpath("./td[1]/span[contains(@style,'line-through')]"):
                 status = "cancelled"
-
-            if "AM" in when:
-                when = when.split("AM")[0] + " AM"
-            else:
-                when = when.split("PM")[0] + " PM"
+            if 'cancelled' in link.xpath("@class")[0]:
+                status = "cancelled"
 
             junk = ["Reception"]
             for key in junk:
                 when = when.replace(key, "")
+
+            pretty_name = f"{self.chambers[chamber]} {desc}"
 
             when = re.sub(r"\s+", " ", when).strip()
             if "tbd" in when.lower():
@@ -89,10 +97,8 @@ class IAEventScraper(Scraper):
                     try:
                         when = datetime.datetime.strptime(when, "%m/%d/%Y %I %p")
                     except ValueError:
-                        self.warning("error parsing timestamp %s", when)
+                        self.warning(f"error parsing timestamp {when} on {pretty_name}")
                         continue
-
-            pretty_name = f"{self.chambers[chamber]} {desc}"
 
             event = Event(
                 name=pretty_name,
