@@ -13,6 +13,34 @@ class UnitedStates(State):
     legislative_sessions = [
         {
             "classification": "primary",
+            "identifier": "115",
+            "name": "115th Congress",
+            "start_date": "2017-01-03",
+            "end_date": "2019-01-02",
+        },
+        {
+            "classification": "primary",
+            "identifier": "114",
+            "name": "114th Congress",
+            "start_date": "2015-01-03",
+            "end_date": "2017-01-03",
+        },
+        {
+            "classification": "primary",
+            "identifier": "113",
+            "name": "113th Congress",
+            "start_date": "2013-01-03",
+            "end_date": "2015-01-03",
+        },
+        {
+            "classification": "primary",
+            "identifier": "112",
+            "name": "112th Congress",
+            "start_date": "2011-01-03",
+            "end_date": "2013-01-03",
+        },
+        {
+            "classification": "primary",
             "identifier": "116",
             "name": "116th Congress",
             "start_date": "2019-01-03",
@@ -29,4 +57,4 @@ class UnitedStates(State):
     ignored_scraped_sessions = []
 
     def get_session_list(self):
-        return ["116"]
+        return ["115"]

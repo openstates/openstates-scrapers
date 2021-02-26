@@ -46,7 +46,8 @@ class USBillScraper(Scraper):
     # to scrape everything UPDATED after a given date/time, start="2020-01-01 22:01:01"
     def scrape(self, chamber=None, session=None, start=None):
         if not session:
-            session = self.latest_session()
+            # session = self.latest_session()
+            session = "116"
             self.info("no session specified, using %s", session)
 
         if start:
@@ -431,6 +432,7 @@ class USBillScraper(Scraper):
 
             for version in row.findall("formats/item"):
                 url = self.get_xpath(version, "url")
+                print(f"Version URL: {url}")
                 bill.add_version_link(
                     note=version_title, url=url, media_type="text/xml"
                 )
