@@ -25,7 +25,7 @@ from .util import get_client, get_url, backoff, SESSION_SITE_IDS
 
 
 member_cache = {}
-SOURCE_URL = "http://www.legis.ga.gov/Legislation/en-US/display/{session}/{bid}"
+SOURCE_URL = "https://www.legis.ga.gov/legislation/{bid}"
 
 vote_name_pattern = re.compile(r"(.*), (\d+(?:ST|ND|RD|TH))", re.IGNORECASE)
 
