@@ -273,7 +273,7 @@ class SDBillScraper(Scraper, LXMLMixin):
         elif "Senate" in location:
             chamber = "upper"
         elif "Joint" in location:
-            chamber = "joint"
+            chamber = "legislature"
         else:
             raise ScrapeError("Bad chamber: %s" % location)
 
