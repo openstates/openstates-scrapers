@@ -160,6 +160,9 @@ class MNEventScraper(Scraper, LXMLMixin):
 
             if "agenda" in row:
                 for agenda_row in row["agenda"]:
+                    if agenda_row["description"].strip() == '':
+                        # sometimes they have blank agendas but bills or files
+                        agenda_row["description"] = "Agenda"
                     agenda = event.add_agenda_item(agenda_row["description"])
                     if "bill_type" in agenda_row:
                         agenda.add_bill(
