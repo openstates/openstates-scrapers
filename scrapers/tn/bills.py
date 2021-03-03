@@ -468,6 +468,9 @@ class TNBillScraper(Scraper):
             raw_vote = raw_vote.split(u"\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0")
             motion = raw_vote[0]
 
+            if len(raw_vote) < 2:
+                continue
+
             vote_date = re.search(r"(\d+/\d+/\d+)", motion)
             if vote_date:
                 vote_date = datetime.datetime.strptime(vote_date.group(), "%m/%d/%Y")
