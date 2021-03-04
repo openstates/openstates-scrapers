@@ -67,7 +67,8 @@ class ORBillScraper(Scraper):
                 title=measure["RelatingTo"],
                 classification=self.bill_types[measure["MeasurePrefix"][1:]],
             )
-            bill.add_abstract(measure["MeasureSummary"].strip(), note="summary")
+            if 'MeasureSummary' in measure:
+                bill.add_abstract(measure["MeasureSummary"].strip(), note="summary")
 
             if measure["RelatingTo"] is None:
                 self.warning("No bill title for {}, skipping.".format(bid))
