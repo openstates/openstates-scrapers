@@ -376,7 +376,7 @@ class FloorVote(PdfPage):
             result=result,
             classification="passage",
         )
-        vote.add_source(self.url)
+        vote.add_source(self.source.url)
         vote.set_count("yes", yes_count)
         vote.set_count("no", no_count)
         vote.set_count("not voting", nv_count)
