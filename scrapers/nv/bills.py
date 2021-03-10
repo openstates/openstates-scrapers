@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import dateutil.parser
 from openstates.scrape import Scraper, Bill
 from .common import session_slugs
-from spatula import HtmlListPage, HtmlPage, CSS, XPath, page_to_items
+from spatula import HtmlListPage, HtmlPage, CSS, XPath, page_to_items, SelectorError
 
 
 TZ = pytz.timezone("PST8PDT")
@@ -216,7 +216,11 @@ class BillTabDetail(HtmlPage):
         bill.add_source(self.input.source_url)
         bill.add_title(long_title)
 
-        self.add_sponsors(bill, CSS("a").match(self.get_column_div("Primary Sponsor")))
+        try:
+            sponsor = self.get_column_div("Primary Sponsor")
+            self.add_sponsors(bill, CSS("a").match(sponsor))
+        except SelectorError:
+            pass
         # TODO: figure out cosponsor div name, can't find any as of Feb 2021
         self.add_actions(bill, chamber)
 
