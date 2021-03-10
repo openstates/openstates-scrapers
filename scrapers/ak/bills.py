@@ -78,6 +78,7 @@ class AKBillScraper(Scraper):
             "R": "resolution",
             "JR": "joint resolution",
             "CR": "concurrent resolution",
+            "SCR": "concurrent resolution",
         }
 
         bill_list_url = f"https://www.akleg.gov/basis/Bill/Range/{session}"
