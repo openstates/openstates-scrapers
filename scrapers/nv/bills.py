@@ -147,10 +147,12 @@ class BillTabDetail(HtmlPage):
             f"//div[contains(text(),'{name}')]/following-sibling::div[@class='col']"
         ).match_one(self.root)
 
-    def add_sponsors(self, bill, sponsor_links):
+    def add_sponsors(self, bill, sponsor_links, primary):
         seen = set()
         for link in sponsor_links:
             name = link.text_content().strip()
+            if "Sponsors" in name:
+                continue
             # Removes leg position from name
             # Example: Assemblywoman Alexis Hansen
             if name.split()[0] in ["Assemblywoman", "Assemblyman", "Senator"]:
@@ -159,9 +161,9 @@ class BillTabDetail(HtmlPage):
                 seen.add(name)
                 bill.add_sponsorship(
                     name=name,
-                    classification="primary",
+                    classification="sponsor" if primary else "cosponsor",
                     entity_type="person",
-                    primary=True,
+                    primary=primary,
                 )
 
     def add_actions(self, bill, chamber):
@@ -217,8 +219,13 @@ class BillTabDetail(HtmlPage):
         bill.add_title(long_title)
 
         try:
-            sponsor = self.get_column_div("Primary Sponsor")
-            self.add_sponsors(bill, CSS("a").match(sponsor))
+            sponsors = self.get_column_div("Primary Sponsor")
+            self.add_sponsors(bill, CSS("a").match(sponsors), primary=True)
+        except SelectorError:
+            pass
+        try:
+            cosponsors = self.get_column_div("Co-Sponsor")
+            self.add_sponsors(bill, CSS("a").match(cosponsors), primary=False)
         except SelectorError:
             pass
         # TODO: figure out cosponsor div name, can't find any as of Feb 2021
