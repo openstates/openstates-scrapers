@@ -285,7 +285,7 @@ class INBillScraper(Scraper):
         }
 
         api_base_url = "https://api.iga.in.gov"
-        proxy = {"url": "http://in-proxy.openstates.org"}
+        # proxy = {"url": "http://in-proxy.openstates.org"}
 
         # ah, indiana. it's really, really hard to find
         # pdfs in their web interface. Super easy with
@@ -458,20 +458,20 @@ class INBillScraper(Scraper):
                 bill.add_abstract(bill_json["latestVersion"]["digest"], note="Digest")
 
             # versions and votes
-            for version in bill_json["versions"][::-1]:
-                try:
-                    version_json = client.get(
-                        "bill_version",
-                        session=session,
-                        bill_id=version["billName"],
-                        version_id=version["printVersionName"],
-                    )
-                except scrapelib.HTTPError:
-                    self.logger.warning("Bill version does not seem to exist.")
-                    continue
+            # for version in bill_json["versions"][::-1]:
+            #     try:
+            #         version_json = client.get(
+            #             "bill_version",
+            #             session=session,
+            #             bill_id=version["billName"],
+            #             version_id=version["printVersionName"],
+            #         )
+            #     except scrapelib.HTTPError:
+            #         self.logger.warning("Bill version does not seem to exist.")
+            #         continue
 
-                yield from self.deal_with_version(
-                    version_json, bill, bill_id, original_chamber, session, proxy
-                )
+            #     yield from self.deal_with_version(
+            #         version_json, bill, bill_id, original_chamber, session, proxy
+            #     )
 
             yield bill
