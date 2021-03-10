@@ -172,7 +172,9 @@ class OHBillScraper(Scraper):
                 bill.add_source(number_link.xpath("a/@href")[0])
 
                 if (session, bill_id) in BAD_BILLS:
-                    self.logger.warning("Skipping details for known bad bill {bill_id}")
+                    self.logger.warning(
+                        f"Skipping details for known bad bill {bill_id}"
+                    )
                     yield bill
                     continue
 
