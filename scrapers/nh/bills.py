@@ -198,7 +198,7 @@ class NHBillScraper(Scraper):
                 continue
 
             line = line.split("|")
-            employee_num = line[0]
+            employee_num = line[0].replace(u'\ufeff','')
 
             # first, last, middle
             if len(line) > 2:
@@ -221,7 +221,7 @@ class NHBillScraper(Scraper):
                 continue
 
             session_yr, lsr, _seq, employee, primary = line.strip().split("|")
-
+            lsr = lsr.zfill(4)
             if session_yr == session and lsr in self.bills:
                 sp_type = "primary" if primary == "1" else "cosponsor"
                 try:
