@@ -1,5 +1,6 @@
 import re
 import datetime
+import lxml
 import os
 from collections import OrderedDict
 
@@ -285,7 +286,7 @@ class INBillScraper(Scraper):
         }
 
         api_base_url = "https://api.iga.in.gov"
-        # proxy = {"url": "http://in-proxy.openstates.org"}
+        proxy = {"url": "http://in-proxy.openstates.org"}
 
         # ah, indiana. it's really, really hard to find
         # pdfs in their web interface. Super easy with
@@ -457,7 +458,32 @@ class INBillScraper(Scraper):
             if bill_json["latestVersion"]["digest"]:
                 bill.add_abstract(bill_json["latestVersion"]["digest"], note="Digest")
 
-            # versions and votes
+            # IN Web requests use cloudflare, which requires a User-Agent to be set
+            headers = {
+                'User-Agent': 'Openstates.org',
+            }
+
+            bill_url = self._get_bill_url(session, bill_id)
+            page = self.get(bill_url, verify=False, headers=headers).content
+            page = lxml.html.fromstring(page)
+
+            for link in page.xpath('//div[@id="bill-versions"]//a[contains(@data-myiga-action,"pdfviewer.loadpdf") and contains(@class,"accordion-header")]'):
+                doc_id = link.xpath('@data-myiga-actiondata')[0]
+                version_name = link.xpath('@title')[0]
+                # found via web inspector of the requests to 
+                # http://iga.in.gov/documents/{doc_id}
+                download_link = f"http://iga.in.gov/documents/{doc_id}/download"
+                bill.add_version_link(
+                    version_name,
+                    download_link,
+                    media_type='application/pdf',
+                    on_duplicate='ignore'
+                )
+                print(doc_id, version_name, download_link)
+
+            # http://iga.in.gov/static-documents/e/7/1/d/e71df83b/HB1001.02.COMH.pdf
+
+            # # versions and votes
             # for version in bill_json["versions"][::-1]:
             #     try:
             #         version_json = client.get(
@@ -473,5 +499,4 @@ class INBillScraper(Scraper):
             #     yield from self.deal_with_version(
             #         version_json, bill, bill_id, original_chamber, session, proxy
             #     )
-
             yield bill
