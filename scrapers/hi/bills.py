@@ -372,4 +372,11 @@ class HIBillScraper(Scraper):
             if chamber == "upper":
                 bill_types.append("gm")
             for typ in bill_types:
+                # TODO: Remove this - disable scraping HR's for now 
+                # due to broken list page. Restore when
+                # https://www.capitol.hawaii.gov/report.aspx?type=HR&year=2021
+                # is loading again
+                if chamber == "lower" and typ == "r":
+                    self.warning("Skipping HR due to a state website bug.")
+                    continue
                 yield from self.scrape_type(chamber, session, typ)
