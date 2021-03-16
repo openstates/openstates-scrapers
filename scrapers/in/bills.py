@@ -411,8 +411,6 @@ class INBillScraper(Scraper):
             bill.add_source(self._get_bill_url(session, bill_id))
             bill.add_source(api_source)
 
-            self.scrape_web_versions(session, bill, bill_id)
-
             # sponsors
             for s in bill_json["authors"]:
                 self._add_sponsor_if_not_blank(bill, s, classification="author")
@@ -519,6 +517,8 @@ class INBillScraper(Scraper):
                 )
                 if committee:
                     a.add_related_entity(committee, entity_type="organization")
+
+            self.scrape_web_versions(session, bill, bill_id)
 
             # subjects
             subjects = [s["entry"] for s in bill_json["latestVersion"]["subjects"]]
