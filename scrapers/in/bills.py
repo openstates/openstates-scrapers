@@ -242,7 +242,7 @@ class INBillScraper(Scraper):
         yield from self._process_votes(votes, bill_id, chamber, session, proxy)
 
     def scrape_web_versions(self, session, bill, bill_id):
-        # found via web inspector of the requests to 
+        # found via web inspector of the requests to
         # http://iga.in.gov/documents/{doc_id}
         # the web url for downloading a doc is http://iga.in.gov/documents/{doc_id}/download
         # where doc_id is the data-myiga-actiondata attribute of the link
@@ -250,7 +250,7 @@ class INBillScraper(Scraper):
 
         # IN Web requests use cloudflare, which requires a User-Agent to be set
         headers = {
-            'User-Agent': 'openstates.org',
+            "User-Agent": "openstates.org",
         }
 
         bill_url = self._get_bill_url(session, bill_id)
@@ -259,55 +259,63 @@ class INBillScraper(Scraper):
 
         # each printing has its version, fiscalnotes, and amendments in an <li>
         for version_section in page.xpath('//div[@id="bill-versions"]/div/ul/li'):
-            version_name = ''
-            for link in version_section.xpath('div/div[1]/a[contains(@data-myiga-action,"pdfviewer.loadpdf") and contains(@class,"accordion-header")]'):
-                doc_id = link.xpath('@data-myiga-actiondata')[0]
-                version_name = link.xpath('@title')[0]
-                # found via web inspector of the requests to 
+            version_name = ""
+            for link in version_section.xpath(
+                'div/div[1]/a[contains(@data-myiga-action,"pdfviewer.loadpdf") and contains(@class,"accordion-header")]'
+            ):
+                doc_id = link.xpath("@data-myiga-actiondata")[0]
+                version_name = link.xpath("@title")[0]
+                # found via web inspector of the requests to
                 # http://iga.in.gov/documents/{doc_id}
                 download_link = f"http://iga.in.gov/documents/{doc_id}/download"
                 bill.add_version_link(
                     version_name,
                     download_link,
-                    media_type='application/pdf',
-                    on_duplicate='ignore'
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
                 )
                 self.info(f"Version {doc_id} {version_name} {download_link}")
 
-            for link in version_section.xpath('.//li[contains(@class,"fiscalnote-item")]/a[contains(@data-myiga-action,"pdfviewer.loadpdf")][1]'):
-                doc_id = link.xpath('@data-myiga-actiondata')[0]
-                document_title = link.xpath('div[1]/text()')[0].strip()
-                document_name = '{} {}'.format(version_name, document_title)
+            for link in version_section.xpath(
+                './/li[contains(@class,"fiscalnote-item")]/a[contains(@data-myiga-action,"pdfviewer.loadpdf")][1]'
+            ):
+                doc_id = link.xpath("@data-myiga-actiondata")[0]
+                document_title = link.xpath("div[1]/text()")[0].strip()
+                document_name = "{} {}".format(version_name, document_title)
                 download_link = f"http://iga.in.gov/documents/{doc_id}/download"
                 bill.add_document_link(
                     document_name,
                     download_link,
-                    media_type='application/pdf',
-                    on_duplicate='ignore'
-                )   
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
                 self.info(f"Fiscal Note {doc_id} {document_name} {download_link}")
 
-            for link in version_section.xpath('.//li[contains(@class,"amendment-item")]/a[contains(@data-myiga-action,"pdfviewer.loadpdf")][1]'):
-                doc_id = link.xpath('@data-myiga-actiondata')[0]
-                document_title = link.xpath('div[1]/text()')[0].strip()
-                document_name = '{} {}'.format(version_name, document_title)
+            for link in version_section.xpath(
+                './/li[contains(@class,"amendment-item")]/a[contains(@data-myiga-action,"pdfviewer.loadpdf")][1]'
+            ):
+                doc_id = link.xpath("@data-myiga-actiondata")[0]
+                document_title = link.xpath("div[1]/text()")[0].strip()
+                document_name = "{} {}".format(version_name, document_title)
                 download_link = f"http://iga.in.gov/documents/{doc_id}/download"
                 # If an amendment has passed, add it as a version, otherwise as a document
-                if ('passed' in document_title.lower()):
+                if "passed" in document_title.lower():
                     bill.add_version_link(
                         document_name,
                         download_link,
-                        media_type='application/pdf',
-                        on_duplicate='ignore'
+                        media_type="application/pdf",
+                        on_duplicate="ignore",
                     )
-                    self.info(f"Passed Amendment  {doc_id} {document_name} {download_link}")
+                    self.info(
+                        f"Passed Amendment  {doc_id} {document_name} {download_link}"
+                    )
                 else:
                     bill.add_document_link(
                         document_name,
                         download_link,
-                        media_type='application/pdf',
-                        on_duplicate='ignore'
-                    )                  
+                        media_type="application/pdf",
+                        on_duplicate="ignore",
+                    )
                     self.info(f"Amendment {doc_id} {document_name} {download_link}")
 
     def scrape(self, session=None):
@@ -529,10 +537,11 @@ class INBillScraper(Scraper):
             if bill_json["latestVersion"]["digest"]:
                 bill.add_abstract(bill_json["latestVersion"]["digest"], note="Digest")
 
+            
+            # Leaving this code in, beacuse if they fix the API we may want it for votes
+            # - TS 2021-03-16
 
-            # http://iga.in.gov/static-documents/e/7/1/d/e71df83b/HB1001.02.COMH.pdf
-
-            # # versions and votes
+            # versions and votes
             # for version in bill_json["versions"][::-1]:
             #     try:
             #         version_json = client.get(
