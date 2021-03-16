@@ -1,5 +1,6 @@
 import re
 import datetime
+import lxml
 import os
 from collections import OrderedDict
 
@@ -240,6 +241,83 @@ class INBillScraper(Scraper):
         votes = version["rollcalls"]
         yield from self._process_votes(votes, bill_id, chamber, session, proxy)
 
+    def scrape_web_versions(self, session, bill, bill_id):
+        # found via web inspector of the requests to
+        # http://iga.in.gov/documents/{doc_id}
+        # the web url for downloading a doc is http://iga.in.gov/documents/{doc_id}/download
+        # where doc_id is the data-myiga-actiondata attribute of the link
+        # this id isn't available in the API, so we have to scrape it
+
+        # IN Web requests use cloudflare, which requires a User-Agent to be set
+        headers = {
+            "User-Agent": "openstates.org",
+        }
+
+        bill_url = self._get_bill_url(session, bill_id)
+        page = self.get(bill_url, verify=False, headers=headers).content
+        page = lxml.html.fromstring(page)
+
+        # each printing has its version, fiscalnotes, and amendments in an <li>
+        for version_section in page.xpath('//div[@id="bill-versions"]/div/ul/li'):
+            version_name = ""
+            for link in version_section.xpath(
+                'div/div[1]/a[contains(@data-myiga-action,"pdfviewer.loadpdf") and contains(@class,"accordion-header")]'
+            ):
+                doc_id = link.xpath("@data-myiga-actiondata")[0]
+                version_name = link.xpath("@title")[0]
+                # found via web inspector of the requests to
+                # http://iga.in.gov/documents/{doc_id}
+                download_link = f"http://iga.in.gov/documents/{doc_id}/download"
+                bill.add_version_link(
+                    version_name,
+                    download_link,
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
+                self.info(f"Version {doc_id} {version_name} {download_link}")
+
+            for link in version_section.xpath(
+                './/li[contains(@class,"fiscalnote-item")]/a[contains(@data-myiga-action,"pdfviewer.loadpdf")][1]'
+            ):
+                doc_id = link.xpath("@data-myiga-actiondata")[0]
+                document_title = link.xpath("div[1]/text()")[0].strip()
+                document_name = "{} {}".format(version_name, document_title)
+                download_link = f"http://iga.in.gov/documents/{doc_id}/download"
+                bill.add_document_link(
+                    document_name,
+                    download_link,
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
+                self.info(f"Fiscal Note {doc_id} {document_name} {download_link}")
+
+            for link in version_section.xpath(
+                './/li[contains(@class,"amendment-item")]/a[contains(@data-myiga-action,"pdfviewer.loadpdf")][1]'
+            ):
+                doc_id = link.xpath("@data-myiga-actiondata")[0]
+                document_title = link.xpath("div[1]/text()")[0].strip()
+                document_name = "{} {}".format(version_name, document_title)
+                download_link = f"http://iga.in.gov/documents/{doc_id}/download"
+                # If an amendment has passed, add it as a version, otherwise as a document
+                if "passed" in document_title.lower():
+                    bill.add_version_link(
+                        document_name,
+                        download_link,
+                        media_type="application/pdf",
+                        on_duplicate="ignore",
+                    )
+                    self.info(
+                        f"Passed Amendment  {doc_id} {document_name} {download_link}"
+                    )
+                else:
+                    bill.add_document_link(
+                        document_name,
+                        download_link,
+                        media_type="application/pdf",
+                        on_duplicate="ignore",
+                    )
+                    self.info(f"Amendment {doc_id} {document_name} {download_link}")
+
     def scrape(self, session=None):
         if not session:
             session = self.latest_session()
@@ -285,7 +363,7 @@ class INBillScraper(Scraper):
         }
 
         api_base_url = "https://api.iga.in.gov"
-        # proxy = {"url": "http://in-proxy.openstates.org"}
+        proxy = {"url": "http://in-proxy.openstates.org"}
 
         # ah, indiana. it's really, really hard to find
         # pdfs in their web interface. Super easy with
@@ -448,6 +526,8 @@ class INBillScraper(Scraper):
                 if committee:
                     a.add_related_entity(committee, entity_type="organization")
 
+            self.scrape_web_versions(session, bill, bill_id)
+
             # subjects
             subjects = [s["entry"] for s in bill_json["latestVersion"]["subjects"]]
             for subject in subjects:
@@ -456,6 +536,10 @@ class INBillScraper(Scraper):
             # Abstract
             if bill_json["latestVersion"]["digest"]:
                 bill.add_abstract(bill_json["latestVersion"]["digest"], note="Digest")
+
+            
+            # Leaving this code in, beacuse if they fix the API we may want it for votes
+            # - TS 2021-03-16
 
             # versions and votes
             # for version in bill_json["versions"][::-1]:
@@ -473,5 +557,4 @@ class INBillScraper(Scraper):
             #     yield from self.deal_with_version(
             #         version_json, bill, bill_id, original_chamber, session, proxy
             #     )
-
             yield bill
