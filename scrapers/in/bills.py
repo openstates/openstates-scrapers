@@ -248,6 +248,10 @@ class INBillScraper(Scraper):
         # where doc_id is the data-myiga-actiondata attribute of the link
         # this id isn't available in the API, so we have to scrape it
 
+        # put this behind a flag 2021-03-18 (openstates/issues#291)
+        if "INDIANA_SCRAPE_WEB_VERSIONS" not in os.environ:
+            return
+
         # IN Web requests use cloudflare, which requires a User-Agent to be set
         headers = {
             "User-Agent": "openstates.org",
@@ -363,7 +367,7 @@ class INBillScraper(Scraper):
         }
 
         api_base_url = "https://api.iga.in.gov"
-        proxy = {"url": "http://in-proxy.openstates.org"}
+        # proxy = {"url": "http://in-proxy.openstates.org"}
 
         # ah, indiana. it's really, really hard to find
         # pdfs in their web interface. Super easy with
@@ -537,7 +541,6 @@ class INBillScraper(Scraper):
             if bill_json["latestVersion"]["digest"]:
                 bill.add_abstract(bill_json["latestVersion"]["digest"], note="Digest")
 
-            
             # Leaving this code in, beacuse if they fix the API we may want it for votes
             # - TS 2021-03-16
 
