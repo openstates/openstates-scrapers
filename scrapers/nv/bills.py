@@ -98,18 +98,19 @@ class BillList(HtmlListPage):
     def get_source_from_input(self):
         slug = session_slugs[self.input["session"]]
         # PageSize 2**31 from their site
+        # TODO: remove filters.selectedbilltypes here, it's just for faster debugging.
         return (
             f"https://www.leg.state.nv.us/App/NELIS/REL/{slug}/"
-            "HomeBill/BillsTab?selectedTab=List&Filters.PageSize=2147483647"
+            "HomeBill/BillsTab?selectedTab=List&Filters.PageSize=2147483647&Filters.SelectedBillTypes=SJR"
             f"&_={time.time()}"
         )
 
     def process_item(self, item):
         link = item.get("href")
         identifier = item.text
-        if "*" in identifier:
-            # previous session bills
-            self.skip(f"skipping prior session {identifier}")
+        # if "*" in identifier:
+        #     # previous session bills
+        #     self.skip(f"skipping prior session {identifier}")
 
         return BillTabDetail(
             BillStub(
@@ -206,6 +207,10 @@ class BillTabDetail(HtmlPage):
         chamber = "upper" if self.input.identifier.startswith("S") else "lower"
         short_title = self.get_column_div("Summary").text
         long_title = CSS("#title").match_one(self.root).text
+
+        # 'C' for carryover? Just trying to think of a better identifier than asterisk.
+        # it's not very discoverable anyway, hmm.
+        self.input.identifier = re.sub('\*+', 'C', self.input.identifier)
 
         bill = Bill(
             identifier=self.input.identifier,
