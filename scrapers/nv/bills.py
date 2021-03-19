@@ -38,9 +38,12 @@ ACTION_CLASSIFIERS = (
 # The list is at https://www.leg.state.nv.us/Session/81st2021/Reports/BillsListLegacy.cfm?DoctypeID=1
 # where 81st2021 will need to be swapped in for the session code.
 CARRYOVERS = {
+    '80': {
+        '*': '2017',
+    },
     '81': {
         '*': '2019',
-        # '**': '2020Special32',
+        '**': '2020Special32',
     }
 }
 
@@ -111,10 +114,9 @@ class BillList(HtmlListPage):
     def get_source_from_input(self):
         slug = session_slugs[self.input["session"]]
         # PageSize 2**31 from their site
-        # TODO: remove filters.selectedbilltypes here, it's just for faster debugging.
         return (
             f"https://www.leg.state.nv.us/App/NELIS/REL/{slug}/"
-            "HomeBill/BillsTab?selectedTab=List&Filters.PageSize=2147483647&Filters.SelectedBillTypes=SJR"
+            "HomeBill/BillsTab?selectedTab=List&Filters.PageSize=2147483647"
             f"&_={time.time()}"
         )
 
@@ -223,12 +225,11 @@ class BillTabDetail(HtmlPage):
 
         if '*' in self.input.identifier:
             stars = re.search(r'\*+', self.input.identifier).group()
-            print(stars)
-            if stars in CARRYOVERS[self.input.session]:
+            if self.input.session in CARRYOVERS and stars in CARRYOVERS[self.input.session]:
                 self.input.identifier = re.sub(r'\*+', '-'+CARRYOVERS[self.input.session][stars], self.input.identifier)
-                print(self.input.identifier)
             else:
-                print(f"Unidentified carryover bill {self.input.identifier}. Update CARRYOVERS dict in bills.py")
+                self.logger.error(f"Unidentified carryover bill {self.input.identifier}. Update CARRYOVERS dict in bills.py")
+                return
 
 
         bill = Bill(
