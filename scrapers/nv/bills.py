@@ -228,7 +228,6 @@ class BillTabDetail(HtmlPage):
                 self.logger.error(f"Unidentified carryover bill {self.input.identifier}. Update CARRYOVERS dict in bills.py")
                 return
 
-
         bill = Bill(
             identifier=self.input.identifier,
             legislative_session=self.input.session,
