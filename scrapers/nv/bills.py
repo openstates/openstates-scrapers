@@ -123,9 +123,6 @@ class BillList(HtmlListPage):
     def process_item(self, item):
         link = item.get("href")
         identifier = item.text
-        # if "*" in identifier:
-        #     # previous session bills
-        #     self.skip(f"skipping prior session {identifier}")
 
         return BillTabDetail(
             BillStub(
