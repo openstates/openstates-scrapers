@@ -30,6 +30,22 @@ ACTION_CLASSIFIERS = (
     ("Vetoed by the Governor", "executive-veto"),
 )
 
+# NV sometimes carries-over bills from previous sessions,
+# without regard for bill number conflicts. 
+# so AB1* could get carried in, even if there's already an existing AB1
+# The number of asterisks represent which past session it was pulled in from,
+# which can include specials, and skip around, so this can't be automated.
+# The list is at https://www.leg.state.nv.us/Session/81st2021/Reports/BillsListLegacy.cfm?DoctypeID=1
+# where 81st2021 will need to be swapped in for the session code.
+CARRYOVERS = {
+    '80': {
+        '*': '2017',
+    },
+    '81': {
+        '*': '2019',
+        '**': '2020Special32',
+    }
+}
 
 def parse_date(date_str):
     return TZ.localize(dateutil.parser.parse(date_str))
@@ -107,9 +123,6 @@ class BillList(HtmlListPage):
     def process_item(self, item):
         link = item.get("href")
         identifier = item.text
-        if "*" in identifier:
-            # previous session bills
-            self.skip(f"skipping prior session {identifier}")
 
         return BillTabDetail(
             BillStub(
@@ -206,6 +219,14 @@ class BillTabDetail(HtmlPage):
         chamber = "upper" if self.input.identifier.startswith("S") else "lower"
         short_title = self.get_column_div("Summary").text
         long_title = CSS("#title").match_one(self.root).text
+
+        if '*' in self.input.identifier:
+            stars = re.search(r'\*+', self.input.identifier).group()
+            if self.input.session in CARRYOVERS and stars in CARRYOVERS[self.input.session]:
+                self.input.identifier = re.sub(r'\*+', '-'+CARRYOVERS[self.input.session][stars], self.input.identifier)
+            else:
+                self.logger.error(f"Unidentified carryover bill {self.input.identifier}. Update CARRYOVERS dict in bills.py")
+                return
 
         bill = Bill(
             identifier=self.input.identifier,
