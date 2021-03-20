@@ -116,6 +116,9 @@ class ARLegislatorScraper(Scraper):
         except AttributeError:
             email = None
         address = root.xpath('string(//div[@id="bodyContent"]/div[1]/div[1]/p/b)')
+        address_parts = address.split(", ")
+        address_parts.insert(-1, "AR")
+        address = ", ".join(address_parts)
 
         person.add_contact_detail(type="address", value=address, note="District Office")
         if phone is not None:
