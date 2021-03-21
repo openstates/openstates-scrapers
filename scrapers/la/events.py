@@ -65,7 +65,7 @@ class LAEventScraper(Scraper, LXMLMixin):
         description = "Meeting on %s of the %s" % (date, title)
         chambers = {"house": "lower", "senate": "upper", "joint": "legislature"}
 
-        for chamber_ in chambers.keys():
+        for chamber_ in chambers:
             if chamber_ in title.lower():
                 break
         else:
