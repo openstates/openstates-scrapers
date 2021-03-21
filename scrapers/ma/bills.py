@@ -517,7 +517,7 @@ class MABillScraper(Scraper):
                     # handles vote count lines
                     cut_name = raw_name.split("-")
                     clean_name = ""
-                    if cut_name[len(cut_name) - 1].strip(" .").isdigit():
+                    if cut_name[-1].strip(" .").isdigit():
                         del cut_name[-1]
                         clean_name = "".join(cut_name)
                     else:
