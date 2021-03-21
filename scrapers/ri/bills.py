@@ -193,7 +193,7 @@ class RIBillScraper(Scraper):
         name = name.lower()
         self.info(name)
 
-        things = ["resolution", "joint resolution" "memorial", "memorandum", "bill"]
+        things = ["resolution", "joint resolution", "memorial", "memorandum", "bill"]
 
         for t in things:
             if t in name:
