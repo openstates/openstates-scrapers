@@ -626,7 +626,7 @@ class CABillScraper(Scraper, LXMLMixin):
                             rc["other"].append(record.legislator_name)
 
                     # Handle duplicate votes
-                    for key in rc.keys():
+                    for key in rc:
                         rc[key] = list(set(rc[key]))
 
                     for key, voters in rc.items():
