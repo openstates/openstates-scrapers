@@ -13,6 +13,10 @@ from openstates.utils import convert_pdf
 from .apiclient import ApiClient
 
 
+PROXY_BASE_URL = "http://in-proxy.openstates.org"
+SCRAPE_WEB_VERSIONS = "INDIANA_SCRAPE_WEB_VERSIONS" in os.environ
+
+
 class INBillScraper(Scraper):
     jurisdiction = "in"
 
@@ -49,7 +53,7 @@ class INBillScraper(Scraper):
 
         return url_template.format(session, url_segment, bill_number)
 
-    def _process_votes(self, rollcalls, bill_id, original_chamber, session, proxy):
+    def _process_votes(self, rollcalls, bill_id, original_chamber, session):
         result_types = {
             "FAILED": False,
             "DEFEATED": False,
@@ -62,7 +66,7 @@ class INBillScraper(Scraper):
         }
 
         for r in rollcalls:
-            proxy_link = proxy["url"] + r["link"]
+            proxy_link = PROXY_BASE_URL + r["link"]
 
             try:
                 (path, resp) = self.urlretrieve(proxy_link)
@@ -160,14 +164,14 @@ class INBillScraper(Scraper):
 
             yield vote
 
-    def deal_with_version(self, version, bill, bill_id, chamber, session, proxy):
+    def deal_with_version(self, version, bill, bill_id, chamber, session):
         # documents
         docs = OrderedDict()
-        docs["Committee Amendment"] = version["cmte_amendments"]
-        docs["Floor Amendment"] = version["floor_amendments"]
-        docs["Amendment"] = version["amendments"]
-        docs["Fiscal Note"] = version["fiscal-notes"]
-        docs["Committee Report"] = version["committee-reports"]
+        docs["Committee Amendment"] = version.get("cmte_amendments", [])
+        docs["Floor Amendment"] = version.get("floor_amendments", [])
+        docs["Amendment"] = version.get("amendments", [])
+        docs["Fiscal Note"] = version.get("fiscal-notes", [])
+        docs["Committee Report"] = version.get("committee-reports", [])
 
         # sometimes amendments appear in multiple places
         # cmte_amendment vs amendment
@@ -178,7 +182,7 @@ class INBillScraper(Scraper):
             doc_list = docs[doc_type]
             for doc in doc_list:
                 title = "{doc_type}: {name}".format(doc_type=doc_type, name=doc["name"])
-                link = proxy["url"] + doc["link"]
+                link = PROXY_BASE_URL + doc["link"]
                 if link not in urls_seen:
                     urls_seen.append(link)
                     bill.add_document_link(
@@ -204,7 +208,7 @@ class INBillScraper(Scraper):
             if version_chamber != api_name_chamber[1]:
                 versions_match = False
 
-        link = proxy["url"] + version["link"]
+        link = PROXY_BASE_URL + version["link"]
         # if the chambers don't match, swap the chamber on version name
         # ex: Engrossed Senate Bill (S) to Engrossed Senate Bill (H)
         name = (
@@ -237,20 +241,12 @@ class INBillScraper(Scraper):
                 note=name, url=link, media_type="application/pdf", date=update_date
             )
 
-        # votes
-        votes = version["rollcalls"]
-        yield from self._process_votes(votes, bill_id, chamber, session, proxy)
-
     def scrape_web_versions(self, session, bill, bill_id):
         # found via web inspector of the requests to
         # http://iga.in.gov/documents/{doc_id}
         # the web url for downloading a doc is http://iga.in.gov/documents/{doc_id}/download
         # where doc_id is the data-myiga-actiondata attribute of the link
         # this id isn't available in the API, so we have to scrape it
-
-        # put this behind a flag 2021-03-18 (openstates/issues#291)
-        if "INDIANA_SCRAPE_WEB_VERSIONS" not in os.environ:
-            return
 
         # IN Web requests use cloudflare, which requires a User-Agent to be set
         headers = {
@@ -367,14 +363,13 @@ class INBillScraper(Scraper):
         }
 
         api_base_url = "https://api.iga.in.gov"
-        # proxy = {"url": "http://in-proxy.openstates.org"}
 
         # ah, indiana. it's really, really hard to find
         # pdfs in their web interface. Super easy with
         # the api, but a key needs to be passed
         # in the headers. To make these documents
         # viewable to the public and our scrapers,
-        # sunlight's put up a proxy service at this link
+        # we've put up a proxy service at this link
         # using our api key for pdf document access.
 
         client = ApiClient(self)
@@ -530,8 +525,6 @@ class INBillScraper(Scraper):
                 if committee:
                     a.add_related_entity(committee, entity_type="organization")
 
-            self.scrape_web_versions(session, bill, bill_id)
-
             # subjects
             subjects = [s["entry"] for s in bill_json["latestVersion"]["subjects"]]
             for subject in subjects:
@@ -541,23 +534,28 @@ class INBillScraper(Scraper):
             if bill_json["latestVersion"]["digest"]:
                 bill.add_abstract(bill_json["latestVersion"]["digest"], note="Digest")
 
-            # Leaving this code in, beacuse if they fix the API we may want it for votes
-            # - TS 2021-03-16
+            # put this behind a flag 2021-03-18 (openstates/issues#291)
+            if not SCRAPE_WEB_VERSIONS:
+                # votes
+                yield from self._process_votes(
+                    bill_json["latestVersion"]["rollcalls"],
+                    bill_id,
+                    original_chamber,
+                    session,
+                )
+                # versions
+                self.deal_with_version(
+                    bill_json["latestVersion"], bill, bill_id, original_chamber, session
+                )
+                for version in bill_json["versions"][::-1]:
+                    self.deal_with_version(
+                        version,
+                        bill,
+                        bill_id,
+                        original_chamber,
+                        session,
+                    )
+            else:
+                self.scrape_web_versions(session, bill, bill_id)
 
-            # versions and votes
-            # for version in bill_json["versions"][::-1]:
-            #     try:
-            #         version_json = client.get(
-            #             "bill_version",
-            #             session=session,
-            #             bill_id=version["billName"],
-            #             version_id=version["printVersionName"],
-            #         )
-            #     except scrapelib.HTTPError:
-            #         self.logger.warning("Bill version does not seem to exist.")
-            #         continue
-
-            #     yield from self.deal_with_version(
-            #         version_json, bill, bill_id, original_chamber, session, proxy
-            #     )
             yield bill
