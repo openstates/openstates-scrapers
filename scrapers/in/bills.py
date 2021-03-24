@@ -14,6 +14,7 @@ from .apiclient import ApiClient
 
 
 PROXY_BASE_URL = "http://in-proxy.openstates.org"
+SCRAPE_WEB_VERSIONS = "INDIANA_SCRAPE_WEB_VERSIONS" in os.environ
 
 
 class INBillScraper(Scraper):
@@ -246,10 +247,6 @@ class INBillScraper(Scraper):
         # the web url for downloading a doc is http://iga.in.gov/documents/{doc_id}/download
         # where doc_id is the data-myiga-actiondata attribute of the link
         # this id isn't available in the API, so we have to scrape it
-
-        # put this behind a flag 2021-03-18 (openstates/issues#291)
-        if "INDIANA_SCRAPE_WEB_VERSIONS" not in os.environ:
-            return
 
         # IN Web requests use cloudflare, which requires a User-Agent to be set
         headers = {
@@ -528,8 +525,6 @@ class INBillScraper(Scraper):
                 if committee:
                     a.add_related_entity(committee, entity_type="organization")
 
-            self.scrape_web_versions(session, bill, bill_id)
-
             # subjects
             subjects = [s["entry"] for s in bill_json["latestVersion"]["subjects"]]
             for subject in subjects:
@@ -539,26 +534,28 @@ class INBillScraper(Scraper):
             if bill_json["latestVersion"]["digest"]:
                 bill.add_abstract(bill_json["latestVersion"]["digest"], note="Digest")
 
-            # Leaving this code in, beacuse if they fix the API we may want it for votes
-            # - TS 2021-03-16
-
-            # votes
-            yield from self._process_votes(
-                bill_json["latestVersion"]["rollcalls"],
-                bill_id,
-                original_chamber,
-                session,
-            )
-            # versions
-            self.deal_with_version(
-                bill_json["latestVersion"], bill, bill_id, original_chamber, session
-            )
-            for version in bill_json["versions"][::-1]:
-                self.deal_with_version(
-                    version,
-                    bill,
+            # put this behind a flag 2021-03-18 (openstates/issues#291)
+            if not SCRAPE_WEB_VERSIONS:
+                # votes
+                yield from self._process_votes(
+                    bill_json["latestVersion"]["rollcalls"],
                     bill_id,
                     original_chamber,
                     session,
                 )
+                # versions
+                self.deal_with_version(
+                    bill_json["latestVersion"], bill, bill_id, original_chamber, session
+                )
+                for version in bill_json["versions"][::-1]:
+                    self.deal_with_version(
+                        version,
+                        bill,
+                        bill_id,
+                        original_chamber,
+                        session,
+                    )
+            else:
+                self.scrape_web_versions(session, bill, bill_id)
+
             yield bill
