@@ -137,7 +137,15 @@ class MIBillScraper(Scraper):
                     )
                     continue
             # instead of trusting upper/lower case, use journal for actor
-            actor = "upper" if "SJ" in journal else "lower"
+            # Journal entries are often posted with 'Expected Soon' as the cite,
+            # then changed to the journal entry.
+            if "SJ" in journal.upper():
+                actor = "upper"
+            elif "HJ" in journal.upper():
+                actor = "lower"
+            else:
+                actor = "legislature"
+
             classification = categorize_action(action)
             bill.add_action(action, date, chamber=actor, classification=classification)
 
