@@ -199,6 +199,15 @@ class SDBillScraper(Scraper, LXMLMixin):
                     second = "failure"
                 atypes.append("%s%s" % ("veto-override-", second))
 
+            if "signed by the president" in action_text.lower():
+                atypes.append("passage")
+
+            if "signed by the speaker" in action_text.lower():
+                atypes.append("passage")
+
+            if "signed by the governor" in action_text.lower():
+                atypes.append("executive-signature")
+
             match = re.match("First read in (Senate|House)", action_text)
             if match:
                 if match.group(1) == "Senate":
