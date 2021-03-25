@@ -144,9 +144,9 @@ class MIBillScraper(Scraper):
                 actor = "upper"
             elif "HJ" in journal.upper():
                 actor = "lower"
-            elif journal.split()[0].islower():
+            elif action.split()[0].islower():
                 actor = "lower"
-            elif journal.split()[0].isupper():
+            elif action.split()[0].isupper():
                 actor = "upper"
             else:
                 actor = "legislature"
