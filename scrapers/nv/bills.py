@@ -17,6 +17,8 @@ ACTION_CLASSIFIERS = (
     ("Bill read. Veto sustained", "veto-override-failure"),
     ("Enrolled and delivered to Governor", "executive-receipt"),
     ("From committee: .+? adopted", "committee-passage"),
+    # the committee and chamber passage can be combined, see NV 80 SB 506
+    ("From committee: .+? pass(.*)Read Third time\.\s*Passed\.", ["committee-passage", "reading-3", "passage"]),
     ("From committee: .+? pass", "committee-passage"),
     ("Prefiled. Referred", ["introduction", "referral-committee"]),
     ("Read first time. Referred", ["reading-1", "referral-committee"]),
@@ -27,6 +29,8 @@ ACTION_CLASSIFIERS = (
     ("Read third time.", "reading-3"),
     ("Rereferred", "referral-committee"),
     ("Resolution read and adopted", "passage"),
+    ("To enrollment", "passage"),
+    ("Approved by the Governor", "executive-signature"),
     ("Vetoed by the Governor", "executive-veto"),
 )
 
