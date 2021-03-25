@@ -274,7 +274,7 @@ class NDVoteScraper(Scraper, LXMLMixin):
 
                             # Check the vote counts in the motion text against
                             # the parsed results
-                            for category_name in keys.keys():
+                            for category_name in keys:
                                 # Need to search for the singular, not plural, in the text
                                 # so it can find, for example,  " 1 NAY "
                                 vote_re = r"(\d+)\s{}".format(category_name[:-1])

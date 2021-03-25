@@ -10,7 +10,7 @@ SESSION_IDS = {"2021": "44", "2020": "43"}
 
 
 class SDBillScraper(Scraper, LXMLMixin):
-    def scrape(self, chambers=None, session=None):
+    def scrape(self, chamber=None, session=None):
         self.seen_votes = set()
         if not session:
             session = self.latest_session()
@@ -20,7 +20,7 @@ class SDBillScraper(Scraper, LXMLMixin):
         url = (
             f"https://sdlegislature.gov/api/Bills/Session/Light/{SESSION_IDS[session]}"
         )
-        chambers = [chambers] if chambers else ["upper", "lower"]
+        chambers = [chamber] if chamber else ["upper", "lower"]
 
         for chamber in chambers:
             if chamber == "upper":
@@ -177,7 +177,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                 action_text == "Do Pass"
                 or action_text == "Tabled"
                 or action["ShowCommitteeName"]
-            ):
+            ) and (action["ActionCommittee"] is not None):
                 full_action.insert(0, f'{action["ActionCommittee"]["Name"]}')
 
             if action["ShowPassed"] or action["ShowFailed"]:
@@ -189,7 +189,8 @@ class SDBillScraper(Scraper, LXMLMixin):
 
             if "referred to" in action_text.lower():
                 atypes.append("referral-committee")
-                full_action.append(action["AssignedCommittee"]["FullName"])
+                if 'AssignedCommittee' in full_action:
+                    full_action.append(action["AssignedCommittee"]["FullName"])
 
             if "Veto override" in action_text:
                 if action["Result"] == "P":
@@ -271,8 +272,11 @@ class SDBillScraper(Scraper, LXMLMixin):
             chamber = "lower"
         elif "Senate" in location:
             chamber = "upper"
+        elif "Joint" in location:
+            chamber = "legislature"
         else:
-            raise ScrapeError("Bad chamber: %s" % location)
+            self.warning("Bad Vote chamber: '%s', skipping" % location)
+            return
 
         motion = page["actionLog"]["StatusText"]
         if motion:

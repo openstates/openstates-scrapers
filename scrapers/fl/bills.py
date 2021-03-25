@@ -376,7 +376,7 @@ class FloorVote(PdfPage):
             result=result,
             classification="passage",
         )
-        vote.add_source(self.url)
+        vote.add_source(self.source.url)
         vote.set_count("yes", yes_count)
         vote.set_count("no", no_count)
         vote.set_count("not voting", nv_count)
@@ -491,9 +491,12 @@ class UpperComVote(PdfPage):
             else:
                 break
 
-        totals = re.search(
-            r"(?msu)\s+(\d{1,3})\s+(\d{1,3})\s+.*?TOTALS", self.text
-        ).groups()
+        totals = re.search(r"(?msu)\s+(\d{1,3})\s+(\d{1,3})\s+.*?TOTALS", self.text)
+        if not totals:
+            self.logger.warning(f"Missing totals for {self.source.url}, skipping")
+            return
+
+        totals = totals.groups()
         yes_count = int(totals[0])
         no_count = int(totals[1])
         result = "pass" if (yes_count > no_count) else "fail"

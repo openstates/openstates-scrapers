@@ -27,8 +27,9 @@ class WVEventScraper(Scraper, LXMLMixin):
     def scrape_committees(self, url):
         page = self.lxmlize(url)
         page.make_links_absolute(url)
+        # note house uses div#wrapleftcol and sen uses div#wrapleftcolr on some pages
         for link in page.xpath(
-            '//div[@id="wrapleftcol"]/a[contains(@href,"agendas.cfm")]/@href'
+            '//div[contains(@id,"wrapleftcol")]/a[contains(@href,"agendas.cfm")]/@href'
         ):
             yield from self.scrape_committee_page(link)
 
@@ -49,6 +50,13 @@ class WVEventScraper(Scraper, LXMLMixin):
             # so just grab this cal year and later
             when = row.xpath("text()")[0].strip()
             when = when.split("-")[0]
+            when = self.clean_date(when)
+
+            # manual fix for un-yeared leap year meeting
+            # on Senate Interstate Cooperation Committee
+            if when == 'February 29':
+                continue
+
             when = dateutil.parser.parse(when)
             if when.year >= datetime.datetime.today().year:
                 yield from self.scrape_meeting_page(row.xpath("@href")[0])
@@ -56,6 +64,12 @@ class WVEventScraper(Scraper, LXMLMixin):
     def scrape_meeting_page(self, url):
         page = self.lxmlize(url)
         page.make_links_absolute(url)
+
+        if page.xpath('//div[text()="Error"]'):
+            return
+
+        if not page.xpath('//div[@id="wrapleftcol"]/h3'):
+            return
 
         com = page.xpath('//div[@id="wrapleftcol"]/h3[1]/text()')[0].strip()
         when = page.xpath('//div[@id="wrapleftcol"]/h1[1]/text()')[0].strip()
@@ -67,15 +81,16 @@ class WVEventScraper(Scraper, LXMLMixin):
         when = re.sub(r"or\s+conclusion\s+(.*)", "", when, flags=re.IGNORECASE)
 
         when = when.split("-")[0]
+        when = self.clean_date(when)
         when = dateutil.parser.parse(when)
         when = self._tz.localize(when)
 
         # we check for this elsewhere, but just in case the very first event on a committee page is way in the past
-        if when.year >= datetime.datetime.today().year:
+        if when.year < datetime.datetime.today().year:
             return
 
         where = page.xpath(
-            '//div[@id="wrapleftcol"]/b[contains(text(), "Location")]/text()'
+            '//div[@id="wrapleftcol"]/*[contains(text(), "Location")]/text()'
         )[0].strip()
         desc = (
             page.xpath('//div[@id="wrapleftcol"]/blockquote[1]')[0]
@@ -103,3 +118,16 @@ class WVEventScraper(Scraper, LXMLMixin):
         event.add_source(url)
 
         yield event
+
+    def clean_date(self, when):
+        # Feb is a tough one, isn't it?
+        # After feburary, februarary, febuary, just give up and regex it
+        when = re.sub(r'feb(.*?)y', 'February', when, flags=re.IGNORECASE)
+        when = re.sub(r'Immediately(.*)', '', when, flags=re.IGNORECASE)
+        when = when.replace('22021', '2021')
+        when = when.replace('20201', '2021')
+        when = when.replace('20202', '2020')
+        when = re.sub(r',\s+\d+ mins following (.*)', '', when)
+        # Convert 1:300PM -> 1:30PM
+        when = re.sub(r"(\d0)0([ap])", r"\1\2",when, flags=re.IGNORECASE)
+        return when

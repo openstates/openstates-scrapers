@@ -1,7 +1,9 @@
 import re
 import html
+import pytz
 import socket
 import datetime
+import dateutil.parser
 
 import requests
 import lxml.html
@@ -16,6 +18,7 @@ BLACKLISTED_BILL_IDS = {"128": ("SP 601", "SP 602"), "129": (), "130": ()}
 
 class MEBillScraper(Scraper):
     categorizer = Categorizer()
+    _tz = pytz.timezone('US/Eastern')
 
     def scrape(self, chamber=None, session=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
@@ -49,6 +52,7 @@ class MEBillScraper(Scraper):
         r = request_session.post(url=search_url, data=form_data)
         r.raise_for_status()
 
+        self.seen = set()
         yield from self._recursively_process_bills(
             request_session=request_session, chamber=chamber, session=session
         )
@@ -66,7 +70,6 @@ class MEBillScraper(Scraper):
         r.raise_for_status()
 
         bills = lxml.html.fromstring(r.text).xpath("//tr/td/b/a")
-        seen = set()
         if bills:
             for bill in bills:
                 bill_id_slug = bill.xpath("./@href")[0]
@@ -76,6 +79,7 @@ class MEBillScraper(Scraper):
                     bill_id_slug
                 )
                 bill_id = bill.text[:2] + " " + bill.text[2:]
+                bill_id = re.sub(r"\s+", " ", bill_id).strip()
 
                 if (
                     session in BLACKLISTED_BILL_IDS
@@ -84,9 +88,9 @@ class MEBillScraper(Scraper):
                     continue
 
                 # avoid duplicates
-                if bill_id in seen:
+                if bill_id in self.seen:
                     continue
-                seen.add(bill_id)
+                self.seen.add(bill_id)
 
                 bill = Bill(
                     identifier=bill_id,
@@ -254,9 +258,7 @@ class MEBillScraper(Scraper):
                     # various versions: billtexts, billdocs, billpdfs
                     v_links = []
 
-                    for v in range(
-                        0, len(vdoc.xpath('//span[@class="story_heading"]')) - 1
-                    ):
+                    for v in range(0, len(vdoc.xpath('//span[@class="story_heading"]')) - 1):
                         version_title = vdoc.xpath('//span[@class="story_heading"]')[
                             v
                         ].text
@@ -335,6 +337,29 @@ class MEBillScraper(Scraper):
                                     media_type="text/html",
                                 )
                                 v_links.append(version_fiscal_html[v])
+
+                    # committee actions are also on this page
+                    for row in vdoc.xpath('//table[@name="CDtab"]/tr')[2:]:
+                        action_date = row.xpath('td[1]/text()')[0].strip()
+                        action_date = dateutil.parser.parse(action_date)
+                        action_date = self._tz.localize(action_date)
+
+                        action = row.xpath('td[2]/text()')[0].strip()
+
+                        result = row.xpath('td[3]/text()')[0].strip()
+                        if result != '':
+                            action = f"{action} - {result}".strip()
+
+                        attrs = self.categorizer.categorize(action)
+                        bill.add_action(
+                            action,
+                            action_date,
+                            chamber='legislature', # Maine committees are joint
+                            classification=attrs["classification"],
+                        )
+
+                    
+
 
     def scrape_votes(self, bill, url):
         page = self.get(url, retry_on_404=True).text

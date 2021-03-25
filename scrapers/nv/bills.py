@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import dateutil.parser
 from openstates.scrape import Scraper, Bill
 from .common import session_slugs
-from spatula import HtmlListPage, HtmlPage, CSS, XPath, page_to_items
+from spatula import HtmlListPage, HtmlPage, CSS, XPath, page_to_items, SelectorError
 
 
 TZ = pytz.timezone("PST8PDT")
@@ -30,6 +30,22 @@ ACTION_CLASSIFIERS = (
     ("Vetoed by the Governor", "executive-veto"),
 )
 
+# NV sometimes carries-over bills from previous sessions,
+# without regard for bill number conflicts. 
+# so AB1* could get carried in, even if there's already an existing AB1
+# The number of asterisks represent which past session it was pulled in from,
+# which can include specials, and skip around, so this can't be automated.
+# The list is at https://www.leg.state.nv.us/Session/81st2021/Reports/BillsListLegacy.cfm?DoctypeID=1
+# where 81st2021 will need to be swapped in for the session code.
+CARRYOVERS = {
+    '80': {
+        '*': '2017',
+    },
+    '81': {
+        '*': '2019',
+        '**': '2020Special32',
+    }
+}
 
 def parse_date(date_str):
     return TZ.localize(dateutil.parser.parse(date_str))
@@ -107,9 +123,6 @@ class BillList(HtmlListPage):
     def process_item(self, item):
         link = item.get("href")
         identifier = item.text
-        if "*" in identifier:
-            # previous session bills
-            self.skip(f"skipping prior session {identifier}")
 
         return BillTabDetail(
             BillStub(
@@ -147,10 +160,12 @@ class BillTabDetail(HtmlPage):
             f"//div[contains(text(),'{name}')]/following-sibling::div[@class='col']"
         ).match_one(self.root)
 
-    def add_sponsors(self, bill, sponsor_links):
+    def add_sponsors(self, bill, sponsor_links, primary):
         seen = set()
         for link in sponsor_links:
             name = link.text_content().strip()
+            if "Sponsors" in name:
+                continue
             # Removes leg position from name
             # Example: Assemblywoman Alexis Hansen
             if name.split()[0] in ["Assemblywoman", "Assemblyman", "Senator"]:
@@ -159,9 +174,9 @@ class BillTabDetail(HtmlPage):
                 seen.add(name)
                 bill.add_sponsorship(
                     name=name,
-                    classification="primary",
+                    classification="sponsor" if primary else "cosponsor",
                     entity_type="person",
-                    primary=True,
+                    primary=primary,
                 )
 
     def add_actions(self, bill, chamber):
@@ -205,6 +220,14 @@ class BillTabDetail(HtmlPage):
         short_title = self.get_column_div("Summary").text
         long_title = CSS("#title").match_one(self.root).text
 
+        if '*' in self.input.identifier:
+            stars = re.search(r'\*+', self.input.identifier).group()
+            if self.input.session in CARRYOVERS and stars in CARRYOVERS[self.input.session]:
+                self.input.identifier = re.sub(r'\*+', '-'+CARRYOVERS[self.input.session][stars], self.input.identifier)
+            else:
+                self.logger.error(f"Unidentified carryover bill {self.input.identifier}. Update CARRYOVERS dict in bills.py")
+                return
+
         bill = Bill(
             identifier=self.input.identifier,
             legislative_session=self.input.session,
@@ -216,7 +239,16 @@ class BillTabDetail(HtmlPage):
         bill.add_source(self.input.source_url)
         bill.add_title(long_title)
 
-        self.add_sponsors(bill, CSS("a").match(self.get_column_div("Primary Sponsor")))
+        try:
+            sponsors = self.get_column_div("Primary Sponsor")
+            self.add_sponsors(bill, CSS("a").match(sponsors), primary=True)
+        except SelectorError:
+            pass
+        try:
+            cosponsors = self.get_column_div("Co-Sponsor")
+            self.add_sponsors(bill, CSS("a").match(cosponsors), primary=False)
+        except SelectorError:
+            pass
         # TODO: figure out cosponsor div name, can't find any as of Feb 2021
         self.add_actions(bill, chamber)
 

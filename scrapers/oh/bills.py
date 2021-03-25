@@ -10,6 +10,8 @@ import lxml.html
 import pytz
 import re
 
+BAD_BILLS = [("134", "SB 92")]
+
 
 class OHBillScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
@@ -168,6 +170,13 @@ class OHBillScraper(Scraper):
                     classification=classification,
                 )
                 bill.add_source(number_link.xpath("a/@href")[0])
+
+                if (session, bill_id) in BAD_BILLS:
+                    self.logger.warning(
+                        f"Skipping details for known bad bill {bill_id}"
+                    )
+                    yield bill
+                    continue
 
                 # get bill from API
                 bill_api_url = (

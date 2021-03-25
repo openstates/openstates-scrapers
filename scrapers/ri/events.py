@@ -86,9 +86,6 @@ class RIEventScraper(Scraper, LXMLMixin):
             except ValueError:
                 continue
 
-        print(self._tz)
-        print(datetime)
-
         event = Event(
             name=event_desc, start_date=self._tz.localize(datetime), location_name=where
         )
@@ -98,7 +95,7 @@ class RIEventScraper(Scraper, LXMLMixin):
         for bill in bills:
             bill_ft = bill.attrib["href"]
             event.add_document(
-                bill.text_content(), bill_ft, media_type="application/pdf"
+                bill.text_content(), bill_ft, media_type="application/pdf", on_duplicate="ignore"
             )
             root = bill.xpath("../../*")
             root = [x.text_content() for x in root]

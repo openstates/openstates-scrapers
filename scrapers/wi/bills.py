@@ -201,7 +201,7 @@ class WIBillScraper(Scraper):
             elif a.text in (
                 "Amendments",
                 "Fiscal Estimates",
-                "Fiscal Estimates and Reports" "Record of Committee Proceedings",
+                "Fiscal Estimates and Reports", "Record of Committee Proceedings",
             ):
                 extra_doc_url = a.get("href")
                 extra_doc = lxml.html.fromstring(self.get(extra_doc_url).text)

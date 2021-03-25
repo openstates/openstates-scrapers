@@ -226,6 +226,7 @@ class VaCSVBillScraper(Scraper):
         # than duping them in a new session, just scrape the 2021S1 data
         if session == "2021":
             self._url_base = self._url_base.replace("211", "212")
+            session_id = "212"
         self.load_history()
         self.load_votes()
         self.load_bills()
@@ -379,6 +380,7 @@ class VaCSVBillScraper(Scraper):
                         bill_url_base
                         + f"legp604.exe?{session_id}+ful+{version['doc_abbr']}"
                     )
+
                     version_date = datetime.datetime.strptime(
                         version["doc_date"], "%m/%d/%y"
                     ).date()
