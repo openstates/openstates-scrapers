@@ -237,6 +237,10 @@ class TXBillScraper(Scraper, LXMLMixin):
                 atype = "reading-2"
             elif desc.startswith("Reported favorably"):
                 atype = "committee-passage-favorable"
+            elif desc == "Effective immediately":
+                atype = "became-law"
+            elif desc == "Filed without the Governor's signature":
+                atype = "became-law"
             else:
                 atype = None
 
