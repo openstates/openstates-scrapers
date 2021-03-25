@@ -29,6 +29,8 @@ _categories = {
     "veto-override-failure": {
         "rgxs": [u"Veto Override Motion Failed", u"Veto Override Failed"]
     },
+    # Became law, potentially without governor signature
+    "became-law": {"rgxs": ["Chapter Number Assigned"]},
     # ???
     # A bill has undergone its first reading
     "reading-1": {"rgxs": ["First Reading"], "funcs": {}},
