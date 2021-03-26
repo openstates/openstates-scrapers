@@ -42,6 +42,7 @@ class MSBillScraper(Scraper):
         ("Partially Vetoed", "executive-veto-line-item"),
         ("Title Suff Do", "committee-passage"),
         ("Read the Third Time", "reading-3"),
+        ("Law W/out Governor's Signature", "became-law"),
     )
 
     def scrape(self, chamber=None, session=None):

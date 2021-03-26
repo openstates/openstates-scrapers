@@ -511,5 +511,7 @@ class AKBillScraper(Scraper):
             action = action.replace("REFERRED TO", "Referred to")
         if "Prefile released" in action:
             atype.append("filing")
+        if "Approved by the Governor" in action:
+            atype.append("executive-signature")
 
         return action, atype

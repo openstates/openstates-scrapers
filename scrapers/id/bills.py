@@ -109,6 +109,7 @@ _ACTIONS = (
     ),
     (r"^to governor", "executive-receipt"),
     (r"^Governor signed", "executive-signature"),
+    (r"^Returned from Governor vetoed", "executive-veto"),
 )
 
 

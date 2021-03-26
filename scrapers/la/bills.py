@@ -317,6 +317,8 @@ class LABillScraper(Scraper, LXMLMixin):
             "ordered to the senate": ["passage"],
             "signed by the governor": ["executive-signature"],
             "sent to the governor": ["executive-receipt"],
+            "becomes Act": ["became-law"],
+            "vetoed by the governor": ["executive-veto"],
         }
 
         try:

@@ -31,8 +31,10 @@ classifiers = {
     r"Vetoed": "executive-veto",
     r"Gubernatorial Veto Override": "veto-override-passage",
     r"Veto overridden": "veto-override-passage",
+    r"Overridden": "veto-override-passage",
     r"Approved by the Governor": "executive-signature",
     r"Enacted under Article II": "became-law",
+    r"Became law": "became-law",
 }
 
 vote_classifiers = {r"third": "passage", r"fla|amend|amd": "amendment"}

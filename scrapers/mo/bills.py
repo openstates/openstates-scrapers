@@ -58,6 +58,7 @@ class MOBillScraper(Scraper, LXMLMixin):
             ("Signed by Governor", "executive-signature"),
             ("Approved by Governor", "executive-signature"),
             ("Vetoed by Governor", "executive-veto"),
+            ("Vetoed in Part by Governor", "executive-veto-line-item"),
             ("Legislature voted to override Governor's veto", "veto-override-passage"),
         ]
         categories = []

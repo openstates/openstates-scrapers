@@ -509,6 +509,9 @@ class INBillScraper(Scraper):
                 if "signed by the governor" in d:
                     action_type.append("executive-signature")
 
+                if "vetoed by the governor" in d:
+                    action_type.append("executive-veto")
+
                 if len(action_type) == 0:
                     # calling it other and moving on with a warning
                     self.logger.warning(
