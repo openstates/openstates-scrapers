@@ -199,6 +199,9 @@ class SDBillScraper(Scraper, LXMLMixin):
                     second = "failure"
                 atypes.append("%s%s" % ("veto-override-", second))
 
+            if "vetoed by the governor" in action_text.lower():
+                atypes.append("executive-veto")
+
             if "signed by the president" in action_text.lower():
                 atypes.append("passage")
 
