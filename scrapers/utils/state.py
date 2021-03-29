@@ -14,6 +14,7 @@ _name_fixes = {
     "WestVirginia": "West Virginia",
     "PuertoRico": "Puerto Rico",
     "DistrictOfColumbia": "District of Columbia",
+    "UnitedStates": "United States",
 }
 
 

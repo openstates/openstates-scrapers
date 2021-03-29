@@ -2,14 +2,17 @@ default_language_version:
     python: python3.9
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.2.3  # Use the ref you want to point at
+    rev: v3.4.0  # Use the ref you want to point at
     hooks:
       - id: check-merge-conflict
       - id: debug-statements
+
+-   repo: https://github.com/pycqa/flake8
+    rev: 3.9.0
+    hooks:
       - id: flake8
         args: ['--max-line-length=120', '--ignore=E203,W503']
         exclude: scrapers/il/tests/
-
 -   repo: https://github.com/ambv/black
     rev: 20.8b1
     hooks:
