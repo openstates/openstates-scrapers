@@ -270,16 +270,14 @@ class ARBillScraper(Scraper):
             )
 
         for link in page.xpath(
-            "//table[@class=\"screenreader\"]//a[contains(@href, '/Bills/Votes?id=')]"
+            "//div[@role=\"grid\"]/../..//a[contains(@href, '/Bills/Votes?id=')]"
         ):
-            date = link.xpath(
-                "normalize-space(substring-after(string(../../td[2]), 'Date:'))"
-            )
+            date = link.xpath("normalize-space(string(../../div[2]))")
             date = TIMEZONE.localize(
                 datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
             )
 
-            motion = link.xpath("string(../../td[3])")
+            motion = link.xpath("string(../../div[3])")
             yield from self.scrape_vote(bill, date, motion, link.attrib["href"])
 
     def scrape_vote(self, bill, date, motion, url):
