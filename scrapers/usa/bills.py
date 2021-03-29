@@ -312,6 +312,8 @@ class USBillScraper(Scraper):
                         )
                         self.info(amdt_name)
                         amdt_url = row.xpath("td[3]/a/@href")[0].strip()
+                        if not amdt_url.startswith("http"):
+                            continue
                         bill.add_document_link(
                             note=amdt_name,
                             url=amdt_url,
