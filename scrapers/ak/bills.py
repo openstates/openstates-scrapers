@@ -157,10 +157,10 @@ class AKBillScraper(Scraper):
         # Get sponsors
         spons_str = (
             doc.xpath('//span[contains(text(), "Sponsor(S)")]')[0].getparent()[1].text
-        )
+        ).strip()
         # Checks if there is a Sponsor string before matching
         if spons_str:
-            sponsors_match = re.match(r"(SENATOR|REPRESENTATIVE)", spons_str)
+            sponsors_match = re.match(r"(SENATOR|REPRESENTATIVE)S?", spons_str)
             if sponsors_match:
                 sponsors = spons_str.split(",")
                 sponsor = sponsors[0].strip()
@@ -175,6 +175,10 @@ class AKBillScraper(Scraper):
 
                 for sponsor in sponsors[1:]:
                     sponsor = sponsor.strip()
+                    # occasional AK site error prints some code here
+                    if 'Model.Sponsors.' in sponsor:
+                        continue
+
                     if sponsor:
                         bill.add_sponsorship(
                             sponsor,
