@@ -542,7 +542,7 @@ class INBillScraper(Scraper):
                 # votes
                 yield from self._process_votes(
                     bill_json["latestVersion"]["rollcalls"],
-                    bill_id,
+                    disp_bill_id,
                     original_chamber,
                     session,
                 )
