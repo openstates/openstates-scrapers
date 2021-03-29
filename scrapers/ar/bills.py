@@ -270,7 +270,7 @@ class ARBillScraper(Scraper):
             )
 
         for link in page.xpath(
-            '//div[@role="grid"]/..//div[@class="col-md-2"]//a[contains(@href, \'/Bills/Votes?id=\')]'
+            "//div[@role=\"grid\"]/../..//a[contains(@href, '/Bills/Votes?id=')]"
         ):
             date = link.xpath("normalize-space(string(../../div[2]))")
             date = TIMEZONE.localize(
