@@ -321,6 +321,7 @@ class MSBillScraper(Scraper):
         "Appointment Confirmed": ("Appointment Confirmation", True),
         "Committee Substitute Adopted": ("Adopt Committee Substitute", True),
         "Committee Substitute Failed": ("Adopt Committee Substitute", False),
+        "Conference Report Filed": ("Conference Report Filed", True),
         "Conference Report Adopted": ("Adopt Conference Report", True),
         "Conference Report Failed": ("Adopt Conference Report", False),
         "Motion to Reconsider Tabled": ("Table Motion to Reconsider", True),
