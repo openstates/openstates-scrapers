@@ -110,7 +110,7 @@ class ARBillScraper(Scraper):
             date = TIMEZONE.localize(
                 datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S.%f")
             )
-            date = "{:%Y-%m-%d}".format(date)
+
             action = row[6]
 
             action_type = []
