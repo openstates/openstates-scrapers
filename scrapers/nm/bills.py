@@ -24,7 +24,7 @@ def session_slug(session):
 class NMBillScraper(Scraper):
     def _init_mdb(self, session):
         ftp_base = "ftp://www.nmlegis.gov/other/"
-        fname = "LegInfo{}".format(session[2:])
+        fname = "LegInfo{}".format(session[2:]).replace('S','s')
         fname_re = (
             r"(\d{{2}}-\d{{2}}-\d{{2}}  \d{{2}}:\d{{2}}(?:A|P)M) .* "
             "({fname}.*zip)".format(fname=fname)
