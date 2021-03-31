@@ -110,17 +110,13 @@ class NMBillScraper(Scraper):
         for subject in self.access_to_csv("TblSubjects"):
             subject_map[subject["SubjectCode"]] = subject["Subject"]
 
-        for row in self.access_to_csv("Legislation"):
-            print(row)
-
         # get all bills into this dict, fill in action/docs before saving
         bills = {}
         for data in [
             row
             for row in self.access_to_csv("Legislation")
-            # if row["BillID"].startswith(chamber_letter)
+            if row["BillID"].startswith(chamber_letter)
         ]:
-            print(row)
             # use their BillID for the key but build our own for storage
             bill_key = data["BillID"].replace(" ", "")
 
