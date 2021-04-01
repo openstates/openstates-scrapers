@@ -304,8 +304,9 @@ class SDBillScraper(Scraper, LXMLMixin):
                 vtype = "passage"
             elif motion == "Concurred in amendments":
                 vtype = "amendment"
-            elif motion == "Veto override":
-                vtype = "veto_override"
+            # commenting out until we add these back to OS-core
+            # elif motion == "Veto override":
+            #     vtype = "veto-override"
             else:
                 vtype = []
 
