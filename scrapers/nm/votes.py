@@ -34,10 +34,10 @@ def convert_sv_char(c):
 
 
 def match_header(row_cols, cell_x):
-    """ Map the data column to the header column, has to be done once for each
-        column. The columns of the headers(yes/no/etc) do not mach up *perfect*
-        with data in the grid due to random preceding whitespace and mixed
-        fonts"""
+    """Map the data column to the header column, has to be done once for each
+    column. The columns of the headers(yes/no/etc) do not mach up *perfect*
+    with data in the grid due to random preceding whitespace and mixed
+    fonts"""
     row_cols.sort()
     c = bisect_left(row_cols, cell_x)
     if c == 0:
@@ -85,7 +85,7 @@ def build_vote(session, bill_id, url, vote_record, chamber, motion_text):
         bill=bill_id,
         bill_chamber="upper" if bill_id[0] == "S" else "lower",
     )
-    vote_event.pupa_id = url
+    vote_event.dedupe_key = url
     vote_event.set_count("yes", len(vote_record["yes"]))
     vote_event.set_count("no", len(vote_record["no"]))
     vote_event.set_count("excused", len(vote_record["excused"]))
@@ -179,8 +179,8 @@ class NMVoteScraper(Scraper):
             yield from self.scrape_vote(chamber, session)
 
     def scrape_vote(self, chamber, session):
-        """ most document types (+ Votes) are in this common directory go
-        through it and attach them to their related bills """
+        """most document types (+ Votes) are in this common directory go
+        through it and attach them to their related bills"""
         session_path = session_slug(session)
 
         doc_path = "http://www.nmlegis.gov/Sessions/{}/votes/".format(session_path)

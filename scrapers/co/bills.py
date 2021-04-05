@@ -412,7 +412,7 @@ class COBillScraper(Scraper, LXMLMixin):
                 bill=bill,
                 classification="passage",
             )
-            vote.pupa_id = vote_url
+            vote.dedupe_key = vote_url
             vote.set_count("yes", yes_count)
             vote.set_count("no", no_count)
             vote.set_count("excused", exc_count)

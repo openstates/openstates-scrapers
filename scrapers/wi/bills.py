@@ -201,7 +201,8 @@ class WIBillScraper(Scraper):
             elif a.text in (
                 "Amendments",
                 "Fiscal Estimates",
-                "Fiscal Estimates and Reports", "Record of Committee Proceedings",
+                "Fiscal Estimates and Reports",
+                "Record of Committee Proceedings",
             ):
                 extra_doc_url = a.get("href")
                 extra_doc = lxml.html.fromstring(self.get(extra_doc_url).text)
@@ -350,7 +351,7 @@ class WIBillScraper(Scraper):
             classification=vtype,
             bill=bill,
         )
-        v.pupa_id = url.split("/")[-1]
+        v.dedupe_key = url.split("/")[-1]
         v.set_count("yes", yes)
         v.set_count("no", no)
 

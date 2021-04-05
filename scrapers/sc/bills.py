@@ -92,9 +92,9 @@ def action_type(action):
 
 class SCBillScraper(Scraper):
     """
-     Bill scraper that pulls down all legislatition on from sc website.
-     Used to pull in information regarding Legislation, and basic associated metadata,
-     using x-path to find and obtain the information
+    Bill scraper that pulls down all legislatition on from sc website.
+    Used to pull in information regarding Legislation, and basic associated metadata,
+    using x-path to find and obtain the information
     """
 
     def __init__(self, *args, **kwargs):
@@ -263,7 +263,7 @@ class SCBillScraper(Scraper):
                 continue
             else:
                 self._seen_vote_ids.add(rollcall_pdf)
-            vote.pupa_id = rollcall_pdf  # distinct KEY for each one
+            vote.dedupe_key = rollcall_pdf  # distinct KEY for each one
 
             yield vote
 

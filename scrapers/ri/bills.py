@@ -347,7 +347,7 @@ class RIBillScraper(Scraper):
                     v.set_count("no", int(count["NAYS"]))
                     v.set_count("other", int(count["NOT VOTING"]))
                     v.add_source(vote["source"])
-                    v.pupa_id = vote["source"]
+                    v.dedupe_key = vote["source"]
 
                     for vt in vote["votes"]:
                         key = {"Y": "yes", "N": "no"}.get(vt["vote"], "other")

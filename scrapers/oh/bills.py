@@ -564,7 +564,9 @@ class OHBillScraper(Scraper):
                     bill=bill,
                 )
             # Concatenate the bill identifier and vote identifier to avoid collisions
-            vote.pupa_id = "{}:{}".format(bill.identifier.replace(" ", ""), v["revno"])
+            vote.dedupe_key = "{}:{}".format(
+                bill.identifier.replace(" ", ""), v["revno"]
+            )
             # the yea and nay counts are not displayed, but vote totals are
             # and passage status is.
             yes_count = 0

@@ -233,7 +233,7 @@ class NEBillScraper(Scraper, LXMLMixin):
             vote.set_count("abstain", present_count)
 
             query_params = urllib.parse.parse_qs(urllib.parse.urlparse(vote_url).query)
-            vote.pupa_id = query_params["KeyID"][0]
+            vote.dedupe_key = query_params["KeyID"][0]
             vote.add_source(vote_url)
             for chunk in range(0, len(cells), 2):
                 name = cells[chunk].text

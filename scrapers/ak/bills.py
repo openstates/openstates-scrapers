@@ -176,7 +176,7 @@ class AKBillScraper(Scraper):
                 for sponsor in sponsors[1:]:
                     sponsor = sponsor.strip()
                     # occasional AK site error prints some code here
-                    if 'Model.Sponsors.' in sponsor:
+                    if "Model.Sponsors." in sponsor:
                         continue
 
                     if sponsor:
@@ -401,7 +401,7 @@ class AKBillScraper(Scraper):
         #     vote.set_count('other', other)
         #     print("Yes votes:", yes, "No votes", no, "Other", other)
 
-        #     vote.pupa_id = (url + ' ' + str(iVoteOnPage)) if iVoteOnPage > 1 else url
+        #     vote.dedupe_key = (url + ' ' + str(iVoteOnPage)) if iVoteOnPage > 1 else url
 
         #     # In lengthy documents, the "header" can be repeated in the middle
         #     # of content. This regex gets rid of it.

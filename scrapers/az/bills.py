@@ -51,8 +51,10 @@ class AZBillScraper(Scraper):
         self.scrape_subjects(bill, internal_id)
         yield from self.scrape_votes(bill, page)
 
-        bill_url = "https://apps.azleg.gov/BillStatus/BillOverview/{}?SessionId={}".format(
-            internal_id, session_id
+        bill_url = (
+            "https://apps.azleg.gov/BillStatus/BillOverview/{}?SessionId={}".format(
+                internal_id, session_id
+            )
         )
         bill.add_source(bill_url)
 
@@ -294,7 +296,7 @@ class AZBillScraper(Scraper):
                 for v in action["Votes"]:
                     vote_type = {"Y": "yes", "N": "no"}.get(v["Vote"], "other")
                     vote.vote(vote_type, v["Legislator"]["FullName"])
-                vote.pupa_id = resp.url + str(action["ReferralNumber"])
+                vote.dedupe_key = resp.url + str(action["ReferralNumber"])
                 yield vote
 
     def scrape(self, chamber=None, session=None):

@@ -120,7 +120,7 @@ class OKBillScraper(Scraper):
 
         for link in page.xpath("//a[contains(@id, 'Auth')]"):
             name = link.xpath("string()").strip()
-            if 'author not found' in name.lower():
+            if "author not found" in name.lower():
                 continue
 
             if ":" in name:
@@ -316,7 +316,7 @@ class OKBillScraper(Scraper):
             vote.set_count("yes", counts["yes"])
             vote.set_count("no", counts["no"])
             vote.set_count("other", counts["other"])
-            vote.pupa_id = url + "#" + rcs
+            vote.dedupe_key = url + "#" + rcs
 
             vote.add_source(url)
 

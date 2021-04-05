@@ -121,7 +121,7 @@ class MDVoteScraper(Scraper, LXMLMixin):
             bill_chamber=bill_chamber,
         )
         # URL includes sequence ID, will be unique
-        vote.pupa_id = url
+        vote.dedupe_key = url
         vote.add_source(url)
         vote.set_count("yes", yes_count)
         vote.set_count("no", no_count)

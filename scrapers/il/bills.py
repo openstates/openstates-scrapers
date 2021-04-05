@@ -290,7 +290,8 @@ class IlBillScraper(Scraper):
 
         # scrape a single bill for debug
         # yield from self.scrape_bill(
-        #     'lower', '101st', 'HB', 'https://ilga.gov/legislation/BillStatus.asp?DocNum=2488&GAID=15&DocTypeID=HB&LegId=118516&SessionID=108&GA=101'
+        #     'lower', '101st', 'HB', 'https://ilga.gov/legislation/BillStatus.asp?DocNum=
+        # 2488&GAID=15&DocTypeID=HB&LegId=118516&SessionID=108&GA=101'
         # )
 
         # Sessions that run from 1997 - 2002. Last few sessiosn before bills were PDFs
@@ -828,7 +829,7 @@ class IlBillScraper(Scraper):
         vote_event.add_source(href)
 
         # for distinguishing between votes with the same id and on same day
-        vote_event.pupa_id = href
+        vote_event.dedupe_key = href
 
         if warned:
             self.warning("Warnings were issued. Best to check %s" % href)

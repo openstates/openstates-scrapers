@@ -198,7 +198,7 @@ class NHBillScraper(Scraper):
                 continue
 
             line = line.split("|")
-            employee_num = line[0].replace(u'\ufeff','')
+            employee_num = line[0].replace("\ufeff", "")
 
             # first, last, middle
             if len(line) > 2:
@@ -388,7 +388,7 @@ class NHBillScraper(Scraper):
                 vote.set_count("yes", yeas)
                 vote.set_count("no", nays)
                 vote.add_source(vote_url)
-                vote.pupa_id = session_yr + body + vote_num  # unique ID for vote
+                vote.dedupe_key = session_yr + body + vote_num  # unique ID for vote
                 votes[body + vote_num] = vote
 
         for line in (

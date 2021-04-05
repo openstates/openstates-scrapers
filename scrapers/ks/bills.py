@@ -279,7 +279,7 @@ class KSBillScraper(Scraper):
                 result="pass" if yes_count > no_count else "fail",
                 classification="passage",
             )
-            vote.pupa_id = link
+            vote.dedupe_key = link
 
             vote.set_count("yes", yes_count)
             vote.set_count("no", no_count)

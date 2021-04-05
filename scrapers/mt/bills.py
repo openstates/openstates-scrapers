@@ -124,8 +124,8 @@ class MTBillScraper(Scraper, LXMLMixin):
             )
             yield bill
             for vote in votes:
-                if vote.pupa_id not in self._seen_vote_ids:
-                    self._seen_vote_ids.add(vote.pupa_id)
+                if vote.dedupe_key not in self._seen_vote_ids:
+                    self._seen_vote_ids.add(vote.dedupe_key)
                     yield vote
 
     def parse_bill(self, bill_url, list_sponsor, session):
@@ -156,7 +156,7 @@ class MTBillScraper(Scraper, LXMLMixin):
         pdf_urls = set(doc.xpath('//a/@href[contains(., "billpdf")]'))
         if len(pdf_urls) > 0:
             url = pdf_urls.pop()
-            url = url.replace('http:', 'https:')
+            url = url.replace("http:", "https:")
             bill.add_version_link(version_name, url, media_type="application/pdf")
 
         new_versions_url = doc.xpath('//a[text()="Previous Version(s)"]/@href')
@@ -173,7 +173,7 @@ class MTBillScraper(Scraper, LXMLMixin):
         for link in page.xpath('//div[contains(@class,"container white")]/a'):
             link_text = link.xpath("text()")[0].strip()
             link_url = link.xpath("@href")[0]
-            link_url = link_url.replace('http:', 'https:')
+            link_url = link_url.replace("http:", "https:")
             bill.add_version_link(
                 link_text, link_url, media_type="application/pdf", on_duplicate="ignore"
             )
@@ -433,7 +433,7 @@ class MTBillScraper(Scraper, LXMLMixin):
                     name += " (clerical corrections made)"
                 try:
                     url = version_urls.pop(str(next(count)))
-                    url = url.replace('http:', 'https:')
+                    url = url.replace("http:", "https:")
                 except KeyError:
                     msg = "No url found for version: %r" % name
                     self.warning(msg)
@@ -445,7 +445,7 @@ class MTBillScraper(Scraper, LXMLMixin):
 
                 try:
                     url = version_urls["x" + str(next(xcount))]
-                    url = url.replace('http:', 'https:')
+                    url = url.replace("http:", "https:")
                 except KeyError:
                     continue
 
@@ -545,7 +545,7 @@ class MTBillScraper(Scraper, LXMLMixin):
             bill=bill,
             bill_action=vote["action"],
         )
-        vote.pupa_id = vote_url  # URL contains sequence number
+        vote.dedupe_key = vote_url  # URL contains sequence number
         vote.add_source(vote_url)
         vote.set_count("yes", yes_count)
         vote.set_count("no", no_count)
@@ -786,7 +786,7 @@ class PDFCommitteeVote(object):
             classification="passage",
             bill=self.bill,
         )
-        v.pupa_id = self.url  # URL contains sequence number
+        v.dedupe_key = self.url  # URL contains sequence number
         v.set_count("yes", self.yes_count())
         v.set_count("no", self.no_count())
         v.set_count("other", self.other_count())

@@ -443,7 +443,7 @@ class NYBillScraper(Scraper):
                 vote.set_count("absent", absent_count)
                 vote.set_count("excused", excused_count)
                 vote.add_source(url)
-                vote.pupa_id = url + motion + spanText[1]
+                vote.dedupe_key = url + motion + spanText[1]
 
                 yield vote
 
@@ -477,7 +477,7 @@ class NYBillScraper(Scraper):
 
         for bill in self._generate_bills(session, window):
             if bill_no:
-                if bill['basePrintNo'] == bill_no.upper():
+                if bill["basePrintNo"] == bill_no.upper():
                     yield from self._scrape_bill(session, bill)
                     return
             else:

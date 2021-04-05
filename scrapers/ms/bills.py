@@ -100,7 +100,7 @@ class MSBillScraper(Scraper):
             title = details_root.xpath("string(//SHORTTITLE)")
             longtitle = details_root.xpath("string(//LONGTITLE)")
 
-            if title == '':
+            if title == "":
                 self.warning(f"No title yet for {bill_id}, skipping")
                 return
 
@@ -447,7 +447,7 @@ class MSBillScraper(Scraper):
             classification="passage",
             bill=bill,
         )
-        vote.pupa_id = url + "#" + bill.identifier
+        vote.dedupe_key = url + "#" + bill.identifier
 
         vote.set_count("yes", yes_count)
         vote.set_count("no", no_count)

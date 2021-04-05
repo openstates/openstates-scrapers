@@ -340,7 +340,9 @@ class MABillScraper(Scraper):
                 n = int(re.findall(r"(\d+)\s*NAYS", action_name)[0])
 
                 # get supplement number
-                n_supplement = int(re.findall(r"No\.\s*(\d+)", action_name, re.IGNORECASE)[0])
+                n_supplement = int(
+                    re.findall(r"No\.\s*(\d+)", action_name, re.IGNORECASE)[0]
+                )
                 cached_vote = VoteEvent(
                     chamber=actor,
                     start_date=action_date,
@@ -352,13 +354,15 @@ class MABillScraper(Scraper):
                 cached_vote.set_count("yes", y)
                 cached_vote.set_count("no", n)
 
-                housevote_pdf = "https://malegislature.gov/Journal/House/{}/{}/RollCalls".format(
-                    bill.legislative_session, action_year
+                housevote_pdf = (
+                    "https://malegislature.gov/Journal/House/{}/{}/RollCalls".format(
+                        bill.legislative_session, action_year
+                    )
                 )
                 self.scrape_house_vote(cached_vote, housevote_pdf, n_supplement)
                 cached_vote.add_source(housevote_pdf)
 
-                cached_vote.pupa_id = "{}#{}".format(housevote_pdf, n_supplement)
+                cached_vote.dedupe_key = "{}#{}".format(housevote_pdf, n_supplement)
 
                 # XXX: disabled house votes on 8/1 to try to get MA importing again
                 # will leaving this in and commented out once we resolve the ID issue
@@ -404,7 +408,7 @@ class MABillScraper(Scraper):
                     )
                     self.scrape_senate_vote(cached_vote, rollcall_pdf)
                     cached_vote.add_source(rollcall_pdf)
-                    cached_vote.pupa_id = rollcall_pdf
+                    cached_vote.dedupe_key = rollcall_pdf
                     # XXX: also disabled, see above note
                     # yield cached_vote
 

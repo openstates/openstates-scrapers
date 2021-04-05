@@ -195,7 +195,7 @@ class MDBillScraper(Scraper):
         )
 
         # Include bill ID to avoid duplication for consent calendars
-        vote.pupa_id = "{}#{}".format(vote_url, bill.identifier)
+        vote.dedupe_key = "{}#{}".format(vote_url, bill.identifier)
 
         for index, vote_type in enumerate(vote_types):
             vote.set_count(vote_type, vote_counts[index])
@@ -279,7 +279,7 @@ class MDBillScraper(Scraper):
             classification="passage",
             result="pass" if passed else "fail",
         )
-        vote.pupa_id = vote_url  # contains sequence number
+        vote.dedupe_key = vote_url  # contains sequence number
         vote.set_count("yes", yes_count)
         vote.set_count("no", no_count)
         vote.set_count("other", other_count)
@@ -448,8 +448,10 @@ class MDBillScraper(Scraper):
     def scrape_chamber(self, chamber, session):
         session_slug = session if "s" in session else session + "RS"
 
-        list_url = "http://mgaleg.maryland.gov/mgawebsite/Legislation/Index/{}?ys={}".format(
-            self.CHAMBERS[chamber], session_slug
+        list_url = (
+            "http://mgaleg.maryland.gov/mgawebsite/Legislation/Index/{}?ys={}".format(
+                self.CHAMBERS[chamber], session_slug
+            )
         )
 
         list_html = self.get(list_url).content

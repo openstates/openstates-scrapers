@@ -224,8 +224,7 @@ class CABillScraper(Scraper, LXMLMixin):
     def committee_code_to_name(
         self, code, committee_code_to_name=get_committee_code_data()
     ):
-        """Need to map committee codes to names.
-        """
+        """Need to map committee codes to names."""
         return committee_code_to_name[code]
 
     def committee_abbr_to_name(
@@ -614,7 +613,7 @@ class CABillScraper(Scraper, LXMLMixin):
                     fsvote.extras = {"threshold": vote.threshold}
 
                     fsvote.add_source(source_url)
-                    fsvote.pupa_id = source_url + "#" + str(vote_num)
+                    fsvote.dedupe_key = source_url + "#" + str(vote_num)
 
                     rc = {"yes": [], "no": [], "other": []}
                     for record in vote.votes:
@@ -698,7 +697,7 @@ class CABillScraper(Scraper, LXMLMixin):
                             bill=fsbill,
                         )
                         fsvote.add_source(vote_page_url)
-                        fsvote.pupa_id = vote_page_url + "#" + str(vote_section)
+                        fsvote.dedupe_key = vote_page_url + "#" + str(vote_section)
 
                         for how_voted, voters in votes.items():
                             for voter in voters:
