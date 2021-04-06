@@ -104,5 +104,6 @@ class HIEventScraper(Scraper, LXMLMixin):
             event.add_document(notice_name, notice_href, media_type="text/html")
             for bill in self.get_related_bills(notice_href):
                 a = event.add_agenda_item(description=bill["descr"].strip())
+                bill["bill_id"] = bill["bill_id"].split(',')[0]
                 a.add_bill(bill["bill_id"], note=bill["type"])
             yield event
