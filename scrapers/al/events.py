@@ -1,4 +1,4 @@
-import datetime
+import dateutil.parser
 import pytz
 import re
 
@@ -41,10 +41,12 @@ class ALEventScraper(Scraper, LXMLMixin):
 
             # host = row.xpath('td')[3].text_content().strip()
             name = row.xpath("td")[3].text_content().strip()
+            if name == '':
+                continue
 
             event = Event(
                 start_date=self._TZ.localize(
-                    datetime.datetime.strptime(date_with_time, self._DATETIME_FORMAT)
+                    dateutil.parser.parse(date_with_time)
                 ),
                 name=name,
                 location_name=location,

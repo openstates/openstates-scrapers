@@ -255,7 +255,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             # Vote URL is just a generic search URL with POSTed data,
             # so provide a different link
             vote.add_source(vote_pdf_url)
-            vote.pupa_id = vote_pdf_url
+            vote.dedupe_key = vote_pdf_url
             vote.set_count("yes", roll["YesVoteCount"])
             vote.set_count("no", roll["NoVoteCount"])
             vote.set_count("other", other_count)

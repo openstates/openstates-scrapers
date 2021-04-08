@@ -37,7 +37,7 @@ class VTEventScraper(Scraper):
                         info["MeetingDate"] + ", " + info["TimeSlot"],
                         "%A, %B %d, %Y, %I:%M %p",
                     )
-                except ValueError:
+                except (ValueError, TypeError):
                     start_time = datetime.datetime.strptime(
                         info["MeetingDate"] + ", " + info["StartTime"],
                         "%A, %B %d, %Y, %I:%M %p",

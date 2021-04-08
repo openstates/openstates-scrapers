@@ -348,11 +348,11 @@ class PABillScraper(Scraper):
             result="pass" if yeas > (nays + other) else "fail",
             bill=bill,
         )
-        # pupa_id situation here is a bit weird, same vote can be used for
+        # dedupe_key situation here is a bit weird, same vote can be used for
         # multiple bills see:
         # http://www.legis.state.pa.us/CFDOCS/Legis/RC/Public/rc_view_action2.cfm?sess_yr=2017&sess_ind=0&rc_body=H&rc_nbr=11       # noqa
         # so we toss the bill id onto the end of the URL
-        vote.pupa_id = url + "#" + bill.identifier
+        vote.dedupe_key = url + "#" + bill.identifier
         vote.add_source(url)
         vote.set_count("yes", yeas)
         vote.set_count("no", nays)
@@ -412,7 +412,7 @@ class PABillScraper(Scraper):
                 result="pass" if rollcall["passed"] else "fail",
                 bill=bill,
             )
-            vote.pupa_id = vote_url
+            vote.dedupe_key = vote_url
             vote.set_count("yes", rollcall["yes_count"])
             vote.set_count("no", rollcall["no_count"])
             vote.set_count("other", rollcall["other_count"])

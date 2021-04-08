@@ -2,7 +2,6 @@ import re
 import datetime
 
 from openstates.scrape import Scraper, Bill, VoteEvent
-from openstates.scrape.base import ScrapeError
 
 from utils import LXMLMixin
 
@@ -177,7 +176,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                 action_text == "Do Pass"
                 or action_text == "Tabled"
                 or action["ShowCommitteeName"]
-            ):
+            ) and (action["ActionCommittee"] is not None):
                 full_action.insert(0, f'{action["ActionCommittee"]["Name"]}')
 
             if action["ShowPassed"] or action["ShowFailed"]:
@@ -189,7 +188,7 @@ class SDBillScraper(Scraper, LXMLMixin):
 
             if "referred to" in action_text.lower():
                 atypes.append("referral-committee")
-                if 'AssignedCommittee' in full_action:
+                if "AssignedCommittee" in full_action:
                     full_action.append(action["AssignedCommittee"]["FullName"])
 
             if "Veto override" in action_text:
@@ -198,6 +197,18 @@ class SDBillScraper(Scraper, LXMLMixin):
                 else:
                     second = "failure"
                 atypes.append("%s%s" % ("veto-override-", second))
+
+            if "vetoed by the governor" in action_text.lower():
+                atypes.append("executive-veto")
+
+            if "signed by the president" in action_text.lower():
+                atypes.append("passage")
+
+            if "signed by the speaker" in action_text.lower():
+                atypes.append("passage")
+
+            if "signed by the governor" in action_text.lower():
+                atypes.append("executive-signature")
 
             match = re.match("First read in (Senate|House)", action_text)
             if match:
@@ -273,9 +284,10 @@ class SDBillScraper(Scraper, LXMLMixin):
         elif "Senate" in location:
             chamber = "upper"
         elif "Joint" in location:
-            chamber = "joint"
+            chamber = "legislature"
         else:
-            raise ScrapeError("Bad chamber: %s" % location)
+            self.warning("Bad Vote chamber: '%s', skipping" % location)
+            return
 
         motion = page["actionLog"]["StatusText"]
         if motion:
@@ -291,8 +303,9 @@ class SDBillScraper(Scraper, LXMLMixin):
                 vtype = "passage"
             elif motion == "Concurred in amendments":
                 vtype = "amendment"
-            elif motion == "Veto override":
-                vtype = "veto_override"
+            # commenting out until we add these back to OS-core
+            # elif motion == "Veto override":
+            #     vtype = "veto-override"
             else:
                 vtype = []
 
@@ -305,7 +318,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                 bill=bill,
             )
             # differentiate nearly identical votes
-            vote.pupa_id = url
+            vote.dedupe_key = url
 
             vote.add_source(url)
             vote.set_count("yes", yes_count)

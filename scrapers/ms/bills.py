@@ -42,6 +42,7 @@ class MSBillScraper(Scraper):
         ("Partially Vetoed", "executive-veto-line-item"),
         ("Title Suff Do", "committee-passage"),
         ("Read the Third Time", "reading-3"),
+        ("Law W/out Governor's Signature", "became-law"),
     )
 
     def scrape(self, chamber=None, session=None):
@@ -99,7 +100,7 @@ class MSBillScraper(Scraper):
             title = details_root.xpath("string(//SHORTTITLE)")
             longtitle = details_root.xpath("string(//LONGTITLE)")
 
-            if title == '':
+            if title == "":
                 self.warning(f"No title yet for {bill_id}, skipping")
                 return
 
@@ -320,6 +321,7 @@ class MSBillScraper(Scraper):
         "Appointment Confirmed": ("Appointment Confirmation", True),
         "Committee Substitute Adopted": ("Adopt Committee Substitute", True),
         "Committee Substitute Failed": ("Adopt Committee Substitute", False),
+        "Conference Report Filed": ("Conference Report Filed", True),
         "Conference Report Adopted": ("Adopt Conference Report", True),
         "Conference Report Failed": ("Adopt Conference Report", False),
         "Motion to Reconsider Tabled": ("Table Motion to Reconsider", True),
@@ -445,7 +447,7 @@ class MSBillScraper(Scraper):
             classification="passage",
             bill=bill,
         )
-        vote.pupa_id = url + "#" + bill.identifier
+        vote.dedupe_key = url + "#" + bill.identifier
 
         vote.set_count("yes", yes_count)
         vote.set_count("no", no_count)

@@ -127,14 +127,30 @@ class MIBillScraper(Scraper):
             journal = tds[1].text_content()
             action = tds[2].text_content()
             try:
-                date = TIMEZONE.localize(datetime.datetime.strptime(date, "%m/%d/%Y"))
+                date = TIMEZONE.localize(datetime.datetime.strptime(date, "%m/%d/%y"))
             except ValueError:
-                self.warning(
-                    "{} has action with invalid date. Skipping Action".format(bill_id)
-                )
-                continue
-            # instead of trusting upper/lower case, use journal for actor
-            actor = "upper" if "SJ" in journal else "lower"
+                try:
+                    date = TIMEZONE.localize(datetime.datetime.strptime(date, "%m/%d/%Y"))
+                except ValueError:
+                    self.warning(
+                        "{} has action with invalid date. Skipping Action".format(bill_id)
+                    )
+                    continue
+            # use journal for actor
+            # then fall back to upper/lower case
+            # Journal entries are often posted with 'Expected Soon' as the cite,
+            # then changed to the journal entry.
+            if "SJ" in journal.upper():
+                actor = "upper"
+            elif "HJ" in journal.upper():
+                actor = "lower"
+            elif action.split()[0].islower():
+                actor = "lower"
+            elif action.split()[0].isupper():
+                actor = "upper"
+            else:
+                actor = "legislature"
+
             classification = categorize_action(action)
             bill.add_action(action, date, chamber=actor, classification=classification)
 

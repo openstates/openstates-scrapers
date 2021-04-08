@@ -91,7 +91,7 @@ class MNVoteScraper(Scraper):
         vote.set_count("yes", yeas)
         vote.set_count("no", nays)
         vote.add_source(vote_url)
-        vote.pupa_id = vote_url
+        vote.dedupe_key = vote_url
 
         # first table has YEAs
         for name in doc.xpath("//table[1]//font/text()"):

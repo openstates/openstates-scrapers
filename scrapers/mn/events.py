@@ -104,7 +104,7 @@ class MNEventScraper(Scraper, LXMLMixin):
                 if doc_url.endswith('.msg'):
                     continue
                 media_type = get_media_type(doc_url)
-                event.add_document(doc_name, doc_url, media_type=media_type)
+                event.add_document(doc_name, doc_url, media_type=media_type, on_duplicate='ignore')
 
             for committee in row.xpath(
                 'div[contains(@class,"card-header")]/h3/a[contains(@class,"text-white")]/b/text()'
@@ -160,6 +160,9 @@ class MNEventScraper(Scraper, LXMLMixin):
 
             if "agenda" in row:
                 for agenda_row in row["agenda"]:
+                    if agenda_row["description"] is None or agenda_row["description"].strip() == '':
+                        # sometimes they have blank agendas but bills or files
+                        agenda_row["description"] = "Agenda"
                     agenda = event.add_agenda_item(agenda_row["description"])
                     if "bill_type" in agenda_row:
                         agenda.add_bill(
@@ -183,6 +186,7 @@ class MNEventScraper(Scraper, LXMLMixin):
                                 doc_name,
                                 f"https://www.senate.mn/{doc_url}",
                                 media_type="text/html",
+                                on_duplicate='ignore'
                             )
 
             if "video_link" in row:

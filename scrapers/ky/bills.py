@@ -53,6 +53,7 @@ class KYBillScraper(Scraper, LXMLMixin):
             r"floor amendments?( \([a-z\d\-]+\))*" r"( and \([a-z\d\-]+\))? filed",
             "amendment-introduction",
         ),
+        ("enrolled, signed by", "passage"),
     ]
 
     def classify_action(self, action):

@@ -10,6 +10,8 @@ import lxml.html
 import pytz
 import re
 
+BAD_BILLS = [("134", "SB 92")]
+
 
 class OHBillScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
@@ -157,7 +159,10 @@ class OHBillScraper(Scraper):
                 chamber = "lower" if "H" in bill_id else "upper"
                 classification = "bill" if "B" in bill_id else "resolution"
 
-                if not title:
+                if not title and session == "134" and bill_id == "HR 35":
+                    # Exception for HR 35 which is a real bill
+                    title = "No title provided"
+                elif not title:
                     self.warning(f"no title for {bill_id}, skipping")
                     continue
                 bill = Bill(
@@ -168,6 +173,13 @@ class OHBillScraper(Scraper):
                     classification=classification,
                 )
                 bill.add_source(number_link.xpath("a/@href")[0])
+
+                if (session, bill_id) in BAD_BILLS:
+                    self.logger.warning(
+                        f"Skipping details for known bad bill {bill_id}"
+                    )
+                    yield bill
+                    continue
 
                 # get bill from API
                 bill_api_url = (
@@ -552,7 +564,9 @@ class OHBillScraper(Scraper):
                     bill=bill,
                 )
             # Concatenate the bill identifier and vote identifier to avoid collisions
-            vote.pupa_id = "{}:{}".format(bill.identifier.replace(" ", ""), v["revno"])
+            vote.dedupe_key = "{}:{}".format(
+                bill.identifier.replace(" ", ""), v["revno"]
+            )
             # the yea and nay counts are not displayed, but vote totals are
             # and passage status is.
             yes_count = 0

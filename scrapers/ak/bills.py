@@ -78,6 +78,7 @@ class AKBillScraper(Scraper):
             "R": "resolution",
             "JR": "joint resolution",
             "CR": "concurrent resolution",
+            "SCR": "concurrent resolution",
         }
 
         bill_list_url = f"https://www.akleg.gov/basis/Bill/Range/{session}"
@@ -156,10 +157,10 @@ class AKBillScraper(Scraper):
         # Get sponsors
         spons_str = (
             doc.xpath('//span[contains(text(), "Sponsor(S)")]')[0].getparent()[1].text
-        )
+        ).strip()
         # Checks if there is a Sponsor string before matching
         if spons_str:
-            sponsors_match = re.match(r"(SENATOR|REPRESENTATIVE)", spons_str)
+            sponsors_match = re.match(r"(SENATOR|REPRESENTATIVE)S?", spons_str)
             if sponsors_match:
                 sponsors = spons_str.split(",")
                 sponsor = sponsors[0].strip()
@@ -174,6 +175,10 @@ class AKBillScraper(Scraper):
 
                 for sponsor in sponsors[1:]:
                     sponsor = sponsor.strip()
+                    # occasional AK site error prints some code here
+                    if "Model.Sponsors." in sponsor:
+                        continue
+
                     if sponsor:
                         bill.add_sponsorship(
                             sponsor,
@@ -396,7 +401,7 @@ class AKBillScraper(Scraper):
         #     vote.set_count('other', other)
         #     print("Yes votes:", yes, "No votes", no, "Other", other)
 
-        #     vote.pupa_id = (url + ' ' + str(iVoteOnPage)) if iVoteOnPage > 1 else url
+        #     vote.dedupe_key = (url + ' ' + str(iVoteOnPage)) if iVoteOnPage > 1 else url
 
         #     # In lengthy documents, the "header" can be repeated in the middle
         #     # of content. This regex gets rid of it.
@@ -510,5 +515,7 @@ class AKBillScraper(Scraper):
             action = action.replace("REFERRED TO", "Referred to")
         if "Prefile released" in action:
             atype.append("filing")
+        if "Approved by the Governor" in action:
+            atype.append("executive-signature")
 
         return action, atype

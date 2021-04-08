@@ -5,20 +5,20 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from .utils import get_short_codes
 from urllib import parse as urlparse
 
-HI_URL_BASE = "http://capitol.hawaii.gov"
+HI_URL_BASE = "https://www.capitol.hawaii.gov"
 SHORT_CODES = "%s/committees/committees.aspx?chamber=all" % (HI_URL_BASE)
 
 
 def create_bill_report_url(chamber, year, bill_type):
     cname = {"upper": "s", "lower": "h"}[chamber]
     bill_slug = {
-        "bill": "intro%sb" % (cname),
-        "cr": "%sCR" % (cname.upper()),
-        "r": "%sR" % (cname.upper()),
-        "gm": "GM",
+        "bill": "%sb" % (cname),
+        "cr": "%scr" % (cname.upper()),
+        "r": "%sr" % (cname.upper()),
+        "gm": "gm",
     }
 
-    return HI_URL_BASE + "/report.aspx?type=" + bill_slug[bill_type] + "&year=" + year
+    return HI_URL_BASE + "/advreports/advreport.aspx?report=deadline&rpt_type=&measuretype=" + bill_slug[bill_type] + "&year=" + year
 
 
 def categorize_action(action):
@@ -39,7 +39,7 @@ def categorize_action(action):
         (".*Passed Third Reading", "passage"),
         ("Report and Resolution Adopted", "passage"),
         ("Enrolled to Governor", "executive-receipt"),
-        ("Act ", "executive-signature"),
+        (" Act ", "became-law"),
         # Note, occasionally the gov sends intent to veto then doesn't. So use Vetoed not Veto
         ("Vetoed .* line-item", "executive-veto-line-item"),
         ("Vetoed", "executive-veto"),
@@ -357,7 +357,7 @@ class HIBillScraper(Scraper):
         list_html = self.get(report_page_url).text
         list_page = lxml.html.fromstring(list_html)
         for bill_url in list_page.xpath("//a[@class='report']"):
-            bill_url = HI_URL_BASE + bill_url.attrib["href"]
+            bill_url = bill_url.attrib["href"]
             yield from self.scrape_bill(session, chamber, billtype_map, bill_url)
 
     def scrape(self, chamber=None, session=None):

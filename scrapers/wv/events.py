@@ -122,9 +122,15 @@ class WVEventScraper(Scraper, LXMLMixin):
     def clean_date(self, when):
         # Feb is a tough one, isn't it?
         # After feburary, februarary, febuary, just give up and regex it
-        when = re.sub(r'feb(.*)y', 'February', when, flags=re.IGNORECASE)
+        when = re.sub(r'feb(.*?)y', 'February', when, flags=re.IGNORECASE)
+        when = re.sub(r'Immediately(.*)', '', when, flags=re.IGNORECASE)
+        when = re.sub(r'Time Announced(.*)', '', when, flags=re.IGNORECASE)
+        when = re.sub(r'\d+ minutes following the evening floor session(.*)', '', when, flags=re.IGNORECASE)
+        when = re.sub(r'ONE HOUR BEFORE SENATE FLOOR SESSION(.*)', '', when, flags=re.IGNORECASE)
         when = when.replace('22021', '2021')
         when = when.replace('20201', '2021')
         when = when.replace('20202', '2020')
         when = re.sub(r',\s+\d+ mins following (.*)', '', when)
+        # Convert 1:300PM -> 1:30PM
+        when = re.sub(r"(\d0)0([ap])", r"\1\2",when, flags=re.IGNORECASE)
         return when

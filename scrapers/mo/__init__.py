@@ -1,3 +1,5 @@
+import http
+import email
 from utils import url_xpath, State
 from .bills import MOBillScraper
 from .events import MOEventScraper
@@ -103,7 +105,31 @@ class Missouri(State):
     ]
 
     def get_session_list(self):
+        http.client.parse_headers = parse_headers_override
         return url_xpath(
             "https://www.house.mo.gov/billcentral.aspx?year=2019&code=S1&q=&id=",
             '//select[@id="SearchSession"]/option/text()',
         )
+
+
+def parse_headers_override(fp, _class=http.client.HTTPMessage):
+    _MAXLINE = 2000
+    _MAXHEADERS = 2000
+    # based on Python's implementation but built to ignore bad headers
+    headers = []
+    while True:
+        line = fp.readline(_MAXLINE + 1)
+        if len(line) > _MAXLINE:
+            raise ValueError("header line")
+
+        # there is a bad header named default-src that has no colon, just skip it
+        if line.startswith(b"default-src"):
+            continue
+
+        headers.append(line)
+        if len(headers) > _MAXHEADERS:
+            raise ValueError("got more than %d headers" % _MAXHEADERS)
+        if line in (b"\r\n", b"\n", b""):
+            break
+    hstring = b"".join(headers).decode("iso-8859-1")
+    return email.parser.Parser(_class=_class).parsestr(hstring)

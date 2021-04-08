@@ -412,7 +412,7 @@ class TXVoteScraper(Scraper):
             # no good identifier on votes, so we'll try this.
             # vote pages in journal shouldn't change so ordering should be OK
             # but might cause an issue if they do change a journal page
-            vote.pupa_id = "{}#{}".format(url, vn)
+            vote.dedupe_key = "{}#{}".format(url, vn)
             yield vote
 
     def get_session_year(self, session):

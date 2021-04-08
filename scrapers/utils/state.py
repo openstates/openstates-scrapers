@@ -26,7 +26,7 @@ class MetaShim(type):
     def __new__(cls, name, bases, dct):
         c = super().__new__(cls, name, bases, dct)
         if name != "State":
-            c.classification = "state"
+            c.classification = "state" if name != "UnitedStates" else "country"
             # while we're here, load the metadata (formerly on a cached property)
             name = _name_fixes.get(name, name)
             c.metadata = lookup(name=name)

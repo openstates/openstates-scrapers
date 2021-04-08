@@ -46,8 +46,7 @@ class USBillScraper(Scraper):
     # to scrape everything UPDATED after a given date/time, start="2020-01-01 22:01:01"
     def scrape(self, chamber=None, session=None, start=None):
         if not session:
-            # session = self.latest_session()
-            session = "116"
+            session = self.latest_session()
             self.info("no session specified, using %s", session)
 
         if start:
@@ -312,6 +311,8 @@ class USBillScraper(Scraper):
                         )
                         self.info(amdt_name)
                         amdt_url = row.xpath("td[3]/a/@href")[0].strip()
+                        if not amdt_url.startswith("http"):
+                            continue
                         bill.add_document_link(
                             note=amdt_name,
                             url=amdt_url,

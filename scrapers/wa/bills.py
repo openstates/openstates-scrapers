@@ -70,7 +70,7 @@ class WABillScraper(Scraper, LXMLMixin):
         }
         chamber = {"lower": "House", "upper": "Senate"}[chamber]
 
-        for bill_type in bill_types.keys():
+        for bill_type in bill_types:
             try:
                 doc = self.lxmlize(base_url + chamber + " " + bill_type)
             except scrapelib.HTTPError:

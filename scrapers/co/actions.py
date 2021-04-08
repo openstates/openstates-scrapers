@@ -69,6 +69,7 @@ rules = (
     Rule("Third Reading Passed", ["reading-3", "passage"]),
     Rule("to Senate Committee of the Whole", "committee-passage", actor="upper"),
     Rule("to House Committee of the Whole", "committee-passage", actor="lower"),
+    Rule("Governor Vetoed", "executive-veto", actor="executive"),
 )
 
 committees_rgx = "(%s)" % "|".join(sorted(committees, key=len, reverse=True))
