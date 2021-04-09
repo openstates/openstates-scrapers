@@ -113,7 +113,8 @@ class BillList(HtmlListPage):
         sponsor = re.sub(r",\s+(Jr|Sr)\.", r" \1.", sponsor)
         for sp in sponsor.split(", "):
             sp = sp.strip()
-            bill.add_sponsorship(sp, "primary", "person", True)
+            sp_type = "organization" if "committee" in sp.lower() else "person"
+            bill.add_sponsorship(sp, "primary", sp_type, True)
 
         return BillDetail(bill)
 
