@@ -52,7 +52,19 @@ class HIEventScraper(Scraper, LXMLMixin):
             tds = event.xpath("./td")
             committee = tds[0].text_content().strip()
 
-            if self.short_ids.get(committee):
+
+            if "/" in committee:
+                coms = committee.split("/")
+                print(coms)
+                com_names = []
+                for com in coms:
+                    com_names.append("{} {}".format(
+                        self.chambers[self.short_ids[com]["chamber"]],
+                        self.short_ids[com]["name"],
+                    ))
+                descr =  ", ".join(com_names)
+                print(descr)
+            elif self.short_ids.get(committee):
                 descr = "{} {}".format(
                     self.chambers[self.short_ids[committee]["chamber"]],
                     self.short_ids[committee]["name"],
