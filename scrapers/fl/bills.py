@@ -57,6 +57,7 @@ class BillList(HtmlListPage):
     dependencies = {"subjects": SubjectPDF}
 
     def get_source_from_input(self):
+        # to test scrape an individual bill, add &billNumber=1351
         return (
             f"https://flsenate.gov/Session/Bills/{self.input['session']}?chamber=both"
         )
@@ -109,6 +110,7 @@ class BillList(HtmlListPage):
         bill.subject = list(self.subjects[subj_bill_id])
 
         sponsor = re.sub(r"^(?:Rep|Sen)\.\s", "", sponsor)
+        sponsor = re.sub(r",\s+(Jr|Sr)\.", r" \1.", sponsor)
         for sp in sponsor.split(", "):
             sp = sp.strip()
             bill.add_sponsorship(sp, "primary", "person", True)
