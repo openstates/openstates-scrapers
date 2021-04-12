@@ -24,12 +24,19 @@ class WYEventScraper(Scraper):
             for row in page:
                 if row["meetingKind"] == 2:
                     com = f"{row['meetingType']} {row['committee']['fullName']}"
+                    # skip state holidays or other non-committee hearings
+                    if com.strip() == "":
+                        continue
+
                     start = parser.parse(row["startDate"])
                     start = self._tz.localize(start)
                     end = parser.parse(row["endTime"])
                     end = self._tz.localize(end)
 
                     where = row["address1"]
+
+                    if where == "":
+                        where = "TBD"
 
                     desc = row["purpose"]
 
