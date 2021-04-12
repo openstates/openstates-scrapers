@@ -368,7 +368,7 @@ et-xmlfile = "*"
 
 [[package]]
 name = "openstates"
-version = "5.9.2"
+version = "5.9.3"
 description = "core infrastructure for the openstates project"
 category = "main"
 optional = false
@@ -871,7 +871,7 @@ california = ["mysqlclient", "SQLAlchemy"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "45485855b63ab1dc6fe7b668e2ee4c085cf3c05c362f32b571b9ed9e71729df8"
+content-hash = "15968fdacd2cec3667c0eedfe1ac17c4817c15d8d9e13580c8dab5b5410c0e3a"
 
 [metadata.files]
 alabaster = [
@@ -1178,8 +1178,8 @@ openpyxl = [
     {file = "openpyxl-3.0.7.tar.gz", hash = "sha256:6456a3b472e1ef0facb1129f3c6ef00713cebf62e736cd7a75bcc3247432f251"},
 ]
 openstates = [
-    {file = "openstates-5.9.2-py3-none-any.whl", hash = "sha256:7918daa030b5947bc5f6142360d2e91ec3fb839db7226d3db23de3b8498f04c5"},
-    {file = "openstates-5.9.2.tar.gz", hash = "sha256:2374274cfeb48f1d85183e2fb99f75e9540dfcb43364fd2fd4948b856aa7fec7"},
+    {file = "openstates-5.9.3-py3-none-any.whl", hash = "sha256:0c6c71d6468984f9941400994d5ff22307ffd655e55e67ef4c303617c867d866"},
+    {file = "openstates-5.9.3.tar.gz", hash = "sha256:45102f3ab8e89bd124ac2159916692c88bfadff8a57b5420fb27d2d297207811"},
 ]
 packaging = [
     {file = "packaging-20.9-py2.py3-none-any.whl", hash = "sha256:67714da7f7bc052e064859c05c595155bd1ee9f69f76557e21f051443c20947a"},
