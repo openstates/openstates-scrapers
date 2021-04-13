@@ -165,4 +165,4 @@ class Illinois(State):
     ]
 
     def get_session_list(self):
-        return url_xpath("http://ilga.gov/PreviousGA.asp", "//option/text()")
+        return url_xpath("https://ilga.gov/PreviousGA.asp", "//option/text()")
