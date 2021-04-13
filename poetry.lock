@@ -552,7 +552,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7)", "win-inet-pton"]
 
 [[package]]
 name = "scrapelib"
-version = "2.0.2"
+version = "2.0.3"
 description = ""
 category = "main"
 optional = false
@@ -1305,8 +1305,8 @@ requests = [
     {file = "requests-2.25.1.tar.gz", hash = "sha256:27973dd4a904a4f13b263a19c866c13b92a39ed1c964655f025f3f8d3d75b804"},
 ]
 scrapelib = [
-    {file = "scrapelib-2.0.2-py3-none-any.whl", hash = "sha256:f80e0f29348e946627b1369227d81477e9db91d2ff780b227b3d2e34eb51767e"},
-    {file = "scrapelib-2.0.2.tar.gz", hash = "sha256:364ad2ff10542b34e3e7352f911494f57ddeca5654d9c03deb4cb9ceacb1fd94"},
+    {file = "scrapelib-2.0.3-py3-none-any.whl", hash = "sha256:afe8551ea4de9a98fbf734578aa9f715649b0806dc6cf7119c4783be727e1450"},
+    {file = "scrapelib-2.0.3.tar.gz", hash = "sha256:e61e5293053133b84c80a6910f3a59e7caf4dbdb2a41b9a846b2212ae28f57f0"},
 ]
 six = [
     {file = "six-1.15.0-py2.py3-none-any.whl", hash = "sha256:8b74bedcbbbaca38ff6d7491d76f2b06b3592611af620f8426e82dddb04a5ced"},
