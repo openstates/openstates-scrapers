@@ -4,8 +4,8 @@ from utils import validate_phone_number
 
 
 CHAMBER_URLS = {
-    "upper": "http://ilga.gov/senate/default.asp?GA={term}",
-    "lower": "http://ilga.gov/house/default.asp?GA={term}",
+    "upper": "https://ilga.gov/senate/default.asp?GA={term}",
+    "lower": "https://ilga.gov/house/default.asp?GA={term}",
 }
 
 CHAMBER_ROLES = {"upper": "Senator", "lower": "Representative"}
