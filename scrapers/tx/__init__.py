@@ -3,7 +3,7 @@ from .bills import TXBillScraper
 from .events import TXEventScraper
 from .people import TXPersonScraper
 
-# from .votes import TXVoteScraper
+from .votes import TXVoteScraper
 
 # from .committees import TXCommitteeScraper
 
@@ -14,7 +14,7 @@ class Texas(State):
         # 'committees': TXCommitteeScraper,
         "bills": TXBillScraper,
         # Re-enable vote scraper when adding next regular session
-        # "votes": TXVoteScraper,
+        "votes": TXVoteScraper,
         "events": TXEventScraper,
     }
     legislative_sessions = [
