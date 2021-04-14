@@ -7,8 +7,8 @@ from openstates.scrape import Scraper, Event
 import pytz
 
 urls = {
-    "upper": "http://www.ilga.gov/senate/schedules/weeklyhearings.asp",
-    "lower": "http://www.ilga.gov/house/schedules/weeklyhearings.asp",
+    "upper": "https://www.ilga.gov/senate/schedules/weeklyhearings.asp",
+    "lower": "https://www.ilga.gov/house/schedules/weeklyhearings.asp",
 }
 
 

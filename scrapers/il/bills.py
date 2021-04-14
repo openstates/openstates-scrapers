@@ -227,7 +227,7 @@ COMMITTEE_CORRECTIONS = {
 }
 
 DUPE_VOTES = {
-    "http://ilga.gov/legislation/votehistory/100/house/committeevotes/"
+    "https://ilga.gov/legislation/votehistory/100/house/committeevotes/"
     "10000HB2457_16401.pdf"
 }
 
@@ -267,7 +267,7 @@ def chamber_slug(chamber):
 
 
 class IlBillScraper(Scraper):
-    LEGISLATION_URL = "http://ilga.gov/legislation/grplist.asp"
+    LEGISLATION_URL = "https://ilga.gov/legislation/grplist.asp"
     localize = pytz.timezone("America/Chicago").localize
 
     def get_bill_urls(self, chamber, session, doc_type):
@@ -322,7 +322,7 @@ class IlBillScraper(Scraper):
 
     def scrape_archive_bills(self, session):
         session_abr = session[0:2]
-        url = f"http://www.ilga.gov/legislation/legisnet{session_abr}/{session_abr}gatoc.html"
+        url = f"https://www.ilga.gov/legislation/legisnet{session_abr}/{session_abr}gatoc.html"
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
@@ -569,7 +569,7 @@ class IlBillScraper(Scraper):
         pdf_only = False
 
         # Some bills don't have html versions, even though they link to them
-        # http://ilga.gov/legislation/fulltext.asp?DocName=&
+        # https://ilga.gov/legislation/fulltext.asp?DocName=&
         # SessionId=108&GA=101&DocTypeId=HB&DocNum=66&GAID=15&LegID=113888&SpecSess=&Session=
         # These bills only show one PDF link at a time, so we're safe in the loop below
         if "HTML full text does not exist for this appropriations document" in html:
