@@ -9,6 +9,7 @@ from openstates.scrape import Scraper, VoteEvent
 
 
 SITE_IDS = {
+    "2021-2022": "89",
     "2019-2020": "88",
     "2017-2018": "87",
     "2015-2016": "86",
