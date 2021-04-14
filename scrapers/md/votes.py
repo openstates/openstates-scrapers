@@ -54,6 +54,11 @@ class MDVoteScraper(Scraper, LXMLMixin):
 
         for line in lines:
             if section == "preamble":
+                if "Vetoed" in line:
+                    self.warning(
+                        f"skipping vote that appears to be on prior session: {line}, {bill_id}"
+                    )
+                    continue
                 possible_bill_id = re.findall(r"([HS][BJR] \d+)", line)
                 if possible_bill_id:
                     bill_id = possible_bill_id[0]
