@@ -19,6 +19,13 @@ VOTES_URLS = {
     "2017s1": "http://www.house.leg.state.mn.us/votes/getVotesls9020171.asp",
     "2019-2020": "https://www.house.leg.state.mn.us/votes/getVotesls91.asp",
     "2020s1": "https://www.house.leg.state.mn.us/votes/getVotesls9120201.asp",
+    "2020s2": "https://www.house.leg.state.mn.us/votes/getVotesls9120202.asp",
+    "2020s3": "https://www.house.leg.state.mn.us/votes/getVotesls9120203.asp",
+    "2020s4": "https://www.house.leg.state.mn.us/votes/getVotesls9120204.asp",
+    "2020s5": "https://www.house.leg.state.mn.us/votes/getVotesls9120205.asp",
+    "2020s6": "https://www.house.leg.state.mn.us/votes/getVotesls9120206.asp",
+    "2020s7": "https://www.house.leg.state.mn.us/votes/getVotesls9120207.asp",
+    "2021-2022": "https://www.house.leg.state.mn.us/votes/getVotesls92.asp",
 }
 
 
