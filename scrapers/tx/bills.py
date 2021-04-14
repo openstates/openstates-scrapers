@@ -36,7 +36,6 @@ _action_re = (
     ("^Effective immediately$", "became-law"),
     ("^Filed without the Governor's signature$", "became-law"),
 )
-()
 
 
 def _categorize_action(action):
