@@ -140,10 +140,12 @@ class CTBillScraper(Scraper):
                 link.text.strip(), link.attrib["href"], media_type="application/pdf"
             )
 
-        for link in page.xpath("//a[contains(@href, 'VOTE')]"):
+        for link in page.xpath(
+            "//a[(contains(@href, '/pdf/') or contains(@href, '/PDF/')) and contains(@href, '/VOTE/')]"
+        ):
             # 2011 HJ 31 has a blank vote, others might too
-            if link.attrib["href"].endswith(".htm") and link.text:
-                pdf_link = link.getprevious()
+            if link.attrib["href"].endswith(".PDF") and link.text:
+                pdf_link = link
                 if pdf_link:
                     yield from self.scrape_vote(
                         bill, pdf_link.text.strip(), link.attrib["href"]
