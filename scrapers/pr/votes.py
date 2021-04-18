@@ -52,8 +52,8 @@ class PRVoteScraper(Scraper):
             yield self.scrape_journal(url, chamber, session, date)
 
     def scrape_journal(self, url, chamber, session, date):
-        filename, response = self.urlretrieve(url)
-        self.logger.info("Saved journal to %r" % filename)
+        filename = self.urlretrieve(url)[0]
+        self.logger.info("Saved journal to %r", filename)
         all_text = convert_pdf(filename, type="text")
 
         lines = all_text.split(b"\n")
@@ -142,7 +142,7 @@ class PRVoteScraper(Scraper):
             while lines[vote_index].strip() and not re.match(
                 r"Senado de", lines[vote_index]
             ):
-                name, vtype = self.parse_vote(lines[vote_index])
+                name, vtype = parse_vote(lines[vote_index])
                 votes[vtype] += 1
                 vote.vote(vtype, name)
                 vote_index = vote_index + 1
@@ -164,11 +164,10 @@ class PRVoteScraper(Scraper):
         self.logger.warning(msg)
         return None
 
-    def parse_vote(self, line):
-        result = re.match(
-            r"^(?P<re_name>.*),(.*)    (?P<re_vote>.*)$", line
-        ).groupdict()
-        for pattern, vtype in _vote_classifiers:
-            if re.match(pattern, result["re_vote"]):
-                vote = vtype
-        return result["re_name"], vote
+
+def parse_vote(line):
+    result = re.match(r"^(?P<re_name>.*),(.*)    (?P<re_vote>.*)$", line).groupdict()
+    for pattern, vtype in _vote_classifiers:
+        if re.match(pattern, result["re_vote"]):
+            vote = vtype
+    return result["re_name"], vote
