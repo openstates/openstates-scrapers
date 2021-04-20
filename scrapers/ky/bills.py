@@ -47,6 +47,7 @@ class KYBillScraper(Scraper, LXMLMixin):
         (r"bill passed", "passage"),
         ("line items vetoed", "executive-veto-line-item"),
         ("delivered to secretary of state", "became-law"),
+        ("became law without", "became-law"),
         ("veto overridden", "veto-override-passage"),
         ("adopted by voice vote", "passage"),
         (
