@@ -26,16 +26,20 @@ _vote_classifiers = (
 
 class PRVoteScraper(Scraper):
     def scrape(self, chamber=None, session=None):
+        if not session:
+            session = self.latest_session()
 
-        session = self.latest_session()  # Only data 2021 and after is available for PR
+        # only senate votes currently scraped
+        if chamber and chamber != "upper":
+            return
+        if session != self.latest_session():
+            return
 
-        chamber = "upper"  # Only Senate data currently available for PR
+        yield from self.scrape_upper(session)
 
-        if chamber:
-            yield from self.scrape_chamber(chamber, session)
-
-    def scrape_chamber(self, chamber, session):
+    def scrape_upper(self, session):
         url = "https://www.senado.pr.gov/Pages/VotacionMedidas.aspx"
+        chamber = "upper"
         html = self.get(url).content
 
         doc = lxml.html.fromstring(html)
