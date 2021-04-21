@@ -147,7 +147,7 @@ class AZBillScraper(Scraper):
             if page[action] and utils.action_map[action]["name"] != "":
                 # sometimes intead of a date they placeholder with True
                 # see 2021 SB1308
-                if page[action] == True:
+                if page[action] is True:
                     continue
                 try:
                     # Remove miliseconds from date if present
