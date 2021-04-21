@@ -1,6 +1,7 @@
 from utils import State
 from .people import PRPersonScraper
 from .bills import PRBillScraper
+from .votes import PRVoteScraper
 
 # from .committees import PRCommitteeScraper
 
@@ -12,6 +13,7 @@ class PuertoRico(State):
         "people": PRPersonScraper,
         # 'committees': PRCommitteeScraper,
         "bills": PRBillScraper,
+        "votes": PRVoteScraper,
     }
     legislative_sessions = [
         {
