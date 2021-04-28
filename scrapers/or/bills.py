@@ -33,7 +33,7 @@ class ORBillScraper(Scraper):
         (".*Recommendation: Do pass.*", ["committee-passage-favorable"]),
         (".*Governor signed.*", ["executive-signature"]),
         (".*Third reading.* Passed", ["passage", "reading-3"]),
-        (".*Third reading.* Failed", ["failure", "reading-3"]),
+        (".*Third reading.* Failed", ["reading-3"]),
         (".*President signed.*", ["passage"]),
         (".*Speaker signed.*", ["passage"]),
         (".*Final reading.* Adopted", ["passage"]),
