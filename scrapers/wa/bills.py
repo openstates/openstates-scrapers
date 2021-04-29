@@ -322,7 +322,7 @@ class WABillScraper(Scraper, LXMLMixin):
             pass
 
         self.scrape_sponsors(bill)
-        self.scrape_actions(bill, bill_num, chamber, fake_source)
+        self.scrape_actions(bill, chamber, fake_source)
         self.scrape_hearings(bill, bill_num)
         yield from self.scrape_votes(bill)
         bill.subject = list(set(self._subjects[bill_id]))
@@ -392,105 +392,63 @@ class WABillScraper(Scraper, LXMLMixin):
             )
             bill.add_action(action_name, action_date, chamber=action_actor)
 
+    def scrape_actions(self, bill, chamber, bill_url):
+        # we previously used the API endpoint at 
+        # http://wslwebservices.leg.wa.gov/legislationservice.asmx/GetLegislativeStatusChangesByBillNumber
+        # for this, but it does not provide the actor chamber. 
 
-    def scrape_action_chambers(self, bill_url, bill_chamber):
-        chamber_phrases = [
-            (r'House', 'lower'),
-            (r'Senate', 'upper'),
-            (r'Other than Legislative', 'executive')
-        ]
         page = lxml.html.fromstring(self.get(bill_url).content)
         headers = page.xpath("//p[contains(@style, 'font-weight: bold; margin-top: 0.6em; margin-bottom: 0.6em;')]")
-        print("action paras")
-        print(headers)
+
         # first actions table is from chamber of origin
-        actor = bill_chamber
+        actor = chamber
+
+        action_year = 0
+
         for header in headers:
-            if 'house' in header.text_content().lower():
+            header_text = header.text_content().lower()
+
+            if 'house' in header_text:
                 actor = 'lower'
-            elif 'senate' in header.text_content().lower():
+            elif 'senate' in header_text:
                 actor = 'upper'
-            elif 'other than legislative' in header.text_content().lower():
+            elif 'other than legislative' in header_text:
                 actor = 'executive'
 
-            rows = header.xpath('following-sibling::div/div')
+            # action years are in a header YYYY Regular|Special session
+            # for a bill with actions that span years, see
+            # see https://apps.leg.wa.gov/billsummary?BillNumber=5315&Initiative=false&Year=2019
+            if re.match(r'\d{4}', header_text):
+                action_year = re.search(r'\d{4}', header_text).group()
+
+            rows = header.xpath('following-sibling::div[1]/div')
             for row in rows:
                 if row.xpath('div[1]')[0].text_content().strip() != "":
                     action_day = row.xpath('div[1]')[0].text_content().strip()
-                action_text = row.xpath('div[2]')[0].text_content().strip()
-                print(actor, action_day, action_text)
-        # $x('//p[@style="font-weight: bold; margin-top: 0.6em; margin-bottom: 0.6em;"]/following-sibling::div');
+                # skip later lines that are just links to files
+                action_text = row.xpath('div[2]')[0].text_content().strip().split('\r\n')[0].strip()
 
+                action_date = self._TZ.localize(
+                    datetime.datetime.strptime(f"{action_day} {action_year}", '%b %d %Y')
+                )
 
-    def scrape_actions(self, bill, bill_num, chamber, fake_source):
-        session = bill.legislative_session
-        # chamber = bill['chamber']
+                temp = self.categorizer.categorize(action_text)
+                classification = temp["classification"]
+                try:
+                    committees = temp["committees"]
+                except KeyError:
+                    committees = []
+                related_entities = []
+                for committee in committees:
+                    related_entities.append({"type": "committee", "name": committee})
 
-        # GetLegislativeStatusChangesByBillNumber gives full results,
-        # unlike GetLegislativeStatusChangesByBillId
-        # http://wslwebservices.leg.wa.gov/legislationservice.asmx/GetLegislativeStatusChangesByBillNumber?
-        # biennium=2015-16&billNumber=1002&beginDate=2014-01-01&endDate=2018-12-31&chamber=senate
-        # biennium=2019-20&billNumber=5121&beginDate=2019-01-01&endDate=2019-12-31&chamber=house
-
-        # Set the start date back a year to catch prefile / intro actions
-        start_date = datetime.date(int(session[0:4]) - 1, 1, 1)
-        end_date = datetime.date(int(session[0:4]) + 1, 12, 31)
-
-        self.scrape_action_chambers(fake_source, chamber)
-
-        url = (
-            "http://wslwebservices.leg.wa.gov/legislationservice.asmx/"
-            "GetLegislativeStatusChangesByBillNumber?biennium={}&billNumber={}"
-            "&beginDate={}&endDate={}".format(
-                self.biennium, bill_num, start_date, end_date
-            )
-        )
-        try:
-            page = self.get(url)
-        except scrapelib.HTTPError as e:
-            self.warning(e)
-            return
-
-        page = lxml.etree.fromstring(page.content)
-
-        for action in xpath(page, "//wa:LegislativeStatus"):
-            action_name = xpath(action, "string(wa:HistoryLine)")
-
-            action_date = xpath(action, "string(wa:ActionDate)")
-            action_date = datetime.datetime.strptime(
-                action_date, "%Y-%m-%dT%H:%M:%S"
-            ).strftime("%Y-%m-%d")
-
-            bill_id = xpath(action, "string(wa:BillId)")
-
-            if "S" in bill_id:
-                if (
-                    "Governor" in bill_id
-                    or "Laws" in bill_id
-                    or "Effective date" in bill_id
-                ):
-                    actor = "executive"
-                else:
-                    actor = "upper"
-            elif "H" in bill_id:
-                actor = "lower"
-            temp = self.categorizer.categorize(action_name)
-            classification = temp["classification"]
-            try:
-                committees = temp["committees"]
-            except KeyError:
-                committees = []
-            related_entities = []
-            for committee in committees:
-                related_entities.append({"type": "committee", "name": committee})
-
-            bill.add_action(
-                description=action_name,
-                date=action_date,
-                chamber=actor,
-                classification=classification,
-                related_entities=related_entities,
-            )
+                bill.add_action(
+                    description=action_text,
+                    date=action_date,
+                    chamber=actor,
+                    classification=classification,
+                    related_entities=related_entities,
+                )
 
     def scrape_votes(self, bill):
         bill_num = bill.identifier.split()[1]
