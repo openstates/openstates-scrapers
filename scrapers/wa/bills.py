@@ -228,7 +228,7 @@ class WABillScraper(Scraper, LXMLMixin):
         # first go through API response and get bill list
         max_year = year if int(datetime.date.today().year) < year + 1 else year + 1
         for y in (year, max_year):
-            self.build_subject_mapping(y)
+            # self.build_subject_mapping(y)
             url = "%s/GetLegislationByYear?year=%s" % (self._base_url, y)
 
             try:
@@ -322,7 +322,7 @@ class WABillScraper(Scraper, LXMLMixin):
             pass
 
         self.scrape_sponsors(bill)
-        self.scrape_actions(bill, bill_num)
+        self.scrape_actions(bill, bill_num, chamber, fake_source)
         self.scrape_hearings(bill, bill_num)
         yield from self.scrape_votes(bill)
         bill.subject = list(set(self._subjects[bill_id]))
@@ -392,7 +392,37 @@ class WABillScraper(Scraper, LXMLMixin):
             )
             bill.add_action(action_name, action_date, chamber=action_actor)
 
-    def scrape_actions(self, bill, bill_num):
+
+    def scrape_action_chambers(self, bill_url, bill_chamber):
+        chamber_phrases = [
+            (r'House', 'lower'),
+            (r'Senate', 'upper'),
+            (r'Other than Legislative', 'executive')
+        ]
+        page = lxml.html.fromstring(self.get(bill_url).content)
+        headers = page.xpath("//p[contains(@style, 'font-weight: bold; margin-top: 0.6em; margin-bottom: 0.6em;')]")
+        print("action paras")
+        print(headers)
+        # first actions table is from chamber of origin
+        actor = bill_chamber
+        for header in headers:
+            if 'house' in header.text_content().lower():
+                actor = 'lower'
+            elif 'senate' in header.text_content().lower():
+                actor = 'upper'
+            elif 'other than legislative' in header.text_content().lower():
+                actor = 'executive'
+
+            rows = header.xpath('following-sibling::div/div')
+            for row in rows:
+                if row.xpath('div[1]')[0].text_content().strip() != "":
+                    action_day = row.xpath('div[1]')[0].text_content().strip()
+                action_text = row.xpath('div[2]')[0].text_content().strip()
+                print(actor, action_day, action_text)
+        # $x('//p[@style="font-weight: bold; margin-top: 0.6em; margin-bottom: 0.6em;"]/following-sibling::div');
+
+
+    def scrape_actions(self, bill, bill_num, chamber, fake_source):
         session = bill.legislative_session
         # chamber = bill['chamber']
 
@@ -405,6 +435,8 @@ class WABillScraper(Scraper, LXMLMixin):
         # Set the start date back a year to catch prefile / intro actions
         start_date = datetime.date(int(session[0:4]) - 1, 1, 1)
         end_date = datetime.date(int(session[0:4]) + 1, 12, 31)
+
+        self.scrape_action_chambers(fake_source, chamber)
 
         url = (
             "http://wslwebservices.leg.wa.gov/legislationservice.asmx/"
