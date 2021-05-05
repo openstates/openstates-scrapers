@@ -1,4 +1,5 @@
 import dateutil.parser
+from dateutil.parser import ParserError
 import pytz
 from openstates.scrape import Scraper
 from openstates.scrape import Event
@@ -63,7 +64,7 @@ class NCEventScraper(Scraper, LXMLMixin):
                 when = f"{date} {time}"
                 try:
                     when = dateutil.parser.parse(when)
-                except dateutil.parser._parser.ParserError:
+                except ParserError:
                     self.warning(f"Unable to parse {time}, only using day component")
                     when = dateutil.parser.parse(date)
 
