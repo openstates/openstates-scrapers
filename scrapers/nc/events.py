@@ -61,7 +61,12 @@ class NCEventScraper(Scraper, LXMLMixin):
                 where = where.replace("STREAM", "")
 
                 when = f"{date} {time}"
-                when = dateutil.parser.parse(when)
+                try:
+                    when = dateutil.parser.parse(when)
+                except dateutil.parser._parser.ParserError:
+                    self.warning(f"Unable to parse {time}, only using day component")
+                    when = dateutil.parser.parse(date)
+
                 when = self._tz.localize(when)
 
                 event = Event(
