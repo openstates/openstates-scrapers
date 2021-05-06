@@ -25,6 +25,8 @@ class MABillScraper(Scraper):
         "Joint": "legislature",
     }
 
+    docket_mapping = {}
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # forcing these values so that 500s come back as skipped bills
@@ -75,9 +77,11 @@ class MABillScraper(Scraper):
             return
 
         if not chamber:
+            self.scrape_dockets(["lower","upper"], session)
             yield from self.scrape_chamber("lower", session, sort, page_limit)
             yield from self.scrape_chamber("upper", session, sort, page_limit)
         else:
+            self.scrape_dockets([chamber], session)
             yield from self.scrape_chamber(chamber, session, sort, page_limit)
 
     def scrape_chamber(self, chamber, session, sort=None, page_limit=None):
@@ -287,6 +291,32 @@ class MABillScraper(Scraper):
                     entity_type="person",
                     # district=cosponsor_district
                 )
+
+    def scrape_dockets(self, chambers, session):
+        # TODO: if it's not current session, bail out to avoid bad data
+        # https://malegislature.gov/ClerksOffice/Senate/Dockets?SearchTerms=&Page=2&SortManagedProperty=lawsdocketnumber&Direction=desc&Sponsor=
+        docket_url_pattern = 'https://malegislature.gov/ClerksOffice/{}/Dockets?SearchTerms=&Page={}&SortManagedProperty=lawsdocketnumber&Direction=desc&Sponsor='
+        for chamber in chambers:                
+            for i in range(1,4):
+                self.info(f"Fetching page {i}")
+                docket_url = docket_url_pattern.format(self.chamber_map[chamber], i)
+                try:
+                    html = self.get(docket_url, verify=False, headers={'Cache-Control': 'no-cache', "Pragma": "no-cache"}).content
+                except requests.exceptions.RequestException:
+                    self.warning(u"Server Error on {}".format(docket_url))
+                    continue
+                
+                page = lxml.html.fromstring(html)
+                for row in page.xpath('//table[contains(@class,"clerkTable")]/tbody/tr'):
+                    if row.xpath('td[1]/a') and row.xpath('td[4]/a'):
+                        bill_num = row.xpath('td[4]/a')[0].text_content().strip().replace('.','')
+                        docket_num = row.xpath('td[1]/a')[0].text_content().strip().replace('.','')
+                        self.docket_mapping[bill_num] = docket_num
+                        print(docket_num, bill_num)
+
+                print(self.docket_mapping)
+
+
 
     def scrape_actions(self, bill, bill_url, session):
         # scrape_action_page adds the actions, and also returns the Page xpath object
