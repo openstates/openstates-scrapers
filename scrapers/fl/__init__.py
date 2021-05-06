@@ -138,9 +138,18 @@ class Florida(State):
             "start_date": "2021-03-02",
             "end_date": "2021-05-01",
         },
+        # TODO: uncomment 2021-05-12 once bills are tested
+        # {
+        #     "name": "2021 Special Session A",
+        #     "identifier": "2021A",
+        #     "classification": "primary",
+        #     "start_date": "2021-05-12",
+        #     "end_date": "2021-05-21",
+        # },        
     ]
     ignored_scraped_sessions = [
         *(str(each) for each in range(1997, 2010)),
+        "2021A",
         "2020 Org.",
         "2019 I",  # Empty, maybe informational session
         "2010",
