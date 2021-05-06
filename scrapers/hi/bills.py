@@ -18,7 +18,13 @@ def create_bill_report_url(chamber, year, bill_type):
         "gm": "gm",
     }
 
-    return HI_URL_BASE + "/advreports/advreport.aspx?report=deadline&rpt_type=&measuretype=" + bill_slug[bill_type] + "&year=" + year
+    return (
+        HI_URL_BASE
+        + "/advreports/advreport.aspx?report=deadline&rpt_type=&measuretype="
+        + bill_slug[bill_type]
+        + "&year="
+        + year
+    )
 
 
 def categorize_action(action):
@@ -168,9 +174,7 @@ class HIBillScraper(Scraper):
 
     def clean_voter_name(self, name):
         if name[-1] == ".":
-            name = name[:-2]
-        if name[0] == " ":
-            name = name[1:]
+            name = name[:-1]
         return name.strip()
 
     def parse_bill_versions_table(self, bill, versions):
