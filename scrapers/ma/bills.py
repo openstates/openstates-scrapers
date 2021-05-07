@@ -225,6 +225,13 @@ class MABillScraper(Scraper):
 
         bill.add_source(bill_url)
 
+        print(bill_id)
+        if bill_id in self.docket_mapping:
+            print("FOUND DOCKET ID MATCH ")
+            print(bill_id, self.docket_mapping[bill_id])
+            bill.extras['docket'] = self.docket_mapping[bill_id]
+            bill.add_related_bill(self.docket_mapping[bill_id], legislative_session=session, relation_type="replaces")
+
         # https://malegislature.gov/Bills/189/SD2739 has a presenter
         # https://malegislature.gov/Bills/189/S2168 no sponsor
         # Find the non-blank text of the dt following Sponsor or Presenter,
@@ -296,8 +303,16 @@ class MABillScraper(Scraper):
         # TODO: if it's not current session, bail out to avoid bad data
         # https://malegislature.gov/ClerksOffice/Senate/Dockets?SearchTerms=&Page=2&SortManagedProperty=lawsdocketnumber&Direction=desc&Sponsor=
         docket_url_pattern = 'https://malegislature.gov/ClerksOffice/{}/Dockets?SearchTerms=&Page={}&SortManagedProperty=lawsdocketnumber&Direction=desc&Sponsor='
-        for chamber in chambers:                
-            for i in range(1,4):
+        for chamber in chambers: 
+            if chamber == 'lower':
+                min_page = 160
+                max_page = 169
+            elif chamber == 'upper':
+                min_page = 100
+                max_page = 105
+
+
+            for i in range(min_page,max_page):
                 self.info(f"Fetching page {i}")
                 docket_url = docket_url_pattern.format(self.chamber_map[chamber], i)
                 try:
