@@ -300,13 +300,6 @@ class MABillScraper(Scraper):
         # TODO: if it's not current session, bail out to avoid bad data
         # https://malegislature.gov/ClerksOffice/Senate/Dockets?SearchTerms=&Page=2&SortManagedProperty=lawsdocketnumber&Direction=desc&Sponsor=
         for chamber in chambers: 
-            if chamber == 'lower':
-                min_page = 160
-                max_page = 169
-            elif chamber == 'upper':
-                min_page = 100
-                max_page = 105
-
             max_page = self.scrape_docket(chamber, 1)
 
             for i in range(2,max_page+1):
