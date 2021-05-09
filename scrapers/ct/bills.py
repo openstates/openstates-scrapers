@@ -198,12 +198,12 @@ class CTBillScraper(Scraper):
 
             if line.startswith("Y") or line.startswith("A") or line.startswith("N"):
                 votes = re.match(
-                    r"(Y|N|A)(\s+\w+)\s+(Y|N|A)(\s+\w+)\s+(Y|N|A)(\s+\w+)\s+(Y|N|A)(\s+\w+)",
+                    r"(Y|N|A)(.+)\s+(Y|N|A)(.+)\s+(Y|N|A)(.+)(\s+(Y|N|A)(.+))?",
                     line,
                 )
                 # Voter is match group 2,4,6,8
                 # need to figure out edge cases in REGEX:
-                # Morrin Bello
+                # MORRIN BELLO
                 # BERGER-GIRVALO
                 # MCCARTHY VAHEY
                 # SIMMONS, C.
