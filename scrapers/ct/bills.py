@@ -11,12 +11,19 @@ import lxml.html
 
 
 class SkipBill(Exception):
-    print("There was an exception")
     pass
 
 
 class CTBillScraper(Scraper):
     latest_only = True
+
+    def add_vote(vote, voter):
+        if vote == "Y":
+            vote.yes(voter)
+        elif vote == "N":
+            vote.no(voter)
+        else:
+            vote.vote("other", voter)
 
     def scrape(self, chamber=None, session=None):
         print("Scraping the bill!")
@@ -190,12 +197,19 @@ class CTBillScraper(Scraper):
                 ).date()
 
             if line.startswith("Y") or line.startswith("A") or line.startswith("N"):
-                print("Process votes here")
-                # separate into votes
-                # get 'Y ' 'N ' or 'A '
-                # (Y|N|A)(\s+\w+)\s+(Y|N|A)(\s+\w+)\s+(Y|N|A)(\s+\w+)\s+(Y|N|A)(\s+\w+)
-                # Vote is match group 1,3,5,7
+                votes = re.match(
+                    r"(Y|N|A)(\s+\w+)\s+(Y|N|A)(\s+\w+)\s+(Y|N|A)(\s+\w+)\s+(Y|N|A)(\s+\w+)",
+                    line,
+                )
                 # Voter is match group 2,4,6,8
+                # need to figure out edge cases in REGEX:
+                # Morrin Bello
+                # BERGER-GIRVALO
+                # MCCARTHY VAHEY
+                # SIMMONS, C.
+                self.add_vote(votes.group(1), votes.group(2))
+                self.add_vote(votes.group(3), votes.group(4))
+                self.add_vote(votes.group(5), votes.group(6))
 
         # not sure about classification.
         vote = Vote(
