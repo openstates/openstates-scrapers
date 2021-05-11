@@ -149,14 +149,19 @@ class MNEventScraper(Scraper, LXMLMixin):
             if "lrl_schedule_link" in row:
                 event.add_source(row["lrl_schedule_link"])
             else:
-                if row["committee"]["link"].startswith("http"):
-                    event.add_source(row["committee"]["link"])
-                elif row["committee"]["link"].startswith("www"):
-                    event.add_source(f"http://{row['committee']['link']}")
-                else:
-                    event.add_source(
-                        f"https://www.senate.mn/{row['committee']['link']}"
-                    )
+                if "link" in row["committee"]:
+                    if row["committee"]["link"].startswith("http"):
+                        event.add_source(row["committee"]["link"])
+                    elif row["committee"]["link"].startswith("www"):
+                        event.add_source(f"http://{row['committee']['link']}")
+                    else:
+                        event.add_source(
+                            f"https://www.senate.mn/{row['committee']['link']}"
+                        )
+                elif "senate_chair_link" in row["committee"]:
+                        event.add_source(
+                            f"https://www.senate.mn/{row['committee']['senate_chair_link']}"
+                        )                    
 
             if "agenda" in row:
                 for agenda_row in row["agenda"]:
