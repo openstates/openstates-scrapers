@@ -1,6 +1,7 @@
 from utils import LXMLMixin
 import re
 import datetime as dt
+import dateutil.parser
 
 from openstates.scrape import Scraper, Event
 
@@ -80,8 +81,8 @@ class TXEventScraper(Scraper, LXMLMixin):
                 tad_fmt = "%m/%d/%Y"
                 tad = date
 
-            # Time expressed as 9:00 AM, Thursday, May 17, 2012
-            datetime = dt.datetime.strptime(tad, tad_fmt)
+            datetime = dateutil.parser.parse(tad)
+
             yield from self.scrape_event_page(
                 session, chamber, event.attrib["href"], datetime
             )
