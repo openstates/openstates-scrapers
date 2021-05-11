@@ -76,9 +76,7 @@ class TXEventScraper(Scraper, LXMLMixin):
             time = peers[1].text_content()
             tad = "%s %s" % (date, time)
             tad = re.sub(r"(PM|AM).*", r"\1", tad)
-            tad_fmt = "%m/%d/%Y %I:%M %p"
             if "AM" not in tad and "PM" not in tad:
-                tad_fmt = "%m/%d/%Y"
                 tad = date
 
             datetime = dateutil.parser.parse(tad)
