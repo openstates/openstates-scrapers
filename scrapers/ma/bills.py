@@ -297,8 +297,11 @@ class MABillScraper(Scraper):
                 )
 
     def scrape_dockets(self, chambers, session):
-        # TODO: if it's not current session, bail out to avoid bad data
         # https://malegislature.gov/ClerksOffice/Senate/Dockets?SearchTerms=&Page=2&SortManagedProperty=lawsdocketnumber&Direction=desc&Sponsor=
+        if session != self.latest_session():
+            self.info("Not scraping latest session, skipping dockets")
+            return
+
         for chamber in chambers: 
             max_page = self.scrape_docket(chamber, 1)
 
