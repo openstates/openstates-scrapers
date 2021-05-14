@@ -390,6 +390,11 @@ class COBillScraper(Scraper, LXMLMixin):
                 "//tr/td[preceding-sibling::td/descendant::"
                 "font[contains(text(),'17C')]]/font/text()"
             )
+
+            if not yes_no_counts:
+                self.info("Missing yes no count")
+                return
+
             yes_count = int(yes_no_counts[0])
             no_count = int(yes_no_counts[2])
             exc_count = int(other_counts[2])
