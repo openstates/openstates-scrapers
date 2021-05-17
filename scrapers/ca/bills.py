@@ -722,7 +722,7 @@ class CABillScraper(Scraper, LXMLMixin):
                     analysis_base,
                     analysis.bill_id,
                     analysis.analysis_id,
-                    analysis.committee_name,
+                    analysis.committee_name.replace(" ", "+"),
                 )
 
                 fsbill.add_document_link(
