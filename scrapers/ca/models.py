@@ -7,6 +7,7 @@ from sqlalchemy import (
     Numeric,
     UnicodeText,
 )
+from sqlalchemy.dialects import mysql
 from sqlalchemy.sql import and_
 from sqlalchemy.orm import backref, relation, foreign
 from sqlalchemy.ext.declarative import declarative_base
@@ -52,6 +53,12 @@ class CABill(Base):
         "CAVoteSummary",
         backref=backref("bill"),
         order_by="CAVoteSummary.vote_date_time",
+    )
+
+    analyses = relation(
+        "CABillAnalysis",
+        backref=backref("bill"),
+        order_by="CABillAnalysis.analysis_date",
     )
 
     @property
@@ -120,6 +127,26 @@ class CABillVersionAuthor(Base):
     primary_author_flg = Column(String(1))
 
     version = relation(CABillVersion, backref=backref("authors"))
+
+
+class CABillAnalysis(Base):
+    __tablename__ = "bill_analysis_tbl"
+
+    analysis_id = Column(Numeric, primary_key=True)
+    bill_id = Column(String(20), ForeignKey(CABill.bill_id))
+    house = Column(String(1))
+    analysis_type = Column(String(100))
+    committee_code = Column(String(6))
+    committee_name = Column(String(200))
+    amendment_author = Column(String(100))
+    analysis_date = Column(DateTime)
+    amendment_date = Column(DateTime)
+    page_num = Column(Numeric)
+    source_doc = Column(mysql.LONGBLOB)
+    released_floor = Column(String(1))
+    active_flg = Column(String(1), default="Y")
+    trans_uid = Column(String(20))
+    trans_update = Column(DateTime)
 
 
 class CABillAction(Base):
