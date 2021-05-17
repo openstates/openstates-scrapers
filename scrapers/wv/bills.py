@@ -384,7 +384,7 @@ class WVBillScraper(Scraper):
             return
 
         data = re.split(r"(Yea|Nay|Absent)s?:", text)[::-1]
-        data = filter(None, data)
+        data = list(filter(None, data))
         keymap = dict(yea="yes", nay="no")
         actual_vote = collections.defaultdict(int)
         vote_count = {"yes": 0, "no": 0, "other": 0}

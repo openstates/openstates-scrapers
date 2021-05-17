@@ -138,6 +138,14 @@ class NewMexico(State):
             "end_date": "2020-11-27",
         },
         {
+            "_scraped_name": "2021 Special",
+            "classification": "special",
+            "identifier": "2021S",
+            "name": "2021 Special Session",
+            "start_date": "2021-03-30",
+            "end_date": "2021-03-31",
+        },
+        {
             "_scraped_name": "2021 Regular",
             "classification": "primary",
             "identifier": "2021",
@@ -145,14 +153,6 @@ class NewMexico(State):
             "start_date": "2021-01-19",
             "end_date": "2021-03-20",
         },
-        {
-            "_scraped_name": "2021 Special",
-            "classification": "special",
-            "identifier": "2021S",
-            "name": "2021 Special Session",
-            "start_date": "2021-03-30",
-            "end_date": "2021-03-31",
-        },        
     ]
     ignored_scraped_sessions = [
         "2010 2nd Special",

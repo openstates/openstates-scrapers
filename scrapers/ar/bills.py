@@ -131,6 +131,14 @@ class ARBillScraper(Scraper):
                 action_type.append("executive-receipt")
             elif action.startswith("Notification"):
                 action_type.append("executive-signature")
+            elif "vetoed by the Governor" in action:
+                action_type.append("executive-veto")
+            elif "override" and "veto passed" in action.casefold():
+                action_type.append("veto-override-passage")
+                action_type.append("passage")
+            elif "override" and "veto failed" in action.casefold():
+                action_type.append("veto-override-failure")
+                action_type.append("failure")
 
             if "referred to" in action:
                 action_type.append("referral-committee")
@@ -310,11 +318,15 @@ class ARBillScraper(Scraper):
                 page.xpath("substring-after(//h3[contains(text(), 'Present')], ': ')")
             )
             passed = yes_count > no_count + not_voting_count + other_count
+            vote_type = []
+            vote_type.append("passage")
+            if "override" and "veto" in motion.casefold():
+                vote_type.append("veto-override")
             vote = VoteEvent(
                 start_date=date,
                 motion_text=motion,
                 result="pass" if passed else "fail",
-                classification="passage",
+                classification=vote_type,
                 chamber=actor,
                 bill=bill,
             )

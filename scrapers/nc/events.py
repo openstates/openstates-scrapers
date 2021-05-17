@@ -1,4 +1,5 @@
 import dateutil.parser
+from dateutil.parser import ParserError
 import pytz
 from openstates.scrape import Scraper
 from openstates.scrape import Event
@@ -61,7 +62,12 @@ class NCEventScraper(Scraper, LXMLMixin):
                 where = where.replace("STREAM", "")
 
                 when = f"{date} {time}"
-                when = dateutil.parser.parse(when)
+                try:
+                    when = dateutil.parser.parse(when)
+                except ParserError:
+                    self.warning(f"Unable to parse {time}, only using day component")
+                    when = dateutil.parser.parse(date)
+
                 when = self._tz.localize(when)
 
                 event = Event(

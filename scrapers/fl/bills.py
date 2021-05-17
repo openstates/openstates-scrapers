@@ -57,6 +57,7 @@ class BillList(HtmlListPage):
     dependencies = {"subjects": SubjectPDF}
 
     def get_source_from_input(self):
+        # to test scrape an individual bill, add &billNumber=1351
         return (
             f"https://flsenate.gov/Session/Bills/{self.input['session']}?chamber=both"
         )
@@ -109,9 +110,11 @@ class BillList(HtmlListPage):
         bill.subject = list(self.subjects[subj_bill_id])
 
         sponsor = re.sub(r"^(?:Rep|Sen)\.\s", "", sponsor)
+        sponsor = re.sub(r",\s+(Jr|Sr)\.", r" \1.", sponsor)
         for sp in sponsor.split(", "):
             sp = sp.strip()
-            bill.add_sponsorship(sp, "primary", "person", True)
+            sp_type = "organization" if "committee" in sp.lower() else "person"
+            bill.add_sponsorship(sp, "primary", sp_type, True)
 
         return BillDetail(bill)
 
@@ -315,12 +318,17 @@ class BillDetail(HtmlPage):
                     )
                 elif "HouseVote" in vote_url:
                     yield FloorVote(
-                        dict(date=vote_date, chamber="lower", bill=self.input,),
+                        dict(
+                            date=vote_date,
+                            chamber="lower",
+                            bill=self.input,
+                        ),
                         source=vote_url,
                     )
                 else:
                     yield UpperComVote(
-                        dict(date=vote_date, bill=self.input), source=vote_url,
+                        dict(date=vote_date, bill=self.input),
+                        source=vote_url,
                     )
         else:
             self.logger.warning("No vote table for {}".format(self.input.identifier))
@@ -545,10 +553,11 @@ class HouseSearchPage(HtmlListPage):
     selector = XPath('//a[contains(@href, "/Bills/billsdetail.aspx?BillId=")]/@href')
 
     def get_source_from_input(self):
-        url = "http://www.myfloridahouse.gov/Sections/Bills/bills.aspx"
+        url = "https://www.myfloridahouse.gov/Sections/Bills/bills.aspx"
         # Keep the digits and all following characters in the bill's ID
         bill_number = re.search(r"^\w+\s(\d+\w*)$", self.input.identifier).group(1)
         session_number = {
+            "2021A": "92",
             "2021": "90",
             "2020": "89",
             "2019": "87",
@@ -578,7 +587,7 @@ class HouseBillPage(HtmlListPage):
         "HB 1", "2020", "title", chamber="upper", classification="bill"
     )
     example_source = (
-        "http://www.myfloridahouse.gov/Sections/Bills/billsdetail.aspx?BillId=69746"
+        "https://www.myfloridahouse.gov/Sections/Bills/billsdetail.aspx?BillId=69746"
     )
 
     def process_item(self, item):
@@ -589,7 +598,10 @@ class HouseComVote(HtmlPage):
     example_input = Bill(
         "HB 1", "2020", "title", chamber="upper", classification="bill"
     )
-    example_source = "http://www.myfloridahouse.gov/Sections/Committees/billvote.aspx?VoteId=54381&IsPCB=0&BillId=69746"
+    example_source = (
+        "https://www.myfloridahouse.gov/Sections/Committees/billvote.aspx?"
+        "VoteId=54381&IsPCB=0&BillId=69746"
+    )
 
     def process_page(self):
         # Checks to see if any vote totals are provided

@@ -10,6 +10,41 @@ from openstates.scrape.base import ScrapeError
 from utils import LXMLMixin
 
 
+_action_re = (
+    ("^Amended$", "amendment-passage"),
+    (r"^Amendment\(s\) offered$", "amendment-introduction"),
+    ("^Amendment amended$", "amendment-amendment"),
+    ("^Amendment withdrawn$", "amendment-withdrawal"),
+    ("^Passed$", "passage"),
+    ("^Adopted$", "passage"),
+    ("^Received (by|from) the.*Secretary of the Senate", "filing"),
+    ("^Received (by|from) the", "introduction"),
+    ("^Sent to the Governor", "executive-receipt"),
+    ("^Signed by the Governor", "executive-signature"),
+    ("^Effective on", "became-law"),
+    ("^Vetoed by the Governor$", "executive-veto"),
+    ("^Read first time$", ["introduction", "reading-1"]),
+    ("^Read & adopted$", ["passage", "introduction"]),
+    ("^Passed as amended$", "passage"),
+    ("^Referred to", "referral-committee"),
+    ("^Recommended to be sent to", "referral-committee"),
+    (r"^Reported favorably w/o amendment\(s\)$", "committee-passage"),
+    ("^Filed$", "filing"),
+    ("^Read 3rd time$", "reading-3"),
+    ("^Read 2nd time$", "reading-2"),
+    ("^Reported favorably", "committee-passage-favorable"),
+    ("^Effective immediately$", "became-law"),
+    ("^Filed without the Governor's signature$", "became-law"),
+)
+
+
+def _categorize_action(action):
+    for pattern, types in _action_re:
+        if re.findall(pattern, action):
+            return types
+    return None
+
+
 class TXBillScraper(Scraper, LXMLMixin):
     _FTP_ROOT = "ftp.legis.state.tx.us"
     CHAMBERS = {"H": "lower", "S": "upper"}
@@ -187,62 +222,7 @@ class TXBillScraper(Scraper, LXMLMixin):
                 self.warning("Skipping public hearing action with no date")
                 continue
 
-            introduced = False
-
-            if desc == "Amended":
-                atype = "amendment-passage"
-            elif desc == "Amendment(s) offered":
-                atype = "amendment-introduction"
-            elif desc == "Amendment amended":
-                atype = "amendment-amendment"
-            elif desc == "Amendment withdrawn":
-                atype = "amendment-withdrawal"
-            elif desc == "Passed" or desc == "Adopted":
-                atype = "passage"
-            elif re.match(r"^Received (by|from) the", desc):
-                if "Secretary of the Senate" not in desc:
-                    atype = "introduction"
-                else:
-                    atype = "filing"
-            elif desc.startswith("Sent to the Governor"):
-                # But what if it gets lost in the mail?
-                atype = "executive-receipt"
-            elif desc.startswith("Signed by the Governor"):
-                atype = "executive-signature"
-            elif desc.startswith("Effective on"):
-                atype = "became-law"
-            elif desc == "Vetoed by the Governor":
-                atype = "executive-veto"
-            elif desc == "Read first time":
-                atype = ["introduction", "reading-1"]
-                introduced = True
-            elif desc == "Read & adopted":
-                atype = ["passage"]
-                if not introduced:
-                    introduced = True
-                    atype.append("introduction")
-            elif desc == "Passed as amended":
-                atype = "passage"
-            elif desc.startswith("Referred to") or desc.startswith(
-                "Recommended to be sent to "
-            ):
-                atype = "referral-committee"
-            elif desc == "Reported favorably w/o amendment(s)":
-                atype = "committee-passage"
-            elif desc == "Filed":
-                atype = "filing"
-            elif desc == "Read 3rd time":
-                atype = "reading-3"
-            elif desc == "Read 2nd time":
-                atype = "reading-2"
-            elif desc.startswith("Reported favorably"):
-                atype = "committee-passage-favorable"
-            elif desc == "Effective immediately":
-                atype = "became-law"
-            elif desc == "Filed without the Governor's signature":
-                atype = "became-law"
-            else:
-                atype = None
+            atype = _categorize_action(desc)
 
             act = bill.add_action(
                 action.findtext("description"),
