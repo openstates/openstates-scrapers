@@ -150,7 +150,7 @@ class AZBillScraper(Scraper):
                 if page[action] is True:
                     continue
                 try:
-                    # Remove miliseconds from date if present
+                    # Remove milliseconds from date if present
                     cleaned_date = page[action].split(".")[0]
                     action_date = datetime.datetime.strptime(
                         cleaned_date, "%Y-%m-%dT%H:%M:%S"

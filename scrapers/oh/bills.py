@@ -70,7 +70,7 @@ class OHBillScraper(Scraper):
                 "senate": "upper",
             }
 
-            # so presumanbly not everything passes, but we haven't
+            # so presumably not everything passes, but we haven't
             # seen anything not pass yet, so we'll need to wait
             # till it fails and get the right language in here
             vote_results = {

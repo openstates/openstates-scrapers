@@ -187,7 +187,7 @@ class NDVoteScraper(Scraper, LXMLMixin):
                         cur_vote = None
 
                         # Identify what is being voted on
-                        # Throw a warning if impropper informaiton found
+                        # Throw a warning if impropper information found
                         bills.extend(re.findall(r"(?i)(H|S|J)(C?)(B|R|M) (\d+)", line))
                         if bills == [] or cur_motion.strip() == "":
                             results = {}

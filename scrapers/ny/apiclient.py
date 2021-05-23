@@ -9,7 +9,7 @@ from OpenSSL.SSL import SysCallError
 class BadAPIResponse(Exception):
     """
     Raised if the service returns a service code higher than 400,
-    other than 429. Makes the response object avaible as exc.resp.
+    other than 429. Makes the response object available as exc.resp.
     """
 
     def __init__(self, resp, *args):

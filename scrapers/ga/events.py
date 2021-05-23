@@ -41,7 +41,7 @@ class GAEventScraper(Scraper):
             if "cancelled" in title.lower() or "canceled" in title.lower():
                 status = "cancelled"
                 # try to replace all variants of "[optional dash] cancel[l]ed [optional dash]"
-                # so we can match up events to thier pre-cancellation occurrence
+                # so we can match up events to their pre-cancellation occurrence
                 title = re.sub(r"-?\s*cancell?ed\s*-?\s*", " ", title, flags=re.I)
 
             where = row["location"]

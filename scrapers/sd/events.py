@@ -30,7 +30,7 @@ class SDEventScraper(Scraper):
         for com in coms:
 
             # temporary store for the events,
-            # because the state lists all the various bits seperately
+            # because the state lists all the various bits separately
             events_by_date = {}
 
             # Skip the floor sessions
