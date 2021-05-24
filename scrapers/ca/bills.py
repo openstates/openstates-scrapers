@@ -705,6 +705,35 @@ class CABillScraper(Scraper, LXMLMixin):
                                 fsvote.vote(how_voted, voter)
                         yield fsvote
 
+            for analysis in bill.analyses:
+                analysis_date = self._tz.localize(analysis.analysis_date)
+                # create an analysis name to match the state's format
+                # 05/31/20- Assembly Appropriations
+                analysis_date_human = analysis_date.strftime("%m/%d/%y")
+                analysis_name = "{}- {}".format(
+                    analysis_date_human, analysis.committee_name
+                )
+
+                analysis_base = "https://leginfo.legislature.ca.gov/faces"
+
+                # unfortunately this just brings you to the analysis list
+                # storing analysisId and analyzingOffice for a future POST request?
+                analysis_url_pdf = "{}/billAnalysisClient.xhtml?bill_id={}&analysisId={}&analyzingOffice={}".format(
+                    analysis_base,
+                    analysis.bill_id,
+                    analysis.analysis_id,
+                    analysis.committee_name.replace(" ", "+"),
+                )
+
+                fsbill.add_document_link(
+                    analysis_name,
+                    analysis_url_pdf,
+                    classification="analysis",
+                    date=analysis_date.date(),
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
+
             yield fsbill
             self.session.expire_all()
 
