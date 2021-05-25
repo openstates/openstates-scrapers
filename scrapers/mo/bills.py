@@ -39,7 +39,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         self._scrape_subjects(self.latest_session())
 
     def _get_action(self, actor, action):
-        # Alright. This covers both chambers and everyting else.
+        # Alright. This covers both chambers and everything else.
         flags = [
             ("Introduced", "introduction"),
             ("Offered", "introduction"),

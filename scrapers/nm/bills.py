@@ -257,7 +257,7 @@ class NMBillScraper(Scraper):
         # if you need to find a missing action code,
         # look up the abbrs in http://www.nmlegis.gov/Legislation/Action_Abbreviations
         action_map = {
-            # these two are recomendations but not reported yet
+            # these two are recommendations but not reported yet
             "6601": ("Recommended DO PASS committee report adopted.", ""),
             "6602": ("Recommended DO PASS, as amended, committee report adopted.", ""),
             "6605": ("Recommended DO NOT PASS, Committee substitute DO PASS", ""),

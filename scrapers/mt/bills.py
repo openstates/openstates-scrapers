@@ -574,7 +574,7 @@ class MTBillScraper(Scraper, LXMLMixin):
             elif v == "A":
                 vote.vote("absent", name, note=note)
 
-        # code to deterimine value of `passed`
+        # code to determine value of `passed`
         passed = None
 
         # some actions take a super majority, so we aren't just
