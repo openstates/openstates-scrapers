@@ -686,7 +686,7 @@ class CABillScraper(Scraper, LXMLMixin):
                     elif "Do Pass" in motion:
                         vtype = "passage"
                     else:
-                        vtype = "other"
+                        vtype = []
                     if len(motion) > 0:
                         fsvote = VoteEvent(
                             motion_text=motion,
