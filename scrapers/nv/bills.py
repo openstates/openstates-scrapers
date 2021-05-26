@@ -187,37 +187,41 @@ class BillTabDetail(HtmlPage):
         # first action is from originating chamber
         actor = chamber
 
-        for row in XPath("//caption/parent::table/tbody/tr").match(self.root):
-            date, action, _ = [x.text for x in row.getchildren()]
-            date = parse_date(date)
+        # Sometimes NV bill page might just not have an actions section at all
+        try:
+            for row in XPath("//caption/parent::table/tbody/tr").match(self.root):
+                date, action, _ = [x.text for x in row.getchildren()]
+                date = parse_date(date)
 
-            # catch chamber changes
-            if action.startswith("In Assembly"):
-                actor = "lower"
-            elif action.startswith("In Senate"):
-                actor = "upper"
-            elif "Governor" in action:
-                actor = "executive"
+                # catch chamber changes
+                if action.startswith("In Assembly"):
+                    actor = "lower"
+                elif action.startswith("In Senate"):
+                    actor = "upper"
+                elif "Governor" in action:
+                    actor = "executive"
 
-            action_type = None
-            for pattern, atype in ACTION_CLASSIFIERS:
-                if re.match(pattern, action):
-                    action_type = atype
-                    break
+                action_type = None
+                for pattern, atype in ACTION_CLASSIFIERS:
+                    if re.match(pattern, action):
+                        action_type = atype
+                        break
 
-            related_entities = []
-            if "Committee on" in action:
-                committees = re.findall(r"Committee on ([a-zA-Z, ]*)\.", action)
-                for committee in committees:
-                    related_entities.append({"type": "committee", "name": committee})
+                related_entities = []
+                if "Committee on" in action:
+                    committees = re.findall(r"Committee on ([a-zA-Z, ]*)\.", action)
+                    for committee in committees:
+                        related_entities.append({"type": "committee", "name": committee})
 
-            bill.add_action(
-                description=action,
-                date=date,
-                chamber=actor,
-                classification=action_type,
-                related_entities=related_entities,
-            )
+                bill.add_action(
+                    description=action,
+                    date=date,
+                    chamber=actor,
+                    classification=action_type,
+                    related_entities=related_entities,
+                )
+        except SelectorError:
+            pass
 
     def process_page(self):
         chamber = "upper" if self.input.identifier.startswith("S") else "lower"

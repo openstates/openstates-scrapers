@@ -23,7 +23,7 @@ _classifiers = (
     # comissions give a report but sometimes they dont do any amendments and
     # leave them as they are.
     # i am not checking if they did or not. but it be easy just read the end and
-    # if it dosnt have amendments it should say 'sin enmiendas'
+    # if it doesn't have amendments it should say 'sin enmiendas'
     ("1er Informe", "", "amendment-amendment"),
     ("2do Informe", "", "amendment-amendment"),
     ("Aprobado con enmiendas", "", "amendment-passage"),

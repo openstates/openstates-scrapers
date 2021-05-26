@@ -183,6 +183,7 @@ class Alabama(State):
         "First Special Session 2010",
         "Regular Session 2016",
         "Organizational Session 2019",
+        "Regular Session 2022",  # stop ignoring in 2022
     ]
 
     def get_session_list(self):

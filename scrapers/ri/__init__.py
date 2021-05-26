@@ -4,13 +4,14 @@ from .bills import RIBillScraper
 from .people import RIPersonScraper
 
 from .events import RIEventScraper
+
 # from .committees import RICommitteeScraper
 
 
 class RhodeIsland(State):
     scrapers = {
         "bills": RIBillScraper,
-        'events': RIEventScraper,
+        "events": RIEventScraper,
         "people": RIPersonScraper,
         # 'committees': RICommitteeScraper,
     }
@@ -110,6 +111,6 @@ class RhodeIsland(State):
 
     def get_session_list(self):
         return url_xpath(
-            "http://status.rilin.state.ri.us/bill_history.aspx?mode=previous",
+            "https://status.rilegislature.gov/bill_history.aspx?mode=previous",
             '//select[@name="ctl00$rilinContent$cbYear"]/option/text()',
         )

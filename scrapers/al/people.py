@@ -22,7 +22,7 @@ class ALPersonScraper(Scraper, LXMLMixin):
         # the url for each rep is unfindable (by me)
         # and the parts needed to make it up do not appear in the html or js.
         # we can find basic information on the main rep page, and sponsor
-        # info on a version of their indivdual page called using only their
+        # info on a version of their individual page called using only their
         # sponsor ID (which we have to scrape from ALISON)
         # we can't get detailed information without another ID
         # which I have not been able to find.
