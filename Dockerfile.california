@@ -1,4 +1,4 @@
-FROM python:3.7-slim
+FROM python:3.9-slim
 LABEL maintainer="James Turk <james@openstates.org>"
 
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PYTHONIOENCODING='utf-8' LANG='C.UTF-8'

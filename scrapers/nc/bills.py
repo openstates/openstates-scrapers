@@ -381,7 +381,7 @@ class NCBillScraper(Scraper):
                 if line and re.match(r"[H, S]\d\d\d\d", line[0]):
                     bill_id = line[0]
 
-                    # Counting by 2 to find each line. 50 is an abitraty number that is
+                    # Counting by 2 to find each line. 50 is an arbitrary number that is
                     # high enough to find all votes for a bill
                     for y in range(1, 50, 2):
                         if not re.match(r"[H, S]\d\d\d\d", vote_text[x + y]) and (

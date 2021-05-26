@@ -21,7 +21,7 @@ class COCommitteeScraper(Scraper, LXMLMixin):
         ):
             details = member.xpath('.//div[@class="member-details"]')[0]
             person = details.xpath("./h4")[0].text_content()
-            # This page does random weird things with whitepace to names
+            # This page does random weird things with whitespace to names
             person = " ".join(person.strip().split())
             if not person:
                 continue

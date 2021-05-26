@@ -5,12 +5,12 @@ description = ""
 authors = ["James Turk <james@openstates.org>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
-openstates = "^5.10.0"
+python = "^3.9"
+openstates = "^6.0.1"
 xlrd = "<2"
 lxml = "^4.4"
 pytz = "^2019.3"
-feedparser = "^5.2"
+feedparser = "^6.0"
 python-dateutil = "^2.8"
 spatula = "^0.6.0"
 chardet = "^3.0"
