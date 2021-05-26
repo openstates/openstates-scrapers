@@ -267,11 +267,14 @@ tzlocal = "1.5.1"
 
 [[package]]
 name = "feedparser"
-version = "5.2.1"
+version = "6.0.2"
 description = "Universal feed parser, handles RSS 0.9x, RSS 1.0, RSS 2.0, CDF, Atom 0.3, and Atom 1.0 feeds"
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=3.6"
+
+[package.dependencies]
+sgmllib3k = "*"
 
 [[package]]
 name = "greenlet"
@@ -748,6 +751,14 @@ python-versions = ">=3.7,<4.0"
 requests = {version = ">=2.25.1,<3.0.0", extras = ["security"]}
 
 [[package]]
+name = "sgmllib3k"
+version = "1.0.0"
+description = "Py3k port of sgmllib."
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "six"
 version = "1.12.0"
 description = "Python 2 and 3 compatibility utilities"
@@ -1111,7 +1122,7 @@ california = ["mysqlclient", "SQLAlchemy"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "748c6ad89553e045758bc732ee62006dfc8251d01d7694244b9ae532985af45c"
+content-hash = "f14e1b895295c979f4e52e05b888467d042db8f13d43777ad287ee07a4db4667"
 
 [metadata.files]
 alabaster = [
@@ -1259,9 +1270,8 @@ extract-msg = [
     {file = "extract_msg-0.23.1.tar.gz", hash = "sha256:3746d5f68266740575ef9097516f39c5f601fa031e188cea338a13b66de16ada"},
 ]
 feedparser = [
-    {file = "feedparser-5.2.1.tar.bz2", hash = "sha256:ce875495c90ebd74b179855449040003a1beb40cd13d5f037a0654251e260b02"},
-    {file = "feedparser-5.2.1.tar.gz", hash = "sha256:bd030652c2d08532c034c27fcd7c85868e7fa3cb2b17f230a44a6bbc92519bf9"},
-    {file = "feedparser-5.2.1.zip", hash = "sha256:cd2485472e41471632ed3029d44033ee420ad0b57111db95c240c9160a85831c"},
+    {file = "feedparser-6.0.2-py3-none-any.whl", hash = "sha256:f596c4b34fb3e2dc7e6ac3a8191603841e8d5d267210064e94d4238737452ddd"},
+    {file = "feedparser-6.0.2.tar.gz", hash = "sha256:1b00a105425f492f3954fd346e5b524ca9cef3a4bbf95b8809470e9857aa1074"},
 ]
 greenlet = [
     {file = "greenlet-1.1.0-cp27-cp27m-macosx_10_14_x86_64.whl", hash = "sha256:60848099b76467ef09b62b0f4512e7e6f0a2c977357a036de602b653667f5f4c"},
@@ -1687,6 +1697,9 @@ s3transfer = [
 scrapelib = [
     {file = "scrapelib-2.0.4-py3-none-any.whl", hash = "sha256:1455d443bd0cda14d240c8e5c746c64c50aef94beb8b5821417e21ff1c79595a"},
     {file = "scrapelib-2.0.4.tar.gz", hash = "sha256:460d6b620e35ee36f0e37f6e8c6a5a27f38c08f9293ad9b7ed139ac3fa191eb2"},
+]
+sgmllib3k = [
+    {file = "sgmllib3k-1.0.0.tar.gz", hash = "sha256:7868fb1c8bfa764c1ac563d3cf369c381d1325d36124933a726f29fcdaa812e9"},
 ]
 six = [
     {file = "six-1.12.0-py2.py3-none-any.whl", hash = "sha256:3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c"},
