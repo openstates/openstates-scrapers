@@ -77,6 +77,8 @@ class FlEventScraper(Scraper):
             .strip()
         )
 
+        com = f"House {com}"
+
         start = self.get_meeting_row(page, "Start Date")
         start = self.tz.localize(
             dateutil.parser.parse(start)
