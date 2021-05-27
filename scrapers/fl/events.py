@@ -33,7 +33,7 @@ class FlEventScraper(Scraper):
             session = self.latest_session()
 
         yield from self.scrape_lower_events(session)
-        # yield from self.scrape_upper_events(session)
+        yield from self.scrape_upper_events(session)
 
     def scrape_lower_events(self, session):
         # get all the coms, then for each committee
@@ -81,32 +81,46 @@ class FlEventScraper(Scraper):
         start = self.tz.localize(
             dateutil.parser.parse(start)
         )
-        end = self.get_meeting_row(page, "End Date")
-        end = self.tz.localize(
-            dateutil.parser.parse(end)
-        )
+
+        end = None
+        if self.get_meeting_row(page, "End Date"):
+            end = self.get_meeting_row(page, "End Date")
+            end = self.tz.localize(
+                dateutil.parser.parse(end)
+            )
         location = self.get_meeting_row(page, "Location")
 
         summary = ''
         if page.xpath('//div[contains(text(),"Meeting Overview")]'):
             summary = page.xpath('//div[div[contains(text(),"Meeting Overview")]]/div[contains(@class,"ml-3")]')[0].text_content().strip()
 
-        event = Event(name=com, start_date=start, end_date=end, location_name=location, description=summary)
+        if end:
+            event = Event(name=com, start_date=start, end_date=end, location_name=location, description=summary)
+        else:
+            event = Event(name=com, start_date=start, location_name=location, description=summary)
         event.add_source(url)
 
         for h5 in page.xpath('//div[contains(@class,"meeting-actions-bills")]/h5'):
             agenda = event.add_agenda_item(h5.text_content().strip())
-            for bill_link in h5.xpath('following-sibling::ul/li'):
-                found_bills = re.findall(r"H.*\s+\d+", bill_link.text_content())
-                print(found_bills)
+            for agenda_item in h5.xpath('following-sibling::ul/li'):
+                agenda_text = agenda_item.text_content().strip()
+                agenda_text = re.sub(r"\s+\u2013\s+", ' - ', agenda_text)
+                item = event.add_agenda_item(agenda_text)
+                found_bills = re.findall(r"H.*\s+\d+", agenda_text)
                 if found_bills:
-                    agenda.add_bill(found_bills[0])
+                    item.add_bill(found_bills[0])
+
         yield event
 
     def get_meeting_row(self, page, header):
-        return page.xpath(
-            f"//div[contains(@class,'meeting-info-rows') and span[contains(text(),'{header}')]]/span[contains(@class,'value')]"
-        )[0].text_content().strip()
+        xpath = f"//div[contains(@class,'meeting-info-rows') and span[contains(text(),'{header}')]]/span[contains(@class,'value')]"
+
+        if page.xpath(xpath):
+            return page.xpath(
+                f"//div[contains(@class,'meeting-info-rows') and span[contains(text(),'{header}')]]/span[contains(@class,'value')]"
+            )[0].text_content().strip()
+        else:
+            return None
 
     def scrape_upper_events(self, session):
         list_url = "https://www.flsenate.gov/Committees"
