@@ -157,4 +157,6 @@ _committee_nr = {
     72: "Senate Public Safety",
     73: "Senate Governance and Finance",
     74: "Senate Human Services",
+    75: "Senate Housing",
+    80: "Senate Insurance, Banking and Financial Institutions",
 }
