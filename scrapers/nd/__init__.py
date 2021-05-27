@@ -2,6 +2,7 @@ from utils import State
 from .votes import NDVoteScraper
 from .people import NDPersonScraper
 from .bills import NDBillScraper
+from .events import NDEventScraper
 
 # from .committees import NDCommitteeScraper
 
@@ -12,6 +13,7 @@ class NorthDakota(State):
         "votes": NDVoteScraper,
         # 'committees': NDCommitteeScraper,
         "bills": NDBillScraper,
+        "events": NDEventScraper,
     }
     legislative_sessions = [
         {
