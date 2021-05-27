@@ -2,17 +2,111 @@ import pytz
 import datetime
 import dateutil.parser
 import lxml
+import re
 from openstates.scrape import Scraper, Event
 
 
 class FlEventScraper(Scraper):
     tz = pytz.timezone("US/Eastern")
 
+    session_ids = {
+        "2021A": "92",
+        "2021": "90",
+        "2020": "89",
+        "2019": "87",
+        "2018": "86",
+        "2017A": "85",
+        "2017": "83",
+        "2016": "80",
+        "2015C": "82",
+        "2015B": "81",
+        "2015A": "79",
+        "2015": "76",
+        "2014O": "78",
+        "2014A": "77",
+        "2016O": "84",
+    }
+
+
     def scrape(self, session=None):
         if session is None:
             session = self.latest_session()
 
-        yield from self.scrape_upper_events(session)
+        yield from self.scrape_lower_events(session)
+        # yield from self.scrape_upper_events(session)
+
+    def scrape_lower_events(self, session):
+        # get all the coms, then for each committee
+        # get the correct notices link
+        # then for each notice, parse the event
+        com_url = "https://www.myfloridahouse.gov/Sections/Committees/committees.aspx"
+        page = self.get(com_url).content
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(com_url)
+
+        for link in page.xpath('//a[contains(@href,"CommitteeId")]'):
+            com_id = re.findall(r"CommitteeId=(\d+)", link.xpath("@href")[0])[0]
+            yield from self.scrape_lower_notice_list(com_id, session)
+
+    def scrape_lower_notice_list(self, com_id, session):
+        session_id = self.session_ids[session]
+        url = (
+            f"https://www.myfloridahouse.gov/Sections/Documents/publications.aspx?"
+            f"CommitteeId={com_id}&PublicationType=Committees&DocumentType=Meeting%20Notices&SessionId={session_id}"
+        )
+        page = self.get(url).content
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+
+        for link in page.xpath('//li[contains(@class,"list-group-item")]/span/a'):
+            yield from self.scrape_lower_event(link.xpath("@href")[0])
+
+    def scrape_lower_event(self, url):
+        html = self.get(url).text
+
+        if "not meeting" in html.lower():
+            self.info(f"Skipping {url}, not meeting")
+            return
+
+        page = lxml.html.fromstring(html)
+        page.make_links_absolute(url)
+
+        com = (
+            page.xpath('//div[contains(@class,"sectionhead")]/h1')[0]
+            .text_content()
+            .strip()
+        )
+
+        start = self.get_meeting_row(page, "Start Date")
+        start = self.tz.localize(
+            dateutil.parser.parse(start)
+        )
+        end = self.get_meeting_row(page, "End Date")
+        end = self.tz.localize(
+            dateutil.parser.parse(end)
+        )
+        location = self.get_meeting_row(page, "Location")
+
+        summary = ''
+        if page.xpath('//div[contains(text(),"Meeting Overview")]'):
+            summary = page.xpath('//div[div[contains(text(),"Meeting Overview")]]/div[contains(@class,"ml-3")]')[0].text_content().strip()
+
+        event = Event(name=com, start_date=start, end_date=end, location_name=location, description=summary)
+        event.add_source(url)
+
+        for h5 in page.xpath('//div[contains(@class,"meeting-actions-bills")]/h5'):
+            agenda = event.add_agenda_item(h5.text_content().strip())
+            for bill_link in h5.xpath('following-sibling::ul/li'):
+                found_bills = re.findall(r"H.*\s+\d+", bill_link.text_content())
+                print(found_bills)
+                if found_bills:
+                    agenda.add_bill(found_bills[0])
+        yield event
+
+    def get_meeting_row(self, page, header):
+        return page.xpath(
+            f"//div[contains(@class,'meeting-info-rows') and span[contains(text(),'{header}')]]/span[contains(@class,'value')]"
+        )[0].text_content().strip()
 
     def scrape_upper_events(self, session):
         list_url = "https://www.flsenate.gov/Committees"
@@ -48,27 +142,31 @@ class FlEventScraper(Scraper):
 
             event = Event(name=com, start_date=date, location_name=location)
 
-            agenda_classes = ['mtgrecord_notice', 'mtgrecord_expandedAgenda', 'mtgrecord_attendance']
+            agenda_classes = [
+                "mtgrecord_notice",
+                "mtgrecord_expandedAgenda",
+                "mtgrecord_attendance",
+            ]
 
             for agenda_class in agenda_classes:
                 if row.xpath(f"//a[@class='{agenda_class}']"):
                     url = row.xpath(f"//a[@class='{agenda_class}']/@href")[0]
-                    doc_name = row.xpath(f"//a[@class='{agenda_class}']")[0].text_content().strip()
-                    event.add_document(
-                        doc_name,
-                        url,
-                        media_type="application/pdf"
+                    doc_name = (
+                        row.xpath(f"//a[@class='{agenda_class}']")[0]
+                        .text_content()
+                        .strip()
                     )
+                    event.add_document(doc_name, url, media_type="application/pdf")
 
-            for link in row.xpath('td[7]/a'):
+            for link in row.xpath("td[7]/a"):
                 url = link.xpath("@href")[0]
                 doc_name = link.text_content().strip()
-                event.add_media_link(doc_name, url, 'audio/mpeg')
-            
-            for link in row.xpath('td[9]/a'):
+                event.add_media_link(doc_name, url, "audio/mpeg")
+
+            for link in row.xpath("td[9]/a"):
                 url = link.xpath("@href")[0]
                 doc_name = link.text_content().strip()
-                event.add_media_link(doc_name, url, 'text/html')                
-                
+                event.add_media_link(doc_name, url, "text/html")
+
             event.add_source(url)
             yield event
