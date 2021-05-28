@@ -21,7 +21,7 @@ class NYEventScraper(Scraper):
 
     def scrape(self, session=None, start=None, end=None):
 
-        yield from self.scrape_lower()
+        # yield from self.scrape_lower()
 
         self.api_key = os.environ["NEW_YORK_API_KEY"]
         self.api_client = OpenLegislationAPIClient(self)
@@ -122,6 +122,12 @@ class NYEventScraper(Scraper):
 
             location = meeting["location"]
             description = meeting["notes"]
+
+            if location == "":
+                location = "See Committee Site"
+
+            if "canceled" in description.lower():
+                continue
 
             event = Event(
                 name=com_name,
