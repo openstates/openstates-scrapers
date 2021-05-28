@@ -1,135 +1,93 @@
-import re
 import datetime as dt
 
 import pytz
+import os
+
+from dateutil.relativedelta import relativedelta
+import dateutil.parser
+
 from openstates.scrape import Scraper, Event
-
-from utils import LXMLMixin
-
-url = "http://assembly.state.ny.us/leg/?sh=hear"
+from .apiclient import OpenLegislationAPIClient
 
 
-class NYEventScraper(Scraper, LXMLMixin):
+class NYEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
+    api_client = None
+    term_start_year = None
 
-    def lower_parse_page(self, url):
-        page = self.lxmlize(url)
-        tables = page.xpath("//table[@class='pubhrgtbl']")
-        date = None
-        for table in tables:
-            metainf = {}
-            rows = table.xpath(".//tr")
-            for row in rows:
-                tds = row.xpath("./*")
-                if len(tds) < 2:
-                    continue
-                key, value = tds
+    def scrape(self, session=None, start=None, end=None):
+        self.api_key = os.environ["NEW_YORK_API_KEY"]
+        self.api_client = OpenLegislationAPIClient(self)
 
-                if key.tag == "th" and key.get("class") == "hrgdate":
-                    date = key.text_content()
-                    date = re.sub(r"\s+", " ", date)
-                    date = re.sub(".*POSTPONED NEW DATE", "", date).strip()
+        if session is None:
+            session = self.latest_session()
+            self.info("no session specified, using %s", session)
 
-                # Due to the html structure this shouldn't be an elif
-                # It needs to fire twice in the same loop iteration
-                if value.tag == "th" and value.get("class") == "commtitle":
-                    coms = value.xpath('.//div[contains(@class,"comm-txt")]/text()')
+        if start is None:
+            start = dt.datetime.today()
+        else:
+            start = dateutil.parser.parse(start)
 
-                elif key.tag == "td":
-                    key = key.text_content().strip()
-                    value = value.text_content().strip()
-                    value = value.replace(u"\x96", "-")
-                    value = re.sub(r"\s+", " ", value)
-                    metainf[key] = value
+        if end is None:
+            end = start + relativedelta(months=+6)
+        else:
+            end = dateutil.parser.parse(end)
 
-            time = metainf["Time:"]
-            repl = {"A.M.": "AM", "P.M.": "PM"}
-            drepl = {"Sept": "Sep"}
-            for r in repl:
-                time = time.replace(r, repl[r])
+        start = start.strftime("%Y-%m-%d")
+        end = end.strftime("%Y-%m-%d")
 
-            for r in drepl:
-                date = date.replace(r, drepl[r])
+        response = self.api_client.get("meetings", start=start, end=end)
 
-            time = re.sub("-.*", "", time)
-            time = time.strip()
+        for item in response["result"]["items"]:
+            yield from self.parse_agenda_item(item)
 
-            year = dt.datetime.now().year
+    def parse_agenda_item(self, item):
+        response = self.api_client.get(
+            "meeting",
+            year=item["agendaId"]["year"],
+            agenda_id=item["agendaId"]["number"],
+            committee=item["committeeId"]["name"],
+        )
 
-            date = "%s %s %s" % (date, year, time)
+        data = response["result"]
 
-            if "tbd" in date.lower():
+        chamber = data["committee"]["committeeId"]["chamber"].title()
+        com_code = data["committee"]["committeeId"]["name"]
+        com_name = f"{chamber} {com_code}"
+
+        # each "meeting" is actually a listing page of multiple meetings of the same committee
+        # broken out by different addendumId
+        for addendum in data["committee"]["addenda"]["items"]:
+            if addendum["addendumId"] != item["addendum"]:
                 continue
 
-            date = date.replace(" PLEASE NOTE NEW TIME", "")
+            meeting = addendum["meeting"]
 
-            # Check if the event has been postponed.
-            postponed = "POSTPONED" in date
-            if postponed:
-                date = date.replace(" POSTPONED", "")
+            when = dateutil.parser.parse(meeting["meetingDateTime"])
+            when = self._tz.localize(when)
 
-            date_formats = ["%B %d %Y %I:%M %p", "%b. %d %Y %I:%M %p"]
-            datetime = None
-            for fmt in date_formats:
-                try:
-                    datetime = dt.datetime.strptime(date, fmt)
-                except ValueError:
-                    pass
-
-            # If the datetime can't be parsed, bail.
-            if datetime is None:
-                return
-
-            title_key = set(metainf) & set(
-                [
-                    "Public Hearing:",
-                    "Summit:",
-                    "Roundtable:",
-                    "Roundtable Meeting:",
-                    "Public Roundtable:",
-                    "Public Meeting:",
-                    "Public Forum:",
-                    "Meeting:",
-                ]
-            )
-            assert len(title_key) == 1, "Couldn't determine event title."
-            title_key = list(title_key).pop()
-            title = metainf[title_key]
-
-            title = re.sub(
-                r"\*\*Click here to view public hearing notice\*\*", "", title
-            )
-
-            # If event was postponed, add a warning to the title.
-            if postponed:
-                title = "POSTPONED: %s" % title
+            location = meeting["location"]
+            description = meeting["notes"]
 
             event = Event(
-                name=title,
-                start_date=self._tz.localize(datetime),
-                location_name=metainf["Place:"],
+                name=com_name,
+                start_date=when,
+                location_name=location,
+                description=description,
             )
-            event.extras = {"contact": metainf["Contact:"]}
-            if "Media Contact:" in metainf:
-                event.extras.update(media_contact=metainf["Media Contact:"])
+
+            com_code = (
+                com_code.lower().replace("'", "").replace(" ", "-").replace(",", "")
+            )
+            url = f"https://www.nysenate.gov/committees/{com_code}"
             event.add_source(url)
 
-            for com in coms:
-                event.add_participant(com.strip(), type="committee", note="host")
-                participant = event.participants[-1]
-                participant["extras"] = ({"chamber": self.classify_committee(com)},)
+            bills = addendum["bills"]["items"]
+
+            if len(bills) > 0:
+                agenda = event.add_agenda_item("Bills under consideration")
+
+            for bill in bills:
+                agenda.add_bill(bill["billId"]["printNo"])
 
             yield event
-
-    def scrape(self):
-        yield from self.lower_parse_page(url)
-
-    def classify_committee(self, name):
-        chamber = "other"
-        if "senate" in name.lower():
-            chamber = "upper"
-        if "assembly" in name.lower():
-            chamber = "lower"
-        if "joint" in name.lower():
-            chamber = "joint"
-        return chamber
