@@ -2,6 +2,10 @@ import datetime as dt
 
 import pytz
 import os
+import re
+
+import lxml
+from lxml import etree
 
 from dateutil.relativedelta import relativedelta
 import dateutil.parser
@@ -16,6 +20,9 @@ class NYEventScraper(Scraper):
     term_start_year = None
 
     def scrape(self, session=None, start=None, end=None):
+
+        yield from self.scrape_lower()
+
         self.api_key = os.environ["NEW_YORK_API_KEY"]
         self.api_client = OpenLegislationAPIClient(self)
 
@@ -36,12 +43,59 @@ class NYEventScraper(Scraper):
         start = start.strftime("%Y-%m-%d")
         end = end.strftime("%Y-%m-%d")
 
+        yield from self.scrape_upper(start, end)
+
+    def scrape_lower(self):
+        url = 'https://nyassembly.gov/leg/?sh=agen'
+        page = self.get(url).content
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+
+        for link in page.xpath('//a[contains(@href,"agenda=")]'):
+            yield from self.scrape_lower_event(link.xpath('@href')[0])
+    
+    def scrape_lower_event(self, url):
+        page = self.get(url).content
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+
+        table = page.xpath('//section[@id="leg-agenda-mod"]/div/table')[0]
+        meta = table.xpath('tr[1]/td[1]/text()')
+
+        # careful, the committee name in the page #committee_div
+        # is getting inserted via JS
+        # so use the one from the table, and strip the chair name
+        com_name = re.sub(r"\(.*\)","", meta[0])
+        com_name = f"Assembly {com_name}"
+
+        when = dateutil.parser.parse(meta[1])
+        when = self._tz.localize(when)
+        location = meta[2]
+
+        event = Event(
+            name=com_name,
+            start_date=when,
+            location_name=location,
+        )
+
+        event.add_participant(com_name, type="committee", note="host")
+
+        event.add_source(url)
+
+        if table.xpath('.//a[contains(@href, "/leg/")]'):
+            agenda = event.add_agenda_item("Bills under Consideration")
+            for bill_link in table.xpath('.//a[contains(@href, "/leg/")]'):
+                agenda.add_bill(bill_link.text_content().strip())
+
+        yield event
+
+    def scrape_upper(self, start, end):
         response = self.api_client.get("meetings", start=start, end=end)
 
         for item in response["result"]["items"]:
-            yield from self.parse_agenda_item(item)
+            yield from self.upper_parse_agenda_item(item)
 
-    def parse_agenda_item(self, item):
+    def upper_parse_agenda_item(self, item):
         response = self.api_client.get(
             "meeting",
             year=item["agendaId"]["year"],
@@ -75,6 +129,8 @@ class NYEventScraper(Scraper):
                 location_name=location,
                 description=description,
             )
+
+            event.add_participant(com_name, type="committee", note="host")
 
             com_code = (
                 com_code.lower().replace("'", "").replace(" ", "-").replace(",", "")
