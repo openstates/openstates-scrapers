@@ -2,6 +2,7 @@ import re
 from utils import url_xpath, State
 from .people import KYPersonScraper
 from .bills import KYBillScraper
+from .events import KYEventScraper
 
 # from .committees import KYCommitteeScraper
 
@@ -11,6 +12,7 @@ class Kentucky(State):
         "people": KYPersonScraper,
         # 'committees': KYCommitteeScraper,
         "bills": KYBillScraper,
+        "events": KYEventScraper,
     }
     legislative_sessions = [
         {
