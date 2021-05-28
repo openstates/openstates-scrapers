@@ -2,13 +2,13 @@ from utils import url_xpath, State
 from .people import OHLegislatorScraper
 from .bills import OHBillScraper
 
-# from .events import OHEventScraper
+from .events import OHEventScraper
 
 
 class Ohio(State):
     scrapers = {
         "people": OHLegislatorScraper,
-        # 'events': OHEventScraper,
+        'events': OHEventScraper,
         "bills": OHBillScraper,
     }
     legislative_sessions = [
