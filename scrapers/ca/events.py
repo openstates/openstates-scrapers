@@ -159,4 +159,5 @@ _committee_nr = {
     74: "Senate Human Services",
     75: "Senate Housing",
     80: "Senate Insurance, Banking and Financial Institutions",
+    81: "Assembly Emergency Management",
 }
