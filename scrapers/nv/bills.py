@@ -203,7 +203,7 @@ class BillTabDetail(HtmlPage):
 
                 action_type = None
                 for pattern, atype in ACTION_CLASSIFIERS:
-                    if re.match(pattern, action):
+                    if re.search(pattern, action, re.IGNORECASE):
                         action_type = atype
                         break
 
