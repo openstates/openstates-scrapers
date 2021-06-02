@@ -1,7 +1,7 @@
 import collections
 import re
-from spatula.pages import HtmlListPage, CsvListPage, HtmlPage, XPath
-from .common.people import Person, PeopleWorkflow
+from spatula import HtmlListPage, CsvListPage, HtmlPage, XPath
+from ..common.people import Person, PeopleWorkflow
 
 PARTIES = {"DFL": "Democratic-Farmer-Labor", "R": "Republican", "I": "Independent"}
 SEN_HTML_URL = "http://www.senate.mn/members/index.php"

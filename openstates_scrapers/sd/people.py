@@ -1,5 +1,5 @@
 from spatula import JsonListPage, URL
-from .common.people import Person, PeopleWorkflow
+from ..common.people import Person, PeopleWorkflow
 
 
 class DirectoryListing(JsonListPage):

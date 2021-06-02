@@ -1,7 +1,7 @@
 import re
 import attr
 from spatula import HtmlListPage, HtmlPage, CSS
-from .common.people import Person, PeopleWorkflow
+from ..common.people import Person, PeopleWorkflow
 
 background_image_re = re.compile(r"background-image:url\((.*?)\)")
 

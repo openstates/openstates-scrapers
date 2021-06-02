@@ -1,6 +1,6 @@
 import re
 from spatula import HtmlListPage, XPath
-from .common.people import Person, PeopleWorkflow
+from ..common.people import Person, PeopleWorkflow
 
 
 def clean_name(name):

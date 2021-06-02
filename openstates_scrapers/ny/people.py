@@ -1,7 +1,7 @@
 import re
 import lxml.etree
 from spatula import HtmlListPage, HtmlPage, CSS, SelectorError, URL
-from .common.people import Person, PeopleWorkflow
+from ..common.people import Person, PeopleWorkflow
 
 
 class PartyAugmentation(HtmlPage):

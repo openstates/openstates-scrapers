@@ -1,5 +1,5 @@
 from spatula import HtmlListPage, HtmlPage, SimilarLink, CSS
-from .common.people import Person, PeopleWorkflow
+from ..common.people import Person, PeopleWorkflow
 
 
 class SenateList(HtmlListPage):

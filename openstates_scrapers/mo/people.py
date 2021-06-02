@@ -1,6 +1,6 @@
 import attr
 from spatula import HtmlListPage, HtmlPage, URL, CSS
-from .common.people import Person, PeopleWorkflow
+from ..common.people import Person, PeopleWorkflow
 
 
 @attr.s(auto_attribs=True)
