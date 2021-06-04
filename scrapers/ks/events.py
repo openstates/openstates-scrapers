@@ -16,9 +16,15 @@ class KSEventScraper(Scraper):
 
     slug = ""
 
+    # Unlike most states, KS posts most of their hearing data after the date
+    # start date defaults to 30 days ago, mostly to cut down on page requests
+    # and avoid getting banned by their aggressive anti-scraping code
     def scrape(self, start=None):
         if start is None:
-            start = datetime.datetime.now().strftime("%Y-%m-%d")
+            start = datetime.datetime.now()
+            start = start - datetime.timedelta(days=30)
+        else:
+            start = dateutil.parser.parse(start)
 
         session = self.latest_session()
         meta = next(
@@ -34,7 +40,9 @@ class KSEventScraper(Scraper):
         for chamber in ["upper", "lower"]:
             chamber_key = f"{self.chamber_names[chamber]}_committees"
             for com in coms_page["content"][chamber_key]:
-                yield from self.scrape_com_page(com["KPID"], chamber, com["TITLE"], start)
+                yield from self.scrape_com_page(
+                    com["KPID"], chamber, com["TITLE"], start
+                )
 
     def scrape_com_page(self, com_id, chamber, com_name, start):
         # http://www.kslegislature.org/li/b2021_22/committees/ctte_h_agriculture_1/
@@ -51,7 +59,7 @@ class KSEventScraper(Scraper):
 
         location = re.search(r"Location\:(.*)$", time_loc).group(1).strip()
 
-        if location.strip() == '':
+        if location.strip() == "":
             location = "See Agenda"
 
         doc_page_url = f"http://www.kslegislature.org/li/{self.slug}/committees/{com_id}/documents/"
@@ -61,7 +69,7 @@ class KSEventScraper(Scraper):
 
         for meeting_date in page.xpath('//select[@id="id_date_choice"]/option/@value'):
             meeting_day = dateutil.parser.parse(meeting_date)
-            if meeting_date < start:
+            if meeting_day < start:
                 continue
 
             yield from self.scrape_meeting_page(
@@ -72,7 +80,10 @@ class KSEventScraper(Scraper):
         self, com_id, chamber, com_name, meeting_date, meeting_time, location
     ):
         # http://www.kslegislature.org/li/b2021_22/committees/ctte_s_jud_1/documents/?date_choice=2021-03-19
-        meeting_page_url = f"http://www.kslegislature.org/li/{self.slug}/committees/{com_id}/documents/?date_choice={meeting_date}"
+        meeting_page_url = (
+            f"http://www.kslegislature.org/li/{self.slug}/"
+            f"committees/{com_id}/documents/?date_choice={meeting_date}"
+        )
 
         page = self.get(meeting_page_url).content
         page = lxml.html.fromstring(page)
@@ -90,7 +101,11 @@ class KSEventScraper(Scraper):
         event = Event(
             start_date=start_date,
             name=f"{pretty_chamber} {com_name}",
-            location_name=location
+            location_name=location,
+        )
+
+        event.add_participant(
+            f"{pretty_chamber} {com_name}", type="committee", note="host"
         )
 
         # Agendas & Minutes
@@ -102,12 +117,7 @@ class KSEventScraper(Scraper):
             event.add_document(doc_name, doc_url, media_type="application/pdf")
 
         # Witness testimony
-        for row in page.xpath(
-            "//table[thead/tr/th/h4[contains(text(), 'Testimony')]]/table[contains(@class,'bottom')]/tbody/tr"
-        ):
-
-            if not row.xpath("td[2]"):
-                continue
+        for row in page.xpath("//tr[td[ul[@id='testimony-docs']]]"):
 
             doc_type = row.xpath("td[1]")[0].text_content()
             meta = row.xpath("td[2]/ul[@id='testimony-docs']")[0]
@@ -116,7 +126,7 @@ class KSEventScraper(Scraper):
                 0
             ].strip()
 
-            org = ''
+            org = ""
             if meta.xpath("li[strong[contains(text(),'Organization')]]/text()"):
                 org = meta.xpath("li[strong[contains(text(),'Organization')]]/text()")[
                     0
@@ -129,11 +139,11 @@ class KSEventScraper(Scraper):
             else:
                 doc_name = f"{doc_type} - {witness} - {topic}"
 
+            agenda = event.add_agenda_item(doc_name)
             if meta.xpath("li[strong[contains(text(),'Measure')]]/text()"):
                 bill_id = meta.xpath("li[strong[contains(text(),'Measure')]]/text()")[
                     0
                 ].strip()
-                agenda = event.add_agenda_item(doc_name)
                 agenda.add_bill(bill_id)
 
         event.add_source(meeting_page_url)
