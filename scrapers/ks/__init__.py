@@ -1,5 +1,6 @@
 from utils import url_xpath, State
 from .bills import KSBillScraper
+from .events import KSEventScraper
 from .people import KSPersonScraper
 
 # from .committees import KSCommitteeScraper
@@ -15,6 +16,7 @@ settings = dict(SCRAPELIB_TIMEOUT=300, SCRAPELIB_RPM=12)
 class Kansas(State):
     scrapers = {
         "bills": KSBillScraper,
+        "events": KSEventScraper,
         "people": KSPersonScraper,
         # 'committees': KSCommitteeScraper,
     }
