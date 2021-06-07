@@ -52,7 +52,7 @@ class WYEventScraper(Scraper):
                     for media in row["meetingMedias"]:
                         # all these i've seen say they're octet stream but are actually youtube links
                         event.add_media_link(
-                            media["documentType"], media["filePath"], "text/html"
+                            media["documentType"], media["filePath"], "text/html", on_duplicate="ignore"
                         )
 
                     for doc in row["meetingDocuments"]:
