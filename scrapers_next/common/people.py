@@ -2,7 +2,6 @@ import re
 import uuid
 from collections import OrderedDict
 from openstates.utils import abbr_to_jid
-from openstates.people.utils import dump_obj
 from spatula import Workflow
 
 
@@ -128,5 +127,6 @@ class Person:
 
 
 class PeopleWorkflow(Workflow):
-    def save_object(self, obj, output_dir):
-        dump_obj(obj, output_dir=output_dir)
+    pass
+    # def save_object(self, obj, output_dir):
+    #     dump_obj(obj, output_dir=Path(output_dir))

@@ -11,7 +11,7 @@ class FormSource:
         self.form_xpath = form_xpath
         self.button_label = button_label
 
-    def process_page(self, scraper):
+    def get_response(self, scraper):
         resp = scraper.get(self.url)
         root = lxml.html.fromstring(resp.content)
         form = root.xpath(self.form_xpath)[0]
@@ -30,7 +30,7 @@ class FormSource:
 
         # do second request
         resp = scraper.post(self.url, data)
-        return resp.content
+        return resp
 
     def __str__(self):
         return f"FormSource('{self.url}', '{self.form_xpath}', '{self.button_label}')"
