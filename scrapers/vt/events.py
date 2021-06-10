@@ -1,4 +1,5 @@
 import datetime
+import dateutil.parser
 import json
 import pytz
 
@@ -27,21 +28,16 @@ class VTEventScraper(Scraper):
                 or info["TimeSlot"] == "1"
                 or info["TimeSlot"] == 1
             ):
-                start_time = datetime.datetime.strptime(
-                    info["MeetingDate"], "%A, %B %d, %Y"
-                )
+                start_time = dateutil.parser.parse(info["MeetingDate"])
                 all_day = True
             else:
                 try:
-                    start_time = datetime.datetime.strptime(
-                        info["MeetingDate"] + ", " + info["TimeSlot"],
-                        "%A, %B %d, %Y, %I:%M %p",
+                    start_time = dateutil.parser.parse(
+                        f"{info['MeetingDate']}, {info['TimeSlot']}"
                     )
-                except (ValueError, TypeError):
-                    start_time = datetime.datetime.strptime(
-                        info["MeetingDate"] + ", " + info["StartTime"],
-                        "%A, %B %d, %Y, %I:%M %p",
-                    )
+                except dateutil.parser._parser.ParserError:
+                    start_time = dateutil.parser.parse(info["MeetingDate"])
+
                 all_day = False
 
             event = Event(
