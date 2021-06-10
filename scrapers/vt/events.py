@@ -3,6 +3,7 @@ import dateutil.parser
 import json
 import pytz
 
+from dateutil.parser import ParserError
 from openstates.scrape import Scraper, Event
 
 
@@ -35,7 +36,7 @@ class VTEventScraper(Scraper):
                     start_time = dateutil.parser.parse(
                         f"{info['MeetingDate']}, {info['TimeSlot']}"
                     )
-                except dateutil.parser._parser.ParserError:
+                except ParserError:
                     start_time = dateutil.parser.parse(info["MeetingDate"])
 
                 all_day = False
