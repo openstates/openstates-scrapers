@@ -278,9 +278,6 @@ class CTBillScraper(Scraper):
                 if re.match(r"SIGNED BY GOVERNOR", action):
                     act_type.append("executive-signature")
 
-                if re.match(r"PUBLIC ACT", action):
-                    act_type.append("became-law")
-
                 if re.match(r"^LINE ITEM VETOED", action):
                     act_type.append("executive-veto-line-item")
 
