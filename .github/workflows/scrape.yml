@@ -1,10 +1,12 @@
 name: Scout Scrape
 
 on:
+  schedule:
+    - cron: "0 10 * * *"
   workflow_dispatch:
 
 jobs:
-  lint:
+  scout:
     runs-on: ubuntu-latest
 
     steps:
