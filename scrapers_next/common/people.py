@@ -8,8 +8,8 @@ PARTIES = {
     "r": "Republican",
     "dem": "Democratic",
     "rep": "Republican",
+    "ind": "Independent",
     "democrat": "Democratic",
-    "republican": "Republican",
 }
 
 

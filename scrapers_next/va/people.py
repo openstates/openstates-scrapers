@@ -2,7 +2,7 @@ import datetime
 import re
 import attr
 from spatula import HtmlPage, HtmlListPage, XPath
-from ..common.people import Person, PeopleWorkflow
+from ..common.people import ScrapePerson
 
 PARTY_MAP = {"R": "Republican", "D": "Democratic", "I": "Independent"}
 party_district_pattern = re.compile(r"\((R|D|I)\) - (?:House|Senate) District\s+(\d+)")
@@ -90,7 +90,7 @@ class MemberDetail(HtmlPage):
     def process_page(self):
         party_district_text = self.root.xpath("//h3/font/text()")[0]
         party, district = get_party_district(party_district_text)
-        p = Person(
+        p = ScrapePerson(
             name=self.input.name,
             state="va",
             chamber=self.chamber,
@@ -167,17 +167,13 @@ class DelegateDetail(MemberDetail):
         return p
 
 
-class SenateList(MemberList):
+class Senate(MemberList):
     chamber = "upper"
     selector = XPath('//div[@class="lColRt"]/ul/li/a')
     next_page_cls = SenatePhotoDetail
 
 
-class DelegateList(MemberList):
+class House(MemberList):
     chamber = "lower"
     selector = XPath('//div[@class="lColLt"]/ul/li/a')
     next_page_cls = DelegateDetail
-
-
-senators = PeopleWorkflow(SenateList)
-delegates = PeopleWorkflow(DelegateList)

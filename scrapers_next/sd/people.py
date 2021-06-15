@@ -1,8 +1,8 @@
 from spatula import JsonListPage, URL
-from ..common.people import Person, PeopleWorkflow
+from ..common.people import ScrapePerson
 
 
-class DirectoryListing(JsonListPage):
+class Legislators(JsonListPage):
     source = URL("https://sdlegislature.gov/api/SessionMembers/Session/44")
 
     def process_item(self, item):
@@ -16,7 +16,7 @@ class DirectoryListing(JsonListPage):
         else:
             name = f"{first} {last}"
 
-        p = Person(
+        p = ScrapePerson(
             name=name,
             family_name=last,
             given_name=first,
@@ -35,14 +35,11 @@ class DirectoryListing(JsonListPage):
         address += f"{item['HomeCity']}, {item['HomeState']} {item['HomeZip']}"
 
         p.district_office.address = address
-        p.district_office.voice = item["HomePhone"]
-        p.capitol_office.voice = item["CapitolPhone"]
+        p.district_office.voice = item["HomePhone"] or ""
+        p.capitol_office.voice = item["CapitolPhone"] or ""
         p.extras["occupation"] = item["Occupation"]
 
         url = f"https://sdlegislature.gov/Legislators/Profile/{item['SessionMemberId']}/Detail"
         p.add_link(url)
         p.add_source(url)
         return p
-
-
-legislators = PeopleWorkflow(DirectoryListing)

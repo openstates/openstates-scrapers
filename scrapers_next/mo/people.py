@@ -1,6 +1,6 @@
 import attr
 from spatula import HtmlListPage, HtmlPage, URL, CSS
-from ..common.people import Person, PeopleWorkflow
+from ..common.people import ScrapePerson
 
 
 @attr.s(auto_attribs=True)
@@ -15,7 +15,7 @@ class HousePartial:
     url: str
 
 
-class HouseList(HtmlListPage):
+class Representatives(HtmlListPage):
     # note: there is a CSV, but it requires a bunch of ASP.net hoops to actually get
     source = URL(
         "https://house.mo.gov/MemberGridCluster.aspx?year=2021&code=R+&filter=clear"
@@ -51,7 +51,7 @@ class HouseDetail(HtmlPage):
 
         photo = CSS("img#ContentPlaceHolder1_imgPhoto1").match_one(self.root).get("src")
 
-        p = Person(
+        p = ScrapePerson(
             state="mo",
             party=party,
             image=photo,
@@ -71,6 +71,3 @@ class HouseDetail(HtmlPage):
         p.add_link(self.input.url)
         p.add_source(self.input.url)
         return p
-
-
-house_members = PeopleWorkflow(HouseList)
