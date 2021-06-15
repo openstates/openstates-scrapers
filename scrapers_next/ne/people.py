@@ -1,5 +1,5 @@
 from spatula import HtmlPage, ListPage, NullSource, CSS
-from ..common.people import Person, PeopleWorkflow
+from ..common.people import ScrapePerson
 
 
 class LegPage(HtmlPage):
@@ -36,7 +36,7 @@ class LegPage(HtmlPage):
             if mode == "address":
                 address.append(line)
 
-        p = Person(
+        p = ScrapePerson(
             chamber="legislature",
             party="Nonpartisan",
             state="ne",
@@ -63,6 +63,3 @@ class LegPageGenerator(ListPage):
     def process_page(self):
         for n in range(1, 50):
             yield LegPage(source=f"http://news.legislature.ne.gov/dist{n:02d}/")
-
-
-legislators = PeopleWorkflow(LegPageGenerator)
