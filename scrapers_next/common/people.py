@@ -49,6 +49,11 @@ class ScrapePerson(BaseModelConfig):
     district_office = ScrapeContactDetail(note="District Office")
     extras: dict = {}
 
+    @validator("party", pre=True)
+    def common_abbreviations(cls, val):
+        # replace with proper name if one exists
+        return PARTIES.get(val.lower(), val)
+
     @validator("name")
     def collapse_spaces(cls, val):
         return re.sub(r"\s+", " ", val).strip()
