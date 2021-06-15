@@ -1,5 +1,5 @@
 from spatula import HtmlListPage, CSS
-from ..common.people import Person, PeopleWorkflow
+from ..common.people import ScrapePerson
 
 
 def split_name(name):
@@ -20,7 +20,7 @@ def ord_suffix(str_num):
     return {1: "st", 2: "nd", 3: "rd"}.get(num % 10, "th")
 
 
-class SenList(HtmlListPage):
+class Senators(HtmlListPage):
     source = "https://senate.michigan.gov/senatorinfo_list.html"
     selector = CSS(".table tbody tr", num_items=38)
     PARTY_MAP = {"Rep": "Republican", "Dem": "Democratic"}
@@ -43,7 +43,7 @@ class SenList(HtmlListPage):
             f"https://senate.michigan.gov/_images/{district}{ord_suffix(district)}.jpg"
         )
 
-        p = Person(
+        p = ScrapePerson(
             **split_name(name),
             state="mi",
             chamber="upper",
@@ -59,7 +59,7 @@ class SenList(HtmlListPage):
         return p
 
 
-class RepList(HtmlListPage):
+class Representatives(HtmlListPage):
     source = "https://www.house.mi.gov/MHRPublic/frmRepListMilenia.aspx?all=true"
     selector = CSS("#grvRepInfo tr", num_items=111)
     office_names = {
@@ -79,7 +79,7 @@ class RepList(HtmlListPage):
         for abbr, full in self.office_names.items():
             office = office.replace(abbr, full)
 
-        p = Person(
+        p = ScrapePerson(
             name=name.text_content(),
             state="mi",
             chamber="lower",
@@ -87,12 +87,11 @@ class RepList(HtmlListPage):
             party=party.text_content(),
             email=email.text_content(),
         )
-        p.add_link(CSS("a").match_one(website).get("href"))
+        link = CSS("a").match_one(website).get("href")
+        if link.startswith("http:/r"):
+            link = link.replace(":/", "://")
+        p.add_link(link)
         p.add_source(self.source.url)
         p.capitol_office.voice = phone.text_content()
         p.capitol_office.address = office
         return p
-
-
-senators = PeopleWorkflow(SenList)
-reps = PeopleWorkflow(RepList)

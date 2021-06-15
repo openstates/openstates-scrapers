@@ -40,10 +40,38 @@ jobs:
       run: poetry install
 
     # scout runs
+    - name: update ak
+      run: poetry run spatula scout scrapers_next.ak.people.Legislators -o artifacts/ak.json
+    - name: update fl reps
+      run: poetry run spatula scout scrapers_next.fl.people.Representatives -o artifacts/fl-reps.json
+    - name: update fl sens
+      run: poetry run spatula scout scrapers_next.fl.people.Senators -o artifacts/fl-sens.json
     - name: update hi
-      run: poetry run spatula scout scrapers_next.hi.people.all_legislators -o artifacts/hi.json
+      run: poetry run spatula scout scrapers_next.hi.people.Legislators -o artifacts/hi.json
     - name: update ks
-      run: poetry run spatula scout scrapers_next.ks.people.MembersList -o artifacts/ks.json
+      run: poetry run spatula scout scrapers_next.ks.people.Legislators -o artifacts/ks.json
+    - name: update md dels
+      run: poetry run spatula scout scrapers_next.md.people.delegates -o artifacts/md-dels.json
+    - name: update md sens
+      run: poetry run spatula scout scrapers_next.md.people.senators -o artifacts/md-sens.json
+    - name: update mi reps
+      run: poetry run spatula scout scrapers_next.mi.people.Representatives -o artifacts/mi-reps.json
+    - name: update mi sens
+      run: poetry run spatula scout scrapers_next.mi.people.Senators -o artifacts/mi-sens.json
+    - name: update mo reps
+      run: poetry run spatula scout scrapers_next.mo.people.Representatives -o artifacts/mo-reps.json
+    - name: update mt
+      run: poetry run spatula scout scrapers_next.mt.people.Legislators -o artifacts/mt.json
+    - name: update ny
+      run: poetry run spatula scout scrapers_next.ny.people.Assembly -o artifacts/ny-assembly.json
+    - name: update oh
+      run: poetry run spatula scout scrapers_next.oh.people.House -o artifacts/oh-house.json
+    - name: update ok
+      run: poetry run spatula scout scrapers_next.ok.people.House -o artifacts/ok-house.json
+    - name: update ok
+      run: poetry run spatula scout scrapers_next.ok.people.Senate -o artifacts/ok-senate.json
+    - name: update sd
+      run: poetry run spatula scout scrapers_next.sd.people.Legislators -o artifacts/sd.json
 
     - name: update remote git repo if necessary
       run: |-

@@ -1,6 +1,6 @@
 import re
 from spatula import HtmlListPage, HtmlPage, XPath, SimilarLink, CSS
-from ..common.people import Person, PeopleWorkflow
+from ..common.people import ScrapePerson
 
 
 class PersonDetail(HtmlPage):
@@ -62,7 +62,7 @@ class PersonDetail(HtmlPage):
         email = SimilarLink("mailto:").match_one(self.root).get("href")
         email = email.split(":", 1)[1].split("?")[0]
 
-        p = Person(
+        p = ScrapePerson(
             name=CSS("h2").match_one(self.root).text.split(" ", 1)[1],
             state="md",
             image=self.image_sel.match_one(self.root).get("src"),
@@ -93,9 +93,9 @@ class PersonList(HtmlListPage):
         )
 
 
-house_members = PeopleWorkflow(
-    PersonList(source="http://mgaleg.maryland.gov/mgawebsite/Members/Index/house")
+delegates = PersonList(
+    source="http://mgaleg.maryland.gov/mgawebsite/Members/Index/house"
 )
-senate_members = PeopleWorkflow(
-    PersonList(source="http://mgaleg.maryland.gov/mgawebsite/Members/Index/senate")
+senators = PersonList(
+    source="http://mgaleg.maryland.gov/mgawebsite/Members/Index/senate"
 )

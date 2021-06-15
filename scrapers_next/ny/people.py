@@ -1,7 +1,7 @@
 import re
 import lxml.etree
 from spatula import HtmlListPage, HtmlPage, CSS, SelectorError, URL
-from ..common.people import Person, PeopleWorkflow
+from ..common.people import ScrapePerson
 
 
 class PartyAugmentation(HtmlPage):
@@ -29,6 +29,8 @@ class PartyAugmentation(HtmlPage):
             dist = tds[0].text_content().strip()
             name = tds[1].text_content().strip()
             party = tds[2].text_content().strip()
+            if "[" in party:
+                party = party.split("[")[0]
             mapping[dist] = (name, party)
         return mapping
 
@@ -88,7 +90,7 @@ def parse_address_lines(text):
     return {"address": "; ".join(address), "fax": fax, "phone": phone, "email": email}
 
 
-class AssemblyList(HtmlListPage):
+class Assembly(HtmlListPage):
     source = URL("https://assembly.state.ny.us/mem/")
     selector = CSS("section.mem-item", num_items=150)
     dependencies = {"party_mapping": PartyAugmentation()}
@@ -131,7 +133,7 @@ class AssemblyList(HtmlListPage):
 
         party = self.party_mapping[district][1]
 
-        p = Person(
+        p = ScrapePerson(
             state="ny",
             chamber="lower",
             image=image,
@@ -143,16 +145,13 @@ class AssemblyList(HtmlListPage):
         p.add_link(url=name.get("href"))
         p.add_source(url=name.get("href"))
         if twitter:
-            p.ids["twitter"] = twitter
+            p.ids.twitter = twitter
         if facebook:
-            p.ids["facebook"] = facebook
+            p.ids.facebook = facebook
         p.district_office.address = district_addr["address"]
-        p.district_office.voice = district_addr["phone"]
-        p.district_office.fax = district_addr["fax"]
+        p.district_office.voice = district_addr["phone"] or ""
+        p.district_office.fax = district_addr["fax"] or ""
         p.capitol_office.address = capitol_addr["address"]
-        p.capitol_office.voice = capitol_addr["phone"]
-        p.capitol_office.fax = capitol_addr["fax"]
+        p.capitol_office.voice = capitol_addr["phone"] or ""
+        p.capitol_office.fax = capitol_addr["fax"] or ""
         return p
-
-
-assembly_members = PeopleWorkflow(AssemblyList)

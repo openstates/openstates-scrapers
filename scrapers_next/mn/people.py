@@ -1,7 +1,7 @@
 import collections
 import re
 from spatula import HtmlListPage, CsvListPage, HtmlPage, XPath
-from ..common.people import Person, PeopleWorkflow
+from ..common.people import ScrapePerson
 
 PARTIES = {"DFL": "Democratic-Farmer-Labor", "R": "Republican", "I": "Independent"}
 SEN_HTML_URL = "http://www.senate.mn/members/index.php"
@@ -35,7 +35,7 @@ class SenExtraInfo(HtmlPage):
         return extra_info
 
 
-class SenList(CsvListPage):
+class Senators(CsvListPage):
     source = "http://www.senate.mn/members/member_list_ascii.php?ls="
     dependencies = {
         "extra_info": SenExtraInfo(),
@@ -46,7 +46,7 @@ class SenList(CsvListPage):
             return
         name = "{} {}".format(row["First Name"], row["Last Name"])
         party = PARTIES[row["Party"]]
-        leg = Person(
+        leg = ScrapePerson(
             name=name,
             district=row["District"].lstrip("0"),
             party=party,
@@ -76,7 +76,7 @@ class SenList(CsvListPage):
         return leg
 
 
-class RepList(HtmlListPage):
+class Representatives(HtmlListPage):
     source = "http://www.house.leg.state.mn.us/members/hmem.asp"
     selector = XPath('//div[@id="Alpha"]//div[@class="media my-3"]')
 
@@ -106,7 +106,7 @@ class RepList(HtmlListPage):
         # if validate_email_address(email_text):
         email = email_text
 
-        rep = Person(
+        rep = ScrapePerson(
             name=name,
             district=district,
             party=party,
@@ -121,7 +121,3 @@ class RepList(HtmlListPage):
         rep.capitol_office.phone = phone
 
         return rep
-
-
-reps = PeopleWorkflow(RepList)
-sens = PeopleWorkflow(SenList)

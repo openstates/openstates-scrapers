@@ -1,5 +1,5 @@
 from spatula import JsonListPage
-from ..common.people import Person, PeopleWorkflow
+from ..common.people import ScrapePerson
 
 
 class DirectoryListing(JsonListPage):
@@ -11,7 +11,7 @@ class DirectoryListing(JsonListPage):
 
     def process_item(self, item):
         chamber_id = item["district"]["chamberType"]
-        p = Person(
+        p = ScrapePerson(
             state="ga",
             chamber=self.chamber_types[chamber_id],
             district=str(item["district"]["number"]),
@@ -61,6 +61,4 @@ class DirectoryListing(JsonListPage):
         return p
 
 
-legislators = PeopleWorkflow(
-    DirectoryListing(source="https://www.legis.ga.gov/api/members/list/1029")
-)
+people = DirectoryListing(source="https://www.legis.ga.gov/api/members/list/1029")

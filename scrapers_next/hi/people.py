@@ -1,6 +1,6 @@
 import lxml.html
 from spatula import CSS, SelectorError, HtmlListPage
-from ..common.people import Person, PeopleWorkflow
+from ..common.people import ScrapePerson
 
 
 class FormSource:
@@ -36,7 +36,7 @@ class FormSource:
         return f"FormSource('{self.url}', '{self.form_xpath}', '{self.button_label}')"
 
 
-class HawaiiLegislators(HtmlListPage):
+class Legislators(HtmlListPage):
     source = FormSource(
         "https://www.capitol.hawaii.gov/members/legislators.aspx", "//form", "Show All"
     )
@@ -69,7 +69,7 @@ class HawaiiLegislators(HtmlListPage):
         address = "Hawaii State Capitol, Room " + data["room"]
         chamber = "upper" if data["chamber"] == "S" else "lower"
 
-        p = Person(
+        p = ScrapePerson(
             name=data["first_name"] + " " + data["last_name"],
             state="hi",
             chamber=chamber,
@@ -85,6 +85,3 @@ class HawaiiLegislators(HtmlListPage):
         p.add_source(data["url"])
         p.add_link(data["url"])
         return p
-
-
-all_legislators = PeopleWorkflow(HawaiiLegislators)

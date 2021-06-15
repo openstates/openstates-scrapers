@@ -1,12 +1,5 @@
-import re
 from spatula import XmlListPage, URL, XPath
-from ..common.people import Person, PeopleWorkflow
-
-
-def clean_name(name):
-    name = re.sub(r"\s+", " ", name)
-    name = name.strip()
-    return name.title()
+from ..common.people import ScrapePerson
 
 
 ELEMENTS = (
@@ -42,12 +35,16 @@ class Legislators(XmlListPage):
         chamber = item.attrib["chamber"]
         code = item.attrib["code"].lower()
 
-        person = Person(
+        party = item_dict["Party"]
+        if party == "N":
+            party = "Independent"
+
+        person = ScrapePerson(
             name="{FirstName} {LastName}".format(**item_dict),
             given_name=item_dict["FirstName"],
             family_name=item_dict["LastName"],
             state="ak",
-            party=item_dict["Party"],
+            party=party,
             chamber=("upper" if chamber == "S" else "lower"),
             district=item_dict["District"],
             image=f"http://akleg.gov/images/legislators/{code}.jpg",
@@ -70,6 +67,3 @@ class Legislators(XmlListPage):
             )
 
         return person
-
-
-legislators = PeopleWorkflow(Legislators)

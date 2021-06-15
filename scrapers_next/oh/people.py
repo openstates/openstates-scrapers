@@ -1,7 +1,7 @@
 import re
 import attr
 from spatula import HtmlListPage, HtmlPage, CSS
-from ..common.people import Person, PeopleWorkflow
+from ..common.people import ScrapePerson
 
 background_image_re = re.compile(r"background-image:url\((.*?)\)")
 
@@ -15,7 +15,7 @@ class HousePartial:
     image = attr.ib()
 
 
-class HouseList(HtmlListPage):
+class House(HtmlListPage):
     source = "https://www.legislature.ohio.gov/legislators/house-directory"
     selector = CSS(".mediaGrid a[target='_blank']", num_items=99)
 
@@ -45,7 +45,7 @@ class HouseDetail(HtmlPage):
 
     def process_page(self):
         # construct person from the details from above
-        p = Person(
+        p = ScrapePerson(
             state="oh",
             chamber="lower",
             district=self.input.district,
@@ -77,6 +77,3 @@ class HouseDetail(HtmlPage):
                 p.capitol_office.fax = dtc.split(": ")[1]
 
         return p
-
-
-house_members = PeopleWorkflow(HouseList)
