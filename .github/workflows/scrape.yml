@@ -42,8 +42,8 @@ jobs:
     # scout runs
     - name: update ak
       run: poetry run spatula scout scrapers_next.ak.people.Legislators -o artifacts/ak.json
-    - name: update fl reps
-      run: poetry run spatula scout scrapers_next.fl.people.Representatives -o artifacts/fl-reps.json
+    # - name: update fl reps
+    #   run: poetry run spatula scout scrapers_next.fl.people.Representatives -o artifacts/fl-reps.json
     - name: update fl sens
       run: poetry run spatula scout scrapers_next.fl.people.Senators -o artifacts/fl-sens.json
     - name: update hi
