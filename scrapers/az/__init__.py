@@ -257,6 +257,15 @@ class Arizona(State):
             "start_date": "2020-01-11",
             "end_date": "2020-04-23",
         },
+        {
+            "_scraped_name": "2021 - Fifty-fifth Legislature - First Special Session",
+            "classification": "special",
+            "identifier": "55th-1st-special",
+            "name": "55th Legislature - 1st Special Session",
+            "start_date": "2021-06-14",
+            "end_date": "2021-06-18",
+        },
+        
     ]
     ignored_scraped_sessions = [
         "2008 - Forty-eighth Legislature - Second Regular Session",
