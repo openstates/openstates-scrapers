@@ -1,6 +1,6 @@
 import re
 from spatula import HtmlListPage, XPath
-from ..common.people import Person, PeopleWorkflow
+from ..common.people import ScrapePerson
 
 
 def clean_name(name):
@@ -21,7 +21,7 @@ class Legislators(HtmlListPage):
         chamber, district = seat.text_content().strip().split()
         url = str(name.xpath("a/@href")[0])
 
-        person = Person(
+        person = ScrapePerson(
             name=clean_name(name.text_content()),
             state="mt",
             party=party.text_content().strip(),
@@ -39,10 +39,6 @@ class Legislators(HtmlListPage):
 
         email = email.xpath("./a/@href")
         if email:
-            email = email[0].split(":", 1)[1]
-        person.capitol_office.email = email
+            person.email = email[0].split(":", 1)[1]
 
         return person
-
-
-legislators = PeopleWorkflow(Legislators)

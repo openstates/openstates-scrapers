@@ -1,8 +1,8 @@
 from spatula import HtmlListPage, HtmlPage, SimilarLink, CSS
-from ..common.people import Person, PeopleWorkflow
+from ..common.people import ScrapePerson
 
 
-class SenateList(HtmlListPage):
+class Senate(HtmlListPage):
     selector = SimilarLink("https://oksenate.gov/senators/", min_items=45, max_items=48)
     source = "https://oksenate.gov/senators"
 
@@ -14,7 +14,7 @@ class SenateList(HtmlListPage):
         )
 
 
-class HouseList(HtmlListPage):
+class House(HtmlListPage):
     selector = SimilarLink(
         r"https://www.okhouse.gov/Members/District.aspx\?District=", num_items=101
     )
@@ -33,7 +33,7 @@ class HouseDetail(HtmlPage):
 
     def process_page(self):
         name = self.name_css.match_one(self.root).text.split(maxsplit=1)[1]
-        p = Person(
+        p = ScrapePerson(
             name=name,
             state="ok",
             chamber="upper",
@@ -79,7 +79,7 @@ class SenateDetail(HtmlPage):
         for bio in CSS(".bSenBio__infoIt").match(self.root):
             if "Party:" in bio.text_content():
                 party = bio.text_content().split(":")[1].strip()
-        p = Person(
+        p = ScrapePerson(
             name=self.name_css.match_one(self.root).text,
             state="ok",
             chamber="upper",
@@ -94,7 +94,3 @@ class SenateDetail(HtmlPage):
         )
 
         return p
-
-
-house_members = PeopleWorkflow(HouseList)
-senate_members = PeopleWorkflow(SenateList)

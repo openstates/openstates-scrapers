@@ -1,8 +1,8 @@
 from spatula import JsonPage
-from ..common.people import Person
+from ..common.people import ScrapePerson
 
 
-class MembersList(JsonPage):
+class Legislators(JsonPage):
     source = "http://www.kslegislature.org/li/api/v11/rev-1/members/"
 
     def process_page(self):
@@ -46,7 +46,7 @@ class MembersDetail(JsonPage):
             f"http://www.kslegislature.org/li/m/images/pics/{content['KPID']}.jpg"
         )
 
-        person = Person(
+        person = ScrapePerson(
             name=name,
             state="ks",
             party=party,

@@ -1,10 +1,7 @@
 import re
 import attr
-import logging
 from spatula import HtmlListPage, HtmlPage, XPath
-from ..common.people import Person, PeopleWorkflow
-
-log = logging.getLogger("fl")
+from ..common.people import ScrapePerson
 
 
 def fix_name(name):
@@ -24,7 +21,7 @@ class PartialPerson:
     image: str = ""  # default empty, required for Rep
 
 
-class SenList(HtmlListPage):
+class Senators(HtmlListPage):
     source = "https://www.flsenate.gov/Senators/"
     selector = XPath("//a[@class='senatorLink']")
 
@@ -48,6 +45,9 @@ class SenDetail(HtmlPage):
     contact_xpath = XPath('//h4[contains(text(), "Office")]')
     input_type = PartialPerson
 
+    def get_source_from_input(self):
+        return self.input.url
+
     def process_page(self):
         email = (
             self.root.xpath('//a[contains(@href, "mailto:")]')[0]
@@ -55,7 +55,7 @@ class SenDetail(HtmlPage):
             .split(":")[-1]
         )
 
-        p = Person(
+        p = ScrapePerson(
             state="fl",
             chamber="upper",
             name=fix_name(self.input.name),
@@ -122,7 +122,7 @@ class RepContact(HtmlPage):
         return self.input.url.replace("details.aspx", "contactmember.aspx")
 
     def process_page(self):
-        p = Person(
+        p = ScrapePerson(
             state="fl",
             chamber="lower",
             name=fix_name(self.input.name),
@@ -149,7 +149,7 @@ class RepContact(HtmlPage):
         return p
 
 
-class RepList(HtmlListPage):
+class Representatives(HtmlListPage):
     source = "https://www.myfloridahouse.gov/Representatives"
     # kind of wonky xpath to not get the partial term people at the bottom of the page
     selector = XPath("(//div[@class='team-page'])[1]//div[@class='team-box']")
@@ -174,7 +174,3 @@ class RepList(HtmlListPage):
                 url=link,
             )
         )
-
-
-senators = PeopleWorkflow(SenList)
-reps = PeopleWorkflow(RepList)

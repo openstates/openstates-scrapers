@@ -3,6 +3,7 @@ data
 cache
 _cache
 _data
+_scrapes
 
 # Setting-overrides that should not be shared
 local_settings.*py
