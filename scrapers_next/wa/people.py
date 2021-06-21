@@ -3,7 +3,7 @@ from spatula import HtmlListPage, CSS, XPath, URL
 from ..common.people import ScrapePerson
 
 
-class PartyAugmentation(HtmlListPage):
+class EmailAugmentation(HtmlListPage):
     """
     WA Email addresses are listed on a separate page.
     """
@@ -11,10 +11,7 @@ class PartyAugmentation(HtmlListPage):
     source = URL("https://app.leg.wa.gov/memberemail/Default.aspx")
 
     def find_rows(self):
-        for table in CSS("#membertable").match(self.root):
-            rows = CSS("tbody tr").match(table)
-            if len(rows) == 147:
-                return rows
+        return CSS("#membertable tbody tr").match(self.root, num_items=147)
 
     def process_page(self):
         # We need it to find the member's email address.
@@ -39,7 +36,7 @@ class PartyAugmentation(HtmlListPage):
 
 
 class LegList(HtmlListPage):
-    dependencies = {"party_mapping": PartyAugmentation()}
+    dependencies = {"email_mapping": EmailAugmentation()}
 
     def process_item(self, item):
         title_name_party = XPath('.//span[@class="memberName"]/text()').match_one(item)
@@ -53,7 +50,7 @@ class LegList(HtmlListPage):
             party = "Democratic"
 
         (district_name, _district_name) = XPath(
-            ".//a[contains(text()," ' " Legislative District")]/text()'
+            './/a[contains(text(), "Legislative District")]/text()'
         ).match(item)
 
         assert (
@@ -131,14 +128,14 @@ class LegList(HtmlListPage):
                 p.district_office.voice = district_phone
 
         p.add_link(XPath('.//a[contains(text(), "Home Page")]/@href').match(item)[0])
-        p.add_source(str(self.source))
-        p.add_source(str(PartyAugmentation.source))
+        p.add_source(self.source.url)
+        p.add_source(EmailAugmentation.source.url)
 
         spans = CSS("div .col-csm-8 span").match(item)
         if len(spans) == 3:
             p.extras["title"] = spans[1].text_content()
 
-        (dep_email, dep_party, dep_dist, dep_pos) = self.party_mapping[name]
+        (dep_email, dep_party, dep_dist, dep_pos) = self.email_mapping[name]
         if dep_party == "R":
             dep_party = "Republican"
         elif dep_party == "D":
