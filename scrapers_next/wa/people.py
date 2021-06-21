@@ -42,7 +42,8 @@ class LegList(HtmlListPage):
     dependencies = {"party_mapping": PartyAugmentation()}
 
     def process_item(self, item):
-        title_name_party = CSS(".memberName").match(item)[0].text_content()
+        title_name_party = XPath('.//span[@class="memberName"]/text()').match_one(item)
+
         (name, party) = re.search(
             r"^(?:Senator|Representative)\s(.+)\s\(([RD])\)$", title_name_party
         ).groups()
@@ -63,7 +64,7 @@ class LegList(HtmlListPage):
             r"(\d{1,2})\w{2} Legislative District", district_name
         ).group(1)
 
-        image = CSS(".memberImage").match_one(item).get("src")
+        image = XPath('.//a[text()="Print Quality Photo"]/@href').match_one(item)
 
         capitol_office = (
             CSS("div.col-csm-6.col-md-3.memberColumnPad > div")
@@ -164,6 +165,3 @@ class SenList(LegList):
     source = "https://app.leg.wa.gov/ContentParts/MemberDirectory/?a=Senate"
     selector = CSS("#allMembers .memberInformation", num_items=49)
     chamber = "upper"
-
-
-# add image back in
