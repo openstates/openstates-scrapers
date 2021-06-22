@@ -3,6 +3,27 @@ from spatula import HtmlListPage, CSS, XPath
 from ..common.people import ScrapePerson
 
 
+class AssemblyList(HtmlListPage):
+    source = "https://www.assembly.ca.gov/assemblymembers"
+    selector = CSS("table tbody tr", num_items=80)
+
+    def process_item(self, item):
+        name = CSS("a").match(item)[2].text_content()
+        name = re.sub(r"Contact Assembly Member", "", name).strip()
+
+        party = CSS("td").match(item)[2].text_content().strip()
+        if party == "Democrat":
+            party = "Democratic"
+
+        district = CSS("td").match(item)[1].text_content().strip().lstrip("0")
+
+        photo_url = CSS("img").match(item, min_items=0)
+        if photo_url:
+            photo_url = photo_url[0].get("src")
+
+        return name, party, district, photo_url
+
+
 class SenList(HtmlListPage):
     source = "https://www.senate.ca.gov/senators"
     selector = CSS("div .view-content > div", num_items=40)
