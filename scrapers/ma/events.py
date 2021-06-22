@@ -66,8 +66,8 @@ class MAEventScraper(Scraper, LXMLMixin):
         title = title.replace("Special Event Details", "")
 
         start_day = page.xpath(
-            'string(//dl[contains(@class,"eventInformation")]/dd[2])'
-        ).strip()
+            '//dl[contains(@class,"eventInformation")]/dd[2]/text()[last()]'
+        )[0].strip()
         start_time = page.xpath(
             'string(//dl[contains(@class,"eventInformation")]/dd[3])'
         ).strip()
