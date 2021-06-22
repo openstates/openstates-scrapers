@@ -39,7 +39,9 @@ class SenList(HtmlListPage):
         capitol_office = XPath(
             ".//div[contains(@class, 'views-field-field-senator-capitol-office')]//p"
         ).match_one(item)
-        capitol_address, capitol_phone = capitol_office.text_content().split("; ")
+        capitol_address, capitol_phone = (
+            capitol_office.text_content().replace(u"\xa0", " ").split("; ")
+        )
         p.capitol_office.address = capitol_address.strip()
         p.capitol_office.voice = capitol_phone.strip()
 
@@ -47,13 +49,13 @@ class SenList(HtmlListPage):
         district_office = XPath(
             ".//div[contains(@class, 'views-field-field-senator-district-office')]"
         ).match_one(item)
-        for addr in district_office.text_content().strip().splitlines():
+        for line in district_office.text_content().strip().splitlines():
             try:
-                if re.search(r"District Offices?", addr):
+                if re.search(r"District Offices?", line):
                     continue
                 # note = "District Office #{}".format(n)
                 # print(addr)
-                addr, phone = addr.strip().split("; ")
+                addr, phone = line.strip().replace(u"\xa0", " ").split("; ")
                 # print(addr)
                 # print(phone)
                 p.district_office.address = addr.strip()
@@ -63,7 +65,11 @@ class SenList(HtmlListPage):
                 # n += 1
             except ValueError:
                 # Steven Bradford separated by period ...
-                continue
+                if re.search(r"\w+\.\s\(\d{3}\)", line):
+                    addr, phone = line.strip().replace(u"\xa0", " ").split(". (")
+                    phone = "(" + phone
+                    p.district_office.address = addr.strip()
+                    p.district_office.voice = phone.strip()
 
         url = XPath(".//a/@href").match(item)[0]
         p.add_link(url)
