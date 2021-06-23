@@ -66,6 +66,16 @@ class Missouri(State):
             "start_date": "2021-01-06",
             "end_date": "2021-05-30",
         },
+        {
+            "_scraped_name": "2021 1st Extraordinary Session",
+            "classification": "primary",
+            "identifier": "2021S1",
+            "name": "2021 1st Extraordinary Session",
+            "start_date": "2021-06-23",
+            # TODO: real end date when session is over
+            "end_date": "2021-06-25",
+        },
+        
     ]
     ignored_scraped_sessions = [
         "2021 Regular Session",
