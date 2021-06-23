@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import dateutil.parser
 from openstates.scrape import Scraper, Bill
 from .common import session_slugs
-from spatula import HtmlListPage, HtmlPage, CSS, XPath, page_to_items, SelectorError
+from spatula import HtmlListPage, HtmlPage, CSS, XPath, SelectorError
 
 
 TZ = pytz.timezone("PST8PDT")
@@ -18,7 +18,10 @@ ACTION_CLASSIFIERS = (
     ("Enrolled and delivered to Governor", "executive-receipt"),
     ("From committee: .+? adopted", "committee-passage"),
     # the committee and chamber passage can be combined, see NV 80 SB 506
-    ("From committee: .+? pass(.*)Read Third time\.\s*Passed\.", ["committee-passage", "reading-3", "passage"]),
+    (
+        r"From committee: .+? pass(.*)Read Third time\.\s*Passed\.",
+        ["committee-passage", "reading-3", "passage"],
+    ),
     ("From committee: .+? pass", "committee-passage"),
     ("Prefiled. Referred", ["introduction", "referral-committee"]),
     ("Read first time. Referred", ["reading-1", "referral-committee"]),
@@ -35,21 +38,22 @@ ACTION_CLASSIFIERS = (
 )
 
 # NV sometimes carries-over bills from previous sessions,
-# without regard for bill number conflicts. 
+# without regard for bill number conflicts.
 # so AB1* could get carried in, even if there's already an existing AB1
 # The number of asterisks represent which past session it was pulled in from,
 # which can include specials, and skip around, so this can't be automated.
 # The list is at https://www.leg.state.nv.us/Session/81st2021/Reports/BillsListLegacy.cfm?DoctypeID=1
 # where 81st2021 will need to be swapped in for the session code.
 CARRYOVERS = {
-    '80': {
-        '*': '2017',
+    "80": {
+        "*": "2017",
     },
-    '81': {
-        '*': '2019',
-        '**': '2020Special32',
-    }
+    "81": {
+        "*": "2019",
+        "**": "2020Special32",
+    },
 }
+
 
 def parse_date(date_str):
     return TZ.localize(dateutil.parser.parse(date_str))
@@ -211,7 +215,9 @@ class BillTabDetail(HtmlPage):
                 if "Committee on" in action:
                     committees = re.findall(r"Committee on ([a-zA-Z, ]*)\.", action)
                     for committee in committees:
-                        related_entities.append({"type": "committee", "name": committee})
+                        related_entities.append(
+                            {"type": "committee", "name": committee}
+                        )
 
                 bill.add_action(
                     description=action,
@@ -228,12 +234,21 @@ class BillTabDetail(HtmlPage):
         short_title = self.get_column_div("Summary").text
         long_title = CSS("#title").match_one(self.root).text
 
-        if '*' in self.input.identifier:
-            stars = re.search(r'\*+', self.input.identifier).group()
-            if self.input.session in CARRYOVERS and stars in CARRYOVERS[self.input.session]:
-                self.input.identifier = re.sub(r'\*+', '-'+CARRYOVERS[self.input.session][stars], self.input.identifier)
+        if "*" in self.input.identifier:
+            stars = re.search(r"\*+", self.input.identifier).group()
+            if (
+                self.input.session in CARRYOVERS
+                and stars in CARRYOVERS[self.input.session]
+            ):
+                self.input.identifier = re.sub(
+                    r"\*+",
+                    "-" + CARRYOVERS[self.input.session][stars],
+                    self.input.identifier,
+                )
             else:
-                self.logger.error(f"Unidentified carryover bill {self.input.identifier}. Update CARRYOVERS dict in bills.py")
+                self.logger.error(
+                    f"Unidentified carryover bill {self.input.identifier}. Update CARRYOVERS dict in bills.py"
+                )
                 return
 
         bill = Bill(
@@ -293,4 +308,4 @@ class NVBillScraper(Scraper):
             self.info("no session specified, using %s", session)
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
         bill_list = BillList({"session": session})
-        yield from page_to_items(self, bill_list)
+        yield from bill_list.do_scrape()

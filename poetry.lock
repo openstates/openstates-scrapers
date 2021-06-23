@@ -665,7 +665,7 @@ crt = ["botocore[crt] (>=1.20.29,<2.0a.0)"]
 
 [[package]]
 name = "scrapelib"
-version = "2.0.5"
+version = "2.0.6"
 description = ""
 category = "main"
 optional = false
@@ -708,7 +708,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "spatula"
-version = "0.8.0"
+version = "0.8.3"
 description = "A modern Python library for writing maintainable web scrapers."
 category = "main"
 optional = false
@@ -721,7 +721,7 @@ cssselect = ">=1.1.0,<2.0.0"
 ipython = {version = ">=7.19.0,<8.0.0", extras = ["shell"]}
 lxml = ">=4.6.2,<5.0.0"
 openpyxl = ">=3.0.6,<4.0.0"
-scrapelib = ">=2.0.5,<3.0.0"
+scrapelib = ">=2.0.6,<3.0.0"
 
 [[package]]
 name = "speechrecognition"
@@ -889,7 +889,7 @@ california = ["mysqlclient", "SQLAlchemy"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "68ef713f90bbe5600e6df0c4dd65d67448d6a5b8406f2c3d1c8bb6d8f3986aee"
+content-hash = "dd36b575be6489e900adb6afd1cbc6ef436aca818bdc60de83578bebd827f3fb"
 
 [metadata.files]
 appnope = [
@@ -1411,8 +1411,8 @@ s3transfer = [
     {file = "s3transfer-0.4.2.tar.gz", hash = "sha256:cb022f4b16551edebbb31a377d3f09600dbada7363d8c5db7976e7f47732e1b2"},
 ]
 scrapelib = [
-    {file = "scrapelib-2.0.5-py3-none-any.whl", hash = "sha256:aae033904e3ab2f76ae2983cdc3222909bfa6a897281eb676027504cf6a4d2d4"},
-    {file = "scrapelib-2.0.5.tar.gz", hash = "sha256:fbfc520c7ac4cf8cfbf859b7bddf78be6b47bb4dcb07aec899dc26af9d128928"},
+    {file = "scrapelib-2.0.6-py3-none-any.whl", hash = "sha256:3d490fd79399e108c7aebc6242feba3014ca2eedf91201fabcacc6a0f59e6e11"},
+    {file = "scrapelib-2.0.6.tar.gz", hash = "sha256:848eca858991fc06509b69239d3880d3348953ee0bd558a4afff7ac17e396e60"},
 ]
 sgmllib3k = [
     {file = "sgmllib3k-1.0.0.tar.gz", hash = "sha256:7868fb1c8bfa764c1ac563d3cf369c381d1325d36124933a726f29fcdaa812e9"},
@@ -1430,8 +1430,8 @@ soupsieve = [
     {file = "soupsieve-2.2.1.tar.gz", hash = "sha256:052774848f448cf19c7e959adf5566904d525f33a3f8b6ba6f6f8f26ec7de0cc"},
 ]
 spatula = [
-    {file = "spatula-0.8.0-py3-none-any.whl", hash = "sha256:6bd4eb91b36caf7771271a802c7f6cef4bd0d62845e5314282b29c2109575e61"},
-    {file = "spatula-0.8.0.tar.gz", hash = "sha256:1e65807c59aca8e8cbd9d2df1ef6ec15be4a759d4426880b9c32136362b3b6d9"},
+    {file = "spatula-0.8.3-py3-none-any.whl", hash = "sha256:60acde389ef7772fbf4eac3f892b04c0e4b3b4aee9cd298e6120d86a94f8b9d9"},
+    {file = "spatula-0.8.3.tar.gz", hash = "sha256:3e6454d52c241ac205dc39e12dbffcd6c09f9b138e7644ed56dd772a411b7696"},
 ]
 speechrecognition = [
     {file = "SpeechRecognition-3.8.1-py2.py3-none-any.whl", hash = "sha256:4d8f73a0c05ec70331c3bacaa89ecc06dfa8d9aba0899276664cda06ab597e8e"},

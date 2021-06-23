@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 from collections import defaultdict
 from openstates.scrape import Bill, VoteEvent, Scraper
 from openstates.utils import format_datetime
-from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage, page_to_items
+from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage
 
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
 import requests
@@ -688,4 +688,4 @@ class FlBillScraper(Scraper):
         # spatula's logging is better than scrapelib's
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
         bill_list = BillList({"session": session})
-        yield from page_to_items(self, bill_list)
+        yield from bill_list.do_scrape()
