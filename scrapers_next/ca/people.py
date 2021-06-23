@@ -48,9 +48,14 @@ class AssemblyList(HtmlListPage):
         p.capitol_office.address = capitol_office_address
         p.capitol_office.voice = capitol_office_phone
 
-        # district_offices = CSS("p").match(item)[1].getchildren()
-        # print(len(district_offices))
-        # p.district_office.address = p.x
+        district_offices = XPath(".//td/p[1]/text()").match(item)
+        # print(district_offices)
+
+        for office in district_offices:
+            district_address, district_phone = office.split("; ")
+
+        p.district_office.address = district_address.strip()
+        p.district_office.voice = district_phone.strip()
 
         return p
 
