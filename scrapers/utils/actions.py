@@ -138,9 +138,9 @@ class BaseCategorizer(object):
         return return_val
 
     def pre_categorize(self, text):
-        """A precategorization hook. Takes & returns text.  """
+        """A precategorization hook. Takes & returns text."""
         return text
 
     def post_categorize(self, return_val):
-        """A post-categorization hook. Takes & returns attrs dict.  """
+        """A post-categorization hook. Takes & returns attrs dict."""
         return return_val

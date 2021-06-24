@@ -144,7 +144,7 @@ class CACommitteeScraper(Scraper, LXMLMixin):
                     )
 
     def scrape_lower_members(self, url):
-        """ Scrape the members from this page. """
+        """Scrape the members from this page."""
 
         doc = self.lxmlize(url)
         members = doc.xpath(

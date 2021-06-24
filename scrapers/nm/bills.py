@@ -56,7 +56,7 @@ class NMBillScraper(Scraper):
             os.remove(fname)
 
     def access_to_csv(self, table):
-        """ using mdbtools, read access tables as CSV """
+        """using mdbtools, read access tables as CSV"""
         commands = ["mdb-export", self.mdbfile, table]
         try:
             pipe = subprocess.Popen(
@@ -182,7 +182,7 @@ class NMBillScraper(Scraper):
         yield from bills.values()
 
     def check_other_documents(self, session, chamber, bills):
-        """ check for documents that reside in their own directory """
+        """check for documents that reside in their own directory"""
 
         s_slug = session_slug(session)
         firs_url = "http://www.nmlegis.gov/Sessions/{}/firs/".format(s_slug)
@@ -240,7 +240,7 @@ class NMBillScraper(Scraper):
         check_docs(final_url, "Final Version")
 
     def scrape_actions(self, chamber_letter, bills):
-        """ append actions to bills """
+        """append actions to bills"""
 
         # we could use the TblLocation to get the real location, but we can
         # fake it with the first letter

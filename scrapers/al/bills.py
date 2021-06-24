@@ -75,7 +75,7 @@ class ALBillScraper(Scraper):
         )
 
     def _set_session(self, session):
-        """ Activate an ASP.NET session, and set the legislative session """
+        """Activate an ASP.NET session, and set the legislative session"""
 
         SESSION_SET_URL = (
             "http://alisondb.legislature.state.al.us/" "Alison/SelectSession.aspx"
@@ -133,7 +133,7 @@ class ALBillScraper(Scraper):
             raise AssertionError("Bill list not found")
 
     def _get_bill_response(self, url):
-        """ Ensure that bill pages loaded fully """
+        """Ensure that bill pages loaded fully"""
 
         try:
             html = self.get(url=url, allow_redirects=False).text

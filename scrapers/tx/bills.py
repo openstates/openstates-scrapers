@@ -60,7 +60,7 @@ class TXBillScraper(Scraper, LXMLMixin):
     )
 
     def _get_ftp_files(self, dir_):
-        """ Recursively traverse an FTP directory, returning all files """
+        """Recursively traverse an FTP directory, returning all files"""
         for i in range(3):
             try:
                 ftp = ftplib.FTP(self._FTP_ROOT)

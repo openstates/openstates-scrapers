@@ -13,7 +13,7 @@ TIMEZONE = pytz.timezone("US/Eastern")
 
 
 def jres_id(n):
-    """ joint res ids go from A-Z, AA-ZZ, etc. """
+    """joint res ids go from A-Z, AA-ZZ, etc."""
     return chr(ord("A") + (n - 1) % 25) * (math.floor(n / 26) + 1)
 
 

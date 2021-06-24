@@ -39,7 +39,7 @@ class MDBMixin(object):
 
     # stolen from nm/bills.py
     def access_to_csv(self, table):
-        """ using mdbtools, read access tables as CSV """
+        """using mdbtools, read access tables as CSV"""
         commands = ["mdb-export", self.mdbfile, table]
         pipe = subprocess.Popen(commands, stdout=subprocess.PIPE, close_fds=True).stdout
         csvfile = csv.DictReader(line.decode() for line in pipe)
