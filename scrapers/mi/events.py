@@ -7,7 +7,8 @@ from openstates.scrape import Scraper, Event
 
 
 # mi_events = "http://legislature.mi.gov/doc.aspx?CommitteeMeetings"
-mi_events = 'http://legislature.mi.gov/(S(sz5mhvrylsnkncnq4j4f21b0))/mileg.aspx?page=MCommitteeMeetings'
+mi_events = "http://legislature.mi.gov/(S(sz5mhvrylsnkncnq4j4f21b0))/mileg.aspx?page=MCommitteeMeetings"
+
 
 class MIEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")

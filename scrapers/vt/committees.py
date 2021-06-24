@@ -11,8 +11,8 @@ class VTCommitteeScraper(Scraper):
         year_slug = self.jurisdiction.get_year_slug(session)
 
         # Load all committees via the private API
-        committee_dump_url = "http://legislature.vermont.gov/committee/loadList/{}/".format(
-            year_slug
+        committee_dump_url = (
+            "http://legislature.vermont.gov/committee/loadList/{}/".format(year_slug)
         )
         json_data = self.get(committee_dump_url).text
         committees = json.loads(json_data)["data"]

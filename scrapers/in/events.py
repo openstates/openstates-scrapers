@@ -1,10 +1,7 @@
 import pytz
-import datetime
 import dateutil.parser
 import lxml
 import requests
-import re
-import sys
 from openstates.scrape import Scraper, Event
 
 
@@ -33,7 +30,7 @@ class INEventScraper(Scraper):
         ].strip()
 
         for row in page.xpath('//div[contains(@id, "agenda-item")]'):
-            status = "tentative"
+            # status = "tentative"
             meta = row.xpath('div[contains(@class,"accordion-heading-agenda")]/a')[0]
 
             date = meta.xpath("text()")[0].strip()

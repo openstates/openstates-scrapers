@@ -188,7 +188,9 @@ class TXBillScraper(Scraper, LXMLMixin):
                 media_type="text/html",
             )
 
-        for fiscal_note in root.iterfind("billtext/docTypes/fiscalNote/versions/version"):
+        for fiscal_note in root.iterfind(
+            "billtext/docTypes/fiscalNote/versions/version"
+        ):
             if not fiscal_note:
                 continue
 

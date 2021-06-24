@@ -55,8 +55,7 @@ class ARCommitteeScraper(Scraper):
                 yield from self.scrape_committee(chamber, name, comm_url)
 
     def _fix_committee_case(self, subcommittee):
-        """Properly capitalize the committee name.
-        """
+        """Properly capitalize the committee name."""
         subcommittee = re.sub(
             r"^(HOUSE|SENATE|JOINT)\s+", "", subcommittee.strip().title()
         )

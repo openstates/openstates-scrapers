@@ -12,7 +12,7 @@ class DistrictOfColumbia(State):
     scrapers = {
         "people": DCPersonScraper,
         # 'committees': DCCommitteeScraper,
-        'events': DCEventScraper,
+        "events": DCEventScraper,
         "bills": DCBillScraper,
     }
     legislative_sessions = [

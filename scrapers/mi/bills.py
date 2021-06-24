@@ -130,10 +130,14 @@ class MIBillScraper(Scraper):
                 date = TIMEZONE.localize(datetime.datetime.strptime(date, "%m/%d/%y"))
             except ValueError:
                 try:
-                    date = TIMEZONE.localize(datetime.datetime.strptime(date, "%m/%d/%Y"))
+                    date = TIMEZONE.localize(
+                        datetime.datetime.strptime(date, "%m/%d/%Y")
+                    )
                 except ValueError:
                     self.warning(
-                        "{} has action with invalid date. Skipping Action".format(bill_id)
+                        "{} has action with invalid date. Skipping Action".format(
+                            bill_id
+                        )
                     )
                     continue
             # use journal for actor

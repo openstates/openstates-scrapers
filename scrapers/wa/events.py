@@ -97,8 +97,10 @@ class WAEventScraper(Scraper, LXMLMixin):
                 description=notes,
             )
 
-            source_url = "https://app.leg.wa.gov/committeeschedules/Home/Agenda/{}".format(
-                agenda_id
+            source_url = (
+                "https://app.leg.wa.gov/committeeschedules/Home/Agenda/{}".format(
+                    agenda_id
+                )
             )
             event.add_source(source_url)
 

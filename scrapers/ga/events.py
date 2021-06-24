@@ -4,9 +4,10 @@ import dateutil.parser
 import re
 from openstates.scrape import Scraper, Event
 
-# usage:
-#  PYTHONPATH=scrapers poetry run os-update ga events --scrape start=YYYY-mm-dd
+
 class GAEventScraper(Scraper):
+    # usage:
+    #  PYTHONPATH=scrapers poetry run os-update ga events --scrape start=YYYY-mm-dd
     tz = pytz.timezone("US/Eastern")
 
     def scrape(self, start=None):

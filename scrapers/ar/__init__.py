@@ -11,7 +11,7 @@ class Arkansas(State):
         "people": ARLegislatorScraper,
         # 'committees': ARCommitteeScraper,
         "bills": ARBillScraper,
-        'events': AREventScraper
+        "events": AREventScraper,
     }
     legislative_sessions = [
         {
