@@ -75,7 +75,6 @@ class Missouri(State):
             # TODO: real end date when session is over
             "end_date": "2021-06-25",
         },
-        
     ]
     ignored_scraped_sessions = [
         "2021 Regular Session",

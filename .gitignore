@@ -4,6 +4,7 @@ cache
 _cache
 _data
 _scrapes
+spatula-cache.db
 
 # Setting-overrides that should not be shared
 local_settings.*py

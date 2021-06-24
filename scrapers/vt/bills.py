@@ -24,8 +24,10 @@ class VTBillScraper(Scraper, LXMLMixin):
         bills_json = self.get(bills_url).text
         bills = json.loads(bills_json)["data"] or []
 
-        bills_url = "http://legislature.vermont.gov/bill/loadBillsIntroduced/{}/".format(
-            year_slug
+        bills_url = (
+            "http://legislature.vermont.gov/bill/loadBillsIntroduced/{}/".format(
+                year_slug
+            )
         )
         bills_json = self.get(bills_url).text
         bills.extend(json.loads(bills_json)["data"] or [])
@@ -202,7 +204,10 @@ class VTBillScraper(Scraper, LXMLMixin):
                 if "Signed by Governor" in action["FullStatus"]:
                     # assert chambers_passed == set("HS")
                     action_type = "executive-signature"
-                elif "become law without signature of governor" in action["FullStatus"].lower():
+                elif (
+                    "become law without signature of governor"
+                    in action["FullStatus"].lower()
+                ):
                     action_type = "became-law"
                     actor = "executive"
                 elif "Vetoed by the Governor" in action["FullStatus"]:
@@ -265,8 +270,10 @@ class VTBillScraper(Scraper, LXMLMixin):
                 )
 
             # Capture votes
-            votes_url = "http://legislature.vermont.gov/bill/loadBillRollCalls/{0}/{1}".format(
-                year_slug, internal_bill_id
+            votes_url = (
+                "http://legislature.vermont.gov/bill/loadBillRollCalls/{0}/{1}".format(
+                    year_slug, internal_bill_id
+                )
             )
             votes_json = self.get(votes_url).text
             votes = json.loads(votes_json)["data"]
@@ -351,8 +358,10 @@ class VTBillScraper(Scraper, LXMLMixin):
 
             # Witnesses:
             #   http://legislature.vermont.gov/bill/loadBillWitnessList/{year_slug}/{internal_bill_id}
-            witnesses_doc_link_url = "https://legislature.vermont.gov/bill/print/2020/{0}/witnesses".format(
-                bill_id_original_format
+            witnesses_doc_link_url = (
+                "https://legislature.vermont.gov/bill/print/2020/{0}/witnesses".format(
+                    bill_id_original_format
+                )
             )
             bill.add_document_link(
                 note="Witness List", url=witnesses_doc_link_url, media_type="text/html"
@@ -360,8 +369,10 @@ class VTBillScraper(Scraper, LXMLMixin):
 
             # Conference committee members:
             #   http://legislature.vermont.gov/bill/loadBillConference/{year_slug}/{bill_number}
-            conferees_doc_link_url = "https://legislature.vermont.gov/bill/print/2020/{0}/conference".format(
-                bill_id_original_format
+            conferees_doc_link_url = (
+                "https://legislature.vermont.gov/bill/print/2020/{0}/conference".format(
+                    bill_id_original_format
+                )
             )
             page = self.lxmlize(conferees_doc_link_url)
             no_data = page.xpath('//div[@class="no-data"]/text()')
@@ -374,8 +385,10 @@ class VTBillScraper(Scraper, LXMLMixin):
 
             # Committee meetings:
             #   http://legislature.vermont.gov/committee/loadHistoryByBill/{year_slug}?LegislationId={internal_bill_id}
-            meetings_doc_link_url = "https://legislature.vermont.gov/bill/print/2020/{0}/meetings".format(
-                bill_id_original_format
+            meetings_doc_link_url = (
+                "https://legislature.vermont.gov/bill/print/2020/{0}/meetings".format(
+                    bill_id_original_format
+                )
             )
             bill.add_document_link(
                 note="Committee Meetings",

@@ -116,8 +116,10 @@ class WYBillScraper(Scraper, LXMLMixin):
         )
 
         if self.is_special:
-            source_url = "http://lso.wyoleg.gov/Legislation/{}/{}?specialSessionValue=1".format(
-                session[0:4], bill_json["bill"]
+            source_url = (
+                "http://lso.wyoleg.gov/Legislation/{}/{}?specialSessionValue=1".format(
+                    session[0:4], bill_json["bill"]
+                )
             )
 
         bill.add_source(source_url)

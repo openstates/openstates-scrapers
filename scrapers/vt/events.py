@@ -1,4 +1,3 @@
-import datetime
 import dateutil.parser
 import json
 import pytz

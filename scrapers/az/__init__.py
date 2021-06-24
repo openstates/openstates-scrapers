@@ -13,7 +13,7 @@ class Arizona(State):
     scrapers = {
         "people": AZPersonScraper,
         # 'committees': AZCommitteeScraper,
-        'events': AZEventScraper,
+        "events": AZEventScraper,
         "bills": AZBillScraper,
     }
     legislative_sessions = [
@@ -265,7 +265,6 @@ class Arizona(State):
             "start_date": "2021-06-14",
             "end_date": "2021-06-18",
         },
-        
     ]
     ignored_scraped_sessions = [
         "2008 - Forty-eighth Legislature - Second Regular Session",

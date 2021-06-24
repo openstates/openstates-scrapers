@@ -2,6 +2,7 @@ from utils import State
 from .bills import WYBillScraper
 from .people import WYPersonScraper
 from .events import WYEventScraper
+
 # from .committees import WYCommitteeScraper
 
 import requests

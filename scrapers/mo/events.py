@@ -39,12 +39,14 @@ class MOEventScraper(Scraper, LXMLMixin):
 
             when_date = self.row_content(page, "Date:")
             when_time = self.row_content(page, "Time:")
-            when_time = re.sub('or upon .* recess', '', when_time)
+            when_time = re.sub("or upon .* recess", "", when_time)
 
             # fix for upon adjournment
-            when_time = when_time.replace("or upon morning adjournment whichever is later", "").strip()
+            when_time = when_time.replace(
+                "or upon morning adjournment whichever is later", ""
+            ).strip()
             # 15/30/45 minutes/hours upon adjournment/recess
-            when_time = re.sub(r"\d+ \w+ upon \w+", '', when_time, flags=re.IGNORECASE)
+            when_time = re.sub(r"\d+ \w+ upon \w+", "", when_time, flags=re.IGNORECASE)
             # a.m. and p.m. seem to confuse dateutil.parser
             when_time = when_time.replace("A.M.", "AM").replace("P.M.", "PM")
 
@@ -55,7 +57,7 @@ class MOEventScraper(Scraper, LXMLMixin):
             )
 
             if not page.xpath(
-                 '//td[descendant::b[contains(text(),"Committee")]]/a/text()'
+                '//td[descendant::b[contains(text(),"Committee")]]/a/text()'
             ):
                 continue
 

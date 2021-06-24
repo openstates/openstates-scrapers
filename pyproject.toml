@@ -23,6 +23,9 @@ SQLAlchemy = {version = "^1.3", optional=true}
 california = ["mysqlclient", "SQLAlchemy"]
 
 
+
+[tool.poetry.dev-dependencies]
+black = "^21.6b0"
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
