@@ -196,20 +196,25 @@ class CTBillScraper(Scraper):
                     date + " " + bill.legislative_session, "%m/%d %Y"
                 ).date()
 
-            if line.startswith("Y") or line.startswith("A") or line.startswith("N"):
-                votes = re.match(
-                    r"(Y|N|A)(.+)\s+(Y|N|A)(.+)\s+(Y|N|A)(.+)(\s+(Y|N|A)(.+))?",
-                    line,
-                )
+            if line.startswith("Y ") or line.startswith("A ") or line.startswith("N "):
+                # votes = re.match(
+                #     r"(Y|N|A)(.+)\s+(Y|N|A)(.+)\s+(Y|N|A)(.+)(\s+(Y|N|A)(.+))?",
+                #     line,
+                # )
                 # Voter is match group 2,4,6,8
-                # need to figure out edge cases in REGEX:
-                # MORRIN BELLO
-                # BERGER-GIRVALO
-                # MCCARTHY VAHEY
-                # SIMMONS, C.
-                self.add_vote(votes.group(1), votes.group(2))
-                self.add_vote(votes.group(3), votes.group(4))
-                self.add_vote(votes.group(5), votes.group(6))
+                split_votes = re.split(r"\W+", line)
+                votes = {}
+
+                for i, entry in enumerate(split_votes):
+                    if entry == "Y" or entry == "N" or entry == "A":
+                        if split_votes[i + 2] not in ["Y", "N", "A"]:
+                            votes[split_votes[i + 1] + " " + split_votes[i + 2]] = entry
+                        else:
+                            votes[split_votes[i + 1]] = entry
+
+                for key, value in votes.items():
+                    self.add_vote(value, key)
+                # add fourth column if it's not empty
 
         # not sure about classification.
         vote = Vote(
