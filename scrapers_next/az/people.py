@@ -3,7 +3,7 @@ import lxml.html
 from spatula import HtmlListPage, CSS, SelectorError
 
 # XPath, URL
-# from ..common.people import ScrapePerson
+from ..common.people import ScrapePerson
 
 
 class BrokenHtmlListPage(HtmlListPage):
@@ -19,31 +19,61 @@ class LegList(BrokenHtmlListPage):
     def process_item(self, item):
         try:
             name = CSS("a").match(item)[0].text_content()
+            # name_list = name.split(" ")
+            # for word in name_list:
+            # if word
+            #
+            district = CSS("a").match(item)[1].text_content()
+
+            party = CSS("td").match(item)[2].text_content()
+            if party == "R":
+                party = "Republican"
+            elif party == "D":
+                party = "Democratic"
+
+            email = CSS("td").match(item)[3].text_content()
+            if email.startswith("Email: "):
+                email = email.replace("Email: ", "").lower() + "@azleg.gov"
+            else:
+                email = ""
+
+            # house of rep + address?
+            room = CSS("td").match(item)[4].text_content()
+            address = "1700 West Washington\n " + room + "\nPhoenix, AZ 85007"
+
+            capitol_phone = CSS("td").match(item)[5].text_content()
+
+            image = CSS("td a img").match(item)
+            if image:
+                image = image[0].get("src")
+
         except SelectorError:
             self.skip("header row")
 
-        print(name)
+        # print(name)
 
-        # p = ScrapePerson(name=name)
-        # return p
+        p = ScrapePerson(
+            name=name,
+            state="az",
+            chamber=self.chamber,
+            district=district,
+            party="Democratic",
+            email=email,
+            image=image,
+        )
+
+        p.capitol_office.address = address
+        p.capitol_office.voice = capitol_phone
+        return p
 
 
 class SenList(LegList):
     source = "https://www.azleg.gov/memberroster/?body=S"
     selector = CSS("table tr")
-
-    # def process_item(self, item):
-    #     try:
-    #         name = CSS("a").match(item)[0].text_content()
-    #     except SelectorError:
-    #         self.skip("header row")
-
-    #     print(name)
-
-    #     #p = ScrapePerson(name=name)
-    #     # return p
+    chamber = "upper"
 
 
 class RepList(LegList):
     source = "https://www.azleg.gov/memberroster/?body=H"
     selector = CSS("table tr")
+    chamber = "lower"
