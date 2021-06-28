@@ -49,13 +49,18 @@ class AssemblyList(HtmlListPage):
         p.capitol_office.voice = capitol_office_phone
 
         district_offices = XPath(".//td/p[1]/text()").match(item)
-        # print(district_offices)
 
         for office in district_offices:
             district_address, district_phone = office.split("; ")
+            p.add_office(
+                contact_type="District Office",
+                address=district_address.strip(),
+                voice=district_phone.strip(),
+            )
 
-        p.district_office.address = district_address.strip()
-        p.district_office.voice = district_phone.strip()
+        url = CSS("a").match(item)[0].get("href")
+        p.add_link(url)
+        p.add_source(self.source.url)
 
         return p
 
@@ -101,7 +106,6 @@ class SenList(HtmlListPage):
         p.capitol_office.address = capitol_address.strip()
         p.capitol_office.voice = capitol_phone.strip()
 
-        # n = 1
         district_office = XPath(
             ".//div[contains(@class, 'views-field-field-senator-district-office')]"
         ).match_one(item)
@@ -109,23 +113,22 @@ class SenList(HtmlListPage):
             try:
                 if re.search(r"District Offices?", line):
                     continue
-                # note = "District Office #{}".format(n)
-                # print(addr)
                 addr, phone = line.strip().replace(u"\xa0", " ").split("; ")
-                # print(addr)
-                # print(phone)
-                p.district_office.address = addr.strip()
-                p.district_office.voice = phone.strip()
-                # p.district_office.note = note
-                # p.district_office.address = addr
-                # n += 1
+                p.add_office(
+                    contact_type="District Office",
+                    address=addr.strip(),
+                    voice=phone.strip(),
+                )
             except ValueError:
                 # Steven Bradford address/phone separated by period instead of semi-colon
                 if re.search(r"\w+\.\s\(\d{3}\)", line):
                     addr, phone = line.strip().replace(u"\xa0", " ").split(". (")
                     phone = "(" + phone
-                    p.district_office.address = addr.strip()
-                    p.district_office.voice = phone.strip()
+                    p.add_office(
+                        contact_type="District Office",
+                        address=addr.strip(),
+                        voice=phone.strip(),
+                    )
 
         url = XPath(".//a/@href").match(item)[0]
         p.add_link(url)
