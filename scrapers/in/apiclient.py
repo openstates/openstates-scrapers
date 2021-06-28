@@ -104,8 +104,7 @@ class ApiClient(object):
     def get(
         self, resource_name, requests_args=None, requests_kwargs=None, **url_format_args
     ):
-        """Resource is a self.resources dict key.
-        """
+        """Resource is a self.resources dict key."""
         num_bad_packets_allowed = 10
         url = self.make_url(resource_name, **url_format_args)
 

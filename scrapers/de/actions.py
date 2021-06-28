@@ -64,8 +64,7 @@ def get_actor(
         (re.compile(r"by governor", re.IGNORECASE), "governor"),
     ),
 ):
-    """Guess the actor for a particular action.
-    """
+    """Guess the actor for a particular action."""
     for r, actor in rgxs:
         m = r.search(action_text)
         if m:

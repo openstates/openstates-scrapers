@@ -95,16 +95,18 @@ class MNEventScraper(Scraper, LXMLMixin):
                 doc_url = attachment.xpath("@href")[0]
                 doc_name = attachment.xpath("text()")[0].strip()
                 # if they don't provide a name just use the filename
-                if doc_name == '':
+                if doc_name == "":
                     parsed_url = urlparse(doc_url)
                     doc_name = os.path.basename(parsed_url)
 
                 # sometimes broken links to .msg files (emails?) are attached,
                 # they always 404.
-                if doc_url.endswith('.msg'):
+                if doc_url.endswith(".msg"):
                     continue
                 media_type = get_media_type(doc_url)
-                event.add_document(doc_name, doc_url, media_type=media_type, on_duplicate='ignore')
+                event.add_document(
+                    doc_name, doc_url, media_type=media_type, on_duplicate="ignore"
+                )
 
             for committee in row.xpath(
                 'div[contains(@class,"card-header")]/h3/a[contains(@class,"text-white")]/b/text()'
@@ -159,13 +161,16 @@ class MNEventScraper(Scraper, LXMLMixin):
                             f"https://www.senate.mn/{row['committee']['link']}"
                         )
                 elif "senate_chair_link" in row["committee"]:
-                        event.add_source(
-                            f"https://www.senate.mn/{row['committee']['senate_chair_link']}"
-                        )                    
+                    event.add_source(
+                        f"https://www.senate.mn/{row['committee']['senate_chair_link']}"
+                    )
 
             if "agenda" in row:
                 for agenda_row in row["agenda"]:
-                    if agenda_row["description"] is None or agenda_row["description"].strip() == '':
+                    if (
+                        agenda_row["description"] is None
+                        or agenda_row["description"].strip() == ""
+                    ):
                         # sometimes they have blank agendas but bills or files
                         agenda_row["description"] = "Agenda"
                     agenda = event.add_agenda_item(agenda_row["description"])
@@ -180,10 +185,10 @@ class MNEventScraper(Scraper, LXMLMixin):
                     if "files" in agenda_row:
                         for file_row in agenda_row["files"]:
                             doc_name = file_row["filename"]
-                            doc_url = file_row['file_path']
+                            doc_url = file_row["file_path"]
 
                             # if they don't provide a name just use the filename
-                            if doc_name == '':
+                            if doc_name == "":
                                 parsed_url = urlparse(doc_url)
                                 doc_name = os.path.basename(parsed_url.path)
 
@@ -191,7 +196,7 @@ class MNEventScraper(Scraper, LXMLMixin):
                                 doc_name,
                                 f"https://www.senate.mn/{doc_url}",
                                 media_type="text/html",
-                                on_duplicate='ignore'
+                                on_duplicate="ignore",
                             )
 
             if "video_link" in row:

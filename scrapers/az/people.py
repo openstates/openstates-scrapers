@@ -40,7 +40,14 @@ class AZPersonScraper(Scraper):
         roster = root.xpath(path)[1:]
         for row in roster:
             position = ""
-            name, district, party, email, room, phone, = row.xpath("td")
+            (
+                name,
+                district,
+                party,
+                email,
+                room,
+                phone,
+            ) = row.xpath("td")
 
             if email.attrib.get("class") == "vacantmember":
                 continue  # Skip any vacant members.

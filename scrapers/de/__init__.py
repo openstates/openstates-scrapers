@@ -3,6 +3,7 @@ from .people import DEPersonScraper
 from .bills import DEBillScraper
 
 from .events import DEEventScraper
+
 # from .committees import DECommitteeScraper
 
 
@@ -10,7 +11,7 @@ class Delaware(State):
     scrapers = {
         "people": DEPersonScraper,
         "bills": DEBillScraper,
-        'events': DEEventScraper,
+        "events": DEEventScraper,
         # 'committees': DECommitteeScraper,
     }
     legislative_sessions = [

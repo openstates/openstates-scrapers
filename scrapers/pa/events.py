@@ -28,13 +28,21 @@ class PAEventScraper(Scraper):
                 'ancestor::div[@class="CMS-MeetingDetail"]/div/a/@name'
             )[0]
             for row in table.xpath("tr"):
-                title = row.xpath('.//div[contains(@class,"CMS-MeetingDetail-Agenda-CommitteeName")]')[0].text_content().strip()
+                title = (
+                    row.xpath(
+                        './/div[contains(@class,"CMS-MeetingDetail-Agenda-CommitteeName")]'
+                    )[0]
+                    .text_content()
+                    .strip()
+                )
 
-                time_string = row.xpath('td[@class="CMS-MeetingDetail-Time"]')[
-                    0
-                ].text_content().strip()
+                time_string = (
+                    row.xpath('td[@class="CMS-MeetingDetail-Time"]')[0]
+                    .text_content()
+                    .strip()
+                )
 
-                time_string = time_string.replace("*", '').strip()
+                time_string = time_string.replace("*", "").strip()
 
                 description = (
                     row.xpath('td[@class="CMS-MeetingDetail-Agenda"]/div/div')[-1]
@@ -57,11 +65,11 @@ class PAEventScraper(Scraper):
                     )
                 except ValueError:
                     try:
-                        start_date = datetime.datetime.strptime(
-                            date_string, "%m/%d/%Y"
-                        )
+                        start_date = datetime.datetime.strptime(date_string, "%m/%d/%Y")
                     except ValueError:
-                        self.warning(f"Could not parse date {date_string} {time_string}, skipping")
+                        self.warning(
+                            f"Could not parse date {date_string} {time_string}, skipping"
+                        )
                         break
 
                 event = Event(

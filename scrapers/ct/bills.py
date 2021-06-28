@@ -266,8 +266,8 @@ class CTBillScraper(Scraper):
                         " AND Office of Fiscal Analysis %s" % (match.group(1))
                     )
 
-                if re.match(r"^ADOPTED, (HOUSE|SENATE)", action) or re.match(
-                    r"^(HOUSE|SENATE) PASSED", action
+                if re.match(r"^ADOPTED, (HOUSE|SENATE|SEN\.?)", action) or re.match(
+                    r"^(HOUSE|SENATE|SEN\.?) PASSED", action
                 ):
                     act_type.append("passage")
 
@@ -284,11 +284,8 @@ class CTBillScraper(Scraper):
                 if not act_type:
                     act_type = None
 
-                if "TRANS.TO HOUSE" in action or action == "SENATE PASSED":
-                    act_chamber = "lower"
-
-                if "TRANSMITTED TO SENATE" in action or action == "HOUSE PASSED":
-                    act_chamber = "upper"
+                if re.match(r"(PUBLIC\sACT|SECRETARY\sOF\sTHE\sSTATE)", action):
+                    act_chamber = "executive"
 
                 bill.add_action(
                     description=action,
@@ -296,6 +293,18 @@ class CTBillScraper(Scraper):
                     chamber=act_chamber,
                     classification=act_type,
                 )
+
+                # if an action is the terminal step in one chamber,
+                # switch the chamber for the next action
+                if (
+                    "TRANS.TO HOUSE" in action
+                    or "SENATE PASSED" in action
+                    or "SEN. PASSED" in action
+                ):
+                    act_chamber = "lower"
+
+                if "TRANSMITTED TO SENATE" in action or "HOUSE PASSED" in action:
+                    act_chamber = "upper"
 
     def scrape_versions(self, chamber, session):
         chamber_letter = {"upper": "s", "lower": "h"}[chamber]

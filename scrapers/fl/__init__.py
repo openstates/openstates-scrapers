@@ -144,7 +144,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2021-05-12",
             "end_date": "2021-05-21",
-        },        
+        },
     ]
     ignored_scraped_sessions = [
         *(str(each) for each in range(1997, 2010)),

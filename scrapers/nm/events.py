@@ -1,5 +1,4 @@
 import pytz
-import datetime
 import dateutil.parser
 import lxml
 import re

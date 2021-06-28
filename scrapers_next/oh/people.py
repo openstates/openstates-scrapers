@@ -21,6 +21,9 @@ class House(HtmlListPage):
 
     def process_item(self, item):
         name = CSS(".mediaCaptionTitle").match_one(item).text
+
+        if name == "Vacant":
+            self.skip("vacant")
         subtitle = CSS(".mediaCaptionSubtitle").match_one(item).text
         image = CSS(".photo").match_one(item).get("style")
         image = background_image_re.findall(image)[0]
@@ -42,6 +45,9 @@ class House(HtmlListPage):
 
 class HouseDetail(HtmlPage):
     input_type = HousePartial
+
+    def get_source_from_input(self):
+        return self.input.url
 
     def process_page(self):
         # construct person from the details from above
