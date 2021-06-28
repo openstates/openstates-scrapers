@@ -148,7 +148,9 @@ class HouseParties(HtmlListPage):
         party_map = {"D": "Democratic", "R": "Republican"}
         parties = {}
         for td_index, td in enumerate(tds):
-            # 2nd and 6th column
+            # 0, 2nd and 6th column
+            if td_index % 9 == 0:
+                name = td.text_content().strip()
             if td_index % 9 == 2:
                 district = td.text_content().strip()
             if td_index % 9 == 6:
@@ -158,7 +160,7 @@ class HouseParties(HtmlListPage):
                 if party_code == "":
                     continue
                 party = party_map[party_code]
-                parties[district] = party
+                parties[district] = {"name": name, "party": party}
         return parties
 
 
@@ -168,13 +170,10 @@ class RepresentativeList(HtmlListPage):
     dependencies = {"party_mapping": HouseParties()}
 
     def process_item(self, item):
-        scraped_name = item[1][2].text.replace("Rep.", "").strip()
-        split_name = " ".join(scraped_name.split())
-
-        name = " ".join(split_name.split(", ")[::-1])
         url = item[1].get("href")
         district = re.search(r"rict=(\d+)", url)[1]
-        party = self.party_mapping[district]
+        party = self.party_mapping[district]["party"]
+        name = self.party_mapping[district]["name"]
         image = item[1][0].get("src")
         return RepresentativeDetail(
             PartialMember(name, url, district, image, party), source=url
