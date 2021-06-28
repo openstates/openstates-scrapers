@@ -80,7 +80,7 @@ class SenatorList(HtmlListPage):
     selector = XPath('//div[@class="mempicdiv"]', num_items=31)
 
     def process_item(self, item):
-        name = item[2].text
+        name = item[2].text.replace("  ", " ")
         url = item[0].get("href")
         district = re.match(r"District (\d+)", item[4].text)[1]
         image = item[0][0].get("src")
@@ -138,10 +138,10 @@ class RepresentativeList(HtmlListPage):
     selector = XPath('//td[@class="members-img-center"]', num_items=150)
 
     def process_item(self, item):
-        name = item[1][2].text
-        # scraped = re.match(r'Rep\.\s(.+), (.+)', scraped_name).groups()
-        #
-        # name = f'{scraped[1]} {scraped[0]}'
+        scraped_name = item[1][2].text.replace("Rep.", "").strip()
+        split_name = " ".join(scraped_name.split())
+
+        name = " ".join(split_name.split(", ")[::-1])
         url = item[1].get("href")
         district = re.search(r"rict=(\d+)", url)[1]
         image = item[1][0].get("src")
