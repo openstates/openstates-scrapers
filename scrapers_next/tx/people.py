@@ -187,7 +187,7 @@ class RepresentativeDetail(HtmlPage):
         p = ScrapePerson(
             name=self.input.name,
             state="tx",
-            party="Democratic",
+            party=self.input.party,
             district=self.input.district,
             chamber="lower",
             image=self.input.image,
