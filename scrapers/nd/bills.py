@@ -38,6 +38,10 @@ class NDBillScraper(Scraper, LXMLMixin):
         title = re.sub(r"\s+", " ", descr.text_content()).strip()
         ttrows = ttrows[:-1]
 
+        if bid[0] not in ["H", "S"]:
+            self.warning(f"Unable to determine bill type for {bid[0]}")
+            return
+
         chamber = {"H": "lower", "S": "upper"}[bid[0]]
 
         type_ = bid[1:3]
