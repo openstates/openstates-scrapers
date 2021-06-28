@@ -11,9 +11,9 @@ repos:
     rev: 3.9.0
     hooks:
       - id: flake8
-        args: ['--max-line-length=120', '--ignore=E203,W503']
+        args: ['--max-line-length=120', '--ignore=E203,W503,E501']
         exclude: scrapers/il/tests/
 -   repo: https://github.com/ambv/black
-    rev: 20.8b1
+    rev: 21.6b0
     hooks:
       - id: black

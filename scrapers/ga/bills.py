@@ -225,8 +225,10 @@ class GABillScraper(Scraper):
                 try:
                     action_types = action_code_map[action["code"]]
                 except KeyError:
-                    error_msg = "Code {code} for action {action} not recognized.".format(
-                        code=action["code"], action=action["action"]
+                    error_msg = (
+                        "Code {code} for action {action} not recognized.".format(
+                            code=action["code"], action=action["action"]
+                        )
                     )
 
                     self.logger.warning(error_msg)
@@ -254,8 +256,12 @@ class GABillScraper(Scraper):
                     sponsors += instrument["Sponsors"]["Sponsorship"]
 
             # 4976 is Sheila McNeill
-            # whose profile is currently causing 500 errors 
-            sponsors = [(x["Type"], self.get_member(x["MemberId"])) for x in sponsors if x["MemberId"] != 4976]
+            # whose profile is currently causing 500 errors
+            sponsors = [
+                (x["Type"], self.get_member(x["MemberId"]))
+                for x in sponsors
+                if x["MemberId"] != 4976
+            ]
 
             for typ, sponsor in sponsors:
                 name = "{First} {Last}".format(**dict(sponsor["Name"]))

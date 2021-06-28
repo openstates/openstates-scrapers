@@ -95,7 +95,10 @@ class RIEventScraper(Scraper, LXMLMixin):
         for bill in bills:
             bill_ft = bill.attrib["href"]
             event.add_document(
-                bill.text_content(), bill_ft, media_type="application/pdf", on_duplicate="ignore"
+                bill.text_content(),
+                bill_ft,
+                media_type="application/pdf",
+                on_duplicate="ignore",
             )
             root = bill.xpath("../../*")
             root = [x.text_content() for x in root]
@@ -104,12 +107,7 @@ class RIEventScraper(Scraper, LXMLMixin):
             if "SCHEDULED FOR" in bill_id:
                 continue
 
-            descr = (
-                bill.getparent()
-                .getparent()
-                .text_content()
-                .replace(u"\u00a0", " ")
-            )
+            descr = bill.getparent().getparent().text_content().replace(u"\u00a0", " ")
 
             for thing in replace:
                 bill_id = bill_id.replace(thing, replace[thing])

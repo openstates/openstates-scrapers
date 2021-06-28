@@ -21,7 +21,7 @@ date_regex = re.compile(r"([0-1][0-9]/[0-3][0-9]/\d+)")
 
 
 def convert_sv_char(c):
-    """ logic for shifting senate vote characters to real ASCII """
+    """logic for shifting senate vote characters to real ASCII"""
     # capital letters shift 64
     if 65 <= ord(c) - 64 <= 90:
         return chr(ord(c) - 64)

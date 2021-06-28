@@ -57,11 +57,13 @@ class HIEventScraper(Scraper, LXMLMixin):
                 coms = committee.split("/")
                 com_names = []
                 for com in coms:
-                    com_names.append("{} {}".format(
-                        self.chambers[self.short_ids[com]["chamber"]],
-                        self.short_ids[com]["name"],
-                    ))
-                descr =  ", ".join(com_names)
+                    com_names.append(
+                        "{} {}".format(
+                            self.chambers[self.short_ids[com]["chamber"]],
+                            self.short_ids[com]["name"],
+                        )
+                    )
+                descr = ", ".join(com_names)
             elif self.short_ids.get(committee):
                 descr = "{} {}".format(
                     self.chambers[self.short_ids[committee]["chamber"]],
@@ -114,6 +116,6 @@ class HIEventScraper(Scraper, LXMLMixin):
             event.add_document(notice_name, notice_href, media_type="text/html")
             for bill in self.get_related_bills(notice_href):
                 a = event.add_agenda_item(description=bill["descr"].strip())
-                bill["bill_id"] = bill["bill_id"].split(',')[0]
+                bill["bill_id"] = bill["bill_id"].split(",")[0]
                 a.add_bill(bill["bill_id"], note=bill["type"])
             yield event

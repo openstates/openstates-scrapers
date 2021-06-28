@@ -8,7 +8,7 @@ from .events import OKEventScraper
 class Oklahoma(State):
     scrapers = {
         # 'committees': OKCommitteeScraper,
-        'events': OKEventScraper,
+        "events": OKEventScraper,
         "bills": OKBillScraper,
     }
     # Sessions are named on OK's website as "{odd year} regular session" until the even year,

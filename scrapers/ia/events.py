@@ -77,7 +77,7 @@ class IAEventScraper(Scraper):
             # sometimes they say cancelled, sometimes they do a red strikethrough
             if link.xpath("./td[1]/span[contains(@style,'line-through')]"):
                 status = "cancelled"
-            if 'cancelled' in link.xpath("@class")[0]:
+            if "cancelled" in link.xpath("@class")[0]:
                 status = "cancelled"
 
             junk = ["Reception"]

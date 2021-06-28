@@ -25,12 +25,12 @@ def parse_phone(str):
 
 class SCPersonScraper(Scraper):
     def __init__(self, *args, **kwargs):
-        """  CSS isn't there without this, it serves up a mobile version. """
+        """CSS isn't there without this, it serves up a mobile version."""
         super().__init__(*args, **kwargs)
         self.user_agent = "Mozilla/5.0"
 
     def scrape(self, chamber=None):
-        """ Generator Function to pull in (scrape) data about person from state website."""
+        """Generator Function to pull in (scrape) data about person from state website."""
 
         chambers = [chamber] if chamber else ["upper", "lower"]
         for c in chambers:

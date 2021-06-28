@@ -21,6 +21,7 @@ class USEventScraper(Scraper, LXMLMixin):
         "HW": "Witness List",
         "HC": "Hearing Notice",
         "SD": "Instructions for Submitting a Request to Testify",
+        "BR": "Bill Text",
     }
 
     buildings = {

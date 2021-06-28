@@ -47,6 +47,7 @@ class ScrapePerson(BaseModelConfig):
     ids: PersonIdBlock = PersonIdBlock()
     capitol_office = ScrapeContactDetail(note="Capitol Office")
     district_office = ScrapeContactDetail(note="District Office")
+    additional_offices: list[ScrapeContactDetail] = []
     extras: dict = {}
 
     @validator("party", pre=True)
@@ -63,3 +64,10 @@ class ScrapePerson(BaseModelConfig):
 
     def add_source(self, url, note=""):
         self.sources.append(Link(url=url, note=note))
+
+    def add_office(self, contact_type: ContactType, *, address="", voice="", fax=""):
+        self.additional_offices.append(
+            ScrapeContactDetail(
+                note=contact_type, address=address, voice=voice, fax=fax
+            )
+        )
