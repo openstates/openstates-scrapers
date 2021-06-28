@@ -1,3 +1,4 @@
+import re
 from spatula import HtmlListPage, CSS, XPath
 from ..common.people import ScrapePerson
 
@@ -29,7 +30,28 @@ class LegList(HtmlListPage):
         p.add_source(self.source.url, note="Contact Web Page")
         p.add_source(self.url, note="Detail Excel Source")
 
+        image = self.get_image(name)
+        p.image = image
+
         return p
+
+    def get_image(self, name):
+        img = "https://www.rilegislature.gov/senators/Pictures/"
+        last_name = name.split()
+        if len(last_name) > 3 or re.search(",", name):
+            print(last_name)
+            return ""
+
+        last_name = last_name[-1].lower()
+        # does not work for
+        # Frank A. Ciccone III
+        # Walter S. Felag Jr.
+        # Jessica de la Cruz
+        # Frank Lombardo, III
+
+        img += last_name
+        img += ".jpg"
+        return img
 
 
 class AssemblyList(LegList):
