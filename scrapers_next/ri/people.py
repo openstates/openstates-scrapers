@@ -36,7 +36,11 @@ class LegList(HtmlListPage):
         return p
 
     def get_image(self, name):
-        img = "https://www.rilegislature.gov/senators/Pictures/"
+        if self.chamber == "upper":
+            img = "https://www.rilegislature.gov/senators/Pictures/"
+        else:
+            img = "https://www.rilegislature.gov/representatives/Pictures/"
+
         last_name = name.split()
         if len(last_name) > 3 or re.search(",", name):
             print(last_name)
@@ -48,6 +52,10 @@ class LegList(HtmlListPage):
         # Walter S. Felag Jr.
         # Jessica de la Cruz
         # Frank Lombardo, III
+        # Rep. Joseph J. Solomon, Jr.
+        # Rep. Robert E. Craven, Sr.
+        # Rep. Edward T. Cardillo, Jr.
+        # Rep. Mary Ann Shallcross Smith
 
         img += last_name
         img += ".jpg"
