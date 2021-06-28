@@ -54,23 +54,24 @@ def process_address(details, p, office):
             flags=re.MULTILINE,
         )
 
+        if address is not None:
+            if office["type"] == "Capitol Address":
+                p.capitol_office.address = address
+            elif office["type"] == "District Address":
+                p.district_office.address = address
+
     phone_number = extract_phone(details)
     fax_number = extract_fax(details)
 
-    if address:
-        if office["label"] == "Capitol Address":
-            p.capitol_office.address = address
-        elif office["label"] == "District Address":
-            p.district_office.address = address
     if phone_number:
-        if office["label"] == "Capitol Address":
+        if office["type"] == "Capitol Address":
             p.capitol_office.voice = phone_number
-        elif office["label"] == "District Address":
+        elif office["type"] == "District Address":
             p.district_office.voice = phone_number
     if fax_number:
-        if office["label"] == "Capitol Address":
+        if office["type"] == "Capitol Address":
             p.capitol_office.fax = fax_number
-        elif office["label"] == "District Address":
+        elif office["type"] == "District Address":
             p.district_office.fax = fax_number
 
     return p
@@ -113,7 +114,7 @@ class SenatorDetail(HtmlPage):
             id = th_tag.xpath("@id")[0] if th_tag.xpath("@id") else ""
             label = th_tag.xpath("text()")[0].strip() if th_tag.xpath("text()") else ""
             if id != "" and label != "":
-                office_ids.append({"id": id, "label": label})
+                office_ids.append({"id": id, "label": label, "type": label})
 
         for office in office_ids:
             row = self.root.xpath(
@@ -200,6 +201,7 @@ class RepresentativeDetail(HtmlPage):
         offices_text = [
             {
                 "label": office_name(p_tag),
+                "type": office_name(p_tag),
                 "details": p_tag.text_content(),
             }
             for p_tag in self.root.xpath(
@@ -216,7 +218,7 @@ class RepresentativeDetail(HtmlPage):
 
             # At the time of writing, this case of multiple district
             # offices occurs exactly once, for the representative at
-            # District 43:
+            # District 4:
             if details.count("Office") > 1:
                 district_offices = [
                     district_office.strip()
@@ -226,8 +228,8 @@ class RepresentativeDetail(HtmlPage):
                 ]
                 offices_text += [
                     {
-                        "name": re.match(r"\w+ Office", office).group(),
-                        "type": "district",
+                        "label": re.match(r"\w+ Office", office).group(),
+                        "type": "District Address",
                         "details": re.search(
                             r"(?<=Office).+(?=\w+ Office|$)?", office, re.DOTALL
                         ).group(),
