@@ -11,6 +11,7 @@ class PartialMember:
     url: str
     district: int
     image: str
+    party: str = ""
 
 
 _phone_pattern = r"\(?\d+\)?[- ]?\d{3}[-.]\d{4}"
@@ -164,6 +165,7 @@ class HouseParties(HtmlListPage):
 class RepresentativeList(HtmlListPage):
     source = "https://house.texas.gov/members/"
     selector = XPath('//td[@class="members-img-center"]', num_items=150)
+    dependencies = {"party_mapping": HouseParties()}
 
     def process_item(self, item):
         scraped_name = item[1][2].text.replace("Rep.", "").strip()
@@ -172,9 +174,10 @@ class RepresentativeList(HtmlListPage):
         name = " ".join(split_name.split(", ")[::-1])
         url = item[1].get("href")
         district = re.search(r"rict=(\d+)", url)[1]
+        party = self.party_mapping[district]
         image = item[1][0].get("src")
         return RepresentativeDetail(
-            PartialMember(name, url, district, image), source=url
+            PartialMember(name, url, district, image, party), source=url
         )
 
 
