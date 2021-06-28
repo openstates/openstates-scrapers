@@ -133,6 +133,34 @@ class SenatorDetail(HtmlPage):
         return p
 
 
+class HouseParties(HtmlListPage):
+    source = (
+        "https://lrl.texas.gov/legeLeaders/members/membersearch.cfm?leg=87&chamber=H"
+    )
+    selector = XPath('//table[@id="tableToSort"]/tbody/', num_items=1)
+
+    def process_page(self):
+        tds = self.root.xpath(
+            '//table[@id="tableToSort"]//td[contains(@class, ' '"results")]',
+        )
+
+        party_map = {"D": "Democratic", "R": "Republican"}
+        parties = {}
+        for td_index, td in enumerate(tds):
+            # 2nd and 6th column
+            if td_index % 9 == 2:
+                district = td.text_content().strip()
+            if td_index % 9 == 6:
+                party_code = td.text_content().strip()
+                if len(party_code) > 1:
+                    party_code = re.search(r"[A-Z]", party_code)[0]
+                if party_code == "":
+                    continue
+                party = party_map[party_code]
+                parties[district] = party
+        return parties
+
+
 class RepresentativeList(HtmlListPage):
     source = "https://house.texas.gov/members/"
     selector = XPath('//td[@class="members-img-center"]', num_items=150)
