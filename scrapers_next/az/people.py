@@ -1,8 +1,5 @@
-# import re
 import lxml.html
 from spatula import HtmlListPage, CSS, SelectorError
-
-# XPath, URL
 from ..common.people import ScrapePerson
 
 
@@ -19,10 +16,9 @@ class LegList(BrokenHtmlListPage):
     def process_item(self, item):
         try:
             name = CSS("a").match(item)[0].text_content()
-            # name_list = name.split(" ")
-            # for word in name_list:
-            # if word
-            #
+            if "--" in name:
+                name = name.split("--")[0].strip()
+
             district = CSS("a").match(item)[1].text_content()
 
             party = CSS("td").match(item)[2].text_content()
@@ -37,9 +33,12 @@ class LegList(BrokenHtmlListPage):
             else:
                 email = ""
 
-            # house of rep + address?
             room = CSS("td").match(item)[4].text_content()
-            address = "1700 West Washington\n " + room + "\nPhoenix, AZ 85007"
+            if self.chamber == "lower":
+                address = "House of Representatives\n "
+            elif self.chamber == "upper":
+                address = "Senate\n "
+            address = address + "1700 West Washington\n " + room + "\nPhoenix, AZ 85007"
 
             capitol_phone = CSS("td").match(item)[5].text_content()
 
@@ -49,8 +48,6 @@ class LegList(BrokenHtmlListPage):
 
         except SelectorError:
             self.skip("header row")
-
-        # print(name)
 
         p = ScrapePerson(
             name=name,
