@@ -24,16 +24,38 @@ class LegList(HtmlListPage):
         )
 
         bio = CSS("td center a").match_one(item).get("href")
+        image = self.image(bio)
+        p.image = image
 
         p.email = email
         p.add_link(bio)
         p.add_source(self.source.url, note="Contact Web Page")
         p.add_source(self.url, note="Detail Excel Source")
 
-        image = self.get_image(name)
-        p.image = image
+        # image = self.get_image(name)
+        # p.image = image
 
         return p
+
+    def image(self, bio):
+        # if re.search("ciccon", bio):
+        # print(bio)
+        img = bio.strip(r"(\/default\.aspx)$")
+        # print(img)
+        last_name = img.split("/")[-1]
+        # print(last_name)
+        img = img.rstrip(last_name)
+        # print(img)
+        img += "Pictures/"
+        # print(img)
+        img += last_name
+        # print(img)
+        img += ".jpg"
+        # print(img)
+
+        # something weird is happening with Ciccone
+        # Rep. Mary Ann Shallcross Smith
+        return img
 
     def get_image(self, name):
         if self.chamber == "upper":
