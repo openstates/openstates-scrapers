@@ -15,12 +15,12 @@ class BrokenHtmlListPage(HtmlListPage):
 class LegList(BrokenHtmlListPage):
     def process_item(self, item):
         try:
-            name = CSS("a").match(item)[0].text_content()
+            name = name_title = CSS("a").match(item)[0].text_content()
         except SelectorError:
             self.skip("header row")
 
-        if "--" in name:
-            name = name.split("--")[0].strip()
+        if "--" in name_title:
+            name, title = [word.strip() for word in name.split("--")]
 
         _, district, party, email, room, capitol_phone = item.getchildren()
 
@@ -63,6 +63,11 @@ class LegList(BrokenHtmlListPage):
 
         p.capitol_office.address = address
         p.capitol_office.voice = capitol_phone
+        p.add_source(self.source.url)
+        p.add_link(CSS("a").match(item)[0].get("href"))
+
+        if "--" in name_title:
+            p.extras["title"] = title
         return p
 
 
