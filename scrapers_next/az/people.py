@@ -22,28 +22,30 @@ class LegList(BrokenHtmlListPage):
         if "--" in name:
             name = name.split("--")[0].strip()
 
-        district = CSS("a").match(item)[1].text_content()
+        _, district, party, email, room, capitol_phone = item.getchildren()
 
-        party = CSS("td").match(item)[2].text_content()
+        district = district.text_content()
+
+        party = party.text_content()
         if party == "R":
             party = "Republican"
         elif party == "D":
             party = "Democratic"
 
-        email = CSS("td").match(item)[3].text_content()
+        email = email.text_content()
         if email.startswith("Email: "):
             email = email.replace("Email: ", "").lower() + "@azleg.gov"
         else:
             email = ""
 
-        room = CSS("td").match(item)[4].text_content()
+        room = room.text_content()
         if self.chamber == "lower":
             address = "House of Representatives\n "
         elif self.chamber == "upper":
             address = "Senate\n "
         address = address + "1700 West Washington\n " + room + "\nPhoenix, AZ 85007"
 
-        capitol_phone = CSS("td").match(item)[5].text_content()
+        capitol_phone = capitol_phone.text_content()
 
         image = CSS("td a img").match(item)
         if image:
