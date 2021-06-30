@@ -15,7 +15,6 @@ class LegacyExcelPage(Page):
     def process_page(self):
         mapping = {}
         for rownum in range(1, self.worksheet.nrows):
-            # for colnum in range(1, self.worksheet.ncols):
             row_vals = self.worksheet.row_values(rownum)
             _district = int(row_vals[0])
             city_town = row_vals[1]
@@ -34,13 +33,8 @@ class Image(HtmlPage):
 
     def process_page(self):
         images = self.root.cssselect("img")
-        print(images)
         image = images[2]
-        print(image)
         image = image.get("src")
-        print(image)
-
-        image = "https://www.rilegislature.gov" + image
 
         self.input.image = image
 
@@ -54,9 +48,7 @@ class LegList(HtmlListPage):
         name = name[1]
         district = CSS("td").match(item)[0].text_content()
         email = CSS("td").match(item)[2].text_content()
-
-        # print(email)
-        # something weird is happening with email above
+        phone = CSS("td").match(item)[3].text_content()
 
         _email, city_town, _name, party, office_addr = self.detail_mapping[
             int(district)
@@ -75,21 +67,17 @@ class LegList(HtmlListPage):
 
         p.extras["City/Town Represented"] = city_town
         p.district_office.address = office_addr
+        p.district_office.voice = phone
 
         bio = CSS("td center a").match_one(item).get("href")
-
-        # Image(bio)
-
-        # image = self.image(bio)
-        # p.image = image
 
         p.email = email
         p.add_link(bio)
         p.add_source(self.source.url, note="Contact Web Page")
-        # p.add_source(self.url, note="Detail Excel Source")
+        # p.add_source(LegacyExcelPage.source, note="Detail Excel Source")
+        p.add_source(bio, note="Image Source")
 
-        return p
-        # return Image(p, source=bio)
+        return Image(p, source=bio)
 
 
 class AssemblyList(LegList):
