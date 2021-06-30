@@ -74,7 +74,9 @@ class LegList(HtmlListPage):
         p.email = email
         p.add_link(bio)
         p.add_source(self.source.url, note="Contact Web Page")
-        # p.add_source(LegacyExcelPage.source, note="Detail Excel Source")
+        p.add_source(
+            self.dependencies["detail_mapping"].source.url, note="Detail Excel Source"
+        )
         p.add_source(bio, note="Image Source")
 
         return Image(p, source=bio)
