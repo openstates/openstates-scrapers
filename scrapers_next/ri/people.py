@@ -71,6 +71,8 @@ class Image(HtmlPage):
         image = image.get("src")
         print(image)
 
+        image = "https://www.rilegislature.gov" + image
+
         self.input.image = image
 
         return self.input
@@ -141,7 +143,7 @@ class LegList(HtmlListPage):
         p.add_source(self.source.url, note="Contact Web Page")
         # p.add_source(self.url, note="Detail Excel Source")
 
-        return p
+        # return p
         return Image(p, source=bio)
 
 
