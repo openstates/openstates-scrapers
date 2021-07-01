@@ -1,7 +1,7 @@
 import requests
 from hashlib import sha512
 import time
-from spatula import URL, JsonListPage
+from spatula import URL, JsonListPage, JsonPage
 from openstates.people.models.committees import ScrapeCommittee
 
 
@@ -35,52 +35,50 @@ def get_token():
     return "Bearer " + requests.get(token_url).json()
 
 
-class CommitteeDetail(JsonListPage):
-    def process_item(self, item):
-        if item != "members":
-            self.skip()
+class CommitteeDetail(JsonPage):
+    def process_page(self):
+        # print(self.data['members'])
         com = self.input
-        print(item)
+        com.add_source(self.source.url)
+        com.add_link(self.source.url)
 
-        for memb in item:
-            print(memb)
+        for memb in self.data["members"]:
+            # print(memb)
             member = memb["name"]
             role = memb["role"]
             com.add_member(member, role)
-        # member = CSS("a").match_one(item).text_content()
         # grab office address and phone?
         # grab member link?
         # grab district as well?
-        # role = CSS("td").match(item)[2].text_content()
-        # com.add_member(member, role)
 
-        return self.input
+        return com
 
 
 class CommitteeList(JsonListPage):
     def process_item(self, item):
-        # print(item)
-        if item["chamber"] == 1:
+        if item["chamber"] == 2:
             chamber = "upper"
             source = "https://www.legis.ga.gov/committees/senate/"
-        elif item["chamber"] == 2:
+        elif item["chamber"] == 1:
             chamber = "lower"
             source = "https://www.legis.ga.gov/committees/house/"
 
         source = URL(
             f"https://www.legis.ga.gov/api/committees/details/{item['id']}/1029",
-            headers={
-                "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYmYiOjE2MjUxNzM2MDUsImV4cCI6MTYyNTE3MzkwNSwiaWF0IjoxNjI1MTczNjA1fQ.FCtrRw9I1iLNRanEZZRygrB826cKCMU0EfISrk_BrGw"
-            },
+            headers={"Authorization": get_token()},
         )
 
         # print(item.get('href'))
+        com = ScrapeCommittee(
+            name=item["name"],
+            parent=chamber,
+        )
+
+        com.add_source(self.source.url)
+        com.add_link(self.source.url)
 
         return CommitteeDetail(
-            ScrapeCommittee(
-                name=item["name"],
-                parent=chamber,
-            ),
+            com,
             source=source,
         )
 
