@@ -1,25 +1,33 @@
-from spatula import HtmlListPage, CSS
+from spatula import HtmlListPage, CSS, HtmlPage
+from openstates.people.models.committees import ScrapeCommittee
 
 
-class CommitteeMembers(HtmlListPage):
+class CommitteeDetail(HtmlPage):
     # selector = CSS('ul .list-unstyled')[0]
 
     def process_page(self, item):
-        return None
+        return self.input
 
 
-class CommitteeScraper(HtmlListPage):
-    selector = CSS("ul .list-unstyled")[0]
+class CommitteeList(HtmlListPage):
+    # selector = XPath("/html/body/app-root/div/main/app-committee-list/div[2]/app-loader/div[2]/div/app-chamber-committees/ul")
 
-    def process_page(self, item):
-        return None
+    def process_item(self, item):
+        return CommitteeDetail(
+            ScrapeCommittee(
+                name=item.text_content(),
+                parent=self.chamber,
+            ),
+            source=item.get("href"),
+        )
 
 
-class HouseCommitteeScraper(CommitteeScraper):
+class HouseCommitteeList(CommitteeList):
     source = "https://www.legis.ga.gov/committees/house"
     chamber = "lower"
 
 
-class SenateCommitteeScraper(CommitteeScraper):
+class SenateCommitteeList(CommitteeList):
     source = "https://www.legis.ga.gov/committees/senate"
     chamber = "upper"
+    selector = CSS("body app-root div.container main")
