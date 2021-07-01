@@ -1,7 +1,7 @@
 import requests
 from hashlib import sha512
 import time
-from spatula import CSS, URL, JsonListPage
+from spatula import URL, JsonListPage
 from openstates.people.models.committees import ScrapeCommittee
 
 
@@ -37,15 +37,22 @@ def get_token():
 
 class CommitteeDetail(JsonListPage):
     def process_item(self, item):
+        if item != "members":
+            self.skip()
         com = self.input
         print(item)
 
-        member = CSS("a").match_one(item).text_content()
+        for memb in item:
+            print(memb)
+            member = memb["name"]
+            role = memb["role"]
+            com.add_member(member, role)
+        # member = CSS("a").match_one(item).text_content()
         # grab office address and phone?
         # grab member link?
         # grab district as well?
-        role = CSS("td").match(item)[2].text_content()
-        com.add_member(member, role)
+        # role = CSS("td").match(item)[2].text_content()
+        # com.add_member(member, role)
 
         return self.input
 
@@ -62,7 +69,9 @@ class CommitteeList(JsonListPage):
 
         source = URL(
             f"https://www.legis.ga.gov/api/committees/details/{item['id']}/1029",
-            headers={"Authorization": get_token()},
+            headers={
+                "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYmYiOjE2MjUxNzM2MDUsImV4cCI6MTYyNTE3MzkwNSwiaWF0IjoxNjI1MTczNjA1fQ.FCtrRw9I1iLNRanEZZRygrB826cKCMU0EfISrk_BrGw"
+            },
         )
 
         # print(item.get('href'))
