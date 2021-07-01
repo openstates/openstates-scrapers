@@ -1,7 +1,7 @@
 import requests
 from hashlib import sha512
 import time
-from spatula import URL, JsonListPage, JsonPage
+from spatula import URL, JsonListPage, JsonPage, HtmlListPage, XPath
 from openstates.people.models.committees import ScrapeCommittee
 
 
@@ -55,6 +55,12 @@ class CommitteeDetail(JsonPage):
 
 
 class CommitteeList(JsonListPage):
+
+    source = URL(
+        "https://www.legis.ga.gov/api/committees/List/1029",
+        headers={"Authorization": get_token()},
+    )
+
     def process_item(self, item):
         if item["chamber"] == 2:
             chamber = "upper"
@@ -83,8 +89,21 @@ class CommitteeList(JsonListPage):
         )
 
 
-class CommitteeList(CommitteeList):
-    source = URL(
-        "https://www.legis.ga.gov/api/committees/List/1029",
-        headers={"Authorization": get_token()},
-    )
+class HouseSpecialCommittees(HtmlListPage):
+    source = "https://www.house.ga.gov/Committees/en-US/StudyCommittees.aspx"
+    selector = XPath("//*[@id='WebPartWPQ2']/table[1]/tbody/tr")
+    # CSS("div #WebPartWPQ2 table tbody").first
+
+    def process_item(self, item):
+        # if item.__class__ == "ms-rteTableHeaderRow-1":
+        #    self.skip()
+
+        name = item.text_content()
+        name = name.strip()
+
+        com = ScrapeCommittee(
+            name=name,
+            parent="lower",
+        )
+
+        return com
