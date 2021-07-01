@@ -19,6 +19,8 @@ SUB_BLACKLIST = [
     "Substitute",
 ]  # Pages are the same, we'll strip this from bills we catch.
 
+SPECIAL_SLUGS = {"2021S1H": "2021Y1", "2021S1S": "2021X1"}
+
 
 class UTBillScraper(Scraper, LXMLMixin):
     def scrape(self, session=None, chamber=None):
@@ -34,7 +36,9 @@ class UTBillScraper(Scraper, LXMLMixin):
         #             url='https://le.utah.gov/~2019/bills/static/HB0087.html'
         #         )
 
-        if "S" in session:
+        if session in SPECIAL_SLUGS:
+            session_slug = SPECIAL_SLUGS[session]
+        elif "S" in session:
             session_slug = session
         else:
             session_slug = "{}GS".format(session)
