@@ -335,10 +335,6 @@ class Utah(State):
     ]
 
     def get_session_list(self):
-        # sessions = url_xpath(
-        #     "http://le.utah.gov/Documents/bills.htm",
-        #     '//ul[contains(@class,"bills-alternate")]/li/a[contains(@href, "BillList")]/text()',
-        # )
         sessions = url_xpath(
             "https://le.utah.gov/asp/billsintro/index.asp?year=2021X1",
             "//select[@id='Listbox1']/option/text()",
