@@ -1,7 +1,6 @@
 from utils import url_xpath, State
 from .bills import TXBillScraper
 from .events import TXEventScraper
-from .people import TXPersonScraper
 
 from .votes import TXVoteScraper
 
@@ -10,7 +9,6 @@ from .votes import TXVoteScraper
 
 class Texas(State):
     scrapers = {
-        "people": TXPersonScraper,
         # 'committees': TXCommitteeScraper,
         "bills": TXBillScraper,
         # Re-enable vote scraper when adding next regular session
