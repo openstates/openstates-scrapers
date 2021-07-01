@@ -281,6 +281,9 @@ class CTBillScraper(Scraper):
                 if re.match(r"^LINE ITEM VETOED", action):
                     act_type.append("executive-veto-line-item")
 
+                if re.match(r"VETOED BY GOVERNOR", action):
+                    act_type.append("executive-veto")
+
                 if not act_type:
                     act_type = None
 
