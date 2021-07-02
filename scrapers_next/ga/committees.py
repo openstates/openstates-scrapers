@@ -1,7 +1,7 @@
 import requests
 from hashlib import sha512
 import time
-from spatula import URL, JsonListPage, JsonPage, HtmlListPage, XPath
+from spatula import URL, JsonListPage, JsonPage
 from openstates.people.models.committees import ScrapeCommittee
 
 
@@ -37,19 +37,14 @@ def get_token():
 
 class CommitteeDetail(JsonPage):
     def process_page(self):
-        # print(self.data['members'])
         com = self.input
         com.add_source(self.source.url)
         com.add_link(self.source.url)
 
         for memb in self.data["members"]:
-            # print(memb)
             member = memb["name"]
             role = memb["role"]
             com.add_member(member, role)
-        # grab office address and phone?
-        # grab member link?
-        # grab district as well?
 
         return com
 
@@ -64,17 +59,14 @@ class CommitteeList(JsonListPage):
     def process_item(self, item):
         if item["chamber"] == 2:
             chamber = "upper"
-            source = "https://www.legis.ga.gov/committees/senate/"
         elif item["chamber"] == 1:
             chamber = "lower"
-            source = "https://www.legis.ga.gov/committees/house/"
 
         source = URL(
             f"https://www.legis.ga.gov/api/committees/details/{item['id']}/1029",
             headers={"Authorization": get_token()},
         )
 
-        # print(item.get('href'))
         com = ScrapeCommittee(
             name=item["name"],
             parent=chamber,
@@ -87,23 +79,3 @@ class CommitteeList(JsonListPage):
             com,
             source=source,
         )
-
-
-class HouseSpecialCommittees(HtmlListPage):
-    source = "https://www.house.ga.gov/Committees/en-US/StudyCommittees.aspx"
-    selector = XPath("//*[@id='WebPartWPQ2']/table[1]/tbody/tr")
-    # CSS("div #WebPartWPQ2 table tbody").first
-
-    def process_item(self, item):
-        # if item.__class__ == "ms-rteTableHeaderRow-1":
-        #    self.skip()
-
-        name = item.text_content()
-        name = name.strip()
-
-        com = ScrapeCommittee(
-            name=name,
-            parent="lower",
-        )
-
-        return com
