@@ -20,13 +20,8 @@ class EmailAugmentation(HtmlListPage):
         rows = self.find_rows()
         for row in rows:
             tds = row.getchildren()
-            name = (
-                CSS("a")
-                .match_one(tds[0])
-                .text_content()
-                .lstrip(r"^(Rep\.|Senator)")
-                .strip()
-            )
+            name = CSS("a").match_one(tds[0]).text_content().strip()
+            name = re.sub(r"^(Rep\.\s|Senator\s)", "", name)
             email = tds[1].text_content().strip()
             dist = tds[2].text_content().strip()
             position = tds[3].text_content().strip()
