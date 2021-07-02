@@ -1,3 +1,4 @@
+import re
 from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError
 from openstates.people.models.committees import ScrapeCommittee
 
@@ -39,8 +40,16 @@ class SenateCommitteeList(HtmlListPage):
 
     def process_item(self, item):
         name = item.text_content().strip()
+        # print(re.search('-', name))
+        if re.search(" - ", name):
+            parent, com_name = name.split(" - Subcommittee on ")
+            print("name is this: ", name)
+            com = ScrapeCommittee(
+                name=com_name, classification="subcommittee", parent=parent
+            )
+        else:
+            com = ScrapeCommittee(name=name, parent=self.chamber)
 
-        com = ScrapeCommittee(name=name, parent=self.chamber)
         com.add_source(self.source.url)
         return SenateCommitteeDetail(com, source=item.get("href"))
 
