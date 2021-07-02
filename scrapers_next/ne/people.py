@@ -1,5 +1,5 @@
 from spatula import HtmlPage, ListPage, NullSource, CSS
-from ..common.people import ScrapePerson
+from openstates.models import ScrapePerson
 
 
 class LegPage(HtmlPage):
