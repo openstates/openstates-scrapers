@@ -38,8 +38,33 @@ def get_token():
 class CommitteeDetail(JsonPage):
     def process_page(self):
         com = self.input
-        com.add_source(self.source.url)
-        com.add_link(self.source.url)
+        com.add_source(
+            self.source.url, note="Detail page (requires authorization token)"
+        )
+        com.add_link(self.source.url, note="Detail page (requires authorization token)")
+
+        com_address = self.data["address"]["address1"].strip() + " "
+        com_address += self.data["address"]["address2"].strip() + " "
+        com_address += self.data["address"]["city"].strip()
+        com_address += ", "
+        com_address += self.data["address"]["state"].strip() + " "
+        com_address += self.data["address"]["zip"].strip()
+
+        # commented out for now to pass flake8
+        # com_phone = self.data["address"]["phone"].strip()
+        # com_fax = self.data["address"]["fax"].strip()
+        # com_email = self.data["address"]["email"]
+
+        """
+        if com_address:
+            com.extras['address'] = com_address
+        if com_phone:
+            com.extras['phone'] = com_phone
+        if com_fax:
+            com.extras['fax'] = com_fax
+        if com_email:
+            com.extras['email'] = com_email
+        """
 
         for memb in self.data["members"]:
             member = memb["name"]
@@ -72,8 +97,12 @@ class CommitteeList(JsonListPage):
             parent=chamber,
         )
 
-        com.add_source(self.source.url)
-        com.add_link(self.source.url)
+        com.add_source(
+            self.source.url, note="Initial list page (requires authorization token)"
+        )
+        com.add_link(
+            self.source.url, note="Initial list page (requires authorization token)"
+        )
 
         return CommitteeDetail(
             com,
