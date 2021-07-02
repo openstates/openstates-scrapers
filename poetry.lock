@@ -463,7 +463,7 @@ et-xmlfile = "*"
 
 [[package]]
 name = "openstates"
-version = "6.1.0"
+version = "6.2.0"
 description = "core infrastructure for the openstates project"
 category = "main"
 optional = false
@@ -1262,8 +1262,8 @@ openpyxl = [
     {file = "openpyxl-3.0.7.tar.gz", hash = "sha256:6456a3b472e1ef0facb1129f3c6ef00713cebf62e736cd7a75bcc3247432f251"},
 ]
 openstates = [
-    {file = "openstates-6.1.0-py3-none-any.whl", hash = "sha256:8b9b7c93357c64bcc7e2c6c6d7f5f3b4b78d2c5b579631f647777b153e7a7834"},
-    {file = "openstates-6.1.0.tar.gz", hash = "sha256:873f41a2845817bea538054ab36d4f31022b9aae00381e426dd0636baae11eec"},
+    {file = "openstates-6.2.0-py3-none-any.whl", hash = "sha256:9e11d3b02ae7c712144f219d7d6775c256ce39f910b3e0934c6e82fff0753212"},
+    {file = "openstates-6.2.0.tar.gz", hash = "sha256:885ab9f70c20ef6fd4aba4d55329ef6a4a531f79f8c879cae4ea347183a2a753"},
 ]
 parso = [
     {file = "parso-0.8.2-py2.py3-none-any.whl", hash = "sha256:a8c4922db71e4fdb90e0d0bc6e50f9b273d3397925e5e60a717e719201778d22"},
