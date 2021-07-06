@@ -48,8 +48,7 @@ class HouseCommitteeDetail(HtmlPage):
                 .split("(")[0]
                 .replace("Rep.", "")
             )
-            com.add_link(CSS("a").match(p)[0].get("href"))
-            # com.add_link(CSS("a").get("href"))
+            # com.add_link(CSS("a").match(p)[0].get("href"))
 
             # todo: should these be capitalized?
             positions = ["committee chair", "vice chair", "republican lead"]
