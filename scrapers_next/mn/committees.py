@@ -33,31 +33,48 @@ class SenateCommitteeDetail(HtmlPage):
 
 
 class HouseCommitteeDetail(HtmlPage):
-    example_source = "https://www.house.leg.state.mn.us/Committees/members/92001"
+    example_source = "https://www.house.leg.state.mn.us/Committees/members/92002"
 
     def process_page(self):
         # print(XPath('//div[contains(@class, media-body)]//span//b').match(self.root).len())
-        for name in XPath('//div[@class="media-body"]/span/b/text()').match(self.root):
-            if name != "Email: ":
-                print("name", name)
-                name_str = name
-            role = XPath("..//preceding-sibling::span/b/u/text()").match(name)
-            print("role!!", role)
+        # print("name", XPath('//div[@class="media-body"]/span[1]/b/text()').match(self.root))
+        for name in XPath(
+            '//div[@class="media pl-2 py-4"]//div[@class="media-body"]'
+        ).match(self.root):
+            # if name != "Email: ":
+            #     print("name", name)
+            #     name_str = name
+            # THIS WORKS:
+            # name = XPath('//div[@class="media-body"]/span[1]/b/text()').match(self.root)
+            # role = XPath("..//preceding-sibling").match(name)
+
+            # name2 = XPath('./span[1]/b/text()').match(name)
+            # if xpath doesn't work, then this does...nah doesn't work that well...
+            # literalname2 = CSS("span b").match(name)[1].text_content()
+
+            literalname2 = XPath(".//span/b/text()").match(name)[0]
+            # if literalname2 in
+            # lxml.etree.XPathEvalError: Unfinished literal
+            # print("literal name", literalname2)
+            # print("role!!", role)
+            # print("person")
 
             # todo: should these be capitalized?
-            # positions = ["committee chair", "vice chair", "republican lead"]
-            if name_str:
+            positions = ["committee chair", "vice chair", "republican lead"]
+            if name:
                 try:
                     # note: maybe have to make role XPath relational so we don't get a long list :(--we want just one role
                     # role = XPath('//div[@class="media-body"]/span/b/u/text()').match(name)
 
-                    role = XPath("..//preceding-sibling::span/b/u/text()").match(name)
+                    # role = XPath("..//preceding-sibling::span/b/u/text()").match(name)
                     # position = XPath("..//preceding-sibling::b/text()").match(link)
-
-                    print("role", role)
+                    position = CSS("span b u").match(name)[0].text_content().lower()
+                    if position in positions:
+                        role = position
+                    # print("role", role)
                 except SelectorError:
                     role = "member"
-            print(name, role)
+            print(literalname2, role)
             # com.add_member(name_str, role)
 
             # another idea: try, except--and then keep using following-sibling (or whatever) to find relevant info
