@@ -1,5 +1,5 @@
 from spatula import HtmlPage, HtmlListPage, CSS
-from openstates.people.models.committees import ScrapeCommittee
+from openstates.models import ScrapeCommittee
 
 
 class CommitteeDetail(HtmlPage):

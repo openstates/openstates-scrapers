@@ -1,5 +1,5 @@
 from spatula import XmlListPage, URL, XPath
-from ..common.people import ScrapePerson
+from openstates.models import ScrapePerson
 
 
 ELEMENTS = (

@@ -1,6 +1,6 @@
 import lxml.html
 from spatula import CSS, SelectorError, HtmlListPage
-from ..common.people import ScrapePerson
+from openstates.models import ScrapePerson
 
 
 class FormSource:

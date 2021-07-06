@@ -1,6 +1,6 @@
 import re
 from spatula import HtmlListPage, XPath
-from ..common.people import ScrapePerson
+from openstates.models import ScrapePerson
 
 
 def clean_name(name):

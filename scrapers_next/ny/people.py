@@ -1,7 +1,7 @@
 import re
 import lxml.etree
 from spatula import HtmlListPage, HtmlPage, CSS, SelectorError, URL
-from ..common.people import ScrapePerson
+from openstates.models import ScrapePerson
 
 
 class PartyAugmentation(HtmlPage):

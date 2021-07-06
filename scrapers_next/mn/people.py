@@ -1,7 +1,7 @@
 import collections
 import re
 from spatula import HtmlListPage, CsvListPage, HtmlPage, XPath
-from ..common.people import ScrapePerson
+from openstates.models import ScrapePerson
 
 PARTIES = {"DFL": "Democratic-Farmer-Labor", "R": "Republican", "I": "Independent"}
 SEN_HTML_URL = "http://www.senate.mn/members/index.php"

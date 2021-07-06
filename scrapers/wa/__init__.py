@@ -1,5 +1,4 @@
 from utils import State
-from .people import WAPersonScraper
 from .events import WAEventScraper
 from .bills import WABillScraper
 
@@ -10,7 +9,6 @@ settings = dict(SCRAPELIB_TIMEOUT=300)
 
 class Washington(State):
     scrapers = {
-        "people": WAPersonScraper,
         "events": WAEventScraper,
         # 'committees': WACommitteeScraper,
         "bills": WABillScraper,
