@@ -41,12 +41,20 @@ class SenateCommitteeDetail(HtmlPage):
 
 
 class HouseCommitteeDetail(HtmlPage):
-    example_source = "https://www.house.leg.state.mn.us/Committees/members/92002"
+    example_source = "https://www.house.leg.state.mn.us/Committees/members/92001"
 
     def process_page(self):
 
         com = self.input
         com.add_source(self.source.url)
+
+        time, room = (
+            CSS(".border-0 .pl-2").match(self.root)[0].text_content().split("in ")
+        )
+        time = time.split("Meets:")[1]
+
+        com.extras["room"] = room.strip()
+        com.extras["meeting schedule"] = time.strip()
 
         for p in XPath('//div[@class="media pl-2 py-4"]').match(self.root):
 
@@ -56,9 +64,7 @@ class HouseCommitteeDetail(HtmlPage):
                 .split("(")[0]
                 .replace("Rep.", "")
             )
-            # com.add_link(CSS("a").match(p)[0].get("href"))
 
-            # todo: should these be capitalized?
             positions = ["committee chair", "vice chair", "republican lead"]
             if name:
                 try:
@@ -71,8 +77,6 @@ class HouseCommitteeDetail(HtmlPage):
         return com
 
 
-# from NC: HouseCommitteeList(CommitteeList)
-# todo: add meeting times for each committee
 class SenateCommitteeList(HtmlListPage):
     selector = CSS(" .card .list-group-flush .d-flex a")
     source = "https://www.senate.mn/committees"
@@ -80,10 +84,8 @@ class SenateCommitteeList(HtmlListPage):
 
     def process_item(self, item):
         name = item.text_content().strip()
-        # print(re.search('-', name))
         if re.search(" - ", name):
             parent, com_name = name.split(" - Subcommittee on ")
-            # print("name is this: ", name)
             com = ScrapeCommittee(
                 name=com_name, classification="subcommittee", parent=parent
             )
@@ -94,9 +96,7 @@ class SenateCommitteeList(HtmlListPage):
         return SenateCommitteeDetail(com, source=item.get("href"))
 
 
-# todo: add meeting times, office building(?)
 class HouseCommitteeList(HtmlListPage):
-    # selector = CSS(".mb-3 .card-body h2 a")
     selector = CSS(".mb-3 .card-body")
     source = "https://www.house.leg.state.mn.us/committees"
     chamber = "lower"
@@ -111,4 +111,10 @@ class HouseCommitteeList(HtmlListPage):
         )
         name = CSS("h2 a").match(item)[0].text_content()
         com = ScrapeCommittee(name=name, parent=self.chamber)
+
+        for links in XPath(".//div[contains(@class, 'container')]//a").match(item):
+            if links.get("href") == link:
+                continue
+            else:
+                com.add_link(links.get("href"))
         return HouseCommitteeDetail(com, source=link)
