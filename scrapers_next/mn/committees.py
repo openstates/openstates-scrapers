@@ -1,6 +1,6 @@
 import re
 from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError
-from openstates.people.models.committees import ScrapeCommittee
+from openstates.models import ScrapeCommittee
 
 
 class SenateCommitteeDetail(HtmlPage):
@@ -11,6 +11,14 @@ class SenateCommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
         com.add_source(self.source.url)
+
+        room, time = XPath("//div[@class='col-sm-12 pb-2']//p[2]/text()").match(
+            self.root
+        )
+        if re.search("On Call", time):
+            time = time.split(" -")[0]
+        com.extras["room"] = room.strip()
+        com.extras["meeting schedule"] = time.strip()
 
         for link in XPath(
             '//div[contains(@class, "media-body")]//a[contains(@href, "member_bio")]'
