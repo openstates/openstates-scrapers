@@ -1,6 +1,6 @@
 import re
 from spatula import HtmlListPage, CSS, XPath
-from ..common.people import ScrapePerson
+from openstates.models import ScrapePerson
 
 
 class AssemblyList(HtmlListPage):

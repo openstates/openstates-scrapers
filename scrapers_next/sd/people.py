@@ -1,5 +1,5 @@
 from spatula import JsonListPage, URL
-from ..common.people import ScrapePerson
+from openstates.models import ScrapePerson
 
 
 class Legislators(JsonListPage):

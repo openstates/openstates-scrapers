@@ -1,5 +1,5 @@
 from spatula import HtmlListPage, HtmlPage, SimilarLink, CSS
-from ..common.people import ScrapePerson
+from openstates.models import ScrapePerson
 
 
 class Senate(HtmlListPage):

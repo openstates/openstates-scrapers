@@ -1,5 +1,5 @@
 from spatula import HtmlListPage, CSS, XPath, HtmlPage, Page
-from ..common.people import ScrapePerson
+from openstates.models import ScrapePerson
 import xlrd
 
 
