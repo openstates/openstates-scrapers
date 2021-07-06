@@ -1,5 +1,5 @@
 from spatula import HtmlListPage, CSS
-from ..common.people import ScrapePerson
+from openstates.models import ScrapePerson
 
 
 def split_name(name):

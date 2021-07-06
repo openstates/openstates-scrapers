@@ -1,6 +1,6 @@
 import lxml.html
 from spatula import HtmlListPage, CSS, SelectorError
-from ..common.people import ScrapePerson
+from openstates.models import ScrapePerson
 
 
 class BrokenHtmlListPage(HtmlListPage):

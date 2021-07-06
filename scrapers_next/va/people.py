@@ -2,7 +2,7 @@ import datetime
 import re
 import attr
 from spatula import HtmlPage, HtmlListPage, XPath
-from ..common.people import ScrapePerson
+from openstates.models import ScrapePerson
 
 PARTY_MAP = {"R": "Republican", "D": "Democratic", "I": "Independent"}
 party_district_pattern = re.compile(r"\((R|D|I)\) - (?:House|Senate) District\s+(\d+)")

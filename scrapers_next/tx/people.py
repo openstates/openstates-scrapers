@@ -1,8 +1,7 @@
 import re
-
 import attr
 from spatula import HtmlListPage, HtmlPage, XPath
-from ..common.people import ScrapePerson
+from openstates.models import ScrapePerson
 
 
 @attr.s(auto_attribs=True)

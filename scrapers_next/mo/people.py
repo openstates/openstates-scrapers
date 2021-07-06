@@ -1,6 +1,6 @@
 import attr
 from spatula import HtmlListPage, HtmlPage, URL, CSS
-from ..common.people import ScrapePerson
+from openstates.models import ScrapePerson
 
 
 @attr.s(auto_attribs=True)
