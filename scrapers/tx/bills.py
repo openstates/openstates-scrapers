@@ -163,6 +163,11 @@ class TXBillScraper(Scraper, LXMLMixin):
 
         bill.add_source(history_url)
 
+        bill_id_for_url = bill_id.replace(" ", "")
+        bill.add_source(
+            f"https://capitol.texas.gov/BillLookup/History.aspx?LegSess={session}&Bill={bill_id_for_url}"
+        )
+
         for subject in root.iterfind("subjects/subject"):
             bill.add_subject(subject.text.strip())
 
