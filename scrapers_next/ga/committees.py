@@ -41,7 +41,17 @@ class CommitteeDetail(JsonPage):
         com.add_source(
             self.source.url, note="Detail page (requires authorization token)"
         )
-        com.add_link(self.source.url, note="Detail page (requires authorization token)")
+
+        if com.parent == "upper":
+            link_chamber = "senate"
+        elif com.parent == "lower":
+            link_chamber = "house"
+
+        source_url_list = self.source.url.split("/")
+        item_id = source_url_list[-2]
+
+        link = URL(f"https://www.legis.ga.gov/committees/{link_chamber}/{item_id}")
+        com.add_link(link.url, note="Human-friendly detail page")
 
         com_address = self.data["address"]["address1"].strip() + " "
         com_address += self.data["address"]["address2"].strip() + " "
@@ -95,9 +105,6 @@ class CommitteeList(JsonListPage):
         )
 
         com.add_source(
-            self.source.url, note="Initial list page (requires authorization token)"
-        )
-        com.add_link(
             self.source.url, note="Initial list page (requires authorization token)"
         )
 
