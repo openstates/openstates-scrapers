@@ -2,7 +2,7 @@ import requests
 from hashlib import sha512
 import time
 from spatula import URL, JsonListPage, JsonPage
-from openstates.people.models.committees import ScrapeCommittee
+from openstates.models import ScrapeCommittee
 
 
 def get_key(timestamp):
@@ -50,21 +50,18 @@ class CommitteeDetail(JsonPage):
         com_address += self.data["address"]["state"].strip() + " "
         com_address += self.data["address"]["zip"].strip()
 
-        # commented out for now to pass flake8
-        # com_phone = self.data["address"]["phone"].strip()
-        # com_fax = self.data["address"]["fax"].strip()
-        # com_email = self.data["address"]["email"]
+        com_phone = self.data["address"]["phone"].strip()
+        com_fax = self.data["address"]["fax"].strip()
+        com_email = self.data["address"]["email"]
 
-        """
         if com_address:
-            com.extras['address'] = com_address
+            com.extras["address"] = com_address
         if com_phone:
-            com.extras['phone'] = com_phone
+            com.extras["phone"] = com_phone
         if com_fax:
-            com.extras['fax'] = com_fax
+            com.extras["fax"] = com_fax
         if com_email:
-            com.extras['email'] = com_email
-        """
+            com.extras["email"] = com_email
 
         for memb in self.data["members"]:
             member = memb["name"]
