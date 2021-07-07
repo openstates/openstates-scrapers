@@ -11,35 +11,23 @@ class CommitteeDetail(HtmlPage):
         com.add_source(self.source.url)
 
         table = XPath("//div[@id='content']/table[2]/tr[position()>1]").match(self.root)
-        # table = CSS("#content p table tbody").match(self.root)
-        # print(table)
         for person in table:
-            # print(committee.text_content())
-            # name = XPath("./td[0]//text()").match(committee)
-            # print(name)
             name = person.text_content()
-            # print("raw name", name)
 
             positions = ["chair", "vice chair"]
-            # role = "filler"
             if name:
                 try:
                     label_text = XPath("./td[1]//text()").match(person)
-                    # print("label", label_text)
                     for label in label_text:
                         label = label.lower()
                         if label.endswith(":"):
                             label = label[:-1]
-                            # ['Members:']
                         if label in positions:
-                            # print("new role: ", label)
                             role = label
                         else:
                             role = "member"
                     name = person.text_content().split(":")[1]
-                    # print("new name", name)
                 except SelectorError:
-                    # print("member")
                     role = "member"
 
             # there are two spaces in between each name
@@ -58,11 +46,11 @@ class CommitteeDetail(HtmlPage):
             for thing in table
         ]
 
-        hello = table[1::2]
+        fields = table[1::2]
         extra = table[2::2]
 
         for i in range(5):
-            com.extras[hello[i].lower()] = extra[i].strip()
+            com.extras[fields[i].lower()] = extra[i].strip()
 
         # more links
         membership = CSS("#content #lnkCmteMbrHistory").match(self.root)
@@ -84,7 +72,6 @@ class CommitteeDetail(HtmlPage):
         return com
 
 
-# problem: does not recognize some characters in name
 class CommitteeList(HtmlListPage):
     selector = CSS("#content form ul li a")
 
@@ -92,13 +79,16 @@ class CommitteeList(HtmlListPage):
         name = item.text_content()
         if re.search(" - ", name):
             parent, name = name.split(" - ")
+
+            # there is one subcommittee that has a shortened parent called "Approps."
+            if parent == "Approps.":
+                parent = "Appropriations"
             committee = ScrapeCommittee(
                 name=name, parent=parent, classification="subcommittee"
             )
         else:
             committee = ScrapeCommittee(name=name, parent=self.chamber)
-        print(committee)
-        # print(item.get("href"))
+
         committee.add_source(self.source.url)
         return CommitteeDetail(committee, source=item.get("href"))
 
