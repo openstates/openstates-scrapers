@@ -9,9 +9,7 @@ class CommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
         com.add_source(self.source.url)
-        # table = CSS("#content p table tbody")
-        # can also do p below
-        # can't get access to this table for some reason...
+
         table = XPath("//div[@id='content']/table[2]/tr[position()>1]").match(self.root)
         # table = CSS("#content p table tbody").match(self.root)
         # print(table)
@@ -20,14 +18,14 @@ class CommitteeDetail(HtmlPage):
             # name = XPath("./td[0]//text()").match(committee)
             # print(name)
             name = person.text_content()
-            print("raw name", name)
+            # print("raw name", name)
 
             positions = ["chair", "vice chair"]
             # role = "filler"
             if name:
                 try:
                     label_text = XPath("./td[1]//text()").match(person)
-                    print("label", label_text)
+                    # print("label", label_text)
                     for label in label_text:
                         label = label.lower()
                         if label.endswith(":"):
@@ -48,16 +46,45 @@ class CommitteeDetail(HtmlPage):
             name = (
                 name.replace("Sen.", "").replace("Rep.", "").replace("  ", " ").strip()
             )
-            # print("final", name, role)
             com.add_member(name, role)
+
+        # extra information
+        table = XPath("//div[@id='content']/table[1]/tr/td//text()").match(self.root)
+        table = [
+            thing.replace("\r", "")
+            .replace("\n", "")
+            .replace("\t", "")
+            .replace(": ", "")
+            for thing in table
+        ]
+
+        hello = table[1::2]
+        extra = table[2::2]
+
+        for i in range(5):
+            com.extras[hello[i].lower()] = extra[i].strip()
+
+        # more links
+        membership = CSS("#content #lnkCmteMbrHistory").match(self.root)
+        meetings = XPath("//center//a[contains(@href, 'MeetingsByCmte')]").match(
+            self.root
+        )
+
+        try:
+            bills = XPath("//center//a[contains(@href, '/Reports/Report')]").match(
+                self.root
+            )
+            links = membership + bills + meetings
+        except SelectorError:
+            links = membership + meetings
+
+        for link in links:
+            com.add_link(link.get("href"))
 
         return com
 
-        # extras
-        # table = XPath("//div[@id='content']/table[1]/tr").match(self.root)
-        # print("extras", table)
 
-
+# problem: does not recognize some characters in name
 class CommitteeList(HtmlListPage):
     selector = CSS("#content form ul li a")
 
