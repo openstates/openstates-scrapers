@@ -120,6 +120,14 @@ class Texas(State):
             "name": "87th Legislature (2021)",
             "start_date": "2021-01-12",
         },
+        {
+            "_scraped_name": "87(1) - 2021",
+            "classification": "special",
+            "end_date": "2021-07-16",
+            "identifier": "871",
+            "name": "87th Legislature, 1st Called Session (2021)",
+            "start_date": "2021-07-08",
+        },
         # TODO: Re-enable vote scraper when adding next regular session
     ]
     ignored_scraped_sessions = [
