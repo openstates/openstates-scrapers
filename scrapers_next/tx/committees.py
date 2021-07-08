@@ -24,7 +24,10 @@ class CommitteeDetail(HtmlPage):
                             label = label[:-1]
                         if label in positions:
                             role = label
+                        elif label == "members":
+                            role = "member"
                         else:
+                            # self.warn(f"unknown role {label}")
                             role = "member"
                     name = person.text_content().split(":")[1]
                 except SelectorError:
@@ -39,17 +42,16 @@ class CommitteeDetail(HtmlPage):
         # extra information
         table = XPath("//div[@id='content']/table[1]/tr/td//text()").match(self.root)
         table = [
-            thing.replace("\r", "")
-            .replace("\n", "")
-            .replace("\t", "")
-            .replace(": ", "")
-            for thing in table
+            info.replace("\r", "").replace("\n", "").replace("\t", "").replace(": ", "")
+            for info in table
         ]
-
+        # the fields, like "clerk", etc. are located at every odd indice
+        # the information for each field, like the clerk's name, are located at every even oddice
         fields = table[1::2]
         extra = table[2::2]
+        num_of_fields = range(5)
 
-        for i in range(5):
+        for i in num_of_fields:
             com.extras[fields[i].lower()] = extra[i].strip()
 
         # more links
