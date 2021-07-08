@@ -3,23 +3,31 @@ from openstates.models import ScrapeCommittee
 
 
 class SenateCommitteeDetail(HtmlPage):
-    example_source = "https://www.nysenate.gov/committees/housing-construction-and-community-development"
+    # example_source = "https://www.nysenate.gov/committees/housing-construction-and-community-development"
     # example_source = ("https://www.nysenate.gov/committees/administrative-regulations-review-commission-arrc")
+    example_source = "https://www.nysenate.gov/committees/joint-senate-task-force-opioids-addiction-overdose-prevention"
 
     def process_page(self):
         # *scrape
         com = self.input
         com.add_source(self.source.url)
 
-        chair_role = (
-            CSS(".c-chair-block--position").match_one(self.root).text_content().lower()
-        )
-        chair_name = CSS(".c-chair--title").match_one(self.root).text_content()
-        # print(chair_name, chair_role)
+        # a few committees don't have chair positions!
+        try:
+            chair_role = (
+                CSS(".c-chair-block--position")
+                .match_one(self.root)
+                .text_content()
+                .lower()
+            )
+            chair_name = CSS(".c-chair--title").match_one(self.root).text_content()
+            print(chair_name, chair_role)
 
-        # *
-        com.add_member(chair_name, chair_role)
+            # *
+            com.add_member(chair_name, chair_role)
 
+        except SelectorError:
+            pass
         # print(XPath("//div[contains(@class, 'c-senators-container')]").match(self.root))
         try:
             for p in XPath(
@@ -68,7 +76,7 @@ class HouseCommitteeDetail(HtmlPage):
             # chair_role = CSS("h2").match_one(chair).text_content().lower()
             # chair_role is preceding sibling header
             chair_name = CSS(".comm-chair-name").match_one(chair).text_content().strip()
-            # problem: there are multiple chairs sometimes, the bottom returns multiple chair positions instead of just one
+            # RESOLVED problem: there are multiple chairs sometimes, the bottom returns multiple chair positions instead of just one
             chair_role = (
                 XPath(f"..//preceding-sibling::header[{num_chairs}]")
                 .match_one(chair)
