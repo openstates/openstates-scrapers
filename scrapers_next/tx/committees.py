@@ -27,7 +27,7 @@ class CommitteeDetail(HtmlPage):
                         elif label == "members":
                             role = "member"
                         else:
-                            # self.warn(f"unknown role {label}")
+                            self.warn(f"unknown role {label}")
                             role = "member"
                     name = person.text_content().split(":")[1]
                 except SelectorError:
