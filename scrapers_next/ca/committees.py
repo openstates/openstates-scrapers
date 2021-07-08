@@ -3,14 +3,22 @@ from openstates.models import ScrapeCommittee
 
 
 class CommitteeDetail(HtmlListPage):
-    selector = XPath("//h2[text()='Members:']/following-sibling::p/a")
+    # selector = XPath("//[text()='Members:']/following-sibling/a")
+    selector = XPath(
+        '//a[(contains(@href, "/sd") or '
+        'contains(@href, "assembly.ca.gov/a")) and '
+        '(starts-with(text(), "Senator") or '
+        'starts-with(text(), "Assembly Member"))]/text()'
+    )
     # "//*[@id="node-182047"]/div/div/div/div/p[11]/a[1]"
+    # "//*[@id="node-39"]/div/div/div/div/p[25]/a[8]"
+    # "//*[@id="node-39"]/div/div/div/div/p[25]/a[9]"
 
     def process_item(self, item):
         com = self.input
-        com.add_source(self.source.url)
-
-        member_name = item.text_content().rstrip("Senator ")
+        # print(item)
+        member_name = item.lstrip("Senator ")
+        # member_name = item.text_content().lstrip("Senator ")
         com.add_member(name=member_name)
         return com
 
@@ -44,16 +52,16 @@ class CommitteeList(HtmlListPage):
         com_name = item.text_content()
         detail_link = item.get("href")
         different_xml = [
-            "https://sbp.senate.ca.gov",
-            "https://selc.senate.ca.gov",
-            "https://senv.senate.ca.gov",
-            "https://shea.senate.ca.gov",
-            "https://sjud.senate.ca.gov",
-            "https://spsf.senate.ca.gov",
-            "https://census.senate.ca.gov/",
-            "https://www.senate.ca.gov/domestic-violence",
-            "https://www.senate.ca.gov/hydrogen-energy",
-            "https://www.senate.ca.gov/mental-health-and-addiction",
+            # "https://sbp.senate.ca.gov" # h3 instread of h2,
+            # "https://selc.senate.ca.gov" # different format,
+            # "https://senv.senate.ca.gov" # different members heading,
+            # "https://shea.senate.ca.gov" # h3 p a instead of h2 p a,
+            # "https://sjud.senate.ca.gov" # h4 h4 a instead of h2 p a,
+            # "https://spsf.senate.ca.gov" # members is p instead of h2,
+            # "https://census.senate.ca.gov/" # ul li instead of p a,
+            # "https://www.senate.ca.gov/domestic-violence",
+            # "https://www.senate.ca.gov/hydrogen-energy",
+            # "https://www.senate.ca.gov/mental-health-and-addiction",
             "http://assembly.ca.gov/fairsallocation",
             "http://fisheries.legislature.ca.gov/",
             "https://jtrules.legislature.ca.gov",
@@ -71,8 +79,10 @@ class CommitteeList(HtmlListPage):
             parent="upper",
         )
 
+        # this is being added for each member (only do once)
         com.add_source(self.source.url)
         com.add_link(detail_link)
+        # add link as a source as well
 
         # print(com_type)
         """
