@@ -1,7 +1,7 @@
-from spatula import HtmlListPage, URL, CSS, XPath
+from spatula import HtmlListPage, URL, XPath  # , CSS
 from openstates.models import ScrapeCommittee
 
-
+'''
 class CommitteeDetail(HtmlListPage):
     # selector = XPath("//[text()='Members:']/following-sibling/a")
     selector = XPath(
@@ -74,9 +74,14 @@ class CommitteeList(HtmlListPage):
         if detail_link in different_xml:
             self.skip()
 
+        if com_name.startswith("Joint"):
+            chamber = "legislature"
+        else:
+            chamber = "upper"
+
         com = ScrapeCommittee(
             name=com_name,
-            parent="upper",
+            parent=chamber,
         )
 
         # this is being added for each member (only do once)
@@ -100,3 +105,100 @@ class CommitteeList(HtmlListPage):
         #    return com
         # else:
         return CommitteeDetail(com, source=source)
+'''
+
+
+class CommitteeList(HtmlListPage):
+    source = URL("http://senate.ca.gov/committees")
+
+    selector = XPath("//h2/../following-sibling::div//a")
+
+    def process_item(self, item):
+        # Retrieve index list of committees.
+        # doc = self.lxmlize(url)
+
+        # Get the text of the committee link, which should be the name of
+        # the committee.
+        comm_name = XPath("text()").match_one(item)
+        # (comm_name,) = committee.xpath("text())")
+
+        comm_url = XPath("@href").match_one(item)
+        # (comm_url,) = committee.xpath("@href")
+        # comm_doc = self.lxmlize(comm_url)
+
+        if comm_name.startswith("Joint"):
+            com = ScrapeCommittee(
+                name=comm_name, parent="legislature", classification="committee"
+            )
+        else:
+            com = ScrapeCommittee(
+                name=comm_name, classification="committee", parent="upper"
+            )
+
+        com.add_source(self.source.url)
+        com.add_source(comm_url)
+        com.add_link(comm_url)
+
+        return com
+
+        """
+        # Special case of members list being presented in text blob.
+        member_blob = comm_doc.xpath(
+            'string(//div[contains(@class, "field-item") and '
+            'starts-with(text(), "Senate Membership:")][1]/text()[1])'
+        )
+
+        if member_blob:
+            # Separate senate membership from assembly membership.
+            # This should strip the header from assembly membership
+            # string automatically.
+            delimiter = "Assembly Membership:\n"
+            senate_members, delimiter, assembly_members = member_blob.partition(
+                delimiter
+            )
+
+            # Strip header from senate membership string.
+            senate_members = senate_members.replace("Senate Membership:\n", "")
+
+            # Clean membership strings.
+            senate_members = senate_members.strip()
+            assembly_members = assembly_members.strip()
+
+            # Parse membership strings into lists.
+            senate_members = senate_members.split("\n")
+            assembly_members = assembly_members.split("\n")
+
+            members = senate_members + assembly_members
+        # Typical membership list format.
+        else:
+            members = comm_doc.xpath(
+                '//a[(contains(@href, "/sd") or '
+                'contains(@href, "assembly.ca.gov/a")) and '
+                '(starts-with(text(), "Senator") or '
+                'starts-with(text(), "Assembly Member"))]/text()'
+            )
+
+        for member in members:
+            if not member.strip():
+                continue
+
+        """
+
+        # (mem_name, mem_role) = re.search(
+        #     r"""(?ux)
+        #         ^(?:Senator|Assembly\sMember)\s  # Legislator title
+        #         (.+?)  # Capture the senator's full name
+        #         (?:\s\((.{2,}?)\))?  # There may be role in parentheses
+        #         (?:\s\([RD]\))?  # There may be a party affiliation
+        #         \s*$
+        #         """,
+        #     member,
+        # ).groups()
+        # org.add_member(mem_name, role=mem_role if mem_role else "member")
+
+        """
+        if not org._related:
+            self.warning("No members found for committee {}".format(comm_name))
+
+        yield org
+        """
