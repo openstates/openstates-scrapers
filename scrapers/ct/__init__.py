@@ -1,5 +1,3 @@
-import lxml.html
-import scrapelib
 from utils import State
 from .people import CTPersonScraper
 from .bills import CTBillScraper
@@ -121,6 +119,7 @@ class Connecticut(State):
 
     def get_session_list(self):
         from utils.lxmlize import url_xpath
+
         return set(
             [
                 x.strip()

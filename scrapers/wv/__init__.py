@@ -2,6 +2,7 @@ from utils import State
 from .people import WVPersonScraper
 from .bills import WVBillScraper
 from .events import WVEventScraper
+
 # from .committees import WVCommitteeScraper
 
 
@@ -148,6 +149,22 @@ class WestVirginia(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-13",
             "end_date": "2021-04-10",
+        },
+        {
+            "_scraped_name": "2021",
+            "classification": "primary",
+            "identifier": "20211S",
+            "name": "2021 First Special Session",
+            "start_date": "2021-06-07",
+            "end_date": "2021-06-11",
+        },
+        {
+            "_scraped_name": "2021",
+            "classification": "primary",
+            "identifier": "20212S",
+            "name": "2021 Second Special Session",
+            "start_date": "2021-06-24",
+            "end_date": "2021-06-25",
         },
     ]
     ignored_scraped_sessions = [

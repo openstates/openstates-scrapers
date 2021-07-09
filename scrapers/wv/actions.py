@@ -124,8 +124,7 @@ class Categorizer(BaseCategorizer):
     rules = rules
 
     def categorize(self, text):
-        """Wrap categorize and add boilerplate committees.
-        """
+        """Wrap categorize and add boilerplate committees."""
         attrs = BaseCategorizer.categorize(self, text)
         committees = attrs["committees"]
         for committee in re.findall(committees_rgx, text, re.I):

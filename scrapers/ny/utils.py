@@ -33,8 +33,7 @@ class UrlData(object):
     """
 
     def __init__(self, name, url, scraper, urls_object):
-        """urls_object is a reference back to the Urls container.
-        """
+        """urls_object is a reference back to the Urls container."""
         self.url = url
         self.name = name
         self.scraper = scraper
@@ -58,8 +57,7 @@ class UrlData(object):
 
     @CachedAttr
     def doc(self):
-        """Return the page's lxml doc.
-        """
+        """Return the page's lxml doc."""
         doc = lxml.html.fromstring(self.text)
         doc.make_links_absolute(self.url)
         return doc
@@ -76,8 +74,7 @@ class UrlData(object):
 
     @CachedAttr
     def etree(self):
-        """Return the documents element tree.
-        """
+        """Return the documents element tree."""
         return lxml.etree.fromstring(self.text)
 
 
@@ -100,14 +97,12 @@ class UrlsMeta(type):
 
 
 class Urls(object):
-    """Contains urls we need to fetch during this scrape.
-    """
+    """Contains urls we need to fetch during this scrape."""
 
     __metaclass__ = UrlsMeta
 
     def __init__(self, scraper, urls):
-        """Sets a UrlData object on the instance for each named url given.
-        """
+        """Sets a UrlData object on the instance for each named url given."""
         self.urls = urls
         self.scraper = scraper
         for name, url in urls.items():
@@ -118,8 +113,7 @@ class Urls(object):
         return "%s(%r)" % (self.__class__.__name__, self.urls)
 
     def __iter__(self):
-        """A generator of this object's UrlData members.
-        """
+        """A generator of this object's UrlData members."""
         for name in self.urls:
             yield getattr(self, name)
 
@@ -148,8 +142,7 @@ class Urls(object):
         return decorator
 
     def validate(self, name, url, text):
-        """Run each validator function for the named url and its text.
-        """
+        """Run each validator function for the named url and its text."""
         for validator in self._validators[name]:
             try:
                 validator(self, url, text)

@@ -79,8 +79,7 @@ class Categorizer(BaseCategorizer):
     rules = rules
 
     def categorize(self, text):
-        """Wrap categorize and add boilerplate committees.
-        """
+        """Wrap categorize and add boilerplate committees."""
         attrs = BaseCategorizer.categorize(self, text)
         if "committees" in attrs:
             committees = attrs["committees"]

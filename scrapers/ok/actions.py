@@ -111,6 +111,7 @@ _categorizer_rules = (
         [u"^(Signed|Approved) by Governor"], [u"executive-signature"], actor="governor"
     ),
     Rule([u"^Vetoed"], [u"executive-veto"], actor="governor"),
+    Rule([u"^Pocket veto"], [u"executive-veto"], actor="executive"),
     Rule([r"Veto overridden"], ["veto-override-passage"]),
 )
 

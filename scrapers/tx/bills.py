@@ -60,7 +60,7 @@ class TXBillScraper(Scraper, LXMLMixin):
     )
 
     def _get_ftp_files(self, dir_):
-        """ Recursively traverse an FTP directory, returning all files """
+        """Recursively traverse an FTP directory, returning all files"""
         for i in range(3):
             try:
                 ftp = ftplib.FTP(self._FTP_ROOT)
@@ -163,37 +163,44 @@ class TXBillScraper(Scraper, LXMLMixin):
 
         bill.add_source(history_url)
 
+        bill_id_for_url = bill_id.replace(" ", "")
+        bill.add_source(
+            f"https://capitol.texas.gov/BillLookup/History.aspx?LegSess={session}&Bill={bill_id_for_url}"
+        )
+
         for subject in root.iterfind("subjects/subject"):
             bill.add_subject(subject.text.strip())
 
-        for version in root.iterfind("billtext/docTypes/bill/versions"):
+        for version in root.iterfind("billtext/docTypes/bill/versions/version"):
             if not version:
                 continue
 
-            note = version.find("version/versionDescription").text
-            html_url = version.find("version/WebHTMLURL").text
+            note = version.find("versionDescription").text
+            html_url = version.find("WebHTMLURL").text
             bill.add_version_link(note=note, url=html_url, media_type="text/html")
-            pdf_url = version.find("version/WebPDFURL").text
+            pdf_url = version.find("WebPDFURL").text
             bill.add_version_link(note=note, url=pdf_url, media_type="application/pdf")
 
-        for analysis in root.iterfind("billtext/docTypes/analysis/versions"):
+        for analysis in root.iterfind("billtext/docTypes/analysis/versions/version"):
             if not analysis:
                 continue
 
-            description = analysis.find("version/versionDescription").text
-            html_url = analysis.find("version/WebHTMLURL").text
+            description = analysis.find("versionDescription").text
+            html_url = analysis.find("WebHTMLURL").text
             bill.add_document_link(
                 note="Analysis ({})".format(description),
                 url=html_url,
                 media_type="text/html",
             )
 
-        for fiscal_note in root.iterfind("billtext/docTypes/fiscalNote/versions"):
+        for fiscal_note in root.iterfind(
+            "billtext/docTypes/fiscalNote/versions/version"
+        ):
             if not fiscal_note:
                 continue
 
-            description = fiscal_note.find("version/versionDescription").text
-            html_url = fiscal_note.find("version/WebHTMLURL").text
+            description = fiscal_note.find("versionDescription").text
+            html_url = fiscal_note.find("WebHTMLURL").text
             bill.add_document_link(
                 note="Fiscal Note ({})".format(description),
                 url=html_url,

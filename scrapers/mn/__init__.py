@@ -206,6 +206,14 @@ class Minnesota(State):
             # Just a guess. TODO: set after schedule is posted
             "end_date": "2021-06-01",
         },
+        {
+            "_scraped_name": "92nd Legislature, 2021 1st Special Session",
+            "classification": "primary",
+            "identifier": "2021s1",
+            "name": "2021, First Special Session",
+            "start_date": "2021-06-14",
+            "end_date": "2021-06-18",
+        },
     ]
     ignored_scraped_sessions = [
         "85th Legislature, 2007-2008",

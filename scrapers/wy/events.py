@@ -16,10 +16,7 @@ class WYEventScraper(Scraper):
         # this month and the next 2 months
         for add in [0, 1, 2]:
             test_date = today + relativedelta.relativedelta(months=+add)
-            month_url = url.format(
-                str(test_date.year),
-                str(test_date.month).zfill(2)
-            )
+            month_url = url.format(str(test_date.year), str(test_date.month).zfill(2))
             page = self.get(month_url).json()
             for row in page:
                 if row["meetingKind"] == 2:
@@ -52,12 +49,17 @@ class WYEventScraper(Scraper):
                     for media in row["meetingMedias"]:
                         # all these i've seen say they're octet stream but are actually youtube links
                         event.add_media_link(
-                            media["documentType"], media["filePath"], "text/html"
+                            media["documentType"],
+                            media["filePath"],
+                            "text/html",
+                            on_duplicate="ignore",
                         )
 
                     for doc in row["meetingDocuments"]:
                         event.add_document(
-                            doc["title"], f"{self.base_url}{doc['documentUrl']}"
+                            doc["title"],
+                            f"{self.base_url}{doc['documentUrl']}",
+                            on_duplicate="ignore",
                         )
 
                     for item in row["meetingAgendas"]:
@@ -90,11 +92,17 @@ class WYEventScraper(Scraper):
             agenda.add_person(name)
 
         for doc in item["meetingDocuments"]:
-            event.add_document(doc["title"], f"{self.base_url}{doc['documentUrl']}")
+            event.add_document(
+                doc["title"],
+                f"{self.base_url}{doc['documentUrl']}",
+                on_duplicate="ignore",
+            )
 
         for doc in item["budgetMeetingDocuments"]:
             event.add_document(
-                doc["displayTitle"], f"{self.base_url}{doc['documentUrl']}"
+                doc["displayTitle"],
+                f"{self.base_url}{doc['documentUrl']}",
+                on_duplicate="ignore",
             )
 
         for sub_item in item["subAgendaItems"]:

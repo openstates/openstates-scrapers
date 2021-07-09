@@ -54,7 +54,10 @@ class AREventScraper(Scraper):
             location = row.xpath("div[2]/text()")[1].strip()
 
             event = Event(
-                name=title, start_date=when, location_name=location, description="",
+                name=title,
+                start_date=when,
+                location_name=location,
+                description="",
             )
             event.add_source(url)
 

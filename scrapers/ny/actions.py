@@ -103,8 +103,7 @@ class BaseCategorizer(object):
         return self.finalize(return_val)
 
     def before_categorize(self, text):
-        """A precategorization hook. Takes/returns text.
-        """
+        """A precategorization hook. Takes/returns text."""
         return text
 
     def after_categorize(self, return_val):

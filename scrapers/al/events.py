@@ -27,7 +27,7 @@ class ALEventScraper(Scraper, LXMLMixin):
                 date_with_time = "{} {}".format(date, time)
             else:
                 # sometimes the time is the first part of the decription
-                match = re.match(r'\s*\d+:\d+\s*[ap]m', details, flags=re.I)
+                match = re.match(r"\s*\d+:\d+\s*[ap]m", details, flags=re.I)
                 if match:
                     date_with_time = "{} {}".format(date, match.group())
 
@@ -41,13 +41,11 @@ class ALEventScraper(Scraper, LXMLMixin):
 
             # host = row.xpath('td')[3].text_content().strip()
             name = row.xpath("td")[3].text_content().strip()
-            if name == '':
+            if name == "":
                 continue
 
             event = Event(
-                start_date=self._TZ.localize(
-                    dateutil.parser.parse(date_with_time)
-                ),
+                start_date=self._TZ.localize(dateutil.parser.parse(date_with_time)),
                 name=name,
                 location_name=location,
                 description=details,

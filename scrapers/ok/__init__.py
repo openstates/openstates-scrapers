@@ -8,7 +8,7 @@ from .events import OKEventScraper
 class Oklahoma(State):
     scrapers = {
         # 'committees': OKCommitteeScraper,
-        'events': OKEventScraper,
+        "events": OKEventScraper,
         "bills": OKBillScraper,
     }
     # Sessions are named on OK's website as "{odd year} regular session" until the even year,
@@ -106,6 +106,7 @@ class Oklahoma(State):
         },
     ]
     ignored_scraped_sessions = [
+        "2022 Regular Session",
         "2020 Regular Session (web)",
         "2017 Regular Session",
         "2015 Regular Session",
