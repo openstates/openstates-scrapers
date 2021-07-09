@@ -119,7 +119,11 @@ class CommitteeList(HtmlListPage):
 
         # Get the text of the committee link, which should be the name of
         # the committee.
+        # print(item.getparent().get("class"))
         comm_name = XPath("text()").match_one(item)
+        if comm_name in ["Teleconference How-To Information", "Legislative Process"]:
+            self.skip()
+
         # (comm_name,) = committee.xpath("text())")
 
         comm_url = XPath("@href").match_one(item)
