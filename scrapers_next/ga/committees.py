@@ -51,7 +51,7 @@ class CommitteeDetail(JsonPage):
         item_id = source_url_list[-2]
 
         link = f"https://www.legis.ga.gov/committees/{link_chamber}/{item_id}"
-        com.add_link(link, note="Human-friendly detail page")
+        com.add_link(link, note="homepage")
 
         com_address = self.data["address"]["address1"].strip() + " "
         com_address += self.data["address"]["address2"].strip() + " "
