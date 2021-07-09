@@ -115,8 +115,16 @@ class HouseCommitteeList(HtmlListPage):
         com = ScrapeCommittee(name=name, parent=self.chamber)
 
         for links in XPath(".//div[contains(@class, 'container')]//a").match(item):
-            if links.get("href") == link:
+            url = links.get("href")
+            if url == link:
                 continue
             else:
-                com.add_link(links.get("href"))
+                if links == XPath(
+                    ".//div[contains(@class, 'container')]//a[contains(@href, 'home')]"
+                ).match_one(item):
+                    com.add_link(url, note="homepage")
+                else:
+                    com.add_link(url)
+
+        com.add_source(self.source.url)
         return HouseCommitteeDetail(com, source=link)
