@@ -1,4 +1,4 @@
-from spatula import HtmlListPage, URL, XPath  # , CSS
+from spatula import HtmlListPage, URL, XPath, HtmlPage  # , CSS
 from openstates.models import ScrapeCommittee
 
 '''
@@ -108,6 +108,18 @@ class CommitteeList(HtmlListPage):
 '''
 
 
+class CommitteeDetail(HtmlPage):
+    def process_page(self):
+        com = self.input
+        # print(self.data)
+        parent_name = XPath('//div[@class="banner-sitename"]/a/text()').match_one(
+            self.root
+        )
+        # print(parent_name)
+        com.parent = parent_name
+        return com
+
+
 class CommitteeList(HtmlListPage):
     source = URL("http://senate.ca.gov/committees")
 
@@ -132,16 +144,28 @@ class CommitteeList(HtmlListPage):
 
         if comm_name.startswith("Joint"):
             com = ScrapeCommittee(
-                name=comm_name, parent="legislature", classification="committee"
+                name=comm_name, classification="committee", parent="legislature"
             )
+        elif comm_name.startswith("Subcommittee"):
+            # print(parent_name)
+            # (parent_name,) = comm_doc.xpath(
+            #    '//div[@class="banner-sitename"]/a/text()'
+            # )
+            # (subcom_name,) = comm_doc.xpath('//h1[@class="title"]/text()')
+            com = ScrapeCommittee(
+                name=comm_name,
+                classification="subcommittee",
+            )
+            return CommitteeDetail(com, source=URL(comm_url))
         else:
             com = ScrapeCommittee(
                 name=comm_name, classification="committee", parent="upper"
             )
 
+        # need to do for subcommittees as well
         com.add_source(self.source.url)
         com.add_source(comm_url)
-        com.add_link(comm_url)
+        com.add_link(comm_url, note="homepage")
 
         return com
 
