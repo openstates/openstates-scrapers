@@ -41,7 +41,7 @@ class SenateCommitteeDetail(HtmlPage):
 
 
 class HouseCommitteeDetail(HtmlPage):
-    example_source = "https://www.house.leg.state.mn.us/Committees/members/92001"
+    example_source = "https://www.house.leg.state.mn.us/Committees/members/92006"
 
     def process_page(self):
 
@@ -61,8 +61,10 @@ class HouseCommitteeDetail(HtmlPage):
             name = (
                 XPath(".//div[@class='media-body']/span/b/text()")
                 .match(p)[0]
-                .split("(")[0]
                 .replace("Rep.", "")
+                .split("(R)")[0]
+                .split("(DFL")[0]
+                .strip()
             )
 
             positions = ["committee chair", "vice chair", "republican lead"]
