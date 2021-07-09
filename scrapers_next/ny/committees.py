@@ -8,6 +8,7 @@ class SenateCommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
         com.add_source(self.source.url)
+        com.add_link(self.source.url, note="homepage")
 
         # a few committees don't have chair positions
         try:
@@ -45,6 +46,7 @@ class HouseCommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
         com.add_source(self.source.url)
+        com.add_link(self.source.url, note="homepage")
 
         chairs = CSS(".chair-info").match(self.root)
 
