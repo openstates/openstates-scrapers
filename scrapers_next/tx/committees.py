@@ -9,6 +9,7 @@ class CommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
         com.add_source(self.source.url)
+        com.add_link(self.source.url, note="homepage")
 
         table = XPath("//div[@id='content']/table[2]/tr[position()>1]").match(self.root)
         for person in table:
