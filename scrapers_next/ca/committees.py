@@ -148,50 +148,43 @@ class JointcommitteeDetail(HtmlPage):
             "//div/p/a[(contains(text(), 'Senator') or contains(text(), 'Assembly Member'))]/text()",
             '//tbody/tr/td/a[(contains(@href, "/sd") or '
             'contains(@href, "assembly.ca.gov/a"))]/text()',
-            "//div/p[@class = 'caption']/text()",
+            "//p[@class = 'caption']/text()",
         ]
-        for type in xpaths:
+
+        for xpath in xpaths:
             try:
-                members = XPath(type).match(self.root)
+                members = XPath(xpath).match(self.root)
             except SelectorError:
                 continue
 
-        print(members)
-
-        # Special case of members list being presented in text blob.
-
-        # Separate senate membership from assembly membership.
-        # This should strip the header from assembly membership
-        # string automatically.
-        # delimiter = "Assembly Membership:\n"
-        # senate_members, delimiter, assembly_members = members.partition(
-        #    delimiter
-        # )
-
-        # Strip header from senate membership string.
-        # senate_members = senate_members.replace("Senate Membership:\n", "")
-
-        # Clean membership strings.
-        # senate_members = senate_members.strip()
-        # assembly_members = assembly_members.strip()
-
-        # Parse membership strings into lists.
-        # senate_members = senate_members.split("\n")
-        # assembly_members = assembly_members.split("\n")
-
-        # members = senate_members + assembly_members
         for member in members:
-            if not member.strip():
-                continue
+            # if type(member) != str:
+            #    member = member.text_content()
+            # print(member)
+            # if not member.strip():
+            #    continue
 
-            (mem_name, mem_role) = re.search(
-                r"""(?ux)
-                    (.+?)  # Capture the senator's full name
-                    (?:\s\((.{2,}?)\))?  # There may be role in parentheses
-                    \s*$
-                    """,
-                member,
-            ).groups()
+            member = re.sub(r"(Senator\s|Assembly\sMember\s)", "", member)
+            # print(member)
+
+            """
+            if re.search(r",\n", member):
+                mem_name, mem_role = member.split(",\n")
+                mem_name = mem_name.strip()
+                mem_role = mem_role.strip()
+            """
+            if re.search(r",\s", member):
+                mem_name, mem_role = member.split(",")
+                mem_name = mem_name.strip()
+                mem_role = mem_role.strip()
+            elif re.search(r"\(", member):
+                mem_name, mem_role = member.split(" (")
+                mem_role = mem_role.rstrip(")")
+            else:
+                mem_name = member
+                mem_role = "member"
+
+            print(mem_name, mem_role)
             com.add_member(mem_name, role=mem_role if mem_role else "member")
 
         return com
