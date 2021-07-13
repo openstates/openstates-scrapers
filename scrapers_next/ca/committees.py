@@ -282,8 +282,9 @@ class SpecialCommitteeDetail(HtmlPage):
                 mem_name, mem_role = mem_name.split("(")
                 mem_name = mem_name.strip()
                 mem_role = mem_role.rstrip(")")
-                # print(mem_name, mem_role)
-            # print(mem_name)
+                print(mem_name, mem_role)
+            else:
+                print(mem_name)
             com.add_member(mem_name, role=mem_role if mem_role else "member")
 
         return com
@@ -298,11 +299,7 @@ class AssemblyCommitteeList(HtmlListPage):
         comm_name = CSS("a").match_one(item).text_content()
         comm_url = CSS("a").match_one(item).get("href")
 
-        to_skip = [
-            "Sub Committees",
-            "Joint Committees",
-            "Select Committees",
-        ]
+        to_skip = ["Sub Committees", "Joint Committees"]
 
         if (
             item.getparent()
@@ -329,6 +326,7 @@ class AssemblyCommitteeList(HtmlListPage):
             .lstrip("\t")
             == "Special Committees"
         ):
+            self.skip()
             com = ScrapeCommittee(
                 name=comm_name, classification="committee", parent="lower"
             )
@@ -336,9 +334,39 @@ class AssemblyCommitteeList(HtmlListPage):
             com.add_source(comm_url)
             com.add_link(comm_url, note="homepage")
             return SpecialCommitteeDetail(com, source=URL(comm_url))
-
+        elif (
+            item.getparent()
+            .getparent()
+            .getparent()
+            .getparent()
+            .getparent()
+            .getparent()
+            .text_content()
+            .split("\n")[2]
+            .lstrip("\t")
+            == "Select Committees"
+        ):
+            to_skip = [
+                "Census",
+                "Coastal Protection and Access to Natural Resources",
+                "Emerging Technologies and Innovation",
+                "Intellectual and Developmental Disabilities",
+                "Non-Profit Sector",
+                "Police Reform",
+                "Sea Level Rise and the California Economy",
+                "Status of Boys and Men of Color",
+            ]
+            if comm_name in to_skip:
+                self.skip()
+            com = ScrapeCommittee(
+                name=comm_name, classification="committee", parent="lower"
+            )
+            com.add_source(self.source.url)
+            com.add_source(comm_url)
+            com.add_link(comm_url, note="homepage")
+            return SpecialCommitteeDetail(com, source=URL(comm_url))
         # Just standing committees for now
-        # self.skip()
+        self.skip()
         com = ScrapeCommittee(
             name=comm_name, classification="committee", parent="lower"
         )
