@@ -134,9 +134,6 @@ class CommitteeDetail(HtmlListPage):
 
         com.add_member(mem_name, role=mem_role if mem_role else "member")
 
-        # if not org._related:
-        #    self.warning("No members found for committee {}".format(comm_name))
-
         return com
 
 
@@ -151,11 +148,23 @@ class JointcommitteeDetail(HtmlPage):
             "//p[@class = 'caption']/text()",
         ]
 
+        page_type = 0
         for xpath in xpaths:
+            page_type += 1
             try:
                 members = XPath(xpath).match(self.root)
+                break
             except SelectorError:
                 continue
+            print(page_type)
+
+        # print(members)
+        if page_type == 3:
+            member_1 = members[0] + " " + members[1]
+            member_2 = members[2] + " " + members[3]
+            members = [member_1, member_2]
+
+        # print(members)
 
         for member in members:
             # if type(member) != str:
@@ -173,7 +182,13 @@ class JointcommitteeDetail(HtmlPage):
                 mem_name = mem_name.strip()
                 mem_role = mem_role.strip()
             """
-            if re.search(r",\s", member):
+            # print(member)
+            if re.search(r"\n", member):
+                mem_name, mem_role = member.split("\n")
+                mem_name = mem_name.strip().rstrip(",")
+                mem_role = mem_role.split("of the")[0]
+                mem_role = mem_role.strip()
+            elif re.search(r",\s", member):
                 mem_name, mem_role = member.split(",")
                 mem_name = mem_name.strip()
                 mem_role = mem_role.strip()
@@ -256,65 +271,3 @@ class CommitteeList(HtmlListPage):
         com.add_link(comm_url, note="homepage")
 
         return CommitteeDetail(com, source=URL(comm_url))
-
-        """
-        # Special case of members list being presented in text blob.
-        member_blob = comm_doc.xpath(
-            'string(//div[contains(@class, "field-item") and '
-            'starts-with(text(), "Senate Membership:")][1]/text()[1])'
-        )
-
-        if member_blob:
-            # Separate senate membership from assembly membership.
-            # This should strip the header from assembly membership
-            # string automatically.
-            delimiter = "Assembly Membership:\n"
-            senate_members, delimiter, assembly_members = member_blob.partition(
-                delimiter
-            )
-
-            # Strip header from senate membership string.
-            senate_members = senate_members.replace("Senate Membership:\n", "")
-
-            # Clean membership strings.
-            senate_members = senate_members.strip()
-            assembly_members = assembly_members.strip()
-
-            # Parse membership strings into lists.
-            senate_members = senate_members.split("\n")
-            assembly_members = assembly_members.split("\n")
-
-            members = senate_members + assembly_members
-        # Typical membership list format.
-        else:
-            members = comm_doc.xpath(
-                '//a[(contains(@href, "/sd") or '
-                'contains(@href, "assembly.ca.gov/a")) and '
-                '(starts-with(text(), "Senator") or '
-                'starts-with(text(), "Assembly Member"))]/text()'
-            )
-
-        for member in members:
-            if not member.strip():
-                continue
-
-        """
-
-        # (mem_name, mem_role) = re.search(
-        #     r"""(?ux)
-        #         ^(?:Senator|Assembly\sMember)\s  # Legislator title
-        #         (.+?)  # Capture the senator's full name
-        #         (?:\s\((.{2,}?)\))?  # There may be role in parentheses
-        #         (?:\s\([RD]\))?  # There may be a party affiliation
-        #         \s*$
-        #         """,
-        #     member,
-        # ).groups()
-        # org.add_member(mem_name, role=mem_role if mem_role else "member")
-
-        """
-        if not org._related:
-            self.warning("No members found for committee {}".format(comm_name))
-
-        yield org
-        """
