@@ -221,19 +221,26 @@ class StandingCommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
 
-        members = CSS("div.chair img").match(self.root)
-
+        try:
+            members = CSS("div.chair img").match(self.root)
+        except SelectorError:
+            members = [CSS("p img").match(self.root)[0]]
+        # print(members)
         mem_num = 0
         for member in members:
             mem = member.get("alt")
+            # print(mem)
             if not mem or re.search(r"Assemblymember", mem):
                 mem = member.getnext().text_content()
                 # print(mem)
 
             mem = re.sub(r"(Senator\s|Assembly\sMember\s)", "", mem)
             mem = re.sub(r"Image\sof\s", "", mem)
-
+            # print(mem)
             if re.search(r",\s(V|C|\()", mem):
+                # x = re.split(r",\s(V|C|\()", mem)
+                # print(x)
+                # mem_name, mem_role = re.split(r",\s(V|C|\()", mem)
                 mem_name, mem_role = mem.split(",")
                 mem_name = mem_name.strip()
                 mem_role = mem_role.strip()
@@ -263,7 +270,7 @@ class StandingCommitteeDetail(HtmlPage):
                 # print(member, "vice chair not listed")
             mem_num += 1
 
-            # print(mem_name, mem_role)
+            print(mem_name, mem_role)
             com.add_member(mem_name, role=mem_role if mem_role else "member")
 
         return com
@@ -357,7 +364,15 @@ class AssemblyCommitteeList(HtmlListPage):
                 "Status of Boys and Men of Color",
             ]
             if comm_name in to_skip:
-                self.skip()
+                # self.skip()
+                com = ScrapeCommittee(
+                    name=comm_name, classification="committee", parent="lower"
+                )
+                com.add_source(self.source.url)
+                com.add_source(comm_url)
+                com.add_link(comm_url, note="homepage")
+                return StandingCommitteeDetail(com, source=URL(comm_url))
+            self.skip()
             com = ScrapeCommittee(
                 name=comm_name, classification="committee", parent="lower"
             )
