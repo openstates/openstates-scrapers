@@ -117,7 +117,7 @@ class Indiana(State):
         },
     ]
     ignored_scraped_sessions = [
-        "First Regular Session 121st General Assembly (2019)",
+        "Second Regular Session 122nd General Assembly (2022)",
         "2012 Regular Session",
         "2011 Regular Session",
         "2010 Regular Session",
