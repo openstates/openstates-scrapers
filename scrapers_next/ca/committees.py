@@ -109,30 +109,30 @@ class CommitteeList(HtmlListPage):
 '''
 
 
-class CommitteeDetail(HtmlListPage):
-    selector = XPath(
-        "//a[(contains(@href, '/sd') or "
-        "contains(@href, 'assembly.ca.gov/a')) and "
-        "(starts-with(text(), 'Senator') or "
-        "starts-with(text(), 'Assembly Member'))]/text()"
-    )
-
-    def process_item(self, item):
+class CommitteeDetail(HtmlPage):
+    def process_page(self):
         com = self.input
+        members = XPath(
+            "//a[(contains(@href, '/sd') or "
+            "contains(@href, 'assembly.ca.gov/a')) and "
+            "(starts-with(text(), 'Senator') or "
+            "starts-with(text(), 'Assembly Member'))]/text()"
+        ).match(self.root)
         # print(item)
 
-        (mem_name, mem_role) = re.search(
-            r"""(?ux)
-                ^(?:Senator|Assembly\sMember)\s  # Legislator title
-                (.+?)  # Capture the senator's full name
-                (?:\s\((.{2,}?)\))?  # There may be role in parentheses
-                (?:\s\([RD]\))?  # There may be a party affiliation
-                \s*$
-                """,
-            item,
-        ).groups()
+        for member in members:
+            (mem_name, mem_role) = re.search(
+                r"""(?ux)
+                    ^(?:Senator|Assembly\sMember)\s  # Legislator title
+                    (.+?)  # Capture the senator's full name
+                    (?:\s\((.{2,}?)\))?  # There may be role in parentheses
+                    (?:\s\([RD]\))?  # There may be a party affiliation
+                    \s*$
+                    """,
+                member,
+            ).groups()
 
-        com.add_member(mem_name, role=mem_role if mem_role else "member")
+            com.add_member(mem_name, role=mem_role if mem_role else "member")
 
         return com
 
@@ -240,6 +240,7 @@ class CommitteeList(HtmlListPage):
         # comm_doc = self.lxmlize(comm_url)
 
         if comm_name.startswith("Joint"):
+            # self.skip()
             com = ScrapeCommittee(
                 name=comm_name, classification="committee", parent="legislature"
             )
@@ -248,7 +249,7 @@ class CommitteeList(HtmlListPage):
             com.add_link(comm_url, note="homepage")
             return JointcommitteeDetail(com, source=URL(comm_url))
         elif comm_name.startswith("Subcommittee"):
-            self.skip()
+            # self.skip()
             # print(parent_name)
             # (parent_name,) = comm_doc.xpath(
             #    '//div[@class="banner-sitename"]/a/text()'
@@ -262,7 +263,7 @@ class CommitteeList(HtmlListPage):
             com.add_link(comm_url, note="homepage")
             return SubcommitteeDetail(com, source=URL(comm_url))
 
-        self.skip()
+        # self.skip()
         com = ScrapeCommittee(
             name=comm_name, classification="committee", parent="upper"
         )
