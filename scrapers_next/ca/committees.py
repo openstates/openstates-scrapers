@@ -269,6 +269,26 @@ class StandingCommitteeDetail(HtmlPage):
         return com
 
 
+class SpecialCommitteeDetail(HtmlPage):
+    def process_page(self):
+        com = self.input
+
+        members = XPath("//tr/td/a[contains(@href, 'assembly.ca.gov')]").match(
+            self.root
+        )
+        for member in members:
+            mem_name = member.text_content()
+            if re.search(r"\s\(", mem_name):
+                mem_name, mem_role = mem_name.split("(")
+                mem_name = mem_name.strip()
+                mem_role = mem_role.rstrip(")")
+                # print(mem_name, mem_role)
+            # print(mem_name)
+            com.add_member(mem_name, role=mem_role if mem_role else "member")
+
+        return com
+
+
 class AssemblyCommitteeList(HtmlListPage):
     source = URL("https://www.assembly.ca.gov/committees")
 
@@ -282,7 +302,6 @@ class AssemblyCommitteeList(HtmlListPage):
             "Sub Committees",
             "Joint Committees",
             "Select Committees",
-            "Special Committees",
         ]
 
         if (
@@ -298,8 +317,28 @@ class AssemblyCommitteeList(HtmlListPage):
             in to_skip
         ):
             self.skip()
+        elif (
+            item.getparent()
+            .getparent()
+            .getparent()
+            .getparent()
+            .getparent()
+            .getparent()
+            .text_content()
+            .split("\n")[2]
+            .lstrip("\t")
+            == "Special Committees"
+        ):
+            com = ScrapeCommittee(
+                name=comm_name, classification="committee", parent="lower"
+            )
+            com.add_source(self.source.url)
+            com.add_source(comm_url)
+            com.add_link(comm_url, note="homepage")
+            return SpecialCommitteeDetail(com, source=URL(comm_url))
 
         # Just standing committees for now
+        # self.skip()
         com = ScrapeCommittee(
             name=comm_name, classification="committee", parent="lower"
         )
