@@ -217,6 +217,58 @@ class SubcommitteeDetail(HtmlPage):
         return com
 
 
+class StandingCommitteeDetail(HtmlPage):
+    def process_page(self):
+        com = self.input
+
+        members = CSS("div.chair img").match(self.root)
+
+        mem_num = 0
+        for member in members:
+            mem = member.get("alt")
+            if not mem or re.search(r"Assemblymember", mem):
+                mem = member.getnext().text_content()
+                # print(mem)
+
+            mem = re.sub(r"(Senator\s|Assembly\sMember\s)", "", mem)
+            mem = re.sub(r"Image\sof\s", "", mem)
+
+            if re.search(r",\s(V|C|\()", mem):
+                mem_name, mem_role = mem.split(",")
+                mem_name = mem_name.strip()
+                mem_role = mem_role.strip()
+                if "(" in mem_role:
+                    mem_role = mem_role.lstrip("(").rstrip(")")
+                if "of the" in mem_role:
+                    mem_role = mem_role.split("of the")[0].strip()
+                if mem_name == "Kevin Kiley":
+                    mem_role = "Vice Chair"
+                # print(mem_name, mem_role)
+            elif re.search(r"\s\((V|C)", mem):
+                mem_name, mem_role = mem.split("(")
+                mem_name = mem_name.strip()
+                mem_role = mem_role.rstrip(")").strip()
+                # print(mem_name, mem_role)
+            elif re.search(r"\n", mem):
+                mem_name, mem_role = mem.split("\n")
+                mem_name = mem_name.strip()
+                mem_role = mem_role.strip().split("of the")[0].strip()
+            elif mem_num == 0:
+                mem_name = mem.strip()
+                mem_role = "Chair"
+                # print(member, "chair not listed")
+            else:
+                mem_name = mem.strip()
+                mem_role = "Vice Chair"
+                # print(member, "vice chair not listed")
+            mem_num += 1
+
+            # print(mem_name, mem_role)
+            com.add_member(mem_name, role=mem_role if mem_role else "member")
+
+        return com
+
+
 class AssemblyCommitteeList(HtmlListPage):
     source = URL("https://www.assembly.ca.gov/committees")
 
@@ -225,6 +277,13 @@ class AssemblyCommitteeList(HtmlListPage):
     def process_item(self, item):
         comm_name = CSS("a").match_one(item).text_content()
         comm_url = CSS("a").match_one(item).get("href")
+
+        to_skip = [
+            "Sub Committees",
+            "Joint Committees",
+            "Select Committees",
+            "Special Committees",
+        ]
 
         if (
             item.getparent()
@@ -236,30 +295,18 @@ class AssemblyCommitteeList(HtmlListPage):
             .text_content()
             .split("\n")[2]
             .lstrip("\t")
-            == "Sub Committees"
-        ):
-            self.skip()
-        elif (
-            item.getparent()
-            .getparent()
-            .getparent()
-            .getparent()
-            .getparent()
-            .getparent()
-            .text_content()
-            .split("\n")[2]
-            .lstrip("\t")
-            == "Joint Committees"
+            in to_skip
         ):
             self.skip()
 
+        # Just standing committees for now
         com = ScrapeCommittee(
             name=comm_name, classification="committee", parent="lower"
         )
         com.add_source(self.source.url)
         com.add_source(comm_url)
         com.add_link(comm_url, note="homepage")
-        return com
+        return StandingCommitteeDetail(com, source=URL(comm_url))
 
 
 class CommitteeList(HtmlListPage):
