@@ -25,14 +25,14 @@ class ChooseType(HtmlPage):
                 continue
 
         if page_type == "type_one":
-            # return None
-            return Type_One(self.input, source=self.source)
+            return None
+            # return Type_One(self.input, source=self.source)
         elif page_type == "type_two":
-            # return None
-            return Type_Two(self.input, source=self.source)
+            return None
+            # return Type_Two(self.input, source=self.source)
         elif page_type == "type_three":
-            # return None
-            return Type_Three(self.input, source=self.source)
+            return None
+            # return Type_Three(self.input, source=self.source)
         else:
             # return None
             return Type_Four(self.input, source=self.source)
@@ -217,7 +217,15 @@ class Type_Four(HtmlPage):
                 # x = re.split(r",\s(V|C|\()", mem)
                 # print(x)
                 # mem_name, mem_role = re.split(r",\s(V|C|\()", mem)
-                mem_name, mem_role = mem.split(",")
+                member_info = mem.split(",")
+                if len(member_info) == 2:
+                    mem_name = member_info[0]
+                    mem_role = member_info[1]
+                elif len(member_info) == 3:
+                    mem_name = member_info[0]
+                    mem_name += member_info[1]
+                    mem_role = member_info[2]
+
                 # mem_name = mem_name.strip()
                 # mem_role = mem_role.strip()
                 if "(" in mem_role:
