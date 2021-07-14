@@ -174,10 +174,11 @@ class RIBillScraper(Scraper):
                 actor = "lower"
 
             if "senate" in action.lower():
-                if actor == "joint":
-                    actor = "upper"
-                else:
-                    actor = "legislature"
+                actor = "upper"
+
+            if "joint" in action.lower():
+                actor = "legislature"
+
             if "governor" in action.lower():
                 actor = "executive"
             date = action.split(" ")[0]

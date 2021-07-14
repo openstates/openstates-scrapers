@@ -11,6 +11,7 @@ class SenateCommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
         com.add_source(self.source.url)
+        com.add_link(self.source.url, note="homepage")
 
         room, time = XPath("//div[@class='col-sm-12 pb-2']//p[2]/text()").match(
             self.root
@@ -41,7 +42,7 @@ class SenateCommitteeDetail(HtmlPage):
 
 
 class HouseCommitteeDetail(HtmlPage):
-    example_source = "https://www.house.leg.state.mn.us/Committees/members/92001"
+    example_source = "https://www.house.leg.state.mn.us/Committees/members/92006"
 
     def process_page(self):
 
@@ -61,8 +62,10 @@ class HouseCommitteeDetail(HtmlPage):
             name = (
                 XPath(".//div[@class='media-body']/span/b/text()")
                 .match(p)[0]
-                .split("(")[0]
                 .replace("Rep.", "")
+                .split("(R)")[0]
+                .split("(DFL")[0]
+                .strip()
             )
 
             positions = ["committee chair", "vice chair", "republican lead"]
@@ -113,8 +116,19 @@ class HouseCommitteeList(HtmlListPage):
         com = ScrapeCommittee(name=name, parent=self.chamber)
 
         for links in XPath(".//div[contains(@class, 'container')]//a").match(item):
-            if links.get("href") == link:
+            url = links.get("href")
+            if url == link:
                 continue
             else:
-                com.add_link(links.get("href"))
+                if links == XPath(
+                    ".//div[contains(@class, 'container')]//a[contains(@href, 'home')]"
+                ).match_one(item):
+                    com.add_link(url, note="homepage")
+                    homepage = True
+                else:
+                    com.add_link(url)
+        if not homepage:
+            self.warn("no homepage found")
+
+        com.add_source(self.source.url)
         return HouseCommitteeDetail(com, source=link)
