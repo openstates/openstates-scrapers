@@ -284,3 +284,52 @@ class SenateCommitteeList(HtmlListPage):
         com.add_source(comm_url)
         com.add_link(comm_url, note="homepage")
         return ChooseType(com, source=URL(comm_url))
+
+
+class AssemblyCommitteeList(HtmlListPage):
+    source = URL("https://www.assembly.ca.gov/committees")
+
+    selector = CSS("div .block.block-views ul li", num_items=98)
+
+    def process_item(self, item):
+        comm_name = CSS("a").match_one(item).text_content()
+        comm_url = CSS("a").match_one(item).get("href")
+
+        if (
+            item.getparent()
+            .getparent()
+            .getparent()
+            .getparent()
+            .getparent()
+            .getparent()
+            .text_content()
+            .split("\n")[2]
+            .lstrip("\t")
+            == "Joint Committees"
+        ):
+            self.skip()
+        elif (
+            item.getparent()
+            .getparent()
+            .getparent()
+            .getparent()
+            .getparent()
+            .getparent()
+            .text_content()
+            .split("\n")[2]
+            .lstrip("\t")
+            == "Sub Committees"
+        ):
+            # self.skip()
+            com = ScrapeCommittee(
+                name=comm_name, classification="subcommittee", parent=""
+            )
+        else:
+            # self.skip()
+            com = ScrapeCommittee(
+                name=comm_name, classification="committee", parent="lower"
+            )
+        com.add_source(self.source.url)
+        com.add_source(comm_url)
+        com.add_link(comm_url, note="homepage")
+        return ChooseType(com, source=URL(comm_url))
