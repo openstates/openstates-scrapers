@@ -34,13 +34,23 @@ class ChooseType(HtmlPage):
             # return None
             return Type_Three(self.input, source=self.source)
         else:
+            # return None
             return Type_Four(self.input, source=self.source)
 
 
 class Type_One(HtmlPage):
     """
     Type One pages are usually formatted with a red background.
-    The format is: Senator Name (role)
+    There are 4 possible formats that are considered Type One:
+    1. Senator Name (role)
+    2. Senator Name, role
+    3. role, Senator Name (D|R)
+    4. Senator Name (D|R)
+
+    43 (out of 51 total) Senate committees are considered Type One (see links below).
+    https://sagri.senate.ca.gov (40 pages have this format)
+    https://fisheries.legislature.ca.gov/ (2 pages have this format)
+    https://selc.senate.ca.gov (1 page has this format)
     """
 
     def process_page(self):
@@ -59,25 +69,42 @@ class Type_One(HtmlPage):
                 else:
                     mem_role = "member"
             elif re.search(r",\s", member):
+                # print("FORMAT 2")
                 mem_name, mem_role = member.split(",")
                 # print(mem_role)
                 # print(mem_name)
                 # mem_name, _ = mem_name.split("(")
             elif re.search(r"\(", member):
+                # print("FORMAT 1")
                 mem_name, mem_role = member.split("(")
                 mem_role = mem_role.rstrip(")")
             else:
                 mem_name = member
                 mem_role = "member"
 
-            print(mem_name.strip(), mem_role.strip())
+            # print(mem_name.strip(), mem_role.strip())
             com.add_member(mem_name.strip(), role=mem_role.strip())
 
+        # print("TYPE ONE")
         return com
 
 
 class Type_Two(HtmlPage):
-    """ """
+    """
+    Type Two pages look very similar to Type One.
+    Type Two pages are usually formatted with a red background.
+    Their html, however, differs slightly from that of Type One.
+
+    There are 2 possible formats that are considered Type One:
+    1. Senator Name (role) (D|R)
+    2. Senator Name (role)
+
+    4 (out of 51 total) Senate committees are considered Type Two (see links below).
+    https://sedn.senate.ca.gov (has 'table' 'tbody' 'tr' 'td' elements between div and p elements)
+    https://sgf.senate.ca.gov (has a 'center' element between div and p elements)
+    https://sjud.senate.ca.gov (has 'h4' element instead of p element)
+    https://census.senate.ca.gov/ (has 'ul' and 'li' elements instead of p element)
+    """
 
     def process_page(self):
         com = self.input
@@ -101,22 +128,28 @@ class Type_Two(HtmlPage):
                 member,
             ).groups()
 
-            if mem_role:
-                print(mem_name.strip(), mem_role.strip())
-            else:
-                print(mem_name.strip(), "member")
+            # if mem_role:
+            #     print(mem_name.strip(), mem_role.strip())
+            # else:
+            #     print(mem_name.strip(), "member")
 
             com.add_member(
                 mem_name.strip(), role=mem_role.strip() if mem_role else "member"
             )
 
+        # print("TYPE TWO")
         return com
 
 
 class Type_Three(HtmlPage):
     """
     Type Three pages are usually formatted with a green background.
-    The format is: Name (role)
+
+    The format is:
+    1. Name (role)
+
+    1 (out of 51 total) Senate committees are considered Type Three (see link below).
+    http://assembly.ca.gov/fairsallocation
     """
 
     def process_page(self):
@@ -135,21 +168,30 @@ class Type_Three(HtmlPage):
                     """,
                 member,
             ).groups()
-            if mem_role:
-                print(mem_name.strip(), mem_role.strip())
-            else:
-                print(mem_name.strip(), "member")
+            # if mem_role:
+            #     print(mem_name.strip(), mem_role.strip())
+            # else:
+            #     print(mem_name.strip(), "member")
             com.add_member(
                 mem_name.strip(), role=mem_role.strip() if mem_role else "member"
             )
 
+        # print("TYPE THREE")
         return com
 
 
 class Type_Four(HtmlPage):
     """
-    Type Three pages are usually formatted with a green background.
-    The format is: Name, role where role is on a new line
+    Type Four pages are usually formatted with a green background.
+
+    The format is:
+    Name,
+    role (on a new line)
+
+    3 (out of 51 total) Senate committees are considered Type Four (see link below).
+    https://jtrules.legislature.ca.gov/
+    https://legaudit.assembly.ca.gov/
+    https://climatechangepolicies.legislature.ca.gov/
     """
 
     def process_page(self):
@@ -204,11 +246,12 @@ class Type_Four(HtmlPage):
                 # print(member, "vice chair not listed")
             mem_num += 1
 
-            print(mem_name.strip(), mem_role.strip())
+            # print(mem_name.strip(), mem_role.strip())
             com.add_member(
                 mem_name.strip(), role=mem_role.strip() if mem_role else "member"
             )
 
+        # print("TYPE FOUR")
         return com
 
 
