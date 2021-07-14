@@ -13,7 +13,7 @@ class ChooseType(HtmlPage):
             "(starts-with(text(), 'Senator') or "
             "starts-with(text(), 'Assembly Member'))]/text()",
             "type_three": '//tbody/tr/td/a[(contains(@href, "/sd") or '
-            'contains(@href, "assembly.ca.gov/a"))]/text()',
+            'contains(@href, "assembly.ca.gov/a"))]//text()',
             "type_four": "//p[@class = 'caption']/text()",
         }
 
@@ -155,7 +155,7 @@ class Type_Three(HtmlPage):
     def process_page(self):
         com = self.input
         members = XPath(
-            "//tbody/tr/td/a[(contains(@href, '/sd') or contains(@href, 'assembly.ca.gov/a'))]/text()"
+            "//tbody/tr/td/a[(contains(@href, '/sd') or contains(@href, 'assembly.ca.gov/a'))]//text()"
         ).match(self.root)
         # print(item)
 
@@ -169,12 +169,12 @@ class Type_Three(HtmlPage):
                 member,
             ).groups()
             # if mem_role:
-            #     print(mem_name.strip(), mem_role.strip())
+            #    print(mem_name.strip(), mem_role.strip())
             # else:
-            #     print(mem_name.strip(), "member")
-            com.add_member(
-                mem_name.strip(), role=mem_role.strip() if mem_role else "member"
-            )
+            #    print(mem_name.strip(), "member")
+            # com.add_member(
+            #    mem_name.strip(), role=mem_role.strip() if mem_role else "member"
+            # )
 
         # print("TYPE THREE")
         return com
