@@ -51,7 +51,7 @@ class CommitteeDetail(HtmlPage):
         # the information for each field, like the clerk's name, are located at every even indice
         fields = table[1::2]
         extra = table[2::2]
-        num_of_fields = range(5)
+        num_of_fields = range(len(fields))
 
         for i in num_of_fields:
             com.extras[fields[i].lower()] = extra[i].strip()
