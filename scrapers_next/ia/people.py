@@ -1,5 +1,6 @@
 import attr
-from spatula import HtmlPage, HtmlListPage, CSS, XPath
+import re
+from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError
 from openstates.models import ScrapePerson
 
 
@@ -41,6 +42,17 @@ class LegDetail(HtmlPage):
         )
         p.add_source(self.source.url)
         p.add_source(self.input.url)
+
+        try:
+            for link in CSS(".link_list a").match(self.root):
+                url = link.get("href")
+                if re.search("leaving?", url):
+                    url = url.replace("https://www.legis.iowa.gov/leaving?forward=", "")
+                if not re.search("http://", url) or re.search("https://", url):
+                    url = "http://" + url
+                p.add_link(url)
+        except SelectorError:
+            pass
 
         table = XPath("//div[@class='legisIndent divideVert']//td//text()").match(
             self.root
