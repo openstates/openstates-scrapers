@@ -25,14 +25,14 @@ class ChooseType(HtmlPage):
                 continue
 
         if page_type == "type_one":
-            return None
-            # return Type_One(self.input, source=self.source)
+            # return None
+            return Type_One(self.input, source=self.source)
         elif page_type == "type_two":
-            return None
-            # return Type_Two(self.input, source=self.source)
+            # return None
+            return Type_Two(self.input, source=self.source)
         elif page_type == "type_three":
-            return None
-            # return Type_Three(self.input, source=self.source)
+            # return None
+            return Type_Three(self.input, source=self.source)
         else:
             # return None
             return Type_Four(self.input, source=self.source)
@@ -51,6 +51,9 @@ class Type_One(HtmlPage):
     https://sagri.senate.ca.gov (40 pages have this format)
     https://fisheries.legislature.ca.gov/ (2 pages have this format)
     https://selc.senate.ca.gov (1 page has this format)
+
+    1 (out of 90 total) Assembly committees are considered Type One (see link below).
+    https://ajed.assembly.ca.gov
     """
 
     def process_page(self):
@@ -82,10 +85,10 @@ class Type_One(HtmlPage):
                 mem_name = member
                 mem_role = "member"
 
-            # print(mem_name.strip(), mem_role.strip())
+            print(mem_name.strip(), mem_role.strip())
             com.add_member(mem_name.strip(), role=mem_role.strip())
 
-        # print("TYPE ONE")
+        print("TYPE ONE")
         return com
 
 
@@ -104,6 +107,8 @@ class Type_Two(HtmlPage):
     https://sgf.senate.ca.gov (has a 'center' element between div and p elements)
     https://sjud.senate.ca.gov (has 'h4' element instead of p element)
     https://census.senate.ca.gov/ (has 'ul' and 'li' elements instead of p element)
+
+    0 (out of 90 total) Assembly committees are considered Type Two.
     """
 
     def process_page(self):
@@ -128,16 +133,16 @@ class Type_Two(HtmlPage):
                 member,
             ).groups()
 
-            # if mem_role:
-            #     print(mem_name.strip(), mem_role.strip())
-            # else:
-            #     print(mem_name.strip(), "member")
+            if mem_role:
+                print(mem_name.strip(), mem_role.strip())
+            else:
+                print(mem_name.strip(), "member")
 
             com.add_member(
                 mem_name.strip(), role=mem_role.strip() if mem_role else "member"
             )
 
-        # print("TYPE TWO")
+        print("TYPE TWO")
         return com
 
 
@@ -168,15 +173,15 @@ class Type_Three(HtmlPage):
                     """,
                 member,
             ).groups()
-            # if mem_role:
-            #    print(mem_name.strip(), mem_role.strip())
-            # else:
-            #    print(mem_name.strip(), "member")
-            # com.add_member(
-            #    mem_name.strip(), role=mem_role.strip() if mem_role else "member"
-            # )
+            if mem_role:
+                print(mem_name.strip(), mem_role.strip())
+            else:
+                print(mem_name.strip(), "member")
+            com.add_member(
+                mem_name.strip(), role=mem_role.strip() if mem_role else "member"
+            )
 
-        # print("TYPE THREE")
+        print("TYPE THREE")
         return com
 
 
@@ -254,12 +259,12 @@ class Type_Four(HtmlPage):
                 # print(member, "vice chair not listed")
             mem_num += 1
 
-            # print(mem_name.strip(), mem_role.strip())
+            print(mem_name.strip(), mem_role.strip())
             com.add_member(
                 mem_name.strip(), role=mem_role.strip() if mem_role else "member"
             )
 
-        # print("TYPE FOUR")
+        print("TYPE FOUR")
         return com
 
 
