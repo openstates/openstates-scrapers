@@ -54,12 +54,10 @@ class Type_One(HtmlPage):
 
             if re.search(r"\((D|R)\)", member):
                 mem_name, _ = member.split("(")
-                print(mem_name)
                 if re.search(r",\s", mem_name):
-                    mem_role, mem_name = member.split(",")
+                    mem_role, mem_name = mem_name.split(",")
                 else:
                     mem_role = "member"
-                print(mem_role)
             elif re.search(r",\s", member):
                 mem_name, mem_role = member.split(",")
                 # print(mem_role)
@@ -72,8 +70,8 @@ class Type_One(HtmlPage):
                 mem_name = member
                 mem_role = "member"
 
-            print(mem_name, mem_role)
-            com.add_member(mem_name, role=mem_role)
+            print(mem_name.strip(), mem_role.strip())
+            com.add_member(mem_name.strip(), role=mem_role.strip())
 
         return com
 
@@ -103,8 +101,14 @@ class Type_Two(HtmlPage):
                 member,
             ).groups()
 
-            print(mem_name, mem_role)
-            com.add_member(mem_name, role=mem_role if mem_role else "member")
+            if mem_role:
+                print(mem_name.strip(), mem_role.strip())
+            else:
+                print(mem_name.strip(), "member")
+
+            com.add_member(
+                mem_name.strip(), role=mem_role.strip() if mem_role else "member"
+            )
 
         return com
 
@@ -131,8 +135,13 @@ class Type_Three(HtmlPage):
                     """,
                 member,
             ).groups()
-            print(mem_name, mem_role)
-            com.add_member(mem_name, role=mem_role if mem_role else "member")
+            if mem_role:
+                print(mem_name.strip(), mem_role.strip())
+            else:
+                print(mem_name.strip(), "member")
+            com.add_member(
+                mem_name.strip(), role=mem_role.strip() if mem_role else "member"
+            )
 
         return com
 
@@ -167,24 +176,24 @@ class Type_Four(HtmlPage):
                 # print(x)
                 # mem_name, mem_role = re.split(r",\s(V|C|\()", mem)
                 mem_name, mem_role = mem.split(",")
-                mem_name = mem_name.strip()
-                mem_role = mem_role.strip()
+                # mem_name = mem_name.strip()
+                # mem_role = mem_role.strip()
                 if "(" in mem_role:
                     mem_role = mem_role.lstrip("(").rstrip(")")
                 if "of the" in mem_role:
-                    mem_role = mem_role.split("of the")[0].strip()
+                    mem_role = mem_role.split("of the")[0]
                 if mem_name == "Kevin Kiley":
                     mem_role = "Vice Chair"
                 # print(mem_name, mem_role)
             elif re.search(r"\s\((V|C)", mem):
                 mem_name, mem_role = mem.split("(")
-                mem_name = mem_name.strip()
-                mem_role = mem_role.rstrip(")").strip()
+                # mem_name = mem_name.strip()
+                mem_role = mem_role.rstrip(")")
                 # print(mem_name, mem_role)
             elif re.search(r"\n", mem):
                 mem_name, mem_role = mem.split("\n")
-                mem_name = mem_name.strip()
-                mem_role = mem_role.strip().split("of the")[0].strip()
+                # mem_name = mem_name.strip()
+                mem_role = mem_role.split("of the")[0]
             elif mem_num == 0:
                 mem_name = mem.strip()
                 mem_role = "Chair"
@@ -195,8 +204,10 @@ class Type_Four(HtmlPage):
                 # print(member, "vice chair not listed")
             mem_num += 1
 
-            print(mem_name, mem_role)
-            com.add_member(mem_name, role=mem_role if mem_role else "member")
+            print(mem_name.strip(), mem_role.strip())
+            com.add_member(
+                mem_name.strip(), role=mem_role.strip() if mem_role else "member"
+            )
 
         return com
 
