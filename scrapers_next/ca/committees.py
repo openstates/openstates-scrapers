@@ -391,7 +391,7 @@ class AssemblyCommitteeList(HtmlListPage):
         return StandingCommitteeDetail(com, source=URL(comm_url))
 
 
-class CommitteeList(HtmlListPage):
+class SenateCommitteeList(HtmlListPage):
     source = URL("http://senate.ca.gov/committees")
 
     selector = XPath("//h2/../following-sibling::div//a")
