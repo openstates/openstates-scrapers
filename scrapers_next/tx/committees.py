@@ -87,10 +87,13 @@ class CommitteeList(HtmlListPage):
             if parent == "Approps.":
                 parent = "Appropriations"
             committee = ScrapeCommittee(
-                name=name, parent=parent, classification="subcommittee"
+                name=name,
+                classification="subcommittee",
+                parent=parent,
+                chamber=self.chamber,
             )
         else:
-            committee = ScrapeCommittee(name=name, parent=self.chamber)
+            committee = ScrapeCommittee(name=name, chamber=self.chamber)
 
         committee.add_source(self.source.url)
         return CommitteeDetail(committee, source=item.get("href"))
