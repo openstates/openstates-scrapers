@@ -1,6 +1,7 @@
 # import lxml.html
+import re
 import attr
-from spatula import HtmlListPage, HtmlPage, XPath
+from spatula import HtmlListPage, HtmlPage, XPath, CSS, SelectorError
 
 # from openstates.models import ScrapePerson
 
@@ -16,19 +17,82 @@ class PartialMember:
 
 
 class LegDetail(HtmlPage):
-    example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=328"
-    # add source
+    # example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=328"
+    # example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=304"
+
+    # source for multiple offices and multiple phone numbers
+    example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=371"
+
+    # TODO: add source
 
     def process_page(self):
         # print('self', self.input.name)
 
         # TODO: multiple office addresses sometimes
+        # party = CSS("i").match(self.root)[0].text_content().strip()
+        party = CSS("i").match(self.root)[0].getchildren()
+
+        party = CSS("i").match(self.root)[0].text_content().strip()
+        try:
+            position = CSS("i font").match_one(self.root).text_content().strip()
+            party = party.replace(position, "")
+            # party = CSS("i").match(self.root)[0].text_content().strip()
+            # print('okay here"s the party', party)
+        except SelectorError:
+            # party = CSS("i").match(self.root)[0].text_content().strip()
+            pass
+
+        # print('party', party)
+        # for what in party:
+        #     print(what.text_content())
+
+        # print('okay', party)
+        if re.search("(D)", party):
+            party = "Democrat"
+        elif re.search("(R)", party):
+            party = "Republican"
+        else:
+            # TODO: i don't think this is it..but must warn
+            # self.warn("Not a major party, please update")
+            print(party)
+
+        print("R or D", party)
+
+        # TODO: there are multiple district offices sometimes: after every two consecutive br tags
+        # or maybe after "NJ" and then 5 numbers for zip code?
+        # district_office = CSS("p").match(self.root)[13].text_content().strip()
+        district_office = CSS("p").match(self.root)[13].getchildren()
+        print("all addresses", district_office)
+        for what in district_office:
+            children_p_tag = what.getchildren()
+
+            # this shows a bunch of br tags in an array
+            print("children of p tag", children_p_tag)
+            for child in children_p_tag:
+                print("single child", child.text_content())
+            # children_of_children = children_p_tag.getchildren()
+            # print('children of children', children_of_children)
+            # next = what.text_content()
+            # print('next', next)
+
+            # for element in next:
+            #     print('element', element)
+            # okay = next.text_content().split("NJ")
+            # print('here', okay)
+            # for element in okay:
+            #     print('replace', element.replace('\r\n', "").strip())
+
+        print("office address", district_office)
+        # for what in CSS("p").match(self.root):
+        # print('okay', what.text_content())
+
+        # print(district_office)
+
         # p = ScrapePerson(
         #     name = self.input.name,
         #     state = 'nj',
 
         # )
-        print("hi")
 
 
 #  name=self.input.name,
@@ -72,8 +136,6 @@ class LegList(HtmlListPage):
 
         p = PartialMember(name=name, chamber=self.chamber, url=self.source.url)
         # what's on this page: state, name, chamber, party, district office address (there are sometimes multiple), phone number
-
-        p.add_source()
 
         # individual people pages
         return LegDetail(p, source=item.get("href"))
