@@ -85,10 +85,10 @@ class Type_One(HtmlPage):
                 mem_name = member
                 mem_role = "member"
 
-            print(mem_name.strip(), mem_role.strip())
+            # print(mem_name.strip(), mem_role.strip())
             com.add_member(mem_name.strip(), role=mem_role.strip())
 
-        print("TYPE ONE")
+        # print("TYPE ONE")
         return com
 
 
@@ -133,16 +133,16 @@ class Type_Two(HtmlPage):
                 member,
             ).groups()
 
-            if mem_role:
-                print(mem_name.strip(), mem_role.strip())
-            else:
-                print(mem_name.strip(), "member")
+            # if mem_role:
+            #    print(mem_name.strip(), mem_role.strip())
+            # else:
+            #    print(mem_name.strip(), "member")
 
             com.add_member(
                 mem_name.strip(), role=mem_role.strip() if mem_role else "member"
             )
 
-        print("TYPE TWO")
+        # print("TYPE TWO")
         return com
 
 
@@ -173,15 +173,17 @@ class Type_Three(HtmlPage):
                     """,
                 member,
             ).groups()
+            """
             if mem_role:
                 print(mem_name.strip(), mem_role.strip())
             else:
                 print(mem_name.strip(), "member")
+            """
             com.add_member(
                 mem_name.strip(), role=mem_role.strip() if mem_role else "member"
             )
 
-        print("TYPE THREE")
+        # print("TYPE THREE")
         return com
 
 
@@ -259,12 +261,12 @@ class Type_Four(HtmlPage):
                 # print(member, "vice chair not listed")
             mem_num += 1
 
-            print(mem_name.strip(), mem_role.strip())
+            # print(mem_name.strip(), mem_role.strip())
             com.add_member(
                 mem_name.strip(), role=mem_role.strip() if mem_role else "member"
             )
 
-        print("TYPE FOUR")
+        # print("TYPE FOUR")
         return com
 
 
@@ -283,15 +285,27 @@ class SenateCommitteeList(HtmlListPage):
         if comm_name.startswith("Joint"):
             # self.skip()
             com = ScrapeCommittee(
-                name=comm_name, classification="committee", parent="legislature"
+                name=comm_name, classification="committee", chamber="legislature"
             )
         elif comm_name.startswith("Subcommittee"):
+            parent_comm = (
+                item.getparent()
+                .getparent()
+                .getparent()
+                .getparent()
+                .getchildren()[0]
+                .text_content()
+            )
+            # print(parent_comm)
             com = ScrapeCommittee(
-                name=comm_name, classification="subcommittee", parent=""
+                name=comm_name,
+                classification="subcommittee",
+                chamber="upper",
+                parent=parent_comm,
             )
         else:
             com = ScrapeCommittee(
-                name=comm_name, classification="committee", parent="upper"
+                name=comm_name, classification="committee", chamber="upper"
             )
         com.add_source(self.source.url)
         com.add_source(comm_url)
@@ -334,13 +348,18 @@ class AssemblyCommitteeList(HtmlListPage):
             == "Sub Committees"
         ):
             # self.skip()
+            parent_comm = item.getparent().getparent().getchildren()[0].text_content()
+            # print(parent_comm)
             com = ScrapeCommittee(
-                name=comm_name, classification="subcommittee", parent=""
+                name=comm_name,
+                classification="subcommittee",
+                chamber="lower",
+                parent=parent_comm,
             )
         else:
             # self.skip()
             com = ScrapeCommittee(
-                name=comm_name, classification="committee", parent="lower"
+                name=comm_name, classification="committee", chamber="lower"
             )
         com.add_source(self.source.url)
         com.add_source(comm_url)
