@@ -9,7 +9,7 @@ class ChooseType(HtmlPage):
         # this link was being considered type one, but should be type four
         if self.source.url == "https://ajed.assembly.ca.gov":
             # return None
-            return Type_Four(self.input, source=self.source)
+            return TypeFour(self.input, source=self.source)
 
         xpaths = {
             "type_one": "//div/p/a[(contains(text(), 'Senator') or contains(text(), 'Assembly Member'))]/text()",
@@ -31,19 +31,19 @@ class ChooseType(HtmlPage):
 
         if page_type == "type_one":
             # return None
-            return Type_One(self.input, source=self.source)
+            return TypeOne(self.input, source=self.source)
         elif page_type == "type_two":
             # return None
-            return Type_Two(self.input, source=self.source)
+            return TypeTwo(self.input, source=self.source)
         elif page_type == "type_three":
             # return None
-            return Type_Three(self.input, source=self.source)
+            return TypeThree(self.input, source=self.source)
         else:
             # return None
-            return Type_Four(self.input, source=self.source)
+            return TypeFour(self.input, source=self.source)
 
 
-class Type_One(HtmlPage):
+class TypeOne(HtmlPage):
     """
     Type One pages are usually formatted with a red background.
     There are 4 possible formats that are considered Type One:
@@ -96,7 +96,7 @@ class Type_One(HtmlPage):
         return com
 
 
-class Type_Two(HtmlPage):
+class TypeTwo(HtmlPage):
     """
     Type Two pages look very similar to Type One.
     Type Two pages are usually formatted with a red background.
@@ -150,7 +150,7 @@ class Type_Two(HtmlPage):
         return com
 
 
-class Type_Three(HtmlPage):
+class TypeThree(HtmlPage):
     """
     Type Three pages are usually formatted with a green background.
 
@@ -197,7 +197,7 @@ class Type_Three(HtmlPage):
         return com
 
 
-class Type_Four(HtmlPage):
+class TypeFour(HtmlPage):
     """
     Type Four pages are usually formatted with a green background.
 
