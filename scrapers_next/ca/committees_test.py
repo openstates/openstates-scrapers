@@ -6,6 +6,11 @@ import re
 class ChooseType(HtmlPage):
     def process_page(self):
 
+        # this link was being considered type one, but should be type four
+        if self.source.url == "https://ajed.assembly.ca.gov":
+            # return None
+            return Type_Four(self.input, source=self.source)
+
         xpaths = {
             "type_one": "//div/p/a[(contains(text(), 'Senator') or contains(text(), 'Assembly Member'))]/text()",
             "type_two": "//a[(contains(@href, '/sd') or "
@@ -25,14 +30,14 @@ class ChooseType(HtmlPage):
                 continue
 
         if page_type == "type_one":
-            return None
-            # return Type_One(self.input, source=self.source)
+            # return None
+            return Type_One(self.input, source=self.source)
         elif page_type == "type_two":
-            return None
-            # return Type_Two(self.input, source=self.source)
+            # return None
+            return Type_Two(self.input, source=self.source)
         elif page_type == "type_three":
-            return None
-            # return Type_Three(self.input, source=self.source)
+            # return None
+            return Type_Three(self.input, source=self.source)
         else:
             # return None
             return Type_Four(self.input, source=self.source)
@@ -52,8 +57,7 @@ class Type_One(HtmlPage):
     https://fisheries.legislature.ca.gov/ (2 pages have this format)
     https://selc.senate.ca.gov (1 page has this format)
 
-    1 (out of 90 total) Assembly committees are considered Type One (see link below).
-    https://ajed.assembly.ca.gov (this is a bug and it should be type 3)
+    0 (out of 89 total) Assembly committees are considered Type One.
     """
 
     def process_page(self):
@@ -85,7 +89,7 @@ class Type_One(HtmlPage):
                 mem_name = member
                 mem_role = "member"
 
-            # print(mem_name.strip(), mem_role.strip())
+            print(mem_name.strip(), mem_role.strip())
             com.add_member(mem_name.strip(), role=mem_role.strip())
 
         # print("TYPE ONE")
@@ -108,7 +112,7 @@ class Type_Two(HtmlPage):
     https://sjud.senate.ca.gov (has 'h4' element instead of p element)
     https://census.senate.ca.gov/ (has 'ul' and 'li' elements instead of p element)
 
-    0 (out of 90 total) Assembly committees are considered Type Two.
+    0 (out of 89 total) Assembly committees are considered Type Two.
     """
 
     def process_page(self):
@@ -133,10 +137,10 @@ class Type_Two(HtmlPage):
                 member,
             ).groups()
 
-            # if mem_role:
-            #    print(mem_name.strip(), mem_role.strip())
-            # else:
-            #    print(mem_name.strip(), "member")
+            if mem_role:
+                print(mem_name.strip(), mem_role.strip())
+            else:
+                print(mem_name.strip(), "member")
 
             com.add_member(
                 mem_name.strip(), role=mem_role.strip() if mem_role else "member"
@@ -156,7 +160,7 @@ class Type_Three(HtmlPage):
     1 (out of 51 total) Senate committees are considered Type Three (see link below).
     http://assembly.ca.gov/fairsallocation
 
-    48 (out of 90 total) Assembly committees are considered Type Three (see links below).
+    48 (out of 89 total) Assembly committees are considered Type Three (see links below).
     https://abgt.assembly.ca.gov/sub1healthandhumanservices
     https://assembly.ca.gov/olympicgames
     https://assembly.ca.gov/cmtewine
@@ -179,12 +183,12 @@ class Type_Three(HtmlPage):
                     """,
                 member,
             ).groups()
-            """
+
             if mem_role:
                 print(mem_name.strip(), mem_role.strip())
             else:
                 print(mem_name.strip(), "member")
-            """
+
             com.add_member(
                 mem_name.strip(), role=mem_role.strip() if mem_role else "member"
             )
@@ -206,12 +210,13 @@ class Type_Four(HtmlPage):
     https://legaudit.assembly.ca.gov/
     https://climatechangepolicies.legislature.ca.gov/
 
-    41 (our of 90) Assembly committees are considered Type Four (see links below).
+    41 (our of 89) Assembly committees are considered Type Four (see links below).
     https://aaar.assembly.ca.gov
     https://awpw.assembly.ca.gov
     https://jtlegbudget.legislature.ca.gov/sublegislativeanalyst
     https://census.assembly.ca.gov/
     https://scbmc.assembly.ca.gov
+    https://ajed.assembly.ca.gov/
     """
 
     def process_page(self):
@@ -221,14 +226,27 @@ class Type_Four(HtmlPage):
             members = CSS("div.chair img").match(self.root)
         except SelectorError:
             members = [CSS("p img").match(self.root)[0]]
+
         # print(members)
         mem_num = 0
         for member in members:
             mem = member.get("alt")
             # print(mem)
+
+            # this link has bad formatting for the img alt (use p text instead)
+            # https://aesm.assembly.ca.gov/
             if not mem or re.search(r"Assemblymember", mem):
                 mem = member.getnext().text_content()
                 # print(mem)
+
+            # these links also has bad formatting
+            # https://idd.assembly.ca.gov name is Mark Stone instead of Jim Frazier
+            # https://policereform.assembly.ca.gov/ name is Gipson instead of Mike A. Gipson
+            if self.source.url in [
+                "https://idd.assembly.ca.gov",
+                "https://policereform.assembly.ca.gov/",
+            ]:
+                mem = member.getparent().getnext().text_content()
 
             mem = re.sub(r"(Senator\s|Assembly\sMember\s)", "", mem)
             mem = re.sub(r"Image\sof\s", "", mem)
@@ -238,6 +256,9 @@ class Type_Four(HtmlPage):
                 # print(x)
                 # mem_name, mem_role = re.split(r",\s(V|C|\()", mem)
                 member_info = mem.split(",")
+
+                # some names have , Jr. or , Sr.
+                # this handles an extra comma
                 if len(member_info) == 2:
                     mem_name = member_info[0]
                     mem_role = member_info[1]
@@ -249,7 +270,7 @@ class Type_Four(HtmlPage):
                 # mem_name = mem_name.strip()
                 # mem_role = mem_role.strip()
                 if "(" in mem_role:
-                    mem_role = mem_role.lstrip("(").rstrip(")")
+                    mem_role = mem_role.strip().lstrip("(").rstrip(")")
                 if "of the" in mem_role:
                     mem_role = mem_role.split("of the")[0]
                 if mem_name == "Kevin Kiley":
@@ -279,7 +300,7 @@ class Type_Four(HtmlPage):
                 mem_name.strip(), role=mem_role.strip() if mem_role else "member"
             )
 
-        print("TYPE FOUR")
+        # print("TYPE FOUR")
         return com
 
 
@@ -334,6 +355,10 @@ class AssemblyCommitteeList(HtmlListPage):
     def process_item(self, item):
         comm_name = CSS("a").match_one(item).text_content()
         comm_url = CSS("a").match_one(item).get("href")
+
+        # "https://jtlegbudget.legislature.ca.gov/sublegislativeanalyst" has no members
+        if comm_url == "https://jtlegbudget.legislature.ca.gov/sublegislativeanalyst":
+            self.skip()
 
         if (
             item.getparent()
