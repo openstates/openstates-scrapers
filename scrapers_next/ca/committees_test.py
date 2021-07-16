@@ -327,31 +327,11 @@ class AssemblyCommitteeList(HtmlListPage):
         if comm_url == "https://jtlegbudget.legislature.ca.gov/sublegislativeanalyst":
             self.skip()
 
-        if (
-            item.getparent()
-            .getparent()
-            .getparent()
-            .getparent()
-            .getparent()
-            .getparent()
-            .text_content()
-            .split("\n")[2]
-            .lstrip("\t")
-            == "Joint Committees"
+        if comm_name.startswith("Joint Committee") or comm_name.startswith(
+            "Joint Legislative"
         ):
             self.skip()
-        elif (
-            item.getparent()
-            .getparent()
-            .getparent()
-            .getparent()
-            .getparent()
-            .getparent()
-            .text_content()
-            .split("\n")[2]
-            .lstrip("\t")
-            == "Sub Committees"
-        ):
+        elif comm_name.startswith("Subcommittee"):
             parent_comm = item.getparent().getparent().getchildren()[0].text_content()
             com = ScrapeCommittee(
                 name=comm_name,
