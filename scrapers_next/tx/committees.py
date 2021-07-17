@@ -46,11 +46,12 @@ class CommitteeDetail(HtmlPage):
             info.replace("\r", "").replace("\n", "").replace("\t", "").replace(": ", "")
             for info in table
         ]
+
         # the fields, like "clerk", etc. are located at every odd indice
-        # the information for each field, like the clerk's name, are located at every even oddice
+        # the information for each field, like the clerk's name, are located at every even indice
         fields = table[1::2]
         extra = table[2::2]
-        num_of_fields = range(5)
+        num_of_fields = range(len(fields))
 
         for i in num_of_fields:
             com.extras[fields[i].lower()] = extra[i].strip()
