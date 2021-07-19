@@ -1,15 +1,9 @@
-from spatula import (
-    HtmlListPage,
-    XPath,
-    CSS,
-    URL,
-    HtmlPage,
-)
+from spatula import HtmlListPage, XPath, CSS, URL, HtmlPage, SelectorError
 from openstates.models import ScrapePerson
 import re
 
 
-class LegDetail(HtmlPage):
+class BlueLegDetail(HtmlPage):
     def process_page(self):
         p = self.input
 
@@ -68,7 +62,90 @@ class LegDetail(HtmlPage):
         return p
 
 
-class LegList(HtmlListPage):
+class RedLegDetail(HtmlPage):
+    def process_page(self):
+        p = self.input
+
+        email = CSS("div.sen-contact a").match(self.root)[0].get("href")
+        email = re.search(r"mailto:(.+)", email).groups()[0]
+        p.email = email
+
+        addr = CSS("div.sen-contact p").match(self.root)[0].text_content()
+
+        # no phone for this link
+        if self.source.url == "https://www.indianasenaterepublicans.com/young":
+            addr = addr
+            phone1 = None
+            phone2 = None
+        else:
+            addr, phone1, phone2 = re.search(
+                r"(.+)Phone:\s(\d{3}-\d{3}-\d{4})\s?or\s(\d{3}-\d{3}-\d{4})", addr
+            ).groups()
+
+        p.capitol_office.address = addr
+        if phone1:
+            p.capitol_office.voice = phone1
+        if phone2:
+            # is this just another capitol phone
+            p.district_office.voice = phone2
+
+        if len(CSS("div.sen-contact p").match(self.root)) == 1:
+            leg_assist = CSS("div.sen-contact p").match_one(self.root).text_content()
+        else:
+            leg_assist = CSS("div.sen-contact p").match(self.root)[1].text_content()
+
+        if len(CSS("div.sen-contact p").match(self.root)) < 3:
+            extra_contacts = leg_assist.split("Media Contact:")
+            leg_assist = extra_contacts[0]
+            media_contact = extra_contacts[1]
+            leg_assist_name, leg_assist_phone, leg_assist_email = re.search(
+                r"Legislative\sAssistant:?(.+)Phone:\s(.+)Email:\s(.+)", leg_assist
+            ).groups()
+            media_contact_name, media_contact_phone, media_contact_email = re.search(
+                r"(.+)Phone:\s(.+)Email:\s(.+)", media_contact
+            ).groups()
+        elif (
+            len(CSS("div.sen-contact p").match(self.root)) == 3
+            or self.source.url == "https://www.indianasenaterepublicans.com/bray"
+        ):
+            leg_assist_name, leg_assist_phone, leg_assist_email = re.search(
+                r"Legislative\sAssistant:?(.+)Phone:\s(.+)Email:\s(.+)", leg_assist
+            ).groups()
+            media_contact = CSS("div.sen-contact p").match(self.root)[2].text_content()
+            media_contact_name, media_contact_phone, media_contact_email = re.search(
+                r"Media\sContact:(.+)Phone:\s(.+)Email:\s(.+)", media_contact
+            ).groups()
+        else:
+            leg_assist_name, leg_assist_phone, leg_assist_email = re.search(
+                r"Legislative\sAssistant:?(.+)Phone:\s(.+)Email:\s(.+)", leg_assist
+            ).groups()
+            media_contact = CSS("div.sen-contact p").match(self.root)[3].text_content()
+            media_contact_name, media_contact_phone, media_contact_email = re.search(
+                r"Media\sContact:(.+)Phone:\s(.+)Email:\s(.+)", media_contact
+            ).groups()
+
+        p.extras["legislative assistant name"] = leg_assist_name
+        p.extras["legislative assistant phone"] = leg_assist_phone
+        p.extras["legislative assistant email"] = leg_assist_email
+        p.extras["media contact name"] = media_contact_name
+        p.extras["media contact phone"] = media_contact_phone
+        p.extras["media contact email"] = media_contact_email
+
+        try:
+            # need to deal with multi-lines of education
+            print(
+                XPath("//h3[contains(text(), 'Education')]")
+                .match(self.root)[0]
+                .getnext()
+                .text_content()
+            )
+        except SelectorError:
+            pass
+        # "//*[@id="biography"]/div[6]/h3"
+        return p
+
+
+class BlueLegList(HtmlListPage):
     def process_item(self, item):
         name = CSS("div a").match(item)[1].text_content()
         # print(name)
@@ -98,25 +175,50 @@ class LegList(HtmlListPage):
         p.add_link(detail_link, note="homepage")
         p.add_source(self.source.url)
         p.add_source(detail_link)
-        return LegDetail(p, source=detail_link)
+        return BlueLegDetail(p, source=detail_link)
 
 
-class RedRepList(LegList):
-    source = "https://www.indianahouserepublicans.com/members/"
+class RedLegList(HtmlListPage):
+    def process_item(self, item):
+        name = CSS("h3").match_one(item).text_content()
+        district = CSS("p.list-district").match_one(item).text_content()
+        district = re.search(r"District\s(\d+)", district).groups()[0]
+
+        img = CSS("img").match_one(item).get("src")
+
+        p = ScrapePerson(
+            name=name,
+            state="in",
+            chamber=self.chamber,
+            district=district,
+            party=self.party,
+            image=img,
+        )
+
+        detail_link = CSS("a").match_one(item).get("href")
+
+        p.add_source(self.source.url)
+        p.add_source(detail_link)
+        p.add_link(detail_link, note="homepage")
+        return RedLegDetail(p, source=detail_link)
+
+
+class RedRepList(RedLegList):
+    source = URL("https://www.indianahouserepublicans.com/members/")
     # selector = CSS("", num_items=)
     chamber = "lower"
     party = "Republican"
 
 
-class BlueRepList(LegList):
+class BlueRepList(BlueLegList):
     source = URL("https://indianahousedemocrats.org/members")
     # selector = CSS("", num_items=)
     chamber = "lower"
     party = "Democratic"
 
 
-class BlueSenList(LegList):
-    source = "https://www.indianasenatedemocrats.org/senators/"
+class BlueSenList(BlueLegList):
+    source = URL("https://www.indianasenatedemocrats.org/senators/")
     # selector = XPath(".//*[@id='esg-grid-10-1']/div/ul/li")
     # selector = CSS("ul .mainul li")
     selector = CSS(
@@ -127,8 +229,8 @@ class BlueSenList(LegList):
     party = "Democratic"
 
 
-class RedSenList(LegList):
-    source = "https://www.indianasenaterepublicans.com/senators"
+class RedSenList(RedLegList):
+    source = URL("https://www.indianasenaterepublicans.com/senators")
     selector = CSS("div.senator-list div.senator-item", num_items=39)
     chamber = "upper"
     party = "Republican"
