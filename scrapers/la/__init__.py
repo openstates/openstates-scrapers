@@ -199,6 +199,14 @@ class Louisiana(State):
             "start_date": "2021-03-12",
             "end_date": "2021-06-10",
         },
+        {
+            "_scraped_name": "2021 Veto Session",
+            "classification": "primary",
+            "identifier": "2021v",
+            "name": "2021 Veto Session",
+            "start_date": "2021-07-20",
+            "end_date": "2021-07-24",
+        },
     ]
     ignored_scraped_sessions = [
         "2020 Organizational Session",
