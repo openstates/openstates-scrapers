@@ -4,8 +4,7 @@ from spatula import (
     CSS,
     URL,
     HtmlPage,
-    SelectorError,
-)  # , CSS, , URL
+)
 from openstates.models import ScrapePerson
 import re
 
@@ -14,16 +13,11 @@ class LegDetail(HtmlPage):
     def process_page(self):
         p = self.input
 
-        try:
-            title = (
-                CSS(
-                    "div .fusion-column-wrapper.fusion-flex-justify-content-flex-start.fusion-content-layout-column h2"
-                )
-                .match(self.root)[0]
-                .text_content()
-            )
-        except SelectorError:
-            pass
+        titles = CSS("h2").match(self.root)
+        if len(titles) > 9:
+            title = titles[0].text_content()
+            print(title)
+            p.extras["title"] = title
 
         assistant = (
             CSS("div .fusion-text.fusion-text-2 p").match(self.root)[0].text_content()
@@ -65,7 +59,6 @@ class LegDetail(HtmlPage):
 
         p.email = email
 
-        p.extras["title"] = title
         p.extras["assistant"] = assistant
         p.extras["media contact name"] = media_contact_name
         p.extras["media contact email"] = media_contact_email
@@ -104,6 +97,7 @@ class LegList(HtmlListPage):
         detail_link = CSS("div a").match(item)[1].get("href")
         p.add_link(detail_link, note="homepage")
         p.add_source(self.source.url)
+        p.add_source(detail_link)
         return LegDetail(p, source=detail_link)
 
 
@@ -126,7 +120,8 @@ class BlueSenList(LegList):
     # selector = XPath(".//*[@id='esg-grid-10-1']/div/ul/li")
     # selector = CSS("ul .mainul li")
     selector = CSS(
-        "body main section div div div.fusion-fullwidth.fullwidth-box.fusion-builder-row-2.nonhundred-percent-fullwidth.non-hundred-percent-height-scrolling article ul li"
+        "body main section div div div.fusion-fullwidth.fullwidth-box.fusion-builder-row-2.nonhundred-percent-fullwidth.non-hundred-percent-height-scrolling article ul li",
+        num_items=11,
     )
     chamber = "upper"
     party = "Democratic"
@@ -134,6 +129,6 @@ class BlueSenList(LegList):
 
 class RedSenList(LegList):
     source = "https://www.indianasenaterepublicans.com/senators"
-    # selector = CSS("", num_items=)
+    selector = CSS("div.senator-list div.senator-item", num_items=39)
     chamber = "upper"
     party = "Republican"
