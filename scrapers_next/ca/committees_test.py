@@ -75,8 +75,6 @@ class TypeOne(HtmlPage):
                 mem_name = member
                 mem_role = "member"
 
-            if "," in mem_name.strip():
-                print(mem_name.strip(), mem_role.strip())
             com.add_member(mem_name.strip(), role=mem_role.strip())
 
         return com
@@ -122,12 +120,6 @@ class TypeTwo(HtmlPage):
                 member,
             ).groups()
 
-            if "," in mem_name.strip():
-                if mem_role:
-                    print(mem_name.strip(), mem_role.strip())
-                else:
-                    print(mem_name.strip(), "member")
-
             com.add_member(
                 mem_name.strip(), role=mem_role.strip() if mem_role else "member"
             )
@@ -155,7 +147,7 @@ class TypeThree(HtmlPage):
     def process_page(self):
         com = self.input
         members = XPath(
-            "//tbody/tr/td/a[(contains(@href, '/sd') or contains(@href, 'assembly.ca.gov/a'))]//text()"
+            "//tbody/tr/td/a[(contains(@href, '/sd') or contains(@href, '/a'))]//text()"
         ).match(self.root)
 
         for member in members:
@@ -168,11 +160,15 @@ class TypeThree(HtmlPage):
                 member,
             ).groups()
 
-            if "," in mem_name.strip():
-                if mem_role:
-                    print(mem_name.strip(), mem_role.strip())
-                else:
-                    print(mem_name.strip(), "member")
+            if "," in mem_name:
+                mem_grps = re.search(
+                    r"((.+),\s)((Democratic|Republican|Dem\.)\sAlternate)?(\w+\.)?",
+                    mem_name,
+                ).groups()
+                if not mem_grps[4]:
+                    mem_name = mem_grps[1]
+                    mem_role = mem_grps[2]
+                    mem_role = re.sub(r"Dem\.", "Democratic", mem_role)
 
             com.add_member(
                 mem_name.strip(), role=mem_role.strip() if mem_role else "member"
@@ -264,8 +260,6 @@ class TypeFour(HtmlPage):
                 mem_role = "Vice Chair"
             mem_num += 1
 
-            if "," in mem_name.strip():
-                print(mem_name.strip(), mem_role.strip())
             com.add_member(
                 mem_name.strip(), role=mem_role.strip() if mem_role else "member"
             )
