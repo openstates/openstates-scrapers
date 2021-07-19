@@ -717,7 +717,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "spatula"
-version = "0.8.3"
+version = "0.8.4"
 description = "A modern Python library for writing maintainable web scrapers."
 category = "main"
 optional = false
@@ -1451,8 +1451,8 @@ soupsieve = [
     {file = "soupsieve-2.2.1.tar.gz", hash = "sha256:052774848f448cf19c7e959adf5566904d525f33a3f8b6ba6f6f8f26ec7de0cc"},
 ]
 spatula = [
-    {file = "spatula-0.8.3-py3-none-any.whl", hash = "sha256:60acde389ef7772fbf4eac3f892b04c0e4b3b4aee9cd298e6120d86a94f8b9d9"},
-    {file = "spatula-0.8.3.tar.gz", hash = "sha256:3e6454d52c241ac205dc39e12dbffcd6c09f9b138e7644ed56dd772a411b7696"},
+    {file = "spatula-0.8.4-py3-none-any.whl", hash = "sha256:5ae2ba2898d701506e3472f993d6d5c59b5907af7dc4af710907cd2be04e9b03"},
+    {file = "spatula-0.8.4.tar.gz", hash = "sha256:e11276f21af0dd5aad21fa6417d8c62cf986e7a19797d92c69312c616c8a9242"},
 ]
 speechrecognition = [
     {file = "SpeechRecognition-3.8.1-py2.py3-none-any.whl", hash = "sha256:4d8f73a0c05ec70331c3bacaa89ecc06dfa8d9aba0899276664cda06ab597e8e"},
