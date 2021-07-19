@@ -116,7 +116,7 @@ class HouseCommitteeList(HtmlListPage):
             .get("href")
         )
         name = CSS("h2 a").match(item)[0].text_content()
-        com = ScrapeCommittee(name=name, parent=self.chamber)
+        com = ScrapeCommittee(name=name, chamber=self.chamber)
 
         for links in XPath(".//div[contains(@class, 'container')]//a").match(item):
             url = links.get("href")
