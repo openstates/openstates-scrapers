@@ -8,8 +8,17 @@ class ChooseType(HtmlPage):
 
         # this link was being considered type one, but should be type four
         if self.source.url == "https://ajed.assembly.ca.gov":
-            return TypeFour(self.input, source=self.source)
+            return process_page_type4(self.root, self.input, self.source)
 
+        if process_page_type1(self.root, self.input):
+            return process_page_type1(self.root, self.input)
+        elif process_page_type2(self.root, self.input):
+            return process_page_type2(self.root, self.input)
+        elif process_page_type3(self.root, self.input):
+            return process_page_type3(self.root, self.input)
+        return process_page_type4(self.root, self.input, self.source)
+
+        """
         xpaths = {
             TypeOne(
                 self.input, source=self.source
@@ -24,7 +33,9 @@ class ChooseType(HtmlPage):
             'contains(@href, "assembly.ca.gov/a"))]//text()',
             TypeFour(self.input, source=self.source): "//p[@class = 'caption']/text()",
         }
+        """
 
+        """
         for page_class, xpath in xpaths.items():
             try:
                 # this selector never gets passed to subsequent classes...
@@ -32,9 +43,10 @@ class ChooseType(HtmlPage):
                 return page_class
             except SelectorError:
                 continue
+        """
 
 
-class TypeOne(HtmlPage):
+def process_page_type1(root, committee):
     """
     Type One pages are usually formatted with a red background.
     There are 4 possible formats that are considered Type One:
@@ -51,36 +63,37 @@ class TypeOne(HtmlPage):
     0 (out of 89 total) Assembly committees are considered Type One.
     """
 
-    def process_page(self):
-        com = self.input
+    try:
         members = XPath(
             "//div/p/a[(contains(text(), 'Senator') or contains(text(), 'Assembly Member'))]/text()"
-        ).match(self.root)
+        ).match(root)
+    except SelectorError:
+        return None
 
-        for member in members:
-            member = re.sub(r"(Senator\s|Assembly\sMember\s)", "", member)
+    for member in members:
+        member = re.sub(r"(Senator\s|Assembly\sMember\s)", "", member)
 
-            if re.search(r"\((D|R)\)", member):
-                mem_name, _ = member.split("(")
-                if re.search(r",\s", mem_name):
-                    mem_role, mem_name = mem_name.split(",")
-                else:
-                    mem_role = "member"
-            elif re.search(r",\s", member):
-                mem_name, mem_role = member.split(",")
-            elif re.search(r"\(", member):
-                mem_name, mem_role = member.split("(")
-                mem_role = mem_role.rstrip(")")
+        if re.search(r"\((D|R)\)", member):
+            mem_name, _ = member.split("(")
+            if re.search(r",\s", mem_name):
+                mem_role, mem_name = mem_name.split(",")
             else:
-                mem_name = member
                 mem_role = "member"
+        elif re.search(r",\s", member):
+            mem_name, mem_role = member.split(",")
+        elif re.search(r"\(", member):
+            mem_name, mem_role = member.split("(")
+            mem_role = mem_role.rstrip(")")
+        else:
+            mem_name = member
+            mem_role = "member"
 
-            com.add_member(mem_name.strip(), role=mem_role.strip())
+        committee.add_member(mem_name.strip(), role=mem_role.strip())
 
-        return com
+    return committee
 
 
-class TypeTwo(HtmlPage):
+def process_page_type2(root, committee):
     """
     Type Two pages look very similar to Type One.
     Type Two pages are usually formatted with a red background.
@@ -99,35 +112,36 @@ class TypeTwo(HtmlPage):
     0 (out of 89 total) Assembly committees are considered Type Two.
     """
 
-    def process_page(self):
-        com = self.input
+    try:
         members = XPath(
             "//a[(contains(@href, '/sd') or "
             "contains(@href, 'assembly.ca.gov/a')) and "
             "(starts-with(text(), 'Senator') or "
             "starts-with(text(), 'Assembly Member'))]/text()"
-        ).match(self.root)
+        ).match(root)
+    except SelectorError:
+        return None
 
-        for member in members:
-            (mem_name, mem_role) = re.search(
-                r"""(?ux)
-                    ^(?:Senator|Assembly\sMember)\s  # Legislator title
-                    (.+?)  # Capture the senator's full name
-                    (?:\s\((.{2,}?)\))?  # There may be role in parentheses
-                    (?:\s\([RD]\))?  # There may be a party affiliation
-                    \s*$
-                    """,
-                member,
-            ).groups()
+    for member in members:
+        (mem_name, mem_role) = re.search(
+            r"""(?ux)
+                ^(?:Senator|Assembly\sMember)\s  # Legislator title
+                (.+?)  # Capture the senator's full name
+                (?:\s\((.{2,}?)\))?  # There may be role in parentheses
+                (?:\s\([RD]\))?  # There may be a party affiliation
+                \s*$
+                """,
+            member,
+        ).groups()
 
-            com.add_member(
-                mem_name.strip(), role=mem_role.strip() if mem_role else "member"
-            )
+        committee.add_member(
+            mem_name.strip(), role=mem_role.strip() if mem_role else "member"
+        )
 
-        return com
+    return committee
 
 
-class TypeThree(HtmlPage):
+def process_page_type3(root, committee):
     """
     Type Three pages are usually formatted with a green background.
 
@@ -144,40 +158,41 @@ class TypeThree(HtmlPage):
     https://assembly.ca.gov/specialcmtelegethics
     """
 
-    def process_page(self):
-        com = self.input
+    try:
         members = XPath(
             "//tbody/tr/td/a[(contains(@href, '/sd') or contains(@href, '/a'))]//text()"
-        ).match(self.root)
+        ).match(root)
+    except SelectorError:
+        return None
 
-        for member in members:
-            (mem_name, mem_role) = re.search(
-                r"""(?ux)
-                    (.+?)  # Capture the senator's full name
-                    (?:\s\((.{2,}?)\))?  # There may be role in parentheses
-                    \s*$
-                    """,
-                member,
+    for member in members:
+        (mem_name, mem_role) = re.search(
+            r"""(?ux)
+                (.+?)  # Capture the senator's full name
+                (?:\s\((.{2,}?)\))?  # There may be role in parentheses
+                \s*$
+                """,
+            member,
+        ).groups()
+
+        if "," in mem_name:
+            mem_grps = re.search(
+                r"((.+),\s)((Democratic|Republican|Dem\.)\sAlternate)?(\w+\.)?",
+                mem_name,
             ).groups()
+            if not mem_grps[4]:
+                mem_name = mem_grps[1]
+                mem_role = mem_grps[2]
+                mem_role = re.sub(r"Dem\.", "Democratic", mem_role)
 
-            if "," in mem_name:
-                mem_grps = re.search(
-                    r"((.+),\s)((Democratic|Republican|Dem\.)\sAlternate)?(\w+\.)?",
-                    mem_name,
-                ).groups()
-                if not mem_grps[4]:
-                    mem_name = mem_grps[1]
-                    mem_role = mem_grps[2]
-                    mem_role = re.sub(r"Dem\.", "Democratic", mem_role)
+        committee.add_member(
+            mem_name.strip(), role=mem_role.strip() if mem_role else "member"
+        )
 
-            com.add_member(
-                mem_name.strip(), role=mem_role.strip() if mem_role else "member"
-            )
-
-        return com
+    return committee
 
 
-class TypeFour(HtmlPage):
+def process_page_type4(root, committee, source):
     """
     Type Four pages are usually formatted with a green background.
 
@@ -199,72 +214,69 @@ class TypeFour(HtmlPage):
     https://ajed.assembly.ca.gov/
     """
 
-    def process_page(self):
-        com = self.input
+    try:
+        members = CSS("div.chair img").match(root)
+    except SelectorError:
+        members = [CSS("p img").match(root)[0]]
 
-        try:
-            members = CSS("div.chair img").match(self.root)
-        except SelectorError:
-            members = [CSS("p img").match(self.root)[0]]
+    mem_num = 0
+    for member in members:
+        mem = member.get("alt")
 
-        mem_num = 0
-        for member in members:
-            mem = member.get("alt")
+        # this link has bad formatting for the img alt (use p text instead)
+        # https://aesm.assembly.ca.gov/
+        if not mem or re.search(r"Assemblymember", mem):
+            mem = member.getnext().text_content()
 
-            # this link has bad formatting for the img alt (use p text instead)
-            # https://aesm.assembly.ca.gov/
-            if not mem or re.search(r"Assemblymember", mem):
-                mem = member.getnext().text_content()
+        # these links also has bad formatting
+        # https://idd.assembly.ca.gov name is Mark Stone instead of Jim Frazier
+        # https://policereform.assembly.ca.gov/ name is Gipson instead of Mike A. Gipson
+        if source.url in [
+            "https://idd.assembly.ca.gov",
+            "https://policereform.assembly.ca.gov/",
+        ]:
+            mem = member.getparent().getnext().text_content()
 
-            # these links also has bad formatting
-            # https://idd.assembly.ca.gov name is Mark Stone instead of Jim Frazier
-            # https://policereform.assembly.ca.gov/ name is Gipson instead of Mike A. Gipson
-            if self.source.url in [
-                "https://idd.assembly.ca.gov",
-                "https://policereform.assembly.ca.gov/",
-            ]:
-                mem = member.getparent().getnext().text_content()
+        mem = re.sub(r"(Senator\s|Assembly\sMember\s)", "", mem)
+        mem = re.sub(r"Image\sof\s", "", mem)
+        if re.search(r",\s(V|C|\()", mem):
+            member_info = mem.split(",")
 
-            mem = re.sub(r"(Senator\s|Assembly\sMember\s)", "", mem)
-            mem = re.sub(r"Image\sof\s", "", mem)
-            if re.search(r",\s(V|C|\()", mem):
-                member_info = mem.split(",")
+            # some names have , Jr. or , Sr. or , P.h.d
+            # this handles an extra comma
+            if len(member_info) == 2:
+                mem_name = member_info[0]
+                mem_role = member_info[1]
+            elif len(member_info) == 3:
+                mem_name = member_info[0]
+                mem_name += member_info[1]
+                mem_role = member_info[2]
 
-                # some names have , Jr. or , Sr. or , P.h.d
-                # this handles an extra comma
-                if len(member_info) == 2:
-                    mem_name = member_info[0]
-                    mem_role = member_info[1]
-                elif len(member_info) == 3:
-                    mem_name = member_info[0]
-                    mem_name += member_info[1]
-                    mem_role = member_info[2]
-
-                if "(" in mem_role:
-                    mem_role = mem_role.strip().lstrip("(").rstrip(")")
-                if "of the" in mem_role:
-                    mem_role = mem_role.split("of the")[0]
-                if mem_name == "Kevin Kiley":
-                    mem_role = "Vice Chair"
-            elif re.search(r"\s\((V|C)", mem):
-                mem_name, mem_role = mem.split("(")
-                mem_role = mem_role.rstrip(")")
-            elif re.search(r"\n", mem):
-                mem_name, mem_role = mem.split("\n")
+            if "(" in mem_role:
+                mem_role = mem_role.strip().lstrip("(").rstrip(")")
+            if "of the" in mem_role:
                 mem_role = mem_role.split("of the")[0]
-            elif mem_num == 0:
-                mem_name = mem.strip()
-                mem_role = "Chair"
-            else:
-                mem_name = mem.strip()
+            if mem_name == "Kevin Kiley":
                 mem_role = "Vice Chair"
-            mem_num += 1
+        elif re.search(r"\s\((V|C)", mem):
+            mem_name, mem_role = mem.split("(")
+            mem_role = mem_role.rstrip(")")
+        elif re.search(r"\n", mem):
+            mem_name, mem_role = mem.split("\n")
+            mem_role = mem_role.split("of the")[0]
+        elif mem_num == 0:
+            mem_name = mem.strip()
+            mem_role = "Chair"
+        else:
+            mem_name = mem.strip()
+            mem_role = "Vice Chair"
+        mem_num += 1
 
-            com.add_member(
-                mem_name.strip(), role=mem_role.strip() if mem_role else "member"
-            )
+        committee.add_member(
+            mem_name.strip(), role=mem_role.strip() if mem_role else "member"
+        )
 
-        return com
+    return committee
 
 
 class SenateCommitteeList(HtmlListPage):
@@ -321,6 +333,7 @@ class AssemblyCommitteeList(HtmlListPage):
         if comm_url == "https://jtlegbudget.legislature.ca.gov/sublegislativeanalyst":
             self.skip()
 
+        # Joint Committees are being skipped to avoid duplicates (they were already grabbed during SenateCommitteeList())
         if comm_name.startswith("Joint Committee") or comm_name.startswith(
             "Joint Legislative"
         ):
