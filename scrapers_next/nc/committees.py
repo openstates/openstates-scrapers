@@ -15,6 +15,7 @@ class CommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
         com.add_source(self.source.url)
+        com.add_link(self.source.url, note="homepage")
 
         for membership_type in CSS("div#Membership h5").match(self.root):
             role = self.get_role(membership_type.text_content())
@@ -36,7 +37,7 @@ class CommitteeList(HtmlListPage):
         return CommitteeDetail(
             ScrapeCommittee(
                 name=item.text_content(),
-                parent=self.chamber,
+                chamber=self.chamber,
             ),
             source=item.get("href"),
         )

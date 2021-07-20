@@ -42,9 +42,9 @@ class CommitteeDetail(JsonPage):
             self.source.url, note="Detail page (requires authorization token)"
         )
 
-        if com.parent == "upper":
+        if com.chamber == "upper":
             link_chamber = "senate"
-        elif com.parent == "lower":
+        elif com.chamber == "lower":
             link_chamber = "house"
 
         source_url_list = self.source.url.split("/")
@@ -101,7 +101,7 @@ class CommitteeList(JsonListPage):
 
         com = ScrapeCommittee(
             name=item["name"],
-            parent=chamber,
+            chamber=chamber,
         )
 
         com.add_source(
