@@ -40,7 +40,8 @@ address_re = re.compile(
 # TODO: also add comments to explain what's happening here
 
 
-def process_address(details, phone_numbers, fax_number):
+# optional fax number parameter
+def process_address(details, phone_numbers, *fax_number):
     # TODO: add p to parameters here
 
     phone_number_match = phone_pattern.findall(phone_numbers)
@@ -84,13 +85,13 @@ def process_address(details, phone_numbers, fax_number):
 
 class LegDetail(HtmlPage):
     # example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=328"
-    # example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=304"
+    example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=304"
 
     # source for multiple offices and multiple phone numbers
     # example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=371"
 
     # example source for fax numbers
-    example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=406"
+    # example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=406"
 
     # TODO: add source
 
@@ -135,9 +136,25 @@ class LegDetail(HtmlPage):
         district_office = CSS("p").match(self.root)[13].getchildren()
         print("district office", district_office)
 
+        image = (
+            XPath("//img[contains(@src, 'memberphotos')]")
+            .match_one(self.root)
+            .get("src")
+        )
+        print('here"s the image', image)
+
+        district = CSS("font b").match(self.root)[26].text_content().split(" ")[1]
+        print("district number: ", district)
+        # for thing in district:
+        #     print('here', thing.text_content())
+
         # p = ScrapePerson(
         #     name=self.input.name,
+        #     state = 'nj',
         #     chamber = self.input.chamber,
+        #     party = party,
+        #     image = image,
+        #     district = district
         # )
 
         # p.add_source(self.input.url)
@@ -150,11 +167,20 @@ class LegDetail(HtmlPage):
                 XPath("//font[@size='2']").match(self.root)[12].text_content()
             )
             print("fax match", fax_match)
-            if fax_match:
-                for okay in district_office:
-                    # print("okay", okay.text_content())
-                    address = okay.text_content()
+            # if fax_match:
+            #     for okay in district_office:
+            #         # print("okay", okay.text_content())
+            #         address = okay.text_content()
+            #         process_address(address, phone_numbers, fax_match)
+            # else:
+            #     for okay in district_office:
+            #         process_address(address, phone_numbers)
+            for okay in district_office:
+                address = okay.text_content()
+                if fax_match:
                     process_address(address, phone_numbers, fax_match)
+                else:
+                    process_address(address, phone_numbers)
             # if there is a fax number:
             # TODO: if statement above along with sending to process_address (nested inside if statement)
         except SelectorError:
