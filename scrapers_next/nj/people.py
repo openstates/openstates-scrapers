@@ -16,6 +16,63 @@ class PartialMember:
     # party: str = ""
 
 
+# re.compile(): combine regular expresssion pattern into pattern objects, can be used for pattern matching
+address_re = re.compile(
+    (
+        # every rep's address starts with a room or street number
+        r"(?:\d+)"
+        # just about anything can follow:
+        + ".+?"
+        # state and zip code
+        + "(?:"
+        + "|".join(
+            [r" +(?:NJ|New Jersey)(?: +0\d{4})?", r"(?:NJ|New Jersey),? +0\d{4}"]
+        )
+        + ")"
+    ),
+    flags=re.DOTALL | re.IGNORECASE,
+)
+
+# if there's more text, then keep doing this (while loop?)
+
+
+# address_re = re.compile(
+#     (
+#         # Every representative's address starts with a room number,
+#         # street number, or P.O. Box:
+#         r"(?:Room|\d+|P\.?\s*O)"
+#         # Just about anything can follow:
+#         + ".+?"
+#         # State and zip code (or just state) along with idiosyncratic
+#         # comma placement:
+#         + "(?:"
+#         + "|".join([r", +(?:TX|Texas)(?: +7\d{4})?", r"(?:TX|Texas),? +7\d{4}"])
+#         + ")"
+#     ),
+#     flags=re.DOTALL | re.IGNORECASE,
+# )
+
+
+def process_address(details):
+    # add p to parameters here
+    match = address_re.findall(details)
+    # print('match', address_re.findall(details))
+    print("here is the match", match)
+    if match is not None:
+        for address in match:
+            address = re.sub(
+                " +$",
+                "",
+                address.replace("\r", "")
+                .replace("\n", " ")
+                .replace("  ", " ")
+                .replace("                       ", " ")
+                .strip(),
+                flags=re.MULTILINE,
+            )
+            print("new address", address)
+
+
 class LegDetail(HtmlPage):
     # example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=328"
     # example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=304"
@@ -62,27 +119,55 @@ class LegDetail(HtmlPage):
         # or maybe after "NJ" and then 5 numbers for zip code?
         # district_office = CSS("p").match(self.root)[13].text_content().strip()
         district_office = CSS("p").match(self.root)[13].getchildren()
+        # this returns font tag in a list
         print("all addresses", district_office)
+
+        # print('font', district_office.text())
+
+        # TODO: use lxml to get text with br tags, then change
+        for okay in district_office:
+            # directly targeting the font tag
+            print("okay", okay.text_content())
+            # but is okay just a block of text?
+            # for element in okay.text_content():
+            # this prints out each letter...
+            # print('indiv element', element)
+            process_address(okay.text_content())
+
+            # split for every space
+            # space_split = okay.text_content().split('(NJ)')
+            # TRY: separate by 'NJ and 5 numbers'
+            # space_split = re.split("(NJ \W)", okay.text_content())
+            # print("space split", space_split)
+            # ['231-L', 'Market', 'Street', 'Camden,', 'NJ', '08102515', 'South', 'White', 'Horse', 'Pike', 'Audubon,', 'NJ', '08106608', 'North', 'Broad', 'St.', 'Suite', '200', 'Woodbury,', 'NJ', '08096']
+
+            # would be nice if i could split after 'NJ #####' instead or even just 5 spaces after NJ
+
+            # is there any way to get the br tags and text?? recursive function (but that uses beautiful soup...)
         for what in district_office:
             children_p_tag = what.getchildren()
 
             # this shows a bunch of br tags in an array
             print("children of p tag", children_p_tag)
-            for child in children_p_tag:
-                print("single child", child.text_content())
-            # children_of_children = children_p_tag.getchildren()
-            # print('children of children', children_of_children)
-            # next = what.text_content()
-            # print('next', next)
 
-            # for element in next:
-            #     print('element', element)
-            # okay = next.text_content().split("NJ")
-            # print('here', okay)
-            # for element in okay:
-            #     print('replace', element.replace('\r\n', "").strip())
+            # print('text of children in p tag', district_office.text_content())
+
+        # for child in children_p_tag:
+        #     print("single child", child.text_content())
+        # children_of_children = children_p_tag.getchildren()
+        # print('children of children', children_of_children)
+        # next = what.text_content()
+        # print('next', next)
+
+        # for element in next:
+        #     print('element', element)
+        # okay = next.text_content().split("NJ")
+        # print('here', okay)
+        # for element in okay:
+        #     print('replace', element.replace('\r\n', "").strip())
 
         print("office address", district_office)
+
         # for what in CSS("p").match(self.root):
         # print('okay', what.text_content())
 
@@ -102,6 +187,11 @@ class LegDetail(HtmlPage):
 #             district=self.input.district,
 #             email=self.input.email,
 #             image=image,
+
+
+# TODO: starting on phone numbers (what about fax numbers?)
+# TODO: for fax numbers, make sure that it is numbers (may not have to do this, since the plan is to not scrape email and just hardcode it, so if there is another <font> then that means there is a fax number--do try, except)
+# TODO: email (hardcode the emails?)
 
 
 class LegList(HtmlListPage):
