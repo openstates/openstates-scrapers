@@ -2,6 +2,7 @@ import pytz
 import lxml
 import dateutil.parser
 import datetime
+import re
 
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
@@ -72,6 +73,13 @@ class MAEventScraper(Scraper, LXMLMixin):
             'string(//dl[contains(@class,"eventInformation")]/dd[3])'
         ).strip()
 
+        # If an event gets moved, ignore the original time
+        start_time = re.sub(
+            r"Original Start Time(.*)New Start Time(\n*)",
+            "",
+            start_time,
+            flags=re.IGNORECASE | re.MULTILINE | re.DOTALL,
+        )
         location = page.xpath(
             'string(//dl[contains(@class,"eventInformation")]/dd[4]//a)'
         ).strip()

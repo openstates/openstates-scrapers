@@ -90,10 +90,13 @@ class SenateCommitteeList(HtmlListPage):
         if re.search(" - ", name):
             parent, com_name = name.split(" - Subcommittee on ")
             com = ScrapeCommittee(
-                name=com_name, classification="subcommittee", parent=parent
+                name=com_name,
+                classification="subcommittee",
+                parent=parent,
+                chamber=self.chamber,
             )
         else:
-            com = ScrapeCommittee(name=name, parent=self.chamber)
+            com = ScrapeCommittee(name=name, chamber=self.chamber)
 
         com.add_source(self.source.url)
         return SenateCommitteeDetail(com, source=item.get("href"))
@@ -113,7 +116,7 @@ class HouseCommitteeList(HtmlListPage):
             .get("href")
         )
         name = CSS("h2 a").match(item)[0].text_content()
-        com = ScrapeCommittee(name=name, parent=self.chamber)
+        com = ScrapeCommittee(name=name, chamber=self.chamber)
 
         for links in XPath(".//div[contains(@class, 'container')]//a").match(item):
             url = links.get("href")
