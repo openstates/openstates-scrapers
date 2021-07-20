@@ -45,7 +45,8 @@ def process_address(details, phone_numbers, *fax_number):
     # TODO: add p to parameters here
 
     phone_number_match = phone_pattern.findall(phone_numbers)
-    print("fax number in process", fax_number)
+    # TODO: WHAT's going on with the asterisk before fax number
+    print("fax number in process", *fax_number)
 
     print("phone number match", phone_number_match)
     match = address_re.findall(details)
@@ -71,7 +72,7 @@ def process_address(details, phone_numbers, *fax_number):
 
             # Often, there are fewer fax numbers than addresses or phone numbers
             try:
-                print("corresponding fax number: ", fax_number[i])
+                print("corresponding fax number: ", *fax_number[i])
             except IndexError:
                 pass
 
@@ -85,14 +86,14 @@ def process_address(details, phone_numbers, *fax_number):
 
 class LegDetail(HtmlPage):
     # example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=328"
-    example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=304"
+    # example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=304"
 
     # source for multiple offices and multiple phone numbers
     # example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=371"
 
     # example source for fax numbers
-    # example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=406"
-
+    example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=406"
+    #
     # TODO: add source
 
     def process_page(self):
@@ -121,7 +122,7 @@ class LegDetail(HtmlPage):
             # self.warn("Not a major party, please update")
             print(party)
 
-        print("R or D", party)
+        print("PARTY: ", party)
 
         # PHONE NUMBERS
         #
@@ -134,7 +135,7 @@ class LegDetail(HtmlPage):
         # TODO: i think district office will just be one item all the time
         # TODO: also not sure if district_office will pick up everyone else's address the same way...maybe sometimes there's another p tag...
         district_office = CSS("p").match(self.root)[13].getchildren()
-        print("district office", district_office)
+        # print("district office", district_office)
 
         image = (
             XPath("//img[contains(@src, 'memberphotos')]")
