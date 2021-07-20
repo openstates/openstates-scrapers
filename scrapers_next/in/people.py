@@ -1,4 +1,4 @@
-from spatula import HtmlListPage, XPath, CSS, URL, HtmlPage, SelectorError
+from spatula import HtmlListPage, XPath, CSS, URL, HtmlPage  # , SelectorError
 from openstates.models import ScrapePerson
 import re
 
@@ -10,7 +10,6 @@ class BlueSenDetail(HtmlPage):
         titles = CSS("h2").match(self.root)
         if len(titles) > 9:
             title = titles[0].text_content()
-            print(title)
             p.extras["title"] = title
 
         assistant = (
@@ -44,9 +43,6 @@ class BlueSenDetail(HtmlPage):
         twitter = CSS("div .fusion-social-links a").match(self.root)[0].get("href")
         fb = CSS("div .fusion-social-links a").match(self.root)[1].get("href")
 
-        # print(phone1)
-        # print(phone2)
-        # print(addr)
         p.district_office.voice = phone1
         p.capitol_office.address = addr
         p.capitol_office.voice = phone2
@@ -86,7 +82,7 @@ class RedSenDetail(HtmlPage):
         if phone1:
             p.capitol_office.voice = phone1
         if phone2:
-            # is this just another capitol phone
+            # is this just another capitol phone?
             p.district_office.voice = phone2
 
         if len(CSS("div.sen-contact p").match(self.root)) == 1:
@@ -131,6 +127,7 @@ class RedSenDetail(HtmlPage):
         p.extras["media contact phone"] = media_contact_phone
         p.extras["media contact email"] = media_contact_email
 
+        """
         try:
             # need to deal with multi-lines of education
             print(
@@ -141,7 +138,8 @@ class RedSenDetail(HtmlPage):
             )
         except SelectorError:
             pass
-        # "//*[@id="biography"]/div[6]/h3"
+        """
+
         return p
 
 
@@ -169,7 +167,6 @@ class BlueRepDetail(HtmlPage):
 class BlueSenList(HtmlListPage):
     def process_item(self, item):
         name = CSS("div a").match(item)[1].text_content()
-        # print(name)
         district = (
             CSS("div .esg-content.eg-senators-grid-element-1")
             .match_one(item)
@@ -179,9 +176,7 @@ class BlueSenList(HtmlListPage):
             .lower()
         )
         district = re.search(r"district\s(\d+)", district).groups()[0]
-        # print(district)
         img = CSS("div img").match_one(item).get("data-lazysrc")
-        # print(img)
 
         p = ScrapePerson(
             name=name,
@@ -191,6 +186,13 @@ class BlueSenList(HtmlListPage):
             party=self.party,
             image=img,
         )
+
+        city = (
+            CSS("div .esg-content.eg-senators-grid-element-27")
+            .match_one(item)
+            .text_content()
+        )
+        p.extras["city"] = city
 
         detail_link = CSS("div a").match(item)[1].get("href")
         p.add_link(detail_link, note="homepage")
@@ -215,6 +217,10 @@ class RedSenList(HtmlListPage):
             party=self.party,
             image=img,
         )
+
+        if len(CSS("p").match(item)) > 2:
+            title = CSS("p").match(item)[0].text_content()
+            p.extras["title"] = title
 
         detail_link = CSS("a").match_one(item).get("href")
 
@@ -339,10 +345,8 @@ class DemocraticHouse(BlueRepList):
 
 class DemocraticSenate(BlueSenList):
     source = URL("https://www.indianasenatedemocrats.org/senators/")
-    # selector = XPath(".//*[@id='esg-grid-10-1']/div/ul/li")
-    # selector = CSS("ul .mainul li")
     selector = CSS(
-        "body main section div div div.fusion-fullwidth.fullwidth-box.fusion-builder-row-2.nonhundred-percent-fullwidth.non-hundred-percent-height-scrolling article ul li",
+        "article ul li",
         num_items=11,
     )
     chamber = "upper"
