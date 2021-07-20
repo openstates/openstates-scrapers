@@ -15,6 +15,11 @@ class LegDetailPage(JsonPage):
 class LegListPage(JsonListPage):
     def process_item(self, item):
         print(item)
+        firstname = item["firstName"]
+        # lastname = item["lastName"]
+        # party = item["party"]
+        # link = item["link"]
+        print(firstname)
 
         p = ScrapePerson(
             name="",
@@ -33,5 +38,9 @@ class ApiGet(LegListPage):
     api_base_url = "https://api.iga.in.gov"
 
     source = URL(
-        "https://api.iga.in.gov/122/legislators", headers={"Authorization": "Token"}
+        "https://api.iga.in.gov/122/chambers/senate/legislators",
+        headers={
+            "Authorization": "Token a62cb5ec0dcb321f9ac33802160911556c6cbb19",
+            "Accept": "application/json",
+        },
     )
