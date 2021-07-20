@@ -16,19 +16,17 @@ class PartialMember:
     # party: str = ""
 
 
-# TODO: add comments to explain what's going on here
 phone_pattern = re.compile(r"\(?\d+\)?[- ]?\d{3}[-.]\d{4}")
 fax_pattern = re.compile(r"\(?\d+\)?[- ]?\d{3}[-.]\d{4}")
-# + "(.+?" + ")"
-# phone_pattern2 = re.compile(r"?\(?\d+\)?[- ]?\d{3}[-.]\d{4}")
+
 
 address_re = re.compile(
     (
-        # every rep's address starts with a room or street number
+        # Everyone's address starts with a room or street number
         r"(?:\d+)"
         # just about anything can follow:
         + ".+?"
-        # state and zip code
+        # then, state and zip code
         + "(?:"
         + "|".join(
             [r" +(?:NJ|New Jersey)(?: +0\d{4})?", r"(?:NJ|New Jersey),? +0\d{4}"]
@@ -42,10 +40,11 @@ address_re = re.compile(
 # TODO: also add comments to explain what's happening here
 
 
-def process_address(details, phone_numbers):
+def process_address(details, phone_numbers, fax_number):
     # TODO: add p to parameters here
 
     phone_number_match = phone_pattern.findall(phone_numbers)
+    print("fax number in process", fax_number)
 
     print("phone number match", phone_number_match)
     match = address_re.findall(details)
@@ -68,6 +67,12 @@ def process_address(details, phone_numbers):
             )
             print("new address: ", address)
             print("corresponding phone number", phone_number_match[i])
+
+            # Often, there are fewer fax numbers than addresses or phone numbers
+            try:
+                print("corresponding fax number: ", fax_number[i])
+            except IndexError:
+                pass
 
             # p.add_office(
             #     contact_type="District Office",
@@ -138,26 +143,20 @@ class LegDetail(HtmlPage):
         # p.add_source(self.input.url)
         # p.add_source(self.source.url)
 
-        for okay in district_office:
-            # directly targeting the font tag
-            print("okay", okay.text_content())
-            address = okay.text_content()
-            process_address(address, phone_numbers)
-
-        # for thing in phone_numbers:
-        #     print('thing', thing.text_content())
-        # TODO: for fax numbers, make sure that it is numbers (may not have to do this, since the plan is to not scrape email and just hardcode it, so if there is another <font> then that means there is a fax number--do try, except)
         # Q: is it okay to just associate fax numbers with the first address?? (everything ive seen so far does this)
         try:
-            # fax = XPath("//font[@size='2']").match(self.root)[12].text_content()
-            # print('fax number', fax)
             # TODO: WHY does this run for pages that don't have A FAX NUMBER
             fax_match = fax_pattern.findall(
                 XPath("//font[@size='2']").match(self.root)[12].text_content()
             )
             print("fax match", fax_match)
-            # if fax_match:
+            if fax_match:
+                for okay in district_office:
+                    # print("okay", okay.text_content())
+                    address = okay.text_content()
+                    process_address(address, phone_numbers, fax_match)
             # if there is a fax number:
+            # TODO: if statement above along with sending to process_address (nested inside if statement)
         except SelectorError:
             pass
 
