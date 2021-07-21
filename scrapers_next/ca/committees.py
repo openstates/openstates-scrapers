@@ -10,40 +10,13 @@ class ChooseType(HtmlPage):
         if self.source.url == "https://ajed.assembly.ca.gov":
             return process_page_type4(self.root, self.input, self.source)
 
-        if process_page_type1(self.root, self.input):
-            return process_page_type1(self.root, self.input)
-        elif process_page_type2(self.root, self.input):
-            return process_page_type2(self.root, self.input)
-        elif process_page_type3(self.root, self.input):
-            return process_page_type3(self.root, self.input)
+        if data := process_page_type1(self.root, self.input):
+            return data
+        elif data := process_page_type2(self.root, self.input):
+            return data
+        elif data := process_page_type3(self.root, self.input):
+            return data
         return process_page_type4(self.root, self.input, self.source)
-
-        """
-        xpaths = {
-            TypeOne(
-                self.input, source=self.source
-            ): "//div/p/a[(contains(text(), 'Senator') or contains(text(), 'Assembly Member'))]/text()",
-            TypeTwo(self.input, source=self.source): "//a[(contains(@href, '/sd') or "
-            "contains(@href, 'assembly.ca.gov/a')) and "
-            "(starts-with(text(), 'Senator') or "
-            "starts-with(text(), 'Assembly Member'))]/text()",
-            TypeThree(
-                self.input, source=self.source
-            ): '//tbody/tr/td/a[(contains(@href, "/sd") or '
-            'contains(@href, "assembly.ca.gov/a"))]//text()',
-            TypeFour(self.input, source=self.source): "//p[@class = 'caption']/text()",
-        }
-        """
-
-        """
-        for page_class, xpath in xpaths.items():
-            try:
-                # this selector never gets passed to subsequent classes...
-                XPath(xpath).match(self.root)
-                return page_class
-            except SelectorError:
-                continue
-        """
 
 
 def process_page_type1(root, committee):
