@@ -1,9 +1,9 @@
 from spatula import (
-    JsonListPage,
-    # JsonPage,
+    JsonPage,
     URL,
 )  # HtmlListPage, XPath, CSS, HtmlPage  # , SelectorError
 from openstates.models import ScrapePerson
+import os
 
 """
 class LegDetailPage(JsonPage):
@@ -12,7 +12,11 @@ class LegDetailPage(JsonPage):
 """
 
 
-class LegListPage(JsonListPage):
+class LegListPage(JsonPage):
+    def process_page(self):
+        for item in self.data["items"]:
+            self.process_item(item)
+
     def process_item(self, item):
         print(item)
 
@@ -33,5 +37,10 @@ class ApiGet(LegListPage):
     api_base_url = "https://api.iga.in.gov"
 
     source = URL(
-        "https://api.iga.in.gov/122/legislators", headers={"Authorization": "Token"}
+        "https://api.iga.in.gov/2021/legislators",
+        headers={
+            "Authorization": os.environ["INDIANA_API_KEY"],
+            "User-Agent": "openstates 2021",
+            "Accept": "application/json",
+        },
     )
