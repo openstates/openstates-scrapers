@@ -1,18 +1,19 @@
 from spatula import (
     JsonPage,
     URL,
-    HtmlPage,
-    CSS,
+    # HtmlPage,
+    # CSS,
 )  # HtmlListPage, XPath, CSS, HtmlPage  # , SelectorError
 from openstates.models import ScrapePerson
 import os
 
 
-class LegDetailPage(HtmlPage):
+class LegDetailPage(JsonPage):
     def process_page(self):
+        print(self.data)
         p = self.input
-        img = CSS("div .row-fluid.span2.hidden-print img").match_one(self.root)
-        p.image = img
+        # img = CSS("div .row-fluid.span2.hidden-print img").match_one(self.root)
+        # p.image = img
         # district
         # address
         # phone
@@ -41,29 +42,22 @@ class LegListPage(JsonPage):
         p.family_name = item["lastName"]
         p.given_name = item["firstName"]
 
-        # link from old code (no authentication needed?)
-        # getting 503 response
-        base_url = "http://iga.in.gov/legislative"
-        api_base_url = "https://api.iga.in.gov"
-        api_link = api_base_url + item["link"]
-        html_link = base_url + item["link"].replace(
-            "legislators/", "legislators/legislator_"
-        )
-        print(api_link)
-        print(html_link)
-        detail_source = URL(html_link)
-
-        # this is my logic from api
-        # getting a 403 error
-        """
-        print(item["link"])
-        link_id = item["link"].split("/")[-1]
-        link_id = link_id.split("_")[-1]
-        print(link_id)
-        detail_link = "https://api.iga.in.gov/2021/legislators/" + link_id
-        detail_link = "https://api.iga.in.gov" + item["link"]
+        # getting a 500 error
+        link_id = item["link"]
+        # link_id = item["link"].split("/")[-1]
+        # link_id = link_id.split("_")[-1]
+        # print(link_id)
+        detail_link = "https://api.iga.in.gov" + link_id
         print(detail_link)
-        """
+
+        detail_source = URL(
+            detail_link,
+            headers={
+                "Authorization": os.environ["INDIANA_API_KEY"],
+                "User-Agent": "openstates 2021",
+                "Accept": "application/json",
+            },
+        )
 
         p.add_source(self.source.url)
         # p.add_source(detail_link)
