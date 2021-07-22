@@ -9,23 +9,68 @@ class LegDetail(HtmlPage):
         img = CSS("body table tr td img").match(self.root)[2].get("src")
         p.image = img
 
-        captiol_addr = CSS("body table tr td").match(self.root)[31].text_content()
+        # print(len(CSS("body table tr td.member").match(self.root)))
+
+        if len(CSS("body table tr td").match(self.root)) == 10:
+            print("GOT A 10")
+            idx = 1
+            # 1 addr, 2 addr, 3 phone, 6 addr, 7 addr, 8 phone
+        else:
+            return None
+        """
+        elif len(CSS("body table tr td").match(self.root)) == 11:
+            idx = 1
+            # 1 addr, 2 addr, 3 phone, 6 addr, 7 addr, 8 phone, 9 email
+        elif len(CSS("body table tr td").match(self.root)) == 12:
+            idx = 1
+            # 1 addr, 2 addr, 3 phone, 6 addr, 7 addr, 8 addr, 9 phone, 10 email
+        elif len(CSS("body table tr td").match(self.root)) == 13:
+            idx = 1
+            # 1 addr, 2 addr, 3 phone, 6 addr, 7 addr, 8 addr, 9 phone, 10 fax, 11 email
+            # 2, 3, 4, 8, 9, 10, 11
+        elif len(CSS("body table tr td").match(self.root)) == 14:
+            idx = 2
+            # 2 addr, 3 addr, 4 phone, 8 addr, 9 addr, 10 addr, 11 phone, 12 fax
+        """
+
+        # idx = 1
+
+        captiol_addr = (
+            CSS("body table tr td.member").match(self.root)[idx].text_content()
+        )
         captiol_addr += " "
-        captiol_addr += CSS("body table tr td").match(self.root)[32].text_content()
-        captiol_phone = CSS("body table tr td").match(self.root)[33].text_content()
+        captiol_addr += (
+            CSS("body table tr td.member").match(self.root)[idx + 1].text_content()
+        )
+        captiol_phone = (
+            CSS("body table tr td.member").match(self.root)[idx + 2].text_content()
+        )
 
         p.capitol_office.address = captiol_addr
         p.capitol_office.voice = captiol_phone
 
-        district_addr = CSS("body table tr td").match(self.root)[37].text_content()
+        district_addr = (
+            CSS("body table tr td.member").match(self.root)[idx + 5].text_content()
+        )
         district_addr += " "
-        district_addr += CSS("body table tr td").match(self.root)[38].text_content()
-        district_addr += " "
-        district_addr += CSS("body table tr td").match(self.root)[39].text_content()
-        district_phone = CSS("body table tr td").match(self.root)[40].text_content()
+        district_addr += (
+            CSS("body table tr td.member").match(self.root)[idx + 6].text_content()
+        )
+        # district_addr += " "
+        # district_addr += CSS("body table tr td.member").match(self.root)[idx + 8].text_content()
+        district_phone = (
+            CSS("body table tr td.member").match(self.root)[idx + 7].text_content()
+        )
 
         p.district_office.address = district_addr
         p.district_office.voice = district_phone
+
+        # 12-14 for sen
+        # 10-14 for house
+        print(captiol_addr)
+        print(captiol_phone)
+        print(district_addr)
+        print(district_phone)
 
         return p
 
