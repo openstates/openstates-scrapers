@@ -1,5 +1,6 @@
 from spatula import CSS, HtmlListPage, HtmlPage
 from openstates.models import ScrapePerson
+import re
 
 
 class LegDetail(HtmlPage):
@@ -11,24 +12,46 @@ class LegDetail(HtmlPage):
 
         # print(len(CSS("body table tr td.member").match(self.root)))
 
-        if len(CSS("body table tr td").match(self.root)) == 10:
-            print("GOT A 10")
+        if len(CSS("body table tr td.member").match(self.root)) == 10:
+            # 3 house links have a length of 10
+            # https://ilga.gov/house/Rep.asp?GA=102&MemberID=3006
+            # https://ilga.gov/house/Rep.asp?GA=102&MemberID=2994
+            # https://ilga.gov/house/Rep.asp?GA=102&MemberID=2949
+            # 0 senate links have a length of 10
             idx = 1
             # 1 addr, 2 addr, 3 phone, 6 addr, 7 addr, 8 phone
-        else:
             return None
-        """
-        elif len(CSS("body table tr td").match(self.root)) == 11:
+        elif len(CSS("body table tr td.member").match(self.root)) == 11:
+            # 34 house links have a length of 11
+            # 0 senate links have a length of 11
             idx = 1
             # 1 addr, 2 addr, 3 phone, 6 addr, 7 addr, 8 phone, 9 email
-        elif len(CSS("body table tr td").match(self.root)) == 12:
+            email_or_fax = (
+                CSS("body table tr td.member").match(self.root)[9].text_content()
+            )
+            if re.search(r"FAX", email_or_fax):
+                fax = re.search(r"(.+)\sFAX", email_or_fax).groups()[0]
+                p.district_office.fax = fax
+                print(fax)
+            else:
+                email = re.search(r"Email:\s(.+)", email_or_fax).groups()[0]
+                p.email = email.strip()
+                print(email)
+            # return None
+            # https://ilga.gov/house/Rep.asp?GA=102&MemberID=2945 special case
+            # https://ilga.gov/house/Rep.asp?GA=102&MemberID=3003 additional office
+        else:
+            return None
+
+        """
+        elif len(CSS("body table tr td.member").match(self.root)) == 12:
             idx = 1
             # 1 addr, 2 addr, 3 phone, 6 addr, 7 addr, 8 addr, 9 phone, 10 email
-        elif len(CSS("body table tr td").match(self.root)) == 13:
+        elif len(CSS("body table tr td.member").match(self.root)) == 13:
             idx = 1
             # 1 addr, 2 addr, 3 phone, 6 addr, 7 addr, 8 addr, 9 phone, 10 fax, 11 email
             # 2, 3, 4, 8, 9, 10, 11
-        elif len(CSS("body table tr td").match(self.root)) == 14:
+        elif len(CSS("body table tr td.member").match(self.root)) == 14:
             idx = 2
             # 2 addr, 3 addr, 4 phone, 8 addr, 9 addr, 10 addr, 11 phone, 12 fax
         """
@@ -67,10 +90,10 @@ class LegDetail(HtmlPage):
 
         # 12-14 for sen
         # 10-14 for house
-        print(captiol_addr)
-        print(captiol_phone)
-        print(district_addr)
-        print(district_phone)
+        # print(captiol_addr)
+        # print(captiol_phone)
+        # print(district_addr)
+        # print(district_phone)
 
         return p
 
