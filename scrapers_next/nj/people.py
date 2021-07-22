@@ -3,7 +3,7 @@ import re
 import attr
 from spatula import HtmlListPage, HtmlPage, XPath, CSS, SelectorError
 
-# from openstates.models import ScrapePerson
+from openstates.models import ScrapePerson
 
 
 @attr.s(auto_attribs=True)
@@ -11,14 +11,10 @@ class PartialMember:
     name: str
     url: str
     chamber: str = ""
-    # district: int
-    # image: str
-    # party: str = ""
 
 
 phone_pattern = re.compile(r"\(?\d+\)?[- ]?\d{3}[-.]\d{4}")
 fax_pattern = re.compile(r"\(?\d+\)?[- ]?\d{3}[-.]\d{4}")
-
 
 address_re = re.compile(
     (
@@ -41,12 +37,15 @@ address_re = re.compile(
 
 
 # optional fax number parameter
-def process_address(details, phone_numbers, *fax_number):
+# def process_address(details, phone_numbers, p, *fax_number):
+def process_address(details, phone_numbers, p, fax_number=[]):
+
     # TODO: add p to parameters here
 
     phone_number_match = phone_pattern.findall(phone_numbers)
     # TODO: WHAT's going on with the asterisk before fax number
-    print("fax number in process", *fax_number)
+    # print("fax number in process", *fax_number)
+    print("fax number in process", fax_number)
 
     print("phone number match", phone_number_match)
     match = address_re.findall(details)
@@ -72,16 +71,27 @@ def process_address(details, phone_numbers, *fax_number):
 
             # Often, there are fewer fax numbers than addresses or phone numbers
             try:
-                print("corresponding fax number: ", *fax_number[i])
+                # print("corresponding fax number: ", *fax_number[i])
+                print("corresponding fax number2: ", fax_number[i])
+
+                # does this work? below: no
+                # fax_num = *fax_number[i]
+                print("fax number without star", fax_number[i])
+                p.add_office(
+                    contact_type="District Office",
+                    address=address,
+                    voice=phone_number_match[i],
+                    fax=fax_number[i],
+                )
             except IndexError:
-                pass
+                p.add_office(
+                    contact_type="District Office",
+                    address=address,
+                    voice=phone_number_match[i]
+                    # TODO: add fax here if there IS ONE ONLY
+                )
 
-            # p.add_office(
-            #     contact_type="District Office",
-            #     address=address,
-            #     voice = phone_number_match[i]
-
-            # )
+            # TODO: if there is only one address, then just put in District Office
 
 
 class LegDetail(HtmlPage):
@@ -97,11 +107,8 @@ class LegDetail(HtmlPage):
     # TODO: add source
 
     def process_page(self):
-        # print('self', self.input.name)
 
-        # TODO: multiple office addresses sometimes
-        # party = CSS("i").match(self.root)[0].text_content().strip()
-        party = CSS("i").match(self.root)[0].getchildren()
+        # party = CSS("i").match(self.root)[0].getchildren()
 
         party = CSS("i").match(self.root)[0].text_content().strip()
         try:
@@ -146,20 +153,33 @@ class LegDetail(HtmlPage):
 
         district = CSS("font b").match(self.root)[26].text_content().split(" ")[1]
         print("district number: ", district)
-        # for thing in district:
-        #     print('here', thing.text_content())
 
-        # p = ScrapePerson(
-        #     name=self.input.name,
-        #     state = 'nj',
-        #     chamber = self.input.chamber,
-        #     party = party,
-        #     image = image,
-        #     district = district
-        # )
+        # TODO: email (hardcode the emails?)
+        # All emails should still be AsmLAST@njleg.org and SenLAST@njleg.org - many reps have these emails on their personal pages
 
-        # p.add_source(self.input.url)
-        # p.add_source(self.source.url)
+        # MAKE SURE this works for Richard J. Codey
+        name_email = self.input.name.split("\xa0")
+        print("name email", name_email)
+        name_email2 = name_email[len(name_email) - 1]
+
+        if self.input.chamber == "upper":
+            email = f"Sen{name_email2}@njleg.org"
+        elif self.input.chamber == "lower":
+            email = f"Asm{name_email2}@njleg.org"
+        print("email: ", email)
+
+        p = ScrapePerson(
+            name=self.input.name,
+            state="nj",
+            chamber=self.input.chamber,
+            party=party,
+            image=image,
+            district=district,
+            email=email,
+        )
+
+        p.add_source(self.input.url)
+        p.add_source(self.source.url)
 
         # Q: is it okay to just associate fax numbers with the first address?? (everything ive seen so far does this)
         try:
@@ -168,44 +188,30 @@ class LegDetail(HtmlPage):
                 XPath("//font[@size='2']").match(self.root)[12].text_content()
             )
             print("fax match", fax_match)
-            # if fax_match:
-            #     for okay in district_office:
-            #         # print("okay", okay.text_content())
-            #         address = okay.text_content()
-            #         process_address(address, phone_numbers, fax_match)
-            # else:
-            #     for okay in district_office:
-            #         process_address(address, phone_numbers)
+
             for okay in district_office:
                 address = okay.text_content()
                 if fax_match:
-                    process_address(address, phone_numbers, fax_match)
+                    process_address(address, phone_numbers, p, fax_number=fax_match)
                 else:
-                    process_address(address, phone_numbers)
+                    process_address(address, phone_numbers, p)
             # if there is a fax number:
             # TODO: if statement above along with sending to process_address (nested inside if statement)
         except SelectorError:
             pass
 
-
-# TODO: email (hardcode the emails?)
+        return p
 
 
 class LegList(HtmlListPage):
     source = "https://www.njleg.state.nj.us/members/abcroster.asp"
-    # source = "https://www.njleg.state.nj.us/members/roster.asp"
-    # add source
-    # email(?), image, a lot of extra info
-    # attempt: just go on individual page and get the info...
 
     def process_item(self, item):
 
         print(item.text_content())
         name = item.text_content()
         p = PartialMember(name=name, chamber=self.chamber, url=self.source.url)
-        # what's on this page: state, name, chamber, party, district office address (there are sometimes multiple), phone number
 
-        # individual people pages
         return LegDetail(p, source=item.get("href"))
 
 
