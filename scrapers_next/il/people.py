@@ -1,5 +1,33 @@
-from spatula import CSS, HtmlListPage
+from spatula import CSS, HtmlListPage, HtmlPage
 from openstates.models import ScrapePerson
+
+
+class LegDetail(HtmlPage):
+    def process_page(self):
+        p = self.input
+
+        img = CSS("body table tr td img").match(self.root)[2].get("src")
+        p.image = img
+
+        captiol_addr = CSS("body table tr td").match(self.root)[31].text_content()
+        captiol_addr += " "
+        captiol_addr += CSS("body table tr td").match(self.root)[32].text_content()
+        captiol_phone = CSS("body table tr td").match(self.root)[33].text_content()
+
+        p.capitol_office.address = captiol_addr
+        p.capitol_office.voice = captiol_phone
+
+        district_addr = CSS("body table tr td").match(self.root)[37].text_content()
+        district_addr += " "
+        district_addr += CSS("body table tr td").match(self.root)[38].text_content()
+        district_addr += " "
+        district_addr += CSS("body table tr td").match(self.root)[39].text_content()
+        district_phone = CSS("body table tr td").match(self.root)[40].text_content()
+
+        p.district_office.address = district_addr
+        p.district_office.voice = district_phone
+
+        return p
 
 
 class LegList(HtmlListPage):
@@ -18,7 +46,14 @@ class LegList(HtmlListPage):
         detail_link = first_link.get("href")
 
         # these are "Former Senate Members"
-        if name == "Andy Manar" or name == "Heather A. Steans":
+        former_members = [
+            "Andy Manar",
+            "Heather A. Steans",
+            "Edward Kodatt",
+            "Michael J. Madigan",
+            "André Thapedi",
+        ]
+        if name in former_members:
             self.skip()
 
         district = CSS("td").match(item)[3].text_content()
@@ -38,7 +73,7 @@ class LegList(HtmlListPage):
         p.add_source(detail_link)
         p.add_link(detail_link, note="homepage")
 
-        return p
+        return LegDetail(p, source=detail_link)
 
 
 class House(LegList):
