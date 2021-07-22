@@ -18,8 +18,9 @@ fax_pattern = re.compile(r"\(?\d+\)?[- ]?\d{3}[-.]\d{4}")
 
 address_re = re.compile(
     (
-        # Everyone's address starts with a room or street number
-        r"(?:\d+)"
+        # TODO: sometimes starts with just a word...
+        # Everyone's address starts with a room or street number (sometimes written out in words), or building name
+        r"(?:\d+|.+?)"
         # just about anything can follow:
         + ".+?"
         # then, state and zip code
@@ -32,24 +33,18 @@ address_re = re.compile(
     flags=re.DOTALL | re.IGNORECASE,
 )
 
-# TODO: before scrape, add p
-# TODO: also add comments to explain what's happening here
 
-
-# optional fax number parameter
 # def process_address(details, phone_numbers, p, *fax_number):
 def process_address(details, phone_numbers, p, fax_number=[]):
 
-    # TODO: add p to parameters here
-
     phone_number_match = phone_pattern.findall(phone_numbers)
-    # TODO: WHAT's going on with the asterisk before fax number
+
     # print("fax number in process", *fax_number)
     print("fax number in process", fax_number)
 
     print("phone number match", phone_number_match)
     match = address_re.findall(details)
-    # print('match', address_re.findall(details))
+
     print("here is the match", match)
     if match is not None:
         num_of_addresses = range(len(match))
@@ -67,31 +62,57 @@ def process_address(details, phone_numbers, p, fax_number=[]):
                 flags=re.MULTILINE,
             )
             print("new address: ", address)
-            print("corresponding phone number", phone_number_match[i])
+
+            # Some office addresses don't have phone numbers
+            phone = ""
+            try:
+                print("corresponding phone number", phone_number_match[i])
+                phone = phone_number_match[i]
+            except IndexError:
+                pass
 
             # Often, there are fewer fax numbers than addresses or phone numbers
             try:
-                # print("corresponding fax number: ", *fax_number[i])
-                print("corresponding fax number2: ", fax_number[i])
+                fax = fax_number[i]
+                # For the first address in the list
+                if i == 0:
+                    if phone != "":  # there is a phone number and fax for this address
+                        p.district_office.address = address
+                        p.district_office.voice = phone
+                        p.district_office.fax = fax
+                else:  # so this is not the first address in the list
+                    if phone != "":
+                        # so there's a fax and phone for this address, but not the first addy
+                        p.add_office(
+                            contact_type="District Office",
+                            address=address,
+                            voice=phone,
+                            fax=fax_number[i],
+                        )
+                    else:  # there is a fax number, but no phone number for this address
+                        p.add_office(
+                            contact_type="District Office",
+                            address=address,
+                            fax=fax_number[i],
+                        )
+            except IndexError:  # there is no fax_number for this address
+                if i == 0:  # no fax, is the first address
+                    if phone != "":  # there is also a phone number
+                        p.district_office.address = address
+                        p.district_office.voice = phone_number_match[i]
+                    else:  # for first address, no fax, no phone number
+                        p.district_office.address = address
+                else:  # no fax, is not the first address
+                    if phone != "":  # there's a phone number, no fax, not first addy
 
-                # does this work? below: no
-                # fax_num = *fax_number[i]
-                print("fax number without star", fax_number[i])
-                p.add_office(
-                    contact_type="District Office",
-                    address=address,
-                    voice=phone_number_match[i],
-                    fax=fax_number[i],
-                )
-            except IndexError:
-                p.add_office(
-                    contact_type="District Office",
-                    address=address,
-                    voice=phone_number_match[i]
-                    # TODO: add fax here if there IS ONE ONLY
-                )
-
-            # TODO: if there is only one address, then just put in District Office
+                        p.add_office(
+                            contact_type="District Office", address=address, voice=phone
+                        )
+                    else:  # there's no phone number or fax for the second addy
+                        p.add_office(
+                            contact_type="District Office",
+                            address=address,
+                        )
 
 
 class LegDetail(HtmlPage):
@@ -103,13 +124,15 @@ class LegDetail(HtmlPage):
 
     # example source for fax numbers
     example_source = "https://www.njleg.state.nj.us/members/BIO.asp?Leg=406"
-    #
-    # TODO: add source
+
+    # check for these too:
+    # https://www.njleg.state.nj.us/members/BIO.asp?Leg=281
+    # https://www.njleg.state.nj.us/members/BIO.asp?Leg=306
 
     def process_page(self):
 
         # party = CSS("i").match(self.root)[0].getchildren()
-
+        # TODO: throw in extras for position
         party = CSS("i").match(self.root)[0].text_content().strip()
         try:
             position = CSS("i font").match_one(self.root).text_content().strip()
@@ -154,10 +177,7 @@ class LegDetail(HtmlPage):
         district = CSS("font b").match(self.root)[26].text_content().split(" ")[1]
         print("district number: ", district)
 
-        # TODO: email (hardcode the emails?)
         # All emails should still be AsmLAST@njleg.org and SenLAST@njleg.org - many reps have these emails on their personal pages
-
-        # MAKE SURE this works for Richard J. Codey
         name_email = self.input.name.split("\xa0")
         print("name email", name_email)
         name_email2 = name_email[len(name_email) - 1]
@@ -181,7 +201,6 @@ class LegDetail(HtmlPage):
         p.add_source(self.input.url)
         p.add_source(self.source.url)
 
-        # Q: is it okay to just associate fax numbers with the first address?? (everything ive seen so far does this)
         try:
             # TODO: WHY does this run for pages that don't have A FAX NUMBER
             fax_match = fax_pattern.findall(
@@ -195,8 +214,7 @@ class LegDetail(HtmlPage):
                     process_address(address, phone_numbers, p, fax_number=fax_match)
                 else:
                     process_address(address, phone_numbers, p)
-            # if there is a fax number:
-            # TODO: if statement above along with sending to process_address (nested inside if statement)
+
         except SelectorError:
             pass
 
