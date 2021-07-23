@@ -19,19 +19,19 @@ class LegDetail(HtmlPage):
             district_fax,
             email,
         ) = self.process_addrs()
-        if not capitol_addr:
-            return None
 
         p.capitol_office.address = capitol_addr
         p.capitol_office.voice = capitol_phone
+        if capitol_fax:
+            p.capitol_office.fax = capitol_fax
         if district_addr:
             p.district_office.address = district_addr
         if district_phone:
             p.district_office.voice = district_phone
-        if email:
-            p.email = email
         if district_fax:
             p.district_office.fax = district_fax
+        if email:
+            p.email = email
 
         return p
 
@@ -171,8 +171,8 @@ class LegDetail(HtmlPage):
                 email,
             )
         elif len(addresses) == 13:
-            # 28 house links have a length of 12
-            # 32 senate links ahve a length of 12
+            # 28 house links have a length of 13
+            # 32 senate links ahve a length of 13
             if re.search(r"(Senator|Representative)", addresses[1].text_content()):
                 cap_addr_line1 = addresses[2].text_content()
                 cap_addr_line2 = addresses[3].text_content()
@@ -229,6 +229,10 @@ class LegDetail(HtmlPage):
                 email,
             )
         elif len(addresses) == 14:
+            # 10 house links have a length of 14
+            # 16 senate links ahve a length of 14
+            return (None, None, None, None, None, None, None)
+            """
             cap_addr_line1 = addresses[2].text_content()
             cap_addr_line2 = addresses[3].text_content()
             cap_phone = addresses[4].text_content()
@@ -237,14 +241,18 @@ class LegDetail(HtmlPage):
             if addresses[10].text_content().startswith("("):
                 dis_phone = addresses[10].text_content()
                 dis_fax = addresses[11].text_content()
-                dis_fax = re.search(r"(.+)\sFAX", dis_fax).groups()[0]
-                district_addr = dis_addr_line1 + " " + dis_addr_line2
+            """
+            # dis_fax = re.search(r"(.+)\sFAX", dis_fax).groups()[0]
+            # district_addr = dis_addr_line1 + " " + dis_addr_line2
+            """
             else:
                 dis_addr_line3 = addresses[10].text_content()
                 dis_phone = addresses[11].text_content()
                 if addresses[12].text_content().startswith("("):
                     dis_fax = addresses[12].text_content()
-                    dis_fax = re.search(r"(.+)\sFAX", dis_fax).groups()[0]
+            """
+            # dis_fax = re.search(r"(.+)\sFAX", dis_fax).groups()[0]
+            """
                 else:
                     dis_fax = None
                 district_addr = (
@@ -260,14 +268,31 @@ class LegDetail(HtmlPage):
                 dis_fax,
                 None,
             )
+            """
         elif len(addresses) == 15:
-            return (None, None, None, None, None, None, None)
-
-        """
-        elif len(CSS("body table tr td.member").match(self.root)) == 14:
-            idx = 2
-            # 2 addr, 3 addr, 4 phone, 8 addr, 9 addr, 10 addr, 11 phone, 12 fax
-        """
+            # 0 house links have a length of 15
+            # 1 senate link has a length of 15
+            # https://ilga.gov/senate/Senator.asp?GA=102&MemberID=2899
+            cap_addr_line1 = addresses[2].text_content()
+            cap_addr_line2 = addresses[3].text_content()
+            cap_phone = addresses[4].text_content()
+            dis_addr_line1 = addresses[8].text_content()
+            dis_addr_line2 = addresses[9].text_content()
+            dis_addr_line3 = addresses[10].text_content()
+            dis_phone = addresses[11].text_content()
+            dis_fax = addresses[12].text_content()
+            dis_fax = re.search(r"(.+)\sFAX", dis_fax).groups()[0]
+            capitol_addr = cap_addr_line1 + " " + cap_addr_line2
+            district_addr = dis_addr_line1 + " " + dis_addr_line2 + " " + dis_addr_line3
+            return (
+                capitol_addr,
+                cap_phone,
+                None,
+                district_addr,
+                dis_phone,
+                dis_fax,
+                None,
+            )
 
 
 class LegList(HtmlListPage):
