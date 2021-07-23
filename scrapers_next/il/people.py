@@ -19,6 +19,8 @@ class LegDetail(HtmlPage):
             district_fax,
             email,
         ) = self.process_addrs()
+        if not capitol_addr:
+            return None
 
         p.capitol_office.address = capitol_addr
         p.capitol_office.voice = capitol_phone
@@ -63,6 +65,7 @@ class LegDetail(HtmlPage):
             district_addr = dis_addr_line1 + " " + dis_addr_line2
             return (capitol_addr, cap_phone, None, district_addr, dis_phone, None, None)
         elif len(addresses) == 11:
+            # none have capitol fax listed
             # 34 house links have a length of 11
             # 0 senate links have a length of 11
             cap_addr_line1 = addresses[1].text_content()
@@ -99,13 +102,10 @@ class LegDetail(HtmlPage):
                     # p.district_office.fax = fax
                     # print(fax)
                 else:
-                    email = re.search(r"Email:\s(.+)", email_or_fax).groups()[0]
+                    email = re.search(r"Email:\s(.+)", email_or_fax).groups()[0].strip()
                     district_fax = None
-                    # p.email = email.strip()
-                    # print(email.strip())
 
             capitol_addr = cap_addr_line1 + " " + cap_addr_line2
-
             return (
                 capitol_addr,
                 cap_phone,
@@ -141,26 +141,63 @@ class LegDetail(HtmlPage):
                     dis_addr_line1 = addresses[7].text_content()
                     dis_addr_line2 = addresses[8].text_content()
                     district_addr = dis_addr_line1 + " " + dis_addr_line2
+                    dis_phone = addresses[9].text_content()
+                    email_or_fax = addresses[10].text_content()
+                    if re.search(r"FAX", email_or_fax):
+                        district_fax = re.search(r"(.+)\sFAX", email_or_fax).groups()[0]
+                        email = None
+                    else:
+                        email = (
+                            re.search(r"Email:\s(.+)", email_or_fax).groups()[0].strip()
+                        )
+                        district_fax = None
                 else:
                     capitol_fax = None
                     dis_addr_line1 = addresses[6].text_content()
-                    dis_addr_line2 = addresses[7].text_content()
-                    dis_addr_line3 = addresses[8].text_content()
-                    district_addr = (
-                        dis_addr_line1 + " " + dis_addr_line2 + " " + dis_addr_line3
-                    )
+                    if re.search(r"Mail\sOnly", addresses[7].text_content()):
+                        dis_addr_line2 = ""
+                    else:
+                        dis_addr_line2 = addresses[7].text_content()
 
-                dis_phone = addresses[9].text_content()
+                    if addresses[8].text_content().startswith("("):
+                        district_addr = dis_addr_line1 + " " + dis_addr_line2
+                        dis_phone = addresses[8].text_content()
+                        district_fax = addresses[9].text_content()
+                        district_fax = re.search(r"(.+)\sFAX", district_fax).groups()[0]
+                        email = addresses[10].text_content()
+                        email = re.search(r"Email:\s(.+)", email).groups()[0].strip()
+                    else:
+                        dis_addr_line3 = addresses[8].text_content()
+                        district_addr = (
+                            dis_addr_line1 + " " + dis_addr_line2 + " " + dis_addr_line3
+                        )
+                        dis_phone = addresses[9].text_content()
+                        email_or_fax = addresses[10].text_content()
+                        if re.search(r"FAX", email_or_fax):
+                            district_fax = re.search(
+                                r"(.+)\sFAX", email_or_fax
+                            ).groups()[0]
+                            email = None
+                        else:
+                            email = (
+                                re.search(r"Email:\s(.+)", email_or_fax)
+                                .groups()[0]
+                                .strip()
+                            )
+                            district_fax = None
+
                 capitol_addr = cap_addr_line1 + " " + cap_addr_line2
-                email_or_fax = addresses[10].text_content()
-                if re.search(r"FAX", email_or_fax):
-                    district_fax = re.search(r"(.+)\sFAX", email_or_fax).groups()[0]
-                    email = None
-                    # p.district_office.fax = fax
-                    # print(fax)
-                else:
-                    email = re.search(r"Email:\s(.+)", email_or_fax).groups()[0]
-                    district_fax = None
+            print(capitol_addr)
+            print(cap_phone)
+            if capitol_fax:
+                print(capitol_fax)
+            print(district_addr)
+            print(dis_phone)
+            if district_fax:
+                print(district_fax)
+            if email:
+                print(email)
+
             return (
                 capitol_addr,
                 cap_phone,
