@@ -10,38 +10,109 @@ class LegDetail(HtmlPage):
         img = CSS("body table tr td img").match(self.root)[2].get("src")
         p.image = img
 
-        # print(len(CSS("body table tr td.member").match(self.root)))
+        (
+            capitol_addr,
+            capitol_phone,
+            district_addr,
+            district_phone,
+            email,
+            district_fax,
+        ) = self.process_addrs()
+        if not capitol_addr:
+            return None
 
-        if len(CSS("body table tr td.member").match(self.root)) == 10:
+        p.capitol_office.address = capitol_addr
+        p.capitol_office.voice = capitol_phone
+        if district_addr:
+            p.district_office.address = district_addr
+        if district_phone:
+            p.district_office.voice = district_phone
+        if email:
+            p.email = email
+        if district_fax:
+            p.district_office.fax = district_fax
+
+        return p
+
+    def process_addrs(self):
+        addresses = CSS("body table tr td.member").match(self.root)
+        if len(addresses) == 7:
+            # no district information
+            # 1 house link has a length of 7
+            # https://ilga.gov/house/Rep.asp?GA=102&MemberID=3012
+            # 0 senate links have a length of 7
+            cap_addr_line1 = addresses[1].text_content()
+            cap_addr_line2 = addresses[2].text_content()
+            cap_phone = addresses[3].text_content()
+            capitol_addr = cap_addr_line1 + " " + cap_addr_line2
+            return (capitol_addr, cap_phone, None, None, None, None)
+        elif len(addresses) == 10:
             # 3 house links have a length of 10
             # https://ilga.gov/house/Rep.asp?GA=102&MemberID=3006
             # https://ilga.gov/house/Rep.asp?GA=102&MemberID=2994
             # https://ilga.gov/house/Rep.asp?GA=102&MemberID=2949
             # 0 senate links have a length of 10
-            idx = 1
-            # 1 addr, 2 addr, 3 phone, 6 addr, 7 addr, 8 phone
-            return None
-        elif len(CSS("body table tr td.member").match(self.root)) == 11:
+            cap_addr_line1 = addresses[1].text_content()
+            cap_addr_line2 = addresses[2].text_content()
+            cap_phone = addresses[3].text_content()
+            dis_addr_line1 = addresses[6].text_content()
+            dis_addr_line2 = addresses[7].text_content()
+            dis_phone = addresses[8].text_content()
+            capitol_addr = cap_addr_line1 + " " + cap_addr_line2
+            district_addr = dis_addr_line1 + " " + dis_addr_line2
+            return (capitol_addr, cap_phone, district_addr, dis_phone, None, None)
+        elif len(addresses) == 11:
             # 34 house links have a length of 11
             # 0 senate links have a length of 11
-            idx = 1
-            # 1 addr, 2 addr, 3 phone, 6 addr, 7 addr, 8 phone, 9 email
-            email_or_fax = (
-                CSS("body table tr td.member").match(self.root)[9].text_content()
-            )
-            if re.search(r"FAX", email_or_fax):
-                fax = re.search(r"(.+)\sFAX", email_or_fax).groups()[0]
-                p.district_office.fax = fax
-                print(fax)
+            cap_addr_line1 = addresses[1].text_content()
+            cap_addr_line2 = addresses[2].text_content()
+            cap_phone = addresses[3].text_content()
+            dis_addr_line1 = addresses[6].text_content()
+            dis_addr_line2 = addresses[7].text_content()
+
+            # special case (extra line in district address)
+            if self.source.url == "https://ilga.gov/house/Rep.asp?GA=102&MemberID=2945":
+                dis_addr_line3 = addresses[8].text_content()
+                dis_phone = addresses[9].text_content()
+                district_addr = (
+                    dis_addr_line1 + " " + dis_addr_line2 + " " + dis_addr_line3
+                )
+                email = None
+                fax = None
+            elif (
+                self.source.url == "https://ilga.gov/house/Rep.asp?GA=102&MemberID=3003"
+            ):
+                # another special case, additional office link
+                email = None
+                fax = None
+                dis_phone = addresses[8].text_content()
+                district_addr = dis_addr_line1 + " " + dis_addr_line2
             else:
-                email = re.search(r"Email:\s(.+)", email_or_fax).groups()[0]
-                p.email = email.strip()
-                print(email)
-            # return None
-            # https://ilga.gov/house/Rep.asp?GA=102&MemberID=2945 special case
-            # https://ilga.gov/house/Rep.asp?GA=102&MemberID=3003 additional office
-        else:
-            return None
+                dis_phone = addresses[8].text_content()
+                email_or_fax = addresses[9].text_content()
+                district_addr = dis_addr_line1 + " " + dis_addr_line2
+
+                if re.search(r"FAX", email_or_fax):
+                    fax = re.search(r"(.+)\sFAX", email_or_fax).groups()[0]
+                    email = None
+                    # p.district_office.fax = fax
+                    # print(fax)
+                else:
+                    email = re.search(r"Email:\s(.+)", email_or_fax).groups()[0]
+                    fax = None
+                    # p.email = email.strip()
+                    # print(email.strip())
+
+            capitol_addr = cap_addr_line1 + " " + cap_addr_line2
+            return (capitol_addr, cap_phone, district_addr, dis_phone, email, fax)
+        elif len(addresses) == 12:
+            return (None, None, None, None, None, None)
+        elif len(addresses) == 13:
+            return (None, None, None, None, None, None)
+        elif len(addresses) == 14:
+            return (None, None, None, None, None, None)
+        elif len(addresses) == 15:
+            return (None, None, None, None, None, None)
 
         """
         elif len(CSS("body table tr td.member").match(self.root)) == 12:
@@ -55,47 +126,6 @@ class LegDetail(HtmlPage):
             idx = 2
             # 2 addr, 3 addr, 4 phone, 8 addr, 9 addr, 10 addr, 11 phone, 12 fax
         """
-
-        # idx = 1
-
-        captiol_addr = (
-            CSS("body table tr td.member").match(self.root)[idx].text_content()
-        )
-        captiol_addr += " "
-        captiol_addr += (
-            CSS("body table tr td.member").match(self.root)[idx + 1].text_content()
-        )
-        captiol_phone = (
-            CSS("body table tr td.member").match(self.root)[idx + 2].text_content()
-        )
-
-        p.capitol_office.address = captiol_addr
-        p.capitol_office.voice = captiol_phone
-
-        district_addr = (
-            CSS("body table tr td.member").match(self.root)[idx + 5].text_content()
-        )
-        district_addr += " "
-        district_addr += (
-            CSS("body table tr td.member").match(self.root)[idx + 6].text_content()
-        )
-        # district_addr += " "
-        # district_addr += CSS("body table tr td.member").match(self.root)[idx + 8].text_content()
-        district_phone = (
-            CSS("body table tr td.member").match(self.root)[idx + 7].text_content()
-        )
-
-        p.district_office.address = district_addr
-        p.district_office.voice = district_phone
-
-        # 12-14 for sen
-        # 10-14 for house
-        # print(captiol_addr)
-        # print(captiol_phone)
-        # print(district_addr)
-        # print(district_phone)
-
-        return p
 
 
 class LegList(HtmlListPage):
