@@ -24,10 +24,6 @@ class BlueSenDetail(HtmlPage):
             r"Phone:\s(\d{3}-\d{3}-\d{4})\s\|\s(.+)", phones
         ).groups()
 
-        email = (
-            CSS("div .fusion-text.fusion-text-2 p a").match(self.root)[0].text_content()
-        )
-
         media_contact = (
             CSS("div .fusion-text.fusion-text-2 p").match(self.root)[3].text_content()
         )
@@ -41,19 +37,23 @@ class BlueSenDetail(HtmlPage):
         )
 
         twitter = CSS("div .fusion-social-links a").match(self.root)[0].get("href")
+        twitter_id = re.search(r"https://twitter\.com/(.+)", twitter).groups()[0]
+
         fb = CSS("div .fusion-social-links a").match(self.root)[1].get("href")
+        fb_id = (
+            re.search(r"https://(www\.)?facebook\.com/(.+)", fb).groups()[1].rstrip("/")
+        )
 
-        p.district_office.voice = phone1
         p.capitol_office.address = addr
-        p.capitol_office.voice = phone2
-
-        p.email = email
+        p.capitol_office.voice = phone1
+        p.extras["second phone"] = phone2
 
         p.extras["assistant"] = assistant
         p.extras["media contact name"] = media_contact_name
         p.extras["media contact email"] = media_contact_email
-        p.extras["twitter"] = twitter
-        p.extras["facebook"] = fb
+
+        p.ids.twitter = twitter_id
+        p.ids.facebook = fb_id
 
         return p
 
@@ -82,8 +82,7 @@ class RedSenDetail(HtmlPage):
         if phone1:
             p.capitol_office.voice = phone1
         if phone2:
-            # is this just another capitol phone?
-            p.district_office.voice = phone2
+            p.extras["second phone"] = phone2
 
         if len(CSS("div.sen-contact p").match(self.root)) == 1:
             leg_assist = CSS("div.sen-contact p").match_one(self.root).text_content()
