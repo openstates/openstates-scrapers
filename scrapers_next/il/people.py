@@ -13,10 +13,11 @@ class LegDetail(HtmlPage):
         (
             capitol_addr,
             capitol_phone,
+            capitol_fax,
             district_addr,
             district_phone,
-            email,
             district_fax,
+            email,
         ) = self.process_addrs()
         if not capitol_addr:
             return None
@@ -45,7 +46,7 @@ class LegDetail(HtmlPage):
             cap_addr_line2 = addresses[2].text_content()
             cap_phone = addresses[3].text_content()
             capitol_addr = cap_addr_line1 + " " + cap_addr_line2
-            return (capitol_addr, cap_phone, None, None, None, None)
+            return (capitol_addr, cap_phone, None, None, None, None, None)
         elif len(addresses) == 10:
             # 3 house links have a length of 10
             # https://ilga.gov/house/Rep.asp?GA=102&MemberID=3006
@@ -60,7 +61,7 @@ class LegDetail(HtmlPage):
             dis_phone = addresses[8].text_content()
             capitol_addr = cap_addr_line1 + " " + cap_addr_line2
             district_addr = dis_addr_line1 + " " + dis_addr_line2
-            return (capitol_addr, cap_phone, district_addr, dis_phone, None, None)
+            return (capitol_addr, cap_phone, None, district_addr, dis_phone, None, None)
         elif len(addresses) == 11:
             # 34 house links have a length of 11
             # 0 senate links have a length of 11
@@ -78,13 +79,13 @@ class LegDetail(HtmlPage):
                     dis_addr_line1 + " " + dis_addr_line2 + " " + dis_addr_line3
                 )
                 email = None
-                fax = None
+                district_fax = None
             elif (
                 self.source.url == "https://ilga.gov/house/Rep.asp?GA=102&MemberID=3003"
             ):
                 # another special case, additional office link
                 email = None
-                fax = None
+                district_fax = None
                 dis_phone = addresses[8].text_content()
                 district_addr = dis_addr_line1 + " " + dis_addr_line2
             else:
@@ -93,26 +94,88 @@ class LegDetail(HtmlPage):
                 district_addr = dis_addr_line1 + " " + dis_addr_line2
 
                 if re.search(r"FAX", email_or_fax):
-                    fax = re.search(r"(.+)\sFAX", email_or_fax).groups()[0]
+                    district_fax = re.search(r"(.+)\sFAX", email_or_fax).groups()[0]
                     email = None
                     # p.district_office.fax = fax
                     # print(fax)
                 else:
                     email = re.search(r"Email:\s(.+)", email_or_fax).groups()[0]
-                    fax = None
+                    district_fax = None
                     # p.email = email.strip()
                     # print(email.strip())
 
             capitol_addr = cap_addr_line1 + " " + cap_addr_line2
-            return (capitol_addr, cap_phone, district_addr, dis_phone, email, fax)
+
+            return (
+                capitol_addr,
+                cap_phone,
+                None,
+                district_addr,
+                dis_phone,
+                district_fax,
+                email,
+            )
         elif len(addresses) == 12:
-            return (None, None, None, None, None, None)
+            # 42 house links have a length of 12
+            # 10 senate links ahve a length of 12
+            if re.search(r"(Senator|Representative)", addresses[1].text_content()):
+                cap_addr_line1 = addresses[2].text_content()
+                cap_addr_line2 = addresses[3].text_content()
+                cap_phone = addresses[4].text_content()
+                capitol_fax = None
+                dis_addr_line1 = addresses[8].text_content()
+                dis_addr_line2 = addresses[9].text_content()
+                dis_phone = addresses[10].text_content()
+                capitol_addr = cap_addr_line1 + " " + cap_addr_line2
+                district_addr = dis_addr_line1 + " " + dis_addr_line2
+                email = None
+                district_fax = None
+            else:
+                cap_addr_line1 = addresses[1].text_content()
+                cap_addr_line2 = addresses[2].text_content()
+                cap_phone = addresses[3].text_content()
+                if re.search(r"FAX", addresses[4].text_content()):
+                    capitol_fax = re.search(
+                        r"(.+)\sFAX", addresses[4].text_content()
+                    ).groups()[0]
+                    dis_addr_line1 = addresses[7].text_content()
+                    dis_addr_line2 = addresses[8].text_content()
+                    district_addr = dis_addr_line1 + " " + dis_addr_line2
+                else:
+                    capitol_fax = None
+                    dis_addr_line1 = addresses[6].text_content()
+                    dis_addr_line2 = addresses[7].text_content()
+                    dis_addr_line3 = addresses[8].text_content()
+                    district_addr = (
+                        dis_addr_line1 + " " + dis_addr_line2 + " " + dis_addr_line3
+                    )
+
+                dis_phone = addresses[9].text_content()
+                capitol_addr = cap_addr_line1 + " " + cap_addr_line2
+                email_or_fax = addresses[10].text_content()
+                if re.search(r"FAX", email_or_fax):
+                    district_fax = re.search(r"(.+)\sFAX", email_or_fax).groups()[0]
+                    email = None
+                    # p.district_office.fax = fax
+                    # print(fax)
+                else:
+                    email = re.search(r"Email:\s(.+)", email_or_fax).groups()[0]
+                    district_fax = None
+            return (
+                capitol_addr,
+                cap_phone,
+                capitol_fax,
+                district_addr,
+                dis_phone,
+                district_fax,
+                email,
+            )
         elif len(addresses) == 13:
-            return (None, None, None, None, None, None)
+            return (None, None, None, None, None, None, None)
         elif len(addresses) == 14:
-            return (None, None, None, None, None, None)
+            return (None, None, None, None, None, None, None)
         elif len(addresses) == 15:
-            return (None, None, None, None, None, None)
+            return (None, None, None, None, None, None, None)
 
         """
         elif len(CSS("body table tr td.member").match(self.root)) == 12:
