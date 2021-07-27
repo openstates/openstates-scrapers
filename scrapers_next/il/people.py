@@ -3,6 +3,21 @@ from openstates.models import ScrapePerson
 import re
 
 
+class AdditionalAddresses(HtmlPage):
+    # print("we get here")
+    def process_page(self):
+        p = self.input
+        additional_office = (
+            CSS("td.notranslate.member").match_one(self.root).text_content()
+        )
+        additional_office, additional_phone = additional_office.split("(")
+        # print(additional_office)
+        # print(additional_phone)
+
+        p.additional_offices = additional_office
+        p.extras["extra phone"] = additional_phone
+
+
 class LegDetail(HtmlPage):
     def process_page(self):
         p = self.input
@@ -18,7 +33,9 @@ class LegDetail(HtmlPage):
             district_phone,
             district_fax,
             email,
-        ) = self.process_addrs()
+            # additional_office,
+            # additional_phone
+        ) = self.process_addrs(p)
 
         p.capitol_office.address = capitol_addr
         p.capitol_office.voice = capitol_phone
@@ -32,10 +49,14 @@ class LegDetail(HtmlPage):
             p.district_office.fax = district_fax
         if email:
             p.email = email
+        # if additional_office:
+        #     p.additional_address = additional_office
+        # if additional_phone:
+        #     p.extras["extra phone"] = additional_phone
 
         return p
 
-    def process_addrs(self):
+    def process_addrs(self, p):
         """
         For a given detail page, len(CSS("body table tr td.member").match(self.root))
         can be either 7, 10, 11, 12, 13, 14, or 15. This function / for loop handles
@@ -49,20 +70,28 @@ class LegDetail(HtmlPage):
             dis_phone,
             dis_fax,
             email,
+            # additional_office,
+            # additional_phone
         ) = (None, None, None, None, None, None, None)
         addresses = CSS("body table tr td.member").match(self.root)
         line_number = 0
         district_addr_lines = 0
         for line in addresses:
+            if line.text_content().strip() == "Additional District Addresses":
+                print("ADDITIONAL ADDRS")
+                # additional_addr_link = line.getchildren()[0].get("href")
+                # print(additional_addr_link)
+                # AdditionalAddresses(p, source=additional_addr_link)
+
             line = line.text_content().strip()
             if (
                 line == "Springfield Office:"
                 or line == "District Office:"
+                or line == ""
                 or line == "Additional District Addresses"
                 or line.startswith("Senator")
                 or line.startswith("Representative")
                 or line.startswith("Years served:")
-                or line == ""
             ):
                 line_number += 1
                 continue
@@ -116,6 +145,8 @@ class LegDetail(HtmlPage):
             dis_phone,
             dis_fax,
             email,
+            # additional_office,
+            # additional_phone
         )
 
 
