@@ -55,9 +55,10 @@ class LegDetail(HtmlPage):
             if (
                 line == "Springfield Office:"
                 or line == "District Office:"
-                or line == "Additional Offices"
+                or line == "Additional District Addresses"
                 or line.startswith("Senator")
                 or line.startswith("Representative")
+                or line.startswith("Years served:")
                 or line == ""
             ):
                 line_number += 1
@@ -66,7 +67,7 @@ class LegDetail(HtmlPage):
             if not capitol_addr:
                 capitol_addr = line
                 line_number += 1
-            elif line.startswith("Springfield"):
+            elif line_number in [2, 3] and not line.startswith("("):
                 capitol_addr += " "
                 capitol_addr += line
                 line_number += 1
@@ -85,7 +86,11 @@ class LegDetail(HtmlPage):
                 district_addr += line
                 line_number += 1
                 district_addr_lines += 1
-            elif not line.startswith("("):
+            elif (
+                district_addr_lines == 2
+                and not line.strip().startswith("(")
+                and not re.search(r"Email:", line)
+            ):
                 district_addr += " "
                 district_addr += line
                 line_number += 1
@@ -96,14 +101,14 @@ class LegDetail(HtmlPage):
             elif re.search(r"FAX", line):
                 dis_fax = re.search(r"(.+)\sFAX", line).groups()[0]
                 line_number += 1
-            else:
-                email = re.search(r"Email:\s", line).groups()[0].strip()
+            elif re.search(r"Email:\s", line.strip()):
+                email = re.search(r"Email:\s(.+)", line).groups()[0].strip()
                 line_number += 1
 
         # print(capitol_addr)
         # print(cap_phone)
         # print(capitol_fax)
-        print(district_addr)
+        # print(district_addr)
         # print(dis_phone)
         # print(dis_fax)
         # print(email)
