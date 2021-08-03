@@ -32,6 +32,20 @@ class LegDetail(HtmlPage):
         p.capitol_office.address = capitol_addr
         # most of them have the same capitol_addr. just a mailing address?
 
+        if len(CSS("div .legislator-content > div").match(self.root)) > 2:
+            title = (
+                CSS("div .legislator-content > div .field-items div")
+                .match(self.root)[2]
+                .text_content()
+            )
+            p.extras["title"] = title
+
+        counties = CSS("div .counties div .field-items div").match(self.root)
+        counties_rep = []
+        for county in counties:
+            counties_rep.append(county.text_content())
+        p.extras["counties represented"] = counties_rep
+
         return p
 
 
