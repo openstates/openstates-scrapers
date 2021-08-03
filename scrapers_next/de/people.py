@@ -7,6 +7,11 @@ class LegDetail(HtmlPage):
     def process_page(self):
         p = self.input
 
+        title_lst = CSS("h5").match_one(self.root).text_content().strip().split("\n")
+        title = title_lst[0].strip()
+        if title not in ["Senator", "Representative"]:
+            p.extras["title"] = title
+
         img = CSS("img").match_one(self.root).get("src")
         p.image = img
 
@@ -75,6 +80,7 @@ class LegList(JsonPage):
                 f"https://legis.delaware.gov/LegislatorDetail?personId={item['PersonId']}"
             )
             p.add_source(detail_link.url)
+            # should p.add_link() be the detail_link?
 
             yield LegDetail(p, source=detail_link.url)
 
