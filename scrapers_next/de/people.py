@@ -1,5 +1,6 @@
-from spatula import JsonPage, URL, HtmlPage, CSS
+from spatula import JsonPage, URL, HtmlPage, CSS, XPath
 from openstates.models import ScrapePerson
+import re
 
 
 class LegDetail(HtmlPage):
@@ -12,16 +13,42 @@ class LegDetail(HtmlPage):
         addr = CSS("div .info-vertical div div").match(self.root)[0].text_content()
         addr += " "
         addr += (
-            CSS("div .info-vertical div div").match(self.root)[1].text_content().strip()
+            XPath("//div/div/div[1]/div[3]/div/div/div[2]/div[2]/text()[1]")
+            .match(self.root)[0]
+            .strip()
         )
-        print(addr)
+        addr += ", "
+        addr += (
+            XPath("//div/div/div[1]/div[3]/div/div/div[2]/div[2]/text()[2]")
+            .match(self.root)[0]
+            .strip()
+        )
         p.capitol_office.address = addr
 
         p.capitol_office.voice = (
-            CSS("div .info-vertical div div").match(self.root)[2].text_content()
+            CSS("div .info-vertical div div span").match(self.root)[2].text_content()
         )
 
-        p.email = CSS("div .info-vertical div div").match(self.root)[3].text_content()
+        email_or_fax = (
+            CSS("div .info-vertical div div").match(self.root)[3].text_content().strip()
+        )
+        if re.search(r"Leghall\sFax:\r\n(.+)", email_or_fax):
+            p.capitol_office.fax = (
+                re.search(r"Leghall\sFax:\r\n(.+)", email_or_fax).groups()[0].strip()
+            )
+            p.email = (
+                CSS("div .info-vertical div div")
+                .match(self.root)[4]
+                .text_content()
+                .strip()
+            )
+        else:
+            p.email = (
+                CSS("div .info-vertical div div")
+                .match(self.root)[3]
+                .text_content()
+                .strip()
+            )
 
         return p
 
