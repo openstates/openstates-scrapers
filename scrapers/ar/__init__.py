@@ -174,6 +174,14 @@ class Arkansas(State):
             "start_date": "2021-01-11",
             "end_date": "2021-03-12",
         },
+        {
+            "_scraped_name": "First Extraordinary Session, 2021",
+            "classification": "special",
+            "identifier": "2021S1",
+            "name": "2021 First Extraordinary Session",
+            "start_date": "2021-08-03",
+            "end_date": "2021-08-13",
+        },
     ]
     ignored_scraped_sessions = [
         "Regular Session, 2009",
