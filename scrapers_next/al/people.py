@@ -13,9 +13,9 @@ class PartialMember:
 
 class LegDetail(HtmlPage):
     # senator
-    example_source = "http://www.legislature.state.al.us/aliswww/ISD/ALSenator.aspx?NAME=Albritton&OID_SPONSOR=100465&OID_PERSON=7691&SESSNAME=Regular%20Session%202022"
+    # example_source = "http://www.legislature.state.al.us/aliswww/ISD/ALSenator.aspx?NAME=Albritton&OID_SPONSOR=100465&OID_PERSON=7691&SESSNAME=Regular%20Session%202022"
     # rep
-    # example_source = 'http://www.legislature.state.al.us/aliswww/ISD/ALRepresentative.aspx?NAME=Alexander&OID_SPONSOR=100537&OID_PERSON=7710&SESSNAME=Regular%20Session%202022'
+    example_source = "http://www.legislature.state.al.us/aliswww/ISD/ALRepresentative.aspx?NAME=Alexander&OID_SPONSOR=100537&OID_PERSON=7710&SESSNAME=Regular%20Session%202022"
     # vacant (for some reason)
     # example_source = 'http://www.legislature.state.al.us/aliswww/ISD/ALRepresentative.aspx?NAME=District%2078&OID_SPONSOR=9100560&OID_PERSON=998507&SESSNAME=Regular%20Session%202022'
 
@@ -29,24 +29,15 @@ class LegDetail(HtmlPage):
 
         # print('name', name)
         # TODO: any way to get rid of the empty ''?
-        name_split = re.split("SENATOR|, ", name)
+        if self.input.chamber == "upper":
+            name_split = re.split("SENATOR|, ", name)
+        elif self.input.chamber == "lower":
+            name_split = re.split("REPRESENTATIVE|, ", name)
         full_name = name_split[2] + name_split[1]
-        # print("full_name", full_name.title())
+        # if full_name == "":
+        #     self.warn("This seat is vacant")
 
         table = CSS("#ContentPlaceHolder1_TabSenator_TabLeg_gvLEG").match_one(self.root)
-
-        # for td in CSS("td").match(table):
-        #     print('td ', td.text_content())
-        #     text = td.text_content()
-        #     # try:
-        #         # selector = XPath("//h2/../following-sibling::div//a")
-        #     try:
-        #         info = XPath(".//following-sibling::td/text()").match(td)
-        #         print('info: ', info)
-        #     except SelectorError:
-        #         print('doesn"t have a sibling')
-        # if text == 'Affiliation:':
-        #     selector = XPath("//h2/../following-sibling::div//a")
 
         for tr in CSS("tr").match(table):
             # print("tr ", tr.text_content())
@@ -56,11 +47,14 @@ class LegDetail(HtmlPage):
             info = info.text_content()
 
             if type == "Affiliation:":
-                # print('hey')
                 if info == "(R)":
                     party = "Republican"
                 elif info == "(D)":
                     party = "Democrat"
+                else:
+                    # party = "Republican"
+                    self.warn("the party must be included")
+
             elif type == "District:":
                 # should i keep 'Senate District ##' or 'House District ##'?
                 district = info.split(" ")[2]
@@ -72,7 +66,6 @@ class LegDetail(HtmlPage):
                 if info != "":
                     fax = info
             elif type == "Street:":
-                # check for 11 South Union Street bc if it is, then it's capital office
                 street = info
             elif type == "Office:":
                 office = info
@@ -85,7 +78,6 @@ class LegDetail(HtmlPage):
 
         # is this formatted correctly?
         address = f"{street}, {office}, {city} AL"
-        # print('addy', address)
 
         image = (
             CSS("#ContentPlaceHolder1_TabSenator_TabLeg_imgLEG")
@@ -133,14 +125,19 @@ class LegList(HtmlListPage):
         last_name = re.split("Pictures/|_", item.get("src"))[1]
         oid_person = item.get("alt")
 
-        # have to extract these weird numbers that are in the image for the URL, so will prob change selector in SenList and RepList
+        # have to extract these numbers that are in the image for the URL, so will prob change selector in SenList and RepList
         # OID_SPONSOR=###
         # ex: http://www.legislature.state.al.us/aliswww/ISD/ALSenator.aspx?NAME=Albritton&OID_SPONSOR=100465&OID_PERSON=7691&SESSNAME=Regular%20Session%202022
-        if self.chamber == "upper":
+        if last_name == "VACANT":
+            pass
+
+        elif self.chamber == "upper":
             oid_sponsor = item.get("longdesc").split("Senate/")[1]
             url = f"http://www.legislature.state.al.us/aliswww/ISD/ALSenator.aspx?NAME={last_name}&OID_SPONSOR={oid_sponsor}&OID_PERSON={oid_person}&SESSNAME=Regular%20Session%202022"
-        if self.chamber == "lower":
-            oid_sponsor = item.get("longdesc").split("Representative/")[1]
+        elif self.chamber == "lower":
+            oid_sponsor = item.get("longdesc").split("House/")[1]
+            print("oid sponsor: ", item.get("longdesc"))
+
             url = f"http://www.legislature.state.al.us/aliswww/ISD/ALRepresentative.aspx?NAME={last_name}&OID_SPONSOR={oid_sponsor}&OID_PERSON={oid_person}&SESSNAME="
         # print("url", url)
         # print(self.input.url)
