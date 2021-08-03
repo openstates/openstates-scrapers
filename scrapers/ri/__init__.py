@@ -1,8 +1,5 @@
 from utils import url_xpath, State
-
 from .bills import RIBillScraper
-from .people import RIPersonScraper
-
 from .events import RIEventScraper
 
 # from .committees import RICommitteeScraper
@@ -12,7 +9,6 @@ class RhodeIsland(State):
     scrapers = {
         "bills": RIBillScraper,
         "events": RIEventScraper,
-        "people": RIPersonScraper,
         # 'committees': RICommitteeScraper,
     }
     legislative_sessions = [

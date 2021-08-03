@@ -1,6 +1,5 @@
 import re
 from utils import url_xpath, State
-from .people import IAPersonScraper
 from .bills import IABillScraper
 from .votes import IAVoteScraper
 from .events import IAEventScraper
@@ -8,7 +7,6 @@ from .events import IAEventScraper
 
 class Iowa(State):
     scrapers = {
-        "people": IAPersonScraper,
         "bills": IABillScraper,
         "votes": IAVoteScraper,
         "events": IAEventScraper,

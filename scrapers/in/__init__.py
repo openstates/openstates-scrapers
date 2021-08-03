@@ -1,7 +1,6 @@
 import os
 import requests
 from utils import State
-from .people import INPersonScraper
 from .bills import INBillScraper
 from .events import INEventScraper
 
@@ -10,7 +9,6 @@ from .events import INEventScraper
 
 class Indiana(State):
     scrapers = {
-        "people": INPersonScraper,
         # 'committees': INCommitteeScraper,
         "bills": INBillScraper,
         "events": INEventScraper,

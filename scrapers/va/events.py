@@ -59,6 +59,10 @@ class VaEventScraper(Scraper):
                 else:
                     continue
 
+            # cancelled so we lose date/time info
+            if not row.xpath(".//a[@title='Add to Calendar']/@href"):
+                continue
+
             date_link = row.xpath(".//a[@title='Add to Calendar']/@href")[0]
             parsed = parse.parse_qs(parse.urlparse(date_link).query)
             date_raw = parsed["dt"][0]
