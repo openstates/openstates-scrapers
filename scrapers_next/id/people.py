@@ -40,14 +40,21 @@ class LegList(HtmlListPage):
             addr = addr3
         p.district_office.address = addr
 
-        phones = re.search(
-            r"(.+)Home(.+)Statehouse(.+)\(Session\sOnly\)", all_text
-        ).groups()
-        district_phone = phones[1].strip()
-        captiol_phone = phones[2].strip()
-        print(district_phone)
-        print(captiol_phone)
-        print()
+        if re.search(r"Home", all_text):
+            phones = re.search(
+                r"(.+)Home(.+)Statehouse(.+)\(Session\sOnly\)", all_text
+            ).groups()
+            district_phone = phones[1].strip()
+            captiol_phone = phones[2].strip()
+            if re.search(r"Bus", district_phone):
+                district_phone = district_phone.split("Bus")[0].strip()
+            p.district_office.voice = district_phone
+        else:
+            phones = re.search(
+                r"(.+)Statehouse(.+)\(Session\sOnly\)", all_text
+            ).groups()
+            captiol_phone = phones[1].strip()
+        p.capitol_office.voice = captiol_phone
 
         p.add_source(self.source.url)
 
