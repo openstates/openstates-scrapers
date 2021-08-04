@@ -12,7 +12,7 @@ class LegDetail(HtmlPage):
         if title not in ["Senator", "Representative"]:
             p.extras["title"] = title
 
-        # this src is not actually showing an image
+        # note that this src is not actually an image. it looks like byte format
         img = CSS("img").match_one(self.root).get("src")
         p.image = img
 
@@ -81,7 +81,7 @@ class LegList(JsonPage):
                 f"https://legis.delaware.gov/LegislatorDetail?personId={item['PersonId']}"
             )
             p.add_source(detail_link.url)
-            # should p.add_link() be the detail_link?
+            p.add_link(detail_link.url, note="homepage")
 
             yield LegDetail(p, source=detail_link.url)
 
