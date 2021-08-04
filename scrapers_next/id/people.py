@@ -40,6 +40,15 @@ class LegList(HtmlListPage):
             addr = addr3
         p.district_office.address = addr
 
+        phones = re.search(
+            r"(.+)Home(.+)Statehouse(.+)\(Session\sOnly\)", all_text
+        ).groups()
+        district_phone = phones[1].strip()
+        captiol_phone = phones[2].strip()
+        print(district_phone)
+        print(captiol_phone)
+        print()
+
         p.add_source(self.source.url)
 
         return p
