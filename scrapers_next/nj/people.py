@@ -127,7 +127,7 @@ class LegDetail(HtmlPage):
         elif re.search("(R)", party):
             party = "Republican"
         else:
-            self.warn(f"the party {party} must be included")
+            self.logger.warning(f"the party {party} must be included")
 
         phone_numbers = XPath("//font[@size='2']").match(self.root)[10].text_content()
 
