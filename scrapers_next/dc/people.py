@@ -10,6 +10,11 @@ class CouncilDetail(HtmlPage):
         name = CSS("h1").match(self.root)[0].text_content().strip()
         p.name = name
 
+        district = CSS("p.h4").match_one(self.root).text_content().strip()
+        if re.search(r"&bullet;", district):
+            district = re.search(r"&bullet;(.+)", district).groups()[0].strip()
+            p.district = district
+
         party = CSS("ul li p").match(self.root)[1].text_content().strip()
         if re.search(r"Party", party):
             party = re.search(r"(.+)\sParty", party).groups()[0]
@@ -70,6 +75,9 @@ class CouncilList(HtmlListPage):
     def process_item(self, item):
         try:
             title = CSS("h3").match_one(item).text_content()
+            if title == "Chair Pro Tempore":
+                # this member is listed twice. skip the 1st time
+                self.skip()
         except SelectorError:
             title = None
 
