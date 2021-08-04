@@ -1,6 +1,6 @@
 import re
 import attr
-from spatula import HtmlListPage, HtmlPage, XPath, CSS
+from spatula import HtmlListPage, HtmlPage, XPath, CSS, SkipItem
 from openstates.models import ScrapePerson
 
 
@@ -43,9 +43,11 @@ class LegDetail(HtmlPage):
                 else:
                     party = info
                     if party == "( )":
-                        self.logger.warning("this seat may be vacant")
+                        # self.logger.warning("this seat may be vacant")
                         # will assign it a random party for scraping purposes, but the warning should be addressed:
-                        party = "Democrat"
+                        # party = "Democrat"
+                        raise SkipItem("vacant")
+                        # continue
 
             elif type == "District:":
                 district = info.split(" ")[2]
@@ -109,36 +111,35 @@ class LegDetail(HtmlPage):
         return p
 
 
-class LegList(HtmlListPage):
+class SenList(HtmlListPage):
+    selector = XPath("//input[@type='image']")
+    source = "http://www.legislature.state.al.us/aliswww/ISD/Senate/ALSenators.aspx"
+    chamber = "upper"
+
     def process_item(self, item):
         last_name = re.split("Pictures/|_", item.get("src"))[1]
         oid_person = item.get("alt")
 
-        # specific numbers in the img tag make up parts of the URL
-
-        if self.chamber == "upper":
-            oid_sponsor = item.get("longdesc").split("Senate/")[1]
-            url = f"http://www.legislature.state.al.us/aliswww/ISD/ALSenator.aspx?NAME={last_name}&OID_SPONSOR={oid_sponsor}&OID_PERSON={oid_person}&SESSNAME=Regular%20Session%202022"
-        if self.chamber == "lower":
-            oid_sponsor = item.get("longdesc").split("House/")[1]
-            print("oid sponsor: ", item.get("longdesc"))
-
-            url = f"http://www.legislature.state.al.us/aliswww/ISD/ALRepresentative.aspx?NAME={last_name}&OID_SPONSOR={oid_sponsor}&OID_PERSON={oid_person}&SESSNAME="
-
+        oid_sponsor = item.get("longdesc").split("Senate/")[1]
+        url = f"http://www.legislature.state.al.us/aliswww/ISD/ALSenator.aspx?NAME={last_name}&OID_SPONSOR={oid_sponsor}&OID_PERSON={oid_person}&SESSNAME=Regular%20Session%202022"
         p = PartialMember(url=self.source.url, chamber=self.chamber)
 
         return LegDetail(p, source=url)
 
 
-class SenList(LegList):
-    selector = XPath("//input[@type='image']")
-    source = "http://www.legislature.state.al.us/aliswww/ISD/Senate/ALSenators.aspx"
-    chamber = "upper"
-
-
-class RepList(LegList):
+class RepList(HtmlListPage):
     selector = XPath("//input[@type='image']")
     source = (
         "http://www.legislature.state.al.us/aliswww/ISD/House/ALRepresentatives.aspx"
     )
     chamber = "lower"
+
+    def process_item(self, item):
+        last_name = re.split("Pictures/|_", item.get("src"))[1]
+        oid_person = item.get("alt")
+
+        oid_sponsor = item.get("longdesc").split("House/")[1]
+        url = f"http://www.legislature.state.al.us/aliswww/ISD/ALRepresentative.aspx?NAME={last_name}&OID_SPONSOR={oid_sponsor}&OID_PERSON={oid_person}&SESSNAME="
+        p = PartialMember(url=self.source.url, chamber=self.chamber)
+
+        return LegDetail(p, source=url)
