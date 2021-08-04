@@ -29,6 +29,10 @@ class LegDetail(HtmlPage):
 
         table = CSS("#ContentPlaceHolder1_TabSenator_TabLeg_gvLEG").match_one(self.root)
 
+        party = (
+            district
+        ) = county = phone = fax = street = office = city = postal = email = ""
+
         for tr in CSS("tr").match(table):
             type, info = CSS("td").match(tr)
             type = type.text_content()
