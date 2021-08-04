@@ -56,7 +56,19 @@ class LegList(HtmlListPage):
             captiol_phone = phones[1].strip()
         p.capitol_office.voice = captiol_phone
 
+        possible_title = CSS("p strong").match(item)[2].text_content().strip()
+        if not re.search(r"Committees:", possible_title):
+            p.extras["title"] = possible_title
+
+        if re.search(r"FAX", all_text):
+            fax = re.search(
+                r"(.+)FAX\s(\(\d{3}\)\s\d{3}-\d{4})(.+)", all_text
+            ).groups()[1]
+            p.capitol_office.fax = fax
+
+        district_link = CSS("p a").match(item)[1].get("href")
         p.add_source(self.source.url)
+        p.add_link(district_link, note="homepage")
 
         return p
 
