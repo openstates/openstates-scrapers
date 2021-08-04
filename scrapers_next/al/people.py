@@ -42,13 +42,6 @@ class LegDetail(HtmlPage):
                     party = "Democrat"
                 else:
                     party = info
-                    if party == "( )":
-                        # self.logger.warning("this seat may be vacant")
-                        # will assign it a random party for scraping purposes, but the warning should be addressed:
-                        # party = "Democrat"
-                        raise SkipItem("vacant")
-                        # continue
-
             elif type == "District:":
                 district = info.split(" ")[2]
             elif type == "County:":
@@ -118,6 +111,7 @@ class SenList(HtmlListPage):
 
     def process_item(self, item):
         last_name = re.split("Pictures/|_", item.get("src"))[1]
+
         oid_person = item.get("alt")
 
         oid_sponsor = item.get("longdesc").split("Senate/")[1]
@@ -136,6 +130,9 @@ class RepList(HtmlListPage):
 
     def process_item(self, item):
         last_name = re.split("Pictures/|_", item.get("src"))[1]
+
+        if last_name == "VACANT.jpeg":
+            raise SkipItem("vacant")
         oid_person = item.get("alt")
 
         oid_sponsor = item.get("longdesc").split("House/")[1]
