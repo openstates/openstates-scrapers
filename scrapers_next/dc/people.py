@@ -13,7 +13,7 @@ class CouncilDetail(HtmlPage):
         district = CSS("p.h4").match_one(self.root).text_content().strip()
         if re.search(r"&bullet;", district):
             district = re.search(r"&bullet;(.+)", district).groups()[0].strip()
-            p.district = district
+        p.district = district
 
         party = CSS("ul li p").match(self.root)[1].text_content().strip()
         if re.search(r"Party", party):
@@ -92,9 +92,6 @@ class CouncilList(HtmlListPage):
             district="",
             image=img,
         )
-
-        if title:
-            p.extras["title"] = title
 
         detail_link = CSS("a").match(item)[1].get("href")
 
