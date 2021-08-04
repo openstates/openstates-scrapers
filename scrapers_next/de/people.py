@@ -12,6 +12,7 @@ class LegDetail(HtmlPage):
         if title not in ["Senator", "Representative"]:
             p.extras["title"] = title
 
+        # this src is not actually showing an image
         img = CSS("img").match_one(self.root).get("src")
         p.image = img
 
