@@ -1,5 +1,4 @@
 from utils import url_xpath, State
-from .people import OHLegislatorScraper
 from .bills import OHBillScraper
 
 # from .events import OHEventScraper
@@ -7,7 +6,6 @@ from .bills import OHBillScraper
 
 class Ohio(State):
     scrapers = {
-        "people": OHLegislatorScraper,
         # 'events': OHEventScraper,
         "bills": OHBillScraper,
     }

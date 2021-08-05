@@ -102,7 +102,7 @@ class SenateCommitteeList(HtmlListPage):
 
     def process_item(self, item):
         name = item.text_content().strip()
-        com = ScrapeCommittee(name=name, parent=self.chamber)
+        com = ScrapeCommittee(name=name, chamber=self.chamber)
         com.add_source(self.source.url)
         return SenateCommitteeDetail(com, source=item.get("href"))
 
@@ -114,6 +114,6 @@ class HouseCommitteeList(HtmlListPage):
 
     def process_item(self, item):
         name = item.text_content()
-        com = ScrapeCommittee(name=name, parent=self.chamber)
+        com = ScrapeCommittee(name=name, chamber=self.chamber)
         com.add_source(self.source.url)
         return HouseCommitteeDetail(com, source=item.get("href"))
