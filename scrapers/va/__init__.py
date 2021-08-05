@@ -165,9 +165,17 @@ class Virginia(State):
             # TODO: set real end date after session
             "end_date": "2021-07-15",
         },
+        {
+            "_scraped_name": "2021 Special Session II",
+            "classification": "special",
+            "identifier": "2021S2",
+            "name": "2021, 2nd Special Session",
+            "start_date": "2021-08-04",
+            # TODO: set real end date after session
+            "end_date": "2021-08-20",
+        },
     ]
     ignored_scraped_sessions = [
-        "2021 Special Session II",
         "2021 Special Session I",
         "2015 Special Session I",
         "2015 Session",
