@@ -131,7 +131,7 @@ class HouseCommitteeList(HtmlListPage):
                 else:
                     com.add_link(url)
         if not homepage:
-            self.warn("no homepage found")
+            self.logger.warning("no homepage found")
 
         com.add_source(self.source.url)
         return HouseCommitteeDetail(com, source=link)

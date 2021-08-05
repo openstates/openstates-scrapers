@@ -20,6 +20,7 @@ class DCBillScraper(Scraper):
         ("Signed by the Mayor ", "executive-signature"),
         ("Enacted", "became-law"),
         ("Law", "became-law"),
+        ("Approved with Resolution Number", "became-law"),
         ("First Reading", "reading-1"),
         ("1st Reading", "reading-1"),
         ("Second Reading", "reading-2"),

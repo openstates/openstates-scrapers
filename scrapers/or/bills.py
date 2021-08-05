@@ -96,7 +96,7 @@ class ORBillScraper(Scraper):
                     )
 
             bill.add_source(
-                "https://olis.leg.state.or.us/liz/{session}/Measures/Overview/{bid}".format(
+                "https://olis.oregonlegislature.gov/liz/{session}/Measures/Overview/{bid}".format(
                     session=session_key, bid=bid.replace(" ", "")
                 )
             )
