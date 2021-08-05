@@ -32,13 +32,24 @@ class LegDetail(HtmlPage):
 
         # a bunch of rows
         rows = CSS(".row").match(table_div)
-        # print("rows", rows)
-        # second_div = CSS(".d-none").match(rows)
-        # for second_div in rows:
-        #     print("i see", second_div.text_content())
 
         # for each row
         # TODO: party
+        party = ""
+        name_party = CSS("h1").match_one(self.root).text_content()
+        print("name party", name_party)
+        # if re.search("(R)", name_party):
+        #     party == "Republican"
+
+        if name_party.endswith("(R)"):
+            party = "Republican"
+        if name_party.endswith("(D)"):
+            party = "Democrat"
+        # print("Party", party)
+
+        image = CSS(".MemberPhoto").match_one(self.root).get("src")
+        # print("image", image)
+
         # TODO: image
         phone = (
             email
@@ -47,30 +58,7 @@ class LegDetail(HtmlPage):
         ) = (
             seniority
         ) = occupation = religion = veteran = public_service = biography = ""
-        # for row in rows:
-        #     try:
-        #         type = CSS(".col-md-3").match_one(row).text_content()
-        #         print("type", type)
-        #         info = CSS(".col-md-9").match_one(row).text_content().strip()
-        #         print("info", info)
-        #     except SelectorError:
-        #         pass
-        #     # print("type: ", type.text_content())
-        #     # print("info: ", info.text_content())
 
-        #     if type == "Phone:":
-        #         # phone number can be empty
-        #         phone = info
-        #     elif type == "Email:":
-        #         email = info
-        #     elif type == "District:":
-        #         district = info
-        #     elif type == "Seniority:":
-        #         seniority = info
-        #     elif type == "Occupation:":
-        #         occupation = info
-        #     elif type == "District:":
-        #         district = info
         table = {
             "Phone:": phone,
             "Email:": email,
@@ -86,23 +74,47 @@ class LegDetail(HtmlPage):
             try:
                 type = CSS(".col-md-3").match_one(row).text_content()
                 info = CSS(".col-md-9").match_one(row).text_content().strip()
+                if type == "Biography:":
+                    info = CSS(".col-md-9 a").match_one(row).get("href")
+                    # print("BIOGRAPHY: ", info)
                 if type in table:
                     table[type] = info
-                    print("dictionary", table)
+                    # print("dictionary", table)
             except SelectorError:
                 pass
 
-        print("here it is: ", table["Phone:"])
+        # print("here it is: ", table["Phone:"])
 
         p = ScrapePerson(
             name=self.input.name,
             state="ar",
             chamber=self.input.chamber,
-            # party=party,
-            # image=image,
+            party=party,
+            image=image,
             district=table["District:"],
             email=table["Email:"],
         )
+
+        if table["Biography:"] != "":
+            p.add_link(table["Biography:"])
+            print("BIOGRAPHY SHOULD BE ADDED")
+
+        # for every key-value pair in table that isn't phone, email, district
+        for key in table:
+            print("KEY", key)
+            if (
+                key == "Phone:"
+                or key == "Email:"
+                or key == "District:"
+                or key == "Biography:"
+            ):
+                print("***phone, email, or district here")
+                continue
+            elif table[key] != "":
+                # remove colon at the end
+                print("about to add to extras***")
+                # text[:-1]
+                p.extras[key[:-1].lower()] = table[key]
 
         return p
 
