@@ -1,4 +1,4 @@
-from spatula import CSS, HtmlListPage, URL, HtmlPage, SelectorError
+from spatula import CSS, HtmlListPage, URL, HtmlPage, SelectorError, XPath
 from openstates.models import ScrapePerson
 import re
 
@@ -16,22 +16,34 @@ class LegDetail(HtmlPage):
         if title != "":
             p.extras["title"] = title
 
-        counties = CSS("div .center ul li").match(self.root).text_content()
-        counties = re.search(r"(.+)\s\(Part\)", counties).groups()[0]
+        counties = CSS("div .center ul li").match_one(self.root).text_content()
+        if re.search(r"\(Part\)", counties):
+            counties = re.search(r"(.+)\s\(Part\)", counties).groups()[0]
         counties = counties.split(", ")
         p.extras["counties represented"] = counties
 
-        email = CSS("p.title").match(self.root)[14].getnext().text_content()
+        email = (
+            XPath("//div[2]/p[contains(text(), 'Email')]")
+            .match_one(self.root)
+            .getnext()
+            .text_content()
+        )
         p.email = email
 
         try:
-            twitter = CSS("p.title").match(self.root)[15].getnext().text_content()
-            p.ids["twitter"] = twitter.lstrip("@")
+            twitter = (
+                XPath("//div[2]/p[contains(text(), 'Twitter')]")
+                .match_one(self.root)
+                .getnext()
+                .text_content()
+                .lstrip("@")
+            )
+            p.ids.twitter = twitter
         except SelectorError:
             twitter = None
 
         # Mailing, Legislative, and Capitol
-        len(CSS("address").match(self.root))
+        # len(CSS("address").match(self.root))
 
         return p
 
@@ -65,7 +77,7 @@ class LegList(HtmlListPage):
         p.add_source(detail_link)
         p.add_link(detail_link, note="homepage")
 
-        return p
+        return LegDetail(p, source=detail_link)
 
 
 class Senate(LegList):
