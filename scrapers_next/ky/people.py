@@ -1,4 +1,4 @@
-from spatula import CSS, HtmlListPage, URL, HtmlPage
+from spatula import CSS, HtmlListPage, URL, HtmlPage, SelectorError
 from openstates.models import ScrapePerson
 import re
 
@@ -15,6 +15,23 @@ class LegDetail(HtmlPage):
         )
         if title != "":
             p.extras["title"] = title
+
+        counties = CSS("div .center ul li").match(self.root).text_content()
+        counties = re.search(r"(.+)\s\(Part\)", counties).groups()[0]
+        counties = counties.split(", ")
+        p.extras["counties represented"] = counties
+
+        email = CSS("p.title").match(self.root)[14].getnext().text_content()
+        p.email = email
+
+        try:
+            twitter = CSS("p.title").match(self.root)[15].getnext().text_content()
+            p.ids["twitter"] = twitter.lstrip("@")
+        except SelectorError:
+            twitter = None
+
+        # Mailing, Legislative, and Capitol
+        len(CSS("address").match(self.root))
 
         return p
 
