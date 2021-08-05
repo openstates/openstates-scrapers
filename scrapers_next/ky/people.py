@@ -55,12 +55,12 @@ class LegList(HtmlListPage):
 
 
 class Senate(LegList):
-    source = URL(
-        "https://legislature.ky.gov/Legislators/senate", headers={"verify": "false"}
-    )
+    source = URL("https://legislature.ky.gov/Legislators/senate", verify=False)
     chamber = "upper"
 
 
 class House(LegList):
-    source = URL("https://legislature.ky.gov/Legislators/house-of-representatives")
+    source = URL(
+        "https://legislature.ky.gov/Legislators/house-of-representatives", verify=False
+    )
     chamber = "lower"
