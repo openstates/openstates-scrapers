@@ -116,6 +116,9 @@ class LegDetail(HtmlPage):
                 # text[:-1]
                 p.extras[key[:-1].lower()] = table[key]
 
+        p.add_source(self.source.url)
+        p.add_source(self.input.url)
+
         return p
 
 
@@ -126,7 +129,6 @@ class LegList(HtmlListPage):
         # name
         print("item", item.text_content())
         print("url", item.get("href"))
-        # not best practice to call self.chamber here
         p = PartialMember(
             name=item.text_content(), chamber=self.chamber, url=self.source.url
         )
@@ -136,13 +138,17 @@ class LegList(HtmlListPage):
 
 class SenList(LegList):
     selector = XPath(
-        "/html//div[@class='row tableRow']//a[contains(@href, 'Detail')][position()<=35]"
+        "/html//div[@role='grid']//div[@role='row']//a[contains(@href, 'Detail')][position()=1]",
+        num_items=1,
     )
+    # /html/body/div[3]/div/main/div/div[1]/div[2]/div[3]
     # source = "https://senate.arkansas.gov/senators/"
     chamber = "upper"
 
 
 class RepList(LegList):
-    selector = XPath("//input[@type='image']")
+    selector = XPath(
+        "/html//div[@class='row tableRow']//a[contains(@href, 'Detail')][position()>35]"
+    )
     # source = "https://www.arkansashouse.org/representatives/members"
     chamber = "lower"
