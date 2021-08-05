@@ -41,12 +41,29 @@ class LegDetail(HtmlPage):
             elif addr_type == "Capitol Address":
                 p.capitol_office.address = addr.text_content()
 
-        # phone = (
-        #     XPath("//div[2]/p[contains(text(), 'Phone Number(s)')]")
-        #     .match_one(self.root)
-        #     .getnext()
-        #     .text_content()
-        # )
+        phones = (
+            XPath("//div[2]/p[contains(text(), 'Phone Number(s)')]")
+            .match_one(self.root)
+            .getnext()
+        )
+        phones = XPath("text()").match(phones)
+        for num in phones:
+            kind, num = num.split(": ")
+            if kind == "LRC" and num.endswith(" (fax)"):
+                fax = num.replace(" (fax)", "")
+                p.capitol_office.fax = fax
+            elif kind == "LRC":
+                p.capitol_office.voice = num
+            elif kind == "Home" and num.endswith(" (fax)"):
+                fax = num.replace(" (fax)", "")
+                p.district_office.fax = fax
+            elif kind == "Home":
+                p.district_office.voice = num
+            elif kind == "Work" and num.endswith(" (fax)"):
+                fax = num.replace(" (fax)", "")
+                p.extras["fax"] = fax
+            elif kind == "Work":
+                p.extras["voice"] = num
 
         # if re.search(r"Work:", phone):
         #     phones = re.search(
