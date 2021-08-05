@@ -30,6 +30,35 @@ class LegDetail(HtmlPage):
         )
         p.email = email
 
+        phone = (
+            XPath("//div[2]/p[contains(text(), 'Phone Number(s)')]")
+            .match_one(self.root)
+            .getnext()
+            .text_content()
+        )
+
+        if re.search(r"Work:", phone):
+            phones = re.search(
+                r"Home:\s(.+)LRC:\s(.+)Work:\s(.+)Work:\s(.+)\s\(fax\)", phone
+            ).groups()
+            print(phones)
+        elif re.search(r"Home:", phone) and re.search(r"fax", phone):
+            phones = re.search(
+                r"Home:\s(.+)LRC:\s(.+)LRC:\s(.+)\s\(fax\)", phone
+            ).groups()
+            print(phones)
+        elif re.search(r"Home:", phone):
+            phones = re.search(r"Home:\s(.+)LRC:\s(.+)", phone).groups()
+            print(phones)
+        elif re.search(r"fax", phone):
+            phones = re.search(r"LRC:\s(.+)\s\(fax\)", phone).groups()
+            print(phones)
+        else:
+            phones = re.search(r"LRC:\s(.+)", phone).groups()
+            print(phones)
+        # phone = re.search(r"LRC:\s(.+)", phone).groups()[0]
+        # p.capitol_office.voice = phone
+
         try:
             twitter = (
                 XPath("//div[2]/p[contains(text(), 'Twitter')]")
