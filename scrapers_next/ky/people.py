@@ -39,20 +39,17 @@ class LegDetail(HtmlPage):
 class LegList(HtmlListPage):
     selector = CSS("a.Legislator-Card.col-md-4.col-sm-6.col-xs-12")
 
-    def process_page(self, item):
+    def process_item(self, item):
         name = CSS("h3").match_one(item).text_content()
-        print(name)
         if name == " - Vacant Seat":
             self.skip()
 
         party = CSS("small").match_one(item).text_content()
         if party == "Democrat":
             party = "Democratic"
-        print(party)
 
         district = CSS("p").match(item)[0].text_content()
-        district = re.search(r"District:\s(.+)", district).groups()[0]
-        print(district)
+        district = re.search(r"District:\r\n(.+)", district).groups()[0].strip()
 
         p = ScrapePerson(
             name=name,
@@ -64,7 +61,7 @@ class LegList(HtmlListPage):
 
         detail_link = item.get("href")
 
-        p.add_source(self.source)
+        p.add_source(self.source.url)
         p.add_source(detail_link)
         p.add_link(detail_link, note="homepage")
 
@@ -72,12 +69,10 @@ class LegList(HtmlListPage):
 
 
 class Senate(LegList):
-    source = URL("https://legislature.ky.gov/Legislators/senate", verify=False)
+    source = URL("https://legislature.ky.gov/Legislators/senate")
     chamber = "upper"
 
 
 class House(LegList):
-    source = URL(
-        "https://legislature.ky.gov/Legislators/house-of-representatives", verify=False
-    )
+    source = URL("https://legislature.ky.gov/Legislators/house-of-representatives")
     chamber = "lower"
