@@ -1,24 +1,46 @@
 from spatula import CSS, HtmlListPage, URL, HtmlPage, SelectorError
 from openstates.models import ScrapePerson
 import re
+from dataclasses import dataclass
+
+
+@dataclass
+class PartialPerson:
+    state: str
+    chamber: str
+    image: str
+    source1: str
+    source2: str
+    link: str
 
 
 class CouncilDetail(HtmlPage):
-    def process_page(self):
-        p = self.input
+    input_type = PartialPerson
 
+    def process_page(self):
         name = CSS("h1").match(self.root)[0].text_content().strip()
-        p.name = name
 
         district = CSS("p.h4").match_one(self.root).text_content().strip()
         if re.search(r"&bullet;", district):
             district = re.search(r"&bullet;(.+)", district).groups()[0].strip()
-        p.district = district
+        if district == "chairman":
+            district = "Chairman"
 
         party = CSS("ul li p").match(self.root)[1].text_content().strip()
         if re.search(r"Party", party):
             party = re.search(r"(.+)\sParty", party).groups()[0]
-        p.party = party
+
+        p = ScrapePerson(
+            name=name,
+            party=party,
+            district=district,
+            state=self.input.state,
+            chamber=self.input.chamber,
+            image=self.input.image,
+        )
+        p.add_source(self.input.source1)
+        p.add_source(self.input.source2)
+        p.add_link(self.input.link, note="homepage")
 
         addr = CSS("ul li p").match(self.root)[3].text_content().strip()
         p.capitol_office.address = addr
@@ -83,20 +105,15 @@ class CouncilList(HtmlListPage):
 
         img = CSS("img").match_one(item).get("src")
 
-        # use placeholders?
-        p = ScrapePerson(
-            name="",
-            state="dc",
-            party="Democratic",
-            chamber="",
-            district="",
-            image=img,
-        )
-
         detail_link = CSS("a").match(item)[1].get("href")
 
-        p.add_source(self.source.url)
-        p.add_source(detail_link)
-        p.add_link(detail_link, note="homepage")
+        partial_p = PartialPerson(
+            state="dc",
+            chamber="legislature",
+            image=img,
+            source1=self.source.url,
+            source2=detail_link,
+            link=detail_link,
+        )
 
-        return CouncilDetail(p, source=detail_link)
+        return CouncilDetail(partial_p, source=detail_link)
