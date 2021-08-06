@@ -77,7 +77,7 @@ class LegDetail(HtmlPage):
             )
             p.ids.twitter = twitter
         except SelectorError:
-            twitter = None
+            pass
 
         try:
             home_city = (
@@ -88,7 +88,7 @@ class LegDetail(HtmlPage):
             )
             p.extras["home city"] = home_city
         except SelectorError:
-            home_city = None
+            pass
 
         return p
 
