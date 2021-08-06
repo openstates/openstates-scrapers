@@ -32,18 +32,17 @@ class LegDetail(HtmlPage):
 
         addresses = CSS("address").match(self.root)
         for addr in addresses:
-            address_clean = ""
+            address_clean = " "
             addr_type = addr.getprevious().text_content()
             addr_lst = XPath("text()").match(addr)
-            for line in addr_lst:
-                address_clean += line
-                address_clean += " "
+            address_clean = address_clean.join(addr_lst)
             if addr_type == "Mailing Address":
-                p.extras["mailing address"] = address_clean.strip()
+                p.extras["mailing address"] = address_clean
             elif addr_type == "Legislative Address":
-                p.district_office.address = address_clean.strip()
+                p.district_office.address = address_clean
             elif addr_type == "Capitol Address":
-                p.capitol_office.address = address_clean.strip()
+                p.capitol_office.address = address_clean
+            print(address_clean)
 
         phones = (
             XPath("//div[2]/p[contains(text(), 'Phone Number(s)')]")
@@ -68,28 +67,6 @@ class LegDetail(HtmlPage):
                 p.extras["fax"] = fax
             elif kind == "Work":
                 p.extras["voice"] = num
-
-        # if re.search(r"Work:", phone):
-        #     phones = re.search(
-        #         r"Home:\s(.+)LRC:\s(.+)Work:\s(.+)Work:\s(.+)\s\(fax\)", phone
-        #     ).groups()
-        #     print(phones)
-        # elif re.search(r"Home:", phone) and re.search(r"fax", phone):
-        #     phones = re.search(
-        #         r"Home:\s(.+)LRC:\s(.+)LRC:\s(.+)\s\(fax\)", phone
-        #     ).groups()
-        #     print(phones)
-        # elif re.search(r"Home:", phone):
-        #     phones = re.search(r"Home:\s(.+)LRC:\s(.+)", phone).groups()
-        #     print(phones)
-        # elif re.search(r"fax", phone):
-        #     phones = re.search(r"LRC:\s(.+)\s\(fax\)", phone).groups()
-        #     print(phones)
-        # else:
-        #     phones = re.search(r"LRC:\s(.+)", phone).groups()
-        #     print(phones)
-        # phone = re.search(r"LRC:\s(.+)", phone).groups()[0]
-        # p.capitol_office.voice = phone
 
         try:
             twitter = (
