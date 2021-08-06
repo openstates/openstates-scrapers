@@ -43,32 +43,35 @@ class LegDetail(HtmlPage):
 
         if name_party.endswith("(R)"):
             party = "Republican"
-        if name_party.endswith("(D)"):
+        elif name_party.endswith("(D)"):
             party = "Democrat"
+        elif name_party.endswith("(I)"):
+            party = "Independent"
+        elif name_party.endswith("(G)"):
+            party = "Green"
         # print("Party", party)
 
         image = CSS(".MemberPhoto").match_one(self.root).get("src")
         # print("image", image)
 
-        # TODO: image
-        phone = (
-            email
-        ) = (
-            district
-        ) = (
-            seniority
-        ) = occupation = religion = veteran = public_service = biography = ""
+        # phone = (
+        #     email
+        # ) = (
+        #     district
+        # ) = (
+        #     seniority
+        # ) = occupation = religion = veteran = public_service = biography = ""
 
         table = {
-            "Phone:": phone,
-            "Email:": email,
-            "District:": district,
-            "Seniority:": seniority,
-            "Occupation:": occupation,
-            "Church Affiliation:": religion,
-            "Veteran:": veteran,
-            "Public Service:": public_service,
-            "Biography:": biography,
+            "Phone:": "",
+            "Email:": "",
+            "District:": "",
+            "Seniority:": "",
+            "Occupation:": "",
+            "Church Affiliation:": "",
+            "Veteran:": "",
+            "Public Service:": "",
+            "Biography:": "",
             # for extras, make a separate table?
             # should be able to do "District:": ""
         }
@@ -129,13 +132,45 @@ class LegList(HtmlListPage):
 
     def process_item(self, item):
         # name
-        print("item", item.text_content())
-        print("url", item.get("href"))
-        p = PartialMember(
-            name=item.text_content(), chamber=self.chamber, url=self.source.url
+        # print("item", item.text_content().replace("\r\n","").replace("                                        ", ""))
+        # print("url", item.get("href"))
+        # print("ORIGIAL", item.text_content())
+        # yall make this bottom better
+        # print("just all with the split: ", item.text_content().replace("\r\n","").strip().replace("                                        ", "   ").split("   "))
+        chamber_name = (
+            item.text_content()
+            .replace("\r\n", "")
+            .strip()
+            .replace("                                        ", "   ")
+            .split("   ")
         )
+        chamber = chamber_name[0]
+        name = chamber_name[1].replace("  ", " ")
+        # chamber = XPath("/html//div[@class='row']//div[@class='gridcell']")
+        # print(hi)
+        if chamber == "Senator":
+            chamber = "upper"
+        elif chamber == "Representative":
+            chamber = "lower"
+        # print("children", item.getchildren())
+        # source = XPath("//a[contains(@href, 'Detail?')]").match_one(item.getchildren()).get("href")
+        source = item.getchildren()[0].get("href")
+        p = PartialMember(name=name, chamber=chamber, url=self.source.url)
 
-        return LegDetail(p, source=item.get("href"))
+        return LegDetail(p, source=source)
+
+
+class PeopleList(LegList):
+    # selector = XPath(
+    #     "//a[contains(@href, 'Detail?')]",
+    # )
+    # selector = XPath("/html//div[@class='row']//div[@class='container']//div[@class='col-sm-6 col-md-6']")
+
+    selector = XPath("//div[@class='col-sm-6 col-md-6']")
+
+    # //*[@id="bodyContent"]/div[2]/div[3]/div[1]
+    # if XPath("")
+    # chamber = "upper"
 
 
 class SenList(LegList):
