@@ -69,6 +69,8 @@ class LegDetail(HtmlPage):
             "Veteran:": veteran,
             "Public Service:": public_service,
             "Biography:": biography,
+            # for extras, make a separate table?
+            # should be able to do "District:": ""
         }
         for row in rows:
             try:
@@ -138,12 +140,16 @@ class LegList(HtmlListPage):
 
 class SenList(LegList):
     selector = XPath(
-        "/html//div[@role='grid']//div[@role='row']//a[contains(@href, 'Detail')][position()=1]",
-        num_items=1,
+        "//a[contains(@href, 'Detail?')][position()<35]",
+        num_items=35,
     )
     # /html/body/div[3]/div/main/div/div[1]/div[2]/div[3]
+    # /html/body/div[3]/div/main/div/div[1]/div[2]/div[3]/div[1]/a[1]
     # source = "https://senate.arkansas.gov/senators/"
     chamber = "upper"
+
+
+# /html/body/table/tbody/tr[6]/td/table/tbody/tr/td[2]/p[2]/b[1]/a
 
 
 class RepList(LegList):
