@@ -50,7 +50,7 @@ class HouseCommitteeDetail(HtmlPage):
         com.add_source(self.source.url)
 
         time, room = (
-            CSS(".border-0 .pl-2").match(self.root)[0].text_content().split("in ")
+            CSS(".border-0 span").match(self.root)[0].text_content().split("in ")
         )
         time = time.split("Meets:")[1]
 
@@ -64,7 +64,7 @@ class HouseCommitteeDetail(HtmlPage):
                 .match(p)[0]
                 .replace("Rep.", "")
                 .split("(R)")[0]
-                .split("(DFL")[0]
+                .split("(DFL)")[0]
                 .strip()
             )
 
