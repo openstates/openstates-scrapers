@@ -131,6 +131,7 @@ class Texas(State):
         # TODO: Re-enable vote scraper when adding next regular session
     ]
     ignored_scraped_sessions = [
+        "87(2) - 2021",
         "80(R) - 2007",
         "79(3) - 2006",
         "79(2) - 2005",
