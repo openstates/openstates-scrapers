@@ -45,8 +45,11 @@ class AREventScraper(Scraper):
 
             title = row.xpath("div[2]/b")[0].text_content().strip()
 
-            times = re.findall(r"\d+:\d+\s*[A|P]M", time)
-            time = times[0]
+            if "call of the chair" in time.lower():
+                time = ""
+            else:
+                times = re.findall(r"\d+:\d+\s*[A|P]M", time)
+                time = times[0]
 
             when = dateutil.parser.parse(f"{day} {time}")
             when = self._tz.localize(when)

@@ -50,7 +50,7 @@ class HouseCommitteeDetail(HtmlPage):
         com.add_source(self.source.url)
 
         time, room = (
-            CSS(".border-0 .pl-2").match(self.root)[0].text_content().split("in ")
+            CSS(".border-0 span").match(self.root)[0].text_content().split("in ")
         )
         time = time.split("Meets:")[1]
 
@@ -64,7 +64,7 @@ class HouseCommitteeDetail(HtmlPage):
                 .match(p)[0]
                 .replace("Rep.", "")
                 .split("(R)")[0]
-                .split("(DFL")[0]
+                .split("(DFL)")[0]
                 .strip()
             )
 
@@ -131,7 +131,7 @@ class HouseCommitteeList(HtmlListPage):
                 else:
                     com.add_link(url)
         if not homepage:
-            self.warn("no homepage found")
+            self.logger.warning("no homepage found")
 
         com.add_source(self.source.url)
         return HouseCommitteeDetail(com, source=link)
