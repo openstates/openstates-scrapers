@@ -30,16 +30,20 @@ class LegDetail(HtmlPage):
         )
         p.email = email
 
-        # not capturing new lines here
         addresses = CSS("address").match(self.root)
         for addr in addresses:
+            address_clean = ""
             addr_type = addr.getprevious().text_content()
+            addr_lst = XPath("text()").match(addr)
+            for line in addr_lst:
+                address_clean += line
+                address_clean += " "
             if addr_type == "Mailing Address":
-                p.extras["mailing address"] = addr.text_content()
+                p.extras["mailing address"] = address_clean.strip()
             elif addr_type == "Legislative Address":
-                p.district_office.address = addr.text_content()
+                p.district_office.address = address_clean.strip()
             elif addr_type == "Capitol Address":
-                p.capitol_office.address = addr.text_content()
+                p.capitol_office.address = address_clean.strip()
 
         phones = (
             XPath("//div[2]/p[contains(text(), 'Phone Number(s)')]")
