@@ -42,7 +42,6 @@ class LegDetail(HtmlPage):
                 p.district_office.address = address_clean
             elif addr_type == "Capitol Address":
                 p.capitol_office.address = address_clean
-            print(address_clean)
 
         phones = (
             XPath("//div[2]/p[contains(text(), 'Phone Number(s)')]")
@@ -79,6 +78,17 @@ class LegDetail(HtmlPage):
             p.ids.twitter = twitter
         except SelectorError:
             twitter = None
+
+        try:
+            home_city = (
+                XPath("//div[2]/p[contains(text(), 'Home City')]")
+                .match_one(self.root)
+                .getnext()
+                .text_content()
+            )
+            p.extras["home city"] = home_city
+        except SelectorError:
+            home_city = None
 
         return p
 
