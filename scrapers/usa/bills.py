@@ -431,15 +431,23 @@ class USBillScraper(Scraper):
     def scrape_versions(self, bill, xml):
         for row in xml.findall("bill/textVersions/item"):
             version_title = self.get_xpath(row, "type")
+            try:
+                version_date = self.get_xpath(row, "date")[:10]
+            except TypeError:
+                version_date = ""
 
             for version in row.findall("formats/item"):
                 url = self.get_xpath(version, "url")
                 print(f"Version URL: {url}")
                 bill.add_version_link(
-                    note=version_title, url=url, media_type="text/xml"
+                    note=version_title,
+                    url=url,
+                    media_type="text/xml",
+                    date=version_date,
                 )
                 bill.add_version_link(
                     note=version_title,
                     url=url.replace("xml", "pdf"),
                     media_type="application/pdf",
+                    date=version_date,
                 )
