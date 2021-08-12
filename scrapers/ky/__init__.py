@@ -133,6 +133,15 @@ class Kentucky(State):
             "start_date": "2020-01-07",
             "end_date": "2020-04-15",
         },
+        # NOTE: Prefiles are live here, scrape with prefiles=True
+        {
+            "_scraped_name": "2022 Regular Session",
+            "classification": "primary",
+            "identifier": "2022RS",
+            "name": "2022 Regular Session",
+            "start_date": "2022-01-05",
+            "end_date": "2022-03-30",
+        },
         {
             "_scraped_name": "2021 Regular Session",
             "classification": "primary",
