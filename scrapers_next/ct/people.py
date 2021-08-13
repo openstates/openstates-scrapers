@@ -60,6 +60,8 @@ class LegList(CsvListPage):
         print("legislator url", legislator_url)
         p.add_link(legislator_url)
 
+        p.add_source(self.source.url)
+
         # the spacing of the address?
         office_address = "%s Room %s; %s" % (
             row["capitol street address"],
@@ -74,7 +76,7 @@ class LegList(CsvListPage):
 
         # spacing?
         if row["home street address"] and row["home city"]:
-            home_address = "{}\n{}, {} {}".format(
+            home_address = "{}; {}, {} {}".format(
                 row["home street address"],
                 row["home city"],
                 row["home state"],
