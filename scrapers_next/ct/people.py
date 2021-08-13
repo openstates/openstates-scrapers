@@ -9,11 +9,11 @@ class LegList(CsvListPage):
         name = row["first name"]
         mid = row["middle initial"].strip()
         if mid:
-            name += " %s" % mid
-        name += " %s" % row["last name"]
+            name += f" {mid}"
+        name += f" {row['last name']}"
         suffix = row["suffix"].strip()
         if suffix:
-            name += " %s" % suffix
+            name += f" {suffix}"
 
         party = row["party"]
 
@@ -48,8 +48,7 @@ class LegList(CsvListPage):
 
         p.add_source(self.source.url)
 
-        # the spacing of the address?
-        office_address = "%s Room %s; %s" % (
+        office_address = "{} Room {}; {}".format(
             row["capitol street address"],
             row["room number"],
             row["capitol city"].replace("  ", " "),
@@ -59,7 +58,6 @@ class LegList(CsvListPage):
         if row["capitol phone"].strip():
             p.capitol_office.voice = row["capitol phone"]
 
-        # spacing?
         if row["home street address"] and row["home city"]:
             home_address = "{}; {}, {} {}".format(
                 row["home street address"],
@@ -68,7 +66,10 @@ class LegList(CsvListPage):
                 row["home zip code"],
             )
 
-            if "Legislative Office Building" not in home_address:
+            if (
+                "Legislative Office Building"
+                and "Legislative Office Bldg" not in home_address
+            ):
                 p.district_office.address = home_address
 
         types = [
