@@ -246,12 +246,12 @@ class TXBillScraper(Scraper, LXMLMixin):
                 act.add_related_entity(name=ctty, entity_type="organization")
 
         for author in root.findtext("authors").split(" | "):
-            if author != "":
+            if re.search(r"\S+", author.strip()) is not None:
                 bill.add_sponsorship(
                     author, classification="primary", entity_type="person", primary=True
                 )
         for coauthor in root.findtext("coauthors").split(" | "):
-            if coauthor != "":
+            if re.search(r"\S+", coauthor.strip()) is not None:
                 bill.add_sponsorship(
                     coauthor,
                     classification="cosponsor",
@@ -259,7 +259,7 @@ class TXBillScraper(Scraper, LXMLMixin):
                     primary=False,
                 )
         for sponsor in root.findtext("sponsors").split(" | "):
-            if sponsor != "":
+            if re.search(r"\S+", sponsor.strip()) is not None:
                 bill.add_sponsorship(
                     sponsor,
                     classification="primary",
@@ -267,7 +267,7 @@ class TXBillScraper(Scraper, LXMLMixin):
                     primary=True,
                 )
         for cosponsor in root.findtext("cosponsors").split(" | "):
-            if cosponsor != "":
+            if re.search(r"\S+", cosponsor.strip()) is not None:
                 bill.add_sponsorship(
                     cosponsor,
                     classification="cosponsor",
