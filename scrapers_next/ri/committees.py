@@ -13,6 +13,19 @@ class CommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
 
+        extra_info = (
+            XPath(
+                "/html/body/div/table/tr[7]/td[2]/table/tr[2]/td/div/table/tr/td/div/table"
+            )
+            .match_one(self.root)
+            .getchildren()
+        )
+        for line in extra_info:
+            line = line.text_content().strip()
+            title, info = re.search(r"(.+):\s(.+)", line).groups()
+            if info != "--":
+                com.extras[title] = info
+
         members = XPath(
             "/html/body/div/table/tr[7]/td[2]/table/tr[2]/td/div/table/tr/td/table/tr"
         ).match(self.root)
