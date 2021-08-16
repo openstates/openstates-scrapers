@@ -5,12 +5,11 @@ from .utils import MDBMixin
 
 class NJCommitteeScraper(Scraper, MDBMixin):
     def scrape(self, session=None):
-        if not session:
-            session = self.jurisdiction.legislative_sessions[-1]["name"]
+        if session is None:
+            session = self.latest_session()
             self.info("no session specified, using %s", session)
 
-        year_abr = session[0:4]
-
+        year_abr = ((int(session) - 209) * 2) + 2000
         self._init_mdb(year_abr)
         members_csv = self.access_to_csv("COMember")
         info_csv = self.access_to_csv("Committee")
@@ -34,7 +33,16 @@ class NJCommitteeScraper(Scraper, MDBMixin):
             org_dictionary[abrv] = org
 
         # Committee Member Database
-        POSITIONS = {"C": "chair", "V": "vice-chair", "": "member"}
+        # FIXME: E.g. "SCEB" is the Select Commission on Emergency COVID-19 Borrowing.
+        # https://www.njleg.state.nj.us/committees/sceb.asp
+        # Its members have "O" for their position code. What does that mean? They're
+        # only called members on the web page, so I'll go with that.
+        POSITIONS = {
+            "C": "chair",
+            "V": "vice-chair",
+            "": "member",
+            "O": "member",
+        }
         for member_rec in members_csv:
             # assignment=P means they are active, assignment=R means removed
             if member_rec["Assignment_to_Committee"] == "P":
