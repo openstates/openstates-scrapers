@@ -1,5 +1,31 @@
-from spatula import URL, HtmlListPage, XPath
+from spatula import URL, HtmlListPage, XPath, HtmlPage, CSS
 from openstates.models import ScrapeCommittee
+import re
+
+
+class SubCommitteeDetail(HtmlPage):
+    def process_page(self):
+        com = self.input
+        return com
+
+
+class CommitteeDetail(HtmlPage):
+    def process_page(self):
+        com = self.input
+
+        members = XPath(
+            "/html/body/div/table/tr[7]/td[2]/table/tr[2]/td/div/table/tr/td/table/tr"
+        ).match(self.root)
+        for member in members:
+            if member.get("class") == "bodyCopyBL":
+                continue
+
+            name = CSS("td div").match(member)[0].text_content().strip()
+            name = re.search(r"(Senator|Representative)\s(.+)", name).groups()[1]
+            role = CSS("td div").match(member)[1].text_content().strip()
+            com.add_member(name, role)
+
+        return com
 
 
 class CommitteeList(HtmlListPage):
@@ -15,9 +41,20 @@ class CommitteeList(HtmlListPage):
         )
 
         com.add_source(self.source.url)
-        # source = item.get("href")
 
-        return com
+        source = item.get("href")
+        com.add_source(source)
+        com.add_link(source, note="homepage")
+
+        if re.search(r"Subcommittees", name):
+            return SubCommitteeDetail(
+                com,
+                source=source,
+            )
+        return CommitteeDetail(
+            com,
+            source=source,
+        )
 
 
 class House(CommitteeList):
