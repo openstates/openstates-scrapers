@@ -16,27 +16,47 @@ class SubCommitteeDetail(HtmlPage):
     input_type = PartialSubCommittee
 
     def process_page(self):
-        titles = {}
-        members_dict = {}
-        for count, td in enumerate(
-            XPath(
-                "/html/body/div/table/tr[7]/td[2]/table/tr[3]/td/div/table/tr/td/table/tr/td"
-            ).match(self.root)
-        ):
-            if td.text_content().strip() != "":
-                if re.search(
-                    r"(Rep|Sen)\.\s", CSS("div strong").match_one(td).text_content()
-                ):
-                    members_dict[count] = td.text_content().strip()
-                else:
-                    titles[count] = td.text_content().strip().lower().capitalize()
-
         parent = CSS("font").match(self.root)[1].text_content().strip()
         parent = re.search(
             r"(House|Senate)\s(.+)\s(Subcommittee\sMembers)", parent
         ).groups()[1]
 
-        for title_count, title in enumerate(titles.values()):
+        sub_dict = {}
+        titles_dict = {}
+        members_dict = {}
+
+        # grab all subcommittee titles
+        for num, title in enumerate(
+            XPath(
+                "/html/body/div/table/tr[7]/td[2]/table/tr[3]/td/div/table/tr/td/table/tr/td/div/strong"
+            ).match(self.root)
+        ):
+            title_clean = ""
+            title = title.text_content().strip()
+            if title != "":
+                for word in title.split():
+                    title_clean += word.lower().capitalize()
+                    title_clean += " "
+                titles_dict[num] = title_clean.strip()
+
+        # grab all subcommittee members
+        for num, members in enumerate(
+            XPath(
+                "/html/body/div/table/tr[7]/td[2]/table/tr[3]/td/div/table/tr/td/table/tr/td/div/p"
+            ).match(self.root)
+        ):
+            if members.text_content().strip() != "":
+                members_dict[num] = members.text_content().strip()
+
+        # combine titles and members into 1 dict
+        for title in range(len(titles_dict)):
+            if re.search(r"Rep\.\s", members_dict[title]):
+                sub_dict[titles_dict[title]] = members_dict[title].split("Rep. ")
+            else:
+                sub_dict[titles_dict[title]] = members_dict[title].split("Sen. ")
+
+        # create ScrapeCommittee() for each subcommittee, add each member
+        for title, members in sub_dict.items():
             com = ScrapeCommittee(
                 name=title,
                 chamber=self.input.chamber,
@@ -47,24 +67,16 @@ class SubCommitteeDetail(HtmlPage):
             com.add_source(self.input.source2)
             com.add_link(self.input.source2, note="homepage")
 
-            for mem_count, members in enumerate(members_dict.values()):
-                if title_count == mem_count:
-                    if re.search(r"Rep\.\s", members):
-                        members = members.split("Rep. ")
-                    else:
-                        members = members.split("Sen. ")
-
-                    for member in members:
-                        if member.strip() == "":
-                            continue
-                        elif ";" in member:
-                            member_name = member.split(";")[0].strip()
-                            member_role = member.split(";")[1].strip()
-                        else:
-                            member_name = member.strip()
-                            member_role = "member"
-                        com.add_member(member_name, member_role)
-
+            for member in members:
+                if member.strip() == "":
+                    continue
+                elif ";" in member:
+                    member_name = member.split(";")[0].strip()
+                    member_role = member.split(";")[1].strip()
+                else:
+                    member_name = member.strip()
+                    member_role = "member"
+                com.add_member(member_name, member_role)
             yield com
 
 
@@ -125,7 +137,6 @@ class CommitteeList(HtmlListPage):
             chamber=self.chamber,
         )
 
-        # need to do in subcommittees as well
         com.add_source(self.source.url)
         source = item.get("href")
         com.add_source(source)
