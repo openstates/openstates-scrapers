@@ -4,14 +4,73 @@ from openstates.models import ScrapeCommittee
 
 class SenateCommitteeDetail(HtmlPage):
     example_source = (
-        "https://www.senate.mn/committees/committee_bio.html?cmte_id=3087&ls=92"
+        "https://committees.senate.michigan.gov/details?com=ADVC&sessionId=14"
     )
 
     def process_page(self):
         # com = self.input
-        print("a new comm")
+        # print("a new comm")
         # print("item name", )
         print("self source url", self.source.url)
+
+        com = self.input
+        # com.add_source(self.source.url)
+        # com.add_link(self.source.url, note="homepage")
+
+        # committee chair
+        # chair = CSS("#MainContent_HLChair").match_one(self.root).text_content().strip()
+        # print("CHAIR: ", chair)
+
+        # comm members
+        members = CSS("#MainContent_BLMembers li").match(self.root)
+        for member in members:
+
+            member = member.text_content().strip().replace("(D)", "").replace("(R)", "")
+            print("here's a member: ", member)
+            positions = ["Majority Vice Chair", "Minority Vice Chair", "Chair"]
+            # if member.endswith("Majority Vice Chair"):
+            #     position = "Majority Vice Chair"
+            # if member.endswith("Minority Vice Chair"):
+            #     position = "Majority Vice Chair"
+            # if any(member for things in positions):
+            #     print('what', things)
+
+            if any(ext in member for ext in positions):
+                print("okay then", positions)
+            # print [extension for extension in positions if(extension in member)]
+            for position in positions:
+                if member.endswith(position):
+                    position_str = position
+                    break
+                else:
+                    position_str = "member"
+            print("FINAL", member.split("  ")[0], position_str)
+
+            com.add_member(member.split("  ")[0], position_str)
+
+        # extras (clerk and phone number)
+        clerk = CSS("#MainContent_HLComClerk").match_one(self.root).text_content()
+        print("CLERK", clerk)
+        com.extras["clerk"] = clerk
+        com.extras["clerk phone number"] = (
+            CSS("#MainContent_HLCCPhone").match_one(self.root).text_content()
+        )
+
+        # meeting schedule
+        # MainContent_lblDayTime
+        com.extras["meeting time"] = (
+            CSS("#MainContent_lblDayTime").match_one(self.root).text_content()
+        )
+        meeting_location = (
+            CSS("#MainContent_lblLocation").match_one(self.root).text_content()
+        )
+        # TODO: add semicolon after "Building"
+        com.extras["meeting location"] = (
+            # CSS("#MainContent_lblLocation").match_one(self.root).text_content()
+            meeting_location
+        )
+
+        # TODO: links are not directly related?
 
 
 class SenateCommitteeList(HtmlListPage):
