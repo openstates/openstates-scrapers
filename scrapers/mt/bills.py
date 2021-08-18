@@ -375,11 +375,27 @@ class MTBillScraper(Scraper, LXMLMixin):
             ).date()
             action_type = actions.categorize(action_name)
 
+            # I think we can grab committees here
+            try:
+                committee = action.xpath("td[5]")[0].text_content().strip()
+                committee = re.sub(r"&nbsp", "", committee)
+                if committee != "":
+                    committee = re.search(r"\([A-Z]\)\s(.+)", committee).groups()[0]
+                    print(committee)
+            except KeyError:
+                committee = None
+
             if "by senate" in action_name.lower():
                 actor = "upper"
 
+            # add committee to openstates.scrape.Bill
+            # if committee exists, add it here
             bill.add_action(
-                action_name, action_date, classification=action_type, chamber=actor
+                action_name,
+                action_date,
+                classification=action_type,
+                chamber=actor,
+                organization=committee,
             )
 
     def _versions_dict(self, session):
