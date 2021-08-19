@@ -9,18 +9,12 @@ class SenateCommitteeDetail(HtmlPage):
     )
 
     def process_page(self):
-        # com = self.input
-        # print("a new comm")
-        # print("item name", )
+
         print("self source url", self.source.url)
 
         com = self.input
         com.add_source(self.source.url)
         com.add_link(self.source.url, note="homepage")
-
-        # committee chair
-        # chair = CSS("#MainContent_HLChair").match_one(self.root).text_content().strip()
-        # print("CHAIR: ", chair)
 
         # comm members
         members = CSS("#MainContent_BLMembers li").match(self.root)
@@ -29,16 +23,7 @@ class SenateCommitteeDetail(HtmlPage):
             member = member.text_content().strip().replace("(D)", "").replace("(R)", "")
             # print("here's a member: ", member)
             positions = ["Majority Vice Chair", "Minority Vice Chair", "Chair"]
-            # if member.endswith("Majority Vice Chair"):
-            #     position = "Majority Vice Chair"
-            # if member.endswith("Minority Vice Chair"):
-            #     position = "Majority Vice Chair"
-            # if any(member for things in positions):
-            #     print('what', things)
 
-            # if any(ext in member for ext in positions):
-            # print("okay then", positions)
-            # print [extension for extension in positions if(extension in member)]
             for position in positions:
                 if member.endswith(position):
                     position_str = position
@@ -69,7 +54,6 @@ class SenateCommitteeDetail(HtmlPage):
         # TODO: still iffy for Approps comm: "Room, "
 
         # if "Room" is the last word on the line, add a space
-        # if " Room" in meeting_location:
 
         if "Building" in meeting_location:
             meeting = re.split("(Building)", meeting_location)
@@ -154,18 +138,21 @@ class HouseCommitteeDetail(HtmlPage):
     )
 
     def process_page(self):
-        # com = self.input
-        # print("a new comm")
-        # print("item name", )
         print("self source url", self.source.url)
-
+        # TODO: look for subcommittees
         com = self.input
-        com.add_source(self.source.url)
-        com.add_link(self.source.url, note="homepage")
+        # com.add_source(self.source.url)
+        # com.add_link(self.source.url, note="homepage")
 
         # comm members
-        member_position = CSS("#divMembers").match(self.root)
-        member_name = CSS("a").match(member_position)
+        member_position = CSS("#divMembers div").match(self.root)
+        member_name = CSS("#divMembers a").match(self.root)
+
+        print("member pos", member_position)
+
+        for i in member_position:
+            print("here's a member pos REALLY", i.text_content())
+        print("member name", member_name)
 
         positions = ["Majority Vice-Chair", "Minority Vice-Chair", "Committee Chair"]
         # TODO: warning if none of the positions are triggered?
@@ -175,30 +162,33 @@ class HouseCommitteeDetail(HtmlPage):
         num_members = range(len(member_name))
 
         for i in num_members:
-            if member_position[i] in positions:
-                pos = member_position[i]
-                # com.add_member(member_name[i], member_position[i])
-            else:
-                pos = "member"
-                # com.add_member(member_name[i], "member")
-            com.add_member(member_name[i], pos)
+            member_pos_str = member_position[i].text_content()
 
-        # extras (clerk and phone number)
-        clerk = CSS("#MainContent_HLComClerk").match_one(self.root).text_content()
-        # print("CLERK", clerk)
-        com.extras["clerk"] = clerk
+            # if member_pos_str in positions:
+            # pos = member_pos_str
+            # com.add_member(member_name[i], member_position[i])
+            # if ["Majority Vice-Chair", "Minority Vice-Chair", "Committee Chair"] in member_pos_str:
+            #     print("OH I SEE")
+            pos = "member"
+            for position in positions:
+                if position in member_pos_str:
+                    pos = position
+                    # print("I WAS REACHED")
+            # else:
+            # pos = "member"
+            # com.add_member(member_name[i], "member")
+            print(member_name[i].text_content(), pos)
+            # com.add_member(member_name[i], pos)
+
+            # extra clerk info
+        # clerk = CSS("#divClerk a").match_one(self.root).text_content()
+        # clerk_phone = CSS("#divClerk").match_one(self.root).text_content()[-10:]
+        # print(clerk, clerk_phone)
+
+        com.extras["clerk"] = CSS("#divClerk a").match_one(self.root).text_content()
         com.extras["clerk phone number"] = (
-            CSS("#MainContent_HLCCPhone").match_one(self.root).text_content()
+            CSS("#divClerk").match_one(self.root).text_content()[-10:]
         )
-
-        # meeting schedule
-        # MainContent_lblDayTime
-        com.extras["meeting time"] = (
-            CSS("#MainContent_lblDayTime").match_one(self.root).text_content()
-        )
-        # meeting_location = (
-        #     CSS("#MainContent_lblLocation").match_one(self.root).text_content()
-        # )
 
 
 class HouseCommitteeList(HtmlListPage):
