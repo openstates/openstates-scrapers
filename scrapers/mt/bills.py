@@ -380,6 +380,7 @@ class MTBillScraper(Scraper, LXMLMixin):
                 committee = action.xpath("td[5]")[0].text_content().strip()
                 committee = re.sub(r"&nbsp", "", committee)
                 if committee != "":
+                    # include parenthesis?
                     committee = re.search(r"\([A-Z]\)\s(.+)", committee).groups()[0]
                     print(committee)
             except KeyError:
