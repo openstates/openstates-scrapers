@@ -391,13 +391,21 @@ class MTBillScraper(Scraper, LXMLMixin):
 
             # add committee to openstates.scrape.Bill
             # if committee exists, add it here
-            bill.add_action(
-                action_name,
-                action_date,
-                classification=action_type,
-                chamber=actor,
-                organization=committee,
-            )
+
+            if committee:
+                bill.add_action(
+                    action_name,
+                    action_date,
+                    chamber=actor,
+                    organization=committee,
+                )
+            else:
+                bill.add_action(
+                    action_name,
+                    action_date,
+                    classification=action_type,
+                    chamber=actor,
+                )
 
     def _versions_dict(self, session):
         """Get a mapping of ('HB', '2') tuples to version urls."""
