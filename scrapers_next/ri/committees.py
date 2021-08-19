@@ -57,6 +57,7 @@ class SubCommitteeDetail(HtmlPage):
 
         # create ScrapeCommittee() for each subcommittee, add each member
         for title, members in sub_dict.items():
+            print(title, self.input.chamber)
             com = ScrapeCommittee(
                 name=title,
                 chamber=self.input.chamber,
@@ -136,6 +137,7 @@ class CommitteeList(HtmlListPage):
             name=name,
             chamber=self.chamber,
         )
+        print(name, self.chamber)
 
         com.add_source(self.source.url)
         source = item.get("href")
