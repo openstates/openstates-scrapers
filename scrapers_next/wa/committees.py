@@ -15,9 +15,11 @@ class CommitteeDetail(HtmlPage):
             last_name = dirty_name[0]
             first_name = dirty_name[1]
             name = first_name + " " + last_name
+            print(name)
 
             try:
                 role = CSS("td").match(member)[0].get("text()")[-1].strip()
+                print(role)
                 # role = member.get("td").get("text()")[-1].strip()
             except SelectorError:
                 role = "member"
