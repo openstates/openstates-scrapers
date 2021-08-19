@@ -1,3 +1,4 @@
+import re
 from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError
 from openstates.models import ScrapeCommittee
 
@@ -14,8 +15,8 @@ class SenateCommitteeDetail(HtmlPage):
         print("self source url", self.source.url)
 
         com = self.input
-        # com.add_source(self.source.url)
-        # com.add_link(self.source.url, note="homepage")
+        com.add_source(self.source.url)
+        com.add_link(self.source.url, note="homepage")
 
         # committee chair
         # chair = CSS("#MainContent_HLChair").match_one(self.root).text_content().strip()
@@ -26,7 +27,7 @@ class SenateCommitteeDetail(HtmlPage):
         for member in members:
 
             member = member.text_content().strip().replace("(D)", "").replace("(R)", "")
-            print("here's a member: ", member)
+            # print("here's a member: ", member)
             positions = ["Majority Vice Chair", "Minority Vice Chair", "Chair"]
             # if member.endswith("Majority Vice Chair"):
             #     position = "Majority Vice Chair"
@@ -35,8 +36,8 @@ class SenateCommitteeDetail(HtmlPage):
             # if any(member for things in positions):
             #     print('what', things)
 
-            if any(ext in member for ext in positions):
-                print("okay then", positions)
+            # if any(ext in member for ext in positions):
+            # print("okay then", positions)
             # print [extension for extension in positions if(extension in member)]
             for position in positions:
                 if member.endswith(position):
@@ -44,13 +45,13 @@ class SenateCommitteeDetail(HtmlPage):
                     break
                 else:
                     position_str = "member"
-            print("FINAL", member.split("  ")[0], position_str)
+            # print("FINAL", member.split("  ")[0], position_str)
 
             com.add_member(member.split("  ")[0], position_str)
 
         # extras (clerk and phone number)
         clerk = CSS("#MainContent_HLComClerk").match_one(self.root).text_content()
-        print("CLERK", clerk)
+        # print("CLERK", clerk)
         com.extras["clerk"] = clerk
         com.extras["clerk phone number"] = (
             CSS("#MainContent_HLCCPhone").match_one(self.root).text_content()
@@ -64,13 +65,31 @@ class SenateCommitteeDetail(HtmlPage):
         meeting_location = (
             CSS("#MainContent_lblLocation").match_one(self.root).text_content()
         )
+        # meeting = meeting_location.split("(Building)")
+        # TODO: still iffy for Approps comm: "Room, "
+        if "Building" in meeting_location:
+            meeting = re.split("(Building)", meeting_location)
+            meeting = meeting[0] + meeting[1] + "; " + meeting[2]
+        elif "Tower" in meeting_location:
+            meeting = re.split("(Tower)", meeting_location)
+            meeting = meeting[0] + meeting[1] + "; " + meeting[2]
+        # print("BUILDING MEETING", meeting)
+        elif "Call of the Chair" in meeting_location:
+            meeting = "Call of the Chair"
+
+        print("MEETING", meeting)
         # TODO: add semicolon after "Building"
         com.extras["meeting location"] = (
             # CSS("#MainContent_lblLocation").match_one(self.root).text_content()
-            meeting_location
+            meeting
         )
 
         # TODO: links are not directly related?
+        com.add_link(CSS("#MainContent_HLcbr").match_one(self.root).get("href"))
+        com.add_link(CSS("#MainContent_HyperLink1").match_one(self.root).get("href"))
+        com.add_link(CSS("#MainContent_HLComAudio").match_one(self.root).get("href"))
+
+        return com
 
 
 class SenateCommitteeList(HtmlListPage):
@@ -113,6 +132,8 @@ class SenateCommitteeList(HtmlListPage):
                         parent="Appropriations",
                     )
                 return SenateCommitteeDetail(com, source=source)
+            else:
+                return None
 
         # for comm_name in title:
         #     # try:
