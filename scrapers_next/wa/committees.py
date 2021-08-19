@@ -1,4 +1,4 @@
-from spatula import HtmlListPage, HtmlPage, CSS, URL, SelectorError
+from spatula import HtmlListPage, HtmlPage, CSS, URL, SelectorError, XPath
 from openstates.models import ScrapeCommittee
 
 
@@ -7,25 +7,18 @@ class CommitteeDetail(HtmlPage):
         com = self.input
 
         members = CSS("div#CommitteeMembers tbody tr").match(self.root)
-        # members = CSS("td a.ui-link").match(self.root)
         for member in members:
             dirty_name = CSS("a").match_one(member).text_content().strip().split(", ")
-            # dirty_name = member.get("a").text_content().strip().split(", ")
-            # dirty_name = member.text_content().strip().split(", ")
             last_name = dirty_name[0]
             first_name = dirty_name[1]
             name = first_name + " " + last_name
             print(name)
 
             try:
-                role = CSS("td").match(member)[0].get("text()")[-1].strip()
+                role = XPath("//td/text()[3]").match(member)[0].strip()
                 print(role)
-                # role = member.get("td").get("text()")[-1].strip()
             except SelectorError:
                 role = "member"
-            # role = member.getnext().getnext().getnext()
-            # .getnext().getnext().getnext()
-            # .tail()
 
             com.add_member(name, role)
 
