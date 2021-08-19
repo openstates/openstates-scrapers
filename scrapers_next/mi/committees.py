@@ -145,9 +145,77 @@ class SenateCommitteeList(HtmlListPage):
                     )
                 return SenateCommitteeDetail(com, source=source)
             else:
-                return None
+                self.skip()
+
+
+class HouseCommitteeDetail(HtmlPage):
+    example_source = (
+        "https://www.house.mi.gov/MHRPublic/CommitteeInfo.aspx?comcode=AGRI"
+    )
+
+    def process_page(self):
+        # com = self.input
+        # print("a new comm")
+        # print("item name", )
+        print("self source url", self.source.url)
+
+        com = self.input
+        com.add_source(self.source.url)
+        com.add_link(self.source.url, note="homepage")
+
+        # comm members
+        member_position = CSS("#divMembers").match(self.root)
+        member_name = CSS("a").match(member_position)
+
+        positions = ["Majority Vice-Chair", "Minority Vice-Chair", "Committee Chair"]
+        # TODO: warning if none of the positions are triggered?
+        # TODO:
+
+        # ex: [Majority Vice-Chair, 106th District, Committee Chair]
+        num_members = range(len(member_name))
+
+        for i in num_members:
+            if member_position[i] in positions:
+                pos = member_position[i]
+                # com.add_member(member_name[i], member_position[i])
+            else:
+                pos = "member"
+                # com.add_member(member_name[i], "member")
+            com.add_member(member_name[i], pos)
+
+        # extras (clerk and phone number)
+        clerk = CSS("#MainContent_HLComClerk").match_one(self.root).text_content()
+        # print("CLERK", clerk)
+        com.extras["clerk"] = clerk
+        com.extras["clerk phone number"] = (
+            CSS("#MainContent_HLCCPhone").match_one(self.root).text_content()
+        )
+
+        # meeting schedule
+        # MainContent_lblDayTime
+        com.extras["meeting time"] = (
+            CSS("#MainContent_lblDayTime").match_one(self.root).text_content()
+        )
+        # meeting_location = (
+        #     CSS("#MainContent_lblLocation").match_one(self.root).text_content()
+        # )
 
 
 class HouseCommitteeList(HtmlListPage):
-    source = "https://capitol.texas.gov/Committees/CommitteesMbrs.aspx?Chamber=H"
+    source = "https://www.house.mi.gov/mhrpublic/committee.aspx"
+    selector = CSS("select option")
     chamber = "lower"
+
+    def process_item(self, item):
+        name = item.text_content()
+        if name != "Statutory Committees" and name != "Select One":
+            comcode = item.get("value")
+
+            com = ScrapeCommittee(name=name, chamber=self.chamber)
+            return HouseCommitteeDetail(
+                com,
+                source="https://www.house.mi.gov/MHRPublic/CommitteeInfo.aspx?comcode="
+                + comcode,
+            )
+        else:
+            self.skip()
