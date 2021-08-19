@@ -116,7 +116,7 @@ class CommitteeList(HtmlListPage):
     source = URL("https://www.rilegislature.gov/pages/committees.aspx")
 
     def process_item(self, item):
-        name = item.text_content()
+        name = item.text_content().strip()
 
         if re.search(r"Subcommittees", name):
             source = item.get("href")
