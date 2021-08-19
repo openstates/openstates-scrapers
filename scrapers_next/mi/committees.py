@@ -67,12 +67,24 @@ class SenateCommitteeDetail(HtmlPage):
         )
         # meeting = meeting_location.split("(Building)")
         # TODO: still iffy for Approps comm: "Room, "
+
+        # if "Room" is the last word on the line, add a space
+        # if " Room" in meeting_location:
+
         if "Building" in meeting_location:
             meeting = re.split("(Building)", meeting_location)
             meeting = meeting[0] + meeting[1] + "; " + meeting[2]
+            if " Room" in meeting_location:
+                room = re.split("(Room)|(Building)", meeting_location)
+                meeting = f"{room[0]}{room[1]}; {room[3]}{room[5]}; {room[6]}"
         elif "Tower" in meeting_location:
             meeting = re.split("(Tower)", meeting_location)
-            meeting = meeting[0] + meeting[1] + "; " + meeting[2]
+            if " Room" in meeting_location:
+                room = re.split("(Room)|(Tower)", meeting_location)
+                meeting = f"{room[0]}{room[1]}; {room[3]}{room[5]}; {room[6]}"
+                # meeting = room[0] + room[1] + "; " + meeting[0] + meeting[1] + "; " + meeting[2]
+            else:
+                meeting = meeting[0] + meeting[1] + "; " + meeting[2]
         # print("BUILDING MEETING", meeting)
         elif "Call of the Chair" in meeting_location:
             meeting = "Call of the Chair"
@@ -134,38 +146,6 @@ class SenateCommitteeList(HtmlListPage):
                 return SenateCommitteeDetail(com, source=source)
             else:
                 return None
-
-        # for comm_name in title:
-        #     # try:
-        #     print(comm_name.text_content())
-        #     comm_name = comm_name.text_content()
-        #     # except SelectorError:
-        #     if comm_name == "Standing Committees":
-        #         for committee in CSS("ul li").match(item):
-
-        #             name = committee.text_content()
-        #             com = ScrapeCommittee(name=name, chamber=self.chamber)
-        #         #     # print("com", com)
-        #         #     # print("source OKAY", CSS("a").match_one(committee).get("href"))
-        #             source = CSS("a").match_one(committee).get("href")
-        #         #     # print("HERE")
-        #             # yield SenateCommitteeDetail(com, source=source)
-        #         # return [SenateCommitteeDetail(ScrapeCommittee(name=committee.text_content(), chamber=self.chamber), source=CSS("a").match_one(committee).get("href")) for committee in CSS("ul li").match(item)]
-        #     elif comm_name == "Appropriations Subcommittees":
-        #         for committee in CSS("ul li").match(item):
-
-        #             name = committee.text_content()
-        #             com = ScrapeCommittee(
-        #                 name=name,
-        #                 classification="subcommittee",
-        #                 chamber=self.chamber,
-        #                 parent="Appropriations",
-        #             )
-        #             # print("com", com)
-        #             source = CSS("a").match_one(committee).get("href")
-        # print("HERE2")
-        # return SenateCommitteeDetail(com, source=source)
-        # return SenateCommitteeDetail(com, source=item.get("href"))
 
 
 class HouseCommitteeList(HtmlListPage):
