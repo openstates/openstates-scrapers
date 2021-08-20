@@ -10,8 +10,6 @@ class SenateCommitteeDetail(HtmlPage):
 
     def process_page(self):
 
-        print("self source url", self.source.url)
-
         com = self.input
         com.add_source(self.source.url)
         com.add_link(self.source.url, note="homepage")
@@ -112,7 +110,6 @@ class HouseCommitteeDetail(HtmlPage):
     )
 
     def process_page(self):
-        print("self source url", self.source.url)
 
         com = self.input
         com.add_source(self.source.url)
