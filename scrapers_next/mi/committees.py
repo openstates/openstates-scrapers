@@ -16,7 +16,6 @@ class SenateCommitteeDetail(HtmlPage):
         com.add_source(self.source.url)
         com.add_link(self.source.url, note="homepage")
 
-        # comm members
         members = CSS("#MainContent_BLMembers li").match(self.root)
         for member in members:
 
@@ -32,15 +31,12 @@ class SenateCommitteeDetail(HtmlPage):
 
             com.add_member(member.split("  ")[0], position_str)
 
-        # extras (clerk and phone number)
         clerk = CSS("#MainContent_HLComClerk").match_one(self.root).text_content()
 
         com.extras["clerk"] = clerk
         com.extras["clerk phone number"] = (
             CSS("#MainContent_HLCCPhone").match_one(self.root).text_content()
         )
-
-        # meeting schedule
 
         com.extras["meeting time"] = (
             CSS("#MainContent_lblDayTime").match_one(self.root).text_content()
@@ -49,8 +45,7 @@ class SenateCommitteeDetail(HtmlPage):
             CSS("#MainContent_lblLocation").match_one(self.root).text_content()
         )
 
-        # if "Room" is the last word on the line, add a space
-
+        # This is some formatting to make the address easier to read
         if "Building" in meeting_location:
             meeting = re.split("(Building)", meeting_location)
             meeting = meeting[0] + meeting[1] + "; " + meeting[2]
@@ -62,21 +57,14 @@ class SenateCommitteeDetail(HtmlPage):
             if " Room" in meeting_location:
                 room = re.split("(Room)|(Tower)", meeting_location)
                 meeting = f"{room[0]}{room[1]}; {room[3]}{room[5]}; {room[6]}"
-                # meeting = room[0] + room[1] + "; " + meeting[0] + meeting[1] + "; " + meeting[2]
             else:
                 meeting = meeting[0] + meeting[1] + "; " + meeting[2]
-        # print("BUILDING MEETING", meeting)
+
         elif "Call of the Chair" in meeting_location:
             meeting = "Call of the Chair"
 
-        print("MEETING", meeting)
-        # TODO: add semicolon after "Building"
-        com.extras["meeting location"] = (
-            # CSS("#MainContent_lblLocation").match_one(self.root).text_content()
-            meeting
-        )
+        com.extras["meeting location"] = meeting
 
-        # TODO: links are not directly related?
         com.add_link(CSS("#MainContent_HLcbr").match_one(self.root).get("href"))
         com.add_link(CSS("#MainContent_HyperLink1").match_one(self.root).get("href"))
         com.add_link(CSS("#MainContent_HLComAudio").match_one(self.root).get("href"))
@@ -103,9 +91,7 @@ class SenateCommitteeList(HtmlListPage):
             ):
                 name_link = CSS("a").match_one(item)
                 name = name_link.text_content()
-                # print("NAME: ", name)
                 source = name_link.get("href")
-                # print("source: ", source)
                 if comm_name == "Standing Committees":
                     com = ScrapeCommittee(name=name, chamber=self.chamber)
                 else:
@@ -132,7 +118,6 @@ class HouseCommitteeDetail(HtmlPage):
         com.add_source(self.source.url)
         com.add_link(self.source.url, note="homepage")
 
-        # comm members
         member_position = CSS("#divMembers div").match(self.root)
         member_name = CSS("#divMembers a").match(self.root)
 
@@ -156,7 +141,7 @@ class HouseCommitteeDetail(HtmlPage):
         com.add_link(CSS("#lnkSubscribe").match_one(self.root).get("href"))
         com.add_link(CSS("#hlPublicVCommitteeSched").match_one(self.root).get("href"))
 
-        # TODO: look for subcommittees
+        # attempt at subcommittees
         # try:
         #     subcommittee = CSS("#lnkSubcommittees").match_one(self.root).get("href")
         #     print("SUBCOMM link", subcommittee)
@@ -180,10 +165,9 @@ class HouseSubcommitteeDetail(HtmlListPage):
     chamber = "lower"
 
     def process_item(self, item):
-        print("this is a subcommittee of", self.input.source)
 
         com = ScrapeCommittee(
-            name="hello",
+            name="name",
             classification="subcommittee",
             chamber=self.chamber,
             parent=CSS("#lblTitle")
@@ -195,7 +179,8 @@ class HouseSubcommitteeDetail(HtmlListPage):
         return com
 
 
-class HouseSubcommittees(HtmlListPage):
+# Due to faulty subcommittee webpages, this doesn't work as intended right now
+class HouseSubcommitteeList(HtmlListPage):
     source = "https://www.house.mi.gov/mhrpublic/committee.aspx"
     selector = CSS("select option")
     chamber = "lower"
@@ -204,14 +189,6 @@ class HouseSubcommittees(HtmlListPage):
         name = item.text_content()
         if name != "Statutory Committees" and name != "Select One":
             comcode = item.get("value")
-
-            # com = ScrapeCommittee(
-            #             name=name,
-            #             classification="subcommittee",
-            #             chamber=self.chamber,
-            #             parent=CSS("#lblTitle").match_one(item).text_content().replace("HOUSE", "").replace("SUBCOMMITTEES", ""),
-            #         )
-
             return HouseSubcommitteeDetail(
                 source="https://www.house.mi.gov/MHRPublic/SubCommittee.aspx?comcode="
                 + comcode,
