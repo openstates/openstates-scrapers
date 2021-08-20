@@ -1,5 +1,29 @@
-from spatula import HtmlListPage, CSS, URL
+from spatula import HtmlListPage, CSS, URL, HtmlPage
 from openstates.models import ScrapeCommittee
+import re
+
+
+# "html body section.parent-section.no-padding div.container-fluid div.row section.parallax-fix div.container div.row div div div div.tab-content div div div div.insert-page.insert-page-522202 div.hidden-print section.row-equal-height.no-padding div"
+# "html body section.parent-section.no-padding div.container-fluid div.row div"
+
+
+class DetailCommitteePage(HtmlPage):
+    def process_page(self):
+        com = self.input
+
+        members = CSS(
+            "div .wpb_column.vc_column_container.col-xs-mobile-fullwidth.col-sm-6 div .row-equal-height.hcode-inner-row"
+        ).match(self.root)
+        for member in members:
+            name = CSS("strong").match_one(member).text_content().strip()
+            name = re.search(r"(Sen\.|Rep\.)\s(.+)", name).groups()[1]
+            if re.search(r",\s", name):
+                name, role = re.search(r"(.+),\s(.+)", name).groups()
+            else:
+                role = "member"
+            print(name, role)
+
+        return com
 
 
 class JointCommitteeList(HtmlListPage):
@@ -20,7 +44,7 @@ class JointCommitteeList(HtmlListPage):
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
 
-        return com
+        return DetailCommitteePage(com, source=detail_link)
 
 
 class CommitteeList(HtmlListPage):
@@ -44,7 +68,7 @@ class CommitteeList(HtmlListPage):
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
 
-        return com
+        return DetailCommitteePage(com, source=detail_link)
 
 
 class Senate(CommitteeList):
