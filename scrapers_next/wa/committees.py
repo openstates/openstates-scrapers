@@ -12,11 +12,9 @@ class CommitteeDetail(HtmlPage):
             last_name = dirty_name[0]
             first_name = dirty_name[1]
             name = first_name + " " + last_name
-            print(name)
 
             try:
                 role = XPath("//td/text()[3]").match(member)[0].strip()
-                print(role)
             except SelectorError:
                 role = "member"
 
@@ -61,9 +59,7 @@ class CommitteeList(HtmlListPage):
 
         # new source
         href = item.get("href")
-        print(href)
         href_lst = href.split("/")
-        print(href_lst)
         new_source = f"https://app.leg.wa.gov/ContentParts/CommitteeMembers/?agency={href_lst[-3]}&committee={href_lst[-1]}"
 
         com.add_source(new_source)
