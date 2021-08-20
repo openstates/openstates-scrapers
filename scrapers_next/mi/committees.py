@@ -139,24 +139,24 @@ class HouseCommitteeDetail(HtmlPage):
 
     def process_page(self):
         print("self source url", self.source.url)
-        # TODO: look for subcommittees
+
         com = self.input
-        # com.add_source(self.source.url)
-        # com.add_link(self.source.url, note="homepage")
+        com.add_source(self.source.url)
+        com.add_link(self.source.url, note="homepage")
 
         # comm members
         member_position = CSS("#divMembers div").match(self.root)
         member_name = CSS("#divMembers a").match(self.root)
 
-        print("member pos", member_position)
+        # print("member pos", member_position)
 
-        for i in member_position:
-            print("here's a member pos REALLY", i.text_content())
-        print("member name", member_name)
+        # for i in member_position:
+        #     print("here's a member pos REALLY", i.text_content())
+        # print("member name", member_name)
 
         positions = ["Majority Vice-Chair", "Minority Vice-Chair", "Committee Chair"]
         # TODO: warning if none of the positions are triggered?
-        # TODO:
+        # TODO: subcommittees in Appropriations (only there??)
 
         # ex: [Majority Vice-Chair, 106th District, Committee Chair]
         num_members = range(len(member_name))
@@ -177,8 +177,8 @@ class HouseCommitteeDetail(HtmlPage):
             # else:
             # pos = "member"
             # com.add_member(member_name[i], "member")
-            print(member_name[i].text_content(), pos)
-            # com.add_member(member_name[i], pos)
+            # print(member_name[i].text_content(), pos)
+            com.add_member(member_name[i].text_content(), pos)
 
             # extra clerk info
         # clerk = CSS("#divClerk a").match_one(self.root).text_content()
@@ -189,6 +189,17 @@ class HouseCommitteeDetail(HtmlPage):
         com.extras["clerk phone number"] = (
             CSS("#divClerk").match_one(self.root).text_content()[-10:]
         )
+
+        com.add_link(CSS("#lnkSubscribe").match_one(self.root).get("href"))
+        com.add_link(CSS("#hlPublicVCommitteeSched").match_one(self.root).get("href"))
+
+        # TODO: look for subcommittees
+        # try:
+        #     subcommittee = CSS("#lnkSubcommittees").match_one(self.root).get("href")
+        #     scrapesubcommittees(com, subcommittee)
+        # except SelectorError:
+
+        return com
 
 
 class HouseCommitteeList(HtmlListPage):
