@@ -27,7 +27,8 @@ class DetailCommitteePage(HtmlPage):
                 name, role = re.search(r"(.+),\s(.+)", name).groups()
             else:
                 role = "member"
-            print(name, role)
+            com.add_member(name, role)
+            # print(name, role)
 
         return com
 
@@ -70,6 +71,14 @@ class CommitteeList(HtmlListPage):
             name=name,
             chamber=self.chamber,
         )
+
+        all_text = CSS("p").match(item)[0].text_content().strip()
+        secretary, email, phone = re.search(
+            r"\n?Secretary:(.+)\n?Email:(.+)\n?Phone:(.+)", all_text
+        ).groups()
+        com.extras["secretary"] = secretary.strip()
+        com.extras["email"] = email.strip()
+        com.extras["phone"] = phone.strip()
 
         detail_link = CSS("a").match(item)[0].get("href")
 
