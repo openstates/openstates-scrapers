@@ -132,6 +132,17 @@ class SenateCommitteeList(HtmlListPage):
                 self.skip()
 
 
+class HouseSubcommittees(HtmlListPage):
+    # source = "https://www.house.mi.gov/mhrpublic/committee.aspx"
+    selector = CSS("#DataList1 tr td")
+    chamber = "lower"
+
+    def process_item(self, item):
+        print("subcommittees gonna be processed")
+        com = ScrapeCommittee(name="hello subcomm", chamber="lower")
+        return com
+
+
 class HouseCommitteeDetail(HtmlPage):
     example_source = (
         "https://www.house.mi.gov/MHRPublic/CommitteeInfo.aspx?comcode=AGRI"
@@ -148,42 +159,19 @@ class HouseCommitteeDetail(HtmlPage):
         member_position = CSS("#divMembers div").match(self.root)
         member_name = CSS("#divMembers a").match(self.root)
 
-        # print("member pos", member_position)
-
-        # for i in member_position:
-        #     print("here's a member pos REALLY", i.text_content())
-        # print("member name", member_name)
-
         positions = ["Majority Vice-Chair", "Minority Vice-Chair", "Committee Chair"]
         # TODO: warning if none of the positions are triggered?
-        # TODO: subcommittees in Appropriations (only there??)
 
         # ex: [Majority Vice-Chair, 106th District, Committee Chair]
         num_members = range(len(member_name))
 
         for i in num_members:
             member_pos_str = member_position[i].text_content()
-
-            # if member_pos_str in positions:
-            # pos = member_pos_str
-            # com.add_member(member_name[i], member_position[i])
-            # if ["Majority Vice-Chair", "Minority Vice-Chair", "Committee Chair"] in member_pos_str:
-            #     print("OH I SEE")
             pos = "member"
             for position in positions:
                 if position in member_pos_str:
                     pos = position
-                    # print("I WAS REACHED")
-            # else:
-            # pos = "member"
-            # com.add_member(member_name[i], "member")
-            # print(member_name[i].text_content(), pos)
             com.add_member(member_name[i].text_content(), pos)
-
-            # extra clerk info
-        # clerk = CSS("#divClerk a").match_one(self.root).text_content()
-        # clerk_phone = CSS("#divClerk").match_one(self.root).text_content()[-10:]
-        # print(clerk, clerk_phone)
 
         com.extras["clerk"] = CSS("#divClerk a").match_one(self.root).text_content()
         com.extras["clerk phone number"] = (
@@ -196,8 +184,17 @@ class HouseCommitteeDetail(HtmlPage):
         # TODO: look for subcommittees
         # try:
         #     subcommittee = CSS("#lnkSubcommittees").match_one(self.root).get("href")
-        #     scrapesubcommittees(com, subcommittee)
+        #     print("SUBCOMM link", subcommittee)
+        #     # return HouseSubcommittees(com, source=subcommittee)
         # except SelectorError:
+        #     print("no subcom")
+        #     pass
+
+        subcommittee = CSS("#lnkSubcommittees").match_one(self.root).get("href")
+        if subcommittee is not None:
+            print("SUBCOMM link", subcommittee)
+            return com, HouseSubcommittees(com, source=subcommittee)
+        # else:
 
         return com
 
