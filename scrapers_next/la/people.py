@@ -77,6 +77,23 @@ class LegislatorDetail(HtmlPage):
         if fax != "":
             p.district_office.fax = fax
 
+        leg_assistant = (
+            CSS("span#body_FormView6_LEGISLATIVEAIDELabel")
+            .match_one(self.root)
+            .text_content()
+            .strip()
+        )
+        p.extras["legislative assistant"] = leg_assistant
+
+        parishes = (
+            CSS("span#body_FormView6_DISTRICTPARISHESLabel")
+            .match_one(self.root)
+            .text_content()
+            .strip()
+            .split(", ")
+        )
+        p.extras["representing parishes"] = parishes
+
         return p
 
 
