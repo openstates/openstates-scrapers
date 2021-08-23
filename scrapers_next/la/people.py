@@ -1,6 +1,24 @@
-from spatula import HtmlListPage, CSS, URL
+from spatula import HtmlListPage, CSS, URL, HtmlPage
 from openstates.models import ScrapePerson
 import re
+
+
+class LegislatorDetail(HtmlPage):
+    def process_page(self):
+        p = self.input
+
+        district_addr = (
+            CSS("span#body_FormView3_OFFICEADDRESS2Label")
+            .match_one(self.root)
+            .text_content()
+            .strip()
+        )
+        print(district_addr)
+        # lxml.etree.tostring(font).replace(b”<br>“, b”\n”).splitlines()
+        # phone = CSS("span#body_FormView3_DISTRICTOFFICEPHONELabel").match_one(self.root).text_content().strip()
+        # fax = CSS("span#body_FormView3_FAXNUMBERLabel").match_one(self.root).text_content().strip()
+
+        return p
 
 
 class Legislators(HtmlListPage):
@@ -32,9 +50,17 @@ class Legislators(HtmlListPage):
             image=img,
         )
 
-        p.add_source(self.source.url)
+        # district_addr = CSS("i.fa.fa-map-marker").match_one(item).getnext().text_content().strip().split("\n")
+        # p.district_office.address = district_addr
+        # print(len(district_addr))
 
-        return p
+        detail_link = CSS("a").match(item)[1].get("href")
+
+        p.add_source(self.source.url)
+        p.add_source(detail_link)
+        p.add_link(detail_link, note="homepage")
+
+        return LegislatorDetail(p, source=detail_link)
 
 
 class Senate(Legislators):
