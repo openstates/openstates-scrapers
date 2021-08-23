@@ -1,4 +1,4 @@
-# import re
+import re
 from spatula import HtmlPage, HtmlListPage, CSS
 from openstates.models import ScrapeCommittee
 
@@ -32,6 +32,7 @@ class SenateCommitteeDetail(HtmlPage):
 class SenateTypeCommitteeList(HtmlListPage):
     # Im guessing there are no subcommittees?
     # source = "https://www.senate.mo.gov/committee/"
+    example_source = "https://www.senate.mo.gov/statutory-committees/"
     selector = CSS(".entry-content a")
     chamber = "upper"
 
@@ -39,9 +40,53 @@ class SenateTypeCommitteeList(HtmlListPage):
         # TODO: don't scrape the schedule in standing
         name = item.text_content()
         print("NAME", name)
-        com = ScrapeCommittee(name=name, chamber=self.chamber)
+        # com = ScrapeCommittee(name=name, chamber=self.chamber)
 
-        if name != "2021 Senate Committee Hearing Schedule":
+        if (
+            name != "2021 Senate Committee Hearing Schedule"
+            and name != "Assigned Bills"
+            and name != "Committee Minutes"
+            and name != "Appointees To Be Considered"
+        ):
+            if "Committee" in name:
+                # name.split("Committee on", "").split("-", "")
+
+                # "Joint, Capital Security" so take the last index here
+                # Joint Committee on Legislative Research – Oversight Subcommittee
+                # "Joint, Legislative Research, Oversight"
+                # comm_name =
+                print("So there's a committee listed in the above name")
+                if "Subcommittee" in name:
+                    name_split = re.split("Committee on | - | Subcommittee", name)
+                    # "Joint, Legislative Research, Oversight"
+                    comm_name = name_split[1]
+                    parent = name_split[2]
+                    print("HERE HERE", comm_name, parent)
+                    com = ScrapeCommittee(
+                        name=comm_name, chamber=self.chamber, parent=parent
+                    )
+                else:
+                    name_split = re.split("Committee on | - ", name)
+                    print("NAME SPLIT", name_split)
+                    # comm_name = name_split[1]
+                    try:
+                        comm_name = name_split[1]
+                    except ValueError:
+                        pass
+                    try:
+                        name_split = re.split("Committee", name)
+                        comm_name = name_split[0]
+                    except IndexError:
+                        comm_name = name_split[1]
+                        pass
+                    # comm_name = name_split[1]
+                    print("HERE HERE", comm_name)
+                    com = ScrapeCommittee(name=comm_name, chamber=self.chamber)
+            else:
+                com = ScrapeCommittee(name=name, chamber=self.chamber)
+                # | Subcommittee
+                # re.split('; |, ',str)
+
             return SenateCommitteeDetail(com, source=item.get("href"))
         else:
             self.skip()
@@ -65,3 +110,6 @@ class SenateCommitteeList(HtmlListPage):
         else:
             # print("SKIPPED")
             self.skip()
+
+
+# would it be better to have SenCommList, SenTypeList, and then Detail (with a )
