@@ -94,6 +94,15 @@ class LegislatorDetail(HtmlPage):
         )
         p.extras["representing parishes"] = parishes
 
+        education = (
+            CSS("span#body_FormView4_EDUCATIONLabel")
+            .match_one(self.root)
+            .text_content()
+            .strip()
+        )
+        if education != "":
+            p.extras["education"] = education
+
         return p
 
 
