@@ -1,4 +1,4 @@
-import re
+# import re
 from spatula import HtmlPage, HtmlListPage, CSS
 from openstates.models import ScrapeCommittee
 
@@ -56,31 +56,32 @@ class SenateTypeCommitteeList(HtmlListPage):
                 # "Joint, Legislative Research, Oversight"
                 # comm_name =
                 print("So there's a committee listed in the above name")
+
+                comm_name = (
+                    name.replace("Joint Committee on the ", "")
+                    .replace("Joint Committee on ", "")
+                    .replace("Committee on ", "")
+                    .replace(" Committee", "")
+                )
+                # comm_name = name.replace("Joint ", "").replace("Committee ", "").replace("on ", "").replace(" the ", "").replace(" Committee", "")
+                # Legislative Research - Personnel Subcommittee
+                # Legislative Research
+                # Missouri Works Job Training Joint Legislative Oversight Committee
                 if "Subcommittee" in name:
-                    name_split = re.split("Committee on | - | Subcommittee", name)
-                    # "Joint, Legislative Research, Oversight"
-                    comm_name = name_split[1]
-                    parent = name_split[2]
-                    print("HERE HERE", comm_name, parent)
+                    # there is a subcommittee
+                    name_parent = comm_name.split(" – ")
+                    print("NAME PAENT", name_parent)
+                    comm_name = name_parent[0]
+                    parent = name_parent[1].replace("Subcommittee", "")
+                    print("NAME and parent", comm_name, parent)
+
                     com = ScrapeCommittee(
-                        name=comm_name, chamber=self.chamber, parent=parent
+                        name=comm_name,
+                        chamber=self.chamber,
+                        classification="subcommittee",
+                        parent=parent,
                     )
                 else:
-                    name_split = re.split("Committee on | - ", name)
-                    print("NAME SPLIT", name_split)
-                    # comm_name = name_split[1]
-                    try:
-                        comm_name = name_split[1]
-                    except ValueError:
-                        pass
-                    try:
-                        name_split = re.split("Committee", name)
-                        comm_name = name_split[0]
-                    except IndexError:
-                        comm_name = name_split[1]
-                        pass
-                    # comm_name = name_split[1]
-                    print("HERE HERE", comm_name)
                     com = ScrapeCommittee(name=comm_name, chamber=self.chamber)
             else:
                 com = ScrapeCommittee(name=name, chamber=self.chamber)
