@@ -1,4 +1,4 @@
-from spatula import HtmlListPage, CSS, URL, HtmlPage
+from spatula import HtmlListPage, CSS, URL, HtmlPage, XPath, SelectorError
 from openstates.models import ScrapePerson
 import re
 
@@ -7,15 +7,69 @@ class LegislatorDetail(HtmlPage):
     def process_page(self):
         p = self.input
 
-        district_addr = (
-            CSS("span#body_FormView3_OFFICEADDRESS2Label")
+        # "//*[@id="body_FormView3_OFFICEADDRESS2Label"]/text()[1]"
+
+        district_addr_lst = XPath(
+            "//*[@id='body_FormView3_OFFICEADDRESS2Label']/text()"
+        ).match(self.root)
+        district_addr_temp = ""
+        district_addr1 = None
+        district_addr2 = None
+        district_addr3 = None
+
+        for addr in district_addr_lst:
+            district_addr_temp += addr.strip()
+            if (
+                re.search(r"L(A|a)\s\s?\s?\d{5}(-\d{4})?$", district_addr_temp)
+                and not district_addr1
+            ):
+                district_addr1 = district_addr_temp
+                district_addr_temp = ""
+                p.district_office.address = district_addr1
+            elif (
+                re.search(r"L(A|a)\s\s?\s?\d{5}(-\d{4})?$", district_addr_temp)
+                and not district_addr2
+            ):
+                district_addr2 = district_addr_temp
+                district_addr_temp = ""
+                p.extras["second address"] = district_addr2
+            elif (
+                re.search(r"L(A|a)\s\s?\s?\d{5}(-\d{4})?$", district_addr_temp)
+                and not district_addr3
+            ):
+                district_addr3 = district_addr_temp
+                district_addr_temp = ""
+                p.extras["third address"] = district_addr3
+            else:
+                district_addr_temp += " "
+
+        phone = (
+            CSS("span#body_FormView3_DISTRICTOFFICEPHONELabel")
             .match_one(self.root)
             .text_content()
             .strip()
         )
-        print(district_addr)
-        # lxml.etree.tostring(font).replace(b”<br>“, b”\n”).splitlines()
-        # phone = CSS("span#body_FormView3_DISTRICTOFFICEPHONELabel").match_one(self.root).text_content().strip()
+        if phone == "504-83POLLY (837-6559)":
+            phone = "(504) 837-6559"
+        else:
+            phone = re.search(r"(\(\d{3}\)\s?\d{3}-\d{4})(.+)?", phone).groups()[0]
+        p.district_office.voice = phone
+
+        try:
+            phone2 = (
+                CSS("span#body_FormView3_DISTRICTOFFICEPHONE2Label")
+                .match_one(self.root)
+                .text_content()
+                .strip()
+            )
+            if phone2 != "":
+                phone2 = re.search(r"(\(\d{3}\)\s?\d{3}-\d{4})(.+)?", phone2).groups()[
+                    0
+                ]
+                p.extras["second phone"] = phone2
+                print(phone2)
+        except SelectorError:
+            pass
         # fax = CSS("span#body_FormView3_FAXNUMBERLabel").match_one(self.root).text_content().strip()
 
         return p
