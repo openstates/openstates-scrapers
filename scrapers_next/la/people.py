@@ -7,8 +7,6 @@ class LegislatorDetail(HtmlPage):
     def process_page(self):
         p = self.input
 
-        # "//*[@id="body_FormView3_OFFICEADDRESS2Label"]/text()[1]"
-
         district_addr_lst = XPath(
             "//*[@id='body_FormView3_OFFICEADDRESS2Label']/text()"
         ).match(self.root)
@@ -67,10 +65,17 @@ class LegislatorDetail(HtmlPage):
                     0
                 ]
                 p.extras["second phone"] = phone2
-                print(phone2)
         except SelectorError:
             pass
-        # fax = CSS("span#body_FormView3_FAXNUMBERLabel").match_one(self.root).text_content().strip()
+
+        fax = (
+            CSS("span#body_FormView3_FAXNUMBERLabel")
+            .match_one(self.root)
+            .text_content()
+            .strip()
+        )
+        if fax != "":
+            p.district_office.fax = fax
 
         return p
 
@@ -103,10 +108,6 @@ class Legislators(HtmlListPage):
             email=email,
             image=img,
         )
-
-        # district_addr = CSS("i.fa.fa-map-marker").match_one(item).getnext().text_content().strip().split("\n")
-        # p.district_office.address = district_addr
-        # print(len(district_addr))
 
         detail_link = CSS("a").match(item)[1].get("href")
 
