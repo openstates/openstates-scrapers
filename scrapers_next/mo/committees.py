@@ -1,5 +1,5 @@
 # import re
-from spatula import HtmlPage, HtmlListPage, CSS
+from spatula import HtmlPage, HtmlListPage, CSS, XPath
 from openstates.models import ScrapeCommittee
 
 
@@ -90,3 +90,39 @@ class SenateCommitteeList(HtmlListPage):
             return SenateTypeCommitteeList(source=item.get("href"))
         else:
             self.skip()
+
+
+class HouseCommitteeList(HtmlListPage):
+    source = "https://www.house.mo.gov/CommitteeHierarchy.aspx"
+    selector = CSS("a")
+
+    def process_item(self, item):
+        # this seems to be the homepage: https://www.house.mo.gov/CommitteeDetail.aspx?filter=compage&committee=2497&year=2021&code=R%20&viewCode=&cluster=true
+        # can be accessed through the current source a tags
+        # but this is better:
+        # from here: https://www.house.mo.gov/CommitteeHierarchy.aspx
+        # craft a url: https://www.house.mo.gov/MemberGridCluster.aspx?filter=compage&category=committee&
+        committee_name = item.text_content()
+
+        committee_name = committee_name.replace("Committee On ", "")
+        committee_name = committee_name.replace("Special", "")
+        committee_name = committee_name.replace("Select", "")
+        committee_name = committee_name.replace("Special", "")
+        committee_name = committee_name.replace("Joint", "")
+        committee_name = committee_name.replace(" Committee on", "").replace(
+            ", Standing", ""
+        )
+        committee_name = committee_name.strip()
+        print(committee_name)
+
+        if "Subcommittee" in committee_name:
+            # Subcommittee on Appropriations - Public Safety, Corrections, Transportation and Revenue, Subcommittee
+            # Appropriations - Public Safety, Corrections, Transportation and Revenue
+            name = committee_name.replace("Subcommittee on ", "").replace(
+                ", Subcommittee", ""
+            )
+            print("name then parent", name)
+
+            parent = XPath("..//..//preceding-sibling::a").match(item)[0].text_content()
+            print("PARENT", parent)
+            # can't get rid of "Standing" for some reason...
