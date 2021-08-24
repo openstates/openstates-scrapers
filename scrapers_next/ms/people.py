@@ -106,19 +106,23 @@ class LegDetail(HtmlPage):
         # cnty_info4 = self.root.cssselect("cnty_info")[3].text_content()
         # print(cnty_info4)
 
-        # h_address = self.root.cssselect("h_address")[0].text_content()
-        # print(h_address)
-        # h_address2 = self.root.cssselect("h_address2")[0].text_content()
-        # print(h_address2)
-        # h_city = self.root.cssselect("h_city")[0].text_content()
-        # print(h_city)
-        # h_zip = self.root.cssselect("h_zip")[0].text_content()
-        # print(h_zip)
-        # h_phone = self.root.cssselect("h_phone")[0].text_content()
-        # print(h_phone)
+        home_addr = ""
+        h_address = self.root.cssselect("h_address")[0].text_content()
+        h_address2 = self.root.cssselect("h_address2")[0].text_content()
+        h_city = self.root.cssselect("h_city")[0].text_content()
+        h_zip = self.root.cssselect("h_zip")[0].text_content()
+        h_phone = self.root.cssselect("h_phone")[0].text_content()
+        if h_address != "" and h_address2 != "":
+            home_addr = (
+                h_address + " " + h_address2 + " " + h_city + ", Mississippi " + h_zip
+            )
+        elif h_address != "":
+            home_addr = h_address + " " + h_city + ", Mississippi " + h_zip
 
-        # b_phone = self.root.cssselect("b_phone")[0].text_content()
-        # print(b_phone)
+        if home_addr != "" and h_phone != "":
+            p.add_office(contact_type="Home Office", address=home_addr, voice=h_phone)
+        elif home_addr != "":
+            p.add_office(contact_type="Home Office", address=home_addr)
 
         cap_room = self.root.cssselect("cap_room")[0].text_content().strip()
         if cap_room != "":
@@ -130,12 +134,20 @@ class LegDetail(HtmlPage):
         cap_phone = self.root.cssselect("cap_phone")[0].text_content()
         if cap_phone != "":
             p.capitol_office.voice = cap_phone
-            print(cap_phone)
 
-        # oth_phone = self.root.cssselect("oth_phone")[0].text_content()
-        # print(oth_phone)
-        # oth_type = self.root.cssselect("oth_type")[0].text_content()
-        # print(oth_type)
+        b_phone = self.root.cssselect("b_phone")[0].text_content()
+        oth_phone = self.root.cssselect("oth_phone")[0].text_content()
+        oth_type = self.root.cssselect("oth_type")[0].text_content()
+        if oth_phone != "" and oth_type == "F" and b_phone != "":
+            p.extras["fax"] = oth_phone
+            p.extras["other phone"] = b_phone
+        elif oth_phone != "" and b_phone != "":
+            p.extras["other phone1"] = oth_phone
+            p.extras["other phone2"] = b_phone
+        elif oth_phone != "":
+            p.extras["other phone"] = oth_phone
+        elif b_phone != "":
+            p.extras["other phone"] = b_phone
 
         return p
 
