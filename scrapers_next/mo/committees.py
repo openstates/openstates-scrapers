@@ -130,9 +130,21 @@ class HouseCommitteeDetail(HtmlPage):
 
                 com.add_member(name, position)
         except SelectorError:
-            print("selector error")
             pass
         return com
+
+
+def remove_comm(comm_name):
+    return (
+        comm_name.replace("Joint Committee on the", "")
+        .replace("Joint Committee on", "")
+        .replace("Special Committee on", "")
+        .replace("Special Interim Committee on", "")
+        .replace(", Standing", "")
+        .replace(", Statutory", "")
+        .replace(", Interim", "")
+        .replace(", Special Standing", "")
+    )
 
 
 class HouseCommitteeList(HtmlListPage):
@@ -143,16 +155,7 @@ class HouseCommitteeList(HtmlListPage):
     def process_item(self, item):
         committee_name = item.text_content()
 
-        committee_name = (
-            committee_name.replace("Joint Committee on the", "")
-            .replace("Joint Committee on", "")
-            .replace("Special Committee on", "")
-            .replace("Special Interim Committee on", "")
-            .replace(", Standing", "")
-            .replace(", Statutory", "")
-            .replace(", Interim", "")
-            .replace(", Special Standing", "")
-        )
+        committee_name = remove_comm(committee_name)
         committee_name = committee_name.strip()
 
         if "Subcommittee" in committee_name:
@@ -160,16 +163,8 @@ class HouseCommitteeList(HtmlListPage):
                 ", Subcommittee", ""
             )
 
-            parent = (
-                XPath("..//..//preceding-sibling::a")
-                .match(item)[0]
-                .text_content()
-                .replace("Joint Committee on", "")
-                .replace("Special Committee on", "")
-                .replace("Special Interim Committee on", "")
-                .replace(", Standing", "")
-                .replace(", Interim", "")
-                .replace(", Special Standing", "")
+            parent = remove_comm(
+                XPath("..//..//preceding-sibling::a").match(item)[0].text_content()
             )
 
             com = ScrapeCommittee(
