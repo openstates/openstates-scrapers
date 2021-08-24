@@ -6,7 +6,11 @@ class CommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
 
-        members = CSS("div#CommitteeMembers tbody tr").match(self.root)
+        try:
+            members = CSS("div#CommitteeMembers tbody tr").match(self.root)
+        except SelectorError:
+            self.logger.warning(f"skipping members for {self.source.url}")
+            return com
         for member in members:
             dirty_name = CSS("a").match_one(member).text_content().strip().split(", ")
             last_name = dirty_name[0]
@@ -45,7 +49,7 @@ class CommitteeList(HtmlListPage):
         elif chamber == "Senate":
             chamber = "upper"
         elif chamber == "Joint":
-            chamber = "legislative"
+            chamber = "legislature"
         elif chamber == "Legislative":
             self.skip()
             # skipping Legislative Agencies
