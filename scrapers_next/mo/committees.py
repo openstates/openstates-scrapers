@@ -104,29 +104,17 @@ class HouseCommitteeDetail(HtmlPage):
         )
         com.add_link(link, note="homepage")
 
-        # TODO: remember to add the link after constructing it
-
-        # add members and positions
-
+        # As of now, one committees page is empty. Just in case it is updated soon, the page will still be scraped
         try:
             members = CSS("#theTable tr").match(self.root)
-            # print("MEMBERS", members)
 
             for member in members:
-                # member = member.text_content()
-                # print("NAMES", member.text_content())
+                # skip first row with table headers
                 if member.text_content().strip() == "NamePartyPosition":
-                    # print("TRIGG")
                     continue
 
-                # member = member.text_content()
-                # info = CSS("td").match(member)
-
-                # for infos in info:
                 __, name, __, position = CSS("td").match(member)
-                # print("NAME", name.text_content())
 
-                # rearrange name
                 name = (
                     name.text_content()
                     .replace("Rep. ", "")
@@ -134,22 +122,17 @@ class HouseCommitteeDetail(HtmlPage):
                     .split(",")
                 )
                 name = name[1] + " " + name[0]
-                # print("FINAL NAME", name)
 
                 if position.text_content():
                     position = position.text_content()
-                    # print("POSITION", position)
                 else:
                     position = "member"
-                # print("POSITION", position)
+
                 com.add_member(name, position)
         except SelectorError:
             print("selector error")
             pass
         return com
-
-
-# com.add_member(member_name, member_pos_str)
 
 
 class HouseCommitteeList(HtmlListPage):
@@ -158,11 +141,6 @@ class HouseCommitteeList(HtmlListPage):
     chamber = "lower"
 
     def process_item(self, item):
-        # this seems to be the homepage: https://www.house.mo.gov/CommitteeDetail.aspx?filter=compage&committee=2497&year=2021&code=R%20&viewCode=&cluster=true
-        # can be accessed through the current source a tags
-        # but this is better:
-        # from here: https://www.house.mo.gov/CommitteeHierarchy.aspx
-        # craft a url: https://www.house.mo.gov/MemberGridCluster.aspx?filter=compage&category=committee&
         committee_name = item.text_content()
 
         committee_name = (
@@ -175,15 +153,11 @@ class HouseCommitteeList(HtmlListPage):
             .replace(", Special Standing", "")
         )
         committee_name = committee_name.strip()
-        # print(committee_name)
 
         if "Subcommittee" in committee_name:
-            # Subcommittee on Appropriations - Public Safety, Corrections, Transportation and Revenue, Subcommittee
-            # Appropriations - Public Safety, Corrections, Transportation and Revenue
             name = committee_name.replace("Subcommittee on ", "").replace(
                 ", Subcommittee", ""
             )
-            # print("name then parent", name)
 
             parent = (
                 XPath("..//..//preceding-sibling::a")
@@ -196,7 +170,6 @@ class HouseCommitteeList(HtmlListPage):
                 .replace(", Interim", "")
                 .replace(", Special Standing", "")
             )
-            # print("PARENT", parent)
 
             com = ScrapeCommittee(
                 name=name,
@@ -204,10 +177,10 @@ class HouseCommitteeList(HtmlListPage):
                 classification="subcommittee",
                 parent=parent,
             )
-
         else:
             com = ScrapeCommittee(name=committee_name, chamber=self.chamber)
 
+        # We can construct a URL that would make scraping easier, as opposed to the link that is directly given
         comm_link = item.get("href").replace("https://www.house.mo.gov/", "")
         source = f"https://www.house.mo.gov/MemberGridCluster.aspx?filter=compage&category=committee&{comm_link}"
         return HouseCommitteeDetail(com, source=source)
