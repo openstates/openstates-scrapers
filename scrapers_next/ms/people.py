@@ -38,9 +38,6 @@ class LegDetail(HtmlPage):
         if self.input.name in ["Lataisha Jackson", "John G. Faulkner"]:
             party = "Democratic"
 
-        # email=email
-        # image=img
-
         p = ScrapePerson(
             name=self.input.name,
             state="ms",
@@ -48,6 +45,18 @@ class LegDetail(HtmlPage):
             district=district,
             party=party,
         )
+
+        email = self.root.cssselect("email")[0].text_content()
+        p.email = email
+        img_id = self.root.cssselect("img_name")[0].text_content()
+        if self.input.chamber == "upper":
+            img = "http://billstatus.ls.state.ms.us/members/senate/" + img_id
+        else:
+            img = "http://billstatus.ls.state.ms.us/members/house/" + img_id
+        p.image = img
+
+        if self.input.title != "member":
+            p.extras["title"] = self.input.title
 
         return p
 
