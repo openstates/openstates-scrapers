@@ -36,6 +36,7 @@ class LegDetail(HtmlPage):
                 district="",
                 party="Republican",
             )
+            p.extras["title"] = self.input.title
             p.extras["phone"] = (
                 CSS("span.fusion-contact-info-phone-number")
                 .match_one(self.root)
