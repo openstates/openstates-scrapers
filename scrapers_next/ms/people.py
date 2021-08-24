@@ -1,8 +1,43 @@
-from spatula import URL, XmlPage
+from spatula import URL, HtmlPage
 from openstates.models import ScrapePerson
+from itertools import zip_longest
+from dataclasses import dataclass
 
 
-class Legislators(XmlPage):
+@dataclass
+class PartialPerson:
+    name: str
+    title: str
+    chamber: str
+
+
+# source https://stackoverflow.com/questions/434287/what-is-the-most-pythonic-way-to-iterate-over-a-list-in-chunks
+def grouper(iterable, n, fillvalue=None):
+    args = [iter(iterable)] * n
+    return zip_longest(*args, fillvalue=fillvalue)
+
+
+class LegDetail(HtmlPage):
+    input_type = PartialPerson
+
+    def process_page(self):
+
+        # party=party
+        # district=district
+
+        # email=email
+        # image=img
+
+        p = ScrapePerson(
+            name=self.input.name,
+            state="ms",
+            chamber=self.input.chamber,
+        )
+
+        return p
+
+
+class Legislators(HtmlPage):
     def process_page(self):
         members = self.root.getchildren()
         for member in members:
@@ -10,28 +45,23 @@ class Legislators(XmlPage):
             if children == []:
                 continue
             elif len(children) == 3:
-                # title = member.getchildren()[0].text_content().strip()
-                name = member.getchildren()[1].text_content().strip()
-                # link = member.getchildren()[2].text_content().strip()
+                title = children[0].text_content().strip()
+                name = children[1].text_content().strip()
+                link = children[2].text_content().strip()
+
+                partial_p = PartialPerson(name=name, title=title, chamber=self.chamber)
+
+                yield LegDetail(partial_p, source=link)
             else:
-                pass
-                # sub_members = [children[i:i + 3] for i in range(0, len(children), 3)]
-                # print(sub_members)
+                for mem in grouper(member, 3):
+                    name = mem[0].text_content().strip()
+                    link = mem[1].text_content().strip()
 
-                # name =  member.getchildren()[0].text_content().strip()
-                # link =  member.getchildren()[1].text_content().strip()
+                    partial_p = PartialPerson(
+                        name=name, title="member", chamber=self.chamber
+                    )
 
-        p = ScrapePerson(
-            name=name,
-            state="ms",
-            chamber=self.chamber,
-        )
-        # party=party
-        # district=district
-        # email=email
-        # image=img
-
-        return p
+                    yield LegDetail(partial_p, source=link)
 
 
 class Senate(Legislators):
