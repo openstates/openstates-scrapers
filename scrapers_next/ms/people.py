@@ -68,6 +68,7 @@ class LegDetail(HtmlPage):
             ):
                 email = email + "@house.ms.gov"
             p.email = email
+
         img_id = self.root.cssselect("img_name")[0].text_content()
         if self.input.chamber == "upper":
             img = "http://billstatus.ls.state.ms.us/members/senate/" + img_id
@@ -83,28 +84,23 @@ class LegDetail(HtmlPage):
             last_name = re.search(r"(.+)\s\(\d{1,2}[a-z]{2}\)", last_name).groups()[0]
         p.family_name = last_name
 
-        # office = self.root.cssselect("office")[0].text_content()
-        # print(office)
-        # cong = self.root.cssselect("cong")[0].text_content()
-        # print(cong)
-        # supreme = self.root.cssselect("supreme")[0].text_content()
-        # print(supreme)
-        # occupation = self.root.cssselect("occupation")[0].text_content()
-        # print(occupation)
-        # education1 = self.root.cssselect("education")[0].text_content()
-        # print(education1)
-        # education2 = self.root.cssselect("education")[1].text_content()
-        # print(education2)
-        # education3 = self.root.cssselect("education")[2].text_content()
-        # print(education3)
-        # cnty_info1 = self.root.cssselect("cnty_info")[0].text_content()
-        # print(cnty_info1)
-        # cnty_info2 = self.root.cssselect("cnty_info")[1].text_content()
-        # print(cnty_info2)
-        # cnty_info3 = self.root.cssselect("cnty_info")[2].text_content()
-        # print(cnty_info3)
-        # cnty_info4 = self.root.cssselect("cnty_info")[3].text_content()
-        # print(cnty_info4)
+        occupation = self.root.cssselect("occupation")
+        if len(occupation) > 0 and occupation[0].text_content().strip() != "":
+            p.extras["occupation"] = occupation[0].text_content().strip()
+
+        education_lst = self.root.cssselect("education")
+        if len(education_lst) > 0:
+            p.extras["education"] = []
+        for ed in education_lst:
+            if ed.text_content().strip() != "":
+                p.extras["education"] += [ed.text_content().strip()]
+
+        county_lst = self.root.cssselect("cnty_info")
+        if len(county_lst) > 0:
+            p.extras["counties represented"] = []
+        for county in county_lst:
+            if county.text_content().strip() != "":
+                p.extras["counties represented"] += [county.text_content().strip()]
 
         home_addr = ""
         h_address = self.root.cssselect("h_address")[0].text_content()
@@ -176,6 +172,10 @@ class Legislators(HtmlPage):
             else:
                 for mem in grouper(member, 3):
                     name = mem[0].text_content().strip()
+                    # Dean Kirby listed twice (already scraped above)
+                    if name == "Dean Kirby":
+                        continue
+
                     link_id = mem[1].text_content().strip()
                     link = "http://billstatus.ls.state.ms.us/members/" + link_id
 
