@@ -21,9 +21,22 @@ class LegDetail(HtmlPage):
     input_type = PartialPerson
 
     def process_page(self):
+        if self.source.url == "http://ltgovhosemann.ms.gov/":
+            return None
 
-        # party=party
-        # district=district
+        district = self.root.cssselect("district")[0].text_content()
+        party = self.root.cssselect("party")[0].text_content()
+
+        if party == "D":
+            party = "Democratic"
+        elif party == "R":
+            party = "Republican"
+        elif party == "I":
+            party = "Independent"
+
+        # no party listed on page
+        if self.input.name in ["Lataisha Jackson", "John G. Faulkner"]:
+            party = "Democratic"
 
         # email=email
         # image=img
@@ -32,6 +45,8 @@ class LegDetail(HtmlPage):
             name=self.input.name,
             state="ms",
             chamber=self.input.chamber,
+            district=district,
+            party=party,
         )
 
         return p
@@ -47,7 +62,11 @@ class Legislators(HtmlPage):
             elif len(children) == 3:
                 title = children[0].text_content().strip()
                 name = children[1].text_content().strip()
-                link = children[2].text_content().strip()
+                link_id = children[2].text_content().strip()
+                if link_id == "http://ltgovhosemann.ms.gov/":
+                    link = link_id
+                else:
+                    link = "http://billstatus.ls.state.ms.us/members/" + link_id
 
                 partial_p = PartialPerson(name=name, title=title, chamber=self.chamber)
 
@@ -55,7 +74,8 @@ class Legislators(HtmlPage):
             else:
                 for mem in grouper(member, 3):
                     name = mem[0].text_content().strip()
-                    link = mem[1].text_content().strip()
+                    link_id = mem[1].text_content().strip()
+                    link = "http://billstatus.ls.state.ms.us/members/" + link_id
 
                     partial_p = PartialPerson(
                         name=name, title="member", chamber=self.chamber
