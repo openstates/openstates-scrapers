@@ -144,7 +144,8 @@ class HouseCommitteeList(HtmlListPage):
         committee_name = item.text_content()
 
         committee_name = (
-            committee_name.replace("Joint Committee on", "")
+            committee_name.replace("Joint Committee on the", "")
+            .replace("Joint Committee on", "")
             .replace("Special Committee on", "")
             .replace("Special Interim Committee on", "")
             .replace(", Standing", "")
