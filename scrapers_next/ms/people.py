@@ -1,4 +1,4 @@
-from spatula import URL, HtmlPage, CSS
+from spatula import URL, HtmlPage, CSS, SelectorError
 from openstates.models import ScrapePerson
 from itertools import zip_longest
 from dataclasses import dataclass
@@ -84,8 +84,8 @@ class LegDetail(HtmlPage):
 
             return p
 
-        district = self.root.cssselect("district")[0].text_content()
-        party = self.root.cssselect("party")[0].text_content()
+        district = CSS("district").match_one(self.root).text_content().strip()
+        party = CSS("party").match_one(self.root).text_content().strip()
 
         if party == "D":
             party = "Democratic"
@@ -110,9 +110,8 @@ class LegDetail(HtmlPage):
         p.add_source(self.source.url)
         p.add_link(self.source.url, note="homepage")
 
-        email = self.root.cssselect("email")
-        if len(email) > 0:
-            email = email[0].text_content().strip()
+        try:
+            email = CSS("email").match_one(self.root).text_content().strip()
             if (
                 not re.search(r"@senate.ms.gov", email)
                 and self.input.chamber == "upper"
@@ -123,8 +122,10 @@ class LegDetail(HtmlPage):
             ):
                 email = email + "@house.ms.gov"
             p.email = email
+        except SelectorError:
+            pass
 
-        img_id = self.root.cssselect("img_name")[0].text_content()
+        img_id = CSS("img_name").match_one(self.root).text_content().strip()
         if self.input.chamber == "upper":
             img = "http://billstatus.ls.state.ms.us/members/senate/" + img_id
         else:
@@ -134,34 +135,41 @@ class LegDetail(HtmlPage):
         if self.input.title != "member":
             p.extras["title"] = self.input.title
 
-        last_name = self.root.cssselect("u_mem_nam")[0].text_content()
+        last_name = CSS("u_mem_nam").match_one(self.root).text_content().strip()
         if re.search(r"\(\d{1,2}[a-z]{2}\)", last_name):
             last_name = re.search(r"(.+)\s\(\d{1,2}[a-z]{2}\)", last_name).groups()[0]
         p.family_name = last_name
 
-        occupation = self.root.cssselect("occupation")
-        if len(occupation) > 0 and occupation[0].text_content().strip() != "":
-            p.extras["occupation"] = occupation[0].text_content().strip()
+        try:
+            occupation = CSS("occupation").match_one(self.root).text_content().strip()
+            if occupation != "":
+                p.extras["occupation"] = occupation
+        except SelectorError:
+            pass
 
-        education_lst = self.root.cssselect("education")
-        if len(education_lst) > 0:
-            p.extras["education"] = []
-        for ed in education_lst:
-            if ed.text_content().strip() != "":
-                p.extras["education"] += [ed.text_content().strip()]
+        try:
+            education_lst = CSS("education").match(self.root)
+            if len(education_lst) > 0:
+                p.extras["education"] = []
+                for ed in education_lst:
+                    if ed.text_content().strip() != "":
+                        p.extras["education"] += [ed.text_content().strip()]
+        except SelectorError:
+            pass
 
-        county_lst = self.root.cssselect("cnty_info")
+        county_lst = CSS("cnty_info").match(self.root)
         if len(county_lst) > 0:
             p.extras["counties represented"] = []
-        for county in county_lst:
-            if county.text_content().strip() != "":
-                p.extras["counties represented"] += [county.text_content().strip()]
+            for county in county_lst:
+                if county.text_content().strip() != "":
+                    p.extras["counties represented"] += [county.text_content().strip()]
 
         home_addr = ""
-        h_address = self.root.cssselect("h_address")[0].text_content()
-        h_address2 = self.root.cssselect("h_address2")[0].text_content()
-        h_city = self.root.cssselect("h_city")[0].text_content()
-        h_zip = self.root.cssselect("h_zip")[0].text_content()
+        h_address = CSS("h_address").match_one(self.root).text_content().strip()
+        h_address2 = CSS("h_address2").match_one(self.root).text_content().strip()
+        h_city = CSS("h_city").match_one(self.root).text_content().strip()
+        h_zip = CSS("h_zip").match_one(self.root).text_content().strip()
+
         # Note that these are listed as 'Home Office' but adding to 'District Office'
         if h_address != "" and h_address2 != "":
             home_addr = (
@@ -172,24 +180,25 @@ class LegDetail(HtmlPage):
             home_addr = h_address + " " + h_city + ", Mississippi " + h_zip
             p.district_office.address = home_addr
 
-        h_phone = self.root.cssselect("h_phone")[0].text_content()
+        h_phone = CSS("h_phone").match_one(self.root).text_content().strip()
         if h_phone != "":
             p.district_office.voice = h_phone
 
-        cap_room = self.root.cssselect("cap_room")[0].text_content().strip()
+        cap_room = CSS("cap_room").match_one(self.root).text_content().strip()
         if cap_room != "":
             cap_addr = "Room %s\n%s" % (cap_room, CAP_ADDRESS)
         else:
             cap_addr = CAP_ADDRESS
         p.capitol_office.address = cap_addr
 
-        cap_phone = self.root.cssselect("cap_phone")[0].text_content()
+        cap_phone = CSS("cap_phone").match_one(self.root).text_content().strip()
         if cap_phone != "":
             p.capitol_office.voice = cap_phone
 
-        b_phone = self.root.cssselect("b_phone")[0].text_content()
-        oth_phone = self.root.cssselect("oth_phone")[0].text_content()
-        oth_type = self.root.cssselect("oth_type")[0].text_content()
+        b_phone = CSS("b_phone").match_one(self.root).text_content().strip()
+        oth_phone = CSS("oth_phone").match_one(self.root).text_content().strip()
+        oth_type = CSS("oth_type").match_one(self.root).text_content().strip()
+
         if oth_phone != "" and oth_type == "F" and b_phone != "":
             p.extras["fax"] = oth_phone
             p.extras["other phone"] = b_phone
