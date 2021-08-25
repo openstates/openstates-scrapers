@@ -31,6 +31,8 @@ class Legislators(CsvListPage):
                 party=party,
             )
 
+            p.add_source(self.source.url)
+
             address = member[8]
             address2 = member[9]
             city = member[10]
