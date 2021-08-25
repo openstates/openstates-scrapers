@@ -1,6 +1,20 @@
-from spatula import URL, CSS, HtmlListPage, SelectorError, XPath
+from spatula import URL, CSS, HtmlListPage, SelectorError, XPath, HtmlPage
 from openstates.models import ScrapePerson
 import re
+
+
+class LegDetail(HtmlPage):
+    def process_page(self):
+        p = self.input
+
+        capitol_addr_lst = XPath(".//*[@id='district']/span[1]/text()").match(self.root)
+        capitol_addr = ""
+        for line in capitol_addr_lst:
+            capitol_addr += line.strip()
+            capitol_addr += " "
+        p.capitol_office.address = capitol_addr.strip()
+
+        return p
 
 
 class Legislators(HtmlListPage):
@@ -92,7 +106,7 @@ class Legislators(HtmlListPage):
         except SelectorError:
             pass
 
-        return p
+        return LegDetail(p, source=detail_link)
 
 
 class Senate(Legislators):
