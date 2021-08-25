@@ -2,13 +2,18 @@ from spatula import URL, CSS, HtmlListPage, XPath
 from openstates.models import ScrapePerson
 import re
 
+CAP_ADDRESS = """c/o Nevada Senate
+401 South Carson Street
+Carson City, NV 89701-4747"""
+
 
 class Legislators(HtmlListPage):
     selector = CSS("tbody tr.thisRow.listRow")
 
     def process_item(self, item):
-        name_title = XPath("//td[2]/span/a/text()").match(item)
-        name = name_title[0]
+        name_title = XPath(".//td/span/a/text()").match(item)
+        name_dirty = name_title[0].split(", ")
+        name = name_dirty[1] + " " + name_dirty[0]
 
         party = CSS("td a").match(item)[2].text_content().strip()
         district = CSS("td a").match(item)[3].text_content().strip()
@@ -26,7 +31,36 @@ class Legislators(HtmlListPage):
             title = name_title[1]
             p.extras["title"] = title
 
+        detail_link = CSS("td span a").match_one(item).get("href")
+
         p.add_source(self.source.url)
+        p.add_source(detail_link)
+        p.add_link(detail_link, note="homepage")
+
+        img = CSS("img").match_one(item).get("src")
+        p.image = img
+
+        extra_info = item.getnext()
+        district_addr = CSS("td").match(extra_info)[0].text_content().strip()
+        p.district_office.address = district_addr
+
+        extra_info_detail = CSS("td div div div span.field").match(extra_info)
+
+        email = extra_info_detail[1].text_content().strip()
+        p.email = email
+
+        leg_bldg_room = extra_info_detail[2].text_content().strip()
+        p.extras["leg building room"] = leg_bldg_room
+        # should this be appended to capitol office?
+
+        leg_bldg_phone = extra_info_detail[3].text_content().strip()
+        p.extras["leg building phone"] = leg_bldg_phone
+        # is this capitol phone?
+
+        if len(extra_info_detail) > 4:
+            work_phone = extra_info_detail[4].text_content().strip()
+            p.extras["work phone"] = work_phone
+            # is this district phone?
 
         return p
 
