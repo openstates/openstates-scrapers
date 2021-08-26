@@ -28,6 +28,36 @@ class LegDetail(HtmlPage):
         img = CSS("img.framed-photo").match_one(self.root).get("src")
         p.image = img
 
+        if (
+            XPath(
+                "/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/h2[2]/text()"
+            ).match(self.root)[0]
+            == "District Address"
+        ):
+            district_addr_lst = XPath(
+                "/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[2]/text()"
+            ).match(self.root)
+            distr_address = ""
+            for line in district_addr_lst:
+                if re.search(r"Phone", line):
+                    distr_phone = re.search(r"Phone:?\s(.+)", line).groups()[0].strip()
+                    p.district_office.voice = distr_phone
+                elif re.search(r"Fax", line):
+                    distr_fax = re.search(r"Fax:?\s(.+)", line).groups()[0].strip()
+                    p.district_office.fax = distr_fax
+                else:
+                    distr_address += line.strip()
+                    distr_address += " "
+            p.district_office.address = distr_address.strip()
+
+        extra_info = XPath(
+            "/html/body/div[1]/div/div/div[2]/div/div[2]/ul[2]/li[1]/ul/li"
+        ).match(self.root)
+        if len(extra_info) > 0:
+            p.extras["personal info"] = []
+            for line in extra_info:
+                p.extras["personal info"] += [line.text_content().strip()]
+
         return p
 
 
