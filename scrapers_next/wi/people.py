@@ -14,6 +14,19 @@ class LegDetail(HtmlPage):
             capitol_addr += " "
         p.capitol_office.address = capitol_addr.strip()
 
+        try:
+            fax = (
+                CSS("span.info.fax")
+                .match_one(self.root)
+                .text_content()
+                .strip()
+                .split("\n")
+            )
+            fax = fax[-1].strip()
+            p.capitol_office.fax = fax
+        except SelectorError:
+            pass
+
         return p
 
 
@@ -21,6 +34,7 @@ class Legislators(HtmlListPage):
     selector = CSS("div.box-content div")
 
     def process_item(self, item):
+        # skip header rows
         if item.get("class") not in ["rounded odd", "rounded even"]:
             self.skip()
 
@@ -52,7 +66,6 @@ class Legislators(HtmlListPage):
         # which one should be 'homepage'?
         # https://legis.wisconsin.gov/senate/16/agard, website currently adding to extras
         # https://docs.legis.wisconsin.gov/2021/legislators/senate/2251, detail_link adding as source and scraping
-        # some are the same url and some are not
 
         website = CSS("span.info strong a").match_one(item).get("href")
         p.extras["website"] = website
