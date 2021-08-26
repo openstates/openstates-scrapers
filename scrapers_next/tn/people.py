@@ -27,6 +27,20 @@ class Legislators(HtmlListPage):
             party=party,
         )
 
+        detail_link = CSS("td a").match(item)[1].get("href")
+
+        p.add_source(self.source.url)
+        p.add_source(detail_link)
+        p.add_link(detail_link, note="homepage")
+
+        email = CSS("td a").match(item)[0].get("href")
+        email = re.search(r"mailto:(.+)", email).groups()[0]
+        p.email = email
+
+        # should this be appended to an address?
+        office_room = CSS("td").match(item)[5].text_content().strip()
+        p.extras["office"] = office_room
+
         return p
 
 
