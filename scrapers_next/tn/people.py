@@ -1,4 +1,4 @@
-from spatula import CSS, URL, HtmlListPage, HtmlPage, XPath
+from spatula import CSS, URL, HtmlListPage, HtmlPage, XPath, SelectorError
 from openstates.models import ScrapePerson
 import re
 
@@ -57,6 +57,62 @@ class LegDetail(HtmlPage):
             p.extras["personal info"] = []
             for line in extra_info:
                 p.extras["personal info"] += [line.text_content().strip()]
+
+        if (
+            XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/h2")
+            .match(self.root)[1]
+            .text_content()
+            .strip()
+            == "Staff Contacts"
+        ):
+            staff_contacts = (
+                XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[2]")
+                .match(self.root)[0]
+                .text_content()
+            )
+            p_num = 2
+        elif (
+            XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/h2")
+            .match(self.root)[2]
+            .text_content()
+            .strip()
+            == "Staff Contacts"
+        ):
+            staff_contacts = (
+                XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[3]")
+                .match(self.root)[0]
+                .text_content()
+            )
+            p_num = 3
+
+        counter = 0
+        for line in staff_contacts.split("\n"):
+            if line.strip() != "":
+                staff_name = line.strip().split(", ")[0]
+                staff_role = None
+                if len(line.strip().split(", ")) > 1:
+                    staff_role = line.strip().split(", ")[1]
+                try:
+                    staff_email = (
+                        XPath(
+                            f"/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[{p_num}]/a"
+                        )
+                        .match(self.root)[counter]
+                        .get("href")
+                    )
+                    staff_email = re.search(r"mailto:\s?(.+)", staff_email).groups()[0]
+                    if staff_role:
+                        p.extras[staff_role + "email"] = staff_email
+                    else:
+                        p.extras["staff email"] = staff_email
+                except SelectorError:
+                    pass
+
+                if staff_role:
+                    p.extras[staff_role] = staff_name
+                else:
+                    p.extras["staff"] = staff_name
+                counter += 1
 
         return p
 
