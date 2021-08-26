@@ -1,6 +1,13 @@
 from spatula import URL, CSS, HtmlListPage, SelectorError, XPath, HtmlPage
 from openstates.models import ScrapePerson
 import re
+from itertools import zip_longest
+
+
+# source https://stackoverflow.com/questions/434287/what-is-the-most-pythonic-way-to-iterate-over-a-list-in-chunks
+def grouper(iterable, n, fillvalue=None):
+    args = [iter(iterable)] * n
+    return zip_longest(*args, fillvalue=fillvalue)
 
 
 class LegDetail(HtmlPage):
@@ -24,6 +31,16 @@ class LegDetail(HtmlPage):
             )
             fax = fax[-1].strip()
             p.capitol_office.fax = fax
+        except SelectorError:
+            pass
+
+        try:
+            staff_spans = CSS("span.info.staff span").match(self.root)
+            for num, span in enumerate(grouper(staff_spans[1:], 2)):
+                staff_name = span[0].text_content().strip()
+                staff_email = span[1].text_content().strip()
+                p.extras["staff" + str(num + 1)] = staff_name
+                p.extras["staff_email" + str(num + 1)] = staff_email
         except SelectorError:
             pass
 
