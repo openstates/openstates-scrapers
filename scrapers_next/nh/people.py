@@ -1,10 +1,32 @@
-from spatula import URL, CsvListPage, HtmlPage
+from spatula import URL, CsvListPage, HtmlPage, CSS, XPath
 from openstates.models import ScrapePerson
 
 
-class LegDetail(HtmlPage):
+class SenDetail(HtmlPage):
     def process_page(self):
         p = self.input
+
+        img = CSS("img.auto-style2").match_one(self.root).get("src")
+        p.image = img
+
+        contact_info = XPath("//*[@id='page_content']/table/tr[2]/td//strong[3]").match(
+            self.root
+        )[0]
+        cap_addr = contact_info.getnext().tail.strip()
+        cap_addr += " "
+        cap_addr += contact_info.getnext().getnext().tail.strip()
+        cap_addr += " "
+        cap_addr += contact_info.getnext().getnext().getnext().tail.strip()
+        p.capitol_office.address = cap_addr
+
+        # phone = XPath("//*[@id='page_content']/table/tr[2]/td//strong[4]").match(self.root)[0].tail.strip()
+        # print(phone)
+        # capitol_office.voice
+        # education
+
+        # some might be missing, most already have
+        # party
+        # email
 
         return p
 
@@ -88,5 +110,5 @@ class Legislators(CsvListPage):
                 p.district_office.address = address
 
             if chamber == "upper":
-                return LegDetail(p, source=detail_link)
+                return SenDetail(p, source=detail_link)
             return p
