@@ -14,55 +14,8 @@ class PartialPerson:
     staff_email: str
 
 
-# 418 total
 # 24 total senators
 # total representatives
-
-# class SenDetail(HtmlPage):
-#     input_type = PartialPerson
-
-#     def process_page(self):
-
-#         party = CSS("span.MemberHeader").match_one(self.root).text_content().strip()
-#         party = re.search(r"(.+)\(([A-Z])-.+\)", party).groups()[1]
-#         print(party)
-
-#         p = ScrapePerson(
-#             name=self.input.name,
-#             state="nh",
-#             chamber=self.input.chamber,
-#             district=self.input.district,
-#             party=party,
-#         )
-
-#         p.add_source(self.input.source)
-#         p.add_source(self.source.url)
-#         p.add_link(self.source.url, note="homepage")
-
-#         img = CSS("img.auto-style2").match_one(self.root).get("src")
-#         p.image = img
-
-#         contact_info = XPath("//*[@id='page_content']/table/tr[2]/td//strong[3]").match(
-#             self.root
-#         )[0]
-#         cap_addr = contact_info.getnext().tail.strip()
-#         cap_addr += " "
-#         cap_addr += contact_info.getnext().getnext().tail.strip()
-#         cap_addr += " "
-#         cap_addr += contact_info.getnext().getnext().getnext().tail.strip()
-#         p.capitol_office.address = cap_addr
-
-#         # phone = XPath("//*[@id='page_content']/table/tr[2]/td//strong[4]").match(self.root)[0].tail.strip()
-#         # print(phone)
-
-#         # capitol_office.voice
-#         # education
-
-#         # some might be missing, most already have
-#         # party
-#         # email
-
-#         return p
 
 
 class SenDetail(HtmlPage):
@@ -120,6 +73,9 @@ class SenDetail(HtmlPage):
             )
             phone = re.search(r"(\d{3}-\d{3}-\d{4})(.+)?", phone).groups()[0]
             p.capitol_office.voice = phone
+
+        email = CSS("table tr td a").match(self.root)[1].text_content().strip()
+        p.email = email
 
         return p
 
