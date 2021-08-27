@@ -1,61 +1,47 @@
-# import re
 from spatula import XPath, URL, JsonListPage
 from openstates.models import ScrapeCommittee
 
-# to get all committees: https://apps.azleg.gov/api/Committee
 
-#
+class CommitteeList(JsonListPage):
 
-
-class SenateCommitteeList(JsonListPage):
-    # source = "https://www.senate.mo.gov/committee/"
-    # source = URL("https://apps.azleg.gov/api/Committee", headers={sessionId=session_id,
-    #         includeOnlyCommitteesWithAgendas="false",
-    #         legislativeBody="S" if chamber == "upper" else "H",})
-
-    # https://apps.azleg.gov/api/StandingCommittee/?legislativeBody=S&sessionId=123&includeMembers=true
-
-    # OKAY SO THE PLAN:
-    # first go here: https://apps.azleg.gov/api/Committee/?legislativeBody=S&sessionId=123&includeMembers=true
-    # how to get session_id? idk lol
-    # then go to each of the standing committees on that list, for ex.
-
-    # or actually, go here for Senate: https://apps.azleg.gov/api/Committee/?legislativeBody=S&sessionId=123&includeMembers=true
-    # then here for House: https://apps.azleg.gov/api/Committee/?legislativeBody=H&sessionId=123&includeMembers=true
-
-    # class Legislators(XmlListPage):
-    # session_num = "32"
-    # source = URL(
-    #     "http://www.legis.state.ak.us/publicservice/basis/members"
-    #     f"?minifyresult=false&session={session_num}",
-    #     headers={"X-Alaska-Legislature-Basis-Version": "1.4"},
-    # )
     session_id = "123"
     source = URL(
         "https://apps.azleg.gov/api/Committee/"
-        f"?legislativeBody=S&sessionId={session_id}&includeMembers=true"
+        f"?sessionId={session_id}&includeMembers=true"
     )
     selector = XPath("//CommitteeModel")
-    chamber = "upper"
 
     def process_item(self, item):
 
         name = item["CommitteeName"]
+        chamber = item["LegislativeBody"]
+
+        if chamber == "H":
+            chamber = "lower"
+        elif chamber == "S":
+            chamber = "upper"
+        else:
+            # a few Ad Hoc Committees don't have chambers, but are not included in the Standing Committees Scrape anyway
+            self.logger.warning("Committee not assigned to chamber")
+            chamber = "lower"
 
         if item["IsSubCommittee"] is False:
-            com = ScrapeCommittee(name=name, chamber=self.chamber)
+            com = ScrapeCommittee(name=name, chamber=chamber)
 
         else:
-            # TODO: unsure of what the parent of a subcommittee info would be stored?
-            # check "/Committee/"
+
+            try:
+                parent, name = name.split(" Subcommittee on ")
+            except ValueError:
+                self.logger.warning(f"No parent listed for {name}")
+
             com = ScrapeCommittee(
                 name=name,
                 classification="subcommittee",
-                chamber=self.chamber,
-                parent="Appropriations",
+                chamber=chamber,
+                parent=parent,
             )
 
-        # TODO: for repeat problem, not sure that this is the best approach?
         members = []
         for member in item["Members"]:
 
@@ -78,24 +64,6 @@ class SenateCommitteeList(JsonListPage):
         com.extras["Committee Short Name"] = item["CommitteeShortName"]
         com.extras["Committee Type"] = item["TypeName"]
 
-        # TODO: only standing committees, right?
+        com.add_source(self.source.url)
 
-        # TODO: add links
         return com
-
-        #                     com = ScrapeCommittee(name=name, chamber=self.chamber)
-        #         else:
-        #             com = ScrapeCommittee(
-        #                 name=name,
-        #                 classification="subcommittee",
-        #                 chamber=self.chamber,
-        #                 parent="Appropriations",
-        #             )
-        # type = item.text_content()
-        # if type == "Standing" or type == "Statutory":
-
-        #     print("WHAT WHAT", item.get("href"))
-        #     # return SenateTypeCommitteeList(source=item.get("href"))
-        # else:
-        #     print("HEREEE")
-        #     self.skip()
