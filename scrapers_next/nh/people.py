@@ -1,17 +1,27 @@
-from spatula import URL, CsvListPage
+from spatula import URL, CsvListPage, HtmlPage
 from openstates.models import ScrapePerson
 
 
+class LegDetail(HtmlPage):
+    def process_page(self):
+        p = self.input
+
+        return p
+
+
 class Legislators(CsvListPage):
+
+    # house_profile_url = (
+    #     "http://www.gencourt.state.nh.us/house/members/member.aspx?member={}"
+    # )
+
     source = URL("http://gencourt.state.nh.us/downloads/members.txt")
 
     def process_item(self, item):
         for line in item.values():
             member = line.split("\t")
 
-            # 39 out of 116 legislators have incomplete info
-            if len(member) < 19:
-                print(member)
+            # 39 out of 116 legislators have incomplete info (len(member) < 19)
 
             lastname = member[0]
             firstname = member[1]
@@ -39,6 +49,14 @@ class Legislators(CsvListPage):
                 party=party,
             )
 
+            # seat_num = member[4]
+            if len(district) == 1:
+                district = "0" + district
+
+            if chamber == "upper":
+                detail_link = f"http://www.gencourt.state.nh.us/Senate/members/webpages/district{district}.aspx"
+                p.add_source(detail_link)
+                p.add_link(detail_link, note="homepage")
             p.add_source(self.source.url)
 
             county = member[5]
@@ -69,4 +87,6 @@ class Legislators(CsvListPage):
             else:
                 p.district_office.address = address
 
+            if chamber == "upper":
+                return LegDetail(p, source=detail_link)
             return p
