@@ -1,14 +1,13 @@
 # import re
-from spatula import XPath, URL, XmlListPage
-
-# from openstates.models import ScrapeCommittee
+from spatula import XPath, URL, JsonListPage
+from openstates.models import ScrapeCommittee
 
 # to get all committees: https://apps.azleg.gov/api/Committee
 
 #
 
 
-class SenateCommitteeList(XmlListPage):
+class SenateCommitteeList(JsonListPage):
     # source = "https://www.senate.mo.gov/committee/"
     # source = URL("https://apps.azleg.gov/api/Committee", headers={sessionId=session_id,
     #         includeOnlyCommitteesWithAgendas="false",
@@ -37,9 +36,68 @@ class SenateCommitteeList(XmlListPage):
         f"?legislativeBody=S&sessionId={session_id}&includeMembers=true"
     )
     selector = XPath("//CommitteeModel")
+    chamber = "upper"
 
     def process_item(self, item):
         print("HUH")
+        # print("ITEM", item[""])
+        # name = XPath("/CommitteeName").match(item)
+        name = item["CommitteeName"]
+        print("NAME", name)
+        print("item", item)
+
+        # print("UM", item[I])
+        print(item["IsSubCommittee"])
+        if item["IsSubCommittee"] is False:
+            # print("NOT HER")
+            com = ScrapeCommittee(name=name, chamber=self.chamber)
+
+        else:
+            # TODO: unsure of what the parent of a subcommittee info would be stored?
+            # check "/Committee/"
+            com = ScrapeCommittee(
+                name=name,
+                classification="subcommittee",
+                chamber=self.chamber,
+                parent="Appropriations",
+            )
+
+        # members = self.data["d3p1:CommitteeMemberModel"]
+        # members = item["d3p1:CommitteeMemberModel"]
+        for member in item["Members"]:
+            # print("MEMBERS", member)
+            # com.add_member(member)
+            # print("MEMBER NAME", member["FirstName"] + " " + member["LastName"])
+
+            name = member["FirstName"] + " " + member["LastName"]
+            if member["IsChair"]:
+                position = "Chair"
+            elif member["IsViceChair"]:
+                position = "Vice Chair"
+            else:
+                position = "member"
+
+            com.add_member(name, position)
+        # for member in members:
+        #     print("hi")
+
+        com.extras["Committee ID"] = item["CommitteeId"]
+        com.extras["Committee Short Name"] = item["CommitteeShortName"]
+        com.extras["Committee Type"] = item["TypeName"]
+
+        # TODO: only standing committees, right?
+
+        # TODO: add links
+        return com
+
+        #                     com = ScrapeCommittee(name=name, chamber=self.chamber)
+        #         else:
+        #             com = ScrapeCommittee(
+        #                 name=name,
+        #                 classification="subcommittee",
+        #                 chamber=self.chamber,
+        #                 parent="Appropriations",
+        #             )
         # type = item.text_content()
         # if type == "Standing" or type == "Statutory":
 
