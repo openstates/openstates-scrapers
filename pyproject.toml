@@ -6,13 +6,13 @@ authors = ["James Turk <james@openstates.org>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-openstates = "^6.3.0"
+openstates = "^6.4.1"
 xlrd = "<2"
 lxml = "^4.4"
 pytz = "^2019.3"
 feedparser = "^6.0"
 python-dateutil = "^2.8"
-spatula = "^0.8.3"
+spatula = "^0.8.5"
 chardet = "^3.0"
 suds-py3 = "^1.3"
 requests = {version = "^2.22", extras = ["security"]}
