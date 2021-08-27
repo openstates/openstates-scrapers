@@ -1,10 +1,42 @@
 from spatula import URL, CsvListPage, HtmlPage, CSS, XPath
 from openstates.models import ScrapePerson
+from dataclasses import dataclass
+import re
+
+
+@dataclass
+class PartialPerson:
+    name: str
+    chamber: str
+    district: str
+    source: str
+
+
+# 418 total
+# 24 total senators
+# total representatives
 
 
 class SenDetail(HtmlPage):
+    input_type = PartialPerson
+
     def process_page(self):
-        p = self.input
+
+        party = CSS("span.MemberHeader").match_one(self.root).text_content().strip()
+        party = re.search(r"(.+)\(([A-Z])-.+\)", party).groups()[1]
+        print(party)
+
+        p = ScrapePerson(
+            name=self.input.name,
+            state="nh",
+            chamber=self.input.chamber,
+            district=self.input.district,
+            party=party,
+        )
+
+        p.add_source(self.input.source)
+        p.add_source(self.source.url)
+        p.add_link(self.source.url, note="homepage")
 
         img = CSS("img.auto-style2").match_one(self.root).get("src")
         p.image = img
@@ -41,9 +73,8 @@ class Legislators(CsvListPage):
 
     def process_item(self, item):
         for line in item.values():
+            print(line)
             member = line.split("\t")
-
-            # 39 out of 116 legislators have incomplete info (len(member) < 19)
 
             lastname = member[0]
             firstname = member[1]
@@ -57,37 +88,47 @@ class Legislators(CsvListPage):
                 chamber = "upper"
 
             district = member[6]
-            if len(member) > 15:
-                party = member[15]
-            else:
-                party = "Democratic"
-                # what should I do when party is not available?
 
-            p = ScrapePerson(
-                name=name,
-                state="nh",
-                chamber=chamber,
-                district=district,
-                party=party,
-            )
-
-            # seat_num = member[4]
-            if len(district) == 1:
-                district = "0" + district
-
+            # 39 out of 116 legislators have incomplete info (len(member) < 19)
+            # 24 senators and 15 reps
             if chamber == "upper":
-                detail_link = f"http://www.gencourt.state.nh.us/Senate/members/webpages/district{district}.aspx"
-                p.add_source(detail_link)
-                p.add_link(detail_link, note="homepage")
-            p.add_source(self.source.url)
+                if len(district) == 1:
+                    district_id = "0" + district
+                else:
+                    district_id = district
+                detail_link = f"http://www.gencourt.state.nh.us/Senate/members/webpages/district{district_id}.aspx"
 
-            county = member[5]
-            if county != "":
-                p.extras["county"] = county
+                partial = PartialPerson(
+                    name=name,
+                    chamber=chamber,
+                    district=district,
+                    source=self.source.url,
+                )
 
-            address = member[8]
+                return SenDetail(partial, source=detail_link)
 
+            # print(len(member))
             if len(member) > 9:
+                party = member[15]
+
+                p = ScrapePerson(
+                    name=name,
+                    state="nh",
+                    chamber=chamber,
+                    district=district,
+                    party=party,
+                )
+
+                # seat_num = member[4]
+
+                p.add_source(self.source.url)
+
+                county = member[5]
+                if county != "":
+                    p.extras["county"] = county
+
+                address = member[8]
+
                 address2 = member[9]
                 city = member[10]
                 zipcode = member[11]
@@ -106,9 +147,5 @@ class Legislators(CsvListPage):
                 p.extras["gender code"] = gendercode
                 title = member[17]
                 p.extras["title"] = title
-            else:
-                p.district_office.address = address
 
-            if chamber == "upper":
-                return SenDetail(p, source=detail_link)
-            return p
+                return p
