@@ -102,7 +102,7 @@ class LegDetail(HtmlPage):
                     )
                     staff_email = re.search(r"mailto:\s?(.+)", staff_email).groups()[0]
                     if staff_role:
-                        p.extras[staff_role + "email"] = staff_email
+                        p.extras[staff_role + " email"] = staff_email
                     else:
                         p.extras["staff email"] = staff_email
                 except SelectorError:
