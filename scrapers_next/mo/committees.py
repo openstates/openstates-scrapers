@@ -76,7 +76,6 @@ class SenateTypeCommitteeList(HtmlListPage):
 
             return SenateCommitteeDetail(com, source=item.get("href"))
         else:
-            print("OK THEN")
             self.skip()
 
 
@@ -85,14 +84,11 @@ class SenateCommitteeList(HtmlListPage):
     selector = CSS("#post-90 a")
 
     def process_item(self, item):
-        print("HUH")
+
         type = item.text_content()
         if type == "Standing" or type == "Statutory":
-
-            print("WHAT WHAT", item.get("href"))
             return SenateTypeCommitteeList(source=item.get("href"))
         else:
-            print("HEREEE")
             self.skip()
 
 
