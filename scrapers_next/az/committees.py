@@ -39,17 +39,10 @@ class SenateCommitteeList(JsonListPage):
     chamber = "upper"
 
     def process_item(self, item):
-        print("HUH")
-        # print("ITEM", item[""])
-        # name = XPath("/CommitteeName").match(item)
-        name = item["CommitteeName"]
-        print("NAME", name)
-        print("item", item)
 
-        # print("UM", item[I])
-        print(item["IsSubCommittee"])
+        name = item["CommitteeName"]
+
         if item["IsSubCommittee"] is False:
-            # print("NOT HER")
             com = ScrapeCommittee(name=name, chamber=self.chamber)
 
         else:
@@ -62,12 +55,9 @@ class SenateCommitteeList(JsonListPage):
                 parent="Appropriations",
             )
 
-        # members = self.data["d3p1:CommitteeMemberModel"]
-        # members = item["d3p1:CommitteeMemberModel"]
+        # TODO: for repeat problem, not sure that this is the best approach?
+        members = []
         for member in item["Members"]:
-            # print("MEMBERS", member)
-            # com.add_member(member)
-            # print("MEMBER NAME", member["FirstName"] + " " + member["LastName"])
 
             name = member["FirstName"] + " " + member["LastName"]
             if member["IsChair"]:
@@ -77,9 +67,12 @@ class SenateCommitteeList(JsonListPage):
             else:
                 position = "member"
 
-            com.add_member(name, position)
-        # for member in members:
-        #     print("hi")
+            # As of now, the API lists all members twice, so we must check for duplicates for members
+            if f"{name} {position}" in members:
+                continue
+            else:
+                members.append(f"{name} {position}")
+                com.add_member(name, position)
 
         com.extras["Committee ID"] = item["CommitteeId"]
         com.extras["Committee Short Name"] = item["CommitteeShortName"]
