@@ -2,10 +2,6 @@ from spatula import URL, CSS, HtmlListPage, XPath
 from openstates.models import ScrapePerson
 import re
 
-CAP_ADDRESS = """c/o Nevada Senate
-401 South Carson Street
-Carson City, NV 89701-4747"""
-
 
 class Legislators(HtmlListPage):
     selector = CSS("tbody tr.thisRow.listRow")
@@ -50,17 +46,15 @@ class Legislators(HtmlListPage):
         p.email = email
 
         leg_bldg_room = extra_info_detail[2].text_content().strip()
-        p.extras["leg building room"] = leg_bldg_room
-        # should this be appended to capitol office?
+        if self.chamber == "upper":
+            chamb = "Senate"
+        else:
+            chamb = "Assembly"
+        cap_addr = f"Room {leg_bldg_room};c/o Nevada {chamb};401 South Carson Street;Carson City, NV 89701-4747"
+        p.capitol_office.address = cap_addr
 
         leg_bldg_phone = extra_info_detail[3].text_content().strip()
-        p.extras["leg building phone"] = leg_bldg_phone
-        # is this capitol phone?
-
-        if len(extra_info_detail) > 4:
-            work_phone = extra_info_detail[4].text_content().strip()
-            p.extras["work phone"] = work_phone
-            # is this district phone?
+        p.capitol_office.voice = leg_bldg_phone
 
         return p
 
