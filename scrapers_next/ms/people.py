@@ -4,8 +4,7 @@ from itertools import zip_longest
 from dataclasses import dataclass
 import re
 
-CAP_ADDRESS = """P. O. Box 1018
-Jackson, MS 39215"""
+CAP_ADDRESS = """P. O. Box 1018;Jackson, MS 39215"""
 
 
 @dataclass
@@ -26,64 +25,6 @@ class LegDetail(HtmlPage):
     input_type = PartialPerson
 
     def process_page(self):
-        # Senate President Delbert Hosemann has a completely different page
-        # what would his district be?
-        if self.source.url == "http://ltgovhosemann.ms.gov/":
-            p = ScrapePerson(
-                name=self.input.name,
-                state="ms",
-                chamber=self.input.chamber,
-                district="",
-                party="Republican",
-            )
-            p.extras["title"] = self.input.title
-            p.extras["phone"] = (
-                CSS("span.fusion-contact-info-phone-number")
-                .match_one(self.root)
-                .text_content()
-                .strip()
-            )
-            p.extras["email"] = (
-                CSS("span.fusion-contact-info-email-address")
-                .match_one(self.root)
-                .text_content()
-                .strip()
-            )
-            twitter = (
-                CSS(
-                    "a.fusion-social-network-icon.fusion-tooltip.fusion-twitter.fusion-icon-twitter"
-                )
-                .match_one(self.root)
-                .get("href")
-                .split("/")[-1]
-            )
-            p.ids.twitter = twitter
-            facebook = (
-                CSS(
-                    "a.fusion-social-network-icon.fusion-tooltip.fusion-facebook.fusion-icon-facebook"
-                )
-                .match_one(self.root)
-                .get("href")
-                .split("/")[-1]
-            )
-            p.ids.facebook = facebook
-            instagram = (
-                CSS(
-                    "a.fusion-social-network-icon.fusion-tooltip.fusion-instagram.fusion-icon-instagram"
-                )
-                .match_one(self.root)
-                .get("href")
-                .split("/")[-2]
-            )
-            p.ids.instagram = instagram
-            p.extras["mailing address"] = "P.O. Box 1018 Jackson, MS, 39215"
-
-            p.add_source(self.input.source)
-            p.add_source(self.source.url)
-            p.add_link(self.source.url, note="homepage")
-
-            return p
-
         district = CSS("district").match_one(self.root).text_content().strip()
         party = CSS("party").match_one(self.root).text_content().strip()
 
@@ -186,7 +127,7 @@ class LegDetail(HtmlPage):
 
         cap_room = CSS("cap_room").match_one(self.root).text_content().strip()
         if cap_room != "":
-            cap_addr = "Room %s\n%s" % (cap_room, CAP_ADDRESS)
+            cap_addr = "Room %s %s" % (cap_room, CAP_ADDRESS)
         else:
             cap_addr = CAP_ADDRESS
         p.capitol_office.address = cap_addr
@@ -224,8 +165,9 @@ class Legislators(HtmlPage):
                 title = children[0].text_content().strip()
                 name = children[1].text_content().strip()
                 link_id = children[2].text_content().strip()
+                # skip Lt. Gov. Delbert Hosemann
                 if link_id == "http://ltgovhosemann.ms.gov/":
-                    link = link_id
+                    continue
                 else:
                     link = "http://billstatus.ls.state.ms.us/members/" + link_id
 
