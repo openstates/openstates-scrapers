@@ -15,7 +15,7 @@ class PartialPerson:
 
 
 # 24 total senators
-# total representatives
+# 395 total representatives?
 
 
 class SenDetail(HtmlPage):
@@ -113,6 +113,18 @@ class Senate(HtmlListPage):
         detail_link = CSS("a").match(item)[0].get("href")
 
         return SenDetail(partial, source=detail_link)
+
+
+class House(HtmlPage):
+    source = URL("http://gencourt.state.nh.us/house/members/default.aspx")
+
+    def process_page(self):
+        members = XPath("//*[@id='ContentPlaceHolder1_ddlReps']/option").match(
+            self.root
+        )
+        print(len(members))
+        # for member in members:
+        # print(member.text_content())
 
 
 # class Legislators(CsvListPage):
