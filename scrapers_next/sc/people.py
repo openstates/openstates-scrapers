@@ -1,4 +1,4 @@
-from spatula import URL, CSS, HtmlListPage, HtmlPage, XPath
+from spatula import URL, CSS, HtmlListPage, HtmlPage, XPath, SelectorError
 from openstates.models import ScrapePerson
 import re
 
@@ -22,6 +22,43 @@ class LegDetail(HtmlPage):
             line2 = "Columbia, SC " + zipcode
         cap_addr += line2
         p.capitol_office.address = cap_addr
+
+        busn_phone = (
+            XPath(
+                "//*[@id='contentsection']/div[1]/div[3]/p/span[contains(text(), 'Business Phone')]"
+            )
+            .match(self.root)[0]
+            .tail.strip()
+        )
+        p.capitol_office.voice = busn_phone
+        # is this capitol office phone?
+
+        try:
+            home_addr_path = (
+                XPath(
+                    "//*[@id='contentsection']/div[1]/div[4]/h2[contains(text(), 'Home Address')]"
+                )
+                .match_one(self.root)
+                .getnext()
+            )
+            home_addr = home_addr_path.text
+            home_addr += " "
+            home_line2 = home_addr_path.getchildren()[0].tail
+            if not re.search(r"SC", home_line2):
+                city, h_zip = re.search(r"(.+),?\s(\d{5})", home_line2).groups()
+                home_line2 = city + ", SC " + h_zip
+            home_addr += home_line2
+            p.district_office.address = home_addr
+            # is this district office address?
+        except SelectorError:
+            pass
+
+        # 1, 2, 3, or 4 phones
+
+        # XPath("//*[@id='contentsection']/div[1]/div[3]/p[2]/span[contains(text(), 'Phone')]").match(self.root).tail.strip()
+        # XPath("//*[@id='contentsection']/div[1]/div[3]/p[3]/span[contains(text(), 'Phone')]").match(self.root).tail.strip()
+        # XPath("//*[@id='contentsection']/div[1]/div[4]/p[2]/span[contains(text(), 'Phone')]").match(self.root).tail.strip()
+        # XPath("//*[@id='contentsection']/div[1]/div[4]/p[3]/span[contains(text(), 'Phone')]").match(self.root).tail.strip()
 
         return p
 
