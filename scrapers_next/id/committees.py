@@ -13,11 +13,14 @@ class DetailCommitteePage(HtmlPage):
         for member in members:
             name = CSS("strong").match_one(member).text_content().strip()
             name = re.search(r"(Sen\.|Rep\.)\s(.+)", name).groups()[1]
+
+            if re.search(r"Ad\sHoc", name):
+                name, _, role = re.search(r"(.+)(\s–\s|\()(Ad\sHoc)\)?", name).groups()
+
             if re.search(r",\s", name):
                 name, role = re.search(r"(.+),\s(.+)", name).groups()
-            else:
-                role = "member"
-            com.add_member(name, role)
+
+            com.add_member(name, role if role else "member")
 
         return com
 
