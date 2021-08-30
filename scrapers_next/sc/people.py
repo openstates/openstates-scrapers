@@ -1,6 +1,29 @@
-from spatula import URL, CSS, HtmlListPage
+from spatula import URL, CSS, HtmlListPage, HtmlPage, XPath
 from openstates.models import ScrapePerson
 import re
+
+
+class LegDetail(HtmlPage):
+    def process_page(self):
+        p = self.input
+
+        cap_addr_path = (
+            XPath(
+                "//*[@id='contentsection']/div[1]/div[3]/h2[contains(text(), 'Columbia Address')]"
+            )
+            .match_one(self.root)
+            .getnext()
+        )
+        cap_addr = cap_addr_path.text
+        cap_addr += " "
+        line2 = cap_addr_path.getchildren()[0].tail
+        if not re.search(r"SC", line2):
+            zipcode = re.search(r"Columbia\s(\d{5})", line2).groups()[0]
+            line2 = "Columbia, SC " + zipcode
+        cap_addr += line2
+        print(cap_addr)
+
+        return p
 
 
 class Legislators(HtmlListPage):
@@ -36,7 +59,7 @@ class Legislators(HtmlListPage):
         img = CSS("img").match_one(item).get("src")
         p.image = img
 
-        return p
+        return LegDetail(p, source=detail_link)
 
 
 class Senate(Legislators):
