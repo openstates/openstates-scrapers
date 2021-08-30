@@ -3,16 +3,6 @@ from openstates.models import ScrapeCommittee
 import re
 
 
-# "html body section.parent-section.no-padding div.container-fluid div.row section.parallax-fix div.container div.row div div div div.tab-content div div div div.insert-page.insert-page-522202 div.hidden-print section.row-equal-height.no-padding div"
-# "html body section.parent-section.no-padding div.container-fluid div.row div"
-# "https://legislature.idaho.gov/sessioninfo/2021/joint/cec/"
-# this link might have broken html
-
-# https://legislature.idaho.gov/lso/bpa/eora/
-# https://legislature.idaho.gov/sessioninfo/2021/standingcommittees/HETH/
-# these links have 'Ad Hoc' in names
-
-
 class DetailCommitteePage(HtmlPage):
     def process_page(self):
         com = self.input
@@ -28,7 +18,6 @@ class DetailCommitteePage(HtmlPage):
             else:
                 role = "member"
             com.add_member(name, role)
-            # print(name, role)
 
         return com
 
@@ -51,6 +40,8 @@ class JointCommitteeList(HtmlListPage):
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
 
+        # this link has broken html (not able to grab member info)
+        # just returning name, chamber, and link
         if detail_link == "https://legislature.idaho.gov/sessioninfo/2021/joint/cec/":
             return com
 
