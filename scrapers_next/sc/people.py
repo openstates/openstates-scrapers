@@ -18,10 +18,10 @@ class LegDetail(HtmlPage):
         cap_addr += " "
         line2 = cap_addr_path.getchildren()[0].tail
         if not re.search(r"SC", line2):
-            zipcode = re.search(r"Columbia\s(\d{5})", line2).groups()[0]
+            zipcode = re.search(r"Columbia,?\s\s?(\d{5})", line2).groups()[0]
             line2 = "Columbia, SC " + zipcode
         cap_addr += line2
-        print(cap_addr)
+        p.capitol_office.address = cap_addr
 
         return p
 
