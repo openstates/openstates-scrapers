@@ -1,4 +1,6 @@
-from spatula import URL, HtmlPage, CSS, XPath, HtmlListPage
+import io
+import csv
+from spatula import URL, HtmlPage, CSS, XPath, HtmlListPage, CsvListPage
 from openstates.models import ScrapePerson
 from dataclasses import dataclass
 import re
@@ -127,49 +129,52 @@ class House(HtmlPage):
         # print(member.text_content())
 
 
-# class Legislators(CsvListPage):
+class Legislators(CsvListPage):
+    def postprocess_response(self) -> None:
+        self.reader = csv.DictReader(io.StringIO(self.response.text), delimiter="\t")
 
-#     # house_profile_url = (
-#     #     "http://www.gencourt.state.nh.us/house/members/member.aspx?member={}"
-#     # )
+    # house_profile_url = (
+    #     "http://www.gencourt.state.nh.us/house/members/member.aspx?member={}"
+    # )
 
-#     source = URL("http://gencourt.state.nh.us/downloads/members.txt")
+    source = URL("http://gencourt.state.nh.us/downloads/members.txt")
 
-#     def process_item(self, item):
-#         for line in item.values():
-#             # print(line)
-#             member = line.split("\t")
+    def process_item(self, item):
+        print(item)
+        for line in item.values():
+            # print(line)
+            member = line.split("\t")
 
-#             lastname = member[0]
-#             firstname = member[1]
-#             middlename = member[2]
-#             name = firstname + " " + middlename + " " + lastname
+            lastname = member[0]
+            firstname = member[1]
+            middlename = member[2]
+            name = firstname + " " + middlename + " " + lastname
 
-#             legislativebody = member[3]
-#             if legislativebody == "H":
-#                 chamber = "lower"
-#             elif legislativebody == "S":
-#                 chamber = "upper"
+            legislativebody = member[3]
+            if legislativebody == "H":
+                chamber = "lower"
+            elif legislativebody == "S":
+                chamber = "upper"
 
-#             district = member[6]
+            district = member[6]
 
-#             # 39 out of 116 legislators have incomplete info (len(member) < 19)
-#             # 24 senators and 15 reps
-#             if chamber == "upper":
-#                 if len(district) == 1:
-#                     district_id = "0" + district
-#                 else:
-#                     district_id = district
-#                 detail_link = f"http://www.gencourt.state.nh.us/Senate/members/webpages/district{district_id}.aspx"
+            # 39 out of 116 legislators have incomplete info (len(member) < 19)
+            # 24 senators and 15 reps
+            if chamber == "upper":
+                if len(district) == 1:
+                    district_id = "0" + district
+                else:
+                    district_id = district
+                detail_link = f"http://www.gencourt.state.nh.us/Senate/members/webpages/district{district_id}.aspx"
 
-#                 partial = PartialPerson(
-#                     name=name,
-#                     chamber=chamber,
-#                     district=district,
-#                     source=self.source.url,
-#                 )
+                partial = PartialPerson(
+                    name=name,
+                    chamber=chamber,
+                    district=district,
+                    source=self.source.url,
+                )
 
-#                 return SenDetail(partial, source=detail_link)
+                return SenDetail(partial, source=detail_link)
 
 
 # # print(len(member))
