@@ -134,10 +134,6 @@ class Legislators(CsvListPage):
     def postprocess_response(self) -> None:
         self.reader = csv.DictReader(io.StringIO(self.response.text), delimiter="\t")
 
-    # house_profile_url = (
-    #     "http://www.gencourt.state.nh.us/house/members/member.aspx?member={}"
-    # )
-
     source = URL("http://gencourt.state.nh.us/downloads/members.txt")
 
     def process_item(self, item):
@@ -178,61 +174,35 @@ class Legislators(CsvListPage):
         p.family_name = lastname
         p.given_name = firstname
 
-        # seatno
-        # County
-        # electedStatus
-        # Address
-        # address2
-        # city
-        # Zipcode
-        # State
-        # Phone
-        # WorkEmail
-        # GenderCode
-        # PersonTitle
+        county = item["County"]
+        if county != "":
+            p.extras["county"] = county
+
+        electedStatus = item["electedStatus"].strip()
+        if electedStatus != "":
+            p.extras["elected status"] = electedStatus
+
+        addr = item["Address"].strip()
+        if addr != "":
+            addr += " "
+            if item["address2"].strip() != "":
+                addr += item["address2"]
+                addr += " "
+            addr += item["city"]
+            addr += ", NH "
+            addr += item["Zipcode"]
+            if item["Phone"].strip() != "":
+                p.add_office(
+                    contact_type="Primary Office", address=addr, voice=item["Phone"]
+                )
+            else:
+                p.add_office(contact_type="Primary Office", address=addr)
+            # is this primary office? or district office?
+
+        if item["WorkEmail"].strip() != "":
+            p.email = item["WorkEmail"].strip()
+
+        if item["GenderCode"].strip() != "":
+            p.extras["gender code"] = item["GenderCode"].strip()
 
         return p
-
-
-# # print(len(member))
-# if len(member) > 9:
-#     party = member[15]
-
-#     p = ScrapePerson(
-#         name=name,
-#         state="nh",
-#         chamber=chamber,
-#         district=district,
-#         party=party,
-#     )
-
-#     # seat_num = member[4]
-
-#     p.add_source(self.source.url)
-
-#     county = member[5]
-#     if county != "":
-#         p.extras["county"] = county
-
-#     address = member[8]
-
-#     address2 = member[9]
-#     city = member[10]
-#     zipcode = member[11]
-#     full_addr = (
-#         address + " " + address2 + " " + city + ", New Hampshire" + zipcode
-#     )
-#     p.district_office.address = full_addr
-
-#     phone = member[13]
-#     p.district_office.voice = phone
-
-#     email = member[14]
-#     p.email = email
-
-#     gendercode = member[16]
-#     p.extras["gender code"] = gendercode
-#     title = member[17]
-#     p.extras["title"] = title
-
-#     return p
