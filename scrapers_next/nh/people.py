@@ -1,8 +1,15 @@
 import io
 import csv
-from spatula import URL, CsvListPage, HtmlPage, CSS, XPath
+from spatula import URL, CsvListPage, HtmlPage, CSS, XPath  # , XmlPage
 from openstates.models import ScrapePerson
 import re
+
+
+class HouseDetail(HtmlPage):
+    def process_page(self):
+        p = self.input
+
+        return p
 
 
 class SenDetail(HtmlPage):
@@ -39,53 +46,6 @@ class SenDetail(HtmlPage):
             p.capitol_office.voice = phone
 
         return p
-
-
-# class Senate(HtmlListPage):
-#     source = URL("http://gencourt.state.nh.us/Senate/members/senate_roster.aspx")
-#     selector = CSS("div#roseterWrap > div", num_items=24)
-
-#     def process_item(self, item):
-
-#         header_line = CSS("div").match(item)[0].text_content().strip()
-#         header_line_lst = re.search(
-#             r"District\s(.+)\s-\sSenator\s(.+)", header_line
-#         ).groups()
-
-#         district = header_line_lst[0]
-#         if district[0] == "0":
-#             district = district[1]
-#         name = header_line_lst[1].strip()
-
-#         staff = CSS("a").match(item)[1]
-#         staff_email = staff.get("href")
-#         staff_email = re.search(r"mailto:(.+)", staff_email).groups()[0]
-#         staff_name = staff.text_content().strip()
-
-#         partial = PartialPerson(
-#             name=name,
-#             chamber="upper",
-#             district=district,
-#             source=self.source.url,
-#             staff_name=staff_name,
-#             staff_email=staff_email,
-#         )
-
-#         detail_link = CSS("a").match(item)[0].get("href")
-
-#         return SenDetail(partial, source=detail_link)
-
-
-# class House(HtmlPage):
-#     source = URL("http://gencourt.state.nh.us/house/members/default.aspx")
-
-#     def process_page(self):
-#         members = XPath("//*[@id='ContentPlaceHolder1_ddlReps']/option").match(
-#             self.root
-#         )
-#         print(len(members))
-#         # for member in members:
-#         # print(member.text_content())
 
 
 class Legislators(CsvListPage):
@@ -160,16 +120,45 @@ class Legislators(CsvListPage):
             p.add_link(detail_link, note="homepage")
             return SenDetail(p, source=detail_link)
 
+        # seat_map = SeatMap()
+        # seat_number = seat_map[item["seatno"]]
+        # detail_link = f"http://www.gencourt.state.nh.us/house/members/member.aspx?member={seat_number}"
+        # return HouseDetail(p, source=detail_link)
         return p
 
 
-# members_url = "http://gencourt.state.nh.us/downloads/Members.txt"
-
 # lookup_url = "http://www.gencourt.state.nh.us/house/members/memberlookup.aspx"
+
 # house_profile_url = (
 #     f"http://www.gencourt.state.nh.us/house/members/member.aspx?member={item["seatno"]}"
 # )
 
-# senate_profile_url = (
-#     f"http://www.gencourt.state.nh.us/Senate/members/webpages/district{district}.aspx"
-# )
+# seat_number = seat_map[row["seatno"]]
+# profile_url = self.house_profile_url.format(seat_number)
+
+# class SeatMap(XmlPage):
+#     source = "http://www.gencourt.state.nh.us/house/members/memberlookup.aspx"
+
+#     def process_page(self):
+#         """Get mapping between seat numbers and legislator identifiers."""
+#         seat_map = {}
+#         # page = self.lxmlize(self.lookup_url)
+#         options = XPath('//select[@id="member"]/option').match(self.root)
+#         print(options)
+#         for option in options:
+#             member_url = f"http://www.gencourt.state.nh.us/house/members/member.aspx?member={option.attrib['value']}"
+#             table = MemberPage(source=member_url)
+
+# member_page = self.lxmlize(member_url)
+# table = member_page.xpath('//table[@id="Table1"]')
+#     if table:
+#         res = re.search(r"seat #:(\d+)", table[0].text_content(), re.IGNORECASE)
+#         if res:
+#             seat_map[res.groups()[0]] = option.attrib["value"]
+# return seat_map
+
+
+# class MemberPage(XmlPage):
+#     def process_page(self):
+#         table = XPath('//table[@id="Table1"]').match(self.root)[0]
+#         return table
