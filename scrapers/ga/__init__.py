@@ -3,14 +3,11 @@ from .util import get_client, backoff
 from .bills import GABillScraper
 from .events import GAEventScraper
 
-# from .committees import GACommitteeScraper
-
 
 class Georgia(State):
     scrapers = {
         "bills": GABillScraper,
         "events": GAEventScraper,
-        # 'committee': GACommitteeScraper,
     }
     legislative_sessions = [
         {
