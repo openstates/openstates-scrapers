@@ -85,6 +85,15 @@ class LegDetail(HtmlPage):
         except SelectorError:
             pass
 
+        title = (
+            XPath("//*[@id='contentsection']/div[1]/div[1]/p")
+            .match(self.root)[1]
+            .text_content()
+        )
+        if not re.search(r"(Republican|Democrat|Committee)", title):
+            print(title)
+            p.extras["title"] = title.strip()
+
         return p
 
 
