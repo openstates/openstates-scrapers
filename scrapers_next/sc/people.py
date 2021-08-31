@@ -91,8 +91,13 @@ class LegDetail(HtmlPage):
             .text_content()
         )
         if not re.search(r"(Republican|Democrat|Committee)", title):
-            print(title)
             p.extras["title"] = title.strip()
+
+        p.extras["counties represented"] = (
+            XPath("//*[@id='contentsection']/div[1]/div[1]/p/span")
+            .match(self.root)[0]
+            .text_content()
+        )
 
         return p
 
