@@ -57,6 +57,32 @@ class LegDetail(HtmlPage):
                 else:
                     p.add_office(contact_type="District Office", address=addr)
 
+        social_links = CSS("div.Widget.MemberBio-SocialLinks a").match(self.root)
+        for link in social_links:
+            if re.search(
+                r"(enewsletters|library|pacapitol|news|(C|c)ontact|linkedin|vimeo|email|feed|google|RSS)",
+                link.get("href"),
+            ):
+                continue
+            elif re.search(r"(F|f)acebook", link.get("href")):
+                if re.search(r"(protect|sk=wall)", link.get("href")):
+                    continue
+                else:
+                    fb = link.get("href").split("/")
+                    if fb[-1] == "" or not re.search(r"[A-Za-z]", fb[-1]):
+                        fb_id = fb[-2]
+                    else:
+                        fb_id = fb[-1]
+                    p.ids.facebook = fb_id
+            elif re.search(r"twitter", link.get("href")):
+                continue
+            elif re.search(r"instagram", link.get("href")):
+                continue
+            elif re.search(r"youtube", link.get("href")):
+                continue
+            else:
+                p.extras["website"] = link.get("href")
+
         return p
 
 
