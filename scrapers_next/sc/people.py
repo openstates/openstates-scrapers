@@ -39,7 +39,6 @@ class LegDetail(HtmlPage):
                 home_line2 = city + ", SC " + h_zip
             home_addr += home_line2
             p.district_office.address = home_addr
-            # is this district office address?
         except SelectorError:
             pass
 
@@ -50,6 +49,8 @@ class LegDetail(HtmlPage):
             p.extras[cap_phones[1].text_content().strip()] = cap_phones[1].tail.strip()
         if cap_phones[0].text_content().strip() == "Business Phone":
             p.capitol_office.voice = cap_phones[0].tail.strip()
+        else:
+            p.extras[cap_phones[0].text_content().strip()] = cap_phones[0].tail.strip()
 
         try:
             home_phones = XPath(
