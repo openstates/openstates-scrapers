@@ -458,6 +458,10 @@ class USBillScraper(Scraper):
         # only try to scrape public law version if there's an enrolled version
         if not any(["Enrolled" in v["note"] for v in bill.versions]):
             return
+        # S 164 is timing out so skipping for now
+        # https://github.com/openstates/issues/issues/482
+        elif bill.title == "Advancing Education on Biosimilars Act of 2021":
+            return
 
         resp = self.get(url + "/text")
         doc = lxml.html.fromstring(resp.content)
