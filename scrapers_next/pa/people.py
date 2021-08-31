@@ -60,26 +60,38 @@ class LegDetail(HtmlPage):
         social_links = CSS("div.Widget.MemberBio-SocialLinks a").match(self.root)
         for link in social_links:
             if re.search(
-                r"(enewsletters|library|pacapitol|news|(C|c)ontact|linkedin|vimeo|email|feed|google|RSS)",
+                r"(enewsletters|library|pacapitol|news|(C|c)ontact|linkedin|vimeo|email|feed|google|RSS|protect|sk=wall)",
                 link.get("href"),
             ):
                 continue
             elif re.search(r"(F|f)acebook", link.get("href")):
-                if re.search(r"(protect|sk=wall)", link.get("href")):
-                    continue
+                fb = link.get("href").split("/")
+                if fb[-1] == "" or not re.search(r"[A-Za-z]", fb[-1]):
+                    fb_id = fb[-2]
                 else:
-                    fb = link.get("href").split("/")
-                    if fb[-1] == "" or not re.search(r"[A-Za-z]", fb[-1]):
-                        fb_id = fb[-2]
-                    else:
-                        fb_id = fb[-1]
-                    p.ids.facebook = fb_id
+                    fb_id = fb[-1]
+                p.ids.facebook = fb_id
             elif re.search(r"twitter", link.get("href")):
-                continue
+                twitter = link.get("href").split("/")
+                if twitter[-1] == "":
+                    tw_id = twitter[-2]
+                else:
+                    tw_id = twitter[-1]
+                p.ids.twitter = tw_id.lstrip("@")
             elif re.search(r"instagram", link.get("href")):
-                continue
+                insta = link.get("href").split("/")
+                if insta[-1] == "" or re.search(r"hl=en", insta[-1]):
+                    insta_id = insta[-2]
+                else:
+                    insta_id = insta[-1]
+                p.ids.instagram = insta_id
             elif re.search(r"youtube", link.get("href")):
-                continue
+                youtube = link.get("href").split("/")
+                if youtube[-1] == "" or re.search(r"featured", youtube[-1]):
+                    youtube_id = youtube[-2]
+                else:
+                    youtube_id = youtube[-1]
+                p.ids.youtube = youtube_id
             else:
                 p.extras["website"] = link.get("href")
 
