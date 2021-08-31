@@ -29,6 +29,12 @@ class LegList(HtmlListPage):
             party=party,
         )
 
+        detail_link = CSS("a").match_one(item).get("href")
+
+        p.add_source(self.source.url)
+        p.add_source(detail_link)
+        p.add_link(detail_link, note="homepage")
+
         return p
 
 
