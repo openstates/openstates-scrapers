@@ -11,31 +11,51 @@ class LegDetail(HtmlPage):
         p.image = img
 
         addresses = CSS("address").match(self.root)
-        cap_addr = ""
-        cap_phone = None
-        cap_fax = None
-        if p.chamber == "upper":
-            lines = XPath("text()").match(addresses[0])
-        else:
-            lines = XPath("text()").match(addresses[-1])
-        for line in lines:
-            if re.search(r"(Senator|Hon\.)", line.strip()):
-                continue
-            elif re.search(r"FAX", line.strip()):
-                cap_fax = line.strip()
-            elif re.search(r"\(\d{3}\)\s\d{3}-\d{4}", line.strip()):
-                cap_phone = line.strip()
+        for num, address in enumerate(addresses):
+            addr = ""
+            phone = None
+            fax = None
+            lines = XPath("text()").match(address)
+            for line in lines:
+                if re.search(r"(Senator|Hon\.)", line.strip()):
+                    continue
+                elif re.search(r"FAX", line.strip()):
+                    fax = line.strip()
+                elif re.search(r"\(\d{3}\)\s\d{3}-\d{4}", line.strip()):
+                    phone = line.strip()
+                else:
+                    addr_lines = line.strip().split("\n")
+                    for addr_line in addr_lines:
+                        addr += addr_line.strip()
+                        addr += " "
+
+            if (p.chamber == "upper" and num == 0) or (
+                p.chamber == "lower" and num == len(addresses) - 1
+            ):
+                p.capitol_office.address = addr.strip()
+                if phone:
+                    p.capitol_office.voice = phone
+                if fax:
+                    fax = re.search(r"FAX:\s(.+)", fax).groups()[0]
+                    p.capitol_office.fax = fax
             else:
-                addr_lines = line.strip().split("\n")
-                for cap_line in addr_lines:
-                    cap_addr += cap_line.strip()
-                    cap_addr += " "
-        p.capitol_office.address = cap_addr.strip()
-        if cap_phone:
-            p.capitol_office.voice = cap_phone
-        if cap_fax:
-            cap_fax = re.search(r"FAX:\s(.+)", cap_fax).groups()[0]
-            p.capitol_office.fax = cap_fax
+                if phone and fax:
+                    fax = re.search(r"FAX:\s(.+)", fax).groups()[0]
+                    p.add_office(
+                        contact_type="District Office",
+                        address=addr,
+                        voice=phone,
+                        fax=fax,
+                    )
+                elif phone:
+                    p.add_office(
+                        contact_type="District Office", address=addr, voice=phone
+                    )
+                elif fax:
+                    fax = re.search(r"FAX:\s(.+)", fax).groups()[0]
+                    p.add_office(contact_type="District Office", address=addr, fax=fax)
+                else:
+                    p.add_office(contact_type="District Office", address=addr)
 
         return p
 
