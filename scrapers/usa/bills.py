@@ -149,7 +149,8 @@ class USBillScraper(Scraper):
         bill.add_source(cg_url)
 
         # use cg_url to get additional version for public law
-        self.scrape_public_law_version(bill, cg_url)
+        # disabled 9/2021 - congress.gov was giving 503s
+        # self.scrape_public_law_version(bill, cg_url)
 
         yield bill
 
