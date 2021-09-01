@@ -42,48 +42,99 @@ class LegDetail(HtmlPage):
         except SelectorError:
             pass
 
-        cap_phones = XPath(
-            "//*[@id='contentsection']/div[1]/div[3]/p/span[contains(text(), 'Phone')]"
-        ).match(self.root)
-        if len(cap_phones) > 1:
-            p.extras[cap_phones[1].text_content().strip()] = cap_phones[1].tail.strip()
-        if cap_phones[0].text_content().strip() == "Business Phone":
-            p.capitol_office.voice = cap_phones[0].tail.strip()
-        else:
-            p.extras[cap_phones[0].text_content().strip()] = cap_phones[0].tail.strip()
+        phone_dict = {
+            "Columbia Address": {
+                "Home Phone": None,
+                "Business Phone": None,
+                "Cell Phone": None,
+            },
+            "Home Address": {
+                "Home Phone": None,
+                "Business Phone": None,
+                "Cell Phone": None,
+            },
+            "Home Information": {
+                "Home Phone": None,
+                "Business Phone": None,
+                "Cell Phone": None,
+            },
+        }
+        phone_spans = XPath("//*[@id='contentsection']/div[1]/div/p/span").match(
+            self.root
+        )[1:]
+        for phone_span in phone_spans:
+            parent = (
+                phone_span.getparent()
+                .getparent()
+                .getchildren()[0]
+                .text_content()
+                .strip()
+            )
+            title = phone_span.text_content().strip()
+            number = phone_span.tail.strip()
+            phone_dict[parent][title] = number
+        # print(phone_dict)
 
-        try:
-            home_phones = XPath(
-                "//*[@id='contentsection']/div[1]/div[4]/p/span[contains(text(), 'Phone')]"
-            ).match(self.root)
-            if len(home_phones) > 1 and len(cap_phones) > 1:
-                if home_phones[0].tail.strip() not in [
-                    cap_phones[0].tail.strip(),
-                    cap_phones[1].tail.strip(),
-                ]:
-                    p.extras[home_phones[0].text_content().strip()] = home_phones[
-                        0
-                    ].tail.strip()
-                if home_phones[1].tail.strip() not in [
-                    cap_phones[0].tail.strip(),
-                    cap_phones[1].tail.strip(),
-                ]:
-                    p.district_office.voice = home_phones[1].tail.strip()
-            elif len(home_phones) > 1:
-                if home_phones[0].tail.strip() != cap_phones[0].tail.strip():
-                    p.extras[home_phones[0].text_content().strip()] = home_phones[
-                        0
-                    ].tail.strip()
-                if home_phones[1].tail.strip() != cap_phones[0].tail.strip():
-                    p.district_office.voice = home_phones[1].tail.strip()
-            elif home_phones[0].text_content().strip() == "Business Phone":
-                p.district_office.voice = home_phones[0].tail.strip()
-            else:
-                p.extras[home_phones[0].text_content().strip()] = home_phones[
-                    0
-                ].tail.strip()
-        except SelectorError:
-            pass
+        for parent, mini_phone_dict in phone_dict.items():
+            if parent == "Columbia Address":
+                for title, phone in mini_phone_dict.items():
+                    if title == "Home Phone" and phone:
+                        p.extras["Columbia Address " + title] = phone
+                    elif title == "Business Phone" and phone:
+                        p.capitol_office.voice = phone
+                    elif title == "Cell Phone" and phone:
+                        p.extras["Columbia Address " + title] = phone
+            elif parent == "Home Address" or parent == "Home Information":
+                for title, phone in mini_phone_dict.items():
+                    if title == "Home Phone" and phone:
+                        p.extras["Home Address " + title] = phone
+                    elif title == "Business Phone" and phone:
+                        p.district_office.voice = phone
+                    elif title == "Cell Phone" and phone:
+                        p.extras["Home Address " + title] = phone
+
+        # cap_phones = XPath(
+        #     "//*[@id='contentsection']/div[1]/div[3]/p/span[contains(text(), 'Phone')]"
+        # ).match(self.root)
+        # if len(cap_phones) > 1:
+        #     p.extras[cap_phones[1].text_content().strip()] = cap_phones[1].tail.strip()
+        # if cap_phones[0].text_content().strip() == "Business Phone":
+        #     p.capitol_office.voice = cap_phones[0].tail.strip()
+        # else:
+        #     p.extras[cap_phones[0].text_content().strip()] = cap_phones[0].tail.strip()
+
+        # try:
+        #     home_phones = XPath(
+        #         "//*[@id='contentsection']/div[1]/div[4]/p/span[contains(text(), 'Phone')]"
+        #     ).match(self.root)
+        #     if len(home_phones) > 1 and len(cap_phones) > 1:
+        #         if home_phones[0].tail.strip() not in [
+        #             cap_phones[0].tail.strip(),
+        #             cap_phones[1].tail.strip(),
+        #         ]:
+        #             p.extras[home_phones[0].text_content().strip()] = home_phones[
+        #                 0
+        #             ].tail.strip()
+        #         if home_phones[1].tail.strip() not in [
+        #             cap_phones[0].tail.strip(),
+        #             cap_phones[1].tail.strip(),
+        #         ]:
+        #             p.district_office.voice = home_phones[1].tail.strip()
+        #     elif len(home_phones) > 1:
+        #         if home_phones[0].tail.strip() != cap_phones[0].tail.strip():
+        #             p.extras[home_phones[0].text_content().strip()] = home_phones[
+        #                 0
+        #             ].tail.strip()
+        #         if home_phones[1].tail.strip() != cap_phones[0].tail.strip():
+        #             p.district_office.voice = home_phones[1].tail.strip()
+        #     elif home_phones[0].text_content().strip() == "Business Phone":
+        #         p.district_office.voice = home_phones[0].tail.strip()
+        #     else:
+        #         p.extras[home_phones[0].text_content().strip()] = home_phones[
+        #             0
+        #         ].tail.strip()
+        # except SelectorError:
+        #     pass
 
         title = (
             XPath("//*[@id='contentsection']/div[1]/div[1]/p")
