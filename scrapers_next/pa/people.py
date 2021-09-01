@@ -1,4 +1,4 @@
-from spatula import URL, CSS, HtmlListPage, HtmlPage, XPath
+from spatula import URL, CSS, HtmlListPage, HtmlPage, XPath  # , SelectorError
 from openstates.models import ScrapePerson
 import re
 
@@ -94,6 +94,20 @@ class LegDetail(HtmlPage):
                 p.ids.youtube = youtube_id
             else:
                 p.extras["website"] = link.get("href")
+
+        # try:
+        #     # iterate over p until Career?
+        #     if p.chamber == "lower":
+        #         sibs = XPath("/html/body/div/section/div/div[2]/div/div[3]/h4[contaions(text(), 'Education')]").match_one(self.root).itersiblings()
+        #     else:
+        #         sibs = XPath("//*[@id='Mbr-Bio']/h4[contains(text(), 'Attended')]").match_one(self.root).itersiblings()
+        #     # or Education
+        #     for sib in sibs:
+        #         if sib.text_content().strip() == "Career" or sib.text_content().strip() == "Military Service":
+        #             break
+        #         print(sib.text_content())
+        # except SelectorError:
+        #     pass
 
         return p
 
