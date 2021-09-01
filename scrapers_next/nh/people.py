@@ -5,11 +5,11 @@ from openstates.models import ScrapePerson
 import re
 
 
-class HouseDetail(HtmlPage):
-    def process_page(self):
-        p = self.input
+# class HouseDetail(HtmlPage):
+#     def process_page(self):
+#         p = self.input
 
-        return p
+#         return p
 
 
 class SenDetail(HtmlPage):
@@ -120,45 +120,7 @@ class Legislators(CsvListPage):
             p.add_link(detail_link, note="homepage")
             return SenDetail(p, source=detail_link)
 
-        # seat_map = SeatMap()
         # seat_number = seat_map[item["seatno"]]
         # detail_link = f"http://www.gencourt.state.nh.us/house/members/member.aspx?member={seat_number}"
         # return HouseDetail(p, source=detail_link)
         return p
-
-
-# lookup_url = "http://www.gencourt.state.nh.us/house/members/memberlookup.aspx"
-
-# house_profile_url = (
-#     f"http://www.gencourt.state.nh.us/house/members/member.aspx?member={item["seatno"]}"
-# )
-
-# seat_number = seat_map[row["seatno"]]
-# profile_url = self.house_profile_url.format(seat_number)
-
-# class SeatMap(XmlPage):
-#     source = "http://www.gencourt.state.nh.us/house/members/memberlookup.aspx"
-
-#     def process_page(self):
-#         """Get mapping between seat numbers and legislator identifiers."""
-#         seat_map = {}
-#         # page = self.lxmlize(self.lookup_url)
-#         options = XPath('//select[@id="member"]/option').match(self.root)
-#         print(options)
-#         for option in options:
-#             member_url = f"http://www.gencourt.state.nh.us/house/members/member.aspx?member={option.attrib['value']}"
-#             table = MemberPage(source=member_url)
-
-# member_page = self.lxmlize(member_url)
-# table = member_page.xpath('//table[@id="Table1"]')
-#     if table:
-#         res = re.search(r"seat #:(\d+)", table[0].text_content(), re.IGNORECASE)
-#         if res:
-#             seat_map[res.groups()[0]] = option.attrib["value"]
-# return seat_map
-
-
-# class MemberPage(XmlPage):
-#     def process_page(self):
-#         table = XPath('//table[@id="Table1"]').match(self.root)[0]
-#         return table
