@@ -19,7 +19,7 @@ class LegDetail(HtmlPage):
             for line in lines:
                 if re.search(r"(Senator|Hon\.)", line.strip()):
                     continue
-                elif re.search(r"FAX", line.strip()):
+                elif re.search(r"(FAX|Fax|fax)", line.strip()):
                     fax = line.strip()
                 elif re.search(r"\(\d{3}\)\s\d{3}-\d{4}", line.strip()):
                     phone = line.strip()
@@ -36,11 +36,11 @@ class LegDetail(HtmlPage):
                 if phone:
                     p.capitol_office.voice = phone
                 if fax:
-                    fax = re.search(r"FAX:\s(.+)", fax).groups()[0]
+                    fax = re.search(r"(FAX|Fax|fax):\s(.+)", fax).groups()[1]
                     p.capitol_office.fax = fax
             else:
                 if phone and fax:
-                    fax = re.search(r"FAX:\s(.+)", fax).groups()[0]
+                    fax = re.search(r"(FAX|Fax|fax):\s(.+)", fax).groups()[1]
                     p.add_office(
                         contact_type="District Office",
                         address=addr,
@@ -52,7 +52,7 @@ class LegDetail(HtmlPage):
                         contact_type="District Office", address=addr, voice=phone
                     )
                 elif fax:
-                    fax = re.search(r"FAX:\s(.+)", fax).groups()[0]
+                    fax = re.search(r"(FAX|Fax|fax):\s(.+)", fax).groups()[1]
                     p.add_office(contact_type="District Office", address=addr, fax=fax)
                 else:
                     p.add_office(contact_type="District Office", address=addr)
