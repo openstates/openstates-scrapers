@@ -272,11 +272,11 @@ class Senate(ExcelListPage):
         if item[0] == "Dist" or item[0] is None:
             self.skip()
 
-        first_name = item[3]
-        last_name = item[4]
+        first_name = item[3].strip()
+        last_name = item[4].strip()
         name = first_name + " " + last_name
         district = item[0]
-        party = item[2]
+        party = item[2].strip()
 
         p = ScrapePerson(
             name=name,
@@ -286,12 +286,15 @@ class Senate(ExcelListPage):
             party=party,
         )
 
+        p.given_name = first_name
+        p.family_name = last_name
+
         detail_link = URL(f"https://legislature.maine.gov/District-{district}")
         p.add_source(self.source.url)
         p.add_source(detail_link.url)
         p.add_link(detail_link.url, note="homepage")
 
-        county = item[1]
+        county = item[1].strip()
         p.extras["county represented"] = county
 
         mailing_address = item[5].strip()
@@ -317,9 +320,9 @@ class Senate(ExcelListPage):
 
         alternate = item[10]
         if alternate is not None:
-            p.extras["alternate phone"] = alternate
+            p.extras["alternate phone"] = alternate.strip()
 
-        email = item[11]
+        email = item[11].strip()
         p.email = email
 
         return SenDetail(p, source=detail_link)
