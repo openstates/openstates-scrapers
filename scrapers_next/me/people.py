@@ -194,16 +194,37 @@ class SenDetail(HtmlPage):
         img = CSS("div#content p img").match_one(self.root).get("src")
         p.image = img
 
-        addr = (
-            CSS("div#content p strong")
-            .match(self.root)[1]
-            .tail.strip()
-            .lstrip(":")
-            .strip()
-        )
+        if self.source.url == "https://legislature.maine.gov/District-22":
+            addr = CSS("div#content p strong").match(self.root)[2].tail.strip()
+        else:
+            addr = (
+                CSS("div#content p strong")
+                .match(self.root)[1]
+                .tail.strip()
+                .lstrip(":")
+                .strip()
+            )
         if addr != p.extras["Mailing address"]:
-            print(p.extras["Mailing address"])
-            print(addr)
+            p.extras["Additional address"] = addr
+            # should this be district address?
+
+        try:
+            home_phones = (
+                XPath("//*[@id='content']/p/strong[contains(text(), 'Home')]")
+                .match_one(self.root)
+                .tail.strip()
+                .lstrip(":")
+                .strip()
+                .split("or")
+            )
+            for home_phone in home_phones:
+                if (
+                    home_phone.strip().split()[-1] != p.extras["phone"].split()[-1]
+                    and len(home_phone.strip().split()) == 2
+                ):
+                    p.extras["home phone"] = home_phone.strip()
+        except SelectorError:
+            pass
 
         return p
 
@@ -251,10 +272,13 @@ class Senate(ExcelListPage):
             address = re.sub(r"PO\s", "P.O. ", address)
         if re.search(r"Saint\s", address):
             address = re.sub(r"Saint\s", "St. ", address)
+        if re.search(r"N\.", address):
+            address = re.sub(r"N\.", "North", address)
         p.extras["Mailing address"] = address
         # should this be a district office?
 
-        phone = item[9]
+        phone = item[9].strip()
+        phone = "(207) " + phone
         # append area code to phone?
         p.extras["phone"] = phone
 
