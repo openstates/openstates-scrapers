@@ -97,6 +97,26 @@ class RepDetail(HtmlPage):
         seat_no = seat_no.text_content().strip()
         p.extras["Seat Number"] = seat_no
 
+        towns = (
+            XPath("//*[@id='main-info']/p/span[contains(text(), 'Town(s)')]")
+            .match_one(self.root)
+            .getnext()
+        )
+        towns = XPath("text()").match(towns)
+        if len(towns) > 0 and towns[0].strip() != "":
+            p.extras["towns represented"] = []
+            for town in towns:
+                p.extras["towns represented"] += [town.strip()]
+
+        cap_addr = XPath(
+            "//*[@id='welcome']/div/div[1]/div/div/table/tbody/tr[3]/td[2]/text()"
+        ).match(self.root)
+        capitol_address = ""
+        for line in cap_addr:
+            capitol_address += line.strip()
+            capitol_address += " "
+        p.captiol_office.address = capitol_address.strip()
+
         return p
 
 
