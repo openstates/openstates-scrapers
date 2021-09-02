@@ -47,6 +47,12 @@ class RepDetail(HtmlPage):
         p.add_source(self.source.url)
         p.add_link(self.source.url, note="homepage")
 
+        img = CSS("img.drop-shadow").match_one(self.root).get("src")
+        p.image = img
+
+        email = CSS("div#main-info p a").match(self.root)[0].text_content().strip()
+        p.email = email
+
         return p
 
 
@@ -66,5 +72,11 @@ class House(HtmlListPage):
         partial = PartialPerson(name=name, party=party, source=self.source.url)
 
         detail_link = CSS("a").match(item)[1].get("href")
+        # Justin Fecteau resigned 7/4/21
+        if (
+            detail_link
+            == "https://legislature.maine.gov/house/house/MemberProfiles/Details/1361"
+        ):
+            self.skip()
 
         return RepDetail(partial, source=detail_link)
