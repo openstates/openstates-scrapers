@@ -226,6 +226,39 @@ class SenDetail(HtmlPage):
         except SelectorError:
             pass
 
+        try:
+            state_phone = (
+                XPath("//*[@id='content']/p/strong[contains(text(), 'State')]")
+                .match_one(self.root)
+                .tail.strip()
+            )
+            state_phone = state_phone.lstrip(":").strip()
+            p.capitol_office.voice = state_phone
+        except SelectorError:
+            pass
+
+        try:
+            state_phone = (
+                XPath("//*[@id='content']/p/b[contains(text(), 'State')]")
+                .match_one(self.root)
+                .tail.strip()
+            )
+            state_phone = state_phone.lstrip(":").strip()
+            p.capitol_office.voice = state_phone
+        except SelectorError:
+            pass
+
+        website = (
+            XPath("//*[@id='content']/p/strong[contains(text(), 'Website')]")
+            .match_one(self.root)
+            .getnext()
+        )
+        if website.get("href") is None:
+            website = website.getnext().get("href")
+        else:
+            website = website.get("href")
+        p.extras["website"] = website
+
         return p
 
 
