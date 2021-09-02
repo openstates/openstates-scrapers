@@ -115,7 +115,7 @@ class RepDetail(HtmlPage):
         for line in cap_addr:
             capitol_address += line.strip()
             capitol_address += " "
-        p.captiol_office.address = capitol_address.strip()
+        p.capitol_office.address = capitol_address.strip()
 
         return p
 
