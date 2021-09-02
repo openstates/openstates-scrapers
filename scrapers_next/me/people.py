@@ -1,4 +1,12 @@
-from spatula import URL, CSS, HtmlListPage, HtmlPage, XPath, SelectorError
+from spatula import (
+    URL,
+    CSS,
+    HtmlListPage,
+    HtmlPage,
+    XPath,
+    SelectorError,
+    ExcelListPage,
+)
 from dataclasses import dataclass
 from openstates.models import ScrapePerson
 import re
@@ -177,3 +185,66 @@ class House(HtmlListPage):
             self.skip()
 
         return RepDetail(partial, source=detail_link)
+
+
+class SenDetail(HtmlPage):
+    def process_page(self):
+        p = self.input
+
+        img = CSS("div#content p img").match_one(self.root).get("src")
+        p.image = img
+
+        return p
+
+
+class Senate(ExcelListPage):
+    source = URL(
+        "https://legislature.maine.gov/uploads/visual_edit/130th-senate-contact-information-as-of-31221.xlsx"
+    )
+
+    def process_item(self, item):
+        # skip header and empty rows
+        if item[0] == "Dist" or item[0] is None:
+            self.skip()
+
+        first_name = item[3]
+        last_name = item[4]
+        name = first_name + " " + last_name
+        district = item[0]
+        party = item[2]
+
+        p = ScrapePerson(
+            name=name,
+            state="me",
+            chamber="upper",
+            district=district,
+            party=party,
+        )
+
+        detail_link = URL(f"https://legislature.maine.gov/District-{district}")
+        p.add_source(self.source.url)
+        p.add_source(detail_link.url)
+        p.add_link(detail_link.url, note="homepage")
+
+        county = item[1]
+        p.extras["county represented"] = county
+
+        mailing_address = item[5]
+        city = item[6]
+        zip = item[8]
+        address = mailing_address + " " + city + ", ME " + zip
+        p.extras["Mailing address"] = address
+        # should this be a district office?
+
+        phone = item[9]
+        # append area code to phone?
+        p.extras["phone"] = phone
+
+        alternate = item[10]
+        if alternate is not None:
+            p.extras["alternate phone"] = alternate
+
+        email = item[11]
+        p.email = email
+
+        return SenDetail(p, source=detail_link)
