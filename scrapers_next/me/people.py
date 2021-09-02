@@ -9,7 +9,7 @@ from spatula import (
 )
 from dataclasses import dataclass
 from openstates.models import ScrapePerson
-import re
+import regex as re
 
 
 @dataclass
@@ -194,6 +194,17 @@ class SenDetail(HtmlPage):
         img = CSS("div#content p img").match_one(self.root).get("src")
         p.image = img
 
+        addr = (
+            CSS("div#content p strong")
+            .match(self.root)[1]
+            .tail.strip()
+            .lstrip(":")
+            .strip()
+        )
+        if addr != p.extras["Mailing address"]:
+            print(p.extras["Mailing address"])
+            print(addr)
+
         return p
 
 
@@ -229,10 +240,17 @@ class Senate(ExcelListPage):
         county = item[1]
         p.extras["county represented"] = county
 
-        mailing_address = item[5]
-        city = item[6]
-        zip = item[8]
-        address = mailing_address + " " + city + ", ME " + zip
+        mailing_address = item[5].strip()
+        city = item[6].strip()
+        zip = item[8].strip()
+        address = mailing_address + ", " + city + ", ME " + zip
+        if re.search(r"St(\s|,)", address):
+            address = re.sub(r"St\s", "Street ", address)
+            address = re.sub(r"St,", "Street,", address)
+        if re.search(r"PO\s", address):
+            address = re.sub(r"PO\s", "P.O. ", address)
+        if re.search(r"Saint\s", address):
+            address = re.sub(r"Saint\s", "St. ", address)
         p.extras["Mailing address"] = address
         # should this be a district office?
 
