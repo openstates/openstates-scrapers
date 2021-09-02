@@ -28,6 +28,15 @@ class LegList(HtmlListPage):
             party=party,
         )
 
+        detail_link = CSS("a").match_one(item).get("href")
+
+        p.add_source(self.source.url)
+        p.add_source(detail_link)
+        p.add_link(detail_link, note="homepage")
+
+        img = CSS("img").match_one(item).get("src")
+        p.image = img
+
         return p
 
 
