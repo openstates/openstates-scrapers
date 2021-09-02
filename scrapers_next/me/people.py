@@ -1,4 +1,4 @@
-from spatula import URL, CSS, HtmlListPage, HtmlPage, XPath
+from spatula import URL, CSS, HtmlListPage, HtmlPage, XPath, SelectorError
 from dataclasses import dataclass
 from openstates.models import ScrapePerson
 import re
@@ -52,6 +52,50 @@ class RepDetail(HtmlPage):
 
         email = CSS("div#main-info p a").match(self.root)[0].text_content().strip()
         p.email = email
+
+        distr_addr = CSS("div#main-info p br").match(self.root)[0].tail.strip()
+        p.district_office.address = distr_addr
+
+        try:
+            work_phone = (
+                XPath("//*[@id='main-info']/p/span[contains(text(), 'Work')]")
+                .match_one(self.root)
+                .getnext()
+            )
+            work_phone = work_phone.text_content().strip()
+            p.district_office.voice = work_phone
+        except SelectorError:
+            pass
+
+        try:
+            cell_phone = (
+                XPath("//*[@id='main-info']/p/span[contains(text(), 'Cell')]")
+                .match_one(self.root)
+                .getnext()
+            )
+            cell_phone = cell_phone.text_content().strip()
+            p.extras["Cell Phone"] = cell_phone
+        except SelectorError:
+            pass
+
+        try:
+            home_phone = (
+                XPath("//*[@id='main-info']/p/span[contains(text(), 'Home')]")
+                .match_one(self.root)
+                .getnext()
+            )
+            home_phone = home_phone.text_content().strip()
+            p.extras["Home Phone"] = home_phone
+        except SelectorError:
+            pass
+
+        seat_no = (
+            XPath("//*[@id='main-info']/p/span[contains(text(), 'Seat')]")
+            .match_one(self.root)
+            .getnext()
+        )
+        seat_no = seat_no.text_content().strip()
+        p.extras["Seat Number"] = seat_no
 
         return p
 
