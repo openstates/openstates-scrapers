@@ -117,6 +117,39 @@ class RepDetail(HtmlPage):
             capitol_address += " "
         p.capitol_office.address = capitol_address.strip()
 
+        # education
+        try:
+            occupation = (
+                XPath(
+                    "//*[@id='welcome']/div/div[1]/div/div/table/tbody/tr/td[contains(text(), 'Occupation')]"
+                )
+                .match_one(self.root)
+                .getnext()
+            )
+            p.extras["occupation"] = occupation.text_content().strip()
+        except SelectorError:
+            pass
+
+        try:
+            if (
+                XPath(
+                    "//*[@id='welcome']/div/div[1]/div/div/table/tbody/tr/td[contains(text(), 'Education')]"
+                )
+                .match_one(self.root)
+                .getnext()
+                is not None
+            ):
+                education = (
+                    XPath(
+                        "//*[@id='welcome']/div/div[1]/div/div/table/tbody/tr/td[contains(text(), 'Education')]"
+                    )
+                    .match_one(self.root)
+                    .getnext()
+                )
+                p.extras["education"] = education.text_content().strip()
+        except SelectorError:
+            pass
+
         return p
 
 
