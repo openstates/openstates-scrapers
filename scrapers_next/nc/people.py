@@ -43,9 +43,22 @@ class LegDetail(HtmlPage):
         print("address", address)
 
         # TODO: where to get email from? idk
-        __, terms, __, phone_number, __, assistant = XPath(
-            "//div[@class='row mx-md-0']/div"
-        ).match(self.root)
+        # if self.input.chamber == 'upper'
+        # try:
+        #     __, terms, __, phone_number, __, assistant = XPath("//div[@class='row mx-md-0']/div").match(self.root)
+        # except ValueError:
+        #     # this is for Representatives
+        #     pass
+        # try:
+        # __, terms, __, occupation, __, phone_number, __, military, __, __ = XPath("//div[@class='row mx-md-0']/div").match(self.root)
+
+        table = XPath("//div[@class='row mx-md-0']/div").match(self.root)
+        if len(table) == 6:
+            __, terms, __, phone_number, __, assistant = table
+        elif len(table) == 10:
+            __, terms, __, occupation, __, phone_number, __, military, __, __ = table
+        else:
+            __, terms, __, occupation, __, phone_number, __, __ = table
 
         p = ScrapePerson(
             name=self.input.name,
@@ -65,11 +78,22 @@ class LegDetail(HtmlPage):
         )
 
         p.extras["represented counties"] = self.input.counties
+
         try:
             p.extras["legislative assistant"] = legislative_assistant.text_content()
             p.extras["legislative assistant email"] = legislative_assistant.get(
                 "href"
             ).split(":")[1]
+        except UnboundLocalError:
+            pass
+
+        try:
+            p.extras["occupation"] = occupation.text_content()
+        except UnboundLocalError:
+            pass
+
+        try:
+            p.extras["military experience"] = military.text_content()
         except UnboundLocalError:
             pass
 
