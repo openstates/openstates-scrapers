@@ -33,7 +33,11 @@ class LegDetail(HtmlPage):
         if capitol_phone != "(505)":
             p.capitol_office.voice = capitol_phone
 
-        # capitol_room = CSS("span").match(all_info[6]).text_content().strip()
+        capitol_room = CSS("span").match_one(all_info[6]).text_content().strip()
+        if capitol_room != "":
+            cap_addr = f"Room {capitol_room} State Capitol;490 Old Santa Fe Trail, Santa Fe, NM 87501"
+            p.capitol_office.address = cap_addr
+            # this address was found using google search
 
         office_phone = CSS("span").match_one(all_info[7]).text_content().strip()
         if office_phone != "":
