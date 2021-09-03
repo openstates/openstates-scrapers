@@ -1,9 +1,9 @@
 import attr
 
 # import re
-from spatula import HtmlListPage, HtmlPage, CSS
+from spatula import HtmlListPage, HtmlPage, CSS, XPath
 
-# from openstates.models import ScrapePerson
+from openstates.models import ScrapePerson
 
 
 @attr.s(auto_attribs=True)
@@ -18,29 +18,94 @@ class PartialMember:
 
 
 class LegDetail(HtmlPage):
-    input_type = PartialMember
+    # input_type = PartialMember
 
     example_source = "https://www.ncleg.gov/Members/Biography/S/416"
 
-    # def get_field(self, field):
-    #     if field.endswith(":"):
-    #         return field[:-1]
-    #     else:
-    #         return field
-
     def process_page(self):
 
-        image = ("//img[contains(@src, '/photo')]").match_one(self.root).get("src")
-        print(image)
-        # p = ScrapePerson(
-        #     name=self.input.name,
-        #     state="nc",
-        #     chamber=self.input.chamber,
-        #     party=self.input.party,
-        #     district=self.input.district,
-        #     # email=email,
-        #     # image=image,
-        # )
+        # image = ("//img[contains(@src, '/photo')]").match_one(self.root).get("src")
+        # print(image)
+
+        # email
+        try:
+            email, legislative_assistant = XPath(
+                "//a[contains(@href, 'mailto')]"
+            ).match(self.root)
+        except ValueError:
+            email = XPath("//a[contains(@href, 'mailto')]").match_one(self.root)
+        # print("EMAIL", email.text_content())
+        # TODO: add legislative assistant name and email to extras
+        #    '//div[contains(@class, "media-body")]//a[contains(@href, "member_bio")]'
+        # "section/div[contains(@class,'large-8')]/div[contains(@class,'base')]"
+
+        image = (
+            XPath("//img[contains(@src, '/Members/MemberImage')]")
+            .match_one(self.root)
+            .get("src")
+        )
+        # print("IMAGE", image)
+
+        # TODO: need capitol office address, office phone number, terms in senate (extras)
+
+        # first grab mailing address
+        address_header = XPath("//h6[@class='mt-3']").match_one(self.root)
+        address = XPath(".//following-sibling::p").match(address_header)
+        address = address[0].text_content() + "; " + address[1].text_content()
+        print("address", address)
+
+        # table = XPath("//div[@class='row mx-md-0']/div").match(self.root)
+        # for ee in table:
+        #     print("ee", ee.text_content())
+        # TODO: where to get email from? idk
+        __, terms, __, phone_number, __, assistant = XPath(
+            "//div[@class='row mx-md-0']/div"
+        ).match(self.root)
+        # print('terms', terms.text_content())
+        #    if contact.text_content().strip() == "Fax:":
+        #         fax_number = (
+        #             XPath(".//following-sibling::div")
+        #             .match_one(contact)
+        #             .text_content()
+        #             .strip()
+        #         )
+
+        p = ScrapePerson(
+            name=self.input.name,
+            state="nc",
+            chamber=self.input.chamber,
+            party=self.input.party,
+            district=self.input.district,
+            email=email.text_content(),
+            image=image,
+        )
+
+        p.capitol_office.address = address
+        p.capitol_office.voice = phone_number.text_content()
+
+        # TODO: terms are spaced weird
+        p.extras["terms in senate"] = (
+            terms.text_content().replace("( ", "(").replace(" )", ")")
+        )
+
+        p.extras["represented counties"] = self.input.counties
+        try:
+            p.extras["legislative assistant"] = legislative_assistant.text_content()
+            p.extras["legislative assistant email"] = legislative_assistant.get(
+                "href"
+            ).split(":")[1]
+        except UnboundLocalError:
+            pass
+
+        p.add_source(self.source.url)
+        p.add_source(self.input.url)
+
+        for url in XPath(
+            "//nav[contains(@class, 'nav nav-pills')]/a[@class='nav-item nav-link']"
+        ).match(self.root):
+            p.add_link(url.get("href"))
+
+        return p
 
 
 class LegList(HtmlListPage):
