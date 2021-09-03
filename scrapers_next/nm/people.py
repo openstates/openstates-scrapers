@@ -28,11 +28,16 @@ class LegDetail(HtmlPage):
             district_addr = address[0].strip()
             p.district_office.address = district_addr
 
-        # capitol_phone = CSS("span").match(all_info[5]).text_content().strip()
+        capitol_phone = CSS("span").match_one(all_info[5]).text_content().strip()
+        if capitol_phone != "(505)":
+            p.capitol_office.voice = capitol_phone
+
         # capitol_room = CSS("span").match(all_info[6]).text_content().strip()
         # office_phone = CSS("span").match(all_info[7]).text_content().strip()
         # home_phone = CSS("span").match(all_info[8]).text_content().strip()
-        # email = CSS("span").match(all_info[9]).text_content().strip()
+
+        email = CSS("a").match_one(all_info[9]).text_content().strip()
+        p.email = email
 
         return p
 
