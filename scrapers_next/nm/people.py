@@ -1,6 +1,40 @@
-from spatula import URL, CSS, HtmlListPage
+from spatula import URL, CSS, HtmlListPage, HtmlPage, XPath
 from openstates.models import ScrapePerson
 import re
+
+
+class LegDetail(HtmlPage):
+    def process_page(self):
+        p = self.input
+
+        all_info = CSS("ul.list-group li").match(self.root)
+
+        county = CSS("span").match_one(all_info[1]).text_content().strip()
+        p.extras["counties represented"] = county
+
+        service = CSS("span").match_one(all_info[2]).text_content().strip()
+        if service != "":
+            p.extras["service"] = service
+
+        occupation = CSS("span").match_one(all_info[3]).text_content().strip()
+        if occupation != "":
+            p.extras["occupation"] = occupation
+
+        address = XPath(".//span/text()").match(all_info[4])
+        if len(address) > 1:
+            district_addr = address[0] + " " + address[1]
+            p.district_office.address = district_addr
+        elif address[0].strip() != ",":
+            district_addr = address[0].strip()
+            p.district_office.address = district_addr
+
+        # capitol_phone = CSS("span").match(all_info[5]).text_content().strip()
+        # capitol_room = CSS("span").match(all_info[6]).text_content().strip()
+        # office_phone = CSS("span").match(all_info[7]).text_content().strip()
+        # home_phone = CSS("span").match(all_info[8]).text_content().strip()
+        # email = CSS("span").match(all_info[9]).text_content().strip()
+
+        return p
 
 
 class LegList(HtmlListPage):
@@ -37,7 +71,7 @@ class LegList(HtmlListPage):
         img = CSS("img").match_one(item).get("src")
         p.image = img
 
-        return p
+        return LegDetail(p, source=detail_link)
 
 
 class Senate(LegList):
