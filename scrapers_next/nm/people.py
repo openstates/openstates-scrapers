@@ -27,14 +27,21 @@ class LegDetail(HtmlPage):
         elif address[0].strip() != ",":
             district_addr = address[0].strip()
             p.district_office.address = district_addr
+        # storing 'Address' as district_office.address
 
         capitol_phone = CSS("span").match_one(all_info[5]).text_content().strip()
         if capitol_phone != "(505)":
             p.capitol_office.voice = capitol_phone
 
         # capitol_room = CSS("span").match(all_info[6]).text_content().strip()
-        # office_phone = CSS("span").match(all_info[7]).text_content().strip()
-        # home_phone = CSS("span").match(all_info[8]).text_content().strip()
+
+        office_phone = CSS("span").match_one(all_info[7]).text_content().strip()
+        if office_phone != "":
+            p.district_office.voice = office_phone
+
+        home_phone = CSS("span").match_one(all_info[8]).text_content().strip()
+        if home_phone != "":
+            p.extras["home phone"] = home_phone
 
         email = CSS("a").match_one(all_info[9]).text_content().strip()
         p.email = email
