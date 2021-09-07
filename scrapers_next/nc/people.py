@@ -1,8 +1,5 @@
 import attr
-
-# import re
 from spatula import HtmlListPage, HtmlPage, CSS, XPath
-
 from openstates.models import ScrapePerson
 
 
@@ -12,7 +9,6 @@ class PartialMember:
     url: str
     district: int
     party: str = ""
-    # email: str = ""
     chamber: str = ""
     counties: str = ""
     appointment: str = ""
@@ -38,30 +34,15 @@ class LegDetail(HtmlPage):
             .get("src")
         )
 
-        # if there's no legislative address, but there's a mailing address:
-        # capital office is mailing address
-        # if there's a legislative address, and a mailing address:
-        # capital office is legislative address
-
-        # TODO: where to get email from? idk
-        # if self.input.chamber == 'upper'
-        # try:
-        #     __, terms, __, phone_number, __, assistant = XPath("//div[@class='row mx-md-0']/div").match(self.root)
-        # except ValueError:
-        #     # this is for Representatives
-        #     pass
-        # try:
-        # __, terms, __, occupation, __, phone_number, __, military, __, __ = XPath("//div[@class='row mx-md-0']/div").match(self.root)
-
         table = XPath("//div[@class='row mx-md-0']/div").match(self.root)
+
+        # there are different combinations of information the page can have
         if len(table) == 6:
             __, terms, __, main_phone, __, assistant = table
         elif len(table) == 10:
             __, terms, __, occupation, __, main_phone, __, military, __, __ = table
         else:
             __, terms, __, occupation, __, main_phone, __, __ = table
-
-        # print("UM THE NAME PASSED", self.input.name)
 
         p = ScrapePerson(
             name=self.input.name,
@@ -74,16 +55,13 @@ class LegDetail(HtmlPage):
         )
 
         address_header = XPath("//h6[@class='mt-3']").match(self.root)
-        # the first address will either be legislative office or mailing address
-        # if there's only one address, it's mailing address (i think...?)
-        # if there are two addresses, the first addy is legislative office
 
-        # if len(address_header) == 1 and address_header[0].text_content() == "Mailing Address:":
         address = XPath(".//following-sibling::p").match(address_header[0])
         address = address[0].text_content() + "; " + address[1].text_content()
-        # print("address", address)
         main_phone = main_phone.text_content().replace("\r\n", "").strip()
 
+        # representatives have both legislative office addresses and mailing addresses,
+        # while senators only have mailing addresses
         try:
             if address_header[1].text_content() == "Mailing Address:":
                 mailing_address = XPath(".//following-sibling::p").match(
@@ -103,7 +81,8 @@ class LegDetail(HtmlPage):
                     .strip()
                 )
 
-                # some reps have main phones and office phones, while senators only have office phones
+                # some reps have main phones and capitol office phones,
+                # and senators only have capitol office phones
                 if office_number != main_phone:
                     p.capitol_office.voice = office_number
                     p.extras["main phone"] = main_phone
@@ -113,7 +92,6 @@ class LegDetail(HtmlPage):
             p.capitol_office.voice = main_phone
 
         p.capitol_office.address = address
-        # p.capitol_office.voice = phone_number.text_content()
 
         p.extras["terms in senate"] = (
             terms.text_content().replace("( ", "(").replace(" )", ")")
@@ -164,39 +142,19 @@ class LegList(HtmlListPage):
         party = party.text_content().strip()
         party = dict(D="Democratic", R="Republican")[party]
 
-        # TODO: for full name: Sam Searcy (Resigned 1/6/21) and Sydney Batch
-
-        # TODO: make sure Sam Searcy is skipped?
-        # print("FULL NAME", full_name.text_content())
         name = full_name.text_content()
-        # print("NAME", name)
         if (
             "Resigned" in full_name.text_content()
             or "Deceased" in full_name.text_content()
         ):
             self.skip()
         elif "Appointed" in full_name.text_content():
-            # print("REached here!!!")
-            # appointment = full_name.text_content().replace("(", "")
-            # name = (
-            #     full_name.text_content()
-            #     .split("(Appointed")[0]
-            #     .replace("\r\n", "")
-            #     .strip()
-            # )
             name, appointment = full_name.text_content().split("(Appointed")
-            # name = name.replace("\r\n", "").strip()
             appointment = appointment.replace(")", "").replace("\r\n", "").strip()
-            # print("FULL", full_name)
-            print("appointment", appointment)
         name = name.replace("\r\n", "").strip()
-        print("HELLOOO", name)
-
-        # there's a main phone vs. office phone..Julia C. Howard
 
         p = PartialMember(
             name=name,
-            # state="nc",
             party=party,
             district=district.text_content(),
             chamber=self.chamber,
@@ -208,10 +166,8 @@ class LegList(HtmlListPage):
             .replace("                        ", " "),
             appointment=appointment,
         )
-        # new_source =
-        # print("NEW SOURCE", new_source.get("href"))
+
         url = CSS("a").match_one(full_name).get("href")
-        # url = CSS(".sorting_1 a").match(item)
         return LegDetail(p, source=url)
 
 
@@ -223,5 +179,3 @@ class SenList(LegList):
 class RepList(LegList):
     source = "https://www.ncleg.gov/Members/MemberTable/H"
     chamber = "lower"
-
-    # https://www.ncleg.gov/Members/Biography/H/764: has occupation and legislative office (which are the same?)
