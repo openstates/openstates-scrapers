@@ -1,4 +1,4 @@
-from spatula import URL, CSS, HtmlListPage, HtmlPage, XPath  # , SelectorError
+from spatula import URL, CSS, HtmlListPage, HtmlPage, XPath, SelectorError
 from openstates.models import ScrapePerson
 import re
 
@@ -8,7 +8,6 @@ class LegDetail(HtmlPage):
         p = self.input
 
         img = CSS("div.field-person-photo img").match_one(self.root).get("src")
-        # print(img)
         p.image = img
 
         # bio_info = CSS("div.pane-content ul li").match(self.root)
@@ -19,43 +18,38 @@ class LegDetail(HtmlPage):
         # service = bio_info[4].text_content().strip()
         # print(len(bio_info))
 
-        # try:
-        #     street = (
-        #         CSS("div.street-address").match_one(self.root).text_content().strip()
-        #     )
-        #     town = CSS("span.locality").match_one(self.root).text_content().strip()
-        #     zip_code = (
-        #         CSS("span.postal-code").match_one(self.root).text_content().strip()
-        #     )
-        #     address = street + ", " + town + ", ND " + zip_code
-        #     # print(address)
-        # except SelectorError:
-        #     pass
+        try:
+            street = (
+                CSS("div.street-address").match_one(self.root).text_content().strip()
+            )
+            town = CSS("span.locality").match_one(self.root).text_content().strip()
+            zip_code = (
+                CSS("span.postal-code").match_one(self.root).text_content().strip()
+            )
+            address = street + ", " + town + ", ND " + zip_code
+            print(address)
+            p.district_office.address = address
+        except SelectorError:
+            pass
 
-        # Cellphone:
-        # Home Telephone:
-        # Office Telephone:
-        # try:
-        #     phones_lower = XPath("//*[@id='block-system-main']//div[contains(text(), 'phone')]").match(self.root)
-        #     for phone in phones_lower:
-        #         phone_type = phone.text_content().strip()
-        #         print(phone_type)
-        #         phone_number = phone.getnext().text_content().strip()
-        #         print(phone_number)
-        # except SelectorError:
-        #     pass
+        try:
+            phones = XPath(
+                "//*[@id='block-system-main']//div[contains(text(), 'phone')]"
+            ).match(self.root)
+            for phone in phones:
+                phone_type = phone.text_content().strip()
+                # print(phone_type)
+                phone_number = phone.getnext().text_content().strip()
+                # print(phone_number)
+                if phone_type == "Cellphone:":
+                    p.extras["Cell phone"] = phone_number
+                elif phone_type == "Home Telephone:":
+                    p.extras["Home phone"] = phone_number
+                elif phone_type == "Office Telephone:":
+                    p.district_office.voice = phone_number
+        except SelectorError:
+            pass
 
-        # try:
-        #     phones_upper = XPath("//*[@id='block-system-main']//div[contains(text(), 'Phone')]").match(self.root)
-        #     for phone in phones_upper:
-        #         phone_type = phone.text_content().strip()
-        #         print(phone_type)
-        #         phone_number = phone.getnext().text_content().strip()
-        #         print(phone_number)
-        # except SelectorError:
-        #     pass
-
-        # email
         email = (
             XPath("//*[@id='block-system-main']//div[contains(text(), 'Email')]")
             .match_one(self.root)
@@ -63,7 +57,6 @@ class LegDetail(HtmlPage):
             .text_content()
             .strip()
         )
-        # print(email)
         p.email = email
 
         return p
@@ -78,6 +71,9 @@ class LegList(HtmlListPage):
     def process_item(self, item):
         name = CSS("div.name").match_one(item).text_content().strip()
         name = re.search(r"(Senator|Representative)\s(.+)", name).groups()[1]
+        # Luke Simons was expelled on 3/4/21
+        if name == "Luke Simons":
+            self.skip()
 
         chamber = CSS("div.chamber").match_one(item).text_content().strip()
         if chamber == "Senate":
