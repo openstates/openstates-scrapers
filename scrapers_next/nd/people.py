@@ -10,13 +10,11 @@ class LegDetail(HtmlPage):
         img = CSS("div.field-person-photo img").match_one(self.root).get("src")
         p.image = img
 
-        # bio_info = CSS("div.pane-content ul li").match(self.root)
-        # occupation = bio_info[0].text_content().strip()
-        # education = bio_info[1].text_content().strip()
-        # military = bio_info[2].text_content().strip()
-        # other_pos = bio_info[3].text_content().strip()
-        # service = bio_info[4].text_content().strip()
-        # print(len(bio_info))
+        bio_info = CSS("div.pane-content ul li").match(self.root)
+        if len(bio_info) > 0:
+            p.extras["bio info"] = []
+            for info in bio_info:
+                p.extras["bio info"] += info
 
         try:
             street = (
@@ -27,7 +25,6 @@ class LegDetail(HtmlPage):
                 CSS("span.postal-code").match_one(self.root).text_content().strip()
             )
             address = street + ", " + town + ", ND " + zip_code
-            print(address)
             p.district_office.address = address
         except SelectorError:
             pass
@@ -38,9 +35,7 @@ class LegDetail(HtmlPage):
             ).match(self.root)
             for phone in phones:
                 phone_type = phone.text_content().strip()
-                # print(phone_type)
                 phone_number = phone.getnext().text_content().strip()
-                # print(phone_number)
                 if phone_type == "Cellphone:":
                     p.extras["Cell phone"] = phone_number
                 elif phone_type == "Home Telephone:":
@@ -58,6 +53,18 @@ class LegDetail(HtmlPage):
             .strip()
         )
         p.email = email
+
+        try:
+            fax = (
+                XPath("//*[@id='block-system-main']//div[contains(text(), 'Fax')]")
+                .match_one(self.root)
+                .getnext()
+                .text_content()
+                .strip()
+            )
+            p.district_office.fax = fax
+        except SelectorError:
+            pass
 
         return p
 
