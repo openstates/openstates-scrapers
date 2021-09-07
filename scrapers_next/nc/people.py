@@ -55,11 +55,11 @@ class LegDetail(HtmlPage):
 
         table = XPath("//div[@class='row mx-md-0']/div").match(self.root)
         if len(table) == 6:
-            __, terms, __, phone_number, __, assistant = table
+            __, terms, __, main_phone, __, assistant = table
         elif len(table) == 10:
-            __, terms, __, occupation, __, phone_number, __, military, __, __ = table
+            __, terms, __, occupation, __, main_phone, __, military, __, __ = table
         else:
-            __, terms, __, occupation, __, phone_number, __, __ = table
+            __, terms, __, occupation, __, main_phone, __, __ = table
 
         # print("UM THE NAME PASSED", self.input.name)
 
@@ -82,6 +82,7 @@ class LegDetail(HtmlPage):
         address = XPath(".//following-sibling::p").match(address_header[0])
         address = address[0].text_content() + "; " + address[1].text_content()
         # print("address", address)
+        main_phone = main_phone.text_content().replace("\r\n", "").strip()
 
         try:
             if address_header[1].text_content() == "Mailing Address:":
@@ -94,11 +95,25 @@ class LegDetail(HtmlPage):
                     + mailing_address[1].text_content()
                 )
                 p.extras["mailing address"] = mailing_address
+                office_number = (
+                    XPath(".//preceding-sibling::p[1]")
+                    .match_one(address_header[1])
+                    .text_content()
+                    .replace("\r\n", "")
+                    .strip()
+                )
+
+                # some reps have main phones and office phones, while senators only have office phones
+                if office_number != main_phone:
+                    p.capitol_office.voice = office_number
+                    p.extras["main phone"] = main_phone
+                else:
+                    p.capitol_office.voice = main_phone
         except IndexError:
-            pass
+            p.capitol_office.voice = main_phone
 
         p.capitol_office.address = address
-        p.capitol_office.voice = phone_number.text_content()
+        # p.capitol_office.voice = phone_number.text_content()
 
         p.extras["terms in senate"] = (
             terms.text_content().replace("( ", "(").replace(" )", ")")
@@ -175,7 +190,9 @@ class LegList(HtmlListPage):
             # print("FULL", full_name)
             print("appointment", appointment)
         name = name.replace("\r\n", "").strip()
-        # print("HELLOOO", name)
+        print("HELLOOO", name)
+
+        # there's a main phone vs. office phone..Julia C. Howard
 
         p = PartialMember(
             name=name,
