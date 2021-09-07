@@ -15,6 +15,7 @@ class PartialMember:
     # email: str = ""
     chamber: str = ""
     counties: str = ""
+    appointment: str = ""
 
 
 class LegDetail(HtmlPage):
@@ -37,10 +38,10 @@ class LegDetail(HtmlPage):
             .get("src")
         )
 
-        address_header = XPath("//h6[@class='mt-3']").match_one(self.root)
-        address = XPath(".//following-sibling::p").match(address_header)
-        address = address[0].text_content() + "; " + address[1].text_content()
-        print("address", address)
+        # if there's no legislative address, but there's a mailing address:
+        # capital office is mailing address
+        # if there's a legislative address, and a mailing address:
+        # capital office is legislative address
 
         # TODO: where to get email from? idk
         # if self.input.chamber == 'upper'
@@ -60,6 +61,8 @@ class LegDetail(HtmlPage):
         else:
             __, terms, __, occupation, __, phone_number, __, __ = table
 
+        # print("UM THE NAME PASSED", self.input.name)
+
         p = ScrapePerson(
             name=self.input.name,
             state="nc",
@@ -69,6 +72,30 @@ class LegDetail(HtmlPage):
             email=email.text_content(),
             image=image,
         )
+
+        address_header = XPath("//h6[@class='mt-3']").match(self.root)
+        # the first address will either be legislative office or mailing address
+        # if there's only one address, it's mailing address (i think...?)
+        # if there are two addresses, the first addy is legislative office
+
+        # if len(address_header) == 1 and address_header[0].text_content() == "Mailing Address:":
+        address = XPath(".//following-sibling::p").match(address_header[0])
+        address = address[0].text_content() + "; " + address[1].text_content()
+        # print("address", address)
+
+        try:
+            if address_header[1].text_content() == "Mailing Address:":
+                mailing_address = XPath(".//following-sibling::p").match(
+                    address_header[0]
+                )
+                mailing_address = (
+                    mailing_address[0].text_content()
+                    + "; "
+                    + mailing_address[1].text_content()
+                )
+                p.extras["mailing address"] = mailing_address
+        except IndexError:
+            pass
 
         p.capitol_office.address = address
         p.capitol_office.voice = phone_number.text_content()
@@ -97,6 +124,9 @@ class LegDetail(HtmlPage):
         except UnboundLocalError:
             pass
 
+        if self.input.appointment:
+            p.extras["appointment date"] = self.input.appointment
+
         p.add_source(self.source.url)
         p.add_source(self.input.url)
 
@@ -112,6 +142,7 @@ class LegList(HtmlListPage):
     selector = CSS("#memberTable tbody tr")
 
     def process_item(self, item):
+        appointment = ""
 
         party, district, _, _, full_name, counties = item.getchildren()
 
@@ -121,18 +152,30 @@ class LegList(HtmlListPage):
         # TODO: for full name: Sam Searcy (Resigned 1/6/21) and Sydney Batch
 
         # TODO: make sure Sam Searcy is skipped?
-        print("FULL NAME", full_name.text_content())
+        # print("FULL NAME", full_name.text_content())
         name = full_name.text_content()
-        if "Resigned" in full_name.text_content():
+        # print("NAME", name)
+        if (
+            "Resigned" in full_name.text_content()
+            or "Deceased" in full_name.text_content()
+        ):
             self.skip()
         elif "Appointed" in full_name.text_content():
-            name = (
-                full_name.text_content()
-                .split("(Appointed")[0]
-                .replace("\r\n", "")
-                .strip()
-            )
-            print("FULL", full_name)
+            # print("REached here!!!")
+            # appointment = full_name.text_content().replace("(", "")
+            # name = (
+            #     full_name.text_content()
+            #     .split("(Appointed")[0]
+            #     .replace("\r\n", "")
+            #     .strip()
+            # )
+            name, appointment = full_name.text_content().split("(Appointed")
+            # name = name.replace("\r\n", "").strip()
+            appointment = appointment.replace(")", "").replace("\r\n", "").strip()
+            # print("FULL", full_name)
+            print("appointment", appointment)
+        name = name.replace("\r\n", "").strip()
+        # print("HELLOOO", name)
 
         p = PartialMember(
             name=name,
@@ -146,6 +189,7 @@ class LegList(HtmlListPage):
             .replace("\r\n", "")
             .replace("\xa0", "")
             .replace("                        ", " "),
+            appointment=appointment,
         )
         # new_source =
         # print("NEW SOURCE", new_source.get("href"))
