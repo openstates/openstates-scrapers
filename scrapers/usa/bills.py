@@ -149,7 +149,8 @@ class USBillScraper(Scraper):
         bill.add_source(cg_url)
 
         # use cg_url to get additional version for public law
-        self.scrape_public_law_version(bill, cg_url)
+        # disabled 9/2021 - congress.gov was giving 503s
+        # self.scrape_public_law_version(bill, cg_url)
 
         yield bill
 
@@ -457,6 +458,10 @@ class USBillScraper(Scraper):
     def scrape_public_law_version(self, bill, url):
         # only try to scrape public law version if there's an enrolled version
         if not any(["Enrolled" in v["note"] for v in bill.versions]):
+            return
+        # S 164 is timing out so skipping for now
+        # https://github.com/openstates/issues/issues/482
+        elif bill.title == "Advancing Education on Biosimilars Act of 2021":
             return
 
         resp = self.get(url + "/text")
