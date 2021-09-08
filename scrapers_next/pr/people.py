@@ -1,4 +1,4 @@
-from spatula import URL, CSS, HtmlListPage, HtmlPage, SelectorError
+from spatula import URL, CSS, HtmlListPage, HtmlPage, SelectorError, XPath
 from openstates.models import ScrapePerson
 import re
 from dataclasses import dataclass
@@ -184,12 +184,16 @@ class RepDetail(HtmlPage):
         fax1 = re.search(r"Fax\.\s(.+)", fax[0]).groups()[0]
         if fax1.strip() != "":
             p.extras["fax"] = fax1
-            print(fax1)
         tty = re.search(r"TTY\.\s?(.+)?", fax[1]).groups()[0]
         if tty and tty.strip() != "":
             p.extras["TTY"] = tty
-            print(tty)
             # what is tty?
+
+        addr = XPath(
+            "//*[@id='dnn_ctr1108_ViewWebRepresentatives_WebRepresentatives1_pnlRepresentative']/h6/text()[1]"
+        ).match_one(self.root)
+        if addr != "":
+            p.district_office.address = addr.strip()
 
         return p
 
