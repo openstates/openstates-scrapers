@@ -1,3 +1,4 @@
+import re
 from spatula import JsonListPage, JsonPage, URL
 from openstates.models import ScrapePerson
 from .utils import get_token
@@ -49,11 +50,18 @@ class PeopleDetail(JsonPage):
 
         for type_info in extras:
             info = self.data[type_info]
-            if info != "null":
+            print("this is the INFO******", info)
+            if info:
                 # p.extras[type_info] = info
                 if type_info == "staff":
-                    p.extras["staff"] = info
-                    # p.extras["staff email"]
+
+                    # need to work on THIS!!!!
+                    # a href=\", ali.farmer@senate.ga.gov\", Ali Farmer, /a"
+                    # <a href=\"mailto:ali.farmer@senate.ga.gov\">Ali Farmer</a>"
+                    info = re.split("mailto:|>|<", info)
+                    print("INFO", info)
+                    p.extras["staff"] = info[3]
+                    p.extras["staff email"] = info[2].replace('"', "")
                 else:
                     p.extras[type_info] = info
 
@@ -111,11 +119,10 @@ class DirectoryListing(JsonListPage):
             raise Exception("unknown photos configuration: " + str(item["photos"]))
 
         # extras
+
         p.extras["residence"] = item["residence"]
         p.extras["city"] = item["city"].strip()
         p.extras["georgia_id"] = item["id"]
-        if item["dateVacated"]:
-            p.end_date = item["dateVacated"]
 
         url = (
             f"https://www.legis.ga.gov/members/{self.chamber_names[chamber_id]}/"
