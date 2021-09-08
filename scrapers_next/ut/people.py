@@ -29,7 +29,9 @@ class LegList(JsonPage):
             p.add_source(self.source.url)
 
             p.image = leg["image"]
+
             p.email = leg["email"].strip()
+
             if leg["address"].strip() != ", , ,":
                 p.district_office.address = leg["address"].strip()
 
@@ -63,6 +65,23 @@ class LegList(JsonPage):
             ):
                 p.add_link(leg["FinanceReport"][0]["url"], note="finance report")
 
-            # leg['id']
+            if chamber == "upper":
+                detail_link = f"https://senate.utah.gov/sen/{leg['id']}/"
+            elif chamber == "lower":
+                detail_link = f"http://house.utah.gov/rep/{leg['id']}/"
+            p.add_source(detail_link)
+            p.add_link(detail_link, note="homepage")
+
+            if leg.get("cell", None):
+                p.extras["cell phone"] = leg["cell"].strip()
+
+            if leg.get("fax", None):
+                p.district_office.fax = leg["fax"].strip()
+
+            if leg.get("homePhone", None):
+                p.extras["home phone"] = leg["homePhone"].strip()
+
+            if leg.get("position", None):
+                p.extras["title"] = leg["position"].strip()
 
             yield p
