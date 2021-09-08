@@ -2,15 +2,12 @@ from utils import State
 from .events import WAEventScraper
 from .bills import WABillScraper
 
-# from .committees import WACommitteeScraper
-
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
 
 class Washington(State):
     scrapers = {
         "events": WAEventScraper,
-        # 'committees': WACommitteeScraper,
         "bills": WABillScraper,
     }
     legislative_sessions = [
