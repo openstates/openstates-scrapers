@@ -198,7 +198,7 @@ class House(HtmlListPage):
     source = URL(
         "http://www.tucamarapr.org/dnncamara/ComposiciondelaCamara/Biografia.aspx"
     )
-    selector = CSS("ul.list-article li")
+    selector = CSS("ul.list-article li", num_items=49)
 
     def process_item(self, item):
         bio_info = (
