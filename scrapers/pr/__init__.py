@@ -1,17 +1,12 @@
 from utils import State
-from .people import PRPersonScraper
 from .bills import PRBillScraper
 from .votes import PRVoteScraper
-
-# from .committees import PRCommitteeScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
 
 class PuertoRico(State):
     scrapers = {
-        "people": PRPersonScraper,
-        # 'committees': PRCommitteeScraper,
         "bills": PRBillScraper,
         "votes": PRVoteScraper,
     }

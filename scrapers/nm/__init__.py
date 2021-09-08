@@ -1,16 +1,11 @@
 from utils import url_xpath, State
-from .people import NMPersonScraper
 from .bills import NMBillScraper
 from .votes import NMVoteScraper
 from .events import NMEventScraper
 
-# from .committees import NMCommitteeScraper
-
 
 class NewMexico(State):
     scrapers = {
-        "people": NMPersonScraper,
-        # 'committees': NMCommitteeScraper,
         "bills": NMBillScraper,
         "events": NMEventScraper,
         "votes": NMVoteScraper,

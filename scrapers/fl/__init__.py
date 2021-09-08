@@ -2,7 +2,6 @@
 import logging
 from .bills import FlBillScraper
 
-# from .committees import FlCommitteeScraper
 # from .events import FlEventScraper
 from utils import url_xpath, State
 
@@ -12,7 +11,6 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 class Florida(State):
     scrapers = {
         "bills": FlBillScraper,
-        # "committees": FlCommitteeScraper,
         # "events": FlEventScraper,
     }
     # Full session list through 2019:

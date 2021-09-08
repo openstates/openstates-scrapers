@@ -2,10 +2,6 @@ from utils import url_xpath, State
 from .bills import KSBillScraper
 from .events import KSEventScraper
 
-# from .people import KSPersonScraper
-
-# from .committees import KSCommitteeScraper
-
 
 # Kansas API's 429 error response includes:
 # You have received this notification because this IP address is querying
@@ -18,8 +14,6 @@ class Kansas(State):
     scrapers = {
         "bills": KSBillScraper,
         "events": KSEventScraper,
-        # "people": KSPersonScraper,
-        # 'committees': KSCommitteeScraper,
     }
     legislative_sessions = [
         {

@@ -1,15 +1,10 @@
 from utils import url_xpath, State
-from .people import NVPeopleScraper
 from .bills import NVBillScraper
 from .events import NVEventScraper
-
-# from .committees import NVCommitteeScraper
 
 
 class Nevada(State):
     scrapers = {
-        "people": NVPeopleScraper,
-        # 'committees': NVCommitteeScraper,
         "bills": NVBillScraper,
         "events": NVEventScraper,
     }

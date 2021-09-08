@@ -5,7 +5,6 @@ from .bills import MOBillScraper
 from .events import MOEventScraper
 
 # from .votes import MOVoteScraper
-# from .committees import MOCommitteeScraper
 
 
 class Missouri(State):
@@ -13,7 +12,6 @@ class Missouri(State):
         "bills": MOBillScraper,
         # 'votes': MOVoteScraper,
         "events": MOEventScraper,
-        # 'committees': MOCommitteeScraper,
     }
     legislative_sessions = [
         {

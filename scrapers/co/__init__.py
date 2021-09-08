@@ -1,16 +1,11 @@
 import re
 from utils import url_xpath, State
-from .people import COLegislatorScraper
 from .bills import COBillScraper
 from .events import COEventScraper
-
-# from .committees import COCommitteeScraper
 
 
 class Colorado(State):
     scrapers = {
-        "people": COLegislatorScraper,
-        # 'committees': COCommitteeScraper,
         "bills": COBillScraper,
         "events": COEventScraper,
     }
