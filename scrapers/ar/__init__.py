@@ -1,15 +1,10 @@
 from utils import url_xpath, State
-from .people import ARLegislatorScraper
 from .bills import ARBillScraper
-
-# from .committees import ARCommitteeScraper
 from .events import AREventScraper
 
 
 class Arkansas(State):
     scrapers = {
-        "people": ARLegislatorScraper,
-        # 'committees': ARCommitteeScraper,
         "bills": ARBillScraper,
         "events": AREventScraper,
     }

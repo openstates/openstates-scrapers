@@ -1,13 +1,11 @@
 import lxml
 from utils import State
-from .people import NCPersonScraper
 from .bills import NCBillScraper
 from .events import NCEventScraper
 
 
 class NorthCarolina(State):
     scrapers = {
-        "people": NCPersonScraper,
         "bills": NCBillScraper,
         "events": NCEventScraper,
     }

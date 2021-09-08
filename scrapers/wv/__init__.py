@@ -1,15 +1,10 @@
 from utils import State
-from .people import WVPersonScraper
 from .bills import WVBillScraper
 from .events import WVEventScraper
-
-# from .committees import WVCommitteeScraper
 
 
 class WestVirginia(State):
     scrapers = {
-        "people": WVPersonScraper,
-        # 'committees': WVCommitteeScraper,
         "bills": WVBillScraper,
         "events": WVEventScraper,
     }

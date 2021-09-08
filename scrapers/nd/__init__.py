@@ -1,16 +1,11 @@
 from utils import State
 from .votes import NDVoteScraper
-from .people import NDPersonScraper
 from .bills import NDBillScraper
-
-# from .committees import NDCommitteeScraper
 
 
 class NorthDakota(State):
     scrapers = {
-        "people": NDPersonScraper,
         "votes": NDVoteScraper,
-        # 'committees': NDCommitteeScraper,
         "bills": NDBillScraper,
     }
     legislative_sessions = [

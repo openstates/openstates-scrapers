@@ -1,17 +1,12 @@
 import re
 from utils import url_xpath, State
-from .people import UTPersonScraper
 from .events import UTEventScraper
 from .bills import UTBillScraper
-
-# from .committees import UTCommitteeScraper
 
 
 class Utah(State):
     scrapers = {
-        "people": UTPersonScraper,
         "events": UTEventScraper,
-        # 'committees': UTCommitteeScraper,
         "bills": UTBillScraper,
     }
     legislative_sessions = [
