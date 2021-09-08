@@ -19,7 +19,6 @@ class PartialPerson:
     source: str
 
 
-# is this correct?
 _party_map = {
     "D": "Democratic",
     "R": "Republican",
@@ -125,7 +124,6 @@ class RepDetail(HtmlPage):
             capitol_address += " "
         p.capitol_office.address = capitol_address.strip()
 
-        # education
         try:
             occupation = (
                 XPath(
@@ -139,21 +137,14 @@ class RepDetail(HtmlPage):
             pass
 
         try:
-            if (
+            education = (
                 XPath(
                     "//*[@id='welcome']/div/div[1]/div/div/table/tbody/tr/td[contains(text(), 'Education')]"
                 )
                 .match_one(self.root)
                 .getnext()
-                is not None
-            ):
-                education = (
-                    XPath(
-                        "//*[@id='welcome']/div/div[1]/div/div/table/tbody/tr/td[contains(text(), 'Education')]"
-                    )
-                    .match_one(self.root)
-                    .getnext()
-                )
+            )
+            if education is not None:
                 p.extras["education"] = education.text_content().strip()
         except SelectorError:
             pass
@@ -204,9 +195,8 @@ class SenDetail(HtmlPage):
                 .lstrip(":")
                 .strip()
             )
-        if addr != p.extras["Mailing address"]:
+        if addr != p.district_office.address:
             p.extras["Additional address"] = addr
-            # should this be district address?
 
         try:
             home_phones = (
@@ -257,7 +247,7 @@ class SenDetail(HtmlPage):
             website = website.getnext().get("href")
         else:
             website = website.get("href")
-        p.extras["website"] = website
+        p.add_link(website, note="website")
 
         return p
 
@@ -310,13 +300,11 @@ class Senate(ExcelListPage):
             address = re.sub(r"Saint\s", "St. ", address)
         if re.search(r"N\.", address):
             address = re.sub(r"N\.", "North", address)
-        p.extras["Mailing address"] = address
-        # should this be a district office?
+        p.district_office.address = address
 
         phone = item[9].strip()
         phone = "(207) " + phone
-        # append area code to phone?
-        p.extras["phone"] = phone
+        p.district_office.voice = phone
 
         alternate = item[10]
         if alternate is not None:
