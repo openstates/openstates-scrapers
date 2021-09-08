@@ -1,15 +1,12 @@
 from utils import State
-
 from .bills import ALBillScraper
 from .events import ALEventScraper
-from .people import ALPersonScraper
 
 
 class Alabama(State):
     scrapers = {
         "bills": ALBillScraper,
         "events": ALEventScraper,
-        "people": ALPersonScraper,
     }
     legislative_sessions = [
         {

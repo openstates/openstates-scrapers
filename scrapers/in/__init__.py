@@ -4,12 +4,9 @@ from utils import State
 from .bills import INBillScraper
 from .events import INEventScraper
 
-# from .committees import INCommitteeScraper
-
 
 class Indiana(State):
     scrapers = {
-        # 'committees': INCommitteeScraper,
         "bills": INBillScraper,
         "events": INEventScraper,
     }

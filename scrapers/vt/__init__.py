@@ -1,7 +1,4 @@
 from utils import url_xpath, State
-from .people import VTPersonScraper
-
-# from .committees import VTCommitteeScraper
 from .bills import VTBillScraper
 from .events import VTEventScraper
 
@@ -18,8 +15,6 @@ settings = dict(SCRAPELIB_RPM=20)
 
 class Vermont(State):
     scrapers = {
-        "people": VTPersonScraper,
-        # 'committees': VTCommitteeScraper,
         "bills": VTBillScraper,
         "events": VTEventScraper,
     }

@@ -1,10 +1,6 @@
 from utils import url_xpath, State
-
 from .bills import NYBillScraper
 from .events import NYEventScraper
-from .people import NYPersonScraper
-
-# from .committees import NYCommitteeScraper
 
 
 settings = dict(SCRAPELIB_TIMEOUT=120)
@@ -14,8 +10,6 @@ class NewYork(State):
     scrapers = {
         "bills": NYBillScraper,
         "events": NYEventScraper,
-        "people": NYPersonScraper,
-        # 'committees': NYCommitteeScraper,
     }
     legislative_sessions = [
         {

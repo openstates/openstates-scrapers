@@ -1,15 +1,10 @@
 import re
 from utils import url_xpath, State
-from .people import KYPersonScraper
 from .bills import KYBillScraper
-
-# from .committees import KYCommitteeScraper
 
 
 class Kentucky(State):
     scrapers = {
-        "people": KYPersonScraper,
-        # 'committees': KYCommitteeScraper,
         "bills": KYBillScraper,
     }
     legislative_sessions = [

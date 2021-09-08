@@ -3,8 +3,6 @@ import re
 import requests
 from utils import State
 from .bills import AZBillScraper
-
-# from .committees import AZCommitteeScraper
 from .events import AZEventScraper
 
 

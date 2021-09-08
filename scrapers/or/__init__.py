@@ -1,16 +1,11 @@
 from utils import State
-from .people import ORPersonScraper
 from .bills import ORBillScraper
 from .votes import ORVoteScraper
 from .events import OREventScraper
 
-# from .committees import ORCommitteeScraper
-
 
 class Oregon(State):
     scrapers = {
-        "people": ORPersonScraper,
-        # 'committees': ORCommitteeScraper,
         "bills": ORBillScraper,
         "votes": ORVoteScraper,
         "events": OREventScraper,
