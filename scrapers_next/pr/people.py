@@ -159,6 +159,38 @@ class RepDetail(HtmlPage):
         if title != "":
             p.extras["title"] = title
 
+        phones = (
+            CSS("h6 span span span")
+            .match(self.root)[0]
+            .text_content()
+            .strip()
+            .split("\n")
+        )
+        phone1 = re.search(r"Tel\.\s(.+)", phones[0]).groups()[0]
+        phone2 = re.search(r"Tel\.\s?(.+)?", phones[1]).groups()[0]
+        # http://www.tucamarapr.org/dnncamara/ComposiciondelaCamara/biografia.aspx?rep=251 has an incomplete phone
+        if phone1.strip() != "" and phone1.strip() != "(787":
+            p.extras["phone1"] = phone1.strip()
+        if phone2 and phone2.strip() != "":
+            p.extras["phone2"] = phone2.strip()
+
+        fax = (
+            CSS("h6 span span span")
+            .match(self.root)[1]
+            .text_content()
+            .strip()
+            .split("\n")
+        )
+        fax1 = re.search(r"Fax\.\s(.+)", fax[0]).groups()[0]
+        if fax1.strip() != "":
+            p.extras["fax"] = fax1
+            print(fax1)
+        tty = re.search(r"TTY\.\s?(.+)?", fax[1]).groups()[0]
+        if tty and tty.strip() != "":
+            p.extras["TTY"] = tty
+            print(tty)
+            # what is tty?
+
         return p
 
 
