@@ -4,14 +4,13 @@ from openstates.models import ScrapePerson
 from .utils import get_token
 
 
-class PeopleDetail(JsonPage):
+class LegDetail(JsonPage):
     def process_page(self):
         p = self.input
         p.add_source(self.source.url, note="Detail page (requires authorization token)")
 
         p.email = self.data["email"]
 
-        # capitol office
         try:
             capitol_office = (
                 self.data["capitolAddress"]["address1"]
@@ -27,10 +26,7 @@ class PeopleDetail(JsonPage):
                 p.capitol_office.fax = self.data["capitolAddress"]["fax"]
         except TypeError:
             pass
-        # a lot of extras: birthday, committee memberships, occupation, press, religion, residence, sessionsinservice, spouse, staff with email, title,
-        # p.extras["title"]
 
-        # residence, city, georgia id
         extras = [
             "birthday",
             "occupation",
@@ -40,26 +36,12 @@ class PeopleDetail(JsonPage):
             "staff",
             "title",
         ]
-        # extras = [self.data["birthday"], self.data["occupation"],self.data["press"],self.data["religion"],self.data["spouse"], self.data["staff"], self.data["title"],]
-        # for info in extras:
-        #     if info != 'null':
-        #         p.extras[]
-
-        # for self.data[info] in extras:
-        #     print("hi", info)
 
         for type_info in extras:
             info = self.data[type_info]
-            print("this is the INFO******", info)
             if info:
-                # p.extras[type_info] = info
                 if type_info == "staff":
-
-                    # need to work on THIS!!!!
-                    # a href=\", ali.farmer@senate.ga.gov\", Ali Farmer, /a"
-                    # <a href=\"mailto:ali.farmer@senate.ga.gov\">Ali Farmer</a>"
                     info = re.split("mailto:|>|<", info)
-                    print("INFO", info)
                     p.extras["staff"] = info[3]
                     p.extras["staff email"] = info[2].replace('"', "")
                 else:
@@ -75,11 +57,8 @@ class DirectoryListing(JsonListPage):
     chamber_names = {1: "house", 2: "senate"}
     party_ids = {0: "Democratic", 1: "Republican"}
 
-    # TODO: replace with utils in committees.py
-
     def process_item(self, item):
         chamber_id = item["district"]["chamberType"]
-        print("NAME", item["fullName"])
 
         p = ScrapePerson(
             state="ga",
@@ -129,20 +108,13 @@ class DirectoryListing(JsonListPage):
             f"{item['id']}?session={item['sessionId']}"
         )
         p.add_source(url)
-        # TODO: get rid of below link?
-        # p.add_link(url)
 
-        # return p
-
-        # source may instead be including &chamber=2 at the end
         source = URL(
             f"https://www.legis.ga.gov/api/members/detail/{item['id']}?session=1029&chamber={chamber_id}",
             headers={"Authorization": get_token()},
         )
 
-        # https://www.legis.ga.gov/api/members/detail/754?session=1029&chamber=2
-
-        return PeopleDetail(p, source=source)
+        return LegDetail(p, source=source)
 
 
 people = DirectoryListing(
@@ -151,6 +123,3 @@ people = DirectoryListing(
         headers={"Authorization": get_token()},
     )
 )
-#     source = URL(
-#     "https://www.legis.ga.gov/api/committees/List/1029",
-#     headers={"Authorization": get_token()},)
