@@ -107,7 +107,7 @@ class DirectoryListing(JsonListPage):
             f"https://www.legis.ga.gov/members/{self.chamber_names[chamber_id]}/"
             f"{item['id']}?session={item['sessionId']}"
         )
-        p.add_source(url)
+        p.add_source(url, note="Initial list page (requires authorization token)")
 
         source = URL(
             f"https://www.legis.ga.gov/api/members/detail/{item['id']}?session=1029&chamber={chamber_id}",
