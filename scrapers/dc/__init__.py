@@ -2,8 +2,6 @@ import os
 import requests
 from utils import State
 from .bills import DCBillScraper
-
-# from .committees import DCCommitteeScraper
 from .events import DCEventScraper
 
 

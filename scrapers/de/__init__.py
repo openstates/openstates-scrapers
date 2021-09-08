@@ -2,8 +2,6 @@ from utils import url_xpath, State
 from .bills import DEBillScraper
 from .events import DEEventScraper
 
-# from .committees import DECommitteeScraper
-
 
 class Delaware(State):
     scrapers = {

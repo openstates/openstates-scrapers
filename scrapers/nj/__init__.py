@@ -2,8 +2,6 @@ from utils import url_xpath, State
 from .bills import NJBillScraper
 from .events import NJEventScraper
 
-# from .committees import NJCommitteeScraper
-
 # don't retry- if a file isn't on FTP just let it go
 settings = dict(SCRAPELIB_RETRY_ATTEMPTS=0)
 
@@ -12,7 +10,6 @@ class NewJersey(State):
     scrapers = {
         "bills": NJBillScraper,
         "events": NJEventScraper,
-        # 'committees': NJCommitteeScraper,
     }
     legislative_sessions = [
         {

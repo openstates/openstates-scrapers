@@ -3,15 +3,12 @@ from .bills import MDBillScraper
 from .events import MDEventScraper
 from .votes import MDVoteScraper
 
-# from .committees import MDCommitteeScraper
-
 
 class Maryland(State):
     scrapers = {
         "bills": MDBillScraper,
         "events": MDEventScraper,
         "votes": MDVoteScraper,
-        # 'committees': MDCommitteeScraper,
     }
     legislative_sessions = [
         {

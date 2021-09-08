@@ -1,13 +1,10 @@
 from utils import State
 from .bills import OKBillScraper
-
-# from .committees import OKCommitteeScraper
 from .events import OKEventScraper
 
 
 class Oklahoma(State):
     scrapers = {
-        # 'committees': OKCommitteeScraper,
         "events": OKEventScraper,
         "bills": OKBillScraper,
     }
