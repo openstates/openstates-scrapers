@@ -1,6 +1,33 @@
-from spatula import URL, JsonPage
+from spatula import URL, JsonPage, HtmlPage, CSS, XPath, SelectorError
 from openstates.models import ScrapePerson
 import re
+
+
+class LegDetail(HtmlPage):
+    def process_page(self):
+        p = self.input
+        img = CSS("img.profile-photo").match_one(self.root).get("src")
+        p.image = img
+
+        try:
+            state_email = (
+                XPath("//*[@id='main-content']/div[2]/dl/dt[text()='Email']")
+                .match_one(self.root)
+                .getnext()
+                .text_content()
+                .strip()
+            )
+            if (
+                state_email.strip() != ""
+                and state_email.strip() not in p.extras["emails"].values()
+            ):
+                p.extras["emails"]["state email"] = state_email.strip()
+                # which one should be assigned to p.email?
+                # I'm guessing state email
+        except SelectorError:
+            pass
+
+        return p
 
 
 class LegList(JsonPage):
@@ -25,6 +52,8 @@ class LegList(JsonPage):
             party = re.sub("Democrat", "Democratic", party)
 
             district = leg["District"].strip()
+            # replace District with ""?
+            # also, these are names rather than numbers
 
             if leg["Title"].strip() == "Senator":
                 chamber = "upper"
@@ -40,8 +69,6 @@ class LegList(JsonPage):
             p.family_name = leg["LastName"].strip()
             if leg["NameSuffix"].strip() != "":
                 p.suffix = leg["NameSuffix"].strip()
-            if leg["Email"].strip() != "":
-                p.email = leg["Email"].strip()
 
             work_addr = ""
             if leg["WorkAddress1"].strip() != "":
@@ -61,12 +88,6 @@ class LegList(JsonPage):
                 work_addr += " "
             if work_addr.strip() != "":
                 p.extras["work address"] = work_addr.strip()
-
-            if (
-                leg["WorkEmail"].strip() != ""
-                and leg["WorkEmail"].strip() != leg["Email"].strip()
-            ):
-                p.extras["work email"] = leg["WorkEmail"].strip()
 
             home_addr = ""
             if leg["HomeAddress1"].strip() != "":
@@ -90,11 +111,25 @@ class LegList(JsonPage):
             if leg["HomePhone"].strip() != "":
                 p.extras["home phone"] = leg["HomePhone"].strip()
 
+            p.extras["emails"] = {}
+            if leg["Email"].strip() != "":
+                # p.email = leg["Email"].strip()
+                p.extras["emails"]["email"] = leg["Email"].strip()
+
+            if (
+                leg["WorkEmail"].strip() != ""
+                and leg["WorkEmail"].strip() != leg["Email"].strip()
+            ):
+                # p.extras["work email"] = leg["WorkEmail"].strip()
+                p.extras["emails"]["work email"] = leg["WorkEmail"].strip()
+
             if (
                 leg["HomeEmail"].strip() != ""
                 and leg["HomeEmail"].strip() != leg["Email"].strip()
+                and leg["HomeEmail"].strip() != leg["WorkEmail"].strip()
             ):
-                p.extras["home email"] = leg["HomeEmail"].strip()
+                # p.extras["home email"] = leg["HomeEmail"].strip()
+                p.extras["emails"]["home email"] = leg["HomeEmail"].strip()
 
             mail_addr = ""
             if leg["MailingAddress1"].strip() != "":
@@ -115,9 +150,18 @@ class LegList(JsonPage):
             if mail_addr.strip() != "":
                 p.extras["mailing address"] = mail_addr.strip()
 
-            yield p
+            detail_link = (
+                f"http://legislature.vermont.gov/people/single/2022/{leg['PersonID']}"
+            )
+            p.add_source(detail_link)
+            p.add_link(detail_link, note="homepage")
+
+            yield LegDetail(p, source=detail_link)
+
+            # old code hard-coded capitol address
+            # "Vermont State House\n115 State Street\nMontpelier, VT 05633"
+            # old code assigned mailing address as district_office.address
 
             # leg['DistrictMap']
             # leg['vTown']
-            # leg['PersonID']
             # leg['Town']
