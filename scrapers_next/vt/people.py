@@ -27,6 +27,15 @@ class LegDetail(HtmlPage):
         except SelectorError:
             pass
 
+        district_map = (
+            XPath("//*[@id='main-content']/div[2]/dl/dt[contains(text(), 'District')]")
+            .match_one(self.root)
+            .getnext()
+            .getchildren()[0]
+            .get("href")
+        )
+        p.add_link(district_map, note="district map")
+
         return p
 
 
@@ -159,9 +168,9 @@ class LegList(JsonPage):
             yield LegDetail(p, source=detail_link)
 
             # old code hard-coded capitol address
-            # "Vermont State House\n115 State Street\nMontpelier, VT 05633"
+            # "Vermont State House\;115 State Street\;Montpelier, VT 05633"
+            # (802) 828-2228 looks like capitol phone
             # old code assigned mailing address as district_office.address
 
-            # leg['DistrictMap']
             # leg['vTown']
             # leg['Town']
