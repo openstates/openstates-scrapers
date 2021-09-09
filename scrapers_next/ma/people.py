@@ -36,7 +36,7 @@ class LegDetail(HtmlPage):
             office_title = (
                 XPath("..//preceding-sibling::h4/text()").match_one(office).strip()
             )
-            print("OFFICE TITLE", office_title)
+            # print("OFFICE TITLE", office_title)
             try:
                 address = CSS("a").match_one(office).text_content().replace("  ", "")
                 address = re.split(" \r\n|\r\n", address)
@@ -51,16 +51,9 @@ class LegDetail(HtmlPage):
 
             try:
                 office_contact_info = CSS(".contactInfo .col-lg-3").match(office)
-                # # print("phone and or fax", office_contact_info)
-                # for ee in office_contact_info:
-                #     print("type of contact info", ee.text_content())
 
-                # print("OKAY NOW INVESTIGATE THIS")
                 for contact in office_contact_info:
-                    # print("capital text", contact.text_content().strip())
-                    # print("START OF A NEW ")
-                    # fax_number = ""
-                    # phone_number = ""
+
                     if contact.text_content().strip() == "Fax:":
                         # print("fax number is here")
                         fax_number = (
@@ -69,21 +62,16 @@ class LegDetail(HtmlPage):
                             .text_content()
                             .strip()
                         )
-                        print("this is the fax number", fax_number)
+                        # print("this is the fax number", fax_number)
                     if contact.text_content().strip() == "Phone:":
-                        # p.capitol_office.fax = fax_number
-                        # print("thisistrgigga")
-                        # print(XPath(".//following-sibling::div[1]").match_one(contact).text_content())
-                        # .match_one(contact)
-                        # .text_content())
-                        # print("this is the phone number")
+
                         phone_number = (
                             XPath(".//following-sibling::div[1]")
                             .match_one(contact)
                             .text_content()
                             .strip()
                         )
-                        print("HELLOOOO PHONE", phone_number)
+                        # print("HELLOOOO PHONE", phone_number)
 
             except SelectorError:
                 pass
@@ -93,87 +81,25 @@ class LegDetail(HtmlPage):
                 if address:
                     p.capitol_office.address = address
                 if fax_number:
-                    print("test", fax_number)
+                    # print("test", fax_number)
                     p.capitol_office.fax = fax_number
-                print("the above is for state")
-                # if phone_number:
-                # except ValueError:
+                # print("the above is for state")
 
-                # p.capitol_office.fax = fax_number
-                # print("capitol fax", fax_number)
             elif office_title == "District Office":
-                # print("the above is for district")
-                # print("distri")
+
                 if address:
                     p.district_office.address = address
                 if fax_number:
-                    print("test", fax_number)
+                    # print("test", fax_number)
                     p.district_office.fax = fax_number
                 if phone_number:
-                    print("test", phone_number)
+                    # print("test", phone_number)
                     p.district_office.voice = phone_number
-                print("the above is for district")
-                # print("distrct phone", phone_number)
-                # print("district fax", fax_number)
+                # print("the above is for district")
 
-        # address = CSS(".contactGroup a").match(self.root)
-
-        # capitol_contact_info = CSS(".contactInfo .col-lg-3").match(self.root)
-        # print("CAPITALCONTACT INFO")
-
-        # # capital_contact
-        # # make into separate function
-        # # contact_info(capitol_contact_info)
-        # for contact in capitol_contact_info:
-        #     print("capital text", contact.text_content().strip())
-        #     if contact.text_content().strip() == "Fax:":
-        #         fax_number = (
-        #             XPath(".//following-sibling::div")
-        #             .match_one(contact)
-        #             .text_content()
-        #             .strip()
-        #         )
-        #         p.capitol_office.fax = fax_number
-
-        # p.capitol_office.address = address[0].text_content().replace("  ", "")
-
-        # try:
-        #     district_office_address = CSS("a").match_one(address[1]).text_content()
-        #     print("DISTIRCT OFFICE", district_office_address)
-
-        # except IndexError:
-        #     pass
-
-        # try:
-
-        # except SelectorError:
-
-        # try:
-        #     p.district_office.address = address[1].text_content().replace("  ", "")
-        # except IndexError:
-        #     pass
-
-        # try:
-        #     district_contact_info = CSS(".contactInfo .col-lg-3").match(self.root)[1]
-        #     for contact in district_contact_info:
-        #         if contact.text_content().strip() == "Phone:":
-        #             phone_number = (
-        #                 XPath(".//following-sibling::div")
-        #                 .match_one(contact)
-        #                 .text_content()
-        #                 .strip()
-        #             )
-        #             p.district_office.voice = phone_number
-        #         elif contact.text_content().strip() == "Fax:":
-        #             fax_number = (
-        #                 XPath(".//following-sibling::div")
-        #                 .match_one(contact)
-        #                 .text_content()
-        #                 .strip()
-        #             )
-        #             p.district_office.fax = fax_number
-        # except IndexError:
-        #     pass
+        links = XPath("//ul[@role='tablist']/li/a").match(self.root)
+        for link in links:
+            p.add_link(link.get("href"))
 
         return p
 
