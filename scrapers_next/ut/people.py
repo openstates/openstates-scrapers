@@ -35,6 +35,13 @@ class LegList(JsonPage):
             if leg["address"].strip() != ", , ,":
                 p.district_office.address = leg["address"].strip()
 
+            # Note about phones from old code
+            # Work phone seems to be the person's non-legislative
+            # office phone, and thus a last option
+            # For example, we called one and got the firm
+            # where he's a lawyer. We're picking
+            # them in order of how likely we think they are
+            # to actually get us to the person we care about.
             if leg.get("workPhone", None):
                 p.district_office.voice = leg["workPhone"]
 
