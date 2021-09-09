@@ -135,10 +135,10 @@ class Texas(State):
         {
             "_scraped_name": "87(3) - 2021",
             "classification": "special",
-            "end_date": "2021-10-31",
+            "end_date": "2021-10-21",
             "identifier": "873",
             "name": "87th Legislature, 3rd Called Session (2021)",
-            "start_date": "2021-09-06",
+            "start_date": "2021-09-20",
         },
         # TODO: Re-enable vote scraper when adding next regular session
     ]
