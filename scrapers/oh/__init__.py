@@ -68,6 +68,7 @@ class Ohio(State):
             "?generalAssemblies=133&pageSize=10&start=1&isInitial=true",
             '//div[@id="generalAssemblyValues"]//'
             'div[contains(@class, "optionLabel")]/text()',
+            user_agent="openstates 2021",
         )
         # Archive does not include current session
         return sessions
