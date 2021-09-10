@@ -61,8 +61,8 @@ class LegList(JsonPage):
             party = re.sub("Democrat", "Democratic", party)
 
             district = leg["District"].strip()
-            # replace District with ""?
-            # also, these are names rather than numbers
+            district = re.sub("District", "", district)
+            # these are names rather than numbers
 
             if leg["Title"].strip() == "Senator":
                 chamber = "upper"
