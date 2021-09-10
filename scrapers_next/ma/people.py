@@ -5,18 +5,10 @@ from openstates.models import ScrapePerson
 def list_url():
     general_court_num = "192"
     return f"https://malegislature.gov/api/GeneralCourts/{general_court_num}/LegislativeMembers/"
-    # # source = URL(
-    #     f"https://malegislature.gov/api/GeneralCourts/{general_court_num}/LegislativeMembers/"
-    # # )
 
 
 class LegDetail(JsonPage):
 
-    # general_court_num = "192"
-    # source = URL(
-    #     f"https://malegislature.gov/api/GeneralCourts/{general_court_num}/LegislativeMembers/"
-    # )
-    # selector = XPath("//LegislativeMemberSummary/Details")
     example_source = (
         "http://malegislature.gov/api/GeneralCourts/192/LegislativeMembers/R_C1"
     )
@@ -40,43 +32,27 @@ class LegDetail(JsonPage):
             email=self.data["EmailAddress"],
         )
 
-        # hardcoding capital address
         room_num = self.data["RoomNumber"]
         if room_num:
             capitol_address = f"24 Beacon St., Room {room_num}; Boston, MA 02133"
             p.capitol_office.address = capitol_address
 
-        # phone number and fax number (if exists) are both from capitol office address
+        # phone number and fax number (if it exists) are both from capitol office address
         phone = self.data["PhoneNumber"]
         numbers_only_phone_length = 10
 
         if phone:
-            # p.capitol_office.voice = self.data["PhoneNumber"]
-            # TODO: extension like 61772228007309 is 617 722 2800x7309
-
             # there are 3 formats for phone numbers (some must be adjusted for extensions):
             # 61772228007309 is 617 722 2800x7309
             # (617) 722-1660 is (617) 722-1660
             # (617) 722-2800 x7306 is (617) 722-2800 x7306
-            # if len(phone) > phone_num_length:
-            #     print("PHONE possibly NOT adjusted")
-
             if (
                 len(phone) > numbers_only_phone_length
                 and " " not in phone
                 and "x" not in phone
             ):
-                # if " " in phone:
-                # OLD PHONE (617) 722-1660
-                # NEW PHONE (617) 722-x1660
-                # if len(phone) > 14:
-
-                print("OLD PHONE", phone)
                 phone = phone[:10] + " x" + phone[10:]
-                print("NEW PHONE", phone)
 
-                # OLD PHONE (617) 722-2800 x7306
-                # NEW PHONE (617) 722-x2800 x7306
             p.capitol_office.voice = phone
 
         try:
