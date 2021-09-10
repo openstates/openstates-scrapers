@@ -1,17 +1,12 @@
 import os
 import requests
 from utils import State
-from .people import DCPersonScraper
 from .bills import DCBillScraper
-
-# from .committees import DCCommitteeScraper
 from .events import DCEventScraper
 
 
 class DistrictOfColumbia(State):
     scrapers = {
-        "people": DCPersonScraper,
-        # 'committees': DCCommitteeScraper,
         "events": DCEventScraper,
         "bills": DCBillScraper,
     }

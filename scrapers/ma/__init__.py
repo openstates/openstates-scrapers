@@ -2,17 +2,12 @@ import re
 import requests
 import lxml.html
 from utils import State
-from .people import MAPersonScraper
 from .bills import MABillScraper
 from .events import MAEventScraper
-
-# from .committees import MACommitteeScraper
 
 
 class Massachusetts(State):
     scrapers = {
-        "people": MAPersonScraper,
-        # 'committees': MACommitteeScraper,
         "bills": MABillScraper,
         "events": MAEventScraper,
     }

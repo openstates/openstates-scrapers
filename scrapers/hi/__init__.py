@@ -2,15 +2,12 @@ from utils import url_xpath, State
 from .events import HIEventScraper
 from .bills import HIBillScraper
 
-# from .committees import HICommitteeScraper
-
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
 
 class Hawaii(State):
     scrapers = {
         "bills": HIBillScraper,
-        # 'committees': HICommitteeScraper,
         "events": HIEventScraper,
     }
     legislative_sessions = [

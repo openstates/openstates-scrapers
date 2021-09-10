@@ -1,18 +1,13 @@
 # encoding=utf-8
 from utils import url_xpath, State
 from .bills import IlBillScraper
-from .people import IlPersonScraper
 from .events import IlEventScraper
-
-# from .committees import IlCommitteeScraper
 
 
 class Illinois(State):
     scrapers = {
         "bills": IlBillScraper,
-        "people": IlPersonScraper,
         "events": IlEventScraper,
-        # "committees": IlCommitteeScraper,
     }
     legislative_sessions = [
         {

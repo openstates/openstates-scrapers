@@ -1,17 +1,12 @@
 from utils import url_xpath, State
 from .bills import TNBillScraper
 from .events import TNEventScraper
-from .people import TNPersonScraper
-
-# from .committees import TNCommitteeScraper
 
 
 class Tennessee(State):
     scrapers = {
         "bills": TNBillScraper,
-        # 'committees': TNCommitteeScraper,
         "events": TNEventScraper,
-        "people": TNPersonScraper,
     }
     legislative_sessions = [
         # {

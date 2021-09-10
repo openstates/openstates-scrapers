@@ -1,20 +1,14 @@
-from utils import State
-from .bills import WYBillScraper
-from .people import WYPersonScraper
-from .events import WYEventScraper
-
-# from .committees import WYCommitteeScraper
-
 import requests
 import re
+from utils import State
+from .bills import WYBillScraper
+from .events import WYEventScraper
 
 
 class Wyoming(State):
     scrapers = {
         "bills": WYBillScraper,
-        "people": WYPersonScraper,
         "events": WYEventScraper,
-        # 'committees': WYCommitteeScraper,
     }
     legislative_sessions = [
         {

@@ -1,16 +1,10 @@
 from utils import url_xpath, State
-
-from .people import MSLegislatorScraper
 from .bills import MSBillScraper
 from .events import MSEventScraper
-
-# from .committees import MSCommitteeScraper
 
 
 class Mississippi(State):
     scrapers = {
-        "people": MSLegislatorScraper,
-        # "committees": MSCommitteeScraper,
         "bills": MSBillScraper,
         "events": MSEventScraper,
     }

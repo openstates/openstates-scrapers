@@ -1,18 +1,12 @@
 from utils import url_xpath, State
-
 from .bills import WIBillScraper
 from .events import WIEventScraper
-from .people import WIPersonScraper
-
-# from .committees import WICommitteeScraper
 
 
 class Wisconsin(State):
     scrapers = {
         "bills": WIBillScraper,
         "events": WIEventScraper,
-        "people": WIPersonScraper,
-        # 'committees': WICommitteeScraper,
     }
     legislative_sessions = [
         {

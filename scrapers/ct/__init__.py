@@ -1,5 +1,4 @@
 from utils import State
-from .people import CTPersonScraper
 from .bills import CTBillScraper
 from .events import CTEventScraper
 
@@ -10,7 +9,6 @@ SKIP_SESSIONS = {"incoming", "pub", "CGAAudio", "rba", "NCSL", "FOI_1", "stained
 
 class Connecticut(State):
     scrapers = {
-        "people": CTPersonScraper,
         "bills": CTBillScraper,
         "events": CTEventScraper,
     }

@@ -1,4 +1,3 @@
-from .people import SCPersonScraper
 from .bills import SCBillScraper
 from .events import SCEventScraper
 from utils import State
@@ -8,7 +7,6 @@ import lxml.html
 
 class SouthCarolina(State):
     scrapers = {
-        "people": SCPersonScraper,
         "bills": SCBillScraper,
         "events": SCEventScraper,
     }

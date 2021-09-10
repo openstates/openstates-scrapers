@@ -1,17 +1,12 @@
 from utils import url_xpath, State
 from .bills import MEBillScraper
-from .people import MEPersonScraper
 from .events import MEEventScraper
-
-# from .committees import MECommitteeScraper
 
 
 class Maine(State):
     scrapers = {
         "bills": MEBillScraper,
-        "people": MEPersonScraper,
         "events": MEEventScraper,
-        # 'committees': MECommitteeScraper,
     }
     legislative_sessions = [
         {

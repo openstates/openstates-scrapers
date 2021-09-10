@@ -2,8 +2,6 @@ from utils import url_xpath, State
 
 from .bills import MNBillScraper
 from .vote_events import MNVoteScraper
-
-# from .committees import MNCommitteeScraper
 from .events import MNEventScraper
 
 """
@@ -21,7 +19,6 @@ sense to get vote data from the bill pages.
 class Minnesota(State):
     scrapers = {
         "bills": MNBillScraper,
-        # "committees": MNCommitteeScraper,
         "votes": MNVoteScraper,
         "events": MNEventScraper,
     }
