@@ -17,13 +17,8 @@ class LegDetail(HtmlPage):
                 .text_content()
                 .strip()
             )
-            if (
-                state_email.strip() != ""
-                and state_email.strip() not in p.extras["emails"].values()
-            ):
-                p.extras["emails"]["state email"] = state_email.strip()
-                # which one should be assigned to p.email?
-                # I'm guessing state email
+            if state_email.strip() != "" and state_email.strip() != p.email:
+                p.extras["state email"] = state_email.strip()
         except SelectorError:
             pass
 
@@ -62,7 +57,6 @@ class LegList(JsonPage):
 
             district = leg["District"].strip()
             district = re.sub("District", "", district)
-            # these are names rather than numbers
 
             if leg["Title"].strip() == "Senator":
                 chamber = "upper"
@@ -120,25 +114,21 @@ class LegList(JsonPage):
             if leg["HomePhone"].strip() != "":
                 p.extras["home phone"] = leg["HomePhone"].strip()
 
-            p.extras["emails"] = {}
             if leg["Email"].strip() != "":
-                # p.email = leg["Email"].strip()
-                p.extras["emails"]["email"] = leg["Email"].strip()
+                p.email = leg["Email"].strip()
 
             if (
                 leg["WorkEmail"].strip() != ""
                 and leg["WorkEmail"].strip() != leg["Email"].strip()
             ):
-                # p.extras["work email"] = leg["WorkEmail"].strip()
-                p.extras["emails"]["work email"] = leg["WorkEmail"].strip()
+                p.extras["work email"] = leg["WorkEmail"].strip()
 
             if (
                 leg["HomeEmail"].strip() != ""
                 and leg["HomeEmail"].strip() != leg["Email"].strip()
                 and leg["HomeEmail"].strip() != leg["WorkEmail"].strip()
             ):
-                # p.extras["home email"] = leg["HomeEmail"].strip()
-                p.extras["emails"]["home email"] = leg["HomeEmail"].strip()
+                p.extras["home email"] = leg["HomeEmail"].strip()
 
             mail_addr = ""
             if leg["MailingAddress1"].strip() != "":
@@ -157,7 +147,12 @@ class LegList(JsonPage):
                 mail_addr += leg["MailingZIP"].strip()
                 mail_addr += " "
             if mail_addr.strip() != "":
-                p.extras["mailing address"] = mail_addr.strip()
+                p.district_office.address = mail_addr.strip()
+
+            p.capitol_office.address = (
+                "Vermont State House;115 State Street;Montpelier, VT 05633-5301"
+            )
+            p.capitol_office.voice = "(802) 828-2228"
 
             detail_link = (
                 f"http://legislature.vermont.gov/people/single/2022/{leg['PersonID']}"
@@ -166,11 +161,3 @@ class LegList(JsonPage):
             p.add_link(detail_link, note="homepage")
 
             yield LegDetail(p, source=detail_link)
-
-            # old code hard-coded capitol address
-            # "Vermont State House\;115 State Street\;Montpelier, VT 05633"
-            # (802) 828-2228 looks like capitol phone
-            # old code assigned mailing address as district_office.address
-
-            # leg['vTown']
-            # leg['Town']
