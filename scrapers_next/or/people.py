@@ -38,6 +38,7 @@ class LegList(XmlPage):
                 party=party,
             )
             # session_key = content[0][0].text
+
             # legislator_code = content[0][1].text
             # cap_address = content[0][4].text
             # cap_phone = content[0][5].text
