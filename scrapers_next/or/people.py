@@ -1,5 +1,6 @@
-from spatula import URL, XmlPage, HtmlPage, CSS
+from spatula import URL, XmlPage, HtmlPage, CSS, SelectorError, XPath
 from openstates.models import ScrapePerson
+import re
 
 # from .apiclient import OregonLegislatorODataClient
 # from .utils import SESSION_KEYS
@@ -14,8 +15,52 @@ class LegDetail(HtmlPage):
             img = "https://www.oregonlegislature.gov/wagner/PublishingImages/member_photo.jpg"
         else:
             img = CSS("h1 img").match_one(self.root).get("src")
-        print(img)
         p.image = img
+
+        # try:
+        #     district_info = XPath("//div[@class='ExternalClassE076DA94B8C9471787D15232970D1A6F']/p//strong[contains(text(), 'District')]").match(self.root)
+        #     for tag in district_info:
+        #         if re.search(r"District(\s|\xa0)Phone:", tag.text_content()):
+        #             if tag.tail is None:
+        #                 print(tag.getnext().text_content().strip())
+        #             else:
+        #                 p.district_office.voice = tag.tail.strip()
+        #                 print(tag.tail.strip())
+        #         elif re.search(r"District(\s|\xa0)(Mailing)?\s?Address:", tag.text_content()):
+        #             if tag.tail is None:
+        #                 print(tag.getnext().text_content().strip())
+        #             else:
+        #                 p.district_office.address = tag.tail.strip()
+        #                 print(tag.tail.strip())
+        #         else:
+        #             if tag.getnext() is not None and tag.getnext().text_content().strip() == "Phone:":
+        #                 print(tag.getnext().tail.strip())
+        #             elif tag.tail is not None and tag.tail.strip() == "Address:":
+        #                 print(tag.getparent().tail)
+        #             else:
+        #                 print(tag.text_content().strip())
+        # except SelectorError:
+        #     pass
+
+        try:
+            district_info = XPath(
+                "//p[@class='ExternalClassE076DA94B8C9471787D15232970D1A6F']//strong[contains(text(), 'District')]"
+            ).match(self.root)
+            for tag in district_info:
+                if re.search(r"District(\s|\xa0)Phone:", tag.text_content()):
+                    print(tag.tail)
+                elif re.search(r"District(\s|\xa0)Address:", tag.text_content()):
+                    print(tag.tail)
+                else:
+                    print(tag.text_content().strip())
+        except SelectorError:
+            pass
+
+        # try:
+        #     distr_phone = XPath("//tr/td[1]/div/div/p/strong[contains(text(), 'District Phone')]").match_one(self.root).tail.strip()
+        #     # print(distr_phone)
+        # except SelectorError:
+        #     pass
 
         return p
 
