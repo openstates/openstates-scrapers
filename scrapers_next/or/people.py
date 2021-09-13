@@ -37,14 +37,29 @@ class LegList(XmlPage):
                 district=district,
                 party=party,
             )
-            # session_key = content[0][0].text
 
+            p.add_source(self.source.url)
+
+            cap_address = content[0][4].text
+            p.capitol_office.address = cap_address.strip()
+
+            cap_phone = content[0][5].text
+            if cap_phone:
+                p.capitol_office.voice = cap_phone.strip()
+
+            title = content[0][6].text
+            if title.strip() not in ["Senator", "Representative"]:
+                p.extras["title"] = title.strip()
+
+            email = content[0][10].text
+            p.email = email.strip()
+
+            website = content[0][11].text
+            p.add_link(website, note="homepage")
+            p.add_source(website)
+
+            # session_key = content[0][0].text
             # legislator_code = content[0][1].text
-            # cap_address = content[0][4].text
-            # cap_phone = content[0][5].text
-            # title = content[0][6].text
-            # email = content[0][10].text
-            # website = content[0][11].text
             # created_date = content[0][12].text
             # modified_date = content[0][13].text
 
