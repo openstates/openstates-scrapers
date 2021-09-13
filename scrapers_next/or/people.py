@@ -11,7 +11,8 @@ class LegList(XmlPage):
     )
 
     def process_page(self):
-        for leg in self.root[4:]:
+        legislators = self.root[4:]
+        for leg in legislators:
             content = leg[9]
 
             first_name = content[0][2].text
