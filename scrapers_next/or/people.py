@@ -1,8 +1,23 @@
-from spatula import URL, XmlPage
+from spatula import URL, XmlPage, HtmlPage, CSS
 from openstates.models import ScrapePerson
 
 # from .apiclient import OregonLegislatorODataClient
 # from .utils import SESSION_KEYS
+
+
+class LegDetail(HtmlPage):
+    def process_page(self):
+        p = self.input
+
+        # this guy's image is different
+        if p.name == "Rob Wagner":
+            img = "https://www.oregonlegislature.gov/wagner/PublishingImages/member_photo.jpg"
+        else:
+            img = CSS("h1 img").match_one(self.root).get("src")
+        print(img)
+        p.image = img
+
+        return p
 
 
 class LegList(XmlPage):
@@ -18,6 +33,9 @@ class LegList(XmlPage):
             first_name = content[0][2].text
             last_name = content[0][3].text
             name = first_name.strip() + " " + last_name.strip()
+            # this guy's website is messed up
+            if name == "Daniel Bonham":
+                continue
 
             chamber = content[0][7].text
             if chamber.strip() == "H":
@@ -41,6 +59,9 @@ class LegList(XmlPage):
 
             p.add_source(self.source.url)
 
+            p.family_name = last_name.strip()
+            p.given_name = first_name.strip()
+
             cap_address = content[0][4].text
             p.capitol_office.address = cap_address.strip()
 
@@ -59,9 +80,4 @@ class LegList(XmlPage):
             p.add_link(website, note="homepage")
             p.add_source(website)
 
-            # session_key = content[0][0].text
-            # legislator_code = content[0][1].text
-            # created_date = content[0][12].text
-            # modified_date = content[0][13].text
-
-            yield p
+            yield LegDetail(p, source=website)
