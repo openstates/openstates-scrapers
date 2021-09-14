@@ -33,45 +33,13 @@ class LegList(JsonListPage):
 
         p.email = item["eMail"].strip()
 
-        # item['city']
-        # item['state']
-        # item['zip']
+        # item['leadershipOrder']
+        # item['legStatus']
+        # item['county']
+        # item['legID']
 
         # assuming this is a district office phone
         p.district_office.voice = item["phone"].strip()
-
-        # item['religion']
-        # item['onWeb']
-        # item['districtList']
-        # item['lastYrSenate']
-        # item['officesHeld']
-        # item['noGChildren']
-        # item['legStatus']
-        # item['legID']
-        # item['occupationDesc']
-        # item['legEducation']
-        # item['houseYears']
-        # item['currentLeadershipPosition']
-        # item['dob']
-        # item['spouseName']
-        # item['legPriorService']
-        # item['county']
-        # item['birthPlace']
-        # item['occupWeb']
-        # item['leadershipPosition']
-        # item['lastYrHouse']
-        # item['legSponsorYears']
-        # item['countyList']
-        # item['senateYears']
-        # item['remarks']
-        # item['noChildren']
-        # item['firstYrHouse']
-        # item['legCommYears']
-        # item['cityList']
-        # item['firstYrSenate']
-        # item['leadershipOrder']
-        # item['civicOrgs']
-        # item['legLeadership']
 
         return p
 
