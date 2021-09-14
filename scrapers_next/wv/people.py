@@ -35,6 +35,10 @@ class LegDetail(HtmlPage):
             except SelectorError:
                 pass
 
+        title = CSS("div#wrapleftcolr b").match(self.root)[0].text_content().strip()
+        if title not in ["Capitol Office:", "District:", ""]:
+            p.extras["title"] = title
+
         return p
 
 
@@ -50,9 +54,7 @@ class LegList(HtmlListPage):
         if party == "Democrat":
             party = "Democratic"
 
-        district = CSS("td").match(item)[2].text_content().strip()
-        if re.search(r"0\d", district):
-            district = re.sub("0", "", district)
+        district = CSS("td").match(item)[2].text_content().strip().lstrip("0")
 
         p = ScrapePerson(
             name=name,
