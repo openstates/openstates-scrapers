@@ -111,6 +111,7 @@ class LegList(XmlPage):
 
             # this guy's website is messed up
             if p.name == "Daniel Bonham":
+                p.image = "https://www.oregonlegislature.gov/bonham/PublishingImages/member_photo.jpg"
                 yield p
-
-            yield LegDetail(p, source=website)
+            else:
+                yield LegDetail(p, source=website)
