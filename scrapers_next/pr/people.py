@@ -1,4 +1,4 @@
-from spatula import URL, CSS, HtmlListPage, HtmlPage, SelectorError
+from spatula import URL, CSS, HtmlListPage, HtmlPage, SelectorError, XPath
 from openstates.models import ScrapePerson
 import re
 from dataclasses import dataclass
@@ -33,15 +33,19 @@ class SenDetail(HtmlPage):
         if district == "Senador por Acumulación":
             district = "At-Large"
         elif district == "Senadora por Distrito":
-            # most are missing a district number
+            # every Senator except for this link are missing a district number
+            # https://senado.pr.gov/Pages/Senators/HON--MIGDALIA-PADILLA-ALVELO.aspx
+            district = ""
             try:
                 district = (
-                    CSS("div.module-distrito")
-                    .match(self.root)[0]
+                    CSS("div.module-distrito span.headline")
+                    .match_one(self.root)
                     .text_content()
                     .strip()
                 )
-                # print(district)
+                district = re.sub("​DISTRITO", "", district)
+                district = re.sub("\u200b", "", district)
+                district = district.strip()
             except SelectorError:
                 pass
 
@@ -49,7 +53,7 @@ class SenDetail(HtmlPage):
             name=self.input.name,
             state="pr",
             chamber="upper",
-            district="",
+            district=district,
             party=self.input.party,
         )
 
@@ -76,13 +80,9 @@ class SenDetail(HtmlPage):
         if title != "":
             p.extras["title"] = title
 
-        # all have same phone number
-        # hard code?
         phone = CSS("a.contact-data.tel").match_one(self.root).text_content().strip()
         p.capitol_office.voice = phone
 
-        # all have same capitol and mailing addresses
-        # hard code?
         addresses = CSS("div.pre-footer div div div div p").match(self.root)
         cap_addr = CSS("br").match(addresses[0])
         capitol_address = ""
@@ -159,6 +159,42 @@ class RepDetail(HtmlPage):
         if title != "":
             p.extras["title"] = title
 
+        phones = (
+            CSS("h6 span span span")
+            .match(self.root)[0]
+            .text_content()
+            .strip()
+            .split("\n")
+        )
+        phone1 = re.search(r"Tel\.\s(.+)", phones[0]).groups()[0]
+        phone2 = re.search(r"Tel\.\s?(.+)?", phones[1]).groups()[0]
+        # http://www.tucamarapr.org/dnncamara/ComposiciondelaCamara/biografia.aspx?rep=251 has an incomplete phone
+        if phone1.strip() != "" and phone1.strip() != "(787":
+            p.district_office.voice = phone1.strip()
+        if phone2 and phone2.strip() != "":
+            p.extras["phone 2"] = phone2.strip()
+
+        fax = (
+            CSS("h6 span span span")
+            .match(self.root)[1]
+            .text_content()
+            .strip()
+            .split("\n")
+        )
+        fax1 = re.search(r"Fax\.\s(.+)", fax[0]).groups()[0]
+        if fax1.strip() != "":
+            p.district_office.fax = fax1.strip()
+        tty = re.search(r"TTY\.\s?(.+)?", fax[1]).groups()[0]
+        if tty and tty.strip() != "":
+            p.extras["TTY"] = tty
+
+        # these addresses do not look complete but capturing them anyway
+        addr = XPath(
+            "//*[@id='dnn_ctr1108_ViewWebRepresentatives_WebRepresentatives1_pnlRepresentative']/h6/text()[1]"
+        ).match_one(self.root)
+        if addr != "":
+            p.district_office.address = addr.strip()
+
         return p
 
 
@@ -166,7 +202,7 @@ class House(HtmlListPage):
     source = URL(
         "http://www.tucamarapr.org/dnncamara/ComposiciondelaCamara/Biografia.aspx"
     )
-    selector = CSS("ul.list-article li")
+    selector = CSS("ul.list-article li", num_items=49)
 
     def process_item(self, item):
         bio_info = (
