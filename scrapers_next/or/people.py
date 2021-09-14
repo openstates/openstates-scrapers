@@ -10,7 +10,7 @@ class LegDetail(HtmlPage):
     def process_page(self):
         p = self.input
 
-        # this guy's image is different
+        # this guy's html/image is different
         if p.name == "Rob Wagner":
             img = "https://www.oregonlegislature.gov/wagner/PublishingImages/member_photo.jpg"
         else:
@@ -65,9 +65,6 @@ class LegList(XmlPage):
             first_name = content[0][2].text
             last_name = content[0][3].text
             name = first_name.strip() + " " + last_name.strip()
-            # this guy's website is messed up
-            if name == "Daniel Bonham":
-                continue
 
             chamber = content[0][7].text
             if chamber.strip() == "H":
@@ -112,4 +109,7 @@ class LegList(XmlPage):
             p.add_link(website, note="homepage")
             p.add_source(website)
 
+            # this guy's website is messed up
+            if p.name == "Daniel Bonham":
+                yield p
             yield LegDetail(p, source=website)
