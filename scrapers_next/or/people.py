@@ -112,4 +112,5 @@ class LegList(XmlPage):
             # this guy's website is messed up
             if p.name == "Daniel Bonham":
                 yield p
+
             yield LegDetail(p, source=website)
