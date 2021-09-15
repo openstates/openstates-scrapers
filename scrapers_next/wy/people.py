@@ -13,6 +13,8 @@ class LegDetail(JsonPage):
         distr_addr = f"{self.data['address']}, {self.data['city']}, {self.data['state']} {self.data['zip']}"
         p.district_office.address = distr_addr
 
+        p.extras["county"] = self.data["county"]
+
         if self.data["legEducation"] != []:
             p.extras["education"] = self.data["legEducation"]
         if self.data["currentLeadershipPosition"] is not None:
@@ -29,15 +31,12 @@ class LegDetail(JsonPage):
             p.extras["birth place"] = self.data["birthPlace"]
         if self.data["occupationDesc"] is not None:
             p.extras["occupation"] = self.data["occupationDesc"]
-
-        print(self.data[""])
+        if self.data["legLeadership"] != []:
+            p.extras["leadership"] = self.data["legLeadership"]
 
         # self.data['phoneType']
-        # self.data['county']
-        # self.data['countyList']
 
         # self.data['civicOrgs']
-        # self.data['legLeadership']
         # self.data['cityList']
         # self.data['legPriorService']
         # self.data['districtList']
@@ -83,8 +82,6 @@ class LegList(JsonListPage):
         p.family_name = item["lastName"].strip()
 
         p.email = item["eMail"].strip()
-
-        # item['county']
 
         # assuming this is a district office phone
         p.district_office.voice = item["phone"].strip()
