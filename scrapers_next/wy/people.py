@@ -9,42 +9,46 @@ class LegDetail(JsonPage):
         img = f"https://wyoleg.gov/LegislatorSummary/Photos/{self.data['legPhoto']}"
         p.image = img
 
+        # assuming this is a district address
+        distr_addr = f"{self.data['address']}, {self.data['city']}, {self.data['state']} {self.data['zip']}"
+        p.district_office.address = distr_addr
+
+        if self.data["legEducation"] != []:
+            p.extras["education"] = self.data["legEducation"]
+        if self.data["currentLeadershipPosition"] is not None:
+            p.extras["title"] = self.data["currentLeadershipPosition"].strip()
+        if self.data["religion"].strip() != "":
+            p.extras["religion"] = self.data["religion"].strip()
+        if self.data["spouseName"] is not None:
+            p.extras["spouse name"] = self.data["spouseName"]
+        if self.data["noChildren"].strip() != "":
+            p.extras["number of children"] = self.data["noChildren"]
+        if self.data["noGChildren"].strip() != "":
+            p.extras["number of grandchildren"] = self.data["noGChildren"]
+        if self.data["birthPlace"].strip() != "":
+            p.extras["birth place"] = self.data["birthPlace"]
+        if self.data["occupationDesc"] is not None:
+            p.extras["occupation"] = self.data["occupationDesc"]
+
+        print(self.data[""])
+
+        # self.data['phoneType']
         # self.data['county']
-        # self.data['remarks']
-        # self.data['occupationDesc']
+        # self.data['countyList']
+
         # self.data['civicOrgs']
-        # self.data['legEducation']
         # self.data['legLeadership']
         # self.data['cityList']
-        # self.data['countyList']
         # self.data['legPriorService']
         # self.data['districtList']
         # self.data['officesHeld']
-        # self.data['spouseName']
-        # self.data['noChildren']
-        # self.data['noGChildren']
         # self.data['occupWeb']
-        # self.data['dob']
-        # self.data['birthPlace']
-        # self.data['religion']
         # self.data['firstYrHouse']
         # self.data['lastYrHouse']
         # self.data['firstYrSenate']
         # self.data['lastYrSenate']
         # self.data['houseYears']
         # self.data['senateYears']
-
-        # self.data['address']
-        # self.data['city']
-        # self.data['state']
-        # self.data['zip']
-        # self.data['onWeb']
-        # self.data['areaCode']
-        # self.data['phoneType']
-        # self.data['leadershipPosition']
-        # self.data['leadershipOrder']
-        # self.data['currentLeadershipPosition']
-        # self.data['legStatus']
 
         return p
 
@@ -80,8 +84,6 @@ class LegList(JsonListPage):
 
         p.email = item["eMail"].strip()
 
-        # item['leadershipOrder']
-        # item['legStatus']
         # item['county']
 
         # assuming this is a district office phone
