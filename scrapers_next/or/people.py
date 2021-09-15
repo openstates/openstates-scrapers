@@ -2,9 +2,6 @@ from spatula import URL, HtmlPage, CSS, SelectorError, XPath, JsonPage
 from openstates.models import ScrapePerson
 import re
 
-# from .apiclient import OregonLegislatorODataClient
-# from .utils import SESSION_KEYS
-
 
 class LegDetail(HtmlPage):
     def process_page(self):
@@ -63,7 +60,7 @@ class LegList(JsonPage):
         for leg in legislators:
             first_name = leg["FirstName"].strip()
             last_name = leg["LastName"].strip()
-            name = first_name + " " + last_name
+            name = f"{first_name} {last_name}"
 
             chamber = leg["Chamber"].strip()
             if chamber == "H":
@@ -90,39 +87,27 @@ class LegList(JsonPage):
             p.family_name = last_name
             p.given_name = first_name
 
-            # leg['SessionKey']
-            # leg['LegislatorCode']
-            # leg['CapitolAddress']
-            # leg['CapitolPhone']
-            # leg['Title']
-            # leg['EmailAddress']
-            # leg['WebSiteUrl']
-            # leg['CreatedDate']
-            # leg['ModifiedDate']
+            cap_address = leg["CapitolAddress"].strip()
+            p.capitol_office.address = cap_address
 
-            # cap_address = content[0][4].text
-            # p.capitol_office.address = cap_address.strip()
+            cap_phone = leg["CapitolPhone"]
+            if cap_phone:
+                p.capitol_office.voice = cap_phone.strip()
 
-            # cap_phone = content[0][5].text
-            # if cap_phone:
-            #     p.capitol_office.voice = cap_phone.strip()
+            title = leg["Title"].strip()
+            if title not in ["Senator", "Representative"]:
+                p.extras["title"] = title
 
-            # title = content[0][6].text
-            # if title.strip() not in ["Senator", "Representative"]:
-            #     p.extras["title"] = title.strip()
+            email = leg["EmailAddress"].strip()
+            p.email = email
 
-            # email = content[0][10].text
-            # p.email = email.strip()
-
-            # website = content[0][11].text
-            # p.add_link(website, note="homepage")
-            # p.add_source(website)
+            website = leg["WebSiteUrl"]
+            p.add_link(website, note="homepage")
+            p.add_source(website)
 
             # this guy's website is messed up
-            # if p.name == "Daniel Bonham":
-            #     p.image = "https://www.oregonlegislature.gov/bonham/PublishingImages/member_photo.jpg"
-            #     yield p
-            # else:
-            #     yield LegDetail(p, source=website)
-
-            yield p
+            if p.name == "Daniel Bonham":
+                p.image = "https://www.oregonlegislature.gov/bonham/PublishingImages/member_photo.jpg"
+                yield p
+            else:
+                yield LegDetail(p, source=website)
