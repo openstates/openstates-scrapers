@@ -1,4 +1,4 @@
-from spatula import URL, XmlPage, HtmlPage, CSS, SelectorError, XPath
+from spatula import URL, HtmlPage, CSS, SelectorError, XPath, JsonPage
 from openstates.models import ScrapePerson
 import re
 
@@ -52,31 +52,30 @@ class LegDetail(HtmlPage):
         return p
 
 
-class LegList(XmlPage):
+class LegList(JsonPage):
     source = URL(
-        "https://api.oregonlegislature.gov/odata/odataservice.svc/LegislativeSessions('2021R1')/Legislators"
+        "https://api.oregonlegislature.gov/odata/odataservice.svc/LegislativeSessions('2021R1')/Legislators",
+        headers={"Accept": "application/json"},
     )
 
     def process_page(self):
-        legislators = self.root[4:]
+        legislators = self.data["value"]
         for leg in legislators:
-            content = leg[9]
+            first_name = leg["FirstName"].strip()
+            last_name = leg["LastName"].strip()
+            name = first_name + " " + last_name
 
-            first_name = content[0][2].text
-            last_name = content[0][3].text
-            name = first_name.strip() + " " + last_name.strip()
-
-            chamber = content[0][7].text
-            if chamber.strip() == "H":
+            chamber = leg["Chamber"].strip()
+            if chamber == "H":
                 chamber = "lower"
-            elif chamber.strip() == "S":
+            elif chamber == "S":
                 chamber = "upper"
 
-            party = content[0][8].text
-            if party.strip() == "Democrat":
+            party = leg["Party"].strip()
+            if party == "Democrat":
                 party = "Democratic"
 
-            district = content[0][9].text
+            district = leg["DistrictNumber"].strip()
 
             p = ScrapePerson(
                 name=name,
@@ -88,30 +87,42 @@ class LegList(XmlPage):
 
             p.add_source(self.source.url)
 
-            p.family_name = last_name.strip()
-            p.given_name = first_name.strip()
+            p.family_name = last_name
+            p.given_name = first_name
 
-            cap_address = content[0][4].text
-            p.capitol_office.address = cap_address.strip()
+            # leg['SessionKey']
+            # leg['LegislatorCode']
+            # leg['CapitolAddress']
+            # leg['CapitolPhone']
+            # leg['Title']
+            # leg['EmailAddress']
+            # leg['WebSiteUrl']
+            # leg['CreatedDate']
+            # leg['ModifiedDate']
 
-            cap_phone = content[0][5].text
-            if cap_phone:
-                p.capitol_office.voice = cap_phone.strip()
+            # cap_address = content[0][4].text
+            # p.capitol_office.address = cap_address.strip()
 
-            title = content[0][6].text
-            if title.strip() not in ["Senator", "Representative"]:
-                p.extras["title"] = title.strip()
+            # cap_phone = content[0][5].text
+            # if cap_phone:
+            #     p.capitol_office.voice = cap_phone.strip()
 
-            email = content[0][10].text
-            p.email = email.strip()
+            # title = content[0][6].text
+            # if title.strip() not in ["Senator", "Representative"]:
+            #     p.extras["title"] = title.strip()
 
-            website = content[0][11].text
-            p.add_link(website, note="homepage")
-            p.add_source(website)
+            # email = content[0][10].text
+            # p.email = email.strip()
+
+            # website = content[0][11].text
+            # p.add_link(website, note="homepage")
+            # p.add_source(website)
 
             # this guy's website is messed up
-            if p.name == "Daniel Bonham":
-                p.image = "https://www.oregonlegislature.gov/bonham/PublishingImages/member_photo.jpg"
-                yield p
-            else:
-                yield LegDetail(p, source=website)
+            # if p.name == "Daniel Bonham":
+            #     p.image = "https://www.oregonlegislature.gov/bonham/PublishingImages/member_photo.jpg"
+            #     yield p
+            # else:
+            #     yield LegDetail(p, source=website)
+
+            yield p
