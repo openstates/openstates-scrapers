@@ -13,8 +13,9 @@ class LegDetail(JsonPage):
         distr_addr = f"{self.data['address']}, {self.data['city']}, {self.data['state']} {self.data['zip']}"
         p.district_office.address = distr_addr
 
-        p.extras["county"] = self.data["county"]
+        # self.data['phoneType']
 
+        p.extras["county"] = self.data["county"]
         if self.data["legEducation"] != []:
             p.extras["education"] = self.data["legEducation"]
         if self.data["currentLeadershipPosition"] is not None:
@@ -33,21 +34,13 @@ class LegDetail(JsonPage):
             p.extras["occupation"] = self.data["occupationDesc"]
         if self.data["legLeadership"] != []:
             p.extras["leadership"] = self.data["legLeadership"]
-
-        # self.data['phoneType']
-
-        # self.data['civicOrgs']
-        # self.data['cityList']
-        # self.data['legPriorService']
-        # self.data['districtList']
-        # self.data['officesHeld']
-        # self.data['occupWeb']
-        # self.data['firstYrHouse']
-        # self.data['lastYrHouse']
-        # self.data['firstYrSenate']
-        # self.data['lastYrSenate']
-        # self.data['houseYears']
-        # self.data['senateYears']
+        if self.data["civicOrgs"] != []:
+            p.extras["organizations"] = self.data["civicOrgs"]
+        if self.data["houseYears"].strip() != "":
+            p.extras["house years"] = self.data["houseYears"]
+        if self.data["senateYears"].strip() != "":
+            p.extras["senate years"] = self.data["senateYears"]
+        p.extras["prior service"] = self.data["legPriorService"]
 
         return p
 
@@ -89,6 +82,9 @@ class LegList(JsonListPage):
         detail_link = f"https://wyoleg.gov/LsoService/api/legislator/{item['legID']}"
         p.add_source(detail_link)
         # should I add detail_link as homepage?
+
+        leg_url = f"http://wyoleg.gov/Legislators/2021/{item['party']}/{item['legID']}"
+        p.add_link(leg_url, note="homepage")
 
         return LegDetail(p, source=detail_link)
 
