@@ -13,7 +13,8 @@ class LegDetail(JsonPage):
         distr_addr = f"{self.data['address']}, {self.data['city']}, {self.data['state']} {self.data['zip']}"
         p.district_office.address = distr_addr
 
-        # self.data['phoneType']
+        # if self.data['phoneType'].strip() not in ["Cell", "Home"]:
+        #     print(self.data['phoneType'])
 
         p.extras["county"] = self.data["county"]
         if self.data["legEducation"] != []:
@@ -81,7 +82,6 @@ class LegList(JsonListPage):
 
         detail_link = f"https://wyoleg.gov/LsoService/api/legislator/{item['legID']}"
         p.add_source(detail_link)
-        # should I add detail_link as homepage?
 
         leg_url = f"http://wyoleg.gov/Legislators/2021/{item['party']}/{item['legID']}"
         p.add_link(leg_url, note="homepage")
