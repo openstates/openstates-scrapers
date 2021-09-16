@@ -12,7 +12,7 @@ class WVEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Eastern")
     # "house bill 123" "senate bill 123" "H.B. 4043" "HB 23" "SCR 29" "S. C. R 23"
     bill_regex = (
-        r"((House Bill|Senate Bill|[HS]\.\s*[BCR]\.\s*([R]\.)*|H\.\s*B\.)\s*\d+)"
+        r"((House Bill|Senate Bill|[HS]\.\s*[BCR]\.\s*([R]\.)*|H\.?\s*B\.?)\s*\d+)"
     )
 
     def scrape(self):
