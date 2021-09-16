@@ -1,5 +1,38 @@
-from spatula import URL, CSS, HtmlListPage
+from spatula import URL, CSS, HtmlListPage, HtmlPage
 from openstates.models import ScrapeCommittee
+import re
+
+
+class CommiteeDetail(HtmlPage):
+    def process_page(self):
+        com = self.input
+
+        # no members
+        if (
+            CSS("div.Membership fieldset").match_one(self.root).text_content().strip()
+            == ""
+        ):
+            return com
+
+        members = CSS("fieldset div.area-holder ul.list li span.col01").match(self.root)
+
+        for member in members:
+            role = member.getnext().text_content().strip()
+            # skip Public Members
+            if role == "Public Member":
+                continue
+
+            if role == "Member":
+                role = "member"
+
+            mem_name = CSS("span span").match_one(member).text_content().strip()
+            mem_name = re.search(r"(Representative|Senator)\s(.+)", mem_name).groups()[
+                1
+            ]
+
+            com.add_member(mem_name, role)
+
+        return com
 
 
 class CommitteeList(HtmlListPage):
@@ -33,19 +66,10 @@ class CommitteeList(HtmlListPage):
                 chamber=chamber,
             )
 
-        return com
+        detail_link = CSS("a").match_one(item).get("href")
 
+        com.add_source(self.source.url)
+        com.add_source(detail_link)
+        com.add_link(detail_link, note="homepage")
 
-# class House(CommitteeList):
-#     source = URL("http://www.akleg.gov/basis/Committee/List/32")
-#     chamber = "lower"
-
-
-# class Senate(CommitteeList):
-#     source = URL("http://www.akleg.gov/basis/Committee/List/32")
-#     chamber = "upper"
-
-
-# class Joint(CommitteeList):
-#     source = URL("http://www.akleg.gov/basis/Committee/List/32#tabCom3")
-#     chamber = "legislature"
+        return CommiteeDetail(com, source=detail_link)
