@@ -15,7 +15,7 @@ class CommDetail(HtmlPage):
                 .text_content()
                 .strip()
             )
-            chair = re.search(r"Senator\s(.+)", chair).groups()[0]
+            chair = re.search(r"(Senator|Representative)\s(.+)", chair).groups()[1]
             com.add_member(chair, "Chair")
         except SelectorError:
             pass
@@ -28,7 +28,9 @@ class CommDetail(HtmlPage):
                 .text_content()
                 .strip()
             )
-            vice_chair = re.search(r"Senator\s(.+)", vice_chair).groups()[0]
+            vice_chair = re.search(
+                r"(Senator|Representative)\s(.+)", vice_chair
+            ).groups()[1]
             com.add_member(vice_chair, "Vice-Chair")
         except SelectorError:
             pass
@@ -42,7 +44,9 @@ class CommDetail(HtmlPage):
             )
             for member in additional_members:
                 member = member.text_content().strip()
-                member = re.search(r"Senator\s(.+)", member).groups()[0]
+                member = re.search(r"(Senator|Representative)\s(.+)", member).groups()[
+                    1
+                ]
                 com.add_member(member, "member")
         except SelectorError:
             pass
@@ -89,7 +93,7 @@ class SenSubComms(HtmlListPage):
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
 
-        return com
+        return CommDetail(com, source=detail_link)
 
 
 class SenList(HtmlListPage):
