@@ -134,6 +134,23 @@ class HouseList(HtmlListPage):
         return com
 
 
-# class Joint(CommList):
-#     source = URL("https://www.arkleg.state.ar.us/Committees/List?type=Joint")
-#     chamber = "legislature"
+class Joint(HtmlListPage):
+    source = URL("https://www.arkleg.state.ar.us/Committees/List?type=Joint")
+    selector = CSS("div#bodyContent div.row p a", num_items=19)
+
+    def process_item(self, item):
+        comm_name = item.text_content().strip()
+
+        com = ScrapeCommittee(
+            name=comm_name.title(),
+            classification="committee",
+            chamber="legislature",
+        )
+
+        detail_link = item.get("href")
+
+        com.add_source(self.source.url)
+        com.add_source(detail_link)
+        com.add_link(detail_link, note="homepage")
+
+        return com
