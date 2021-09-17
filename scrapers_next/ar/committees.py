@@ -28,6 +28,15 @@ class HouseJointDetail(HtmlPage):
         except SelectorError:
             pass
 
+        try:
+            extra_info = CSS("div#bodyContent b").match(self.root)
+            for title in extra_info:
+                position = title.text_content().strip()
+                name = title.getnext().tail.strip()
+                com.extras[position] = name
+        except SelectorError:
+            pass
+
         return com
 
 
