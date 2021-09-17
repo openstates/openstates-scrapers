@@ -49,10 +49,15 @@ class CommList(HtmlListPage):
         detail_link = item.get("href")
 
         com.add_source(self.source.url)
-        com.add_source(detail_link)
-        com.add_link(detail_link, note="homepage")
 
-        return CommDetail(com, source=detail_link)
+        # detail links for Joint Committees are hidden
+        # "javascript:__doPostBack('ctl00$ContentPlaceHolder1$gvJICommittees','cmdCommittee$0')"
+        if self.chamber != "legislature":
+            com.add_source(detail_link)
+            com.add_link(detail_link, note="homepage")
+
+            return CommDetail(com, source=detail_link)
+        return com
 
 
 class Senate(CommList):
@@ -71,11 +76,9 @@ class House(CommList):
     selector = CSS("li.interim_listpad a")
 
 
-# class Joint(CommList):
-#     source = URL(
-#         "http://www.legislature.state.al.us/aliswww/ISD/House/JointInterimCommittees.aspx"
-#     )
-#     chamber = "legislature"
-#     selector = CSS("tr td a")
-# detail links are hidden.
-# "javascript:__doPostBack('ctl00$ContentPlaceHolder1$gvJICommittees','cmdCommittee$0')"
+class Joint(CommList):
+    source = URL(
+        "http://www.legislature.state.al.us/aliswww/ISD/House/JointInterimCommittees.aspx"
+    )
+    chamber = "legislature"
+    selector = CSS("tr td a")
