@@ -3,7 +3,7 @@ from openstates.models import ScrapeCommittee
 import re
 
 
-class HouseDetail(HtmlPage):
+class HouseJointDetail(HtmlPage):
     def process_page(self):
         com = self.input
 
@@ -24,7 +24,7 @@ class HouseDetail(HtmlPage):
                 if role.strip() == "":
                     role = "member"
                 com.add_member(mem_name, role)
-                # many 'ex officio' for House Subcommittees
+                # many 'ex officio' roles for House Subcommittees, Joint Committees, and Joint Subcommittees
         except SelectorError:
             pass
 
@@ -189,7 +189,7 @@ class HouseSubComms(HtmlListPage):
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
 
-        return HouseDetail(com, source=detail_link)
+        return HouseJointDetail(com, source=detail_link)
 
 
 class HouseList(HtmlListPage):
@@ -211,7 +211,7 @@ class HouseList(HtmlListPage):
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
 
-        return HouseDetail(com, source=detail_link)
+        return HouseJointDetail(com, source=detail_link)
 
 
 class JointSubComms(HtmlListPage):
@@ -244,7 +244,7 @@ class JointSubComms(HtmlListPage):
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
 
-        return com
+        return HouseJointDetail(com, source=detail_link)
 
 
 class Joint(HtmlListPage):
@@ -266,4 +266,4 @@ class Joint(HtmlListPage):
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
 
-        return com
+        return HouseJointDetail(com, source=detail_link)
