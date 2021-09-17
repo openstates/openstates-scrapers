@@ -3,7 +3,35 @@ from openstates.models import ScrapeCommittee
 import re
 
 
-class CommDetail(HtmlPage):
+class HouseDetail(HtmlPage):
+    def process_page(self):
+        com = self.input
+
+        try:
+            members = XPath("//*[@id='committeesIntroRoster']/div/div/div/a").match(
+                self.root
+            )
+            for member in members:
+                member_dirty = member.text_content().strip().split("\n")
+                mem_name = member_dirty[0].strip() + " " + member_dirty[1].strip()
+                role = (
+                    member.getparent()
+                    .getprevious()
+                    .getprevious()
+                    .text_content()
+                    .strip()
+                )
+                if role.strip() == "":
+                    role = "member"
+                com.add_member(mem_name, role)
+                # many 'ex officio' for House Subcommittees
+        except SelectorError:
+            pass
+
+        return com
+
+
+class SenDetail(HtmlPage):
     def process_page(self):
         com = self.input
 
@@ -93,7 +121,7 @@ class SenSubComms(HtmlListPage):
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
 
-        return CommDetail(com, source=detail_link)
+        return SenDetail(com, source=detail_link)
 
 
 class SenList(HtmlListPage):
@@ -128,7 +156,7 @@ class SenList(HtmlListPage):
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
 
-        return CommDetail(com, source=detail_link)
+        return SenDetail(com, source=detail_link)
 
 
 class HouseSubComms(HtmlListPage):
@@ -161,7 +189,7 @@ class HouseSubComms(HtmlListPage):
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
 
-        return com
+        return HouseDetail(com, source=detail_link)
 
 
 class HouseList(HtmlListPage):
@@ -183,7 +211,7 @@ class HouseList(HtmlListPage):
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
 
-        return com
+        return HouseDetail(com, source=detail_link)
 
 
 class JointSubComms(HtmlListPage):
