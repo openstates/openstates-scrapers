@@ -134,6 +134,39 @@ class HouseList(HtmlListPage):
         return com
 
 
+class JointSubComms(HtmlListPage):
+    source = URL("https://www.arkleg.state.ar.us/Committees/List?type=Joint")
+    selector = CSS("div#bodyContent li a", num_items=31)
+
+    def process_item(self, item):
+        sub_name = item.text_content().strip()
+
+        parent = (
+            item.getparent()
+            .getparent()
+            .getparent()
+            .getparent()
+            .getchildren()[0]
+            .text_content()
+            .strip()
+        )
+
+        com = ScrapeCommittee(
+            name=sub_name.title(),
+            classification="subcommittee",
+            chamber="legislature",
+            parent=parent.title(),
+        )
+
+        detail_link = item.get("href")
+
+        com.add_source(self.source.url)
+        com.add_source(detail_link)
+        com.add_link(detail_link, note="homepage")
+
+        return com
+
+
 class Joint(HtmlListPage):
     source = URL("https://www.arkleg.state.ar.us/Committees/List?type=Joint")
     selector = CSS("div#bodyContent div.row p a", num_items=19)
