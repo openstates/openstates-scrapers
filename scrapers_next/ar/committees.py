@@ -1,5 +1,53 @@
-from spatula import URL, CSS, HtmlListPage
+from spatula import URL, CSS, HtmlListPage, HtmlPage, XPath, SelectorError
 from openstates.models import ScrapeCommittee
+import re
+
+
+class CommDetail(HtmlPage):
+    def process_page(self):
+        com = self.input
+
+        try:
+            chair = (
+                XPath("//h5[text()='Chair']")
+                .match_one(self.root)
+                .getnext()
+                .text_content()
+                .strip()
+            )
+            chair = re.search(r"Senator\s(.+)", chair).groups()[0]
+            com.add_member(chair, "Chair")
+        except SelectorError:
+            pass
+
+        try:
+            vice_chair = (
+                XPath("//h5[text()='Vice-Chair']")
+                .match_one(self.root)
+                .getnext()
+                .text_content()
+                .strip()
+            )
+            vice_chair = re.search(r"Senator\s(.+)", vice_chair).groups()[0]
+            com.add_member(vice_chair, "Vice-Chair")
+        except SelectorError:
+            pass
+
+        try:
+            additional_members = (
+                XPath("//h5[text()='Additional Members']")
+                .match_one(self.root)
+                .getnext()
+                .getchildren()
+            )
+            for member in additional_members:
+                member = member.text_content().strip()
+                member = re.search(r"Senator\s(.+)", member).groups()[0]
+                com.add_member(member, "member")
+        except SelectorError:
+            pass
+
+        return com
 
 
 class SenSubComms(HtmlListPage):
@@ -76,7 +124,7 @@ class SenList(HtmlListPage):
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
 
-        return com
+        return CommDetail(com, source=detail_link)
 
 
 class HouseSubComms(HtmlListPage):
