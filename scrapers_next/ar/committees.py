@@ -79,6 +79,15 @@ class SenDetail(HtmlPage):
         except SelectorError:
             pass
 
+        try:
+            extra_info = CSS("section.content strong").match(self.root)
+            for title in extra_info:
+                position = title.text_content().strip()
+                name = title.tail.strip().lstrip(":").strip()
+                com.extras[position] = name
+        except SelectorError:
+            pass
+
         return com
 
 
