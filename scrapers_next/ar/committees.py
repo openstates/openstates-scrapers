@@ -35,6 +35,12 @@ class SenSubComms(HtmlListPage):
             parent=comm_name,
         )
 
+        detail_link = CSS("a").match_one(item).get("href")
+
+        com.add_source(self.source.url)
+        com.add_source(detail_link)
+        com.add_link(detail_link, note="homepage")
+
         return com
 
 
@@ -64,14 +70,35 @@ class SenList(HtmlListPage):
             chamber=chamber,
         )
 
+        detail_link = CSS("a").match(item)[0].get("href")
+
         com.add_source(self.source.url)
+        com.add_source(detail_link)
+        com.add_link(detail_link, note="homepage")
 
         return com
 
 
-# class House(CommList):
-#     source = URL("https://www.arkleg.state.ar.us/Committees/List?type=House")
-#     chamber = "lower"
+class HouseList(HtmlListPage):
+    source = URL("https://www.arkleg.state.ar.us/Committees/List?type=House")
+    selector = CSS("div#bodyContent div.row p a", num_items=16)
+
+    def process_item(self, item):
+        comm_name = item.text_content().strip()
+
+        com = ScrapeCommittee(
+            name=comm_name.title(),
+            classification="committee",
+            chamber="lower",
+        )
+
+        detail_link = item.get("href")
+
+        com.add_source(self.source.url)
+        com.add_source(detail_link)
+        com.add_link(detail_link, note="homepage")
+
+        return com
 
 
 # class Joint(CommList):
