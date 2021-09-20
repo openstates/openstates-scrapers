@@ -101,9 +101,15 @@ class Oklahoma(State):
             "start_date": "2021-02-01",
             "end_date": "2021-05-28",
         },
+        {
+            "_scraped_name": "2022 Regular Session",
+            "identifier": "2022",
+            "name": "2022 Regular Session",
+            "start_date": "2022-02-01",
+            "end_date": "2022-05-29",
+        },
     ]
     ignored_scraped_sessions = [
-        "2022 Regular Session",
         "2020 Regular Session (web)",
         "2017 Regular Session",
         "2015 Regular Session",
