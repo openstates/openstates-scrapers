@@ -161,6 +161,13 @@ class Oregon(State):
             "start_date": "2020-01-19",
             "end_date": "2020-07-11",
         },
+        {
+            "_scraped_name": "2021 1st Special Session",
+            "identifier": "2021S1",
+            "name": "2021 Special Session",
+            "start_date": "2021-09-20",
+            "end_date": "2021-09-25",
+        },
     ]
     ignored_scraped_sessions = [
         "2021-2022 Interim",
