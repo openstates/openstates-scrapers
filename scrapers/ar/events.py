@@ -62,7 +62,7 @@ class AREventScraper(Scraper):
                 location_name=location,
                 description="",
             )
-            event.add_source(url)
+            event.add_source("https://www.arkleg.state.ar.us/Calendars/Meetings")
 
             if row.xpath(".//a[@aria-label='Agenda']"):
                 agenda_url = row.xpath(".//a[@aria-label='Agenda']/@href")[0]
