@@ -4,6 +4,7 @@ import datetime
 import json
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 class MEEventScraper(Scraper, LXMLMixin):
@@ -72,6 +73,9 @@ class MEEventScraper(Scraper, LXMLMixin):
         url = url.format(start_date, end_date)
 
         page = json.loads(self.get(url).content)
+
+        if len(page) == 0:
+            raise EmptyScrape
 
         for row in page:
             if row["Cancelled"] is True or row["Postponed"] is True:
