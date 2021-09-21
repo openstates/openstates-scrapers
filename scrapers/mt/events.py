@@ -1,4 +1,5 @@
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 from dateutil import parser, relativedelta
 import datetime
 import lxml
@@ -38,6 +39,8 @@ class MTEventScraper(Scraper):
 
         page = self.get(url).content
         page = lxml.html.fromstring(page)
+        if len(page.xpath("//p[contains(text(), 'No Records')]")) == 2:
+            raise EmptyScrape
         page.make_links_absolute(url)
 
         for row in page.xpath("//table[@border]/tr"):
