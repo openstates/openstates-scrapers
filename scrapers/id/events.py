@@ -7,14 +7,14 @@ from openstates.exceptions import EmptyScrape
 
 class IDEventScraper(Scraper):
     _tz = pytz.timezone("America/Boise")
-    empty = []
+    empty_chambers = []
 
     def scrape(self, chamber=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber)
 
-        if self.empty == ["upper", "lower"]:
+        if self.empty_chambers == ["upper", "lower"]:
             raise EmptyScrape
 
     def scrape_chamber(self, chamber):
@@ -29,7 +29,7 @@ class IDEventScraper(Scraper):
         if page.xpath(
             "//div[@id='allDiv' and contains(text(),'No meetings scheduled')]"
         ):
-            self.empty.append(chamber)
+            self.empty_chambers.append(chamber)
 
         for row in page.xpath('//div[@id="ai1ec-container"]/div'):
             month = row.xpath(
