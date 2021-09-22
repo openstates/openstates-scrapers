@@ -2,6 +2,7 @@ import datetime as dt
 
 from utils import LXMLMixin
 from openstates.scrape import Event, Scraper
+from openstates.exceptions import EmptyScrape
 import json
 import pytz
 
@@ -61,6 +62,12 @@ class DEEventScraper(Scraper, LXMLMixin):
 
     def scrape(self):
         url = "https://legis.delaware.gov/json/CommitteeMeetings/GetUpcomingCommitteeMeetings"
-        data = self.post(url).json()["Data"]
+        resp = self.post(url)
+
+        if resp.text == "":
+            raise EmptyScrape
+            return
+
+        data = resp.json()["Data"]
         for item in data:
             yield from self.scrape_meeting_notice(item, url)
