@@ -51,6 +51,7 @@ class TXEventScraper(Scraper, LXMLMixin):
         event = Event(
             name=committee, start_date=self._tz.localize(datetime), location_name=where
         )
+        event.dedupe_key = url
 
         event.add_source(url)
         event.add_participant(committee, type="committee", note="host")
