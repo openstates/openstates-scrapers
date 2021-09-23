@@ -228,8 +228,9 @@ class AZBillScraper(Scraper):
                     )
                 )
             if status["ReportDate"]:
+                cleaned_date = status["ReportDate"].split(".")[0]
                 action_date = datetime.datetime.strptime(
-                    status["ReportDate"], "%Y-%m-%dT%H:%M:%S"
+                    cleaned_date, "%Y-%m-%dT%H:%M:%S"
                 ).strftime("%Y-%m-%d")
                 bill.add_action(
                     description=status["Action"],
