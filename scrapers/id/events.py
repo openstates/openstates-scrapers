@@ -2,15 +2,20 @@ import pytz
 import dateutil.parser
 import lxml
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 class IDEventScraper(Scraper):
     _tz = pytz.timezone("America/Boise")
+    empty_chambers = []
 
     def scrape(self, chamber=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber)
+
+        if self.empty_chambers == ["upper", "lower"]:
+            raise EmptyScrape
 
     def scrape_chamber(self, chamber):
         if chamber == "upper":
@@ -20,6 +25,11 @@ class IDEventScraper(Scraper):
 
         page = self.get(url).content
         page = lxml.html.fromstring(page)
+
+        if page.xpath(
+            "//div[@id='allDiv' and contains(text(),'No meetings scheduled')]"
+        ):
+            self.empty_chambers.append(chamber)
 
         for row in page.xpath('//div[@id="ai1ec-container"]/div'):
             month = row.xpath(
