@@ -156,6 +156,8 @@ class Alabama(State):
         },
     ]
     ignored_scraped_sessions = [
+        # TODO: add to scraped when prefiles up
+        "First Special Session 2021",
         "Regular Session 1998",
         "Organizational Session 1999",
         "Regular Session 1999",
