@@ -317,8 +317,18 @@ class AZBillScraper(Scraper):
 
         session_form_url = "https://www.azleg.gov/azlegwp/setsession.php"
         form = {"sessionID": session_id}
+        headers = {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+            "Content-Type": "application/json; charset=utf-8",
+            "Referer": "https://www.azleg.gov/azlegwp/",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36",
+        }
         req = self.post(
-            url=session_form_url, data=form, cookies=req.cookies, allow_redirects=True
+            url=session_form_url,
+            data=form,
+            cookies=req.cookies,
+            headers=headers,
+            allow_redirects=True,
         )
 
         bill_list_url = "https://www.azleg.gov/bills/"
