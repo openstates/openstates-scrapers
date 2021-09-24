@@ -276,8 +276,9 @@ class AZBillScraper(Scraper):
                     continue
                 if action["ReportDate"] is None:
                     continue
+                cleaned_date = action["ReportDate"].split(".")[0]
                 action_date = datetime.datetime.strptime(
-                    action["ReportDate"], "%Y-%m-%dT%H:%M:%S"
+                    cleaned_date, "%Y-%m-%dT%H:%M:%S"
                 )
                 vote = VoteEvent(
                     chamber={"S": "upper", "H": "lower"}[header["LegislativeBody"]],
