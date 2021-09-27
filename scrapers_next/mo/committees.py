@@ -24,7 +24,9 @@ class SenateCommitteeDetail(HtmlPage):
                 continue
 
             member_pos_str = "member"
-            member_name = member_position[0]
+            member_name = (
+                member_position[0].replace("Representative ", "").replace("Rep. ", "")
+            )
 
             for pos in positions:
                 if pos in member_position:
@@ -42,6 +44,10 @@ class SenateTypeCommitteeList(HtmlListPage):
 
     def process_item(self, item):
         name = item.text_content()
+        if "Joint" in name:
+            chamber = "legislature"
+        else:
+            chamber = "upper"
 
         if (
             name != "2021 Senate Committee Hearing Schedule"
@@ -60,19 +66,19 @@ class SenateTypeCommitteeList(HtmlListPage):
 
                 if "Subcommittee" in name:
                     name_parent = comm_name.split(" – ")
-                    comm_name = name_parent[0]
-                    parent = name_parent[1].replace("Subcommittee", "")
+                    parent = name_parent[0]
+                    comm_name = name_parent[1].replace("Subcommittee", "")
 
                     com = ScrapeCommittee(
                         name=comm_name,
-                        chamber=self.chamber,
+                        chamber=chamber,
                         classification="subcommittee",
                         parent=parent,
                     )
                 else:
-                    com = ScrapeCommittee(name=comm_name, chamber=self.chamber)
+                    com = ScrapeCommittee(name=comm_name, chamber=chamber)
             else:
-                com = ScrapeCommittee(name=name, chamber=self.chamber)
+                com = ScrapeCommittee(name=name, chamber=chamber)
 
             return SenateCommitteeDetail(com, source=item.get("href"))
         else:
@@ -154,6 +160,14 @@ class HouseCommitteeList(HtmlListPage):
 
     def process_item(self, item):
         committee_name = item.text_content()
+
+        # only scrape joint coms on senate scrape
+        if (
+            "Joint" in committee_name
+            or "Task Force" in committee_name
+            or "Conference" in committee_name
+        ):
+            self.skip()
 
         committee_name = remove_comm(committee_name)
         committee_name = committee_name.strip()
