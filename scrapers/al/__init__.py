@@ -154,6 +154,14 @@ class Alabama(State):
             # TODO: Real end date after session
             "end_date": "2022-05-18",
         },
+        {
+            "_scraped_name": "First Special Session 2021",
+            "classification": "special",
+            "identifier": "2021s1",
+            "name": "First Special Session 2021",
+            "start_date": "2021-09-27",
+            "end_date": "2021-10-01",
+        },
     ]
     ignored_scraped_sessions = [
         # TODO: add to scraped when prefiles up
