@@ -110,6 +110,7 @@ class Oklahoma(State):
         },
     ]
     ignored_scraped_sessions = [
+        "2021 First Special Session",
         "2020 Regular Session (web)",
         "2017 Regular Session",
         "2015 Regular Session",
