@@ -439,10 +439,11 @@ class ALBillScraper(Scraper):
                         )
 
                 if amendment:
+                    session = "2021FS" if self.session == "2021s1" else self.session
                     amend_url = (
                         "http://alisondb.legislature.state.al.us/ALISON/"
                         "SearchableInstruments/{0}/PrintFiles/{1}.pdf".format(
-                            self.session, amendment
+                            session, amendment
                         )
                     )
 
