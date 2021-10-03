@@ -4,6 +4,7 @@ from operator import itemgetter
 from collections import defaultdict
 import string
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
+from openstates.utils import convert_pdf
 from .utils import parse_directory_listing, open_csv
 
 import lxml.html
@@ -16,7 +17,16 @@ class SkipBill(Exception):
 class CTBillScraper(Scraper):
     latest_only = True
 
+    def add_vote(vote, voter):
+        if vote == "Y":
+            vote.yes(voter)
+        elif vote == "N":
+            vote.no(voter)
+        else:
+            vote.vote("other", voter)
+
     def scrape(self, chamber=None, session=None):
+        print("Scraping the bill!")
         if session is None:
             session = self.latest_session()
             self.info("no session specified, using %s", session)
@@ -38,6 +48,7 @@ class CTBillScraper(Scraper):
             yield bill[0]
 
     def scrape_bill_info(self, session, chambers):
+        print("Scraping the bill info from FTP site")
         info_url = "ftp://ftp.cga.ct.gov/pub/data/bill_info.csv"
         data = self.get(info_url)
         page = open_csv(data)
@@ -94,6 +105,7 @@ class CTBillScraper(Scraper):
                 pass
 
     def scrape_bill_page(self, bill):
+        print("Scraping the bill page from web")
         # Removes leading zeroes in the bill number.
         bill_number = "".join(re.split("0+", bill.identifier, 1))
 
@@ -140,54 +152,69 @@ class CTBillScraper(Scraper):
                 link.text.strip(), link.attrib["href"], media_type="application/pdf"
             )
 
-        for link in page.xpath("//a[contains(@href, 'VOTE')]"):
+        for link in page.xpath(
+            "//a[(contains(@href, '/pdf/') or contains(@href, '/PDF/')) and contains(@href, '/VOTE/')]"
+        ):
             # 2011 HJ 31 has a blank vote, others might too
-            if link.attrib["href"].endswith(".htm") and link.text:
-                pdf_link = link.getprevious()
-                if pdf_link:
+            print(link.text)
+            if link.text:
+                pdf_link = link
+                if pdf_link is not None:
                     yield from self.scrape_vote(
                         bill, pdf_link.text.strip(), link.attrib["href"]
                     )
+        print("Finished scraping webpage")
 
     def scrape_vote(self, bill, name, url):
         if "VOTE/h" in url:
             vote_chamber = "lower"
-            cols = (1, 5, 9, 13)
-            name_offset = 3
-            yes_offset = 0
-            no_offset = 1
         else:
             vote_chamber = "upper"
-            cols = (1, 6)
-            name_offset = 4
-            yes_offset = 1
-            no_offset = 2
 
-        page = self.get(url, verify=False).text
+        (path, resp) = self.urlretrieve(url)
+        pdflines = convert_pdf(path, "text")
+        # os.remove(path)
 
-        if "BUDGET ADDRESS" in page:
-            return
+        for line in pdflines.split(b"\n"):
+            line = line.strip().decode()
 
-        page = lxml.html.fromstring(page)
+            if line.startswith("Those voting Yea"):
+                yes_count = re.match(r"[^\d]*(\d+)[^\d]*", line).group(1)
 
-        yes_count = page.xpath("string(//span[contains(., 'Those voting Yea')])")
-        yes_count = int(re.match(r"[^\d]*(\d+)[^\d]*", yes_count).group(1))
+            if line.startswith("Those voting Nay"):
+                no_count = re.match(r"[^\d]*(\d+)[^\d]*", line).group(1)
 
-        no_count = page.xpath("string(//span[contains(., 'Those voting Nay')])")
-        no_count = int(re.match(r"[^\d]*(\d+)[^\d]*", no_count).group(1))
+            if line.startswith("Those absent and not voting"):
+                other_count = re.match(r"[^\d]*(\d+)[^\d]*", line).group(1)
 
-        other_count = page.xpath("string(//span[contains(., 'Those absent')])")
-        other_count = int(re.match(r"[^\d]*(\d+)[^\d]*", other_count).group(1))
+            if line.startswith("Necessary for Passage"):
+                need_count = re.match(r"[^\d]*(\d+)[^\d]*", line).group(1)
 
-        need_count = page.xpath("string(//span[contains(., 'Necessary for')])")
-        need_count = int(re.match(r"[^\d]*(\d+)[^\d]*", need_count).group(1))
+            if line.startswith("Taken on"):
+                date = re.match(r".*Taken\s+on\s+(\d+/\s?\d+)", line).group(1)
+                date = datetime.datetime.strptime(
+                    date + " " + bill.legislative_session, "%m/%d %Y"
+                ).date()
 
-        date = page.xpath("string(//span[contains(., 'Taken on')])")
-        date = re.match(r".*Taken\s+on\s+(\d+/\s?\d+)", date).group(1)
-        date = date.replace(" ", "")
-        date = datetime.datetime.strptime(
-            date + " " + bill.legislative_session, "%m/%d %Y"
-        ).date()
+            if line.startswith("Y ") or line.startswith("A ") or line.startswith("N "):
+                # votes = re.match(
+                #     r"(Y|N|A)(.+)\s+(Y|N|A)(.+)\s+(Y|N|A)(.+)(\s+(Y|N|A)(.+))?",
+                #     line,
+                # )
+                # Voter is match group 2,4,6,8
+                split_votes = re.split(r"\W+", line)
+                votes = {}
+
+                for i, entry in enumerate(split_votes):
+                    if entry == "Y" or entry == "N" or entry == "A":
+                        if split_votes[i + 2] not in ["Y", "N", "A"]:
+                            votes[split_votes[i + 1] + " " + split_votes[i + 2]] = entry
+                        else:
+                            votes[split_votes[i + 1]] = entry
+
+                for key, value in votes.items():
+                    self.add_vote(value, key)
+                # add fourth column if it's not empty
 
         # not sure about classification.
         vote = Vote(
@@ -202,21 +229,7 @@ class CTBillScraper(Scraper):
         vote.set_count("no", no_count)
         vote.set_count("other", other_count)
         vote.add_source(url)
-        table = page.xpath("//table")[0]
-        for row in table.xpath("tr"):
-            for i in cols:
-                name = row.xpath("string(td[%d])" % (i + name_offset)).strip()
-
-                if not name or name == "VACANT":
-                    continue
-                name = string.capwords(name)
-                if "Y" in row.xpath("string(td[%d])" % (i + yes_offset)):
-                    vote.yes(name)
-                elif "N" in row.xpath("string(td[%d])" % (i + no_offset)):
-                    vote.no(name)
-                else:
-                    vote.vote("other", name)
-
+        print("Finished scraping the votes")
         yield vote
 
     def scrape_bill_history(self):
