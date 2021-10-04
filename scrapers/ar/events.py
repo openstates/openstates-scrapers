@@ -40,7 +40,7 @@ class AREventScraper(Scraper):
             if "no meeting" in time.lower() or "cancelled" in time.lower():
                 continue
 
-            if time == "Upon Adjournment Whichever is Later":
+            if "upon adjournment" in time.lower():
                 time = "1:00 PM"
 
             title = row.xpath("div[2]/b")[0].text_content().strip()
