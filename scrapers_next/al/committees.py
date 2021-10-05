@@ -31,7 +31,7 @@ class CommDetail(HtmlPage):
                 idx, val = info.text_content().strip().split(":")
                 com.extras[idx.strip()] = val.strip()
             else:
-                com.extras["Room"] = info.text_content().strip()
+                 com.extras["Room"] = info.text_content().strip()
 
         return com
 
