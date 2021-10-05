@@ -28,3 +28,12 @@ class CommitteeDetails(HtmlPage):
         com.add_source(self.source.url)
         com.add_link(self.source.url, note="homepage")
         return com
+
+class CommitteeList(HtmlListPage):
+    source = "https://leg.colorado.gov/content/committees"
+    selector = CSS("div.view-content tbody a[href]")
+
+    def process_item(self, item):
+        name = item.text
+        return CommitteeDetails(
+            name, source="https://leg.colorado.gov/content/committees")
