@@ -140,12 +140,12 @@ class NHBillScraper(Scraper):
                 # check to see if resolution, process versions by getting lsr off link on the bill source page
                 if re.match(r"^.R\d+", bill_id):
                     # ex: HR 1 is lsr=847 but version id=838
-                    bill_url = (
+                    resolution_url = (
                         "http://www.gencourt.state.nh.us/bill_Status/bill_status.aspx?"
                         + "lsr={}&sy={}&txtsessionyear={}".format(lsr, session, session)
                     )
-                    bill_page = self.get(bill_url).content.decode("utf-8")
-                    page = lxml.html.fromstring(bill_page)
+                    resolution_page = self.get(resolution_url).content.decode("utf-8")
+                    page = lxml.html.fromstring(resolution_page)
                     version_href = page.xpath("//a[2]/@href")[1]
                     true_version = re.search(r"id=(\d+)&", version_href)[1]
                     self.versions_by_lsr[lsr] = true_version
