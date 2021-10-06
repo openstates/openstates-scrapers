@@ -10,18 +10,18 @@ class CommitteeDetails(HtmlPage):
             chamber = "lower"
         elif chamber =="Senate Committee of Reference":
             chamber = "upper"
+        else:
+            chamber = "legislature"
         print("CHAMBER: ",chamber)
         com = ScrapeCommittee(name=self.input, chamber=chamber)
         members = CSS("div div.block-content div div:nth-child(1) div div.member-details").match(self.root)
         for member in members:
-            roles = ["Chair", "Vice Chair"]
             member_name = CSS("h4 a").match_one(member).text
-            member_role = CSS("span.member-role").match_one(member).text
-            p_role = "member"
-            for role in roles:
-                if role in member_role:
-                    p_role = role
-            com.add_member(member_name, p_role)
+            try :
+                member_role = CSS(".member-role").match_one(member).text
+            except SelectorError:
+                member_role = "member"
+            com.add_member(member_name, member_role)
         com.add_source(self.source.url)
         com.add_link(self.source.url, note="homepage")
         return com
@@ -33,4 +33,4 @@ class CommitteeList(HtmlListPage):
     def process_item(self, item):
         name = item.text
         return CommitteeDetails(
-            name, source="https://leg.colorado.gov/content/committees")
+            name, source=CSS("a").match_one(item).get("href"))
