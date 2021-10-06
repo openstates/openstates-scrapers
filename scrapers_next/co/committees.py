@@ -28,7 +28,7 @@ class CommitteeDetails(HtmlPage):
 
 class CommitteeList(HtmlListPage):
     source = "https://leg.colorado.gov/content/committees"
-    selector = CSS("div.view-content tbody a[href]")
+    selector = CSS("div.view-content tbody a[href]",num_items=49)
 
     def process_item(self, item):
         name = item.text
