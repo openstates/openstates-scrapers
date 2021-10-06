@@ -12,19 +12,16 @@ class CommitteeDetails(HtmlPage):
             chamber = "upper"
         print("CHAMBER: ",chamber)
         com = ScrapeCommittee(name=self.input, chamber=chamber)
-
-        members = CSS("div.member-details h4 a[href] ").match(self.root)
+        members = CSS("div div.block-content div div:nth-child(1) div div.member-details").match(self.root)
         for member in members:
-            members_t = CSS("div:nth-child(1) div div.member-details").match(self.root)
-            for member_t in members_t:
-                member_title = CSS(".member-title").match_one(member_t).text
-                member_role = CSS("span.member-role").match_one(member_t).text
-                roles = ["Chair", "Vice Chair"]
-                p_role = "member"
-                for role in roles:
-                    if role in member_role:
-                        p_role = role
-        com.add_member(member.text_content(), p_role, member_title)
+            roles = ["Chair", "Vice Chair"]
+            member_name = CSS("h4 a").match_one(member).text
+            member_role = CSS("span.member-role").match_one(member).text
+            p_role = "member"
+            for role in roles:
+                if role in member_role:
+                    p_role = role
+            com.add_member(member_name, p_role)
         com.add_source(self.source.url)
         com.add_link(self.source.url, note="homepage")
         return com
