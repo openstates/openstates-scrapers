@@ -32,7 +32,7 @@ class UTEventScraper(Scraper, LXMLMixin):
 
                             when = self._tz.localize(when)
 
-                            if row["status"] == "C":
+                            if "status" in row and row["status"] == "C":
                                 status = "cancelled"
 
                             event = Event(
