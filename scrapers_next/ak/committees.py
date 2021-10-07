@@ -40,7 +40,12 @@ class CommitteeList(HtmlListPage):
     selector = CSS("div.area-frame ul.list li", num_items=112)
 
     def process_item(self, item):
-        comm_name = item.text_content().strip()
+        comm_name = (
+            item.text_content().strip().split(" (")[0].title().replace("(Fin Sub)", "")
+        )
+
+        if "Conference" in comm_name:
+            self.skip()
 
         chamber = item.getparent().getprevious().getprevious().text_content().strip()
         if chamber == "House":
@@ -57,7 +62,7 @@ class CommitteeList(HtmlListPage):
                 name=comm_name,
                 classification="subcommittee",
                 chamber=chamber,
-                parent="FINANCE(FIN)",
+                parent="Finance",
             )
         else:
             com = ScrapeCommittee(
