@@ -93,9 +93,9 @@ class PersonList(HtmlListPage):
         )
 
 
-delegates = PersonList(
-    source="http://mgaleg.maryland.gov/mgawebsite/Members/Index/house"
-)
-senators = PersonList(
-    source="http://mgaleg.maryland.gov/mgawebsite/Members/Index/senate"
-)
+class DelegateList(PersonList):
+    source = "http://mgaleg.maryland.gov/mgawebsite/Members/Index/house"
+
+
+class SenatorList(PersonList):
+    source = "http://mgaleg.maryland.gov/mgawebsite/Members/Index/senate"

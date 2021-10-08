@@ -1,4 +1,4 @@
-from spatula import HtmlListPage, CSS
+from spatula import HtmlListPage, CSS, URL
 from openstates.models import ScrapePerson
 
 
@@ -21,7 +21,7 @@ def ord_suffix(str_num):
 
 
 class Senators(HtmlListPage):
-    source = "https://senate.michigan.gov/senatorinfo_list.html"
+    source = URL("https://senate.michigan.gov/senatorinfo_list.html", verify=False)
     selector = CSS(".table tbody tr", num_items=38)
     PARTY_MAP = {"Rep": "Republican", "Dem": "Democratic"}
 
@@ -79,12 +79,16 @@ class Representatives(HtmlListPage):
         for abbr, full in self.office_names.items():
             office = office.replace(abbr, full)
 
+        party = {"R": "Republican", "D": "Democratic", "": "Independent"}[
+            party.text_content().strip()
+        ]
+
         p = ScrapePerson(
             name=name.text_content(),
             state="mi",
             chamber="lower",
             district=district.text_content().lstrip("0"),
-            party=party.text_content(),
+            party=party,
             email=email.text_content(),
         )
         link = CSS("a").match_one(website).get("href")
