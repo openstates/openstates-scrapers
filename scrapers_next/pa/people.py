@@ -42,20 +42,18 @@ class LegDetail(HtmlPage):
                 if phone and fax:
                     fax = re.search(r"(FAX|Fax|fax):\s(.+)", fax).groups()[1]
                     p.add_office(
-                        contact_type="District Office",
+                        classification="district",
                         address=addr,
                         voice=phone,
                         fax=fax,
                     )
                 elif phone:
-                    p.add_office(
-                        contact_type="District Office", address=addr, voice=phone
-                    )
+                    p.add_office(classification="district", address=addr, voice=phone)
                 elif fax:
                     fax = re.search(r"(FAX|Fax|fax):\s(.+)", fax).groups()[1]
-                    p.add_office(contact_type="District Office", address=addr, fax=fax)
+                    p.add_office(classification="district", address=addr, fax=fax)
                 else:
-                    p.add_office(contact_type="District Office", address=addr)
+                    p.add_office(classification="district", address=addr)
 
         social_links = CSS("div.Widget.MemberBio-SocialLinks a").match(self.root)
         for link in social_links:

@@ -30,14 +30,14 @@ class LegislatorDetail(HtmlPage):
             ):
                 district_addr2 = district_addr_temp
                 district_addr_temp = ""
-                p.add_office("District Office", address=district_addr2)
+                p.add_office("district", address=district_addr2)
             elif (
                 re.search(r"L(A|a)\s\s?\s?\d{5}(-\d{4})?$", district_addr_temp)
                 and not district_addr3
             ):
                 district_addr3 = district_addr_temp
                 district_addr_temp = ""
-                p.add_office("District Office", address=district_addr3)
+                p.add_office("district", address=district_addr3)
             else:
                 district_addr_temp += " "
 

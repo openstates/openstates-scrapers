@@ -53,7 +53,7 @@ class AssemblyList(HtmlListPage):
         for office in district_offices:
             district_address, district_phone = office.split("; ")
             p.add_office(
-                contact_type="District Office",
+                classification="district",
                 address=district_address.strip(),
                 voice=district_phone.strip(),
             )

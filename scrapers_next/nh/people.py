@@ -102,10 +102,10 @@ class Legislators(CsvListPage):
             addr += item["Zipcode"]
             if item["Phone"].strip() != "":
                 p.add_office(
-                    contact_type="Primary Office", address=addr, voice=item["Phone"]
+                    classification="primary", address=addr, voice=item["Phone"]
                 )
             else:
-                p.add_office(contact_type="Primary Office", address=addr)
+                p.add_office(classification="primary", address=addr)
             # is this primary office? or district office?
 
         if item["WorkEmail"].strip() != "":

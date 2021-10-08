@@ -75,14 +75,14 @@ def process_address(details, phone_numbers, p, fax_number=[]):
                 else:
                     if phone != "":
                         p.add_office(
-                            contact_type="District Office",
+                            classification="district",
                             address=address,
                             voice=phone,
                             fax=fax_number[i],
                         )
                     else:
                         p.add_office(
-                            contact_type="District Office",
+                            classification="district",
                             address=address,
                             fax=fax_number[i],
                         )
@@ -95,13 +95,12 @@ def process_address(details, phone_numbers, p, fax_number=[]):
                         p.district_office.address = address
                 else:
                     if phone != "":
-
                         p.add_office(
-                            contact_type="District Office", address=address, voice=phone
+                            classification="district", address=address, voice=phone
                         )
                     else:
                         p.add_office(
-                            contact_type="District Office",
+                            classification="district",
                             address=address,
                         )
 
