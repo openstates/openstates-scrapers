@@ -16,7 +16,7 @@ class CommitteeDetail(HtmlPage):
         for member_type in CSS("div article div div h4").match(self.root):
             role = self.get_role(member_type.text_content())
             members = [
-                p.text_content() for p in CSS("p a").match(member_type.getnext())
+                p.text_content() for p in CSS("a").match(member_type.getnext())
             ]
             for member in members:
                 member = member[21:].strip()
@@ -30,14 +30,14 @@ class CommitteeDetail(HtmlPage):
 
 class CommitteeList(HtmlListPage):
     source =  URL("https://dccouncil.us/committees-for-council-period-23/")
-    selector = CSS("div ul li")
+    selector = CSS("div ul li div")
     chamber = "legislature"
 
     def process_item(self, item):
-
-        name = CSS("div a").match(item)[0].text_content()
+        com_link = CSS("a").match(item)[0]
+        name = com_link.text_content()
         com = ScrapeCommittee(name=name,classification = "committee", chamber=self.chamber)
-        detail_link = item.get("href")
+        detail_link = com_link.get("href")
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
         return CommitteeDetail(com, source=detail_link)
