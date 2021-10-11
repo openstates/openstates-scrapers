@@ -161,6 +161,14 @@ class WestVirginia(State):
             "start_date": "2021-06-24",
             "end_date": "2021-06-25",
         },
+        {
+            "_scraped_name": "2021",
+            "classification": "primary",
+            "identifier": "20213S",
+            "name": "2021 Third Special Session",
+            "start_date": "2021-06-24",
+            "end_date": "2021-06-25",
+        },
     ]
     ignored_scraped_sessions = [
         "2029",
