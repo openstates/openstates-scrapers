@@ -19,7 +19,12 @@ class CommitteeDetail(HtmlPage):
                 p.text_content() for p in CSS("a").match(member_type.getnext())
             ]
             for member in members:
-                member = member[21:].strip()
+                if member[:2] == "At":
+                    member = member[22:].strip()
+                elif member[:2] == "Wa":
+                    member = member[21:].strip()
+                elif member[:2] == "Ch":
+                    member = member[8:].strip()
                 com.add_member(member, role)
 
 
