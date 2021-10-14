@@ -138,6 +138,14 @@ class Kentucky(State):
             "end_date": "2022-03-30",
         },
         {
+            "_scraped_name": "2021 Special Session",
+            "classification": "special",
+            "identifier": "2021SS",
+            "name": "2021 Special Session",
+            "start_date": "2021-09-01",
+            "end_date": "2021-09-09",
+        },
+        {
             "_scraped_name": "2021 Regular Session",
             "classification": "primary",
             "identifier": "2021RS",
