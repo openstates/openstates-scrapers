@@ -4,6 +4,7 @@ from openstates.models import ScrapeCommittee
 class CommitteeDetail(HtmlPage):
     example_source = "https://dccouncil.us/committees/committee-human-services/"
     example_input = "Committee on Human Services"
+    # the get role is just make sure that as roles are being taken don't have an S at the end.
     def get_role(self, text):
         if text.endswith('s'):
             text = text[:-1]
@@ -43,7 +44,5 @@ class CommitteeList(HtmlListPage):
         name = com_link.text_content()
         com = ScrapeCommittee(name=name,classification = "committee", chamber=self.chamber)
         detail_link = com_link.get("href")
-        com.add_source(detail_link)
-        com.add_link(detail_link, note="homepage")
         return CommitteeDetail(com, source=detail_link)
 
