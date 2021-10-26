@@ -117,10 +117,6 @@ class MNBillScraper(Scraper, LXMLMixin):
         # SSL broken as of Jan 2020
         self.verify = False
 
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
 

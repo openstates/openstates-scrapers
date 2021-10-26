@@ -12,10 +12,6 @@ class TXEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Central")
 
     def scrape(self, session=None, chamber=None):
-        if not session:
-            session = self.latest_session()
-            self.info("No session specified; using %s", session)
-
         if chamber:
             yield from self.scrape_committee_upcoming(session, chamber)
         else:

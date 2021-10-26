@@ -69,10 +69,6 @@ class NMBillScraper(Scraper):
             raise
 
     def scrape(self, chamber=None, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using latest session {}".format(session))
-
         chambers = [chamber] if chamber else ["upper", "lower"]
 
         for chamber in chambers:

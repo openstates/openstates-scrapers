@@ -40,10 +40,6 @@ class WYBillScraper(Scraper, LXMLMixin):
     is_special = False
 
     def scrape(self, chamber=None, session=None):
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)

@@ -15,10 +15,6 @@ class MDEventScraper(Scraper, LXMLMixin):
     date_format = "%m%d%Y"
 
     def scrape(self, session=None, start=None, end=None):
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using latest")
-
         if start is None:
             start_date = datetime.datetime.now().strftime(self.date_format)
         else:

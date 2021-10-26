@@ -22,9 +22,6 @@ class MEBillScraper(Scraper):
 
     def scrape(self, chamber=None, session=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
 
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)

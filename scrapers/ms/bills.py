@@ -46,10 +46,6 @@ class MSBillScraper(Scraper):
     )
 
     def scrape(self, chamber=None, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_bills(chamber, session)

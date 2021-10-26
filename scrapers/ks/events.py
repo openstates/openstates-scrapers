@@ -19,14 +19,13 @@ class KSEventScraper(Scraper):
     # Unlike most states, KS posts most of their hearing data after the date
     # start date defaults to 30 days ago, mostly to cut down on page requests
     # and avoid getting banned by their aggressive anti-scraping code
-    def scrape(self, start=None):
+    def scrape(self, session, start=None):
         if start is None:
             start = datetime.datetime.now()
             start = start - datetime.timedelta(days=30)
         else:
             start = dateutil.parser.parse(start)
 
-        session = self.latest_session()
         meta = next(
             each
             for each in self.jurisdiction.legislative_sessions

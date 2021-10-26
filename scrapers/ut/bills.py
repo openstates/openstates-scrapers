@@ -24,10 +24,6 @@ SPECIAL_SLUGS = {"2021S1H": "2021Y1", "2021S1S": "2021X1"}
 
 class UTBillScraper(Scraper, LXMLMixin):
     def scrape(self, session=None, chamber=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         # if you need to test on an individual bill...
         # yield from self.scrape_bill(
         #             chamber='lower',

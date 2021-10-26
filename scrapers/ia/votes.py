@@ -20,9 +20,6 @@ SITE_IDS = {
 
 class IAVoteScraper(Scraper):
     def scrape(self, chamber=None, session=None):
-        if not session:
-            session = self.latest_session()
-
         if chamber:
             yield from self.scrape_chamber(chamber, session)
         else:

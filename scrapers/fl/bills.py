@@ -676,14 +676,9 @@ class HouseComVote(HtmlPage):
 
 class FlBillScraper(Scraper):
     def scrape(self, session=None):
-        # FL published a bad bill in 2019, #143
         self.raise_errors = False
         self.retry_attempts = 1
         self.retry_wait_seconds = 3
-
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
 
         # spatula's logging is better than scrapelib's
         logging.getLogger("scrapelib").setLevel(logging.WARNING)

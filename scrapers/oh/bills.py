@@ -49,10 +49,6 @@ class OHBillScraper(Scraper):
         # Bills endpoint can sometimes take a very long time to load
         self.timeout = 300
 
-        if not session:
-            session = self.latest_session()
-            self.info("no session, using %s", session)
-
         if int(session) < 128:
             raise AssertionError("No data for period {}".format(session))
 
@@ -621,11 +617,6 @@ class OHBillScraper(Scraper):
         status_report_url = (
             "https://www.legislature.ohio.gov/legislation/status-reports"
         )
-
-        # ssl verification off due Ohio not correctly implementing SSL
-        if not session:
-            session = self.latest_session()
-            self.info("no session, using %s", session)
 
         doc = self.get(status_report_url).text
         doc = lxml.html.fromstring(doc)

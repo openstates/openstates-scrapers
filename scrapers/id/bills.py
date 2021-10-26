@@ -168,11 +168,6 @@ class IDBillScraper(Scraper):
         """
         Scrapes all the bills for a given session and chamber
         """
-
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         # specials don't have subjects
         if "spcl" in session:
             self._subjects = defaultdict(list)

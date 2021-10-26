@@ -54,9 +54,6 @@ class DCBillScraper(Scraper):
     }
 
     def scrape(self, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         for category in self._categories:
             leg_listing_url = (
                 self._API_BASE_URL + f"BulkData/{category['categoryId']}/{session}"

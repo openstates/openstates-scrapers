@@ -18,19 +18,18 @@ class AZEventScraper(Scraper):
 
     address = "1700 W. Washington St., Phoenix, Arizona"
 
-    def scrape(self, chamber=None):
+    def scrape(self, chamber=None, session=None):
         if chamber:
             if chamber == "other":
                 return
             else:
-                yield from self.scrape_chamber(chamber)
+                yield from self.scrape_chamber(chamber, session)
         else:
             chambers = ["upper", "lower"]
             for chamber in chambers:
-                yield from self.scrape_chamber(chamber)
+                yield from self.scrape_chamber(chamber, session)
 
-    def scrape_chamber(self, chamber):
-        session = self.latest_session()
+    def scrape_chamber(self, chamber, session):
         session_id = session_metadata.session_id_meta_data[session]
 
         chamber_abbr = self.chamber_codes[chamber]

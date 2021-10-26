@@ -10,8 +10,6 @@ class VTEventScraper(Scraper):
     TIMEZONE = pytz.timezone("America/New_York")
 
     def scrape(self, session=None):
-        if session is None:
-            session = self.latest_session()
         year_slug = self.jurisdiction.get_year_slug(session)
 
         url = "http://legislature.vermont.gov/committee/loadAllMeetings/{}".format(

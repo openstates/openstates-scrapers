@@ -303,9 +303,6 @@ class BillTabText(HtmlPage):
 
 class NVBillScraper(Scraper):
     def scrape(self, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
         bill_list = BillList({"session": session})
         yield from bill_list.do_scrape()

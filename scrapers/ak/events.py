@@ -18,10 +18,6 @@ class AKEventScraper(Scraper, LXMLMixin):
     # date_filter argument can give you just one day;
     # format is "2/28/2019" per AK's site
     def scrape(self, chamber=None, session=None, date_filter=None):
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         listing_url = "/meetings"
         args = {"minifyresult": "true", "session": session}
         headers = {"X-Alaska-Legislature-Basis-Query": "meetings;details"}

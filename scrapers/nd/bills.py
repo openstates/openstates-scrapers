@@ -185,9 +185,6 @@ class NDBillScraper(Scraper, LXMLMixin):
                 self.warning("Bill ID and Type Not Found!")
 
     def scrape(self, session=None, chamber=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         # chambers = [chamber] if chamber else ['upper', 'lower']
         # figuring out starting year from metadata
         for item in self.jurisdiction.legislative_sessions:
