@@ -17,7 +17,7 @@ class CommitteeDetails (HtmlPage):
             for position in positions:
                 if member_name.endswith(position):
                     pos_str = position.strip().replace("(", "").replace(")", "")
-            com.add_member(member_name.split(" ", 1)[1], pos_str)
+            com.add_member(member_name.split(" ", 1)[1].strip().replace("(Chair)","").replace("(Co-Chair)","").replace("(Vice-Chair)",""), pos_str)
         return com
 
 
