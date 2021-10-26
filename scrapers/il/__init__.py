@@ -1,5 +1,6 @@
 # encoding=utf-8
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import IlBillScraper
 from .events import IlEventScraper
 

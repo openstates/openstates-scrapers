@@ -1,5 +1,5 @@
 import datetime
-from utils import State
+from openstates.scrape import State
 from .bills import NHBillScraper
 from .events import NHEventScraper
 

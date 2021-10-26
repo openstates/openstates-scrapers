@@ -1,5 +1,5 @@
 import lxml
-from utils import State
+from openstates.scrape import State
 from .bills import NCBillScraper
 from .events import NCEventScraper
 

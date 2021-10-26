@@ -1,4 +1,4 @@
-from utils import State
+from openstates.scrape import State
 from .bills import PRBillScraper
 from .votes import PRVoteScraper
 

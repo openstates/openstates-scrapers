@@ -1,4 +1,4 @@
-from utils import State
+from openstates.scrape import State
 from .events import USEventScraper
 from .bills import USBillScraper
 from .votes import USVoteScraper

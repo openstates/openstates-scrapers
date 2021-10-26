@@ -1,4 +1,5 @@
-from utils import url_xpath, State
+from openstates.scrape import State
+from utils import url_xpath
 from .bills import PABillScraper
 from .events import PAEventScraper
 

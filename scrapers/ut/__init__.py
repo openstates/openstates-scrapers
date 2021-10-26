@@ -1,5 +1,6 @@
 import re
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .events import UTEventScraper
 from .bills import UTBillScraper
 

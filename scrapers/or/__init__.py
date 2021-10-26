@@ -1,4 +1,4 @@
-from utils import State
+from openstates.scrape import State
 from .bills import ORBillScraper
 from .votes import ORVoteScraper
 from .events import OREventScraper

@@ -1,6 +1,6 @@
 from .bills import SCBillScraper
 from .events import SCEventScraper
-from utils import State
+from openstates.scrape import State
 import requests
 import lxml.html
 

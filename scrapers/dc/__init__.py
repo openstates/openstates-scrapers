@@ -1,6 +1,6 @@
 import os
 import requests
-from utils import State
+from openstates.scrape import State
 from .bills import DCBillScraper
 from .events import DCEventScraper
 

@@ -1,6 +1,7 @@
 import http
 import email
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import MOBillScraper
 from .events import MOEventScraper
 

@@ -1,4 +1,4 @@
-from utils import State
+from openstates.scrape import State
 from .events import WAEventScraper
 from .bills import WABillScraper
 

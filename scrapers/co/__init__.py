@@ -1,5 +1,6 @@
 import re
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import COBillScraper
 from .events import COEventScraper
 

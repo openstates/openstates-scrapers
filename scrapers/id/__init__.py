@@ -1,6 +1,7 @@
 from .bills import IDBillScraper
 from .events import IDEventScraper
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 
 
 class Idaho(State):

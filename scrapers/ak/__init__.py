@@ -1,4 +1,5 @@
-from utils import State, url_xpath
+from openstates.scrape import State
+from utils import url_xpath
 
 from .bills import AKBillScraper
 from .events import AKEventScraper

@@ -1,6 +1,6 @@
 import requests
 import re
-from utils import State
+from openstates.scrape import State
 from .bills import WYBillScraper
 from .events import WYEventScraper
 

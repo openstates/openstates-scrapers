@@ -1,5 +1,6 @@
 import logging
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .csv_bills import VaCSVBillScraper
 from .events import VaEventScraper
 

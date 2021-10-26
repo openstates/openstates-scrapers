@@ -1,11 +1,9 @@
-# import scrapelib
-# import lxml.html
 import json
 import requests
 
 from .bills import SDBillScraper
 from .events import SDEventScraper
-from utils import State
+from openstates.scrape import State
 
 
 class SouthDakota(State):
