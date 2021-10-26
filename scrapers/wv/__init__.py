@@ -168,6 +168,7 @@ class WestVirginia(State):
             "name": "2021 Third Special Session",
             "start_date": "2021-06-24",
             "end_date": "2021-06-25",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

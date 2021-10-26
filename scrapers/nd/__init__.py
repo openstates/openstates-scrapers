@@ -50,6 +50,7 @@ class NorthDakota(State):
             "name": "67th Legislative Assembly (2021-2022)",
             "start_date": "2021-01-02",
             "end_date": "2021-04-30",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

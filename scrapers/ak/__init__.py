@@ -44,6 +44,7 @@ class Alaska(State):
             "name": "32nd Legislature (2021-2022)",
             "start_date": "2021-01-19",
             "end_date": "2021-04-19",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

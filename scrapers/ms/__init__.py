@@ -213,6 +213,7 @@ class Mississippi(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-05",
             "end_date": "2021-03-15",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

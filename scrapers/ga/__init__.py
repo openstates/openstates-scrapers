@@ -72,6 +72,7 @@ class Georgia(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-11",
             "end_date": "2021-04-02",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

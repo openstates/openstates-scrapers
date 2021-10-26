@@ -59,6 +59,7 @@ class Ohio(State):
             "name": "134th Legislature (2021-2022)",
             "start_date": "2021-01-04",
             "end_date": "2022-12-31",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = []

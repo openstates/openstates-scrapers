@@ -194,6 +194,7 @@ class Louisiana(State):
             "name": "2021 Regular Session",
             "start_date": "2021-03-12",
             "end_date": "2021-06-10",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

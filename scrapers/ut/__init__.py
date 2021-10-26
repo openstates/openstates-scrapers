@@ -285,6 +285,7 @@ class Utah(State):
             "name": "2021 1st Senate Extraordinary Session",
             "start_date": "2021-05-19",
             "end_date": "2021-05-25",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

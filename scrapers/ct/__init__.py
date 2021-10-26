@@ -90,6 +90,7 @@ class Connecticut(State):
             "start_date": "2021-01-06",
             # TODO: fill out actual end date
             "end_date": "2022-05-06",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

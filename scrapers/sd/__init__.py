@@ -130,6 +130,7 @@ class SouthDakota(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-12",
             "end_date": "2021-03-29",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = []

@@ -141,6 +141,7 @@ class Illinois(State):
             "start_date": "2021-01-13",
             "end_date": "2021-12-31",
             "classification": "primary",
+            "active": True,
         },
     ]
 

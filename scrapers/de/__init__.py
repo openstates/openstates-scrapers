@@ -93,6 +93,7 @@ class Delaware(State):
             "name": "151st General Assembly (2021-2022)",
             "start_date": "2021-01-12",
             "end_date": "2022-05-06",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

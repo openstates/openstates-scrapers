@@ -51,6 +51,7 @@ class Montana(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-04",
             "end_date": "2021-04-25",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

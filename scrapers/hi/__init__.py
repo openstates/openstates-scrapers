@@ -81,6 +81,7 @@ class Hawaii(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-20",
             "end_date": "2021-05-09",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

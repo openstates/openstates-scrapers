@@ -114,6 +114,7 @@ class Idaho(State):
             "name": "66th Legislature, 1st Regular Session (2021)",
             "start_date": "2020-01-11",
             "end_date": "2020-04-07",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

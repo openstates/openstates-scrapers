@@ -177,6 +177,7 @@ class Arkansas(State):
             "name": "2021 First Extraordinary Session",
             "start_date": "2021-08-03",
             "end_date": "2021-08-13",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

@@ -164,6 +164,7 @@ class Wisconsin(State):
             "start_date": "2021-02-17",
             # TODO: set a better end date once session ends
             "end_date": "2022-02-26",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

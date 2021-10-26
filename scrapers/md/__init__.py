@@ -163,6 +163,7 @@ class Maryland(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-12",
             "end_date": "2021-04-12",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
