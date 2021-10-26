@@ -11,15 +11,14 @@ class CommitteeDetails (HtmlPage):
         members = CSS("#members p").match(self.root)
         for member in members:
             member_name = member.text_content()
+            # print(member_name)
+            pos_str = "member"
             positions = ["(Chair)", "(Co-Chair)", "(Vice-Chair)"]
             for position in positions:
                 if member_name.endswith(position):
-                    pos_str = position.strip().replace("(","").replace(")","")
-                    break
-                else:
-                    pos_str = "member"
-            com.add_member(member_name.split(" ")[0], pos_str)
-            return com
+                    pos_str = position.strip().replace("(", "").replace(")", "")
+            com.add_member(member_name.split(" ", 1)[1], pos_str)
+        return com
 
 
 
