@@ -154,6 +154,7 @@ class Wisconsin(State):
             "start_date": "2021-01-04",
             # TODO: set a better end date once session ends
             "end_date": "2022-05-23",
+            "active": True,
         },
         {
             "_scraped_name": "January 2021 Special Session",

@@ -99,6 +99,7 @@ class Tennessee(State):
             "name": "112th Regular Session (2021-2022)",
             "start_date": "2021-01-12",
             "end_date": "2021-05-06",
+            "active": True,
         },
         {
             "_scraped_name": "Second Extraordinary Session (October 2021)",

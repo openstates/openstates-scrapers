@@ -169,6 +169,7 @@ class Arkansas(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-11",
             "end_date": "2021-03-12",
+            "active": True,
         },
         {
             "_scraped_name": "First Extraordinary Session, 2021",

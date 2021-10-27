@@ -145,6 +145,7 @@ class Kentucky(State):
             "name": "2021 Special Session",
             "start_date": "2021-09-01",
             "end_date": "2021-09-09",
+            "active": True,
         },
         {
             "_scraped_name": "2021 Regular Session",

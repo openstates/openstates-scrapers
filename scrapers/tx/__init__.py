@@ -116,6 +116,7 @@ class Texas(State):
             "identifier": "87",
             "name": "87th Legislature (2021)",
             "start_date": "2021-01-12",
+            "active": True,
         },
         {
             "_scraped_name": "87(1) - 2021",
@@ -124,6 +125,7 @@ class Texas(State):
             "identifier": "871",
             "name": "87th Legislature, 1st Called Session (2021)",
             "start_date": "2021-07-08",
+            "active": True,
         },
         {
             "_scraped_name": "87(2) - 2021",
@@ -132,6 +134,7 @@ class Texas(State):
             "identifier": "872",
             "name": "87th Legislature, 2nd Called Session (2021)",
             "start_date": "2021-08-07",
+            "active": True,
         },
         {
             "_scraped_name": "87(3) - 2021",
