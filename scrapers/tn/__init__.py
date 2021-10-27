@@ -107,6 +107,14 @@ class Tennessee(State):
             "start_date": "2021-10-18",
             "end_date": "2021-10-22",
         },
+        {
+            "_scraped_name": "Third Extraordinary Session (October 2021)",
+            "classification": "special",
+            "identifier": "112S3",
+            "name": "112th Third Extraordinary Session (October 2021)",
+            "start_date": "2021-10-27",
+            "end_date": "2021-10-29",
+        },
     ]
     ignored_scraped_sessions = [
         "107th General Assembly",
