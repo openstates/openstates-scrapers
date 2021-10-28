@@ -1,4 +1,5 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import TNBillScraper
 from .events import TNEventScraper
 
@@ -98,6 +99,7 @@ class Tennessee(State):
             "name": "112th Regular Session (2021-2022)",
             "start_date": "2021-01-12",
             "end_date": "2021-05-06",
+            "active": True,
         },
         {
             "_scraped_name": "Second Extraordinary Session (October 2021)",
@@ -106,6 +108,7 @@ class Tennessee(State):
             "name": "112th Second Extraordinary Session (October 2021)",
             "start_date": "2021-10-18",
             "end_date": "2021-10-22",
+            "active": True,
         },
         {
             "_scraped_name": "Third Extraordinary Session (October 2021)",

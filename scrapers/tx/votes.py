@@ -331,10 +331,6 @@ def viva_voce_votes(root, session, chamber):
 
 class TXVoteScraper(Scraper):
     def scrape(self, session=None, chamber=None):
-        if not session:
-            session = self.latest_session()
-            self.info("No session specified; using %s", session)
-
         if session == "821":
             self.warning("no journals for session 821")
             return

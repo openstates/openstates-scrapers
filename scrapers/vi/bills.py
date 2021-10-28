@@ -71,8 +71,6 @@ class VIBillScraper(Scraper, LXMLMixin):
     committees = []
 
     def scrape(self, session=None, chambers=None):
-        if session is None:
-            session = self.latest_session()
         self.session = session
 
         if chambers is None:

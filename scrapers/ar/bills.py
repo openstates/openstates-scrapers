@@ -24,9 +24,6 @@ def get_utf_16_ftp_content(url):
 
 class ARBillScraper(Scraper):
     def scrape(self, chamber=None, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         self.slug = get_slug_for_session(session)
         chambers = [chamber] if chamber else ["upper", "lower"]
         self.bills = {}

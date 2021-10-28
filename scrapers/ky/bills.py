@@ -64,9 +64,6 @@ class KYBillScraper(Scraper, LXMLMixin):
         return None
 
     def scrape(self, session=None, chamber=None, prefiles=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         # Bill page markup changed starting with the 2016 regular session.
         # kinda gross
         if int(session[0:4]) >= 2016:

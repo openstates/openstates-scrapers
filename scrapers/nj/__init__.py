@@ -1,4 +1,5 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import NJBillScraper
 from .events import NJEventScraper
 
@@ -60,6 +61,7 @@ class NewJersey(State):
             "name": "2020-2021 Regular Session",
             "start_date": "2020-01-14",
             "end_date": "2020-12-31",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

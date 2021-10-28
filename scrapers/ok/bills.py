@@ -33,9 +33,6 @@ class OKBillScraper(Scraper):
     }
 
     def scrape(self, chamber=None, session=None, only_bills=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session, only_bills)

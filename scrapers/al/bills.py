@@ -145,11 +145,7 @@ class ALBillScraper(Scraper):
         except scrapelib.HTTPError:
             pass
 
-    def scrape(self, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
+    def scrape(self, session):
         self.session = session
         details = next(
             each

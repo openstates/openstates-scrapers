@@ -1,6 +1,7 @@
 import http
 import email
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import MOBillScraper
 from .events import MOEventScraper
 
@@ -63,6 +64,7 @@ class Missouri(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-06",
             "end_date": "2021-05-30",
+            "active": True,
         },
         {
             "_scraped_name": "2021 1st Extraordinary Session",
@@ -72,6 +74,7 @@ class Missouri(State):
             "start_date": "2021-06-23",
             # TODO: real end date when session is over
             "end_date": "2021-06-25",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

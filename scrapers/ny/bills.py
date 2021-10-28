@@ -468,11 +468,6 @@ class NYBillScraper(Scraper):
     # NEW_YORK_API_KEY=key os-update ny bills --scrape window=5d1h
     def scrape(self, session=None, bill_no=None, window=None):
         self.api_client = OpenLegislationAPIClient(self)
-
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         self.term_start_year = session.split("-")[0]
 
         for bill in self._generate_bills(session, window):

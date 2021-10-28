@@ -283,11 +283,7 @@ class IlBillScraper(Scraper):
             yield bill_url
 
     def scrape(self, session=None):
-        if session is not None:
-            session_id = session
-        else:
-            session_id = self.latest_session()
-
+        session_id = session
         # scrape a single bill for debug
         # yield from self.scrape_bill(
         #     'lower', '101st', 'HB', 'https://ilga.gov/legislation/BillStatus.asp?DocNum=

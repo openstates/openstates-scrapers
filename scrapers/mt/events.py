@@ -14,10 +14,6 @@ class MTEventScraper(Scraper):
     events = {}
 
     def scrape(self, session=None):
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using latest")
-
         for i in self.jurisdiction.legislative_sessions:
             if i["identifier"] == session:
                 session_slug = i["_scraped_name"]

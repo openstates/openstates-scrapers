@@ -69,10 +69,6 @@ class AKBillScraper(Scraper):
     _current_comm = None
 
     def scrape(self, chamber=None, session=None):
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified")
-
         bill_types = {
             "B": "bill",
             "R": "resolution",

@@ -73,8 +73,6 @@ class MTBillScraper(Scraper, LXMLMixin):
 
     def scrape(self, chamber=None, session=None):
         # set default parameters
-        if not session:
-            session = self.latest_session()
         chambers = [chamber] if chamber else ["upper", "lower"]
 
         # self.versions_dict = self._versions_dict(session)

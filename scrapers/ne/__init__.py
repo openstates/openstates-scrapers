@@ -1,4 +1,5 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import NEBillScraper
 from .events import NEEventScraper
 
@@ -65,6 +66,7 @@ class Nebraska(State):
             "start_date": "2021-09-13",
             "end_date": "2021-09-30",
             "classification": "special",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

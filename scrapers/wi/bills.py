@@ -91,10 +91,6 @@ class WIBillScraper(Scraper):
                 last_subject = last_subject_div[0]
 
     def scrape(self, chamber=None, session=None):
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
 
         for chamber in chambers:

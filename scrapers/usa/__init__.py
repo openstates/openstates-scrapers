@@ -1,4 +1,4 @@
-from utils import State
+from openstates.scrape import State
 from .events import USEventScraper
 from .bills import USBillScraper
 from .votes import USVoteScraper
@@ -52,6 +52,7 @@ class UnitedStates(State):
             "name": "117th Congress",
             "start_date": "2021-01-03",
             "end_date": "2023-01-02",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = []

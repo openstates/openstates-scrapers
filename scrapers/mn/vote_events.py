@@ -36,10 +36,6 @@ class MNVoteScraper(Scraper):
     date_re = re.compile(r"Date: (\d+/\d+/\d+)")
 
     def scrape(self, session=None, chamber=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         chambers = [chamber] if chamber else ["upper", "lower"]
 
         votes_url = VOTES_URLS.get(session)

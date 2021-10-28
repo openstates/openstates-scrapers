@@ -241,10 +241,6 @@ def listing_matches_chamber(listing, chamber):
 
 class TNBillScraper(Scraper):
     def scrape(self, session=None, chamber=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         self._seen_votes = set()
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:

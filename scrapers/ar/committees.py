@@ -20,10 +20,6 @@ class ARCommitteeScraper(Scraper):
     _seen = set()
 
     def scrape(self, chamber=None, session=None):
-
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         session_slug = get_slug_for_session(session)
         session_year = int(session[:4])
         odd_year = session_year if session_year % 2 else session_year - 1

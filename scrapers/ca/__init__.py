@@ -1,5 +1,6 @@
 import re
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import CABillScraper
 
 
@@ -392,6 +393,7 @@ class California(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2020-12-07",
             "end_date": "2021-12-31",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

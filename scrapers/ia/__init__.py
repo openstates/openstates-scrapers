@@ -1,5 +1,6 @@
 import re
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import IABillScraper
 from .votes import IAVoteScraper
 from .events import IAEventScraper
@@ -54,6 +55,7 @@ class Iowa(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-11",
             "end_date": "2021-03-30",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

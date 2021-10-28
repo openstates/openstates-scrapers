@@ -1,6 +1,6 @@
 import os
 import requests
-from utils import State
+from openstates.scrape import State
 from .bills import DCBillScraper
 from .events import DCEventScraper
 
@@ -52,6 +52,7 @@ class DistrictOfColumbia(State):
             "name": "24th Council Period (2021-2022)",
             "start_date": "2021-01-02",
             "end_date": "2022-12-31",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

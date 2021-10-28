@@ -1,4 +1,5 @@
-from utils import url_xpath, State
+from openstates.scrape import State
+from utils import url_xpath
 from .bills import PABillScraper
 from .events import PAEventScraper
 
@@ -75,6 +76,7 @@ class Pennsylvania(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-01",
             "end_date": "2022-11-30",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

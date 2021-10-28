@@ -1,4 +1,5 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import KSBillScraper
 from .events import KSEventScraper
 
@@ -72,6 +73,7 @@ class Kansas(State):
             "start_date": "2021-01-11",
             # TODO: set real end date
             "end_date": "2022-05-31",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = []

@@ -5,10 +5,6 @@ from openstates.scrape import Scraper, Organization
 
 class WYCommitteeScraper(Scraper):
     def scrape(self, session=None):
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         # com_types = ['J', 'SE', 'O']
         # base_url = 'https://wyoleg.gov/LsoService/api/committeeList/2018/J'
         url = "https://wyoleg.gov/LsoService/api/committees/{}".format(session)

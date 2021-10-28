@@ -26,13 +26,10 @@ _vote_classifiers = (
 
 class PRVoteScraper(Scraper):
     def scrape(self, chamber=None, session=None):
-        if not session:
-            session = self.latest_session()
-
         # only senate votes currently scraped
         if chamber and chamber != "upper":
             return
-        if session != self.latest_session():
+        if session != "2021-2024":
             return
 
         yield from self.scrape_upper(session)

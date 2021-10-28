@@ -1,7 +1,7 @@
 import lxml.html
 import re
 import requests
-from utils import State
+from openstates.scrape import State
 from .bills import AZBillScraper
 from .events import AZEventScraper
 
@@ -259,6 +259,7 @@ class Arizona(State):
             "name": "55th Legislature - 1st Regular Session",
             "start_date": "2020-01-11",
             "end_date": "2020-04-23",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

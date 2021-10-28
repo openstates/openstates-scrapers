@@ -308,9 +308,6 @@ class AZBillScraper(Scraper):
                 yield vote
 
     def scrape(self, chamber=None, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         session_id = session_metadata.session_id_meta_data[session]
 
         # Get the bills page to start the session

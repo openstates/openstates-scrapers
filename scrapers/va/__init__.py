@@ -1,5 +1,6 @@
 import logging
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .csv_bills import VaCSVBillScraper
 from .events import VaEventScraper
 
@@ -173,6 +174,7 @@ class Virginia(State):
             "start_date": "2021-08-04",
             # TODO: set real end date after session
             "end_date": "2021-08-20",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

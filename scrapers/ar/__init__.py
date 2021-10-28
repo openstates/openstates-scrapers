@@ -1,4 +1,5 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import ARBillScraper
 from .events import AREventScraper
 
@@ -168,6 +169,7 @@ class Arkansas(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-11",
             "end_date": "2021-03-12",
+            "active": True,
         },
         {
             "_scraped_name": "First Extraordinary Session, 2021",
@@ -176,6 +178,7 @@ class Arkansas(State):
             "name": "2021 First Extraordinary Session",
             "start_date": "2021-08-03",
             "end_date": "2021-08-13",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

@@ -39,10 +39,6 @@ class COBillScraper(Scraper, LXMLMixin):
         """
         Entry point when invoking this (or really whatever else)
         """
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         chambers = [chamber] if chamber else ["upper", "lower"]
 
         for chamber in chambers:

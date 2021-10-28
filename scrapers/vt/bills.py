@@ -12,9 +12,6 @@ class VTBillScraper(Scraper, LXMLMixin):
     def scrape(self, session=None):
         HTML_TAGS_RE = r"<.*?>"
 
-        if session is None:
-            session = self.latest_session()
-
         year_slug = self.jurisdiction.get_year_slug(session)
 
         # Load all bills and resolutions via the private API

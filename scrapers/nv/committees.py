@@ -8,13 +8,13 @@ nelis_root = "https://www.leg.state.nv.us/App/NELIS/REL"
 
 
 class NVCommitteeScraper(Scraper):
-    def scrape(self, chamber=None):
+    def scrape(self, chamber=None, session=None):
         if chamber:
             chambers = [chamber]
         else:
             chambers = ["upper", "lower"]
         for chamber in chambers:
-            insert = self.jurisdiction.session_slugs[self.latest_session()]
+            insert = self.jurisdiction.session_slugs[session]
 
             chamber_names = {"lower": "Assembly", "upper": "Senate"}
             list_url = "%s/%s/HomeCommittee/LoadCommitteeListTab" % (nelis_root, insert)

@@ -17,9 +17,6 @@ class CTBillScraper(Scraper):
     latest_only = True
 
     def scrape(self, chamber=None, session=None):
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         self.bills = defaultdict(list)
         self._committee_names = {}

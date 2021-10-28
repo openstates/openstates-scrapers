@@ -1,11 +1,9 @@
-# import scrapelib
-# import lxml.html
 import json
 import requests
 
 from .bills import SDBillScraper
 from .events import SDEventScraper
-from utils import State
+from openstates.scrape import State
 
 
 class SouthDakota(State):
@@ -132,6 +130,7 @@ class SouthDakota(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-12",
             "end_date": "2021-03-29",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = []

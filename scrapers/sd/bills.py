@@ -11,9 +11,6 @@ SESSION_IDS = {"2021": "44", "2020": "43"}
 class SDBillScraper(Scraper, LXMLMixin):
     def scrape(self, chamber=None, session=None):
         self.seen_votes = set()
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
 
         # removing Light here adds more info, maybe useful
         url = (

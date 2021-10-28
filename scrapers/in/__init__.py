@@ -1,6 +1,6 @@
 import os
 import requests
-from utils import State
+from openstates.scrape import State
 from .bills import INBillScraper
 from .events import INEventScraper
 
@@ -109,6 +109,7 @@ class Indiana(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-11",
             "end_date": "2021-04-29",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

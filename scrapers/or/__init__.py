@@ -1,4 +1,4 @@
-from utils import State
+from openstates.scrape import State
 from .bills import ORBillScraper
 from .votes import ORVoteScraper
 from .events import OREventScraper
@@ -167,6 +167,7 @@ class Oregon(State):
             "name": "2021 Special Session",
             "start_date": "2021-09-20",
             "end_date": "2021-09-25",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

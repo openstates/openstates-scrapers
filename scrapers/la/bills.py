@@ -102,9 +102,6 @@ class LABillScraper(Scraper, LXMLMixin):
             return []
 
     def scrape(self, chamber=None, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         chambers = [chamber] if chamber else ["upper", "lower"]
         session_id = self._session_ids[session]
         # Scan bill abbreviation list if necessary.

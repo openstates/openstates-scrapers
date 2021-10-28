@@ -3,7 +3,8 @@ import logging
 from .bills import FlBillScraper
 
 # from .events import FlEventScraper
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -135,6 +136,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2021-03-02",
             "end_date": "2021-05-01",
+            "active": True,
         },
         {
             "name": "2021 Special Session A",

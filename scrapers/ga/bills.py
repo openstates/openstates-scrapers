@@ -123,10 +123,6 @@ class GABillScraper(Scraper):
             "STH": None,
             "HTS": None,
         }
-
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         sid = SESSION_SITE_IDS[session]
 
         legislation = backoff(self.lservice.GetLegislationForSession, sid)[

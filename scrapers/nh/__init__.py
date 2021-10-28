@@ -1,5 +1,5 @@
 import datetime
-from utils import State
+from openstates.scrape import State
 from .bills import NHBillScraper
 from .events import NHEventScraper
 
@@ -76,6 +76,7 @@ class NewHampshire(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-06",
             "end_date": "2021-06-28",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

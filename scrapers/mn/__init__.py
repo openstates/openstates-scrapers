@@ -1,4 +1,5 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 
 from .bills import MNBillScraper
 from .vote_events import MNVoteScraper
@@ -210,6 +211,7 @@ class Minnesota(State):
             "name": "2021, First Special Session",
             "start_date": "2021-06-14",
             "end_date": "2021-06-18",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

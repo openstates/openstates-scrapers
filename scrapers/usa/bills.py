@@ -45,10 +45,6 @@ class USBillScraper(Scraper):
 
     # to scrape everything UPDATED after a given date/time, start="2020-01-01 22:01:01"
     def scrape(self, chamber=None, session=None, start=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         if start:
             start = datetime.datetime.strptime(start, "%Y-%m-%d %H:%I:%S")
         else:
