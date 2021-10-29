@@ -23,7 +23,7 @@ class CommitteeDetails(HtmlPage):
             member_name = CSS("h4 a").match_one(member).text_content()
             try:
                 positions = ["Chair", "Vice Chair"]
-                position = CSS("span.member-role").match_one(member).text_content().lower()
+                position = CSS("span.member-role").match_one(member).text_content()
                 if position in positions:
                     member_role = position
             except SelectorError:
