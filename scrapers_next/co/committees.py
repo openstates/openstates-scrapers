@@ -18,10 +18,10 @@ class CommitteeDetails(HtmlPage):
             chamber = "legislature"
         print("CHAMBER: ", chamber)
         com = ScrapeCommittee(name=self.input, chamber=chamber)
-        members = CSS(".member h4").match(self.root)
+        members = CSS(".member ").match(self.root)
         for member in members:
+            member_name = CSS("h4 a").match_one(member).text_content()
             try:
-                member_name = CSS("a").match_one(member).text_content()
                 positions = ["Chair", "Vice Chair"]
                 position = CSS("span.member-role").match_one(member).text_content().lower()
                 if position in positions:
@@ -41,3 +41,8 @@ class CommitteeList(HtmlListPage):
     def process_item(self, item):
         name = item.text
         return CommitteeDetails(name, source=CSS("a").match_one(item).get("href"))
+
+
+if __name__ == "__main__":
+    from spatula.cli import scrape
+    scrape(["committees"])
