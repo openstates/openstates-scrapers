@@ -1,4 +1,4 @@
-from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError, Selector
+from spatula import HtmlPage, HtmlListPage, CSS, SelectorError
 from openstates.models import ScrapeCommittee
 
 
@@ -45,4 +45,5 @@ class CommitteeList(HtmlListPage):
 
 if __name__ == "__main__":
     from spatula.cli import scrape
+
     scrape(["committees"])
