@@ -151,6 +151,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2022-01-11",
             "end_date": "2022-03-11",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
