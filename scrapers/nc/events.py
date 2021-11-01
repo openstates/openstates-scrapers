@@ -64,9 +64,12 @@ class NCEventScraper(Scraper, LXMLMixin):
                 when = f"{date} {time}"
                 try:
                     when = dateutil.parser.parse(when)
-                except ParserError:
+                    # occasionally they'd do 9am-1pm which confuses the TZ detection
+                    when = self._tz.localize(when)
+                except (ParserError, ValueError):
                     self.warning(f"Unable to parse {time}, only using day component")
                     when = dateutil.parser.parse(date)
+                    when = self._tz.localize(when).date()
 
                 when = self._tz.localize(when)
 
