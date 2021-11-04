@@ -157,6 +157,9 @@ class GABillScraper(Scraper):
             if instrument["Suffix"]:
                 bill_id += instrument["Suffix"]
 
+            # special session bills get a suffix that doesn't show up in the site
+            bill_id = bill_id.replace("EX", "")
+
             title = instrument["Caption"]
             description = instrument["Summary"]
 

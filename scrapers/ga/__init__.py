@@ -74,9 +74,16 @@ class Georgia(State):
             "end_date": "2021-04-02",
             "active": True,
         },
+        {
+            "_scraped_name": "2021 Special Session",
+            "identifier": "2021_ss",
+            "name": "2021 Special Session",
+            "start_date": "2021-11-03",
+            "end_date": "2021-11-10",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
-        "2021 Special Session",
         "2009-2010 Regular Session",
         "2007-2008 Regular Session",
         "2005 Special Session",
