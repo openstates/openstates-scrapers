@@ -76,6 +76,7 @@ class Georgia(State):
         },
     ]
     ignored_scraped_sessions = [
+        "2021 Special Session",
         "2009-2010 Regular Session",
         "2007-2008 Regular Session",
         "2005 Special Session",
