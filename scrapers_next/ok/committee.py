@@ -1,23 +1,63 @@
 from spatula import HtmlPage, CSS, HtmlListPage, SelectorError
 from openstates.models import ScrapeCommittee
+
+
 class SenateCommitteeDetail(HtmlPage):
     example_source = "https://oksenate.gov/committees/agriculture-and-wildlife"
     example_input = "Agriculture and Wildlife"
+
     def process_page(self):
         com = self.input
         try:
-            members_name = CSS(
-                "section.section.section_ind_f.section_bg-color_b div div div div a span"
-            ).match(self.root)
-            for member in members_name:
-                name = member.text_content()
-                member_role = "member"
-                com.add_member(name, member_role)
-        except SelectorError:
-            pass
+            mem_name_C = (
+                CSS(
+                    "div div div.senators__items span div article a span.senators__name span"
+                )
+                .match(self.root)[0]
+                .text_content()
+            )
+            mem_name_VC = (
+                CSS(
+                    "div div div.senators__items span div article a span.senators__name span"
+                )
+                .match(self.root)[1]
+                .text_content()
+            )
+            role_C = (
+                CSS("div div div.senators__items span div span.senators__position")
+                .match(self.root)[0]
+                .text_content()
+            )
+            role_VC = (
+                CSS("div div div.senators__items span div span.senators__position")
+                .match(self.root)[1]
+                .text_content()
+            )
+            com.add_member(mem_name_C, role_C)
+            com.add_member(mem_name_VC, role_VC)
+        except:
+            mem_name_C = (
+                CSS(
+                    "div div div.senators__items span div article a span.senators__name span"
+                )
+                .match(self.root)[0]
+                .text_content()
+            )
+            role_C = (
+                CSS("div div div.senators__items span div span.senators__position")
+                .match(self.root)[0]
+                .text_content()
+            )
+            com.add_member(mem_name_C, role_C)
+        members = CSS("div div div div a span.sSen__sName").match(self.root)
+        for member in members:
+            name = member.text_content().strip()
+            role = "member"
+            com.add_member(name, role)
         com.add_source(self.source.url)
         com.add_link(self.source.url, note="homepage")
         return com
+
 
 class HouseCommitteeDetail(HtmlPage):
     example_source = "https://www.okhouse.gov/Committees/CommitteeMembers.aspx?CommID=417&SubCommID=0"
@@ -96,7 +136,7 @@ class CommitteeList(HtmlListPage):
         detail_link = com_link.get("href")
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
-        #return com
+        # return com
         return HouseCommitteeDetail(com, source=detail_link)
 
 
@@ -111,32 +151,34 @@ class JointCommitteeList(CommitteeList):
     source = "https://www.okhouse.gov/Committees/Default.aspx"
     chamber = "legislature"
 
+
 class ConfrenceCommitteeList(CommitteeList):
     selector = CSS("#ctl00_ContentPlaceHolder1_rgdConference_GridData td")
     source = "https://www.okhouse.gov/Committees/Default.aspx"
     chamber = "legislature"
+
 
 class SpecialCommitteeList(CommitteeList):
     selector = CSS("#ctl00_ContentPlaceHolder1_rgdSpecial_GridData td")
     source = "https://www.okhouse.gov/Committees/Default.aspx"
     chamber = "legislature"
 
-    class SenateCommitteeList(HtmlListPage):
-        source = "https://oksenate.gov/committees-list"
-        chamber = "upper"
-        selector = CSS("div.bTiles__items")
 
-        def process_item(self, item):
-            com_link = CSS("a").match(item)[0]
-            name = CSS("a div span.bTiles__title", num_items=15).match(item)[0].text_content()
-            com = ScrapeCommittee(
-                name=name, classification="committee", chamber=self.chamber
-            )
-            detail_link = com_link.get("href")
-            com.add_source(detail_link)
-            com.add_link(detail_link, note="homepage")
-            # return com
-            return SenateCommitteeDetail(com, source=detail_link)
+class SenateCommitteeList(HtmlListPage):
+    source = "https://oksenate.gov/committees-list"
+    chamber = "upper"
+    selector = CSS(
+        "section.section.section_ind_c.section_bg-color_c div div div.bTiles__items a"
+    )
+
+    def process_item(self, item):
+
+        name = CSS("div span.bTiles__title").match(item)[0].text_content()
+        com = ScrapeCommittee(
+            name=name, classification="committee", chamber=self.chamber
+        )
+        detail_link = item.get("href")
+        return SenateCommitteeDetail(com, source=detail_link)
 
 
 if __name__ == "__main__":
