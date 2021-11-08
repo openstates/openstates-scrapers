@@ -13,8 +13,6 @@ class CommitteeDetail(HtmlPage):
 
     def process_page(self):
         com = self.input
-        com.add_source(self.source.url)
-        com.add_link(self.source.url, note="homepage")
 
         for member_type in CSS("div article div div h4 ").match(self.root):
             role = self.get_role(member_type.text_content())
