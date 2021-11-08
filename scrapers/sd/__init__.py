@@ -39,6 +39,7 @@ class SouthDakota(State):
             "name": "2011 Special Session",
             "start_date": "2011-10-24",
             "end_date": "2011-10-25",
+            "classification": "special",
         },
         {
             "_scraped_name": "2012",
@@ -88,6 +89,7 @@ class SouthDakota(State):
             "name": "2017 Special Session",
             "start_date": "2017-06-12",
             "end_date": "2017-06-12",
+            "classification": "special",
         },
         {
             "_scraped_name": "2018",
@@ -102,6 +104,7 @@ class SouthDakota(State):
             "name": "2018 Special Session",
             "start_date": "2018-09-12",
             "end_date": "2018-09-12",
+            "classification": "special",
         },
         {
             "_scraped_name": "2019",
@@ -123,6 +126,7 @@ class SouthDakota(State):
             "name": "2020 Special Session",
             "start_date": "2020-10-05",
             "end_date": "2020-10-05",
+            "classification": "special",
         },
         {
             "_scraped_name": "2021",
@@ -132,8 +136,17 @@ class SouthDakota(State):
             "end_date": "2021-03-29",
             "active": True,
         },
+        {
+            "_scraped_name": "2021r",
+            "identifier": "2021r",
+            "name": "2021 Special Session",
+            "start_date": "2021-11-08",
+            "end_date": "2021-11-12",
+            "classification": "special",
+            "active": True,
+        },
     ]
-    ignored_scraped_sessions = []
+    ignored_scraped_sessions = ["2022"]
 
     def get_session_list(self):
         api_url = "https://sdlegislature.gov/api/Sessions/"
