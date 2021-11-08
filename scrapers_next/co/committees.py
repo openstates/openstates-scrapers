@@ -1,4 +1,4 @@
-from spatula import HtmlPage, HtmlListPage, CSS, SelectorError
+from spatula import HtmlPage, HtmlListPage, CSS, SelectorError, URL
 from openstates.models import ScrapeCommittee
 
 
@@ -16,7 +16,6 @@ class CommitteeDetails(HtmlPage):
             chamber = "upper"
         else:
             chamber = "legislature"
-        print("CHAMBER: ", chamber)
         com = ScrapeCommittee(name=self.input, chamber=chamber)
         members = CSS(".member ").match(self.root)
         for member in members:
@@ -35,12 +34,14 @@ class CommitteeDetails(HtmlPage):
 
 
 class CommitteeList(HtmlListPage):
-    source = "https://leg.colorado.gov/content/committees"
+    source = URL("https://leg.colorado.gov/content/committees", timeout=30)
     selector = CSS("div.view-content tbody a[href]", num_items=49)
 
     def process_item(self, item):
         name = item.text
-        return CommitteeDetails(name, source=CSS("a").match_one(item).get("href"))
+        return CommitteeDetails(
+            name, source=URL(CSS("a").match_one(item).get("href"), timeout=30)
+        )
 
 
 if __name__ == "__main__":
