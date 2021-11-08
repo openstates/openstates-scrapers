@@ -146,7 +146,7 @@ class SouthDakota(State):
             "active": True,
         },
     ]
-    ignored_scraped_sessions = ["2022", "2021r"]
+    ignored_scraped_sessions = ["2022"]
 
     def get_session_list(self):
         api_url = "https://sdlegislature.gov/api/Sessions/"
