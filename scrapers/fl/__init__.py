@@ -136,7 +136,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2021-03-02",
             "end_date": "2021-05-01",
-            # "active": True,
+            "active": True,
         },
         {
             "name": "2021 Special Session A",
@@ -159,7 +159,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2022-01-11",
             "end_date": "2022-03-11",
-            # "active": True,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
