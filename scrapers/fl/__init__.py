@@ -136,7 +136,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2021-03-02",
             "end_date": "2021-05-01",
-            "active": True,
+            # "active": True,
         },
         {
             "name": "2021 Special Session A",
@@ -146,17 +146,24 @@ class Florida(State):
             "end_date": "2021-05-21",
         },
         {
+            "name": "2021 Special Session B",
+            "identifier": "2021B",
+            "classification": "special",
+            "start_date": "2021-11-15",
+            "end_date": "2021-11-19",
+            "active": True,
+        },
+        {
             "name": "2022 Regular Session",
             "identifier": "2022",
             "classification": "primary",
             "start_date": "2022-01-11",
             "end_date": "2022-03-11",
-            "active": True,
+            # "active": True,
         },
     ]
     ignored_scraped_sessions = [
         *(str(each) for each in range(1997, 2010)),
-        "2021B",
         "2020 Org.",
         "2019 I",  # Empty, maybe informational session
         "2010",
