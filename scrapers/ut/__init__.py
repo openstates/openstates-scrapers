@@ -287,6 +287,16 @@ class Utah(State):
             "end_date": "2021-05-25",
             "active": True,
         },
+        {
+            "_scraped_name": "2021 2nd Special Session",
+            "classification": "special",
+            "identifier": "2021S2",
+            "name": "2021 2nd Special Session",
+            "start_date": "2021-11-08",
+            # TODO: Proper end date after session
+            "end_date": "2020-11-12",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "2022 General Session",
