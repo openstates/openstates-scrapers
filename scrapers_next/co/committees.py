@@ -21,6 +21,9 @@ class CommitteeDetails(HtmlPage):
         for member in members:
             try:
                 member_name = CSS("h4 a").match_one(member).text_content()
+            except SelectorError:
+                continue
+            try:
                 positions = ["Chair", "Vice Chair"]
                 position = CSS("span.member-role").match_one(member).text_content()
                 if position in positions:
