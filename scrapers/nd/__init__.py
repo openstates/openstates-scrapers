@@ -52,6 +52,15 @@ class NorthDakota(State):
             "end_date": "2021-04-30",
             "active": True,
         },
+        {
+            "_scraped_name": "67th (2021) Legislative Assembly Special 2021 Session",
+            "identifier": "67S1",
+            "name": "67th (2021) Legislative Assembly Special 2021 Session",
+            "start_date": "2021-11-08",
+            "end_date": "2021-11-12",
+            "classification": "special",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "68th Legislative Assembly (2023-24)",
