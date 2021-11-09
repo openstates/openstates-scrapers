@@ -1,5 +1,4 @@
-# import re
-from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError
+from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError, SkipItem
 from openstates.models import ScrapeCommittee
 
 
@@ -12,6 +11,9 @@ class SenateCommitteeDetail(HtmlPage):
         com.add_link(self.source.url, note="homepage")
 
         members = CSS(".gallery .desc").match(self.root)
+
+        if not members:
+            raise SkipItem("empty committee")
 
         positions = ["Chairman", "Vice-Chairman"]
         for member in members:
