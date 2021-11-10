@@ -5,7 +5,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 
 from utils import LXMLMixin
 
-SESSION_IDS = {"2021": "44", "2020": "43", "2021r": "65"}
+SESSION_IDS = {"2021": "44", "2020": "43", "2021r": "65", "2021i": "66"}
 
 
 class SDBillScraper(Scraper, LXMLMixin):
@@ -62,6 +62,7 @@ class SDBillScraper(Scraper, LXMLMixin):
             title=title,
             classification=btype,
         )
+        bill.add_source(f"https://sdlegislature.gov/Session/Bill/{api_id}")
         bill.add_source(url)
 
         version_rows = page["Documents"]
