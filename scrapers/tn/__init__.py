@@ -117,6 +117,7 @@ class Tennessee(State):
             "name": "112th Third Extraordinary Session (October 2021)",
             "start_date": "2021-10-27",
             "end_date": "2021-10-29",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
