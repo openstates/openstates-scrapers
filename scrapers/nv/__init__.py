@@ -131,6 +131,7 @@ class Nevada(State):
             "name": "33rd (2021) Special Session",
             "start_date": "2021-11-12",
             "end_date": "2021-11-12",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
