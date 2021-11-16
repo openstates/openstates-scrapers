@@ -1,4 +1,4 @@
-from spatula import URL, CSS, HtmlListPage, HtmlPage
+from spatula import URL, CSS, HtmlListPage, HtmlPage, SkipItem
 from openstates.models import ScrapeCommittee
 import re
 
@@ -12,7 +12,7 @@ class CommiteeDetail(HtmlPage):
             CSS("div.Membership fieldset").match_one(self.root).text_content().strip()
             == ""
         ):
-            return com
+            raise SkipItem("empty committee")
 
         members = CSS("fieldset div.area-holder ul.list li span.col01").match(self.root)
 

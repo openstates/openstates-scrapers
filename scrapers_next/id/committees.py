@@ -1,4 +1,4 @@
-from spatula import HtmlListPage, CSS, URL, HtmlPage
+from spatula import HtmlListPage, CSS, URL, HtmlPage, SkipItem
 from openstates.models import ScrapeCommittee
 import re
 
@@ -10,6 +10,10 @@ class DetailCommitteePage(HtmlPage):
         members = CSS(
             "div .wpb_column.vc_column_container.col-xs-mobile-fullwidth.col-sm-6 div .row-equal-height.hcode-inner-row"
         ).match(self.root)
+
+        if not members:
+            raise SkipItem("empty committee")
+
         for member in members:
             name = CSS("strong").match_one(member).text_content().strip()
             name = re.search(r"(Sen\.|Rep\.)\s(.+)", name).groups()[1]

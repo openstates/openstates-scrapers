@@ -362,16 +362,25 @@ class USBillScraper(Scraper):
         bill.extras["cosponsor_bioguides"] = all_sponsors
 
     def scrape_laws(self, bill, xml):
-        law_format = "{type} {num}"
-        laws = []
+        # ex. public law, https://www.govinfo.gov/bulkdata/BILLSTATUS/117/s/BILLSTATUS-117s325.xml
+        # ex. private law, https://www.govinfo.gov/bulkdata/BILLSTATUS/115/hr/BILLSTATUS-115hr4641.xml
+
         for row in xml.findall("bill/laws/item"):
-            laws.append(
-                law_format.format(
-                    type=self.get_xpath(row, "type"),
-                    num=self.get_xpath(row, "number"),
-                )
+            law_type = self.get_xpath(row, "type")
+            law_ref = self.get_xpath(row, "number")
+
+            url_slug = "pvtl" if law_type == "Private Law" else "publ"
+
+            law_url_pattern = "https://www.congress.gov/{congress}/plaws/{url_slug}{num}/PLAW-{congress}{url_slug}{num}.pdf"
+
+            congress, plaw = law_ref.split("-")
+            law_url = law_url_pattern.format(
+                congress=congress, num=plaw, url_slug=url_slug
             )
-        bill.extras["laws"] = laws
+
+            bill.add_citation(
+                f"US {law_type}", law_ref, citation_type="final", url=law_url
+            )
 
     def scrape_related_bills(self, bill, xml):
         for row in xml.findall("bill/relatedBills/item"):
