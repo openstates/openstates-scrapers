@@ -75,6 +75,8 @@ class CommitteeDetail(HtmlPage):
                 com.add_member(
                     member.replace("Rep.", "").replace("Sen.", "").strip(), role_m
                 )
+        else:
+            raise ValueError("no members scraped!")
         return com
 
 
