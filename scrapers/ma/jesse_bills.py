@@ -3,6 +3,7 @@ import requests
 import os
 from datetime import datetime
 import lxml.html
+import json
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 
@@ -31,6 +32,14 @@ class MABillScraper(Scraper):
         self.raise_errors = False
         self.verify = False
 
+    # Tweak which responses are acceptible to the scrapelib internals
+    def accept_response(self, response, **kwargs):
+        # 400 code is weirdly "Document could not be found" so accept that we could not get
+        if response.status_code == 400:
+            return True
+
+        return super().accept_response(response, **kwargs)
+
     def format_bill_number(self, raw):
         return raw.replace("Bill ", "").replace(".", " ").strip()
 
@@ -58,18 +67,40 @@ class MABillScraper(Scraper):
     def scrape(
         self, chamber=None, session=None, bill_no=None, sort=None, page_limit=None
     ):
-        if page_limit:
-            page_limit = int(page_limit)
+        if not session:
+            session = self.latest_session()
+
+        # if page_limit:
+        #     page_limit = int(page_limit)
 
         if bill_no:
-            single_bill_chamber = False
-            if "H" in bill_no:
-                single_bill_chamber = "lower"
-            else:
-                single_bill_chamber = "upper"
-
-            yield from self.scrape_bill(session, bill_no, single_bill_chamber)
+            yield from self.scrape_bill(session, bill_no)
             return
+
+        yield from self.scrape_documents(session)
+
+    def get_identifier_from_summary_doc(self, summary_doc):
+        if summary_doc["BillNumber"]:
+            return summary_doc["BillNumber"]
+        else:
+            return summary_doc["DocketNumber"]
+
+    def scrape_documents(self, session):
+        # for the chamber of the action
+
+        # Pull the search page to get the filters
+        session_number = re.sub(r"[^0-9]", "", session)
+        search_url = (
+            f"https://malegislature.gov/api/GeneralCourts/{session_number}/Documents"
+        )
+        summary_docs = json.loads(self.get(search_url).text)
+
+        for summary_doc in summary_docs:
+            doc_number = self.get_identifier_from_summary_doc(summary_doc)
+            if not summary_doc["Details"]:
+                self.logger.info(f"Skipping {doc_number} for lack of details")
+            else:
+                yield from self.scrape_bill(session, doc_number)
 
     def list_bills(self, session, chamber, pageNumber, sort=None):
         session_filter = self.session_filters[session]
@@ -125,56 +156,85 @@ class MABillScraper(Scraper):
 
         return int(maxPage)
 
-    def scrape_bill(self, session, bill_id, chamber):
+    def scrape_bill(self, session, bill_id):
         # https://malegislature.gov/Bills/189/SD2739
-        session_for_url = self.replace_non_digits(session)
-        bill_url = "https://malegislature.gov/Bills/{}/{}".format(
-            session_for_url, bill_id
-        )
+        # session_for_url = self.replace_non_digits(session)
+        # bill_url = "https://malegislature.gov/Bills/{}/{}".format(
+        #     session_for_url, bill_id
+        # )
 
-        try:
-            response = self.get(bill_url)
-            self.info("GET (with `requests`) - {}".format(bill_url))
-        except requests.exceptions.RequestException:
-            self.warning(u"Server Error on {}".format(bill_url))
-            return False
+        # /GeneralCourts/{generalCourtNumber}/Documents/{documentNumber}
+        session_number = re.sub(r"[^0-9]", "", session)
+        bill_url = f"https://malegislature.gov/api/GeneralCourts/{session_number}/Documents/{bill_id}"
 
-        html = response.text
+        response = self.get(bill_url)
+        self.info("GET (with `requests`) - {}".format(bill_url))
+        if response.status_code == 400:
+            # 400 is weirdly "The requested Document could not be found in General Court..."
+            # so we can't get details
+            self.logger.info(
+                f"Could not get bill details for {bill_id}, got Document could not be found error"
+            )
+            return
+        if response.status_code == 500:
+            # some bills are stuck in 500 forever?
+            # https://malegislature.gov/api/GeneralCourts/192/Documents/HD4135
+            # https://malegislature.gov/api/GeneralCourts/192/Documents/HD4167
+            # https://malegislature.gov/api/GeneralCourts/192/Documents/HD4241
+            # https://malegislature.gov/api/GeneralCourts/192/Documents/HD4242
+            # https://malegislature.gov/api/GeneralCourts/192/Documents/HD4364
+            # https://malegislature.gov/api/GeneralCourts/192/Documents/HD4365
+            # https://malegislature.gov/api/GeneralCourts/192/Documents/HD4366
+            # https://malegislature.gov/api/GeneralCourts/192/Documents/HD4367
+            # https://malegislature.gov/api/GeneralCourts/192/Documents/HD4373
+            self.logger.info(f"Could not get bill details for {bill_id}, got 500 error")
+            return
 
-        page = lxml.html.fromstring(html)
+        # html = response.text
+        # page = lxml.html.fromstring(html)
 
-        if not page.xpath('//div[contains(@class, "followable")]/h1/text()'):
-            self.warning(u"Server Error on {}".format(bill_url))
-            return False
+        document = json.loads(response.text)
+
+        # if not page.xpath('//div[contains(@class, "followable")]/h1/text()'):
+        #     self.warning(u"Server Error on {}".format(bill_url))
+        #     return False
 
         # The state website will periodically miss a few bills' titles for a few days
         # These titles will be extant on the bill list page, but missing on the bill detail page
         # The titles are eventually populated under one of two markups
-        try:
-            bill_title = page.xpath('//div[@id="contentContainer"]/div/div/h2/text()')[
-                0
-            ]
-        except IndexError:
-            bill_title = None
-            pass
+        # try:
+        #     bill_title = page.xpath('//div[@id="contentContainer"]/div/div/h2/text()')[
+        #         0
+        #     ]
+        # except IndexError:
+        #     bill_title = None
+        #     pass
 
-        if bill_title is None:
-            try:
-                bill_title = page.xpath(
-                    '//div[contains(@class,"followable")]/h1/text()'
-                )[0]
-                bill_title = bill_title.replace("Bill", "").strip()
-            except IndexError:
-                self.warning("Couldn't find title for {}; skipping".format(bill_id))
-                return False
+        bill_title = document["Title"]
+
+        # if bill_title is None:
+        #     try:
+        #         bill_title = page.xpath(
+        #             '//div[contains(@class,"followable")]/h1/text()'
+        #         )[0]
+        #         bill_title = bill_title.replace("Bill", "").strip()
+        #     except IndexError:
+        #         self.warning("Couldn't find title for {}; skipping".format(bill_id))
+        #         return False
 
         bill_types = ["H", "HD", "S", "SD", "SRes"]
+        bill_type = re.sub("[0-9]", "", bill_id)
         if re.sub("[0-9]", "", bill_id) not in bill_types:
             self.warning("Unsupported bill type for {}; skipping".format(bill_id))
             return False
 
         if "SRes" in bill_id:
             bill_id = bill_id.replace("SRes", "SR")
+
+        if bill_type[0] == "H":
+            chamber = "lower"
+        else:
+            chamber = "upper"
 
         bill = Bill(
             bill_id,
@@ -184,47 +244,47 @@ class MABillScraper(Scraper):
             classification="bill",
         )
 
-        bill_summary = None
-        if page.xpath('//p[@id="pinslip"]/text()'):
-            bill_summary = page.xpath('//p[@id="pinslip"]/text()')[0]
-        if bill_summary:
-            bill.add_abstract(bill_summary, "summary")
+        if document["Pinslip"]:
+            bill.add_abstract(document["Pinslip"], "summary")
 
+        web_bill_url = f"https://malegislature.gov/Bills/{session}/{bill_id}"
+        bill.add_source(web_bill_url)
         bill.add_source(bill_url)
 
         # https://malegislature.gov/Bills/189/SD2739 has a presenter
         # https://malegislature.gov/Bills/189/S2168 no sponsor
         # Find the non-blank text of the dt following Sponsor or Presenter,
         # including any child link text.
-        sponsor = page.xpath(
-            '//dt[text()="Sponsor:" or text()="Presenter:"]/'
-            "following-sibling::dd/descendant-or-self::*/text()[normalize-space()]"
-        )
-        if sponsor:
-            sponsor = (
-                sponsor[0]
-                .replace("*", "")
-                .replace("%", "")
-                .replace("This sponsor is an original petitioner.", "")
-                .strip()
-            )
-            bill.add_sponsorship(
-                sponsor, classification="primary", primary=True, entity_type="person"
-            )
+        # sponsor = page.xpath(
+        #     '//dt[text()="Sponsor:" or text()="Presenter:"]/'
+        #     "following-sibling::dd/descendant-or-self::*/text()[normalize-space()]"
+        # )
+        # if sponsor:
+        #     sponsor = (
+        #         sponsor[0]
+        #         .replace("*", "")
+        #         .replace("%", "")
+        #         .replace("This sponsor is an original petitioner.", "")
+        #         .strip()
+        #     )
+        #     bill.add_sponsorship(
+        #         sponsor, classification="primary", primary=True, entity_type="person"
+        #     )
 
-        self.scrape_cosponsors(bill, bill_url)
+        # TODO self.scrape_cosponsors(bill, bill_url)
 
-        version = page.xpath(
-            "//div[contains(@class, 'modalBtnGroup')]/"
-            "a[contains(text(), 'Download PDF') and not(@disabled)]/@href"
-        )
-        if version:
-            version_url = "https://malegislature.gov{}".format(version[0])
-            bill.add_version_link(
-                "Bill Text", version_url, media_type="application/pdf"
-            )
+        # TODO version = page.xpath(
+        #     "//div[contains(@class, 'modalBtnGroup')]/"
+        #     "a[contains(text(), 'Download PDF') and not(@disabled)]/@href"
+        # )
+        # if version:
+        #     version_url = "https://malegislature.gov{}".format(version[0])
+        #     bill.add_version_link(
+        #         "Bill Text", version_url, media_type="application/pdf"
+        #     )
 
-        self.scrape_actions(bill, bill_url, session)
+        # TODO self.scrape_actions(bill, bill_url, session)
+
         yield bill
 
     def scrape_cosponsors(self, bill, bill_url):
@@ -400,9 +460,7 @@ class MABillScraper(Scraper):
             (path, resp) = self.urlretrieve(vurl)
             pdflines = convert_pdf(path, "text")
             os.remove(path)
-            self.house_pdf_cache[vurl] = pdflines.decode("utf-8").replace(
-                u"\u2019", "'"
-            )
+            self.house_pdf_cache[vurl] = pdflines.decode("utf-8").replace("\u2019", "'")
         return self.house_pdf_cache[vurl]
 
     def scrape_house_vote(self, vote, vurl, supplement):
@@ -470,7 +528,7 @@ class MABillScraper(Scraper):
         # handle individual lines in pdf to id legislator votes
         for line in lines:
             line = line.strip()
-            line = line.decode("utf-8").replace(u"\u2212", "-")
+            line = line.decode("utf-8").replace("\u2212", "-")
             if line == "":
                 continue
             # change mode accordingly
