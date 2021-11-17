@@ -1,7 +1,7 @@
 from spatula import JsonListPage, JsonPage, XPath, URL
 
 # from openstates.utils import format_datetime
-from openstates.scrape import Bill
+from openstates.scrape import Bill, Scraper
 import attr
 import re
 
@@ -10,7 +10,6 @@ import re
 class PartialBill:
     id: str
     session: str
-    session_number: int
     title: int
     chamber: str
 
@@ -46,7 +45,6 @@ class BillList(JsonListPage):
         bill = PartialBill(
             id=bill_id,
             session=self.session_id,
-            session_number=self.session_number,
             title=title,
             chamber="lower" if bill_id[0] == "H" else "upper",
         )
@@ -60,56 +58,67 @@ class BillDetail(JsonPage):
     def process_page(self):
         document = self.data
         leg_type = document["LegislationTypeName"].lower()
-
-        # temp source
         session = document["GeneralCourtNumber"]
         title = document["Title"]
-
-        bill_id_parts = re.match(r"([A-Z]+)(\d+)", document["BillNumber"]).group()
-        bill_id = f"{bill_id_parts(1)} {bill_id_parts(2)}"
+        bill_id = (
+            document["BillNumber"]
+            if document["BillNumber"]
+            else document["DocketNumber"]
+        )
 
         b = Bill(
             identifier=bill_id,
             legislative_session="192nd",
             title=title,
             chamber="lower" if bill_id[0] == "H" else "upper",
-            classification=leg_type,
+            classification=[leg_type],
         )
-        # b = Bill(
-        #     identifier=self.input.id,
-        #     legislative_session=self.input.session,
-        #     title=self.input.title,
-        #     chamber=self.input.chamber,
-        #     classification=leg_type,
-        # )
         bill_url = f"https://malegislature.gov/Bills/{session}/{bill_id}"
         b.add_source(bill_url)
+        print(leg_type)
+
+        if document["Pinslip"]:
+            bill_summary = document["Pinslip"]
+            b.add_abstract(bill_summary, "summary")
+            print(bill_summary)
 
         if document["PrimarySponsor"]:
             primary_sponsor = document["PrimarySponsor"]["Name"]
+            print(primary_sponsor)
             primary_sponsor_type = document["PrimarySponsor"]["Type"]
             primary_type = "organization" if primary_sponsor_type == 2 else "person"
             b.add_sponsorship(primary_sponsor, "primary", primary_type, True)
-        for cosponsor in document["Cosponsors"]:
-            if cosponsor["Name"] != primary_sponsor:
-                sponsor = cosponsor["Name"]
-                s_type = cosponsor["Type"]
-                sponsor_type = "organization" if s_type == 2 else "person"
-                b.add_sponsorship(sponsor, "cosponsor", sponsor_type, False)
+        if document["Cosponsors"]:
+            for cosponsor in document["Cosponsors"]:
+                if cosponsor["Name"] != primary_sponsor:
+                    sponsor = cosponsor["Name"]
+                    print(sponsor)
+                    s_type = cosponsor["Type"]
+                    sponsor_type = "organization" if s_type == 2 else "person"
+                    b.add_sponsorship(sponsor, "cosponsor", sponsor_type, False)
 
         if document["DocumentText"]:
             version_url = f"{bill_url}.pdf"
+            print(version_url)
             b.add_version_link(
                 "Bill Text",
                 version_url,
                 media_type="application/pdf",
-                on_duplicate="ignore",
             )
 
-        print(b)
+        # if document["Amendments"]:
+        #     for amendment in self.data["Amendments"]:
+        #         number = amendment["AmendmentNumber"]
+        #         chamber = amendment["Branch"]
+        #         parent_bill = amendment["ParentBillNumber"]
+        #         # https://malegislature.gov/Bills/GetAmendmentContent/192/H715/1/House/Preview
+        #         url = f"https://malegislature.gov/Bills/GetAmendmentContent/{session}/{parent_bill}/{number}/{chamber}/Preview"
+        #         name = "{} to {}".format(number, parent_bill)
+        #         print(name)
+        #         b.add_document_link(name, url, media_type="application/pdf", on_duplicate="ignore")
+
         # action_url = document["BillHistory"]
         # yield self.process_history(source=action_url)
-
         return b
 
     # def process_history(self, source):
@@ -128,3 +137,18 @@ class BillDetail(JsonPage):
     #             actor=action_actor,
     #             # classification=attrs["classification"],
     #         )
+
+
+class MaBillScraper(Scraper):
+    verify = False
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.retry_wait_seconds = 3
+        self.raise_errors = False
+        self.retry_attempts = 1
+        self.verify = False
+
+    def scrape(self, session=None):
+        bill_list = BillList({"session": session})
+        yield from bill_list.do_scrape()

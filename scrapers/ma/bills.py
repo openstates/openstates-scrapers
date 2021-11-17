@@ -184,12 +184,6 @@ class MABillScraper(Scraper):
             classification="bill",
         )
 
-        bill_summary = None
-        if page.xpath('//p[@id="pinslip"]/text()'):
-            bill_summary = page.xpath('//p[@id="pinslip"]/text()')[0]
-        if bill_summary:
-            bill.add_abstract(bill_summary, "summary")
-
         bill.add_source(bill_url)
 
         # https://malegislature.gov/Bills/189/SD2739 has a presenter
@@ -213,16 +207,6 @@ class MABillScraper(Scraper):
             )
 
         self.scrape_cosponsors(bill, bill_url)
-
-        version = page.xpath(
-            "//div[contains(@class, 'modalBtnGroup')]/"
-            "a[contains(text(), 'Download PDF') and not(@disabled)]/@href"
-        )
-        if version:
-            version_url = "https://malegislature.gov{}".format(version[0])
-            bill.add_version_link(
-                "Bill Text", version_url, media_type="application/pdf"
-            )
 
         self.scrape_actions(bill, bill_url, session)
         yield bill
@@ -511,6 +495,3 @@ class MABillScraper(Scraper):
         s.verify = False
         s.headers.update({"X-Requested-With": "XMLHttpRequest"})
         return s.get(url)
-
-    def replace_non_digits(self, str):
-        return re.sub(r"[^\d]", "", str).strip()
