@@ -32,6 +32,28 @@ class CommitteeDetail(HtmlPage):
                 com.add_member(
                     member.replace("Rep.", "").replace("Sen.", "").strip(), role_m
                 )
+        if len(rolez) == 6:
+            member_Chair = rolez[0].text
+            member_Vice = rolez[1].text
+            member_M = "Member"
+
+            Chair_Mem = members[0]
+            com.add_member(
+                Chair_Mem.text.replace("Rep.", "").replace("Sen.", "").strip(),
+                member_Chair,
+            )
+            Vice_Mem = members[1]
+            com.add_member(
+                Vice_Mem.text.replace("Rep.", "").replace("Sen.", "").strip(),
+                member_Vice,
+            )
+            Member_Mems = members[2:]
+            for mem in Member_Mems:
+                member = mem.text.strip()
+                role_m = member_M
+                com.add_member(
+                    member.replace("Rep.", "").replace("Sen.", "").strip(), role_m
+                )
         elif len(rolez) == 5:
             member_Chair = rolez[0].text
             member_Vice = rolez[1].text
