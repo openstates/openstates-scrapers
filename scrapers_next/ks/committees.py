@@ -32,7 +32,7 @@ class CommitteeDetail(HtmlPage):
                 com.add_member(
                     member.replace("Rep.", "").replace("Sen.", "").strip(), role_m
                 )
-        if len(rolez) == 6:
+        elif len(rolez) == 6:
             member_Chair = rolez[0].text
             member_Vice = rolez[1].text
             member_M = "Member"
