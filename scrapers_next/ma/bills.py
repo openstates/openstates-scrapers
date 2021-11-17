@@ -57,18 +57,32 @@ class BillList(JsonListPage):
 class BillDetail(JsonPage):
     example_source = "https://malegislature.gov/api/GeneralCourts/192/Documents/S756"
 
-    def process_page(self, timeout=80):
+    def process_page(self):
         document = self.data
         leg_type = document["LegislationTypeName"].lower()
 
+        # temp source
+        session = document["GeneralCourtNumber"]
+        title = document["Title"]
+
+        bill_id_parts = re.match(r"([A-Z]+)(\d+)", document["BillNumber"]).group()
+        bill_id = f"{bill_id_parts(1)} {bill_id_parts(2)}"
+
         b = Bill(
-            identifier=self.input.id,
-            legislative_session=self.input.session,
-            title=self.input.title,
-            chamber=self.input.chamber,
+            identifier=bill_id,
+            legislative_session="192nd",
+            title=title,
+            chamber="lower" if bill_id[0] == "H" else "upper",
             classification=leg_type,
         )
-        bill_url = f"https://malegislature.gov/Bills/{self.input.session_number}/{self.input.id}"
+        # b = Bill(
+        #     identifier=self.input.id,
+        #     legislative_session=self.input.session,
+        #     title=self.input.title,
+        #     chamber=self.input.chamber,
+        #     classification=leg_type,
+        # )
+        bill_url = f"https://malegislature.gov/Bills/{session}/{bill_id}"
         b.add_source(bill_url)
 
         if document["PrimarySponsor"]:
