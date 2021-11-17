@@ -35,7 +35,7 @@ class SenateCommitteeDetail(HtmlPage):
             )
             com.add_member(mem_name_C, role_C)
             com.add_member(mem_name_VC, role_VC)
-        except:
+        except IndexError:
             mem_name_C = (
                 CSS(
                     "div div div.senators__items span div article a span.senators__name span"
