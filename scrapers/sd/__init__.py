@@ -145,6 +145,15 @@ class SouthDakota(State):
             "classification": "special",
             "active": True,
         },
+        {
+            "_scraped_name": "2021i",
+            "identifier": "2021i",
+            "name": "2021 Second Special Session",
+            "start_date": "2021-11-08",
+            "end_date": "2021-11-12",
+            "classification": "special",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = ["2022"]
 

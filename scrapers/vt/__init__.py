@@ -87,6 +87,7 @@ class Vermont(State):
         },
     ]
     ignored_scraped_sessions = [
+        "2021 Special Session",
         "2020 Training Session",
         "2009 Special Session",
     ]

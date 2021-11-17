@@ -173,7 +173,7 @@ class WestVirginia(State):
     ]
     ignored_scraped_sessions = [
         "2029",
-        *(str(each) for each in range(1960, 2011)),
+        *(str(each) for each in range(1940, 2011)),
     ]
 
     def get_session_list(self):
