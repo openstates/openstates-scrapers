@@ -1,4 +1,4 @@
-from spatula import HtmlListPage, HtmlPage, CSS, XPath
+from spatula import HtmlListPage, HtmlPage, CSS, XPath, URL
 from openstates.models import ScrapeCommittee
 
 
@@ -65,7 +65,10 @@ class SenateCommitteeDetail(HtmlPage):
 
 
 class SenateCommittee(HtmlListPage):
-    source = "http://www.gencourt.state.nh.us/Senate/committees/senate_committees.aspx"
+    source = URL(
+        "http://www.gencourt.state.nh.us/Senate/committees/senate_committees.aspx",
+        timeout=30,
+    )
     chamber = "upper"
     selector = CSS("#form1 div h5")
 
@@ -78,7 +81,7 @@ class SenateCommittee(HtmlListPage):
         detail_link = com_link.get("href")
         com.add_source(detail_link)
         com.add_link(detail_link, "homepage")
-        return SenateCommitteeDetail(com, source=detail_link)
+        return SenateCommitteeDetail(com, source=URL(detail_link, timeout=30))
 
 
 class HouseCommittee(HtmlListPage):
@@ -95,7 +98,7 @@ class HouseCommittee(HtmlListPage):
         detail_link = com_link.get("href")
         com.add_source(detail_link)
         com.add_link(detail_link, "homepage")
-        return HouseCommitteeDetail(com, source=detail_link)
+        return HouseCommitteeDetail(com, source=URL(detail_link, timeout=30))
 
 
 if __name__ == "__main__":
