@@ -184,7 +184,7 @@ class NHBillScraper(Scraper):
                 if lsr in self.amendments_by_lsr:
                     amendment_id = self.amendments_by_lsr[lsr]
                     amendment_url = (
-                        "http://www.gencourt.state.nh.us/bill_status/"
+                        "http://www.gencourt.state.nh.us/bill_status/legacy/bs2016/"
                         "billText.aspx?sy={}&id={}&txtFormat=amend".format(
                             session, amendment_id
                         )
@@ -301,7 +301,7 @@ class NHBillScraper(Scraper):
 
     def add_source(self, bill, lsr, session):
         bill_url = (
-            "http://www.gencourt.state.nh.us/bill_Status/bill_status.aspx?"
+            "http://www.gencourt.state.nh.us/bill_status/legacy/bs2016/bill_status.aspx?"
             + "lsr={}&sy={}&sortoption=&txtsessionyear={}".format(lsr, session, session)
         )
         bill.add_source(bill_url)
