@@ -33,8 +33,10 @@ class SenateCommitteeDetail(HtmlPage):
                 .match(self.root)[1]
                 .text_content()
             )
-            com.add_member(mem_name_C, role_C)
-            com.add_member(mem_name_VC, role_VC)
+            if mem_name_C:
+                com.add_member(mem_name_C, role_C)
+            if mem_name_VC:
+                com.add_member(mem_name_VC, role_VC)
         except IndexError:
             mem_name_C = (
                 CSS(
@@ -48,7 +50,8 @@ class SenateCommitteeDetail(HtmlPage):
                 .match(self.root)[0]
                 .text_content()
             )
-            com.add_member(mem_name_C, role_C)
+            if mem_name_C:
+                com.add_member(mem_name_C, role_C)
         members = CSS("div div div div a span.sSen__sName").match(self.root)
         for member in members:
             name = member.text_content().strip()
@@ -117,7 +120,8 @@ class HouseCommitteeDetail(HtmlPage):
             for member in members:
                 name = member.text_content().replace("Rep.", "")
                 role = "member"
-                com.add_member(name, role)
+                if name:
+                    com.add_member(name, role)
         except SelectorError:
             members = CSS("#ctl00_ContentPlaceHolder1_dlstHMembers td").match(self.root)
             for member in members:
