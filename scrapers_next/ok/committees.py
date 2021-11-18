@@ -53,7 +53,8 @@ class SenateCommitteeDetail(HtmlPage):
         for member in members:
             name = member.text_content().strip()
             role = "member"
-            com.add_member(name, role)
+            if name:
+                com.add_member(name, role)
         com.add_source(self.source.url)
         com.add_link(self.source.url, note="homepage")
         return com
@@ -122,7 +123,8 @@ class HouseCommitteeDetail(HtmlPage):
             for member in members:
                 name = member.text_content().replace("Rep.", "")
                 role = "member"
-                com.add_member(name, role)
+                if name:
+                    com.add_member(name, role)
         return com
 
 
