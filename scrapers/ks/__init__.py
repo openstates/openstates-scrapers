@@ -73,6 +73,15 @@ class Kansas(State):
             "start_date": "2021-01-11",
             # TODO: set real end date
             "end_date": "2022-05-31",
+            "active": False,
+        },
+        {
+            "_scraped_name": "b2021s",
+            "classification": "special",
+            "identifier": "2021S1",
+            "name": "2021 Special Session",
+            "start_date": "2021-11-22",
+            "end_date": "2021-11-25",
             "active": True,
         },
     ]
