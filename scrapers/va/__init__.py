@@ -171,7 +171,6 @@ class Virginia(State):
             "name": "2021, 2nd Special Session",
             "start_date": "2021-08-04",
             "end_date": "2021-08-10",
-            "active": True,
         },
         {
             "_scraped_name": "2022 Session",
