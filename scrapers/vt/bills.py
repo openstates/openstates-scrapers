@@ -356,8 +356,8 @@ class VTBillScraper(Scraper, LXMLMixin):
             # Witnesses:
             #   http://legislature.vermont.gov/bill/loadBillWitnessList/{year_slug}/{internal_bill_id}
             witnesses_doc_link_url = (
-                "https://legislature.vermont.gov/bill/print/2020/{0}/witnesses".format(
-                    bill_id_original_format
+                "https://legislature.vermont.gov/bill/print/{0}/{1}/witnesses".format(
+                    year_slug, bill_id_original_format
                 )
             )
             bill.add_document_link(
@@ -367,8 +367,8 @@ class VTBillScraper(Scraper, LXMLMixin):
             # Conference committee members:
             #   http://legislature.vermont.gov/bill/loadBillConference/{year_slug}/{bill_number}
             conferees_doc_link_url = (
-                "https://legislature.vermont.gov/bill/print/2020/{0}/conference".format(
-                    bill_id_original_format
+                "https://legislature.vermont.gov/bill/print/{0}/{1}/conference".format(
+                    year_slug, bill_id_original_format
                 )
             )
             page = self.lxmlize(conferees_doc_link_url)
@@ -383,8 +383,8 @@ class VTBillScraper(Scraper, LXMLMixin):
             # Committee meetings:
             #   http://legislature.vermont.gov/committee/loadHistoryByBill/{year_slug}?LegislationId={internal_bill_id}
             meetings_doc_link_url = (
-                "https://legislature.vermont.gov/bill/print/2020/{0}/meetings".format(
-                    bill_id_original_format
+                "https://legislature.vermont.gov/bill/print/{0}/{1}/meetings".format(
+                    year_slug, bill_id_original_format
                 )
             )
             bill.add_document_link(
