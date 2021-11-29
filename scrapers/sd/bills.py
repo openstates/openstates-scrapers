@@ -277,12 +277,16 @@ class SDBillScraper(Scraper, LXMLMixin):
         page = self.get(url).json()
 
         location = page["actionLog"]["FullName"]
-        if "House" in location:
-            chamber = "lower"
-        elif "Senate" in location:
-            chamber = "upper"
-        elif "Joint" in location:
-            chamber = "legislature"
+        if location:
+            if "House" in location:
+                chamber = "lower"
+            elif "Senate" in location:
+                chamber = "upper"
+            elif "Joint" in location:
+                chamber = "legislature"
+            else:
+                self.warning("Bad Vote chamber: '%s', skipping" % location)
+                return
         else:
             self.warning("Bad Vote chamber: '%s', skipping" % location)
             return
