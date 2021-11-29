@@ -1,11 +1,18 @@
-from openstates.scrape import Scraper, Organization
-from spatula import Spatula, Page
-from .utils import fix_name
+from spatula import HtmlPage, HtmlListPage, XPath
+from openstates.models import ScrapeCommittee
 
 
-class HouseComList(Page):
-    url = "http://www.myfloridahouse.gov/Sections/Committees/committees.aspx"
-    list_xpath = "//a[contains(@href, 'committeesdetail.aspx')]"
+def fix_name(name):
+    # handles cases like Watson, Jr., Clovis
+    if ", " not in name:
+        return name
+    last, first = name.rsplit(", ", 1)
+    return first + " " + last
+
+
+class HouseComList(HtmlListPage):
+    source = "http://www.myfloridahouse.gov/Sections/Committees/committees.aspx"
+    selector = XPath("//a[contains(@href, 'committeesdetail.aspx')]")
 
     def handle_page(self):
         # don't use handle_page_item because we need to look back at prior element
@@ -19,7 +26,7 @@ class HouseComList(Page):
                 parent = None
                 chamber = "lower"
 
-            comm = Organization(
+            comm = ScrapeCommittee(
                 name=name, classification="committee", chamber=chamber, parent_id=parent
             )
             yield self.scrape_page(HouseComDetail, item.attrib["href"], obj=comm)
@@ -30,7 +37,7 @@ class HouseComList(Page):
                 chamber = None
 
 
-class HouseComDetail(Page):
+class HouseComDetail(HtmlPage):
     def clean_name(self, name):
         name = name.replace(" [D]", "")
         name = name.replace(" [R]", "")
@@ -59,15 +66,15 @@ class HouseComDetail(Page):
         yield self.obj
 
 
-class SenComList(Page):
-    url = "http://www.flsenate.gov/Committees/"
-    list_xpath = "//a[contains(@href, 'Committees/Show')]/@href"
+class SenComList(HtmlListPage):
+    source = "http://www.flsenate.gov/Committees/"
+    selector = XPath("//a[contains(@href, 'Committees/Show')]/@href")
 
-    def handle_list_item(self, item):
-        return self.scrape_page(SenComDetail, item)
+    def process_item(self, item):
+        return SenComDetail(source=item)
 
 
-class SenComDetail(Page):
+class SenComDetail(HtmlPage):
     def clean_name(self, member):
         member = member.replace("Senator ", "").strip()
         member = member.replace(" (D)", "")
@@ -76,8 +83,8 @@ class SenComDetail(Page):
         member = fix_name(member)
         return member
 
-    def handle_page(self):
-        name = self.doc.xpath('//h2[@class="committeeName"]')[0].text
+    def process_page(self):
+        name = self.root.xpath('//h2[@class="committeeName"]')[0].text
         if name.startswith("Appropriations Subcommittee"):
             return
             # TODO: restore scraping of Appropriations Subcommittees
@@ -89,26 +96,26 @@ class SenComDetail(Page):
                 name = name.replace("Committee on ", "")
             parent = None
             chamber = "upper"
-        comm = Organization(
-            name=name, classification="committee", chamber=chamber, parent_id=parent
+        comm = ScrapeCommittee(
+            name=name, classification="committee", chamber=chamber, parent=parent
         )
 
-        for dt in self.doc.xpath('//div[@id="members"]/dl/dt'):
+        for dt in self.root.xpath('//div[@id="members"]/dl/dt'):
             role = dt.text.replace(": ", "").strip().lower()
             member = dt.xpath("./following-sibling::dd")[0].text_content()
             member = self.clean_name(member)
             comm.add_member(member, role=role)
 
-        for ul in self.doc.xpath('//div[@id="members"]/ul/li'):
+        for ul in self.root.xpath('//div[@id="members"]/ul/li'):
             member = self.clean_name(ul.text_content())
             comm.add_member(member)
 
-        comm.add_source(self.url)
+        comm.add_source(self.source.url)
 
-        yield comm
+        return comm
 
 
-class FlCommitteeScraper(Scraper, Spatula):
-    def scrape(self):
-        yield from self.scrape_page_items(SenComList)
-        yield from self.scrape_page_items(HouseComList)
+# class FlCommitteeScraper(Scraper, Spatula):
+#     def scrape(self):
+#         yield from self.scrape_page_items(SenComList)
+#         yield from self.scrape_page_items(HouseComList)
