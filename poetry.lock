@@ -314,7 +314,7 @@ test = ["mock (>=1.3.0)"]
 
 [[package]]
 name = "ipython"
-version = "7.29.0"
+version = "7.30.0"
 description = "IPython: Productive Interactive Computing"
 category = "main"
 optional = false
@@ -454,7 +454,7 @@ et-xmlfile = "*"
 
 [[package]]
 name = "openstates"
-version = "6.9.1"
+version = "6.9.2"
 description = "core infrastructure for the openstates project"
 category = "main"
 optional = false
@@ -1116,8 +1116,8 @@ imapclient = [
     {file = "IMAPClient-2.1.0.zip", hash = "sha256:60ba79758cc9f13ec910d7a3df9acaaf2bb6c458720d9a02ec33a41352fd1b99"},
 ]
 ipython = [
-    {file = "ipython-7.29.0-py3-none-any.whl", hash = "sha256:a658beaf856ce46bc453366d5dc6b2ddc6c481efd3540cb28aa3943819caac9f"},
-    {file = "ipython-7.29.0.tar.gz", hash = "sha256:4f69d7423a5a1972f6347ff233e38bbf4df6a150ef20fbb00c635442ac3060aa"},
+    {file = "ipython-7.30.0-py3-none-any.whl", hash = "sha256:c8f3e07aefb9cf9e067f39686f035ce09b27a1ee602116a3030b91b6fc138ee4"},
+    {file = "ipython-7.30.0.tar.gz", hash = "sha256:d41f8e80b99690122400f9b2069b12f670246a1b4cc5d332bd6c4e2500e6d6fb"},
 ]
 jedi = [
     {file = "jedi-0.18.0-py2.py3-none-any.whl", hash = "sha256:18456d83f65f400ab0c2d3319e48520420ef43b23a086fdc05dff34132f0fb93"},
@@ -1206,8 +1206,8 @@ openpyxl = [
     {file = "openpyxl-3.0.9.tar.gz", hash = "sha256:40f568b9829bf9e446acfffce30250ac1fa39035124d55fc024025c41481c90f"},
 ]
 openstates = [
-    {file = "openstates-6.9.1-py3-none-any.whl", hash = "sha256:68326e19881939f3a1e5da6b70032036ae1552f7910e82809d66a4dc8d63e873"},
-    {file = "openstates-6.9.1.tar.gz", hash = "sha256:c1fe9e98076d51abee1b9a8f12fdae58419411b07390ed3b4bbbcd329f019125"},
+    {file = "openstates-6.9.2-py3-none-any.whl", hash = "sha256:cde0fecdaf77dfaa5b2fe8e3ea3166ab7c73bfb803b26eb4c40a742750ddf8a7"},
+    {file = "openstates-6.9.2.tar.gz", hash = "sha256:6e48af6af86ca5185368b15a3fafe43d481fb7fe7707ca0136ed459b62074386"},
 ]
 parso = [
     {file = "parso-0.8.2-py2.py3-none-any.whl", hash = "sha256:a8c4922db71e4fdb90e0d0bc6e50f9b273d3397925e5e60a717e719201778d22"},
