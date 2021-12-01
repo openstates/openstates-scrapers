@@ -165,9 +165,17 @@ class Maryland(State):
             "end_date": "2021-04-12",
             "active": True,
         },
+        {
+            "_scraped_name": "2021 Special Session",
+            "classification": "special",
+            "identifier": "2021s1",
+            "name": "2021, 1st Special Session",
+            "start_date": "2021-12-06",
+            "end_date": "2021-12-12",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
-        "2021 Special Session",
         "1996 Regular Session",
         "1997 Regular Session",
         "1998 Regular Session",
