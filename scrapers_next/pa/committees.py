@@ -9,58 +9,50 @@ class HouseCommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
         try:
-            Chair_Member1 = (
+            Chair_Member = (
+                CSS("div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText a")
+                .match(self.root)[0]
+                .text.strip()
+            )
+            Chair_Member_rolez = (
                 CSS(
-                    "div div div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText a"
+                    "div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText div"
                 )
                 .match(self.root)[0]
                 .text.strip()
             )
-            Chair_Member_rolez_1 = (
-                CSS(
-                    "div div div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText div"
-                )
-                .match(self.root)[0]
+            com.add_member(Chair_Member, Chair_Member_rolez)
+            Demo_Chair_Member = (
+                CSS("div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText a")
+                .match(self.root)[1]
                 .text.strip()
             )
-            com.add_member(Chair_Member1, Chair_Member_rolez_1)
-            Chair_Member2 = (
+            Demo_Chair_Member_rolez = (
                 CSS(
-                    "div div div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText a"
+                    "div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText div"
                 )
                 .match(self.root)[1]
                 .text.strip()
             )
-            Chair_Member_rolez_2 = (
-                CSS(
-                    "div div div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText div"
-                )
-                .match(self.root)[1]
-                .text.strip()
-            )
-            com.add_member(Chair_Member2, Chair_Member_rolez_2)
+            com.add_member(Demo_Chair_Member, Demo_Chair_Member_rolez)
         except IndexError:
             pass
-        Members = XPath("/html/body/div/section/div/div[12]/div/div/div/div[2]").match(
-            self.root
-        )
-        for mem in Members:
+        Majority_Members = XPath("//div[12]/div/div/div/div[2]").match(self.root)
+        for mem in Majority_Members:
             try:
-                member_name = XPath("div[1]/a").match_one(mem).text.strip()
-                mem_position = XPath("div[2]").match_one(mem).text.strip()
+                major_member_name = XPath("div[1]/a").match_one(mem).text.strip()
+                major_mem_position = XPath("div[2]").match_one(mem).text.strip()
             except SelectorError:
-                mem_position = "Member"
-            com.add_member(member_name, mem_position)
-        Members_2 = XPath(
-            "/html/body/div/section/div/div[14]/div/div/div/div[2]"
-        ).match(self.root)
-        for mem in Members_2:
+                major_mem_position = "Member"
+            com.add_member(major_member_name, major_mem_position)
+        Minority_Members = XPath("//div[14]/div/div/div/div[2]").match(self.root)
+        for mem in Minority_Members:
             try:
-                member_name2 = XPath("div[1]/a").match_one(mem).text.strip()
-                mem_position2 = XPath("div[2]").match_one(mem).text.strip()
+                minor_member_name = XPath("div[1]/a").match_one(mem).text.strip()
+                minor_mem_position = XPath("div[2]").match_one(mem).text.strip()
             except SelectorError:
-                mem_position2 = "Member"
-            com.add_member(member_name2, mem_position2)
+                minor_mem_position = "Member"
+            com.add_member(minor_member_name, minor_mem_position)
         return com
 
 
@@ -71,59 +63,50 @@ class SenateCommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
         try:
-            Chair_Member1 = (
+            Chair_Member = (
+                CSS("div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText a")
+                .match(self.root)[0]
+                .text.strip()
+            )
+            Chair_Member_rolez = (
                 CSS(
-                    "div div div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText a"
+                    "div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText div"
                 )
                 .match(self.root)[0]
                 .text.strip()
             )
-            Chair_Member_rolez_1 = (
-                CSS(
-                    "div div div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText div"
-                )
-                .match(self.root)[0]
+            com.add_member(Chair_Member, Chair_Member_rolez)
+            Demo_Chair_Member = (
+                CSS("div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText a")
+                .match(self.root)[1]
                 .text.strip()
             )
-            com.add_member(Chair_Member1, Chair_Member_rolez_1)
-            Chair_Member2 = (
+            Demo_Chair_Member_rolez = (
                 CSS(
-                    "div div div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText a"
+                    "div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText div"
                 )
                 .match(self.root)[1]
                 .text.strip()
             )
-            Chair_Member_rolez_2 = (
-                CSS(
-                    "div div div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText div"
-                )
-                .match(self.root)[1]
-                .text.strip()
-            )
-            com.add_member(Chair_Member2, Chair_Member_rolez_2)
+            com.add_member(Demo_Chair_Member, Demo_Chair_Member_rolez)
         except IndexError:
             pass
-        Members = XPath("/html/body/div/section/div/div[10]/div/div/div/div[2]").match(
-            self.root
-        )
-        for mem in Members:
+        Majority_Members = XPath("//div[10]/div/div/div/div[2]").match(self.root)
+        for mem in Majority_Members:
             try:
-                member_name = XPath("div[1]/a").match_one(mem).text.strip()
-                mem_position = XPath("div[2]").match_one(mem).text.strip()
+                major_member_name = XPath("div[1]/a").match_one(mem).text.strip()
+                major_mem_position = XPath("div[2]").match_one(mem).text.strip()
             except SelectorError:
-                mem_position = "Member"
-            com.add_member(member_name, mem_position)
-        Members_2 = XPath(
-            "/html/body/div/section/div/div[12]/div/div/div/div[2]"
-        ).match(self.root)
-        for mem in Members_2:
+                major_mem_position = "Member"
+            com.add_member(major_member_name, major_mem_position)
+        Minority_Members = XPath("//div[12]/div/div/div/div[2]").match(self.root)
+        for mem in Minority_Members:
             try:
-                member_name2 = XPath("div[1]/a").match_one(mem).text.strip()
-                mem_position2 = XPath("div[2]").match_one(mem).text.strip()
+                minor_member_name = XPath("div[1]/a").match_one(mem).text.strip()
+                minor_mem_position = XPath("div[2]").match_one(mem).text.strip()
             except SelectorError:
-                mem_position2 = "Member"
-            com.add_member(member_name2, mem_position2)
-
+                minor_mem_position = "Member"
+            com.add_member(minor_member_name, minor_mem_position)
         return com
 
 
