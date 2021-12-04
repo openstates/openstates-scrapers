@@ -5,7 +5,9 @@ from openstates.models import ScrapeCommittee
 class HouseCommitteeDetail(HtmlPage):
     example_source = "https://www.legis.state.pa.us/cfdocs/CteeInfo/index.cfm?Code=32&CteeBody=H&SessYear=2021"
     example_name = "Aging & Older Adult Services"
-    example_input = ScrapeCommittee(name=example_name, classification="committee", chamber="lower")
+    example_input = ScrapeCommittee(
+        name=example_name, classification="committee", chamber="lower"
+    )
 
     def process_page(self):
         com = self.input
