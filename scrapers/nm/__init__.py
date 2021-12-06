@@ -150,8 +150,18 @@ class NewMexico(State):
             "end_date": "2021-03-20",
             "active": True,
         },
+        # {
+        #     "_scraped_name": "2021 2nd Special",
+        #     "classification": "special",
+        #     "identifier": "2021S2",
+        #     "name": "2021 Second Special Session",
+        #     "start_date": "2021-12-06",
+        #     "end_date": "2021-12-20",
+        #     "active": True,
+        # },
     ]
     ignored_scraped_sessions = [
+        "2021 2nd Special",
         "2010 2nd Special",
         "2010 Regular",
         "2009 1st Special",
