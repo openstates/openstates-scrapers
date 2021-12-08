@@ -180,6 +180,15 @@ class Arkansas(State):
             "end_date": "2021-08-13",
             "active": True,
         },
+        {
+            "_scraped_name": "Second Extraordinary Session, 2021",
+            "classification": "special",
+            "identifier": "2021S2",
+            "name": "2021 Second Extraordinary Session",
+            "start_date": "2021-12-07",
+            "end_date": "2021-12-13",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "Fiscal Session, 2022",

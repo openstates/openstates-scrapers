@@ -45,7 +45,8 @@ class NMBillScraper(Scraper):
         remote_file = ftp_base + matches[-1][1]
 
         # all of the data is in this Access DB, download & retrieve it
-        mdbfile = "{}.accdb".format(fname)
+        # for specials, zip file is 21S2 but included mbd is 21s2
+        mdbfile = "{}.accdb".format(fname.replace("s", "S"))
 
         # if a new mdbfile or it has changed
         if getattr(self, "mdbfile", None) != mdbfile:
