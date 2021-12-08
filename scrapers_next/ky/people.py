@@ -106,7 +106,9 @@ class LegList(HtmlListPage):
             party = "Democratic"
 
         district = CSS("p").match(item)[0].text_content()
-        district = re.search(r"District:\r\n(.+)", district).groups()[0].strip()
+        district = (
+            re.search(r"District:\r\n(.+)", district).groups()[0].strip().lstrip("0")
+        )
 
         p = ScrapePerson(
             name=name,
