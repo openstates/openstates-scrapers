@@ -24,7 +24,7 @@ class Legislators(JsonListPage):
             district=item["District"].lstrip("0"),
             chamber="upper" if item["MemberType"] == "S" else "lower",
             party=item["Politics"],
-            email=item["EmailState"],
+            email=item["EmailState"] or "",
             image="https://lawmakerdocuments.blob.core.usgovcloudapi.net/photos/"
             + item["Picture"].lower(),
         )
