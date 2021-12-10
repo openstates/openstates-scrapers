@@ -115,6 +115,15 @@ class Wyoming(State):
             "name": "2021 Special Session",
             "start_date": "2021-10-26",
             "end_date": "2021-10-28",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022",
+            "classification": "primary",
+            "identifier": "2022",
+            "name": "2022 Regular Session",
+            "start_date": "2022-02-14",
+            "end_date": "2022-03-11",
             "active": True,
         },
     ]
