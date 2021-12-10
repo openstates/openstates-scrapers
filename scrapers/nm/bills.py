@@ -46,7 +46,7 @@ class NMBillScraper(Scraper):
 
         # all of the data is in this Access DB, download & retrieve it
         # for specials, zip file is 21S2 but included mbd is 21s2
-        mdbfile = "{}.accdb".format(fname.replace("s", "S"))
+        mdbfile = "{}.accdb".format(fname)
 
         # if a new mdbfile or it has changed
         if getattr(self, "mdbfile", None) != mdbfile:
