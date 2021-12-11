@@ -20,14 +20,14 @@ class HouseCommitteeDetail(HtmlPage):
                 .text.strip()
             )
             # main chair role
-            Chair_Member_rolez = (
+            Chair_Member_role = (
                 CSS(
                     "div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText div"
                 )
                 .match(self.root)[0]
                 .text.strip()
             )
-            com.add_member(Chair_Member, Chair_Member_rolez)
+            com.add_member(Chair_Member, Chair_Member_role)
             # Democratic Chair member and or the minority chair member
             Demo_Chair_Member = (
                 CSS("div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText a")
@@ -35,14 +35,14 @@ class HouseCommitteeDetail(HtmlPage):
                 .text.strip()
             )
             # Democratic Chair member and or the minority chair member role
-            Demo_Chair_Member_rolez = (
+            Demo_Chair_Member_role = (
                 CSS(
                     "div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText div"
                 )
                 .match(self.root)[1]
                 .text.strip()
             )
-            com.add_member(Demo_Chair_Member, Demo_Chair_Member_rolez)
+            com.add_member(Demo_Chair_Member, Demo_Chair_Member_role)
         except IndexError:
             pass
         # Regular majority members and their roles
@@ -84,14 +84,14 @@ class SenateCommitteeDetail(HtmlPage):
                 .text.strip()
             )
             # main chair role
-            Chair_Member_rolez = (
+            Chair_Member_role = (
                 CSS(
                     "div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText div"
                 )
                 .match(self.root)[0]
                 .text.strip()
             )
-            com.add_member(Chair_Member, Chair_Member_rolez)
+            com.add_member(Chair_Member, Chair_Member_role)
             # Democratic Chair member and or the minority chair member
             Demo_Chair_Member = (
                 CSS("div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText a")
@@ -99,14 +99,14 @@ class SenateCommitteeDetail(HtmlPage):
                 .text.strip()
             )
             # Democratic Chair member and or the minority chair member role
-            Demo_Chair_Member_rolez = (
+            Demo_Chair_Member_role = (
                 CSS(
                     "div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText div"
                 )
                 .match(self.root)[1]
                 .text.strip()
             )
-            com.add_member(Demo_Chair_Member, Demo_Chair_Member_rolez)
+            com.add_member(Demo_Chair_Member, Demo_Chair_Member_role)
         except IndexError:
             pass
         # Regular majority members and their roles
