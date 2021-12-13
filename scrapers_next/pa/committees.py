@@ -135,7 +135,9 @@ class SenateCommitteeList(HtmlListPage):
     chamber = "upper"
     selector = CSS("table tbody tr td:nth-child(1) a")
     # The list of various the Senate committees
+
     def process_item(self, item):
+
         name = item.text_content().strip()
         com = ScrapeCommittee(
             name=name, classification="committee", chamber=self.chamber
@@ -152,6 +154,7 @@ class HouseCommitteeList(HtmlListPage):
     selector = CSS("table tbody tr td:nth-child(1) a")
 
     # The list of various the House committees
+
     def process_item(self, item):
         name = item.text_content().strip()
         com = ScrapeCommittee(
