@@ -5,7 +5,13 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 
 from utils import LXMLMixin
 
-SESSION_IDS = {"2021": "44", "2020": "43", "2021r": "65", "2021i": "66"}
+SESSION_IDS = {
+    "2021": "44",
+    "2020": "43",
+    "2021r": "65",
+    "2021i": "66",
+    "2022": "64",
+}
 
 
 class SDBillScraper(Scraper, LXMLMixin):
