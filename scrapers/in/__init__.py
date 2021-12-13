@@ -111,7 +111,7 @@ class Indiana(State):
             "end_date": "2021-04-29",
         },
         {
-            "_scraped_name": "First Regular Session 123rd General Assembly (2022)",
+            "_scraped_name": "Second Regular Session 122nd General Assembly (2022)",
             "classification": "primary",
             "identifier": "2022",
             "name": "2022 Regular Session",
