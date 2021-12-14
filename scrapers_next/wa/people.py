@@ -1,38 +1,9 @@
 import re
-from spatula import HtmlListPage, CSS, XPath, URL
+from spatula import HtmlListPage, CSS, XPath
 from openstates.models import ScrapePerson
 
 
-class EmailAugmentation(HtmlListPage):
-    """
-    WA Email addresses are listed on a separate page.
-    """
-
-    source = URL("https://app.leg.wa.gov/memberemail/Default.aspx")
-
-    def find_rows(self):
-        return CSS("#membertable tbody tr").match(self.root, num_items=147)
-
-    def process_page(self):
-        # We need it to find the member's email address.
-        # These positions are enough to discriminate the chamber too (0 = upper, 1,2 = lower)
-        mapping = {}
-        rows = self.find_rows()
-        for row in rows:
-            tds = row.getchildren()
-            name = CSS("a").match_one(tds[0]).text_content().strip()
-            name = re.sub(r"^(Rep\.\s|Senator\s)", "", name)
-            email = tds[1].text_content().strip()
-            dist = tds[2].text_content().strip()
-            position = tds[3].text_content().strip()
-            party = tds[4].text_content().strip()
-            mapping[name] = (email, party, dist, position)
-        return mapping
-
-
 class LegList(HtmlListPage):
-    dependencies = {"email_mapping": EmailAugmentation()}
-
     def process_item(self, item):
         title_name_party = XPath('.//span[@class="memberName"]/text()').match_one(item)
 
@@ -124,25 +95,10 @@ class LegList(HtmlListPage):
 
         p.add_link(XPath('.//a[contains(text(), "Home Page")]/@href').match(item)[0])
         p.add_source(self.source.url)
-        p.add_source(EmailAugmentation.source.url)
 
         spans = CSS("div .col-csm-8 span").match(item)
         if len(spans) == 3:
             p.extras["title"] = spans[1].text_content()
-
-        (dep_email, dep_party, dep_dist, dep_pos) = self.email_mapping[name]
-        if dep_party == "R":
-            dep_party = "Republican"
-        elif dep_party == "D":
-            dep_party = "Democratic"
-
-        if (
-            (self.chamber == "upper" and dep_pos == "0")
-            or (self.chamber == "lower" and dep_pos != "0")
-            and dep_party == party
-            and dep_dist == district_num
-        ):
-            p.email = dep_email
 
         return p
 
@@ -155,5 +111,5 @@ class RepList(LegList):
 
 class SenList(LegList):
     source = "https://app.leg.wa.gov/ContentParts/MemberDirectory/?a=Senate"
-    selector = CSS("#allMembers .memberInformation", num_items=49)
+    selector = CSS("#allMembers .memberInformation", min_items=45, max_items=49)
     chamber = "upper"
