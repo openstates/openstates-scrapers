@@ -12,9 +12,9 @@ class LegDetail(HtmlPage):
         if title not in ["Senator", "Representative"]:
             p.extras["title"] = title
 
-        # note that this src is not actually an image. it looks like byte format
-        img = CSS("img").match_one(self.root).get("src")
-        p.image = img
+        # note that this src is not actually a URL, it is a data: URL
+        # img = CSS("img").match_one(self.root).get("src")
+        # p.image = img
 
         addr = CSS("div .info-vertical div div").match(self.root)[0].text_content()
         addr += " "

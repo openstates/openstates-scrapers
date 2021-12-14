@@ -85,17 +85,6 @@ class RepDetail(HtmlPage):
         except SelectorError:
             pass
 
-        try:
-            home_phone = (
-                XPath("//*[@id='main-info']/p/span[contains(text(), 'Home')]")
-                .match_one(self.root)
-                .getnext()
-            )
-            home_phone = home_phone.text_content().strip()
-            p.extras["Home Phone"] = home_phone
-        except SelectorError:
-            pass
-
         seat_no = (
             XPath("//*[@id='main-info']/p/span[contains(text(), 'Seat')]")
             .match_one(self.root)
@@ -197,24 +186,6 @@ class SenDetail(HtmlPage):
             )
         if addr != p.district_office.address:
             p.extras["Additional address"] = addr
-
-        try:
-            home_phones = (
-                XPath("//*[@id='content']/p/strong[contains(text(), 'Home')]")
-                .match_one(self.root)
-                .tail.strip()
-                .lstrip(":")
-                .strip()
-                .split("or")
-            )
-            for home_phone in home_phones:
-                if (
-                    home_phone.strip().split()[-1] != p.extras["phone"].split()[-1]
-                    and len(home_phone.strip().split()) == 2
-                ):
-                    p.extras["home phone"] = home_phone.strip()
-        except SelectorError:
-            pass
 
         try:
             state_phone = (

@@ -21,13 +21,13 @@ class LegDetail(HtmlPage):
         ) = self.process_addrs()
 
         p.capitol_office.address = capitol_addr
-        p.capitol_office.voice = capitol_phone
+        p.capitol_office.voice = capitol_phone or ""
         if capitol_fax:
             p.capitol_office.fax = capitol_fax
         if district_addr:
             p.district_office.address = district_addr
         if district_phone:
-            p.district_office.voice = district_phone
+            p.district_office.voice = district_phone or ""
         if district_fax:
             p.district_office.fax = district_fax
         if email:

@@ -63,7 +63,7 @@ class HouseDetail(HtmlPage):
             p.capitol_office.address = "; ".join(
                 [ln.strip() for ln in capitol_address_div[:-1]]
             )
-            p.capitol_office.phone = capitol_address_div[-1].strip()
+            p.capitol_office.voice = capitol_address_div[-1].strip()
         return p
 
 
@@ -88,7 +88,7 @@ class SenateDetail(HtmlPage):
             district=self.district_css.match_one(self.root).text.strip().split()[1],
         )
         p.capitol_office.address = self.address_css.match_one(self.root).text
-        p.capitol_office.phone = self.phone_css.match_one(self.root).text
+        p.capitol_office.voice = self.phone_css.match_one(self.root).text
         p.add_link(
             self.contact_link_sel.match_one(self.root).get("href"), "Contact Form"
         )

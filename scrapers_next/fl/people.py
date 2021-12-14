@@ -1,6 +1,6 @@
 import re
 import attr
-from spatula import HtmlListPage, HtmlPage, XPath
+from spatula import HtmlListPage, HtmlPage, XPath, URL
 from openstates.models import ScrapePerson
 
 
@@ -46,7 +46,7 @@ class SenDetail(HtmlPage):
     input_type = PartialPerson
 
     def get_source_from_input(self):
-        return self.input.url
+        return URL(self.input.url, timeout=10)
 
     def process_page(self):
         email = (
@@ -86,7 +86,7 @@ class SenDetail(HtmlPage):
         ]
 
         clean_address_lines = []
-        fax = phone = None
+        fax = phone = ""
         PHONE_RE = r"\(\d{3}\)\s\d{3}\-\d{4}"
         after_phone = False
 
@@ -105,7 +105,7 @@ class SenDetail(HtmlPage):
         address = "; ".join(clean_address_lines)
         address = re.sub(r"\s{2,}", " ", address)
         obj_office.address = address
-        obj_office.phone = phone
+        obj_office.voice = phone
         obj_office.fax = fax
 
 
