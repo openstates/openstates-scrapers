@@ -1,4 +1,4 @@
-from spatula import JsonPage
+from spatula import JsonPage, URL
 from openstates.models import ScrapePerson
 
 
@@ -6,11 +6,14 @@ class Legislators(JsonPage):
     source = "http://www.kslegislature.org/li/api/v11/rev-1/members/"
 
     def process_page(self):
-        for member in self.data["content"]["house_members"]:
+        for member in (
+            self.data["content"]["house_members"]
+            + self.data["content"]["senate_members"]
+        ):
             # source is a URL object, we need the .url member
-            yield MembersDetail(source=self.source.url + member["KPID"] + "/")
-        for member in self.data["content"]["senate_members"]:
-            yield MembersDetail(source=self.source.url + member["KPID"] + "/")
+            yield MembersDetail(
+                source=URL(self.source.url + member["KPID"] + "/", timeout=10)
+            )
 
 
 class MembersDetail(JsonPage):
