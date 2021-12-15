@@ -42,6 +42,8 @@ class RepDetail(HtmlPage):
         # https://legislature.maine.gov/house/house/MemberProfiles/Details/1193 has no district
         if district != "":
             district = re.search(r"(\d+)\s+-", district).groups()[0]
+        else:
+            raise SkipItem("non-voting member")
 
         p = ScrapePerson(
             name=self.input.name,
