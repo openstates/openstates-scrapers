@@ -3,6 +3,11 @@ from openstates.models import ScrapePerson
 import re
 
 
+def fix_phone(num):
+    num = num[:14]
+    return num.replace("(", "").replace(") ", "-")
+
+
 class LegDetail(HtmlPage):
     def process_page(self):
         p = self.input
@@ -34,26 +39,17 @@ class LegDetail(HtmlPage):
             ):
                 p.capitol_office.address = addr.strip()
                 if phone:
-                    p.capitol_office.voice = phone[:14]
+                    p.capitol_office.voice = fix_phone(phone)
                 if fax:
                     fax = re.search(r"(FAX|Fax|fax):\s(.+)", fax).groups()[1]
-                    p.capitol_office.fax = fax
+                    p.capitol_office.fax = fix_phone(fax)
             else:
-                if phone and fax:
+                p.district_office.address = addr.strip()
+                if phone:
+                    p.district_office.voice = fix_phone(phone)
+                if fax:
                     fax = re.search(r"(FAX|Fax|fax):\s(.+)", fax).groups()[1]
-                    p.add_office(
-                        classification="district",
-                        address=addr,
-                        voice=phone,
-                        fax=fax,
-                    )
-                elif phone:
-                    p.add_office(classification="district", address=addr, voice=phone)
-                elif fax:
-                    fax = re.search(r"(FAX|Fax|fax):\s(.+)", fax).groups()[1]
-                    p.add_office(classification="district", address=addr, fax=fax)
-                else:
-                    p.add_office(classification="district", address=addr)
+                    p.district_office.fax = fix_phone(fax)
 
         social_links = CSS("div.Widget.MemberBio-SocialLinks a").match(self.root)
         for link in social_links:
