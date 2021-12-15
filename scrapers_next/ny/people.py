@@ -83,6 +83,8 @@ def parse_address_lines(text):
             mode = None
         elif line_lower.startswith("fax:"):
             fax = line_lower.replace("fax:", "").strip()
+            if len(fax) == 8:
+                fax = "518-" + fax
             mode = None
         elif mode == "address":
             address.append(line)
