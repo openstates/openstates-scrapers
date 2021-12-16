@@ -139,6 +139,28 @@ class BillDetail(JsonPage):
     #         )
 
 
+class ActionHistoryList(JsonListPage):
+    source = "http://malegislature.gov/api/GeneralCourts/192/Documents/S1160/DocumentHistoryActions"
+    selector = XPath("//DocumentHistoryAction")
+    input = Bill("S1160", "192nd", "title", chamber="upper", classification="bill")
+
+    def process_item(self, item):
+        chamber = item["Branch"]
+        action = item["Action"]
+        date = item["Date"]
+        action_actor = chamber_map_reverse[chamber]
+        # attrs = categorizer.categorize(action)
+        # classification = attrs["classification"]
+
+        self.input.add_action(
+            action,
+            chamber,
+            date,
+            # classification,
+            organization=action_actor,
+        )
+
+
 class MaBillScraper(Scraper):
     verify = False
 

@@ -1,6 +1,7 @@
 import attr
 import re
-from spatula import JsonListPage, JsonPage, XPath, URL
+import requests
+from spatula import JsonListPage, JsonPage, XPath, URL, SkipItem
 
 # from datetime import datetime
 from openstates.scrape import Bill, Scraper
@@ -56,7 +57,7 @@ class BillList(JsonListPage):
 
             return BillDetail(bill, source=url)
         else:
-            return self.logger.warning("Docket bill, no further details available")
+            raise SkipItem("Docket bill, no further details available")
 
 
 class BillDetail(JsonPage):
@@ -65,6 +66,8 @@ class BillDetail(JsonPage):
     def process_page(self):
         document = self.data
         leg_type = document["LegislationTypeName"].lower()
+        if leg_type == "resolve":
+            leg_type = "resolution"
         session = document["GeneralCourtNumber"]
         title = document["Title"]
         bill_id = document["BillNumber"]
@@ -116,13 +119,23 @@ class BillDetail(JsonPage):
                     name, url, media_type="application/pdf", on_duplicate="ignore"
                 )
 
-        # action_url = document["BillHistory"]
+        action_url = document["BillHistory"]
+        yield self.process_actions(action_url)
         # yield ActionHistoryList(b, source=action_url)
         return b
 
+    def process_actions(self, url):
+        sources = requests.Session()
+        action_list = sources.get(url)
+        print(action_list)
+
 
 class ActionHistoryList(JsonListPage):
+    example_source = "http://malegislature.gov/api/GeneralCourts/192/Documents/S1160/DocumentHistoryActions"
     selector = XPath("//DocumentHistoryAction")
+    example_input = Bill(
+        "S1160", "192nd", "title", chamber="upper", classification="bill"
+    )
 
     def process_item(self, item):
         chamber = item["Branch"]
