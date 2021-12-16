@@ -73,7 +73,7 @@ class Kansas(State):
             "start_date": "2021-01-11",
             # TODO: set real end date
             "end_date": "2022-05-31",
-            "active": False,
+            "active": True,
         },
         {
             "_scraped_name": "b2021s",
@@ -82,7 +82,7 @@ class Kansas(State):
             "name": "2021 Special Session",
             "start_date": "2021-11-22",
             "end_date": "2021-11-25",
-            "active": True,
+            "active": False,
         },
     ]
     ignored_scraped_sessions = []
