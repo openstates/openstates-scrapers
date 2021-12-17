@@ -1,78 +1,40 @@
-import collections
 import re
-from spatula import HtmlListPage, CsvListPage, HtmlPage, XPath
+from spatula import HtmlListPage, JsonPage, XPath
 from openstates.models import ScrapePerson
 
 PARTIES = {"DFL": "Democratic-Farmer-Labor", "R": "Republican", "I": "Independent"}
 SEN_HTML_URL = "http://www.senate.mn/members/index.php"
 
 
-class SenExtraInfo(HtmlPage):
-    source = SEN_HTML_URL
+class Senators(JsonPage):
+    source = "https://www.senate.mn/api/members"
 
     def process_page(self):
-        extra_info = collections.defaultdict(dict)
-
-        xpath = '//div[@id="alphabetically"]' '//div[@class="media my-3"]'
-        for div in self.root.xpath(xpath):
-            main_link, email_link = filter(
-                lambda link: link.get("href"), div.xpath(".//a")
-            )
-            name = main_link.text_content().split(" (")[0]
-            leg = extra_info[name]
-            leg["office_phone"] = next(
-                filter(
-                    lambda string: re.match(r"\d{3}-\d{3}-\d{4}", string.strip()),
-                    div.xpath(".//text()"),
-                )
-            ).strip()
-            leg["url"] = main_link.get("href")
-            leg["image"] = div.xpath(".//img/@src")[0]
-            if "mailto:" in email_link.get("href"):
-                leg["email"] = email_link.get("href").replace("mailto:", "")
-
-        print("collected preliminary data on {} legislators".format(len(extra_info)))
-        return extra_info
-
-
-class Senators(CsvListPage):
-    source = "http://www.senate.mn/members/member_list_ascii.php?ls="
-    dependencies = {
-        "extra_info": SenExtraInfo(),
-    }
+        for row in self.data["members"]:
+            yield self.process_item(row)
 
     def process_item(self, row):
-        if not row["First Name"]:
-            return
-        name = "{} {}".format(row["First Name"], row["Last Name"])
-        party = PARTIES[row["Party"]]
+        name = row["preferred_full_name"]
+        party = PARTIES[row["party"]]
         leg = ScrapePerson(
             name=name,
-            district=row["District"].lstrip("0"),
+            family_name=row["preferred_last_name"],
+            email=row["email"],
+            district=row["dist"].lstrip("0"),
             party=party,
             state="mn",
             chamber="upper",
-            image=self.extra_info[name]["image"],
+            image="https://www.senate.mn/img/member_thumbnails/" + row["mem_bio_pic"],
+        )
+        leg.capitol_office.voice = row["full_phone_number"]
+        leg.capitol_office.address = "; ".join(
+            (row["office_address_first_line"], row["office_address_second_line"])
         )
 
-        if "url" in self.extra_info[name]:
-            leg.add_link(self.extra_info[name]["url"])
-        if "office_phone" in self.extra_info[name]:
-            leg.capitol_office.voice = self.extra_info[name]["office_phone"]
-        if "email" in self.extra_info[name]:
-            leg.email = self.extra_info[name]["email"]
-
-        row["Zipcode"] = row["Zipcode"].strip()
-        if (
-            a in row["Address2"]
-            for a in ["95 University Avenue W", "100 Rev. Dr. Martin Luther King"]
-        ):
-            address = "{Address}\n{Address2}\n{City}, {State} {Zipcode}".format(**row)
-            if "Rm. Number" in row:
-                address = "{0} {1}".format(row["Rm. Number"], address)
-        leg.capitol_office.address = address
+        leg.add_link(
+            f"https://www.senate.mn/members/member_bio.html?mem_id={row['mem_id']}"
+        )
         leg.add_source(self.source.url)
-        leg.add_source(SEN_HTML_URL)
         return leg
 
 
@@ -118,6 +80,6 @@ class Representatives(HtmlListPage):
         rep.add_link(url)
         rep.add_source(self.source.url)
         rep.capitol_office.address = address
-        rep.capitol_office.phone = phone
+        rep.capitol_office.voice = phone
 
         return rep

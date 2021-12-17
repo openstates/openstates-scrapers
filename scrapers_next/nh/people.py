@@ -1,25 +1,18 @@
 import io
 import csv
-from spatula import URL, CsvListPage, HtmlPage, CSS, XPath  # , XmlPage
+from spatula import URL, CsvListPage, HtmlPage, CSS, XPath, SelectorError
 from openstates.models import ScrapePerson
 import re
-
-
-# class HouseDetail(HtmlPage):
-#     def process_page(self):
-#         p = self.input
-
-#         return p
 
 
 class SenDetail(HtmlPage):
     def process_page(self):
         p = self.input
 
-        img = CSS("img.auto-style2").match_one(self.root).get("src")
+        img = CSS("img.rounded").match_one(self.root).get("src")
         p.image = img
 
-        contact_info = XPath("//*[@id='page_content']/table/tr[2]/td//strong[3]").match(
+        contact_info = XPath("//strong[contains(text(), 'Contact Information')]").match(
             self.root
         )[0]
         cap_addr = contact_info.getnext().tail.strip()
@@ -29,21 +22,16 @@ class SenDetail(HtmlPage):
         cap_addr += contact_info.getnext().getnext().getnext().tail.strip()
         p.capitol_office.address = cap_addr
 
-        if (
-            self.source.url
-            == "http://www.gencourt.state.nh.us/Senate/members/webpages/district14.aspx"
-        ):
-            phone = CSS("table tr td strong").match(self.root)[5].tail.strip()
-        else:
+        try:
             phone = (
-                XPath(
-                    "//*[@id='page_content']/table/tr[2]/td//strong[contains(text(), 'Phone:')]"
-                )
+                XPath("//strong[contains(text(), 'Phone:')]")
                 .match(self.root)[0]
                 .tail.strip()
             )
             phone = re.search(r"(\d{3}-\d{3}-\d{4})(.+)?", phone).groups()[0]
             p.capitol_office.voice = phone
+        except SelectorError:
+            pass
 
         return p
 
