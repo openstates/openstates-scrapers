@@ -3,7 +3,6 @@ import re
 import requests
 from spatula import JsonListPage, JsonPage, XPath, URL, SkipItem
 
-# from datetime import datetime
 from openstates.scrape import Bill, Scraper
 from .actions import Categorizer
 
@@ -16,20 +15,10 @@ class PartialBill:
     chamber: str
 
 
-@attr.s(auto_attribs=True)
-class PartialAction:
-    action: str
-    chamber: str
-    date: int
+# class PartialVote:
 
 
 categorizer = Categorizer()
-chamber_map_reverse = {
-    "House": "lower",
-    "Senate": "upper",
-    "Executive": "executive",
-    "Joint": "legislature",
-}
 
 
 class BillList(JsonListPage):
@@ -46,7 +35,6 @@ class BillList(JsonListPage):
             bill_id = item["BillNumber"]
             title = item["Title"]
             url = item["Details"]
-            print(bill_id, url)
 
             bill = PartialBill(
                 id=bill_id,
@@ -120,38 +108,43 @@ class BillDetail(JsonPage):
                 )
 
         action_url = document["BillHistory"]
-        yield self.process_actions(action_url)
-        # yield ActionHistoryList(b, source=action_url)
+        actions = self.process_actions(action_url)
+        for act in actions:
+            print(act)
+            action_text = (act["action"],)
+            chamber = (act["chamber"],)
+            date = (act["date"],)
+            attrs = categorizer.categorize(action_text[0])
+            classification = attrs["classification"]
+            action_date = re.match("(.*)T", date[0]).group(1)
+
+            b.add_action(
+                action_text[0],
+                chamber=chamber[0],
+                date=action_date,
+                classification=classification,
+            )
+
         return b
 
     def process_actions(self, url):
         sources = requests.Session()
-        action_list = sources.get(url)
-        print(action_list)
+        action_list = sources.get(url, timeout=20).json()
+        full_actions = []
+        for item in action_list:
+            act = {
+                "chamber": item["Branch"],
+                "action": item["Action"],
+                "date": item["Date"],
+            }
+            full_actions.append(act)
+        return full_actions
 
 
-class ActionHistoryList(JsonListPage):
-    example_source = "http://malegislature.gov/api/GeneralCourts/192/Documents/S1160/DocumentHistoryActions"
-    selector = XPath("//DocumentHistoryAction")
-    example_input = Bill(
-        "S1160", "192nd", "title", chamber="upper", classification="bill"
-    )
-
-    def process_item(self, item):
-        chamber = item["Branch"]
-        action = item["Action"]
-        date = item["Date"]
-        action_actor = chamber_map_reverse[chamber]
-        attrs = categorizer.categorize(action)
-        classification = attrs["classification"]
-
-        self.input.add_action(
-            action,
-            chamber,
-            date,
-            classification,
-            organization=action_actor,
-        )
+# class RollCall(JsonPage):
+#
+#     def process_page(self):
+#         document = self.data
 
 
 class MABillScraper(Scraper):
