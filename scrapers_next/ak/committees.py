@@ -77,4 +77,4 @@ class CommitteeList(HtmlListPage):
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
 
-        return CommiteeDetail(com, source=detail_link)
+        return CommiteeDetail(com, source=URL(detail_link, timeout=30))
