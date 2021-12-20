@@ -59,12 +59,13 @@ class BillDetail(JsonPage):
         session = document["GeneralCourtNumber"]
         title = document["Title"]
         bill_id = document["BillNumber"]
+        chamber = "lower" if bill_id[0] == "H" else "upper"
 
         b = Bill(
             identifier=bill_id,
             legislative_session="192nd",
             title=title,
-            chamber="lower" if bill_id[0] == "H" else "upper",
+            chamber=chamber,
             classification=[leg_type],
         )
         bill_url = f"https://malegislature.gov/Bills/{session}/{bill_id}"
@@ -96,7 +97,7 @@ class BillDetail(JsonPage):
             )
 
         if document["Amendments"]:
-            for amendment in self.data["Amendments"]:
+            for amendment in document["Amendments"]:
                 number = amendment["AmendmentNumber"]
                 chamber = amendment["Branch"]
                 parent_bill = amendment["ParentBillNumber"]
@@ -110,17 +111,16 @@ class BillDetail(JsonPage):
         action_url = document["BillHistory"]
         actions = self.process_actions(action_url)
         for act in actions:
-            print(act)
-            action_text = (act["action"],)
-            chamber = (act["chamber"],)
-            date = (act["date"],)
-            attrs = categorizer.categorize(action_text[0])
+            action_text = act["action"]
+            chamber = act["chamber"]
+            date = act["date"]
+            attrs = categorizer.categorize(action_text)
             classification = attrs["classification"]
-            action_date = re.match("(.*)T", date[0]).group(1)
+            action_date = re.match("(.*)T", date).group(1)
 
             b.add_action(
-                action_text[0],
-                chamber=chamber[0],
+                action_text,
+                chamber=chamber,
                 date=action_date,
                 classification=classification,
             )
