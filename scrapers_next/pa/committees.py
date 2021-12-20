@@ -1,4 +1,4 @@
-from spatula import CSS, HtmlPage, HtmlListPage, XPath, SelectorError
+from spatula import CSS, HtmlPage, HtmlListPage, SelectorError
 from openstates.models import ScrapeCommittee
 
 
@@ -45,21 +45,23 @@ class HouseCommitteeDetail(HtmlPage):
             com.add_member(Demo_Chair_Member, Demo_Chair_Member_role)
         except IndexError:
             pass
-        # Regular majority members and their roles
-        Majority_Members = XPath("//div[12]/div/div/div/div[2]").match(self.root)
+        Majority_Members = CSS(
+            ".Widget.CteeInfo-MajorityList .MemberInfoList-MemberWrapper.Member"
+        ).match(self.root)
         for mem in Majority_Members:
             try:
-                major_member_name = XPath("div[1]/a").match_one(mem).text.strip()
-                major_mem_position = XPath("div[2]").match_one(mem).text.strip()
+                major_member_name = CSS("div a").match_one(mem).text.strip()
+                major_mem_position = CSS(".position").match_one(mem).text.strip()
             except SelectorError:
                 major_mem_position = "Member"
             com.add_member(major_member_name, major_mem_position)
-        # Regular minority members and their roles
-        Minority_Members = XPath("//div[14]/div/div/div/div[2]").match(self.root)
+        Minority_Members = CSS(
+            ".Widget.CteeInfo-MinorityList .MemberInfoList-MemberWrapper.Member"
+        ).match(self.root)
         for mem in Minority_Members:
             try:
-                minor_member_name = XPath("div[1]/a").match_one(mem).text.strip()
-                minor_mem_position = XPath("div[2]").match_one(mem).text.strip()
+                minor_member_name = CSS("div a").match_one(mem).text.strip()
+                minor_mem_position = CSS(".position").match_one(mem).text.strip()
             except SelectorError:
                 minor_mem_position = "Member"
             com.add_member(minor_member_name, minor_mem_position)
@@ -68,10 +70,7 @@ class HouseCommitteeDetail(HtmlPage):
 
 class SenateCommitteeDetail(HtmlPage):
     source = "https://www.legis.state.pa.us/cfdocs/CteeInfo/index.cfm?Code=32&CteeBody=H&SessYear=2021"
-    example_name = "Aging & Older Adult Services"
-    example_input = ScrapeCommittee(
-        name=example_name, classification="committee", chamber="lower"
-    )
+    input = "Aging & Older Adult Services"
 
     def process_page(self):
         com = self.input
@@ -109,21 +108,23 @@ class SenateCommitteeDetail(HtmlPage):
             com.add_member(Demo_Chair_Member, Demo_Chair_Member_role)
         except IndexError:
             pass
-        # Regular majority members and their roles
-        Majority_Members = XPath("//div[10]/div/div/div/div[2]").match(self.root)
+        Majority_Members = CSS(
+            ".Widget.CteeInfo-MajorityList .MemberInfoList-MemberWrapper.Member"
+        ).match(self.root)
         for mem in Majority_Members:
             try:
-                major_member_name = XPath("div[1]/a").match_one(mem).text.strip()
-                major_mem_position = XPath("div[2]").match_one(mem).text.strip()
+                major_member_name = CSS("div a").match_one(mem).text.strip()
+                major_mem_position = CSS(".position").match_one(mem).text.strip()
             except SelectorError:
                 major_mem_position = "Member"
             com.add_member(major_member_name, major_mem_position)
-        # Regular minority members and their roles
-        Minority_Members = XPath("//div[12]/div/div/div/div[2]").match(self.root)
+        Minority_Members = CSS(
+            ".Widget.CteeInfo-MinorityList .MemberInfoList-MemberWrapper.Member"
+        ).match(self.root)
         for mem in Minority_Members:
             try:
-                minor_member_name = XPath("div[1]/a").match_one(mem).text.strip()
-                minor_mem_position = XPath("div[2]").match_one(mem).text.strip()
+                minor_member_name = CSS("div a").match_one(mem).text.strip()
+                minor_mem_position = CSS(".position").match_one(mem).text.strip()
             except SelectorError:
                 minor_mem_position = "Member"
             com.add_member(minor_member_name, minor_mem_position)
@@ -134,10 +135,8 @@ class SenateCommitteeList(HtmlListPage):
     source = "https://www.legis.state.pa.us/cfdocs/CteeInfo/StandingCommittees.cfm?CteeBody=S"
     chamber = "upper"
     selector = CSS("table tbody tr td:nth-child(1) a")
-    # The list of various the Senate committees
 
     def process_item(self, item):
-
         name = item.text_content().strip()
         com = ScrapeCommittee(
             name=name, classification="committee", chamber=self.chamber
@@ -152,8 +151,6 @@ class HouseCommitteeList(HtmlListPage):
     source = "https://www.legis.state.pa.us/cfdocs/CteeInfo/StandingCommittees.cfm?CteeBody=H"
     chamber = "lower"
     selector = CSS("table tbody tr td:nth-child(1) a")
-
-    # The list of various the House committees
 
     def process_item(self, item):
         name = item.text_content().strip()
