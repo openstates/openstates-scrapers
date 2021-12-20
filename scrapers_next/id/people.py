@@ -13,7 +13,10 @@ class LegList(HtmlListPage):
         name = CSS("p strong").match(item)[0].text_content()
         email = CSS("p strong").match(item)[1].text_content()
         district_full = CSS("p a").match(item)[1].text_content()
-        district = re.search(r"District\s(.+)", district_full).groups()[0]
+        try:
+            district = re.search(r"District\s(.+)", district_full).groups()[0]
+        except AttributeError:
+            self.skip(f"skipping {name}, likely an alternate?")
 
         all_text = CSS("p").match(item)[1].text_content()
         party_letter = re.search(r"(.+)(\(([A-Z])\))(.+)", all_text).groups()[2]

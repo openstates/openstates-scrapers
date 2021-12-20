@@ -4,12 +4,18 @@ import re
 
 
 class LegDetail(HtmlPage):
+    def process_error_response(self, response):
+        self.logger.warning(response)
+        pass
+
     def process_page(self):
         p = self.input
 
         # this guy's html/image is different
         if p.name == "Rob Wagner":
             img = "https://www.oregonlegislature.gov/wagner/PublishingImages/member_photo.jpg"
+        elif p.name == "Kathleen Taylor":
+            img = "https://www.oregonlegislature.gov/taylor/PublishingImages/member_photo.jpg"
         else:
             img = CSS("h1 img").match_one(self.root).get("src")
         p.image = img

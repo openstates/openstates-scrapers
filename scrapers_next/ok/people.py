@@ -36,7 +36,7 @@ class HouseDetail(HtmlPage):
         p = ScrapePerson(
             name=name,
             state="ok",
-            chamber="upper",
+            chamber="lower",
             party=self.party_css.match_one(self.root).text,
             district=self.district_css.match_one(self.root).text.split()[1],
         )

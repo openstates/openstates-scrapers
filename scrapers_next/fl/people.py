@@ -5,11 +5,15 @@ from openstates.models import ScrapePerson
 
 
 def fix_name(name):
-    # handles cases like Watson, Jr., Clovis
     if ", " not in name:
         return name
-    last, first = name.rsplit(", ", 1)
-    return first + " " + last
+    if name.endswith(", Jr."):
+        last, first, suffix = name.split(", ")
+        return f"{first} {last}, {suffix}"
+    else:
+        # handles cases like Watson, Jr., Clovis
+        last, first = name.rsplit(", ", 1)
+        return f"{first} {last}"
 
 
 @attr.s(auto_attribs=True)

@@ -1,3 +1,4 @@
+import re
 from spatula import HtmlListPage, CSS, URL
 from openstates.models import ScrapePerson
 
@@ -60,8 +61,8 @@ class Senators(HtmlListPage):
 
 
 class Representatives(HtmlListPage):
-    source = "https://www.house.mi.gov/MHRPublic/frmRepListMilenia.aspx?all=true"
-    selector = CSS("#grvRepInfo tr", num_items=111)
+    source = "https://www.house.mi.gov/AllRepresentatives"
+    selector = CSS("#allreps .list-item", num_items=110)
     office_names = {
         "SHOB": "South House Office Building",
         "NHOB": "North House Office Building",
@@ -69,33 +70,33 @@ class Representatives(HtmlListPage):
     }
 
     def process_item(self, item):
-        website, district, name, party, office, phone, email = item.getchildren()
+        if "Vacant" in item.text_content():
+            self.skip("vacant")
+        link = item.xpath(".//a")[0]
+        url = link.get("href")
+        (
+            name,
+            party,
+            district,
+        ) = re.match(r"\s+([^\(]+)\((\w+)\)\s+District-(\d+)", link.text).groups()
 
-        # skip header row
-        if website.tag == "th":
-            self.skip()
-
-        office = office.text_content()
-        for abbr, full in self.office_names.items():
-            office = office.replace(abbr, full)
-
-        party = {"R": "Republican", "D": "Democratic", "": "Independent"}[
-            party.text_content().strip()
-        ]
+        contact = item.getchildren()[1].getchildren()[0:3]
+        office = contact[0].text_content().strip()
+        phone = contact[1].text_content().strip()
+        email = contact[2].text_content().strip()
 
         p = ScrapePerson(
-            name=name.text_content(),
+            **split_name(name),
             state="mi",
             chamber="lower",
-            district=district.text_content().lstrip("0"),
+            district=district,
             party=party,
-            email=email.text_content(),
+            email=email,
         )
-        link = CSS("a").match_one(website).get("href")
-        if link.startswith("http:/r"):
-            link = link.replace(":/", "://")
-        p.add_link(link)
+        if url.startswith("http:/r"):
+            url = url.replace("http:/", "http://")
+        p.add_link(url)
         p.add_source(self.source.url)
-        p.capitol_office.voice = phone.text_content()
+        p.capitol_office.voice = phone
         p.capitol_office.address = office
         return p

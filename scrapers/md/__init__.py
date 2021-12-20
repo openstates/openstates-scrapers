@@ -163,7 +163,6 @@ class Maryland(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-12",
             "end_date": "2021-04-12",
-            "active": True,
         },
         {
             "_scraped_name": "2021 Special Session",
@@ -172,6 +171,14 @@ class Maryland(State):
             "name": "2021, 1st Special Session",
             "start_date": "2021-12-06",
             "end_date": "2021-12-12",
+        },
+        {
+            "_scraped_name": "2022 Regular Session",
+            "classification": "primary",
+            "identifier": "2022",
+            "name": "2022 Regular Session",
+            "start_date": "2022-01-12",
+            "end_date": "2022-04-11",
             "active": True,
         },
     ]

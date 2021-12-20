@@ -1,5 +1,13 @@
 import re
-from spatula import HtmlListPage, HtmlPage, XPath, SimilarLink, CSS
+from spatula import (
+    HtmlListPage,
+    HtmlPage,
+    XPath,
+    SimilarLink,
+    CSS,
+    SelectorError,
+    SkipItem,
+)
 from openstates.models import ScrapePerson
 
 
@@ -59,8 +67,11 @@ class PersonDetail(HtmlPage):
         # )
 
         # email is formatted mailto:<addr>?body...
-        email = SimilarLink("mailto:").match_one(self.root).get("href")
-        email = email.split(":", 1)[1].split("?")[0]
+        try:
+            email = SimilarLink("mailto:").match_one(self.root).get("href")
+            email = email.split(":", 1)[1].split("?")[0]
+        except SelectorError:
+            email = ""
 
         p = ScrapePerson(
             name=CSS("h2").match_one(self.root).text.split(" ", 1)[1],
@@ -68,7 +79,7 @@ class PersonDetail(HtmlPage):
             image=self.image_sel.match_one(self.root).get("src"),
             party=self.extract_dd("Party"),
             district=self.extract_dd("District"),
-            chamber=None,
+            chamber=self.input["chamber"],
             email=email,
         )
         p.add_link(self.source.url)
@@ -77,19 +88,24 @@ class PersonDetail(HtmlPage):
 
 
 class PersonList(HtmlListPage):
-    selector = XPath("//div[@id='myDIV']//div[@class='p-0 member-index-cell']")
+    selector = XPath(
+        "//div[@id='myDIV']//div[@class='p-0 member-index-cell col-print-6']"
+    )
 
     def process_item(self, item):
         dd_text = XPath(".//dd/text()").match(item)
         district = dd_text[2].strip().split()[1]
         party = dd_text[4].strip()
+        url = str(XPath(".//dd/a[1]/@href").match_one(item))
+        if "Details" not in url:
+            raise SkipItem(f"skipping {url}")
         return PersonDetail(
             dict(
                 chamber="upper" if "senate" in self.source.url else "lower",
                 district=district,
                 party=party,
             ),
-            source=str(XPath(".//dd/a[1]/@href").match_one(item)),
+            source=url,
         )
 
 
