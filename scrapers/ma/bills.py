@@ -3,7 +3,7 @@ import re
 import requests
 from spatula import JsonListPage, JsonPage, XPath, URL, SkipItem
 
-from openstates.scrape import Bill, Scraper
+from openstates.scrape import Bill, Scraper, VoteEvent
 from .actions import Categorizer
 
 
@@ -13,9 +13,6 @@ class PartialBill:
     session: str
     title: int
     chamber: str
-
-
-# class PartialVote:
 
 
 categorizer = Categorizer()
@@ -56,6 +53,8 @@ class BillDetail(JsonPage):
         leg_type = document["LegislationTypeName"].lower()
         if leg_type == "resolve":
             leg_type = "resolution"
+        if leg_type == "proposal for constitutional amendment":
+            leg_type = "proposed bill"
         session = document["GeneralCourtNumber"]
         title = document["Title"]
         bill_id = document["BillNumber"]
@@ -118,6 +117,30 @@ class BillDetail(JsonPage):
             classification = attrs["classification"]
             action_date = re.match("(.*)T", date).group(1)
 
+            if "Roll Call" in action_text:
+                vote_action = action_text.split("-")[0]
+                vote_counts = action_text.split("-")[1].lower()
+                roll_call = re.match(r"(?:#|no. )(\d+)", vote_counts).group(1)
+                url = f"https://malegislature.gov/RollCall/192/{chamber}RollCall{roll_call}.pdf"
+
+                yeas_text = re.match(r"(\d+) yeas|yeas (\d+)", vote_counts).group(0)
+                yeas_count = re.match(r"\d+", yeas_text).group(1)
+                nays_text = re.match(r"(\d+) nays|nays (\d+)", vote_counts).group(0)
+                nays_count = re.match(r"\d+", nays_text).group(1)
+                result = "pass" if yeas_count > nays_count else "fail"
+
+                vote = VoteEvent(
+                    chamber,
+                    start_date=action_date,
+                    motion_text=vote_action,
+                    result=result,
+                    classification="passage",
+                    bill=bill_id,
+                )
+                vote.set_count("yes", yeas_count)
+                vote.set_count("no", nays_count)
+                vote.add_source(url)
+
             b.add_action(
                 action_text,
                 chamber=chamber,
@@ -139,12 +162,6 @@ class BillDetail(JsonPage):
             }
             full_actions.append(act)
         return full_actions
-
-
-# class RollCall(JsonPage):
-#
-#     def process_page(self):
-#         document = self.data
 
 
 class MABillScraper(Scraper):
