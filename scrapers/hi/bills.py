@@ -5,7 +5,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from .utils import get_short_codes
 from urllib import parse as urlparse
 
-HI_URL_BASE = "https://www.capitol.hawaii.gov"
+HI_URL_BASE = "https://capitol.hawaii.gov"
 SHORT_CODES = "%s/committees/committees.aspx?chamber=all" % (HI_URL_BASE)
 
 
@@ -192,8 +192,8 @@ class HIBillScraper(Scraper):
                 name = http_href[0].text_content().strip()
                 pdf_href = tds[1].xpath("./a")
 
-                http_link = http_href[0].attrib["href"]
-                pdf_link = pdf_href[0].attrib["href"]
+                http_link = http_href[0].attrib["href"].replace("www.", "")
+                pdf_link = pdf_href[0].attrib["href"].replace("www.", "")
 
                 # some bills (and GMs) swap the order or double-link to the same format
                 # so detect the type, and ignore dupes
@@ -226,7 +226,7 @@ class HIBillScraper(Scraper):
         last_item = ""
 
         for link in links:
-            filename = link.attrib["href"]
+            filename = link.attrib["href"].replace("www.", "")
             name = link.text_content().strip()
             if name == "" and last_item != "":
                 name = last_item
@@ -244,7 +244,7 @@ class HIBillScraper(Scraper):
         last_item = ""
 
         for link in links:
-            filename = link.attrib["href"]
+            filename = link.attrib["href"].replace("www.", "")
             name = link.text_content().strip()
             if name == "" and last_item != "":
                 name = last_item
@@ -361,7 +361,7 @@ class HIBillScraper(Scraper):
         list_html = self.get(report_page_url).text
         list_page = lxml.html.fromstring(list_html)
         for bill_url in list_page.xpath("//a[@class='report']"):
-            bill_url = bill_url.attrib["href"]
+            bill_url = bill_url.attrib["href"].replace("www.", "")
             yield from self.scrape_bill(session, chamber, billtype_map, bill_url)
 
     def scrape(self, chamber=None, session=None):

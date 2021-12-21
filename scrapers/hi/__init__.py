@@ -103,7 +103,7 @@ class Hawaii(State):
     def get_session_list(self):
         # doesn't include current session, we need to change it
         sessions = url_xpath(
-            "http://www.capitol.hawaii.gov/archives/main.aspx",
+            "https://capitol.hawaii.gov/archives/main.aspx",
             "//div[@class='roundedrect gradientgray shadow archiveyears']/a/text()",
         )
         sessions.remove("Archives Main")
