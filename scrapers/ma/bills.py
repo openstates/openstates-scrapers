@@ -119,13 +119,13 @@ class BillDetail(JsonPage):
 
             if "Roll Call" in action_text:
                 vote_action = action_text.split("-")[0]
-                vote_counts = action_text.split("-")[1].lower()
-                roll_call = re.match(r"(?:#|no. )(\d+)", vote_counts).group(1)
+                roll_call = re.match(r"(?:#|no. )(\d+)", action_text)
+                print(action_text, chamber, bill_id)
                 url = f"https://malegislature.gov/RollCall/192/{chamber}RollCall{roll_call}.pdf"
 
-                yeas_text = re.match(r"(\d+) yeas|yeas (\d+)", vote_counts).group(0)
+                yeas_text = re.match(r"(\d+) yeas|yeas (\d+)", action_text).group(0)
                 yeas_count = re.match(r"\d+", yeas_text).group(1)
-                nays_text = re.match(r"(\d+) nays|nays (\d+)", vote_counts).group(0)
+                nays_text = re.match(r"(\d+) nays|nays (\d+)", action_text).group(0)
                 nays_count = re.match(r"\d+", nays_text).group(1)
                 result = "pass" if yeas_count > nays_count else "fail"
 
