@@ -118,8 +118,10 @@ class BillDetail(JsonPage):
             action_date = re.match("(.*)T", date).group(1)
 
             if "Roll Call" in action_text:
+                # TODO: Get regex working and make sure the actions are coming in
                 vote_action = action_text.split("-")[0]
                 roll_call = re.match(r"(?:#|no. )(\d+)", action_text)
+                # Error NoneType on roll_call
                 print(action_text, chamber, bill_id)
                 url = f"https://malegislature.gov/RollCall/192/{chamber}RollCall{roll_call}.pdf"
 
