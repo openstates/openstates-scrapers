@@ -105,110 +105,31 @@ class SenateCommitteeList(HtmlListPage):
 
 
 class HouseCommitteeDetail(HtmlPage):
-    example_source = (
-        "https://www.house.mi.gov/MHRPublic/CommitteeInfo.aspx?comcode=AGRI"
-    )
+    example_source = "https://www.house.mi.gov/Committee/AGRI"
+    example_input = ScrapeCommittee(name="Agriculture", chamber="lower")
 
     def process_page(self):
-
         com = self.input
         com.add_source(self.source.url)
         com.add_link(self.source.url, note="homepage")
 
-        member_position = CSS("#divMembers div").match(self.root)
-        member_name = CSS("#divMembers a").match(self.root)
+        member_links = CSS(".mb40 li a").match(self.root)
 
-        positions = ["Majority Vice-Chair", "Minority Vice-Chair", "Committee Chair"]
-
-        num_members = range(len(member_name))
-
-        for i in num_members:
-            member_pos_str = member_position[i].text_content()
-            pos = "member"
-            for position in positions:
-                if position in member_pos_str:
-                    pos = position
-            com.add_member(member_name[i].text_content(), pos)
-
-        com.extras["clerk"] = CSS("#divClerk a").match_one(self.root).text_content()
-        com.extras["clerk phone number"] = (
-            CSS("#divClerk").match_one(self.root).text_content()[-10:]
-        )
-
-        com.add_link(CSS("#lnkSubscribe").match_one(self.root).get("href"))
-        com.add_link(CSS("#hlPublicVCommitteeSched").match_one(self.root).get("href"))
-
-        # attempt at subcommittees
-        # try:
-        #     subcommittee = CSS("#lnkSubcommittees").match_one(self.root).get("href")
-        #     print("SUBCOMM link", subcommittee)
-        #     # return HouseSubcommittees(com, source=subcommittee)
-        # except SelectorError:
-        #     print("no subcom")
-        #     pass
-
-        # subcommittee = CSS("#lnkSubcommittees").match_one(self.root).get("href")
-        # if subcommittee is not None:
-        #     print("SUBCOMM link", subcommittee)
-        #     return com, HouseSubcommittees(com, source=subcommittee)
-        # else:
+        for link in member_links:
+            if link.text.startswith("Rep."):
+                title = link.getnext().text_content().strip()
+                name = link.text.split("(")[0].replace("Rep. ", "")
+                com.add_member(name, title or "member")
 
         return com
-
-
-class HouseSubcommitteeDetail(HtmlListPage):
-    example_source = "https://www.house.mi.gov/MHRPublic/SubCommittee.aspx?comcode=APPR"
-    selector = CSS("#DataList1 tr td")
-    chamber = "lower"
-
-    def process_item(self, item):
-
-        com = ScrapeCommittee(
-            name="name",
-            classification="subcommittee",
-            chamber=self.chamber,
-            parent=CSS("#lblTitle")
-            .match_one(self.root)
-            .text_content()
-            .replace("HOUSE", "")
-            .replace("SUBCOMMITTEES", ""),
-        )
-        return com
-
-
-# Due to faulty subcommittee webpages, this doesn't work as intended right now
-class HouseSubcommitteeList(HtmlListPage):
-    source = "https://www.house.mi.gov/mhrpublic/committee.aspx"
-    selector = CSS("select option")
-    chamber = "lower"
-
-    def process_item(self, item):
-        name = item.text_content()
-        if name != "Statutory Committees" and name != "Select One":
-            comcode = item.get("value")
-            return HouseSubcommitteeDetail(
-                source="https://www.house.mi.gov/MHRPublic/SubCommittee.aspx?comcode="
-                + comcode,
-            )
-        else:
-            self.skip()
 
 
 class HouseCommitteeList(HtmlListPage):
-    source = "https://www.house.mi.gov/mhrpublic/committee.aspx"
-    selector = CSS("select option")
+    source = "https://www.house.mi.gov/Committees"
+    selector = CSS("#standing li.list-item a")
     chamber = "lower"
 
     def process_item(self, item):
-        name = item.text_content()
-        if name != "Statutory Committees" and name != "Select One":
-            comcode = item.get("value")
-
-            com = ScrapeCommittee(name=name, chamber=self.chamber)
-            return HouseCommitteeDetail(
-                com,
-                source="https://www.house.mi.gov/MHRPublic/CommitteeInfo.aspx?comcode="
-                + comcode,
-            )
-        else:
-            self.skip()
+        name = item.text_content().strip()
+        com = ScrapeCommittee(name=name, chamber=self.chamber)
+        return HouseCommitteeDetail(com, source=item.get("href"))
