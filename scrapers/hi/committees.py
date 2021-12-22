@@ -3,7 +3,7 @@ from openstates.scrape import Scraper, Organization
 import lxml.html
 
 
-HI_URL_BASE = "http://capitol.hawaii.gov"
+HI_URL_BASE = "https://capitol.hawaii.gov"
 
 
 def get_chamber_url(chamber):

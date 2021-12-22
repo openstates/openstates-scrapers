@@ -69,7 +69,7 @@ class PartialMember:
 
 
 class MemberList(HtmlListPage):
-    session_id = "211"  # 2021
+    session_id = "221"  # 2022
     source = f"http://lis.virginia.gov/{session_id}/mbr/MBR.HTM"
 
     def process_item(self, item):
@@ -81,7 +81,9 @@ class MemberList(HtmlListPage):
 
         name, action, date = clean_name(name)
 
-        return self.next_page_cls(PartialMember(name=name, url=item.get("href")))
+        return self.next_page_cls(
+            PartialMember(name=name, url=item.get("href")), source=item.get("href")
+        )
 
 
 class MemberDetail(HtmlPage):

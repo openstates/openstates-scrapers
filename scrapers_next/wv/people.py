@@ -84,14 +84,14 @@ class LegList(HtmlListPage):
         p.add_source(detail_link)
         p.add_link(detail_link, note="homepage")
 
-        return LegDetail(p, source=detail_link)
+        return LegDetail(p, source=URL(detail_link, timeout=30))
 
 
 class Senate(LegList):
-    source = URL("http://www.wvlegislature.gov/Senate1/roster.cfm")
+    source = URL("http://www.wvlegislature.gov/Senate1/roster.cfm", timeout=30)
     chamber = "upper"
 
 
 class House(LegList):
-    source = URL("http://www.wvlegislature.gov/House/roster.cfm")
+    source = URL("http://www.wvlegislature.gov/House/roster.cfm", timeout=30)
     chamber = "lower"

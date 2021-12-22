@@ -54,7 +54,7 @@ class Legislators(CsvListPage):
         elif legislativebody == "S":
             chamber = "upper"
 
-        district = item["District"]
+        district = item["District"].lstrip("0")
 
         party = item["party"]
         if party == "D" or party == "d":

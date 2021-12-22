@@ -16,6 +16,7 @@ class CommiteeDetail(HtmlPage):
 
         members = CSS("fieldset div.area-holder ul.list li span.col01").match(self.root)
 
+        num_members = 0
         for member in members:
             role = member.getnext().text_content().strip()
             # skip Public Members
@@ -25,12 +26,16 @@ class CommiteeDetail(HtmlPage):
             if role == "Member":
                 role = "member"
 
+            num_members += 1
             mem_name = CSS("span span").match_one(member).text_content().strip()
             mem_name = re.search(r"(Representative|Senator)\s(.+)", mem_name).groups()[
                 1
             ]
 
             com.add_member(mem_name, role)
+
+        if not num_members:
+            raise SkipItem("only public members")
 
         return com
 
@@ -77,4 +82,4 @@ class CommitteeList(HtmlListPage):
         com.add_source(detail_link)
         com.add_link(detail_link, note="homepage")
 
-        return CommiteeDetail(com, source=detail_link)
+        return CommiteeDetail(com, source=URL(detail_link, timeout=30))
