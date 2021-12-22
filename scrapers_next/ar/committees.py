@@ -1,4 +1,4 @@
-from spatula import URL, CSS, HtmlListPage, HtmlPage, XPath, SelectorError
+from spatula import URL, CSS, HtmlListPage, HtmlPage, XPath, SelectorError, SkipItem
 from openstates.models import ScrapeCommittee
 import re
 
@@ -26,7 +26,7 @@ class HouseJointDetail(HtmlPage):
                 com.add_member(mem_name, role)
                 # many 'ex officio' roles for House Subcommittees, Joint Committees, and Joint Subcommittees
         except SelectorError:
-            pass
+            raise SkipItem("empty committee")
 
         try:
             extra_info = CSS("div#bodyContent b").match(self.root)
@@ -97,6 +97,8 @@ class SenDetail(HtmlPage):
         except SelectorError:
             pass
 
+        if not com.members:
+            raise SkipItem("empty committee")
         return com
 
 
@@ -125,6 +127,9 @@ class SenSubComms(HtmlListPage):
         comm_name = (
             CSS("a").match(item.getparent().getparent())[0].text_content().strip()
         )
+
+        if comm_name == "Alc-Jbc Budget Hearings":
+            self.skip()
 
         com = ScrapeCommittee(
             name=sub_name,
@@ -194,6 +199,9 @@ class HouseSubComms(HtmlListPage):
             .strip()
         )
 
+        if parent.title() == "Alc-Jbc Budget Hearings":
+            self.skip()
+
         com = ScrapeCommittee(
             name=sub_name.title(),
             classification="subcommittee",
@@ -249,6 +257,9 @@ class JointSubComms(HtmlListPage):
             .strip()
         )
 
+        if parent.title() == "Alc-Jbc Budget Hearings":
+            self.skip()
+
         com = ScrapeCommittee(
             name=sub_name.title(),
             classification="subcommittee",
@@ -267,7 +278,7 @@ class JointSubComms(HtmlListPage):
 
 class Joint(HtmlListPage):
     source = URL("https://www.arkleg.state.ar.us/Committees/List?type=Joint")
-    selector = CSS("div#bodyContent div.row p a", num_items=19)
+    selector = CSS("div#bodyContent div.row p a", min_items=15)
 
     def process_item(self, item):
         comm_name = item.text_content().strip()
