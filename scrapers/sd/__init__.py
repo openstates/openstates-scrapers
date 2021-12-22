@@ -134,7 +134,6 @@ class SouthDakota(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-12",
             "end_date": "2021-03-29",
-            "active": True,
         },
         {
             "_scraped_name": "2021r",
@@ -143,7 +142,6 @@ class SouthDakota(State):
             "start_date": "2021-11-08",
             "end_date": "2021-11-12",
             "classification": "special",
-            "active": True,
         },
         {
             "_scraped_name": "2021i",
@@ -152,10 +150,17 @@ class SouthDakota(State):
             "start_date": "2021-11-08",
             "end_date": "2021-11-12",
             "classification": "special",
+        },
+        {
+            "_scraped_name": "2022",
+            "identifier": "2022",
+            "name": "2022 Regular Session",
+            "start_date": "2022-01-11",
+            "end_date": "2022-03-28",
             "active": True,
         },
     ]
-    ignored_scraped_sessions = ["2022"]
+    ignored_scraped_sessions = []
 
     def get_session_list(self):
         api_url = "https://sdlegislature.gov/api/Sessions/"
