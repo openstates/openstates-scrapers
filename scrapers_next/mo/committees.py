@@ -1,4 +1,4 @@
-from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError, SkipItem
+from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError, SkipItem, URL
 from openstates.models import ScrapeCommittee
 
 
@@ -36,6 +36,8 @@ class SenateCommitteeDetail(HtmlPage):
 
             com.add_member(member_name, member_pos_str)
 
+        if not com.members:
+            raise SkipItem("empty")
         return com
 
 
@@ -82,7 +84,7 @@ class SenateTypeCommitteeList(HtmlListPage):
             else:
                 com = ScrapeCommittee(name=name, chamber=chamber)
 
-            return SenateCommitteeDetail(com, source=item.get("href"))
+            return SenateCommitteeDetail(com, source=URL(item.get("href"), timeout=30))
         else:
             self.skip()
 
@@ -92,10 +94,9 @@ class SenateCommitteeList(HtmlListPage):
     selector = CSS("#post-90 a")
 
     def process_item(self, item):
-
-        type = item.text_content()
-        if type == "Standing" or type == "Statutory":
-            return SenateTypeCommitteeList(source=item.get("href"))
+        ctype = item.text_content()
+        if ctype == "Standing" or ctype == "Statutory":
+            return SenateTypeCommitteeList(source=URL(item.get("href"), timeout=30))
         else:
             self.skip()
 
@@ -195,4 +196,4 @@ class HouseCommitteeList(HtmlListPage):
         # We can construct a URL that would make scraping easier, as opposed to the link that is directly given
         comm_link = item.get("href").replace("https://www.house.mo.gov/", "")
         source = f"https://www.house.mo.gov/MemberGridCluster.aspx?filter=compage&category=committee&{comm_link}"
-        return HouseCommitteeDetail(com, source=source)
+        return HouseCommitteeDetail(com, source=URL(source, timeout=30))
