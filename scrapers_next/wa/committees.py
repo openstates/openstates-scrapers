@@ -29,7 +29,7 @@ class CommitteeDetail(HtmlPage):
 
 class CommitteeList(HtmlListPage):
     source = URL("https://app.leg.wa.gov/ContentParts/LegislativeCommittees/Index")
-    selector = CSS("div ul li span a.ms-srch-item-link", num_items=57)
+    selector = CSS("div ul li span a.ms-srch-item-link", min_items=50)
 
     def process_item(self, item):
 
