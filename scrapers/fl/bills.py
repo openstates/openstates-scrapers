@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 from collections import defaultdict
 from openstates.scrape import Bill, VoteEvent, Scraper
 from openstates.utils import format_datetime
-from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage
+from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage, URL
 
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
 import requests
@@ -58,8 +58,9 @@ class BillList(HtmlListPage):
 
     def get_source_from_input(self):
         # to test scrape an individual bill, add &billNumber=1351
-        return (
-            f"https://flsenate.gov/Session/Bills/{self.input['session']}?chamber=both"
+        return URL(
+            f"https://flsenate.gov/Session/Bills/{self.input['session']}?chamber=both",
+            verify=False,
         )
 
     def get_next_source(self):
