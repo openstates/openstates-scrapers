@@ -55,6 +55,11 @@ class BillDetail(JsonPage):
             leg_type = "resolution"
         if leg_type == "proposal for constitutional amendment":
             leg_type = "proposed bill"
+        if (
+            leg_type == "governor's message (communication)"
+            or leg_type == "letter of transmittal"
+        ):
+            leg_type = "bill"
         session = document["GeneralCourtNumber"]
         title = document["Title"]
         bill_id = document["BillNumber"]
@@ -118,29 +123,47 @@ class BillDetail(JsonPage):
             action_date = re.match("(.*)T", date).group(1)
 
             if "Roll Call" in action_text:
-                # TODO: Get regex working and make sure the actions are coming in
-                vote_action = action_text.split("-")[0]
-                roll_call = re.match(r"(?:#|no. )(\d+)", action_text)
-                # Error NoneType on roll_call
-                print(action_text, chamber, bill_id)
+                description = action_text.lower()
+                roll_call = re.search(r"roll call #(\d+)", description).group(1)
                 url = f"https://malegislature.gov/RollCall/192/{chamber}RollCall{roll_call}.pdf"
 
-                yeas_text = re.match(r"(\d+) yeas|yeas (\d+)", action_text).group(0)
-                yeas_count = re.match(r"\d+", yeas_text).group(1)
-                nays_text = re.match(r"(\d+) nays|nays (\d+)", action_text).group(0)
-                nays_count = re.match(r"\d+", nays_text).group(1)
+                yeas_text = re.search(r"\((\d+) yeas|yeas (\d+)", description).group(0)
+                yeas_count = re.search(r"\d+", yeas_text).group(0)
+                nays_text = re.search(r"(\d+) nays|nays (\d+)\)", description).group(0)
+                nays_count = re.search(r"\d+", nays_text).group(0)
                 result = "pass" if yeas_count > nays_count else "fail"
 
                 vote = VoteEvent(
-                    chamber,
                     start_date=action_date,
-                    motion_text=vote_action,
+                    chamber=chamber,
+                    bill=b,
+                    motion_text=action_text,
                     result=result,
                     classification="passage",
-                    bill=bill_id,
                 )
                 vote.set_count("yes", yeas_count)
                 vote.set_count("no", nays_count)
+                vote.add_source(url)
+
+            if "No. " in action_text:
+                description = action_text.lower()
+                roll_call = re.search(r"no. (\d+)", description).group(1)
+                url = f"https://malegislature.gov/RollCall/192/{chamber}RollCall{roll_call}.pdf"
+
+                y_count = re.search(r"(\d+) yeas", description).group(1)
+                n_count = re.search(r"(\d+) nays", description).group(1)
+                result = "pass" if y_count > n_count else "fail"
+
+                vote = VoteEvent(
+                    start_date=action_date,
+                    chamber=chamber,
+                    bill=b,
+                    motion_text=action_text,
+                    result=result,
+                    classification="passage",
+                )
+                vote.set_count("yes", y_count)
+                vote.set_count("no", n_count)
                 vote.add_source(url)
 
             b.add_action(
@@ -154,7 +177,7 @@ class BillDetail(JsonPage):
 
     def process_actions(self, url):
         sources = requests.Session()
-        action_list = sources.get(url, timeout=20).json()
+        action_list = sources.get(url, timeout=40, verify=False).json()
         full_actions = []
         for item in action_list:
             act = {
