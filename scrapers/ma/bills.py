@@ -51,14 +51,9 @@ class BillDetail(JsonPage):
     def process_page(self):
         document = self.data
         leg_type = document["LegislationTypeName"].lower()
-        if leg_type == "resolve":
+        if leg_type == "resolution":
             leg_type = "resolution"
-        if leg_type == "proposal for constitutional amendment":
-            leg_type = "proposed bill"
-        if (
-            leg_type == "governor's message (communication)"
-            or leg_type == "letter of transmittal"
-        ):
+        else:
             leg_type = "bill"
         session = document["GeneralCourtNumber"]
         title = document["Title"]
