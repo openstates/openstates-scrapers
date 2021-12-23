@@ -15,6 +15,16 @@ class PartialBill:
     chamber: str
 
 
+class PartialVote:
+    description: str
+    chamber: str
+    date: str
+    bill: Bill
+    yes: int
+    no: int
+    source: str
+
+
 categorizer = Categorizer()
 
 
@@ -48,6 +58,7 @@ class BillList(JsonListPage):
 class BillDetail(JsonPage):
     example_source = "https://malegislature.gov/api/GeneralCourts/192/Documents/S756"
 
+    @property
     def process_page(self):
         document = self.data
         leg_type = document["LegislationTypeName"].lower()
@@ -117,6 +128,29 @@ class BillDetail(JsonPage):
             classification = attrs["classification"]
             action_date = re.match("(.*)T", date).group(1)
 
+            # full house vote details not available through api
+            if "No. " in action_text:
+                description = action_text.lower()
+                roll_call = re.search(r"no. (\d+)", description).group(1)
+                url = f"https://malegislature.gov/RollCall/192/{chamber}RollCall{roll_call}.pdf"
+
+                y_count = re.search(r"(\d+) yeas", description).group(1)
+                n_count = re.search(r"(\d+) nays", description).group(1)
+                result = "pass" if self.input.yes > self.input.no else "fail"
+
+                vote = VoteEvent(
+                    start_date=action_date,
+                    chamber=chamber,
+                    bill=b,
+                    motion_text=description,
+                    result=result,
+                    classification="passage",
+                )
+                vote.set_count("yes", y_count)
+                vote.set_count("no", n_count)
+                vote.add_source(url)
+
+            # senate votes do have a separate api page to pull details from
             if "Roll Call" in action_text:
                 description = action_text.lower()
                 roll_call = re.search(r"roll call #(\d+)", description).group(1)
@@ -126,40 +160,21 @@ class BillDetail(JsonPage):
                 yeas_count = re.search(r"\d+", yeas_text).group(0)
                 nays_text = re.search(r"(\d+) nays|nays (\d+)\)", description).group(0)
                 nays_count = re.search(r"\d+", nays_text).group(0)
-                result = "pass" if yeas_count > nays_count else "fail"
 
-                vote = VoteEvent(
-                    start_date=action_date,
-                    chamber=chamber,
-                    bill=b,
-                    motion_text=action_text,
-                    result=result,
-                    classification="passage",
+                api_url = f"http://malegislature.gov/api/GeneralCourts/{session}/Branches/{chamber}/RollCalls/{roll_call}"
+
+                yield self.process_votes(
+                    PartialVote(
+                        description,
+                        chamber,
+                        date=action_date,
+                        bill=b,
+                        yes=yeas_count,
+                        no=nays_count,
+                        source=url,
+                    ),
+                    url=api_url,
                 )
-                vote.set_count("yes", yeas_count)
-                vote.set_count("no", nays_count)
-                vote.add_source(url)
-
-            if "No. " in action_text:
-                description = action_text.lower()
-                roll_call = re.search(r"no. (\d+)", description).group(1)
-                url = f"https://malegislature.gov/RollCall/192/{chamber}RollCall{roll_call}.pdf"
-
-                y_count = re.search(r"(\d+) yeas", description).group(1)
-                n_count = re.search(r"(\d+) nays", description).group(1)
-                result = "pass" if y_count > n_count else "fail"
-
-                vote = VoteEvent(
-                    start_date=action_date,
-                    chamber=chamber,
-                    bill=b,
-                    motion_text=action_text,
-                    result=result,
-                    classification="passage",
-                )
-                vote.set_count("yes", y_count)
-                vote.set_count("no", n_count)
-                vote.add_source(url)
 
             b.add_action(
                 action_text,
@@ -182,6 +197,33 @@ class BillDetail(JsonPage):
             }
             full_actions.append(act)
         return full_actions
+
+    def process_votes(self, url):
+        result = "pass" if self.input.yes > self.input.no else "fail"
+
+        vote = VoteEvent(
+            start_date=self.input.date,
+            chamber=self.input.chamber,
+            bill=self.input.bill,
+            motion_text=self.input.description,
+            result=result,
+            classification="passage",
+        )
+        vote.set_count("yes", self.input.yes)
+        vote.set_count("no", self.input.no)
+        vote.add_source(self.input.source)
+
+        sources = requests.Session()
+        vote_page = sources.get(url, timeout=30, verify=False).json()
+
+        for yea in vote_page["Yeas"]:
+            vote.yes("yes", yea["MemberCode"])
+        for no in vote_page["Nays"]:
+            vote.no("no", no["MemberCode"])
+        for absent in vote_page["Absent"]:
+            vote.vote("other", absent["MemberCode"])
+
+        yield vote
 
 
 class MABillScraper(Scraper):
