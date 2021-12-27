@@ -1,4 +1,4 @@
-from spatula import HtmlPage, HtmlListPage, XPath
+from spatula import HtmlPage, HtmlListPage, XPath, URL
 from openstates.models import ScrapeCommittee
 
 
@@ -68,7 +68,7 @@ class HouseComDetail(HtmlPage):
 
 
 class SenComList(HtmlListPage):
-    source = "http://www.flsenate.gov/Committees/"
+    source = URL("https://www.flsenate.gov/Committees/", verify=False)
     selector = XPath("//a[contains(@href, 'Committees/Show')]/@href")
 
     def process_item(self, item):
@@ -114,9 +114,3 @@ class SenComDetail(HtmlPage):
         comm.add_source(self.source.url)
 
         return comm
-
-
-# class FlCommitteeScraper(Scraper, Spatula):
-#     def scrape(self):
-#         yield from self.scrape_page_items(SenComList)
-#         yield from self.scrape_page_items(HouseComList)
