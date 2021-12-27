@@ -11,7 +11,7 @@ def fix_name(name):
 
 
 class HouseComList(HtmlPage):
-    source = "http://www.myfloridahouse.gov/Sections/Committees/committees.aspx"
+    source = "https://www.myfloridahouse.gov/Sections/Committees/committees.aspx"
     selector = XPath("//a[contains(@href, 'committeesdetail.aspx')]")
 
     def process_page(self):
@@ -48,17 +48,17 @@ class HouseComDetail(HtmlPage):
         return name
 
     def process_page(self):
-        name = self.root.xpath('//h1[@class="cd_ribbon"]')[0].text
+        name = self.root.xpath('//h1[@class="ribbon"]')[0].text
 
-        for lm in self.root.xpath('//div[@class="cd_LeaderMember"]'):
-            role = lm.xpath('.//div[@class="cd_LeaderTitle"]')[0].text_content().strip()
+        for lm in self.root.xpath('//div[@class="member-card"]'):
+            role = lm.xpath('.//div[@class="portrait-title"]')[0].text_content().strip()
             name = (
-                lm.xpath('.//span[@class="cd_LeaderTitle"]/a')[0].text_content().strip()
+                lm.xpath('.//div[@class="portrait-title"]/a')[0].text_content().strip()
             )
             name = self.clean_name(name)
             self.input.add_member(name, role=role)
 
-        for cm in self.root.xpath('//p[@class="cd_committeemembers"]//a'):
+        for cm in self.root.xpath('//div[@class="portrait-title"]//a'):
             name = self.clean_name(cm.text_content())
             self.input.add_member(name)
 
@@ -85,7 +85,7 @@ class SenComDetail(HtmlPage):
         return member
 
     def process_page(self):
-        name = self.root.xpath('//h2[@class="committeeName"]')[0].text
+        name = self.root.xpath('//h2[@class="committeeName"]')[1].text
         if name.startswith("Appropriations Subcommittee"):
             return
             # TODO: restore scraping of Appropriations Subcommittees
@@ -97,6 +97,7 @@ class SenComDetail(HtmlPage):
                 name = name.replace("Committee on ", "")
             parent = None
             chamber = "upper"
+        print(name)
         comm = ScrapeCommittee(
             name=name, classification="committee", chamber=chamber, parent=parent
         )
