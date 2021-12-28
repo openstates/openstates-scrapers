@@ -1,13 +1,10 @@
 import datetime
-import os
-import re
 import json
 import lxml
 
 import pytz
 
 from openstates.scrape import Scraper, Event
-from openstates.utils import convert_pdf
 
 import datetime as dt
 from dateutil.relativedelta import relativedelta
@@ -17,7 +14,7 @@ import dateutil.parser
 class OHEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
 
-    base_url = 'https://www.legislature.ohio.gov/schedules/'
+    base_url = "https://www.legislature.ohio.gov/schedules/"
 
     def scrape(self, start=None, end=None):
         if start is None:
@@ -37,23 +34,27 @@ class OHEventScraper(Scraper):
         data = json.loads(self.get(url).content)
 
         for item in data:
-            name = item['title'].replace('Committee','').strip()
-            if 'canceled' in name.lower():
+            name = item["title"].replace("Committee", "").strip()
+            if "canceled" in name.lower():
                 continue
-            
-            if 'house session' in name.lower() or 'senate session' in name.lower():
+
+            if "house session" in name.lower() or "senate session" in name.lower():
                 continue
 
             url = f"{self.base_url}{item['url']}"
 
-            when = dateutil.parser.parse(item['start'])
+            when = dateutil.parser.parse(item["start"])
             when = self._tz.localize(when)
 
             page = self.get(url).content
             page = lxml.html.fromstring(page)
 
-            location = page.xpath('//div[contains(@class,"eventModule") and h3[contains(text(), "Location")]]/text()')[0].strip()
-            agenda_url = page.xpath('//a[contains(@class,"linkButton") and contains(text(),"Agenda")]/@href')[0]
+            location = page.xpath(
+                '//div[contains(@class,"eventModule") and h3[contains(text(), "Location")]]/text()'
+            )[0].strip()
+            agenda_url = page.xpath(
+                '//a[contains(@class,"linkButton") and contains(text(),"Agenda")]/@href'
+            )[0]
 
             event = Event(
                 name=name,
