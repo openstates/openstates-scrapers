@@ -1,5 +1,4 @@
 import pytz
-import datetime
 import dateutil.parser
 import lxml
 import re
@@ -26,7 +25,6 @@ class FlEventScraper(Scraper):
         "2014A": "77",
         "2016O": "84",
     }
-
 
     def scrape(self, session=None):
         if session is None:
@@ -80,33 +78,43 @@ class FlEventScraper(Scraper):
         com = f"House {com}"
 
         start = self.get_meeting_row(page, "Start Date")
-        start = self.tz.localize(
-            dateutil.parser.parse(start)
-        )
+        start = self.tz.localize(dateutil.parser.parse(start))
 
         end = None
         if self.get_meeting_row(page, "End Date"):
             end = self.get_meeting_row(page, "End Date")
-            end = self.tz.localize(
-                dateutil.parser.parse(end)
-            )
+            end = self.tz.localize(dateutil.parser.parse(end))
         location = self.get_meeting_row(page, "Location")
 
-        summary = ''
+        summary = ""
         if page.xpath('//div[contains(text(),"Meeting Overview")]'):
-            summary = page.xpath('//div[div[contains(text(),"Meeting Overview")]]/div[contains(@class,"ml-3")]')[0].text_content().strip()
+            summary = (
+                page.xpath(
+                    '//div[div[contains(text(),"Meeting Overview")]]/div[contains(@class,"ml-3")]'
+                )[0]
+                .text_content()
+                .strip()
+            )
 
         if end:
-            event = Event(name=com, start_date=start, end_date=end, location_name=location, description=summary)
+            event = Event(
+                name=com,
+                start_date=start,
+                end_date=end,
+                location_name=location,
+                description=summary,
+            )
         else:
-            event = Event(name=com, start_date=start, location_name=location, description=summary)
+            event = Event(
+                name=com, start_date=start, location_name=location, description=summary
+            )
         event.add_source(url)
 
         for h5 in page.xpath('//div[contains(@class,"meeting-actions-bills")]/h5'):
-            agenda = event.add_agenda_item(h5.text_content().strip())
-            for agenda_item in h5.xpath('following-sibling::ul/li'):
+            event.add_agenda_item(h5.text_content().strip())
+            for agenda_item in h5.xpath("following-sibling::ul/li"):
                 agenda_text = agenda_item.text_content().strip()
-                agenda_text = re.sub(r"\s+\u2013\s+", ' - ', agenda_text)
+                agenda_text = re.sub(r"\s+\u2013\s+", " - ", agenda_text)
                 item = event.add_agenda_item(agenda_text)
                 found_bills = re.findall(r"H.*\s+\d+", agenda_text)
                 if found_bills:
@@ -118,9 +126,13 @@ class FlEventScraper(Scraper):
         xpath = f"//div[contains(@class,'meeting-info-rows') and span[contains(text(),'{header}')]]/span[contains(@class,'value')]"
 
         if page.xpath(xpath):
-            return page.xpath(
-                f"//div[contains(@class,'meeting-info-rows') and span[contains(text(),'{header}')]]/span[contains(@class,'value')]"
-            )[0].text_content().strip()
+            return (
+                page.xpath(
+                    f"//div[contains(@class,'meeting-info-rows') and span[contains(text(),'{header}')]]/span[contains(@class,'value')]"
+                )[0]
+                .text_content()
+                .strip()
+            )
         else:
             return None
 
