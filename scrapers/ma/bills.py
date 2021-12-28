@@ -24,6 +24,7 @@ class BillList(JsonListPage):
     source = URL(
         f"https://malegislature.gov/api/GeneralCourts/{session_number}/Documents",
         timeout=80,
+        verify=False,
     )
     selector = XPath("//DocumentSummary")
 
@@ -48,7 +49,6 @@ class BillList(JsonListPage):
 class BillDetail(JsonPage):
     example_source = "https://malegislature.gov/api/GeneralCourts/192/Documents/S756"
 
-    @property
     def process_page(self):
         document = self.data
         leg_type = document["LegislationTypeName"].lower()
