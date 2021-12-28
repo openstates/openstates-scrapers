@@ -2,7 +2,6 @@ import re
 from utils import url_xpath
 from openstates.scrape import State
 from .bills import CABillScraper
-from .people import CAPersonScraper
 
 from .events import CAEventScraper
 
@@ -16,8 +15,6 @@ class California(State):
     scrapers = {
         "bills": CABillScraper,
         "events": CAEventScraper,
-        "people": CAPersonScraper,
-        # 'committees': CACommitteeScraper,
     }
     legislative_sessions = [
         {
