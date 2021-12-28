@@ -12,7 +12,6 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 class Florida(State):
     scrapers = {
         "bills": FlBillScraper,
-        # "committees": FlCommitteeScraper,
         "events": FlEventScraper,
     }
     # Full session list through 2019:

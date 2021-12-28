@@ -5,9 +5,6 @@ from .bills import CABillScraper
 
 from .events import CAEventScraper
 
-# from .committees import CACommitteeScraper
-
-
 settings = dict(SCRAPELIB_RPM=30)
 
 
