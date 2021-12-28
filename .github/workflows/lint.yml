@@ -2,9 +2,9 @@ name: Lint Python
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   lint:
@@ -12,13 +12,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: setup Python 3.8
+    - name: setup Python 3.9
       uses: actions/setup-python@v2
       with:
-        python-version: 3.8
+        python-version: 3.9
     - name: install linters
       run: pip install flake8 black
     - name: flake8 check
-      run: flake8 scrapers
-    # - name: black check
-    #   run: black --check scrapers
+      run: flake8 scrapers scrapers_next
+    - name: black check
+      run: black --check scrapers scrapers_next

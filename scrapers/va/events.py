@@ -16,8 +16,7 @@ class VaEventScraper(Scraper):
     _tz = pytz.timezone("America/New_York")
     tzinfos = {"EDT": gettz("America/New_York"), "EST": gettz("America/New_York")}
 
-    def scrape(self):
-        session = self.latest_session()
+    def scrape(self, session):
         session_id = SESSION_SITE_IDS[session]
 
         yield from self.scrape_lower()
@@ -58,6 +57,10 @@ class VaEventScraper(Scraper):
                     event_type = "other"
                 else:
                     continue
+
+            # cancelled so we lose date/time info
+            if not row.xpath(".//a[@title='Add to Calendar']/@href"):
+                continue
 
             date_link = row.xpath(".//a[@title='Add to Calendar']/@href")[0]
             parsed = parse.parse_qs(parse.urlparse(date_link).query)

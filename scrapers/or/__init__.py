@@ -1,16 +1,11 @@
-from utils import State
-from .people import ORPersonScraper
+from openstates.scrape import State
 from .bills import ORBillScraper
 from .votes import ORVoteScraper
 from .events import OREventScraper
 
-# from .committees import ORCommitteeScraper
-
 
 class Oregon(State):
     scrapers = {
-        "people": ORPersonScraper,
-        # 'committees': ORCommitteeScraper,
         "bills": ORBillScraper,
         "votes": ORVoteScraper,
         "events": OREventScraper,
@@ -166,8 +161,25 @@ class Oregon(State):
             "start_date": "2020-01-19",
             "end_date": "2020-07-11",
         },
+        {
+            "_scraped_name": "2021 1st Special Session",
+            "identifier": "2021S1",
+            "name": "2021 Special Session",
+            "start_date": "2021-09-20",
+            "end_date": "2021-09-25",
+            "active": True,
+        },
+        {
+            "_scraped_name": "2021 2nd Special Session",
+            "identifier": "2021S2",
+            "name": "2021 Special Session 2",
+            "start_date": "2021-12-13",
+            "end_date": "2021-12-25",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
+        "2021-2022 Interim",
         "Mock Session 2020",
         "Today",
         "2019-2020 Interim",

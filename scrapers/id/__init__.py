@@ -1,15 +1,11 @@
-from .people import IDPersonScraper
 from .bills import IDBillScraper
 from .events import IDEventScraper
-from utils import url_xpath, State
-
-# from .committees import IDCommitteeScraper
+from utils import url_xpath
+from openstates.scrape import State
 
 
 class Idaho(State):
     scrapers = {
-        "people": IDPersonScraper,
-        # 'committees': IDCommitteeScraper,
         "bills": IDBillScraper,
         "events": IDEventScraper,
     }
@@ -118,6 +114,7 @@ class Idaho(State):
             "name": "66th Legislature, 1st Regular Session (2021)",
             "start_date": "2020-01-11",
             "end_date": "2020-04-07",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

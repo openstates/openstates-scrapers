@@ -1,8 +1,7 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .events import HIEventScraper
 from .bills import HIBillScraper
-
-# from .committees import HICommitteeScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
@@ -10,7 +9,6 @@ settings = dict(SCRAPELIB_TIMEOUT=300)
 class Hawaii(State):
     scrapers = {
         "bills": HIBillScraper,
-        # 'committees': HICommitteeScraper,
         "events": HIEventScraper,
     }
     legislative_sessions = [
@@ -83,7 +81,8 @@ class Hawaii(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-20",
             "end_date": "2021-05-09",
-        },        
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "2011",
@@ -105,7 +104,7 @@ class Hawaii(State):
         # doesn't include current session, we need to change it
         sessions = url_xpath(
             "http://www.capitol.hawaii.gov/archives/main.aspx",
-            "//div[@class='roundedrect gradientgray shadow']/a/text()",
+            "//div[@class='roundedrect gradientgray shadow archiveyears']/a/text()",
         )
         sessions.remove("Archives Main")
         return sessions

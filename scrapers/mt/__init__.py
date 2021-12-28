@@ -1,12 +1,11 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import MTBillScraper
 from .events import MTEventScraper
-# from .committees import MTCommitteeScraper
 
 
 class Montana(State):
     scrapers = {
-        # 'committees': MTCommitteeScraper,
         "bills": MTBillScraper,
         "events": MTEventScraper,
     }
@@ -52,6 +51,7 @@ class Montana(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-04",
             "end_date": "2021-04-25",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

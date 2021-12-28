@@ -1,15 +1,11 @@
 import lxml
-from utils import State
-from .people import NCPersonScraper
+from openstates.scrape import State
 from .bills import NCBillScraper
 from .events import NCEventScraper
-# from .committees import NCCommitteeScraper
 
 
 class NorthCarolina(State):
     scrapers = {
-        "people": NCPersonScraper,
-        # 'committees': NCCommitteeScraper,
         "bills": NCBillScraper,
         "events": NCEventScraper,
     }
@@ -358,6 +354,7 @@ class NorthCarolina(State):
             "start_date": "2021-01-04",
             # TODO: fix this when session ends
             "end_date": "2022-08-01",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = []

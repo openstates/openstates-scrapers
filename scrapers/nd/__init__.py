@@ -1,17 +1,12 @@
-from utils import State
+from openstates.scrape import State
 from .votes import NDVoteScraper
-from .people import NDPersonScraper
 from .bills import NDBillScraper
 from .events import NDEventScraper
-
-# from .committees import NDCommitteeScraper
 
 
 class NorthDakota(State):
     scrapers = {
-        "people": NDPersonScraper,
         "votes": NDVoteScraper,
-        # 'committees': NDCommitteeScraper,
         "bills": NDBillScraper,
         "events": NDEventScraper,
     }
@@ -57,9 +52,20 @@ class NorthDakota(State):
             "name": "67th Legislative Assembly (2021-2022)",
             "start_date": "2021-01-02",
             "end_date": "2021-04-30",
+            "active": True,
+        },
+        {
+            "_scraped_name": "67th (2021) Legislative Assembly Special 2021 Session",
+            "identifier": "67S1",
+            "name": "67th (2021) Legislative Assembly Special 2021 Session",
+            "start_date": "2021-11-08",
+            "end_date": "2021-11-12",
+            "classification": "special",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
+        "68th Legislative Assembly (2023-24)",
         "61st Legislative Assembly (2009-10)",
         "60th Legislative Assembly (2007-08)",
         "59th Legislative Assembly (2005-06)",

@@ -18,19 +18,18 @@ class AZEventScraper(Scraper):
 
     address = "1700 W. Washington St., Phoenix, Arizona"
 
-    def scrape(self, chamber=None):
+    def scrape(self, chamber=None, session=None):
         if chamber:
             if chamber == "other":
                 return
             else:
-                yield from self.scrape_chamber(chamber)
+                yield from self.scrape_chamber(chamber, session)
         else:
             chambers = ["upper", "lower"]
             for chamber in chambers:
-                yield from self.scrape_chamber(chamber)
+                yield from self.scrape_chamber(chamber, session)
 
-    def scrape_chamber(self, chamber):
-        session = self.latest_session()
+    def scrape_chamber(self, chamber, session):
         session_id = session_metadata.session_id_meta_data[session]
 
         chamber_abbr = self.chamber_codes[chamber]
@@ -67,17 +66,17 @@ class AZEventScraper(Scraper):
                 # fix for dateutil parser confusion
                 row["Time"] = row["Time"].replace("A.M.", "AM").replace("P.M.", "PM")
 
-                if 'upon rec' not in row['Time'].lower():
+                if "upon rec" not in row["Time"].lower():
                     time = re.findall(r"(\d+:\d+\s+[A|P]M)", row["Time"])
                     if len(time) == 0:
                         self.warning(f"Unable to get time for {row['Time']} on {title}")
-                        time = '00:00:00'
+                        time = "00:00:00"
                     else:
                         time = time[0]
 
                     time = time.replace(r"\s+", " ")
                 else:
-                    time = ''
+                    time = ""
 
                 when = dateutil.parser.parse(f"{row['Date']} {time}")
                 when = self._tz.localize(when)

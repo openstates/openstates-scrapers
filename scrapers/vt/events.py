@@ -1,7 +1,8 @@
-import datetime
+import dateutil.parser
 import json
 import pytz
 
+from dateutil.parser import ParserError
 from openstates.scrape import Scraper, Event
 
 
@@ -9,8 +10,6 @@ class VTEventScraper(Scraper):
     TIMEZONE = pytz.timezone("America/New_York")
 
     def scrape(self, session=None):
-        if session is None:
-            session = self.latest_session()
         year_slug = self.jurisdiction.get_year_slug(session)
 
         url = "http://legislature.vermont.gov/committee/loadAllMeetings/{}".format(
@@ -27,21 +26,16 @@ class VTEventScraper(Scraper):
                 or info["TimeSlot"] == "1"
                 or info["TimeSlot"] == 1
             ):
-                start_time = datetime.datetime.strptime(
-                    info["MeetingDate"], "%A, %B %d, %Y"
-                )
+                start_time = dateutil.parser.parse(info["MeetingDate"])
                 all_day = True
             else:
                 try:
-                    start_time = datetime.datetime.strptime(
-                        info["MeetingDate"] + ", " + info["TimeSlot"],
-                        "%A, %B %d, %Y, %I:%M %p",
+                    start_time = dateutil.parser.parse(
+                        f"{info['MeetingDate']}, {info['TimeSlot']}"
                     )
-                except (ValueError, TypeError):
-                    start_time = datetime.datetime.strptime(
-                        info["MeetingDate"] + ", " + info["StartTime"],
-                        "%A, %B %d, %Y, %I:%M %p",
-                    )
+                except ParserError:
+                    start_time = dateutil.parser.parse(info["MeetingDate"])
+
                 all_day = False
 
             event = Event(

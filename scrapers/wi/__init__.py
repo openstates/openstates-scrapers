@@ -1,18 +1,13 @@
-from utils import url_xpath, State
-
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import WIBillScraper
 from .events import WIEventScraper
-from .people import WIPersonScraper
-
-# from .committees import WICommitteeScraper
 
 
 class Wisconsin(State):
     scrapers = {
         "bills": WIBillScraper,
         "events": WIEventScraper,
-        "people": WIPersonScraper,
-        # 'committees': WICommitteeScraper,
     }
     legislative_sessions = [
         {
@@ -159,6 +154,7 @@ class Wisconsin(State):
             "start_date": "2021-01-04",
             # TODO: set a better end date once session ends
             "end_date": "2022-05-23",
+            "active": True,
         },
         {
             "_scraped_name": "January 2021 Special Session",
@@ -169,6 +165,7 @@ class Wisconsin(State):
             "start_date": "2021-02-17",
             # TODO: set a better end date once session ends
             "end_date": "2022-02-26",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

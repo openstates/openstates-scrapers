@@ -3,7 +3,8 @@ import os
 import time
 import functools
 from collections import defaultdict
-from OpenSSL.SSL import SysCallError
+
+# from OpenSSL.SSL import SysCallError
 
 
 class BadAPIResponse(Exception):
@@ -63,12 +64,8 @@ class OpenLegislationAPIClient(object):
             "committees/{session_year}/{chamber}/{committee_name}/history"
             "?limit={limit}&offset={offset}&full={full}&order={sort_order}"
         ),
-        meetings=(
-            "agendas/meetings/{start}/{end}?"
-        ),
-        meeting=(
-            "agendas/{year}/{agenda_id}/{committee}?"
-        ),
+        meetings=("agendas/meetings/{start}/{end}?"),
+        meeting=("agendas/{year}/{agenda_id}/{committee}?"),
         members=(
             "members/{session_year}?limit={limit}&offset={offset}&full={full}"
             "&sort={sort_order}"
@@ -115,16 +112,15 @@ class OpenLegislationAPIClient(object):
         response = None
         tries = 0
         while response is None and tries < num_bad_packets_allowed:
-            try:
-                response = self.scraper.get(url, *requests_args, **requests_kwargs)
-            except SysCallError as e:
-                err, string = e.args
-                if err != 104:
-                    raise
-                tries += 1
-                if tries >= num_bad_packets_allowed:
-                    print(err, string)
-                    raise RuntimeError("Received too many bad packets from API.")
+            response = self.scraper.get(url, *requests_args, **requests_kwargs)
+            # except SysCallError as e:
+            #     err, string = e.args
+            #     if err != 104:
+            #         raise
+            #     tries += 1
+            #     if tries >= num_bad_packets_allowed:
+            #         print(err, string)
+            #         raise RuntimeError("Received too many bad packets from API.")
 
         return response
 

@@ -24,10 +24,6 @@ class WAEventScraper(Scraper, LXMLMixin):
     }
 
     def scrape(self, chamber=None, session=None, start=None, end=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         now = datetime.datetime.now()
         print_format = "%Y-%m-%d"
 
@@ -97,8 +93,10 @@ class WAEventScraper(Scraper, LXMLMixin):
                 description=notes,
             )
 
-            source_url = "https://app.leg.wa.gov/committeeschedules/Home/Agenda/{}".format(
-                agenda_id
+            source_url = (
+                "https://app.leg.wa.gov/committeeschedules/Home/Agenda/{}".format(
+                    agenda_id
+                )
             )
             event.add_source(source_url)
 

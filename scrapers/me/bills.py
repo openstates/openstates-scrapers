@@ -22,9 +22,6 @@ class MEBillScraper(Scraper):
 
     def scrape(self, chamber=None, session=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
 
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
@@ -32,7 +29,7 @@ class MEBillScraper(Scraper):
     def scrape_chamber(self, chamber, session):
         # Create a Bill for each Paper of the chamber's session
         request_session = requests.Session()
-        search_url = "http://legislature.maine.gov/LawMakerWeb/doadvancedsearch.asp"
+        search_url = "https://legislature.maine.gov/LawMakerWeb/doadvancedsearch.asp"
         session_number = str(int(session) - 116)
         paper_type = "HP" if chamber == "lower" else "SP"
         form_data = {
@@ -65,7 +62,7 @@ class MEBillScraper(Scraper):
         Bill object for every Paper from the given chamber
         """
 
-        url = "http://legislature.maine.gov/LawMakerWeb/searchresults.asp"
+        url = "https://legislature.maine.gov/LawMakerWeb/searchresults.asp"
         r = request_session.get(url, params={"StartWith": first_item})
         r.raise_for_status()
 
@@ -75,7 +72,7 @@ class MEBillScraper(Scraper):
                 bill_id_slug = bill.xpath("./@href")[0]
                 if bill_id_slug == "summary.asp?ID=280068396":
                     continue
-                bill_url = "http://legislature.maine.gov/LawMakerWeb/{}".format(
+                bill_url = "https://legislature.maine.gov/LawMakerWeb/{}".format(
                     bill_id_slug
                 )
                 bill_id = bill.text[:2] + " " + bill.text[2:]

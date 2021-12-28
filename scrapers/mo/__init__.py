@@ -1,11 +1,11 @@
 import http
 import email
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import MOBillScraper
 from .events import MOEventScraper
 
 # from .votes import MOVoteScraper
-# from .committees import MOCommitteeScraper
 
 
 class Missouri(State):
@@ -13,7 +13,6 @@ class Missouri(State):
         "bills": MOBillScraper,
         # 'votes': MOVoteScraper,
         "events": MOEventScraper,
-        # 'committees': MOCommitteeScraper,
     }
     legislative_sessions = [
         {
@@ -66,9 +65,26 @@ class Missouri(State):
             "start_date": "2021-01-06",
             "end_date": "2021-05-30",
         },
+        {
+            "_scraped_name": "2021 1st Extraordinary Session",
+            "classification": "primary",
+            "identifier": "2021S1",
+            "name": "2021 1st Extraordinary Session",
+            "start_date": "2021-06-23",
+            # TODO: real end date when session is over
+            "end_date": "2021-06-25",
+        },
+        {
+            "_scraped_name": "2022 Regular Session",
+            "classification": "primary",
+            "identifier": "2022",
+            "name": "2022 Regular Session",
+            "start_date": "2022-01-05",
+            "end_date": "2022-05-20",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
-        "2021 Regular Session",
         "2018 Regular Session",
         "2018 Special Session",
         "2018 1st Extraordinary Session",

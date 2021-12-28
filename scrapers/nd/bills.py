@@ -14,13 +14,18 @@ class NDBillScraper(Scraper, LXMLMixin):
 
     categorizer = NDCategorizer()
 
-    house_list_url = "http://www.legis.nd.gov/assembly/%s-%s/bill-text/house-bill.html"
+    house_list_url = (
+        "http://www.legis.nd.gov/assembly/%s-%s/%sbill-text/house-bill.html"
+    )
     senate_list_url = (
-        "http://www.legis.nd.gov/assembly/%s-%s/bill-text/senate-bill.html"
+        "http://www.legis.nd.gov/assembly/%s-%s/%sbill-text/senate-bill.html"
     )
     subjects_url = (
-        "http://www.legis.nd.gov/assembly/%s-%s/subject-index/major-topic.html"
+        "http://www.legis.nd.gov/assembly/%s-%s/%ssubject-index/major-topic.html"
     )
+
+    url_session = ""
+    special_url_slug = ""
 
     def scrape_actions(self, session, href):
         page = self.lxmlize(href)
@@ -37,6 +42,10 @@ class NDBillScraper(Scraper, LXMLMixin):
 
         title = re.sub(r"\s+", " ", descr.text_content()).strip()
         ttrows = ttrows[:-1]
+
+        if bid[0] not in ["H", "S"]:
+            self.warning(f"Unable to determine bill type for {bid[0]}")
+            return
 
         chamber = {"H": "lower", "S": "upper"}[bid[0]]
 
@@ -181,25 +190,32 @@ class NDBillScraper(Scraper, LXMLMixin):
                 self.warning("Bill ID and Type Not Found!")
 
     def scrape(self, session=None, chamber=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
+        self.url_session = session
         # chambers = [chamber] if chamber else ['upper', 'lower']
         # figuring out starting year from metadata
         for item in self.jurisdiction.legislative_sessions:
             if item["identifier"] == session:
                 start_year = item["start_date"][:4]
                 self.year = start_year
+                if "classification" in item and item["classification"] == "special":
+                    self.special_url_slug = "/special-session/"
+                    self.url_session = session[0:2]
                 break
         # Get the subjects for every bill
         # Sometimes, at least with prefiles, a bill will not be given subjects
-        self.subjects_url = self.subjects_url % (session, start_year)
+        self.subjects_url = self.subjects_url % (
+            self.url_session,
+            start_year,
+            self.special_url_slug,
+        )
         self.subjects = {}
         self.scrape_subjects(session)
 
         for chamber, url in {
-            "lower": self.house_list_url % (session, start_year),
-            "upper": self.senate_list_url % (session, start_year),
+            "lower": self.house_list_url
+            % (self.url_session, start_year, self.special_url_slug),
+            "upper": self.senate_list_url
+            % (self.url_session, start_year, self.special_url_slug),
         }.items():
             doc = self.lxmlize(url)
             bill_urls = doc.xpath(

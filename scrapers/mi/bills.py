@@ -13,7 +13,7 @@ TIMEZONE = pytz.timezone("US/Eastern")
 
 
 def jres_id(n):
-    """ joint res ids go from A-Z, AA-ZZ, etc. """
+    """joint res ids go from A-Z, AA-ZZ, etc."""
     return chr(ord("A") + (n - 1) % 25) * (math.floor(n / 26) + 1)
 
 
@@ -130,10 +130,14 @@ class MIBillScraper(Scraper):
                 date = TIMEZONE.localize(datetime.datetime.strptime(date, "%m/%d/%y"))
             except ValueError:
                 try:
-                    date = TIMEZONE.localize(datetime.datetime.strptime(date, "%m/%d/%Y"))
+                    date = TIMEZONE.localize(
+                        datetime.datetime.strptime(date, "%m/%d/%Y")
+                    )
                 except ValueError:
                     self.warning(
-                        "{} has action with invalid date. Skipping Action".format(bill_id)
+                        "{} has action with invalid date. Skipping Action".format(
+                            bill_id
+                        )
                     )
                     continue
             # use journal for actor

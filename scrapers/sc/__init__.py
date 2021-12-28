@@ -1,14 +1,12 @@
-from .people import SCPersonScraper
 from .bills import SCBillScraper
 from .events import SCEventScraper
-from utils import State
+from openstates.scrape import State
 import requests
 import lxml.html
 
 
 class SouthCarolina(State):
     scrapers = {
-        "people": SCPersonScraper,
         "bills": SCBillScraper,
         "events": SCEventScraper,
     }
@@ -60,6 +58,7 @@ class SouthCarolina(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-12",
             "end_date": "2022-05-14",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
@@ -84,7 +83,7 @@ class SouthCarolina(State):
     ]
 
     def get_session_list(self):
-        """ Get session list from billsearch page using xpath"""
+        """Get session list from billsearch page using xpath"""
         url = "http://www.scstatehouse.gov/billsearch.php"
         path = "//select[@id='session']/option/text()"
 

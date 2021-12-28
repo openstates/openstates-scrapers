@@ -36,7 +36,6 @@ class MOBillScraper(Scraper, LXMLMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         super(Scraper, self).__init__(header_func=self.custom_header_func)
-        self._scrape_subjects(self.latest_session())
 
     def _get_action(self, actor, action):
         # Alright. This covers both chambers and everything else.
@@ -689,10 +688,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         yield from self._parse_house_billpage(bill_page_url, year)
 
     def scrape(self, chamber=None, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
+        self._scrape_subjects(session)
         # special sessions and other year manipulation messes up the session variable
         # but we need it for correct output
         self._session_id = session

@@ -58,9 +58,6 @@ class MABillScraper(Scraper):
     def scrape(
         self, chamber=None, session=None, bill_no=None, sort=None, page_limit=None
     ):
-        if not session:
-            session = self.latest_session()
-
         if page_limit:
             page_limit = int(page_limit)
 
@@ -424,7 +421,7 @@ class MABillScraper(Scraper):
                 action.add_related_entity(com, entity_type="organization")
 
     def get_house_pdf(self, vurl):
-        """ cache house PDFs since they are done by year """
+        """cache house PDFs since they are done by year"""
         if vurl not in self.house_pdf_cache:
             (path, resp) = self.urlretrieve(vurl)
             pdflines = convert_pdf(path, "text")

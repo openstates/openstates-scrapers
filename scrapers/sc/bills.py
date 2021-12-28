@@ -439,10 +439,6 @@ class SCBillScraper(Scraper):
         :param chamber:
         :param session:
         """
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         self._seen_vote_ids = set()
 
         # Subject scraping disabled Summer 2020, openstates/issues#77

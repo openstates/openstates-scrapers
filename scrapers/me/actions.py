@@ -53,8 +53,7 @@ class Categorizer(BaseCategorizer):
     rules = rules
 
     def categorize(self, text):
-        """Wrap categorize and add boilerplate committees.
-        """
+        """Wrap categorize and add boilerplate committees."""
         attrs = BaseCategorizer.categorize(self, text)
         committees = attrs["committees"]
         for committee in re.findall(committees_rgx, text):
@@ -89,8 +88,7 @@ actor_regex = [
 
 
 def get_actor(action_text, chamber, rgxs=actor_regex):
-    """Guess the actor for a particular action.
-    """
+    """Guess the actor for a particular action."""
     for r, actor in rgxs:
         m = r.search(action_text)
         if m:

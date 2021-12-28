@@ -51,9 +51,7 @@ class INCommitteeScraper(Scraper):
 
         return sc_dict
 
-    def scrape(self):
-        session = self.latest_session()
-
+    def scrape(self, session):
         subcomms = self.get_subcommittee_info(session)
 
         api_base_url = "https://api.iga.in.gov"

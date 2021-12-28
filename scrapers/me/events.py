@@ -4,6 +4,7 @@ import datetime
 import json
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 class MEEventScraper(Scraper, LXMLMixin):
@@ -12,11 +13,6 @@ class MEEventScraper(Scraper, LXMLMixin):
     date_format = "%B  %d, %Y"
 
     def scrape(self, session=None, start=None, end=None):
-
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         # testimony url, we'll need it later in a loop
 
         # testmony query looks gnary but breaks down to:
@@ -72,6 +68,9 @@ class MEEventScraper(Scraper, LXMLMixin):
         url = url.format(start_date, end_date)
 
         page = json.loads(self.get(url).content)
+
+        if len(page) == 0:
+            raise EmptyScrape
 
         for row in page:
             if row["Cancelled"] is True or row["Postponed"] is True:

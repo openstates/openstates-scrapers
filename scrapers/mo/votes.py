@@ -193,10 +193,6 @@ class MOVoteScraper(Scraper, LXMLMixin):
     #  the agenda of the day.
 
     def scrape(self, chamber=None, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         if chamber in ["upper", None]:
             yield from self._scrape_upper_chamber(session)
         if chamber in ["lower", None]:

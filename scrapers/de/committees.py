@@ -6,15 +6,15 @@ from utils import LXMLMixin
 class DECommitteeScraper(Scraper, LXMLMixin):
     jurisdiction = "de"
 
-    def scrape(self, chamber=None):
+    def scrape(self, chamber=None, session=None):
         if chamber:
-            yield from self.scrape_chamber(chamber)
+            yield from self.scrape_chamber(chamber, session)
         else:
             chambers = ["upper", "lower"]
             for chamber in chambers:
-                yield from self.scrape_chamber(chamber)
+                yield from self.scrape_chamber(chamber, session)
 
-    def scrape_chamber(self, chamber):
+    def scrape_chamber(self, chamber, session):
         urls = {
             "upper": "http://legis.delaware.gov/json/Committees/"
             + "GetCommitteesByTypeId?assemblyId=%s&committeeTypeId=1",
@@ -22,7 +22,6 @@ class DECommitteeScraper(Scraper, LXMLMixin):
             + "GetCommitteesByTypeId?assemblyId=%s&committeeTypeId=2",
         }
 
-        session = self.latest_session()
         self.info("no session specified, using %s", session)
 
         if chamber == "lower":

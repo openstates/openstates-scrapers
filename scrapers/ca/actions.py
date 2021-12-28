@@ -23,6 +23,7 @@ _categorizer_rules = (
     ),
     Rule(r"Approved by the Governor", "executive-signature"),
     Rule(r"Approved by the Governor with item veto", "executive-veto-line-item"),
+    Rule(r"Chaptered by Secretary of State", "became-law"),
     Rule("Vetoed by Governor", "executive-veto"),
     Rule("Vetoed by the Governor", "executive-veto"),
     Rule(r"To Governor", "executive-receipt"),

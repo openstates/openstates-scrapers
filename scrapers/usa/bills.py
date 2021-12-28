@@ -45,10 +45,6 @@ class USBillScraper(Scraper):
 
     # to scrape everything UPDATED after a given date/time, start="2020-01-01 22:01:01"
     def scrape(self, chamber=None, session=None, start=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         if start:
             start = datetime.datetime.strptime(start, "%Y-%m-%d %H:%I:%S")
         else:
@@ -131,23 +127,26 @@ class USBillScraper(Scraper):
         self.scrape_titles(bill, xml)
         self.scrape_versions(bill, xml)
 
-        # https://www.congress.gov/bill/116th-congress/house-bill/1
         xml_url = "https://www.govinfo.gov/bulkdata/BILLSTATUS/{congress}/{type}/BILLSTATUS-{congress}{type}{num}.xml"
         bill.add_source(
             xml_url.format(congress=session, type=bill_type.lower(), num=bill_num)
         )
-
+        # need to get Congress.gov URL for source & additional versions
+        # https://www.congress.gov/bill/116th-congress/house-bill/1
         cg_url = (
             "https://congress.gov/bill/{congress}th-congress/{chamber}-{type}/{num}"
         )
-        bill.add_source(
-            cg_url.format(
-                congress=session,
-                chamber=chamber_name.lower(),
-                type=classification.lower(),
-                num=bill_num,
-            )
+        cg_url = cg_url.format(
+            congress=session,
+            chamber=chamber_name.lower(),
+            type=classification.lower(),
+            num=bill_num,
         )
+        bill.add_source(cg_url)
+
+        # use cg_url to get additional version for public law
+        # disabled 9/2021 - congress.gov was giving 503s
+        # self.scrape_public_law_version(bill, cg_url)
 
         yield bill
 
@@ -300,6 +299,7 @@ class USBillScraper(Scraper):
             )
             try:
                 page = lxml.html.fromstring(self.get(rules_url).content)
+                page.make_links_absolute(rules_url)
                 for row in page.xpath(
                     '//article[contains(@class, "field-name-field-amendment-table")]/div/div/table/tr'
                 ):
@@ -362,16 +362,25 @@ class USBillScraper(Scraper):
         bill.extras["cosponsor_bioguides"] = all_sponsors
 
     def scrape_laws(self, bill, xml):
-        law_format = "{type} {num}"
-        laws = []
+        # ex. public law, https://www.govinfo.gov/bulkdata/BILLSTATUS/117/s/BILLSTATUS-117s325.xml
+        # ex. private law, https://www.govinfo.gov/bulkdata/BILLSTATUS/115/hr/BILLSTATUS-115hr4641.xml
+
         for row in xml.findall("bill/laws/item"):
-            laws.append(
-                law_format.format(
-                    type=self.get_xpath(row, "type"),
-                    num=self.get_xpath(row, "number"),
-                )
+            law_type = self.get_xpath(row, "type")
+            law_ref = self.get_xpath(row, "number")
+
+            url_slug = "pvtl" if law_type == "Private Law" else "publ"
+
+            law_url_pattern = "https://www.congress.gov/{congress}/plaws/{url_slug}{num}/PLAW-{congress}{url_slug}{num}.pdf"
+
+            congress, plaw = law_ref.split("-")
+            law_url = law_url_pattern.format(
+                congress=congress, num=plaw, url_slug=url_slug
             )
-        bill.extras["laws"] = laws
+
+            bill.add_citation(
+                f"US {law_type}", law_ref, citation_type="final", url=law_url
+            )
 
     def scrape_related_bills(self, bill, xml):
         for row in xml.findall("bill/relatedBills/item"):
@@ -430,15 +439,51 @@ class USBillScraper(Scraper):
     def scrape_versions(self, bill, xml):
         for row in xml.findall("bill/textVersions/item"):
             version_title = self.get_xpath(row, "type")
+            try:
+                version_date = self.get_xpath(row, "date")[:10]
+            except TypeError:
+                version_date = ""
 
             for version in row.findall("formats/item"):
                 url = self.get_xpath(version, "url")
                 print(f"Version URL: {url}")
                 bill.add_version_link(
-                    note=version_title, url=url, media_type="text/xml"
+                    note=version_title,
+                    url=url,
+                    media_type="text/xml",
+                    date=version_date,
                 )
                 bill.add_version_link(
                     note=version_title,
                     url=url.replace("xml", "pdf"),
                     media_type="application/pdf",
+                    date=version_date,
                 )
+
+    def scrape_public_law_version(self, bill, url):
+        # only try to scrape public law version if there's an enrolled version
+        if not any(["Enrolled" in v["note"] for v in bill.versions]):
+            return
+        # S 164 is timing out so skipping for now
+        # https://github.com/openstates/issues/issues/482
+        elif bill.title == "Advancing Education on Biosimilars Act of 2021":
+            return
+
+        resp = self.get(url + "/text")
+        doc = lxml.html.fromstring(resp.content)
+        doc.make_links_absolute(url)
+
+        try:
+            latest_version = doc.xpath("//select[@id='textVersion']/option/text()")[0]
+        except IndexError:
+            return
+        if "Public Law" in latest_version:
+            month, day, year = re.findall(r"(\d{2})/(\d{2})/(\d{4})", latest_version)[0]
+            date = f"{year}-{month}-{day}"
+            latest_version_url = doc.xpath("//a[text()='PDF']/@href")[0]
+            bill.add_version_link(
+                note="Public Law",
+                url=latest_version_url,
+                media_type="application/pdf",
+                date=date,
+            )

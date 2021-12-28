@@ -1,16 +1,12 @@
-from utils import url_xpath, State
-from .people import NMPersonScraper
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import NMBillScraper
 from .votes import NMVoteScraper
 from .events import NMEventScraper
 
-# from .committees import NMCommitteeScraper
-
 
 class NewMexico(State):
     scrapers = {
-        "people": NMPersonScraper,
-        # 'committees': NMCommitteeScraper,
         "bills": NMBillScraper,
         "events": NMEventScraper,
         "votes": NMVoteScraper,
@@ -152,9 +148,20 @@ class NewMexico(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-19",
             "end_date": "2021-03-20",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2021 2nd Special",
+            "classification": "special",
+            "identifier": "2021S2",
+            "name": "2021 Second Special Session",
+            "start_date": "2021-12-06",
+            "end_date": "2021-12-20",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
+        "2021 2nd Special",
         "2010 2nd Special",
         "2010 Regular",
         "2009 1st Special",

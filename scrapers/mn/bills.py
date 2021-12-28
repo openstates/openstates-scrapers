@@ -58,6 +58,7 @@ SITE_IDS = {
     "2020s6": "6912020",
     "2020s7": "7912020",
     "2021-2022": "0922021",
+    "2021s1": "1922021",
 }
 
 
@@ -115,10 +116,6 @@ class MNBillScraper(Scraper, LXMLMixin):
 
         # SSL broken as of Jan 2020
         self.verify = False
-
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
 
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:

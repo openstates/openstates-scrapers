@@ -2,8 +2,9 @@ import requests
 import lxml.html
 
 
-def url_xpath(url, path, verify=True):
-    doc = lxml.html.fromstring(requests.get(url, verify=verify).text)
+def url_xpath(url, path, verify=True, user_agent=None):
+    headers = {"user-agent": user_agent} if user_agent else None
+    doc = lxml.html.fromstring(requests.get(url, verify=verify, headers=headers).text)
     return doc.xpath(path)
 
 

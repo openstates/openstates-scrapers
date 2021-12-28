@@ -11,9 +11,6 @@ class IAEventScraper(Scraper):
     chambers = {"upper": "Senate", "lower": "House"}
 
     def scrape(self, chamber=None, session=None):
-        if not session:
-            session = self.latest_session()
-
         if chamber:
             yield from self.scrape_chamber(chamber, session)
         else:
@@ -77,7 +74,7 @@ class IAEventScraper(Scraper):
             # sometimes they say cancelled, sometimes they do a red strikethrough
             if link.xpath("./td[1]/span[contains(@style,'line-through')]"):
                 status = "cancelled"
-            if 'cancelled' in link.xpath("@class")[0]:
+            if "cancelled" in link.xpath("@class")[0]:
                 status = "cancelled"
 
             junk = ["Reception"]

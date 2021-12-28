@@ -1,17 +1,12 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import TXBillScraper
 from .events import TXEventScraper
-from .people import TXPersonScraper
-
 from .votes import TXVoteScraper
-
-# from .committees import TXCommitteeScraper
 
 
 class Texas(State):
     scrapers = {
-        "people": TXPersonScraper,
-        # 'committees': TXCommitteeScraper,
         "bills": TXBillScraper,
         # Re-enable vote scraper when adding next regular session
         "votes": TXVoteScraper,
@@ -121,6 +116,34 @@ class Texas(State):
             "identifier": "87",
             "name": "87th Legislature (2021)",
             "start_date": "2021-01-12",
+            "active": True,
+        },
+        {
+            "_scraped_name": "87(1) - 2021",
+            "classification": "special",
+            "end_date": "2021-07-16",
+            "identifier": "871",
+            "name": "87th Legislature, 1st Called Session (2021)",
+            "start_date": "2021-07-08",
+            "active": True,
+        },
+        {
+            "_scraped_name": "87(2) - 2021",
+            "classification": "special",
+            "end_date": "2021-09-06",
+            "identifier": "872",
+            "name": "87th Legislature, 2nd Called Session (2021)",
+            "start_date": "2021-08-07",
+            "active": True,
+        },
+        {
+            "_scraped_name": "87(3) - 2021",
+            "classification": "special",
+            "end_date": "2021-10-21",
+            "identifier": "873",
+            "name": "87th Legislature, 3rd Called Session (2021)",
+            "start_date": "2021-09-20",
+            "active": True,
         },
         # TODO: Re-enable vote scraper when adding next regular session
     ]

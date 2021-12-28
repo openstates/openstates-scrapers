@@ -1,14 +1,10 @@
-from utils import State
-from .people import WVPersonScraper
+from openstates.scrape import State
 from .bills import WVBillScraper
 from .events import WVEventScraper
-# from .committees import WVCommitteeScraper
 
 
 class WestVirginia(State):
     scrapers = {
-        "people": WVPersonScraper,
-        # 'committees': WVCommitteeScraper,
         "bills": WVBillScraper,
         "events": WVEventScraper,
     }
@@ -149,27 +145,35 @@ class WestVirginia(State):
             "start_date": "2021-01-13",
             "end_date": "2021-04-10",
         },
+        {
+            "_scraped_name": "2021",
+            "classification": "primary",
+            "identifier": "20211S",
+            "name": "2021 First Special Session",
+            "start_date": "2021-06-07",
+            "end_date": "2021-06-11",
+        },
+        {
+            "_scraped_name": "2021",
+            "classification": "primary",
+            "identifier": "20212S",
+            "name": "2021 Second Special Session",
+            "start_date": "2021-06-24",
+            "end_date": "2021-06-25",
+        },
+        {
+            "_scraped_name": "2021",
+            "classification": "primary",
+            "identifier": "20213S",
+            "name": "2021 Third Special Session",
+            "start_date": "2021-06-24",
+            "end_date": "2021-06-25",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "2029",
-        "2010",
-        "2009",
-        "2008",
-        "2007",
-        "2006",
-        "2005",
-        "2004",
-        "2003",
-        "2002",
-        "2001",
-        "2000",
-        "1999",
-        "1998",
-        "1997",
-        "1996",
-        "1995",
-        "1994",
-        "1993",
+        *(str(each) for each in range(1940, 2011)),
     ]
 
     def get_session_list(self):

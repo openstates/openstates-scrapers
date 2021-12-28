@@ -1,19 +1,14 @@
 import lxml.html
 import re
 import requests
-from utils import State
-from .people import AZPersonScraper
+from openstates.scrape import State
 from .bills import AZBillScraper
-
-# from .committees import AZCommitteeScraper
 from .events import AZEventScraper
 
 
 class Arizona(State):
     scrapers = {
-        "people": AZPersonScraper,
-        # 'committees': AZCommitteeScraper,
-        'events': AZEventScraper,
+        "events": AZEventScraper,
         "bills": AZBillScraper,
     }
     legislative_sessions = [
@@ -250,12 +245,31 @@ class Arizona(State):
             "end_date": "2020-05-27",
         },
         {
+            "_scraped_name": "2021 - Fifty-fifth Legislature - First Special Session",
+            "classification": "special",
+            "identifier": "55th-1st-special",
+            "name": "55th Legislature - 1st Special Session",
+            "start_date": "2021-06-14",
+            "end_date": "2021-06-18",
+        },
+        {
             "_scraped_name": "2021 - Fifty-fifth Legislature - First Regular Session",
             "classification": "primary",
             "identifier": "55th-1st-regular",
             "name": "55th Legislature - 1st Regular Session",
             "start_date": "2020-01-11",
             "end_date": "2020-04-23",
+            "active": True,
+        },
+        {
+            "_scraped_name": "2022 - Fifty-fifth Legislature - Second Regular Session",
+            "classification": "special",
+            "identifier": "55th-2nd-regular",
+            "name": "Fifty-fifth Legislature - Second Regular Session",
+            "start_date": "2022-01-10",
+            # TODO: real end date
+            "end_date": "2022-04-23",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

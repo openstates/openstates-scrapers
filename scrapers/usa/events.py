@@ -21,6 +21,7 @@ class USEventScraper(Scraper, LXMLMixin):
         "HW": "Witness List",
         "HC": "Hearing Notice",
         "SD": "Instructions for Submitting a Request to Testify",
+        "BR": "Bill Text",
     }
 
     buildings = {
@@ -44,10 +45,6 @@ class USEventScraper(Scraper, LXMLMixin):
     # date_filter argument can give you just one day;
     # format is "2/28/2019" per AK's site
     def scrape(self, chamber=None, session=None, date_filter=None):
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         # todo: yield from
         if chamber is None:
             yield from self.scrape_house()
@@ -153,7 +150,11 @@ class USEventScraper(Scraper, LXMLMixin):
                 self.info("Fetching {} via POST".format(row.get("href")))
                 xml = self.asp_post(row.get("href"), page, params)
 
-                xml = lxml.etree.fromstring(xml)
+                try:
+                    xml = lxml.etree.fromstring(xml)
+                except Exception:
+                    self.warning(f"Bad XML reference {row.get('href')}, skipping")
+                    continue
 
                 yield from self.house_meeting(xml, row.get("href"))
 

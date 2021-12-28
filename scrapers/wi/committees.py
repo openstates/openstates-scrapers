@@ -32,9 +32,6 @@ class WICommitteeScraper(Scraper):
         return org
 
     def scrape(self, chamber=None, session=None):
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         term = SESSION_TERMS[session]
 
         chambers = [chamber] if chamber is not None else ["upper", "lower"]

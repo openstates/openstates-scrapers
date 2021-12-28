@@ -1,17 +1,13 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import TNBillScraper
 from .events import TNEventScraper
-from .people import TNPersonScraper
-
-# from .committees import TNCommitteeScraper
 
 
 class Tennessee(State):
     scrapers = {
         "bills": TNBillScraper,
-        # 'committees': TNCommitteeScraper,
         "events": TNEventScraper,
-        "people": TNPersonScraper,
     }
     legislative_sessions = [
         # {
@@ -103,6 +99,25 @@ class Tennessee(State):
             "name": "112th Regular Session (2021-2022)",
             "start_date": "2021-01-12",
             "end_date": "2021-05-06",
+            "active": True,
+        },
+        {
+            "_scraped_name": "Second Extraordinary Session (October 2021)",
+            "classification": "special",
+            "identifier": "112S2",
+            "name": "112th Second Extraordinary Session (October 2021)",
+            "start_date": "2021-10-18",
+            "end_date": "2021-10-22",
+            "active": True,
+        },
+        {
+            "_scraped_name": "Third Extraordinary Session (October 2021)",
+            "classification": "special",
+            "identifier": "112S3",
+            "name": "112th Third Extraordinary Session (October 2021)",
+            "start_date": "2021-10-27",
+            "end_date": "2021-10-29",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

@@ -1,7 +1,5 @@
-from utils import url_xpath, State
-from .people import VTPersonScraper
-
-# from .committees import VTCommitteeScraper
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import VTBillScraper
 from .events import VTEventScraper
 
@@ -18,8 +16,6 @@ settings = dict(SCRAPELIB_RPM=20)
 
 class Vermont(State):
     scrapers = {
-        "people": VTPersonScraper,
-        # 'committees': VTCommitteeScraper,
         "bills": VTBillScraper,
         "events": VTEventScraper,
     }
@@ -87,14 +83,25 @@ class Vermont(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-06",
             "end_date": "2021-05-15",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2021 Special Session",
+            "classification": "special",
+            "identifier": "2021S1",
+            "name": "2021 Special Session",
+            "start_date": "2021-11-22",
+            "end_date": "2021-11-26",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
+        "2021 Special Session",
         "2020 Training Session",
         "2009 Special Session",
     ]
 
-    site_ids = {"2018ss1": "2018.1"}
+    site_ids = {"2018ss1": "2018.1", "2021S1": "2021.1"}
 
     # 2021 TODO: is this function still correct?
     def get_year_slug(self, session):

@@ -1,16 +1,12 @@
 import re
-from utils import url_xpath, State
-from .people import KYPersonScraper
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import KYBillScraper
 from .events import KYEventScraper
-
-# from .committees import KYCommitteeScraper
 
 
 class Kentucky(State):
     scrapers = {
-        "people": KYPersonScraper,
-        # 'committees': KYCommitteeScraper,
         "bills": KYBillScraper,
         "events": KYEventScraper,
     }
@@ -134,6 +130,24 @@ class Kentucky(State):
             "name": "2020 Regular Session",
             "start_date": "2020-01-07",
             "end_date": "2020-04-15",
+        },
+        # NOTE: Prefiles are live here, scrape with prefiles=True
+        {
+            "_scraped_name": "2022 Regular Session",
+            "classification": "primary",
+            "identifier": "2022RS",
+            "name": "2022 Regular Session",
+            "start_date": "2022-01-05",
+            "end_date": "2022-03-30",
+            "active": True,
+        },
+        {
+            "_scraped_name": "2021 Special Session",
+            "classification": "special",
+            "identifier": "2021SS",
+            "name": "2021 Special Session",
+            "start_date": "2021-09-01",
+            "end_date": "2021-09-09",
         },
         {
             "_scraped_name": "2021 Regular Session",

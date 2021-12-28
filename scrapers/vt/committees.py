@@ -6,13 +6,11 @@ from openstates.scrape import Organization, Scraper
 
 class VTCommitteeScraper(Scraper):
     def scrape(self, session=None):
-        if session is None:
-            session = self.latest_session()
         year_slug = self.jurisdiction.get_year_slug(session)
 
         # Load all committees via the private API
-        committee_dump_url = "http://legislature.vermont.gov/committee/loadList/{}/".format(
-            year_slug
+        committee_dump_url = (
+            "http://legislature.vermont.gov/committee/loadList/{}/".format(year_slug)
         )
         json_data = self.get(committee_dump_url).text
         committees = json.loads(json_data)["data"]

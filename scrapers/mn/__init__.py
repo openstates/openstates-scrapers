@@ -1,9 +1,8 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 
 from .bills import MNBillScraper
 from .vote_events import MNVoteScraper
-
-# from .committees import MNCommitteeScraper
 from .events import MNEventScraper
 
 """
@@ -21,7 +20,6 @@ sense to get vote data from the bill pages.
 class Minnesota(State):
     scrapers = {
         "bills": MNBillScraper,
-        # "committees": MNCommitteeScraper,
         "votes": MNVoteScraper,
         "events": MNEventScraper,
     }
@@ -205,6 +203,15 @@ class Minnesota(State):
             "start_date": "2021-01-05",
             # Just a guess. TODO: set after schedule is posted
             "end_date": "2021-06-01",
+        },
+        {
+            "_scraped_name": "92nd Legislature, 2021 1st Special Session",
+            "classification": "primary",
+            "identifier": "2021s1",
+            "name": "2021, First Special Session",
+            "start_date": "2021-06-14",
+            "end_date": "2021-06-18",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

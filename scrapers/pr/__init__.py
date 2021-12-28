@@ -1,17 +1,12 @@
-from utils import State
-from .people import PRPersonScraper
+from openstates.scrape import State
 from .bills import PRBillScraper
 from .votes import PRVoteScraper
-
-# from .committees import PRCommitteeScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
 
 class PuertoRico(State):
     scrapers = {
-        "people": PRPersonScraper,
-        # 'committees': PRCommitteeScraper,
         "bills": PRBillScraper,
         "votes": PRVoteScraper,
     }
@@ -43,6 +38,7 @@ class PuertoRico(State):
             "name": "2021-2024 Session",
             "start_date": "2021-01-01",
             "end_date": "2025-01-01",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = ["2005-2008", "2001-2004", "1997-2000", "1993-1996"]

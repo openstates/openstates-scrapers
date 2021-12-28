@@ -1,8 +1,7 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import KSBillScraper
-from .people import KSPersonScraper
-
-# from .committees import KSCommitteeScraper
+from .events import KSEventScraper
 
 
 # Kansas API's 429 error response includes:
@@ -15,8 +14,7 @@ settings = dict(SCRAPELIB_TIMEOUT=300, SCRAPELIB_RPM=12)
 class Kansas(State):
     scrapers = {
         "bills": KSBillScraper,
-        "people": KSPersonScraper,
-        # 'committees': KSCommitteeScraper,
+        "events": KSEventScraper,
     }
     legislative_sessions = [
         {
@@ -75,6 +73,16 @@ class Kansas(State):
             "start_date": "2021-01-11",
             # TODO: set real end date
             "end_date": "2022-05-31",
+            "active": True,
+        },
+        {
+            "_scraped_name": "b2021s",
+            "classification": "special",
+            "identifier": "2021S1",
+            "name": "2021 Special Session",
+            "start_date": "2021-11-22",
+            "end_date": "2021-11-25",
+            "active": False,
         },
     ]
     ignored_scraped_sessions = []

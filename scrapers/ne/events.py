@@ -78,6 +78,8 @@ class NEEventScraper(Scraper):
             event.add_committee(com, note="host")
 
             for row in meeting.xpath("div/table/tr"):
+                if not row.xpath("td[3]"):
+                    continue
                 agenda_desc = row.xpath("td[3]/text()")[0].strip()
                 agenda_item = event.add_agenda_item(description=agenda_desc)
 

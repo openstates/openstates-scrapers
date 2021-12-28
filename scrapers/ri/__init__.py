@@ -1,19 +1,13 @@
-from utils import url_xpath, State
-
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import RIBillScraper
-from .people import RIPersonScraper
-
 from .events import RIEventScraper
-
-# from .committees import RICommitteeScraper
 
 
 class RhodeIsland(State):
     scrapers = {
         "bills": RIBillScraper,
         "events": RIEventScraper,
-        "people": RIPersonScraper,
-        # 'committees': RICommitteeScraper,
     }
     legislative_sessions = [
         {
@@ -95,6 +89,7 @@ class RhodeIsland(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-05",
             "end_date": "2021-06-30",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

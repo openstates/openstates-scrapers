@@ -12,10 +12,6 @@ class TXEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Central")
 
     def scrape(self, session=None, chamber=None):
-        if not session:
-            session = self.latest_session()
-            self.info("No session specified; using %s", session)
-
         if chamber:
             yield from self.scrape_committee_upcoming(session, chamber)
         else:
@@ -51,19 +47,20 @@ class TXEventScraper(Scraper, LXMLMixin):
         event = Event(
             name=committee, start_date=self._tz.localize(datetime), location_name=where
         )
+        event.dedupe_key = url
 
         event.add_source(url)
         event.add_participant(committee, type="committee", note="host")
         if chair is not None:
             event.add_participant(chair, type="legislator", note="chair")
 
+        # add a single agenda item, attach all bills
+        agenda = event.add_agenda_item(plaintext)
+
         for bill in bills:
             chamber, type, number = bill
             bill_id = "%s%s %s" % (chamber, type, number)
-            item = event.add_agenda_item("Bill up for discussion")
-            item.add_bill(bill_id)
-
-        event.add_agenda_item(plaintext)
+            agenda.add_bill(bill_id)
 
         yield event
 

@@ -34,5 +34,5 @@ SESSION_SITE_IDS = {
     "August 2017 Special Session": "au7",
     "January 2018 Special Session": "jr8",
     "March 2018 Special Session": "mr8",
-    "2021S1": "jr1"
+    "2021S1": "jr1",
 }

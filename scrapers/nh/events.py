@@ -59,7 +59,10 @@ class NHEventScraper(Scraper, LXMLMixin):
             title = row["title"].strip()
 
             event = Event(
-                name=title, start_date=start, end_date=end, location_name="See Source",
+                name=title,
+                start_date=start,
+                end_date=end,
+                location_name="See Source",
             )
 
             event.add_source(event_url)

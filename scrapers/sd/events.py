@@ -82,7 +82,9 @@ class SDEventScraper(Scraper):
 
                 # subcoms don't differentiate the chamber, so skip them
                 if com["Committee"]["Body"] != "A":
-                    com_name = f"{com['Committee']['BodyName']} {com['Committee']['Name']}"
+                    com_name = (
+                        f"{com['Committee']['BodyName']} {com['Committee']['Name']}"
+                    )
                     event.add_participant(com_name, type="committee", note="host")
 
                 events_by_date[event.start_date.date().strftime("%Y%m%d")] = event
@@ -128,7 +130,7 @@ class SDEventScraper(Scraper):
 
         start_date = dateutil.parser.parse(agenda_document["DocumentDate"])
 
-        location = f"500 E Capitol Ave, Pierre, SD 57501"
+        location = "500 E Capitol Ave, Pierre, SD 57501"
 
         event = Event(
             name=name,

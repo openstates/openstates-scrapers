@@ -1,17 +1,13 @@
-from utils import url_xpath, State
-from .people import ARLegislatorScraper
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import ARBillScraper
-
-# from .committees import ARCommitteeScraper
 from .events import AREventScraper
 
 
 class Arkansas(State):
     scrapers = {
-        "people": ARLegislatorScraper,
-        # 'committees': ARCommitteeScraper,
         "bills": ARBillScraper,
-        'events': AREventScraper
+        "events": AREventScraper,
     }
     legislative_sessions = [
         {
@@ -173,9 +169,29 @@ class Arkansas(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-11",
             "end_date": "2021-03-12",
+            "active": True,
+        },
+        {
+            "_scraped_name": "First Extraordinary Session, 2021",
+            "classification": "special",
+            "identifier": "2021S1",
+            "name": "2021 First Extraordinary Session",
+            "start_date": "2021-08-03",
+            "end_date": "2021-08-13",
+            "active": True,
+        },
+        {
+            "_scraped_name": "Second Extraordinary Session, 2021",
+            "classification": "special",
+            "identifier": "2021S2",
+            "name": "2021 Second Extraordinary Session",
+            "start_date": "2021-12-07",
+            "end_date": "2021-12-13",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
+        "Fiscal Session, 2022",
         "Regular Session, 2009",
         "Fiscal Session, 2010",
         "Regular Session, 2007",

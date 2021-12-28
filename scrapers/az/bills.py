@@ -228,8 +228,9 @@ class AZBillScraper(Scraper):
                     )
                 )
             if status["ReportDate"]:
+                cleaned_date = status["ReportDate"].split(".")[0]
                 action_date = datetime.datetime.strptime(
-                    status["ReportDate"], "%Y-%m-%dT%H:%M:%S"
+                    cleaned_date, "%Y-%m-%dT%H:%M:%S"
                 ).strftime("%Y-%m-%d")
                 bill.add_action(
                     description=status["Action"],
@@ -273,8 +274,11 @@ class AZBillScraper(Scraper):
             for action in actions:
                 if action["Action"] == "No Action":
                     continue
+                if action["ReportDate"] is None:
+                    continue
+                cleaned_date = action["ReportDate"].split(".")[0]
                 action_date = datetime.datetime.strptime(
-                    action["ReportDate"], "%Y-%m-%dT%H:%M:%S"
+                    cleaned_date, "%Y-%m-%dT%H:%M:%S"
                 )
                 vote = VoteEvent(
                     chamber={"S": "upper", "H": "lower"}[header["LegislativeBody"]],
@@ -304,9 +308,6 @@ class AZBillScraper(Scraper):
                 yield vote
 
     def scrape(self, chamber=None, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         session_id = session_metadata.session_id_meta_data[session]
 
         # Get the bills page to start the session
@@ -314,8 +315,18 @@ class AZBillScraper(Scraper):
 
         session_form_url = "https://www.azleg.gov/azlegwp/setsession.php"
         form = {"sessionID": session_id}
+        headers = {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+            "Content-Type": "application/json; charset=utf-8",
+            "Referer": "https://www.azleg.gov/azlegwp/",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36",
+        }
         req = self.post(
-            url=session_form_url, data=form, cookies=req.cookies, allow_redirects=True
+            url=session_form_url,
+            data=form,
+            cookies=req.cookies,
+            headers=headers,
+            allow_redirects=True,
         )
 
         bill_list_url = "https://www.azleg.gov/bills/"

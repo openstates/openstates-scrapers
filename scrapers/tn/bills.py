@@ -159,8 +159,7 @@ def categorize_action(action):
 
 
 def actions_from_table(bill, actions_table):
-    """
-    """
+    """"""
     action_rows = actions_table.xpath("tr")
 
     # first row will say "Actions Taken on S|H(B|R|CR)..."
@@ -219,7 +218,7 @@ BILL_LISTING_PREFIX_RE = re.compile(r"StartNum=([A-Z]{2,3})")
 
 
 def listing_matches_chamber(listing, chamber):
-    """ Returns True if the listing url matches the passed chamber
+    """Returns True if the listing url matches the passed chamber
 
     This parses the URL to pull out the bill prefix (e.g. HB, SB, etc.), and uses some knowledge
     encoded in the constants above to say if it is a valid prefix for the chamber.
@@ -242,10 +241,6 @@ def listing_matches_chamber(listing, chamber):
 
 class TNBillScraper(Scraper):
     def scrape(self, session=None, chamber=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         self._seen_votes = set()
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:

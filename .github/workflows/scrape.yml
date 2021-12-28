@@ -1,0 +1,54 @@
+name: Scout Scrape
+
+on:
+  schedule:
+    - cron: "0 10 * * *"
+  workflow_dispatch:
+
+jobs:
+  scout:
+    runs-on: ubuntu-latest
+
+    steps:
+    # checkouts
+    - uses: actions/checkout@v2
+    - name: checkout results repo
+      uses: actions/checkout@v2
+      with:
+        repository: openstates/scraper-artifacts
+        path: artifacts
+        token: ${{ secrets.GH_ACCESS_TOKEN }}
+
+    # install python environment
+    - name: setup Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: install Poetry
+      uses: snok/install-poetry@v1.1.1
+    - name: cache Poetry virtualenv
+      uses: actions/cache@v2
+      id: poetry-cache
+      with:
+        path: ~/.virtualenvs/
+        key: poetry-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          poetry-${{ hashFiles('**/poetry.lock') }}
+    - name: set poetry config path
+      run: poetry config virtualenvs.path ~/.virtualenvs
+    - name: install python dependencies
+      run: poetry install
+
+    # scout runs
+    - name: run instrumented scout for people
+      run: poetry run scripts/instrumented_scout.py
+
+    - name: update remote git repo if necessary
+      run: |-
+        cd artifacts
+        git diff
+        git config --global user.email "actions@users.noreply.github.com"
+        git config --global user.name "openstates-bot"
+        git add -A
+        git commit -m "scout run" || exit 0
+        git push

@@ -1,9 +1,7 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import NJBillScraper
 from .events import NJEventScraper
-from .people import NJPersonScraper
-
-# from .committees import NJCommitteeScraper
 
 # don't retry- if a file isn't on FTP just let it go
 settings = dict(SCRAPELIB_RETRY_ATTEMPTS=0)
@@ -13,8 +11,6 @@ class NewJersey(State):
     scrapers = {
         "bills": NJBillScraper,
         "events": NJEventScraper,
-        "people": NJPersonScraper,
-        # 'committees': NJCommitteeScraper,
     }
     legislative_sessions = [
         {
@@ -65,6 +61,7 @@ class NewJersey(State):
             "name": "2020-2021 Regular Session",
             "start_date": "2020-01-14",
             "end_date": "2020-12-31",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

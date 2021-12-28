@@ -118,9 +118,6 @@ class PRBillScraper(Scraper):
     ):
         self.seen_votes = set()
         self.seen_bills = set()
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified using %s", session)
 
         if bill_no:
             yield from self.scrape_chamber(
@@ -216,8 +213,10 @@ class PRBillScraper(Scraper):
             bill_rid = self.extract_bill_rid(row)
             # Good test bills: 127866 132106 122472
             # bill_rid = '122472'
-            bill_url = "https://sutra.oslpr.org/osl/esutra/MedidaReg.aspx?rid={}".format(
-                bill_rid
+            bill_url = (
+                "https://sutra.oslpr.org/osl/esutra/MedidaReg.aspx?rid={}".format(
+                    bill_rid
+                )
             )
             if bill_url not in self.seen_bills:
                 yield from self.scrape_bill(chamber, session, bill_url)

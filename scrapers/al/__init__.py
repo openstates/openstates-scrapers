@@ -1,15 +1,12 @@
-from utils import State
-
+from openstates.scrape import State
 from .bills import ALBillScraper
 from .events import ALEventScraper
-from .people import ALPersonScraper
 
 
 class Alabama(State):
     scrapers = {
         "bills": ALBillScraper,
         "events": ALEventScraper,
-        "people": ALPersonScraper,
     }
     legislative_sessions = [
         {
@@ -148,8 +145,29 @@ class Alabama(State):
             "start_date": "2021-02-02",
             "end_date": "2021-05-18",
         },
+        {
+            "_scraped_name": "Regular Session 2022",
+            "classification": "primary",
+            "identifier": "2022rs",
+            "name": "2022 Regular Session",
+            "start_date": "2022-01-11",
+            # TODO: Real end date after session
+            "end_date": "2022-05-18",
+            "active": True,
+        },
+        {
+            "_scraped_name": "First Special Session 2021",
+            "classification": "special",
+            "identifier": "2021s1",
+            "name": "First Special Session 2021",
+            "start_date": "2021-09-27",
+            "end_date": "2021-10-01",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
+        # TODO: add to scraped when prefiles up
+        "Second Special Session 2021",
         "Regular Session 1998",
         "Organizational Session 1999",
         "Regular Session 1999",
@@ -183,7 +201,6 @@ class Alabama(State):
         "First Special Session 2010",
         "Regular Session 2016",
         "Organizational Session 2019",
-        "Regular Session 2022",  # stop ignoring in 2022
     ]
 
     def get_session_list(self):

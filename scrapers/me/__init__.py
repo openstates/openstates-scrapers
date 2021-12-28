@@ -1,17 +1,13 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import MEBillScraper
-from .people import MEPersonScraper
 from .events import MEEventScraper
-
-# from .committees import MECommitteeScraper
 
 
 class Maine(State):
     scrapers = {
         "bills": MEBillScraper,
-        "people": MEPersonScraper,
         "events": MEEventScraper,
-        # 'committees': MECommitteeScraper,
     }
     legislative_sessions = [
         {
@@ -83,6 +79,7 @@ class Maine(State):
             "name": "130th Legislature (2021-2022)",
             "start_date": "2020-12-02",
             "end_date": "2021-06-16",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = ["2001-2002"]

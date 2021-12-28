@@ -15,10 +15,6 @@ class DEBillScraper(Scraper, LXMLMixin):
     legislators_by_short = {}
 
     def scrape(self, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         # Cache the legislators, we'll need them for sponsors and votes
         self.scrape_legislators(session)
 

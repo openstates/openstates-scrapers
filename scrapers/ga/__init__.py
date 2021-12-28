@@ -1,15 +1,13 @@
-from utils import State
+from openstates.scrape import State
 from .util import get_client, backoff
 from .bills import GABillScraper
 from .events import GAEventScraper
-# from .committees import GACommitteeScraper
 
 
 class Georgia(State):
     scrapers = {
         "bills": GABillScraper,
         "events": GAEventScraper,
-        # 'committee': GACommitteeScraper,
     }
     legislative_sessions = [
         {
@@ -74,6 +72,15 @@ class Georgia(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-11",
             "end_date": "2021-04-02",
+            "active": True,
+        },
+        {
+            "_scraped_name": "2021 Special Session",
+            "identifier": "2021_ss",
+            "name": "2021 Special Session",
+            "start_date": "2021-11-03",
+            "end_date": "2021-11-10",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

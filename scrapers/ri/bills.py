@@ -174,10 +174,11 @@ class RIBillScraper(Scraper):
                 actor = "lower"
 
             if "senate" in action.lower():
-                if actor == "joint":
-                    actor = "upper"
-                else:
-                    actor = "legislature"
+                actor = "upper"
+
+            if "joint" in action.lower():
+                actor = "legislature"
+
             if "governor" in action.lower():
                 actor = "executive"
             date = action.split(" ")[0]
@@ -299,10 +300,6 @@ class RIBillScraper(Scraper):
                 yield b
 
     def scrape(self, chamber=None, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
 
         subjects = self.get_subject_bill_dict(session)

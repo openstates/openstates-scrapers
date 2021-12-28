@@ -1,7 +1,4 @@
-import lxml.html
-import scrapelib
-from utils import State
-from .people import CTPersonScraper
+from openstates.scrape import State
 from .bills import CTBillScraper
 from .events import CTEventScraper
 
@@ -12,7 +9,6 @@ SKIP_SESSIONS = {"incoming", "pub", "CGAAudio", "rba", "NCSL", "FOI_1", "stained
 
 class Connecticut(State):
     scrapers = {
-        "people": CTPersonScraper,
         "bills": CTBillScraper,
         "events": CTEventScraper,
     }
@@ -94,6 +90,7 @@ class Connecticut(State):
             "start_date": "2021-01-06",
             # TODO: fill out actual end date
             "end_date": "2022-05-06",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
@@ -121,6 +118,7 @@ class Connecticut(State):
 
     def get_session_list(self):
         from utils.lxmlize import url_xpath
+
         return set(
             [
                 x.strip()

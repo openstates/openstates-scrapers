@@ -1,17 +1,13 @@
-from utils import url_xpath, State
-from .people import DEPersonScraper
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import DEBillScraper
-
 from .events import DEEventScraper
-# from .committees import DECommitteeScraper
 
 
 class Delaware(State):
     scrapers = {
-        "people": DEPersonScraper,
         "bills": DEBillScraper,
-        'events': DEEventScraper,
-        # 'committees': DECommitteeScraper,
+        "events": DEEventScraper,
     }
     legislative_sessions = [
         {
@@ -97,9 +93,40 @@ class Delaware(State):
             "name": "151st General Assembly (2021-2022)",
             "start_date": "2021-01-12",
             "end_date": "2022-05-06",
+            "active": True,
         },
     ]
-    ignored_scraped_sessions = []
+    ignored_scraped_sessions = [
+        "1932 - 1934 (GA 104)",
+        "1928 - 1930 (GA 102)",
+        "1930 - 1932 (GA 103)",
+        "1918 - 1920 (GA 97)",
+        "1880 - 1882 (GA 78)",
+        "1902 - 1904 (GA 89)",
+        "1896 - 1898 (GA 86)",
+        "1878 - 1880 (GA 77)",
+        "1904 - 1906 (GA 90)",
+        "1916 - 1918 (GA 96)",
+        "1912 - 1914 (GA 94)",
+        "1924 - 1926 (GA 100)",
+        "1892 - 1894 (GA 84)",
+        "1882 - 1884 (GA 79)",
+        "1886 - 1888 (GA 81)",
+        "1890 - 1892 (GA 83)",
+        "1920 - 1922 (GA 98)",
+        "1906 - 1908 (GA 91)",
+        "1910 - 1912 (GA 93)",
+        "1898 - 1900 (GA 87)",
+        "1900 - 1902 (GA 88)",
+        "1908 - 1910 (GA 92)",
+        "1884 - 1886 (GA 80)",
+        "1926 - 1928 (GA 101)",
+        "1894 - 1896 (GA 85)",
+        "1914 - 1916 (GA 95)",
+        "1922 - 1924 (GA 99)",
+        "1888 - 1890 (GA 82)",
+        "1876 - 1878 (GA 76)",
+    ]
 
     def get_session_list(self):
         url = "https://legis.delaware.gov/"

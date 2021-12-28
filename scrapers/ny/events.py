@@ -5,7 +5,6 @@ import os
 import re
 
 import lxml
-from lxml import etree
 
 from dateutil.relativedelta import relativedelta
 import dateutil.parser
@@ -46,26 +45,26 @@ class NYEventScraper(Scraper):
         yield from self.scrape_upper(start, end)
 
     def scrape_lower(self):
-        url = 'https://nyassembly.gov/leg/?sh=agen'
+        url = "https://nyassembly.gov/leg/?sh=agen"
         page = self.get(url).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
         for link in page.xpath('//a[contains(@href,"agenda=")]'):
-            yield from self.scrape_lower_event(link.xpath('@href')[0])
-    
+            yield from self.scrape_lower_event(link.xpath("@href")[0])
+
     def scrape_lower_event(self, url):
         page = self.get(url).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
         table = page.xpath('//section[@id="leg-agenda-mod"]/div/table')[0]
-        meta = table.xpath('tr[1]/td[1]/text()')
+        meta = table.xpath("tr[1]/td[1]/text()")
 
         # careful, the committee name in the page #committee_div
         # is getting inserted via JS
         # so use the one from the table, and strip the chair name
-        com_name = re.sub(r"\(.*\)","", meta[0])
+        com_name = re.sub(r"\(.*\)", "", meta[0])
         com_name = f"Assembly {com_name}"
 
         when = dateutil.parser.parse(meta[1])

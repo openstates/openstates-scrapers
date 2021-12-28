@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 from collections import defaultdict
 from openstates.scrape import Bill, VoteEvent, Scraper
 from openstates.utils import format_datetime
-from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage, page_to_items
+from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage
 
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
 import requests
@@ -557,6 +557,8 @@ class HouseSearchPage(HtmlListPage):
         # Keep the digits and all following characters in the bill's ID
         bill_number = re.search(r"^\w+\s(\d+\w*)$", self.input.identifier).group(1)
         session_number = {
+            "2022": "93",
+            "2021B": "94",
             "2021A": "92",
             "2021": "90",
             "2020": "89",
@@ -676,16 +678,11 @@ class HouseComVote(HtmlPage):
 
 class FlBillScraper(Scraper):
     def scrape(self, session=None):
-        # FL published a bad bill in 2019, #143
         self.raise_errors = False
         self.retry_attempts = 1
         self.retry_wait_seconds = 3
 
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         # spatula's logging is better than scrapelib's
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
         bill_list = BillList({"session": session})
-        yield from page_to_items(self, bill_list)
+        yield from bill_list.do_scrape()

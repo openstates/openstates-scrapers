@@ -10,9 +10,6 @@ class COEventScraper(Scraper, LXMLMixin):
 
     def scrape(self, chamber=None, session=None):
         url = "http://leg.colorado.gov/content/committees"
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
             if chamber == "lower":

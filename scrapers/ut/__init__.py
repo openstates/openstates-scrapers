@@ -1,17 +1,13 @@
 import re
-from utils import url_xpath, State
-from .people import UTPersonScraper
+from utils import url_xpath
+from openstates.scrape import State
 from .events import UTEventScraper
 from .bills import UTBillScraper
-
-# from .committees import UTCommitteeScraper
 
 
 class Utah(State):
     scrapers = {
-        "people": UTPersonScraper,
         "events": UTEventScraper,
-        # 'committees': UTCommitteeScraper,
         "bills": UTBillScraper,
     }
     legislative_sessions = [
@@ -274,8 +270,37 @@ class Utah(State):
             # TODO: Proper end date after session
             "end_date": "2020-05-28",
         },
+        {
+            "_scraped_name": "2021 1st House Extraordinary Session",
+            "classification": "special",
+            "identifier": "2021S1H",
+            "name": "2021 1st House Extraordinary Session",
+            "start_date": "2021-05-19",
+            "end_date": "2021-05-25",
+        },
+        {
+            "_scraped_name": "2021 1st Senate Extraordinary Session",
+            "classification": "special",
+            "identifier": "2021S1S",
+            "name": "2021 1st Senate Extraordinary Session",
+            "start_date": "2021-05-19",
+            "end_date": "2021-05-25",
+            "active": True,
+        },
+        {
+            "_scraped_name": "2021 2nd Special Session",
+            "classification": "special",
+            "identifier": "2021S2",
+            "name": "2021 2nd Special Session",
+            "start_date": "2021-11-08",
+            # TODO: Proper end date after session
+            "end_date": "2020-11-12",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
+        "2022 General Session",
+        "2013 1st House Session",
         "2011 Veto Override Session",
         "2010 2nd Special Session",
         "2010 General Session",
@@ -318,7 +343,7 @@ class Utah(State):
 
     def get_session_list(self):
         sessions = url_xpath(
-            "http://le.utah.gov/Documents/bills.htm",
-            '//ul[contains(@class,"bills-alternate")]/li/a[contains(@href, "BillList")]/text()',
+            "https://le.utah.gov/asp/billsintro/index.asp?year=2021X1",
+            "//select[@id='Listbox1']/option/text()",
         )
         return [re.sub(r"\s+", " ", session.strip()) for session in sessions]

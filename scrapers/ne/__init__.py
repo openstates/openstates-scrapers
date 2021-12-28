@@ -1,14 +1,12 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import NEBillScraper
 from .events import NEEventScraper
-
-# from .committees import NECommitteeScraper
 
 
 class Nebraska(State):
     scrapers = {
         "bills": NEBillScraper,
-        # 'committees': NECommitteeScraper,
         "events": NEEventScraper,
     }
     legislative_sessions = [
@@ -60,6 +58,15 @@ class Nebraska(State):
             "name": "107th Legislature (2021-2022)",
             "start_date": "2021-01-06",
             "end_date": "2021-12-31",
+        },
+        {
+            "_scraped_name": "107th Legislature 1st Special Session",
+            "identifier": "107S1",
+            "name": "107th Legislature 1st Special Session",
+            "start_date": "2021-09-13",
+            "end_date": "2021-09-30",
+            "classification": "special",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

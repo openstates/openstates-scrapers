@@ -2,11 +2,13 @@ import pytz
 import datetime
 import dateutil.parser
 import re
+from .util import get_token
 from openstates.scrape import Scraper, Event
 
-# usage:
-#  PYTHONPATH=scrapers poetry run os-update ga events --scrape start=YYYY-mm-dd
+
 class GAEventScraper(Scraper):
+    # usage:
+    #  PYTHONPATH=scrapers poetry run os-update ga events --scrape start=YYYY-mm-dd
     tz = pytz.timezone("US/Eastern")
 
     def scrape(self, start=None):
@@ -20,7 +22,7 @@ class GAEventScraper(Scraper):
 
         url = f"https://www.legis.ga.gov/api/meetings?startDate={date_slug}"
 
-        page = self.get(url).json()
+        page = self.get(url, headers={"Authorization": get_token()}).json()
 
         for row in page:
             status = "tentative"

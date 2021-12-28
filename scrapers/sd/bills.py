@@ -5,15 +5,12 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 
 from utils import LXMLMixin
 
-SESSION_IDS = {"2021": "44", "2020": "43"}
+SESSION_IDS = {"2021": "44", "2020": "43", "2021r": "65", "2021i": "66"}
 
 
 class SDBillScraper(Scraper, LXMLMixin):
     def scrape(self, chamber=None, session=None):
         self.seen_votes = set()
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
 
         # removing Light here adds more info, maybe useful
         url = (
@@ -65,6 +62,7 @@ class SDBillScraper(Scraper, LXMLMixin):
             title=title,
             classification=btype,
         )
+        bill.add_source(f"https://sdlegislature.gov/Session/Bill/{api_id}")
         bill.add_source(url)
 
         version_rows = page["Documents"]
@@ -279,12 +277,16 @@ class SDBillScraper(Scraper, LXMLMixin):
         page = self.get(url).json()
 
         location = page["actionLog"]["FullName"]
-        if "House" in location:
-            chamber = "lower"
-        elif "Senate" in location:
-            chamber = "upper"
-        elif "Joint" in location:
-            chamber = "legislature"
+        if location:
+            if "House" in location:
+                chamber = "lower"
+            elif "Senate" in location:
+                chamber = "upper"
+            elif "Joint" in location:
+                chamber = "legislature"
+            else:
+                self.warning("Bad Vote chamber: '%s', skipping" % location)
+                return
         else:
             self.warning("Bad Vote chamber: '%s', skipping" % location)
             return

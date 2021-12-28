@@ -3,6 +3,7 @@ import logging
 import pytz
 
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 from .apiclient import OregonLegislatorODataClient
 from .utils import SESSION_KEYS
 
@@ -20,8 +21,6 @@ class OREventScraper(Scraper):
     # due to API limitations, each scrape will only scrape the events in that provided (or current) session
     def scrape(self, session=None, start_date=None):
         self.api_client = OregonLegislatorODataClient(self)
-        if not session:
-            session = self.latest_session()
         yield from self.scrape_events(session, start_date)
 
     def scrape_events(self, session, start_date):
@@ -43,6 +42,9 @@ class OREventScraper(Scraper):
             start_date=start_date.strftime(self._DATE_FORMAT),
             session=session_key,
         )
+
+        if len(meetings_response) == 0:
+            raise EmptyScrape
 
         for meeting in meetings_response:
             event_date = self._TZ.localize(

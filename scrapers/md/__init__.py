@@ -1,9 +1,8 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import MDBillScraper
 from .events import MDEventScraper
 from .votes import MDVoteScraper
-
-# from .committees import MDCommitteeScraper
 
 
 class Maryland(State):
@@ -11,7 +10,6 @@ class Maryland(State):
         "bills": MDBillScraper,
         "events": MDEventScraper,
         "votes": MDVoteScraper,
-        # 'committees': MDCommitteeScraper,
     }
     legislative_sessions = [
         {
@@ -165,6 +163,23 @@ class Maryland(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-12",
             "end_date": "2021-04-12",
+        },
+        {
+            "_scraped_name": "2021 Special Session",
+            "classification": "special",
+            "identifier": "2021s1",
+            "name": "2021, 1st Special Session",
+            "start_date": "2021-12-06",
+            "end_date": "2021-12-12",
+        },
+        {
+            "_scraped_name": "2022 Regular Session",
+            "classification": "primary",
+            "identifier": "2022",
+            "name": "2022 Regular Session",
+            "start_date": "2022-01-12",
+            "end_date": "2022-04-11",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

@@ -24,7 +24,7 @@ def session_slug(session):
 class NMBillScraper(Scraper):
     def _init_mdb(self, session):
         ftp_base = "ftp://www.nmlegis.gov/other/"
-        fname = "LegInfo{}".format(session[2:]).replace('S','s')
+        fname = "LegInfo{}".format(session[2:]).replace("S", "s")
         fname_re = (
             r"(\d{{2}}-\d{{2}}-\d{{2}}  \d{{2}}:\d{{2}}(?:A|P)M) .* "
             "({fname}.*zip)".format(fname=fname)
@@ -45,6 +45,7 @@ class NMBillScraper(Scraper):
         remote_file = ftp_base + matches[-1][1]
 
         # all of the data is in this Access DB, download & retrieve it
+        # for specials, zip file is 21S2 but included mbd is 21s2
         mdbfile = "{}.accdb".format(fname)
 
         # if a new mdbfile or it has changed
@@ -56,7 +57,7 @@ class NMBillScraper(Scraper):
             os.remove(fname)
 
     def access_to_csv(self, table):
-        """ using mdbtools, read access tables as CSV """
+        """using mdbtools, read access tables as CSV"""
         commands = ["mdb-export", self.mdbfile, table]
         try:
             pipe = subprocess.Popen(
@@ -69,10 +70,6 @@ class NMBillScraper(Scraper):
             raise
 
     def scrape(self, chamber=None, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using latest session {}".format(session))
-
         chambers = [chamber] if chamber else ["upper", "lower"]
 
         for chamber in chambers:
@@ -182,7 +179,7 @@ class NMBillScraper(Scraper):
         yield from bills.values()
 
     def check_other_documents(self, session, chamber, bills):
-        """ check for documents that reside in their own directory """
+        """check for documents that reside in their own directory"""
 
         s_slug = session_slug(session)
         firs_url = "http://www.nmlegis.gov/Sessions/{}/firs/".format(s_slug)
@@ -240,7 +237,7 @@ class NMBillScraper(Scraper):
         check_docs(final_url, "Final Version")
 
     def scrape_actions(self, chamber_letter, bills):
-        """ append actions to bills """
+        """append actions to bills"""
 
         # we could use the TblLocation to get the real location, but we can
         # fake it with the first letter

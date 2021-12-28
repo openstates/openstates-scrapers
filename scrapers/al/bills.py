@@ -75,7 +75,7 @@ class ALBillScraper(Scraper):
         )
 
     def _set_session(self, session):
-        """ Activate an ASP.NET session, and set the legislative session """
+        """Activate an ASP.NET session, and set the legislative session"""
 
         SESSION_SET_URL = (
             "http://alisondb.legislature.state.al.us/" "Alison/SelectSession.aspx"
@@ -133,7 +133,7 @@ class ALBillScraper(Scraper):
             raise AssertionError("Bill list not found")
 
     def _get_bill_response(self, url):
-        """ Ensure that bill pages loaded fully """
+        """Ensure that bill pages loaded fully"""
 
         try:
             html = self.get(url=url, allow_redirects=False).text
@@ -145,11 +145,7 @@ class ALBillScraper(Scraper):
         except scrapelib.HTTPError:
             pass
 
-    def scrape(self, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
+    def scrape(self, session):
         self.session = session
         details = next(
             each
@@ -281,12 +277,11 @@ class ALBillScraper(Scraper):
             if not title:
                 title = "[No title given by state]"
             bill.title = title
+            session = "2021FS" if self.session == "2021s1" else self.session
 
             version_url_base = (
                 "http://alisondb.legislature.state.al.us/ALISON/"
-                "SearchableInstruments/{0}/PrintFiles/{1}-".format(
-                    self.session, bill_id
-                )
+                "SearchableInstruments/{0}/PrintFiles/{1}-".format(session, bill_id)
             )
             versions = bill_doc.xpath(
                 '//table[@class="box_versions"]/tr/td[2]/font/text()'
@@ -440,10 +435,11 @@ class ALBillScraper(Scraper):
                         )
 
                 if amendment:
+                    session = "2021FS" if self.session == "2021s1" else self.session
                     amend_url = (
                         "http://alisondb.legislature.state.al.us/ALISON/"
                         "SearchableInstruments/{0}/PrintFiles/{1}.pdf".format(
-                            self.session, amendment
+                            session, amendment
                         )
                     )
 

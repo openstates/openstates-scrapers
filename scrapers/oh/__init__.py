@@ -1,5 +1,5 @@
-from utils import url_xpath, State
-from .people import OHLegislatorScraper
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import OHBillScraper
 
 from .events import OHEventScraper
@@ -7,8 +7,7 @@ from .events import OHEventScraper
 
 class Ohio(State):
     scrapers = {
-        "people": OHLegislatorScraper,
-        'events': OHEventScraper,
+        "events": OHEventScraper,
         "bills": OHBillScraper,
     }
     legislative_sessions = [
@@ -60,6 +59,7 @@ class Ohio(State):
             "name": "134th Legislature (2021-2022)",
             "start_date": "2021-01-04",
             "end_date": "2022-12-31",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = []
@@ -70,6 +70,7 @@ class Ohio(State):
             "?generalAssemblies=133&pageSize=10&start=1&isInitial=true",
             '//div[@id="generalAssemblyValues"]//'
             'div[contains(@class, "optionLabel")]/text()',
+            user_agent="openstates 2021",
         )
         # Archive does not include current session
         return sessions

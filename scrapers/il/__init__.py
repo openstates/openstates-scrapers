@@ -1,18 +1,14 @@
 # encoding=utf-8
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import IlBillScraper
-from .people import IlPersonScraper
 from .events import IlEventScraper
-
-# from .committees import IlCommitteeScraper
 
 
 class Illinois(State):
     scrapers = {
         "bills": IlBillScraper,
-        "people": IlPersonScraper,
         "events": IlEventScraper,
-        # "committees": IlCommitteeScraper,
     }
     legislative_sessions = [
         {
@@ -145,6 +141,7 @@ class Illinois(State):
             "start_date": "2021-01-13",
             "end_date": "2021-12-31",
             "classification": "primary",
+            "active": True,
         },
     ]
 

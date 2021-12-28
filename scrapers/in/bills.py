@@ -319,10 +319,6 @@ class INBillScraper(Scraper):
                     self.info(f"Amendment {doc_id} {document_name} {download_link}")
 
     def scrape(self, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         self._bill_prefix_map = {
             "HB": {"type": "bill", "url_segment": "bills/house"},
             "HR": {"type": "resolution", "url_segment": "resolutions/house/simple"},

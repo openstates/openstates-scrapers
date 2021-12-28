@@ -366,9 +366,6 @@ class HIBillScraper(Scraper):
 
     def scrape(self, chamber=None, session=None):
         get_short_codes(self)
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         bill_types = ["bill", "cr", "r"]
         chambers = [chamber] if chamber else ["lower", "upper"]
         for chamber in chambers:

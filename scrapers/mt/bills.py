@@ -73,8 +73,6 @@ class MTBillScraper(Scraper, LXMLMixin):
 
     def scrape(self, chamber=None, session=None):
         # set default parameters
-        if not session:
-            session = self.latest_session()
         chambers = [chamber] if chamber else ["upper", "lower"]
 
         # self.versions_dict = self._versions_dict(session)
@@ -375,11 +373,26 @@ class MTBillScraper(Scraper, LXMLMixin):
             ).date()
             action_type = actions.categorize(action_name)
 
+            # grab committees here
+            try:
+                committee = action.xpath("td[5]")[0].text_content().strip()
+                committee = re.sub(r"&nbsp", "", committee)
+                if committee != "":
+                    # include parenthesis?
+                    # committee = re.search(r"\([A-Z]\)\s(.+)", committee).groups()[0]
+                    action_name += " - "
+                    action_name += committee
+            except KeyError:
+                pass
+
             if "by senate" in action_name.lower():
                 actor = "upper"
 
             bill.add_action(
-                action_name, action_date, classification=action_type, chamber=actor
+                action_name,
+                action_date,
+                classification=action_type,
+                chamber=actor,
             )
 
     def _versions_dict(self, session):

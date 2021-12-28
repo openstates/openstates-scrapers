@@ -1,5 +1,6 @@
 import logging
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .csv_bills import VaCSVBillScraper
 from .events import VaEventScraper
 
@@ -154,16 +155,30 @@ class Virginia(State):
             "identifier": "2020specialI",
             "name": "2020, 1st Special Session",
             "start_date": "2020-08-18",
-            # TODO: set real end date after session
-            "end_date": "2020-08-21",
+            "end_date": "2020-11-09",
         },
         {
             "_scraped_name": "2021 Session",
             "identifier": "2021",
             "name": "2021 Regular Session",
             "start_date": "2021-01-13",
-            # TODO: set real end date after session
-            "end_date": "2021-07-15",
+            "end_date": "2021-03-08",
+        },
+        {
+            "_scraped_name": "2021 Special Session II",
+            "classification": "special",
+            "identifier": "2021S2",
+            "name": "2021, 2nd Special Session",
+            "start_date": "2021-08-04",
+            "end_date": "2021-08-10",
+        },
+        {
+            "_scraped_name": "2022 Session",
+            "identifier": "2022",
+            "name": "2022 Regular Session",
+            "start_date": "2022-01-12",
+            "end_date": "2022-03-12",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

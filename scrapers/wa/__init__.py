@@ -1,18 +1,13 @@
-from utils import State
-from .people import WAPersonScraper
+from openstates.scrape import State
 from .events import WAEventScraper
 from .bills import WABillScraper
-
-# from .committees import WACommitteeScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
 
 class Washington(State):
     scrapers = {
-        "people": WAPersonScraper,
         "events": WAEventScraper,
-        # 'committees': WACommitteeScraper,
         "bills": WABillScraper,
     }
     legislative_sessions = [
@@ -65,6 +60,7 @@ class Washington(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-11",
             "end_date": "2021-04-25",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

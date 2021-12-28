@@ -40,13 +40,16 @@ class AREventScraper(Scraper):
             if "no meeting" in time.lower() or "cancelled" in time.lower():
                 continue
 
-            if time == "Upon Adjournment Whichever is Later":
+            if "upon adjournment" in time.lower():
                 time = "1:00 PM"
 
             title = row.xpath("div[2]/b")[0].text_content().strip()
 
-            times = re.findall(r"\d+:\d+\s*[A|P]M", time)
-            time = times[0]
+            if "call of the chair" in time.lower():
+                time = ""
+            else:
+                times = re.findall(r"\d+:\d+\s*[A|P]M", time)
+                time = times[0]
 
             when = dateutil.parser.parse(f"{day} {time}")
             when = self._tz.localize(when)
@@ -54,9 +57,12 @@ class AREventScraper(Scraper):
             location = row.xpath("div[2]/text()")[1].strip()
 
             event = Event(
-                name=title, start_date=when, location_name=location, description="",
+                name=title,
+                start_date=when,
+                location_name=location,
+                description="",
             )
-            event.add_source(url)
+            event.add_source("https://www.arkleg.state.ar.us/Calendars/Meetings")
 
             if row.xpath(".//a[@aria-label='Agenda']"):
                 agenda_url = row.xpath(".//a[@aria-label='Agenda']/@href")[0]
