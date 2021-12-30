@@ -2,11 +2,13 @@ import re
 from utils import url_xpath
 from openstates.scrape import State
 from .bills import KYBillScraper
+from .events import KYEventScraper
 
 
 class Kentucky(State):
     scrapers = {
         "bills": KYBillScraper,
+        "events": KYEventScraper,
     }
     legislative_sessions = [
         {
