@@ -4,7 +4,7 @@ import datetime as dt
 
 import lxml.html
 from openstates.scrape import Scraper, Event
-
+from openstates.exceptions import EmptyScrape
 
 # mi_events = "http://legislature.mi.gov/doc.aspx?CommitteeMeetings"
 mi_events = "http://legislature.mi.gov/(S(sz5mhvrylsnkncnq4j4f21b0))/mileg.aspx?page=MCommitteeMeetings"
@@ -111,6 +111,15 @@ class MIEventScraper(Scraper):
             "upper": "//span[@id='frg_mcommitteemeetings_SenateMeetingsList']",
             "other": "//span[@is='frg_mcommitteemeetings_JointMeetingsList']",
         }
+
+        if page.xpath(
+            "//span[contains(text(),'There are no House meetings scheduled')]"
+        ) and page.xpath(
+            "//span[contains(text(),'There are no Senate meetings scheduled')]"
+        ):
+            raise EmptyScrape
+            return
+
         for chamber in chambers:
             span = page.xpath(xpaths[chamber])
             if len(span) > 0:
