@@ -170,6 +170,15 @@ class WestVirginia(State):
             "end_date": "2021-06-25",
             "active": True,
         },
+        {
+            "_scraped_name": "2022",
+            "classification": "primary",
+            "identifier": "2022",
+            "name": "2022 Regular",
+            "start_date": "2022-01-12",
+            "end_date": "2022-06-25",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "2029",
