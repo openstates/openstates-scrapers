@@ -61,7 +61,7 @@ class NorthDakota(State):
             "start_date": "2021-11-08",
             "end_date": "2021-11-12",
             "classification": "special",
-            "active": True,
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [
