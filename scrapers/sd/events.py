@@ -12,7 +12,52 @@ class SDEventScraper(Scraper):
 
     com_agendas = {}
 
+    # The interim/front page json listings are just slightly different.
+    def scrape_schedule_file(self):
+        url = "https://sdlegislature.gov/api/Documents/Schedule"
+        meetings = self.get(url).json()
+
+        for row in meetings["sessionMeetings"]:
+            if row["NoMeeting"] is True:
+                continue
+
+            com_name = row["CommitteeFullName"]
+            if com_name is None or com_name == "":
+                com_name = row["InterimYearCommitteeName"]
+
+            com = {"FullName": com_name}
+            event = self.create_event(com, row)
+
+            self.scrape_agendas_and_bills(event, row["DocumentId"])
+
+            meeting_documents_url = (
+                f"https://sdlegislature.gov/api/Documents/Meeting/{row['DocumentId']}"
+            )
+            meeting_docs = self.get(meeting_documents_url).json()
+
+            for meeting_doc in meeting_docs:
+                meeting_doc_url = f"https://mylrc.sdlegislature.gov/api/Documents/{meeting_doc['DocumentId']}.pdf"
+
+                event.add_document(
+                    meeting_doc["Title"],
+                    meeting_doc_url,
+                    media_type="application/pdf",
+                )
+
+            if row["InterimYearCommitteeId"]:
+                event.add_source(
+                    f"https://sdlegislature.gov/Interim/Committee/{row['InterimYearCommitteeId']}/Detail"
+                )
+            else:
+                event.add_source(
+                    f"https://sdlegislature.gov/Session/Committee/{row['SessionCommitteeId']}/Detail"
+                )
+
+            yield event
+
     def scrape(self):
+
+        yield from self.scrape_schedule_file()
         # SD is weird because they don't have individual 'events' that have their own IDs.
         # instead we hit all the various document URLs, and combine them into synthetic events based on date.
 
