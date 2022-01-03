@@ -4,6 +4,7 @@ import pytz
 
 
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 class NEEventScraper(Scraper):
@@ -42,6 +43,12 @@ class NEEventScraper(Scraper):
     def scrape_events(self, page):
 
         page = lxml.html.fromstring(page)
+
+        if page.xpath(
+            "//h3[contains(text(),'There are no hearings for the date range')]"
+        ):
+            raise EmptyScrape
+            return
 
         for meeting in page.xpath('//div[@class="card mb-4"]'):
             com = meeting.xpath('div[contains(@class, "card-header")]/text()')[
