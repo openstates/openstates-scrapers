@@ -54,7 +54,9 @@ class Legislators(CsvListPage):
         elif legislativebody == "S":
             chamber = "upper"
 
-        district = item["District"].lstrip("0")
+        district_county = item["County"]
+        district_num = item["District"]
+        district = f"{district_county} {district_num.lstrip('0')}"
 
         party = item["party"]
         if party == "D" or party == "d":
@@ -103,7 +105,7 @@ class Legislators(CsvListPage):
             p.extras["gender code"] = item["GenderCode"].strip()
 
         if chamber == "upper":
-            detail_link = f"http://www.gencourt.state.nh.us/Senate/members/webpages/district{district}.aspx"
+            detail_link = f"http://www.gencourt.state.nh.us/Senate/members/webpages/district{district_num}.aspx"
             p.add_source(detail_link)
             p.add_link(detail_link, note="homepage")
             return SenDetail(p, source=detail_link)
