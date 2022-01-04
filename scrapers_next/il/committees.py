@@ -1,5 +1,6 @@
-from spatula import XPath, CSS, HtmlListPage, HtmlPage, SelectorError
+from spatula import XPath, CSS, HtmlListPage, HtmlPage, SelectorError, SkipItem
 from openstates.models import ScrapeCommittee
+import re
 
 
 class Committee_Detail(HtmlPage):
@@ -33,53 +34,76 @@ class Committee_Detail(HtmlPage):
 class SenateCommittee(HtmlListPage):
     source = "https://ilga.gov/senate/committees/default.asp"
     chamber = "upper"
-    selector = CSS("tr")
-
+    selector = XPath("//body/table/tr[3]/td[3]/table/tr[1]/td[1]/table[1]/td[@class ='content']")
+    code = None
+    last_parent = None
+    count = 0
+    current_committee_name = None
     def process_item(self, item):
-        tab_link = CSS("td.content a").match(item)[0]
-        name = tab_link.text.strip()
+        # find out which column were in using mode.
+        Mode_Value = self.count % 3
+        # check the count for the name
+        # extract the name
+        if Mode_Value == 0:
+            self.current_committee_name = CSS("a").match(item)[0]
 
-        com = ScrapeCommittee(
-            name=name, classification="committee", chamber=self.chamber
-        )
-        detail_link = tab_link.get("href")
-        com.add_source(detail_link)
-        com.add_source(detail_link, "homepage")
-        # return Committee_Detail(com, source=detail_link)
-        return com
+        # use the count to get the code
+        elif Mode_Value == 1:
+            self.code = item.text_content().strip()
+        elif Mode_Value == 2:
+            if item.text_content().strip() == "Not Scheduled":
+                raise SkipItem("Not Scheduled")
+            if re.search(r"-", str(self.code)):
+                name = self.current_committee_name.text_content().strip()
+                parent = self.last_parent
+                com = ScrapeCommittee(
+                    name=name,
+                    classification="subcommittee",
+                    chamber=self.chamber,
+                    parent=parent)
+            else:
+                name = self.current_committee_name.text_content().strip()
+                self.last_parent = name
+                com = ScrapeCommittee(
+                    name=name,
+                    classification="committee",
+                    chamber=self.chamber)
+                detail_link = self.current_committee_name.get("href")
+            com.add_source(detail_link, "homepage")
+            return com
+
 
 
 class HouseCommittee(HtmlListPage):
     source = "https://ilga.gov/house/committees/default.asp"
     chamber = "lower"
     selector = CSS("table:nth-child(7) tr:not(:first-child)")
-
+    last_parent = None
     def process_item(self, item):
         tab_link = CSS("td:nth-child(1) a").match(item)[0]
         code = CSS("td:nth-child(2)").match(item)[0].text_content()
         name = tab_link.text_content().strip()
-        dash = "-"
 
-        if re.search(r"-", str(code)):
-            if dash not in code.getprevious(self):
-                parent = name.getprevious(self)
-            else:
-                parent = parent.getprevious(self)
+        if re.search(r"-",str(code)):
+            parent = self.last_parent
+            com = ScrapeCommittee(
+               name = name,
+               classification = "subcommittee",
+               chamber = self.chamber,
+               parent = parent )
+        else:
+            self.last_parent = name
             com = ScrapeCommittee(
                 name=name,
-                classification="subcommittee",
-                chamber=self.chamber,
-                parent=parent,
-            )
-        else:
-            com = ScrapeCommittee(
-                name=name, classification="committee", chamber=self.chamber
+                classification="committee",
+                chamber=self.chamber
             )
         detail_link = tab_link.get("href")
         com.add_source(detail_link)
         com.add_source(detail_link, "homepage")
         # return Committee_Detail(com, source=detail_link)
         return com
+
 
 
 if __name__ == "__main__":
