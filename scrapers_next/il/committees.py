@@ -70,7 +70,7 @@ class SenateCommittee(HtmlListPage):
                     chamber=self.chamber)
                 detail_link = self.current_committee_name.get("href")
             com.add_source(detail_link, "homepage")
-            return com
+            return Committee_Detail(com, source=detail_link)
 
 
 
@@ -80,10 +80,12 @@ class HouseCommittee(HtmlListPage):
     selector = CSS("table:nth-child(7) tr:not(:first-child)")
     last_parent = None
     def process_item(self, item):
+        #the tab link has the name.
         tab_link = CSS("td:nth-child(1) a").match(item)[0]
+        #got the code to check for subcommittee
         code = CSS("td:nth-child(2)").match(item)[0].text_content()
         name = tab_link.text_content().strip()
-
+        #Logic to get the subcommittee
         if re.search(r"-",str(code)):
             parent = self.last_parent
             com = ScrapeCommittee(
@@ -101,8 +103,8 @@ class HouseCommittee(HtmlListPage):
         detail_link = tab_link.get("href")
         com.add_source(detail_link)
         com.add_source(detail_link, "homepage")
-        # return Committee_Detail(com, source=detail_link)
-        return com
+        return Committee_Detail(com, source=detail_link)
+
 
 
 
