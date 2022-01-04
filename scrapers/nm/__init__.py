@@ -157,6 +157,15 @@ class NewMexico(State):
             "name": "2021 Second Special Session",
             "start_date": "2021-12-06",
             "end_date": "2021-12-20",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022 Regular",
+            "classification": "primary",
+            "identifier": "2022",
+            "name": "2022 Regular Session",
+            "start_date": "2022-01-18",
+            "end_date": "2022-02-17",
             "active": True,
         },
     ]
