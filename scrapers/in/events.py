@@ -1,6 +1,7 @@
 import pytz
 import cloudscraper
 import dateutil.parser
+from datetime import date
 import lxml.html
 from openstates.scrape import Scraper, Event
 
@@ -14,7 +15,9 @@ class INEventScraper(Scraper):
     scraper = cloudscraper.create_scraper()
 
     def scrape(self):
-        list_url = "http://iga.in.gov/legislative/2021/committees/standing"
+        list_url = "http://iga.in.gov/legislative/{}/committees/standing".format(
+            date.today().year
+        )
         page = self.scraper.get(list_url).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(list_url)
