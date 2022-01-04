@@ -113,8 +113,7 @@ class Colorado(State):
             "identifier": "2020B",
             "name": "2020 First Extraordinary Session",
             "start_date": "2020-11-30",
-            # TODO: Real end date after session ends
-            "end_date": "2020-12-04",
+            "end_date": "2020-12-02",
         },
         {
             "_scraped_name": "2021 Regular Session",
