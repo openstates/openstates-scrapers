@@ -54,10 +54,12 @@ class Nebraska(State):
         },
         {
             "_scraped_name": "107th Legislature 1st and 2nd Sessions",
+            "classification": "primary",
             "identifier": "107",
             "name": "107th Legislature (2021-2022)",
-            "start_date": "2021-01-06",
-            "end_date": "2021-12-31",
+            "start_date": "2022-01-05",
+            "end_date": "2022-03-31",
+            "active": True,
         },
         {
             "_scraped_name": "107th Legislature 1st Special Session",
@@ -66,7 +68,6 @@ class Nebraska(State):
             "start_date": "2021-09-13",
             "end_date": "2021-09-30",
             "classification": "special",
-            "active": True,
         },
     ]
     ignored_scraped_sessions = [
