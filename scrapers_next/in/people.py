@@ -323,14 +323,16 @@ class RedRepList(HtmlListPage):
         detail_link = item.get("href")
         p.add_link(detail_link, note="homepage")
         p.add_source(detail_link)
-        p.add_source(self.source.url)
+        p.add_source(self.source.url.split("?")[0])
 
         return RedRepDetail(p, source=URL(detail_link, timeout=10))
 
 
 class RepublicanHouse(RedRepList):
-    source = URL("https://www.indianahouserepublicans.com/members/", timeout=10)
-    selector = CSS("div.member-list a", num_items=30)
+    source = URL(
+        "https://www.indianahouserepublicans.com/members/?pos=0,100,100", timeout=10
+    )
+    selector = CSS("div.member-list a", min_items=60, max_items=100)
     chamber = "lower"
     party = "Republican"
 
