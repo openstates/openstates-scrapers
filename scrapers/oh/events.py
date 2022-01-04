@@ -9,12 +9,15 @@ from openstates.scrape import Scraper, Event
 import datetime as dt
 from dateutil.relativedelta import relativedelta
 import dateutil.parser
+import cloudscraper
 
 
 class OHEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
 
     base_url = "https://www.legislature.ohio.gov/schedules/"
+
+    scraper = cloudscraper.create_scraper()
 
     def scrape(self, start=None, end=None):
         if start is None:
@@ -30,11 +33,11 @@ class OHEventScraper(Scraper):
         start = start.strftime("%Y-%m-%d")
         end = end.strftime("%Y-%m-%d")
 
-        url = f"{self.base_url}/calendar-data?start={start}&end={end}"
-        data = json.loads(self.get(url).content)
+        url = f"{self.base_url}calendar-data?start={start}&end={end}"
+        data = json.loads(self.scraper.get(url).content)
 
         for item in data:
-            name = item["title"].replace("Committee", "").strip()
+            name = item["title"].strip()
             if "canceled" in name.lower():
                 continue
 
@@ -46,7 +49,7 @@ class OHEventScraper(Scraper):
             when = dateutil.parser.parse(item["start"])
             when = self._tz.localize(when)
 
-            page = self.get(url).content
+            page = self.scraper.get(url).content
             page = lxml.html.fromstring(page)
 
             location = page.xpath(
