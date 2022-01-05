@@ -60,7 +60,6 @@ class Nebraska(State):
         },
         {
             "_scraped_name": "107th Legislature 1st and 2nd Sessions",
-            "classification": "primary",
             "identifier": "107",
             "name": "107th Legislature (2021-2022)",
             "start_date": "2021-01-06",
