@@ -34,11 +34,14 @@ class Committee_Detail(HtmlPage):
 class SenateCommittee(HtmlListPage):
     source = "https://ilga.gov/senate/committees/default.asp"
     chamber = "upper"
-    selector = XPath("//body/table/tr[3]/td[3]/table/tr[1]/td[1]/table[1]/td[@class ='content']")
+    selector = XPath(
+        "//body/table/tr[3]/td[3]/table/tr[1]/td[1]/table[1]/td[@class ='content']"
+    )
     code = None
     last_parent = None
     count = 0
     current_committee_name = None
+
     def process_item(self, item):
         # find out which column were in using mode.
         Mode_Value = self.count % 3
@@ -60,18 +63,17 @@ class SenateCommittee(HtmlListPage):
                     name=name,
                     classification="subcommittee",
                     chamber=self.chamber,
-                    parent=parent)
+                    parent=parent,
+                )
             else:
                 name = self.current_committee_name.text_content().strip()
                 self.last_parent = name
                 com = ScrapeCommittee(
-                    name=name,
-                    classification="committee",
-                    chamber=self.chamber)
+                    name=name, classification="committee", chamber=self.chamber
+                )
                 detail_link = self.current_committee_name.get("href")
             com.add_source(detail_link, "homepage")
             return Committee_Detail(com, source=detail_link)
-
 
 
 class HouseCommittee(HtmlListPage):
@@ -79,33 +81,31 @@ class HouseCommittee(HtmlListPage):
     chamber = "lower"
     selector = CSS("table:nth-child(7) tr:not(:first-child)")
     last_parent = None
+
     def process_item(self, item):
-        #the tab link has the name.
+        # the tab link has the name.
         tab_link = CSS("td:nth-child(1) a").match(item)[0]
-        #got the code to check for subcommittee
+        # got the code to check for subcommittee
         code = CSS("td:nth-child(2)").match(item)[0].text_content()
         name = tab_link.text_content().strip()
-        #Logic to get the subcommittee
-        if re.search(r"-",str(code)):
+        # Logic to get the subcommittee
+        if re.search(r"-", str(code)):
             parent = self.last_parent
             com = ScrapeCommittee(
-               name = name,
-               classification = "subcommittee",
-               chamber = self.chamber,
-               parent = parent )
+                name=name,
+                classification="subcommittee",
+                chamber=self.chamber,
+                parent=parent,
+            )
         else:
             self.last_parent = name
             com = ScrapeCommittee(
-                name=name,
-                classification="committee",
-                chamber=self.chamber
+                name=name, classification="committee", chamber=self.chamber
             )
         detail_link = tab_link.get("href")
         com.add_source(detail_link)
         com.add_source(detail_link, "homepage")
         return Committee_Detail(com, source=detail_link)
-
-
 
 
 if __name__ == "__main__":
