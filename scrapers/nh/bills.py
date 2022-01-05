@@ -139,7 +139,7 @@ class NHBillScraper(Scraper):
                 if re.match(r"^.R\d+", bill_id):
                     # ex: HR 1 is lsr=847 but version id=838
                     resolution_url = (
-                        "http://www.gencourt.state.nh.us/bill_Status/bill_status.aspx?"
+                        "http://www.gencourt.state.nh.us/bill_status/legacy/bs2016/bill_status.aspx?"
                         + "lsr={}&sy={}&txtsessionyear={}".format(lsr, session, session)
                     )
                     resolution_page = self.get(
@@ -151,17 +151,19 @@ class NHBillScraper(Scraper):
                     self.versions_by_lsr[lsr] = true_version
 
                 # http://www.gencourt.state.nh.us/bill_status/billText.aspx?sy=2017&id=95&txtFormat=html
+                # or if 2022 bills
+                # http://www.gencourt.state.nh.us/bill_status/legacy/bs2016/billText.aspx?id=1410&txtFormat=html&sy=2022
                 if lsr in self.versions_by_lsr:
                     version_id = self.versions_by_lsr[lsr]
                     version_url = (
-                        "http://www.gencourt.state.nh.us/bill_status/"
+                        "http://www.gencourt.state.nh.us/bill_status/legacy/bs2016/"
                         "billText.aspx?sy={}&id={}&txtFormat=html".format(
                             session, version_id
                         )
                     )
 
                     pdf_version_url = (
-                        "http://www.gencourt.state.nh.us/bill_status/"
+                        "http://www.gencourt.state.nh.us/bill_status/legacy/bs2016/"
                         "billText.aspx?sy={}&id={}&txtFormat=pdf&v=current".format(
                             session, version_id
                         )
