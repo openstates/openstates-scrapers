@@ -103,7 +103,7 @@ class AZEventScraper(Scraper):
             yield event
 
     def scrape_chamber(self, chamber):
-        session = self.latest_session()
+        session = self.jurisdiction.legislative_sessions[-1]["identifier"]
         session_id = session_metadata.session_id_meta_data[session]
 
         chamber_abbr = self.chamber_codes[chamber]
