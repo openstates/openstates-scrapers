@@ -257,8 +257,8 @@ class Arizona(State):
             "classification": "primary",
             "identifier": "55th-1st-regular",
             "name": "55th Legislature - 1st Regular Session",
-            "start_date": "2020-01-11",
-            "end_date": "2020-04-23",
+            "start_date": "2021-01-11",
+            "end_date": "2021-06-30",
             "active": True,
         },
         {
