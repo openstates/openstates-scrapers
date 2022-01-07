@@ -61,6 +61,14 @@ class NewJersey(State):
             "name": "2020-2021 Regular Session",
             "start_date": "2020-01-14",
             "end_date": "2020-12-31",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022-2023",
+            "identifier": "220",
+            "name": "2022-2023 Regular Session",
+            "start_date": "2022-01-11",
+            "end_date": "2022-12-31",
             "active": True,
         },
     ]
