@@ -138,8 +138,9 @@ class Tennessee(State):
         return [
             x
             for x in url_xpath(
-                "http://www.capitol.tn.gov/legislation/archives.html",
+                "https://www.capitol.tn.gov/legislation/archives.html",
                 '//h2[text()="Bills and Resolutions"]/following-sibling::ul/li/text()',
+                verify=False,
             )
             if x.strip()
         ]
