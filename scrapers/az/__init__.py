@@ -259,7 +259,7 @@ class Arizona(State):
             "name": "55th Legislature - 1st Regular Session",
             "start_date": "2021-01-11",
             "end_date": "2021-06-30",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2022 - Fifty-fifth Legislature - Second Regular Session",
@@ -267,8 +267,7 @@ class Arizona(State):
             "identifier": "55th-2nd-regular",
             "name": "Fifty-fifth Legislature - Second Regular Session",
             "start_date": "2022-01-10",
-            # TODO: real end date
-            "end_date": "2022-04-23",
+            "end_date": "2022-05-13",
             "active": True,
         },
     ]
