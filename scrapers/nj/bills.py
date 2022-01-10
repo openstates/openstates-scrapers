@@ -370,7 +370,7 @@ class NJBillScraper(Scraper, MDBMixin):
         votes = {}
 
         for filename in vote_info_list:
-            s_vote_url = "ftp://www.njleg.state.nj.us/votes/%s.zip" % filename
+            s_vote_url = f"https://www.njleg.state.nj.us/votes/{filename}.zip"
             try:
                 s_vote_zip, resp = self.urlretrieve(s_vote_url)
             except scrapelib.FTPError:
