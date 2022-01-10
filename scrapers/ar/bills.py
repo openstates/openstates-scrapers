@@ -352,7 +352,7 @@ class ARBillScraper(Scraper):
             vote.add_source(url)
 
             xpath = (
-                '//h3[contains(text(), "Yeas")]/'
+                '//*[@id="bodyContent"]/div/div/div/b[contains(text(), "Yeas")]'
                 'following::div[(contains(@class, "row")'
                 'and descendant::div/a[contains(@href, "/Legislators/")])'
                 'or (contains(@class, "row") and not(div))]'
