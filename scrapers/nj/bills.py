@@ -5,6 +5,7 @@ import csv
 import pytz
 import zipfile
 import collections
+import dateutil.parser
 from datetime import datetime
 
 import scrapelib
@@ -217,7 +218,7 @@ class NJBillScraper(Scraper, MDBMixin):
     def initialize_committees(self, year_abr):
         chamber = {"A": "Assembly", "S": "Senate", "": ""}
 
-        com_csv = self.access_to_csv("Committee")
+        com_csv = self.to_csv("COMMITTEE.TXT")
 
         self._committees = {}
 
@@ -251,7 +252,7 @@ class NJBillScraper(Scraper, MDBMixin):
 
     def scrape_bills(self, session, year_abr):
         # Main Bill information
-        main_bill_csv = self.access_to_csv("MainBill")
+        main_bill_csv = self.to_csv("MAINBILL.TXT")
 
         # keep a dictionary of bills (mapping bill_id to Bill obj)
         bill_dict = {}
@@ -288,7 +289,7 @@ class NJBillScraper(Scraper, MDBMixin):
             bill_dict[bill_id] = bill
 
         # Sponsors
-        bill_sponsors_csv = self.access_to_csv("BillSpon")
+        bill_sponsors_csv = self.to_csv("BILLSPON.TXT")
 
         for rec in bill_sponsors_csv:
             bill_type = rec["BillType"].strip()
@@ -312,7 +313,7 @@ class NJBillScraper(Scraper, MDBMixin):
             )
 
         # Documents
-        bill_document_csv = self.access_to_csv("BillWP")
+        bill_document_csv = self.to_csv("BILLWP.TXT")
 
         for rec in bill_document_csv:
             bill_type = rec["BillType"].strip()
@@ -326,7 +327,6 @@ class NJBillScraper(Scraper, MDBMixin):
             document = document.split("\\")
             document = document[-2] + "/" + document[-1]
 
-            # doc_url = "ftp://www.njleg.state.nj.us/%s/%s" % (year, document)
             htm_url = "http://www.njleg.state.nj.us/{}/Bills/{}".format(
                 year_abr, document.replace(".DOC", ".HTM")
             )
@@ -471,7 +471,7 @@ class NJBillScraper(Scraper, MDBMixin):
                 yield vote
 
         # Actions
-        bill_action_csv = self.access_to_csv("BillHist")
+        bill_action_csv = self.to_csv("BILLHIST.TXT")
         actor_map = {"A": "lower", "G": "executive", "S": "upper"}
 
         for rec in bill_action_csv:
@@ -484,7 +484,7 @@ class NJBillScraper(Scraper, MDBMixin):
             bill = bill_dict[bill_id]
             action = rec["Action"]
             date = rec["DateAction"]
-            date = datetime.strptime(date, "%m/%d/%y %H:%M:%S")
+            date = dateutil.parser.parse(date)
             actor = actor_map[rec["House"]]
             comment = rec["Comment"]
             action, atype = self.categorize_action(action, bill_id)
@@ -498,7 +498,7 @@ class NJBillScraper(Scraper, MDBMixin):
             )
 
         # Subjects
-        subject_csv = self.access_to_csv("BillSubj")
+        subject_csv = self.to_csv("BILLSUBJ.TXT")
         for rec in subject_csv:
             bill_id = rec["BillType"].strip() + str(int(rec["BillNumber"]))
             if bill_id not in bill_dict:
