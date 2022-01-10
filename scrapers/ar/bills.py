@@ -351,12 +351,7 @@ class ARBillScraper(Scraper):
             vote.set_count("other", other_count)
             vote.add_source(url)
 
-            xpath = (
-                '//*[@id="bodyContent"]/div/div/div/b[contains(text(), "Yeas")]'
-                'following::div[(contains(@class, "row")'
-                'and descendant::div/a[contains(@href, "/Legislators/")])'
-                'or (contains(@class, "row") and not(div))]'
-            )
+            xpath = '//*[@id="bodyContent"]/div/div/div[(contains(@class, "voteList"))]'
 
             divs = page.xpath(xpath)
 
