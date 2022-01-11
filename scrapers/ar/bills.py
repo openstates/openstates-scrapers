@@ -303,18 +303,24 @@ class ARBillScraper(Scraper):
 
             votevals = ["yes", "no", "not voting", "other"]
             yes_count = int(
-                page.xpath("substring-after(//h3[contains(text(), 'Yeas')], ': ')")
+                page.xpath(
+                    "substring-after(//*[@id='bodyContent']/div/div/div/b[contains(text(), 'Yeas')], ': ')"
+                )
             )
             no_count = int(
-                page.xpath("substring-after(//h3[contains(text(), 'Nays')], ': ')")
+                page.xpath(
+                    "substring-after(//*[@id='bodyContent']/div/div/div/b[contains(text(), 'Nays')], ': ')"
+                )
             )
             not_voting_count = int(
                 page.xpath(
-                    "substring-after(//h3[contains(text(), 'Non Voting')], ': ')"
+                    "substring-after(//*[@id='bodyContent']/div/div/div/b[contains(text(), 'Non Voting')], ': ')"
                 )
             )
             other_count = int(
-                page.xpath("substring-after(//h3[contains(text(), 'Present')], ': ')")
+                page.xpath(
+                    "substring-after(//*[@id='bodyContent']/div/div/div/b[contains(text(), 'Present')], ': ')"
+                )
             )
             passed = yes_count > no_count + not_voting_count + other_count
             vote_type = []
@@ -332,7 +338,7 @@ class ARBillScraper(Scraper):
             try:
                 excused_count = int(
                     page.xpath(
-                        "substring-after(//h3[contains(text(), 'Excused')], ': ')"
+                        "substring-after(//*[@id='bodyContent']/div/div/div/b[contains(text(), 'Excused')], ': ')"
                     )
                 )
                 vote.set_count("excused", excused_count)
@@ -345,12 +351,7 @@ class ARBillScraper(Scraper):
             vote.set_count("other", other_count)
             vote.add_source(url)
 
-            xpath = (
-                '//h3[contains(text(), "Yeas")]/'
-                'following::div[(contains(@class, "row")'
-                'and descendant::div/a[contains(@href, "/Legislators/")])'
-                'or (contains(@class, "row") and not(div))]'
-            )
+            xpath = '//*[@id="bodyContent"]/div/div/div[(contains(@class, "voteList"))]'
 
             divs = page.xpath(xpath)
 
