@@ -326,7 +326,7 @@ test = ["mock (>=1.3.0)"]
 
 [[package]]
 name = "ipython"
-version = "7.30.1"
+version = "7.31.0"
 description = "IPython: Productive Interactive Computing"
 category = "main"
 optional = false
@@ -466,7 +466,7 @@ et-xmlfile = "*"
 
 [[package]]
 name = "openstates"
-version = "6.10.2"
+version = "6.10.4"
 description = "core infrastructure for the openstates project"
 category = "main"
 optional = false
@@ -1147,8 +1147,8 @@ imapclient = [
     {file = "IMAPClient-2.1.0.zip", hash = "sha256:60ba79758cc9f13ec910d7a3df9acaaf2bb6c458720d9a02ec33a41352fd1b99"},
 ]
 ipython = [
-    {file = "ipython-7.30.1-py3-none-any.whl", hash = "sha256:fc60ef843e0863dd4e24ab2bb5698f071031332801ecf8d1aeb4fb622056545c"},
-    {file = "ipython-7.30.1.tar.gz", hash = "sha256:cb6aef731bf708a7727ab6cde8df87f0281b1427d41e65d62d4b68934fa54e97"},
+    {file = "ipython-7.31.0-py3-none-any.whl", hash = "sha256:4c4234cdcc6b8f87c5b5c7af9899aa696ac5cfcf0e9f6d0688018bbee5c73bce"},
+    {file = "ipython-7.31.0.tar.gz", hash = "sha256:346c74db7312c41fa566d3be45d2e759a528dcc2994fe48aac1a03a70cd668a3"},
 ]
 jedi = [
     {file = "jedi-0.18.1-py2.py3-none-any.whl", hash = "sha256:637c9635fcf47945ceb91cd7f320234a7be540ded6f3e99a50cb6febdfd1ba8d"},
@@ -1249,8 +1249,8 @@ openpyxl = [
     {file = "openpyxl-3.0.9.tar.gz", hash = "sha256:40f568b9829bf9e446acfffce30250ac1fa39035124d55fc024025c41481c90f"},
 ]
 openstates = [
-    {file = "openstates-6.10.2-py3-none-any.whl", hash = "sha256:8fe13f4aa076bc0c7d75a04a435626b292667d9b635e9ab5006f64c126f77388"},
-    {file = "openstates-6.10.2.tar.gz", hash = "sha256:7fc022a2b2e50a1033478081aba78601d2fa9c77777239ade2a05306406d2ca9"},
+    {file = "openstates-6.10.4-py3-none-any.whl", hash = "sha256:82871c1124b520fafaf264c1f2c7a08cbc6d8f74a50116c36f6c6d1626cd1900"},
+    {file = "openstates-6.10.4.tar.gz", hash = "sha256:189795a57174d3de61d3011dbf3026f8256a33b818cfa01eb53656a9efb95658"},
 ]
 parso = [
     {file = "parso-0.8.3-py2.py3-none-any.whl", hash = "sha256:c001d4636cd3aecdaf33cbb40aebb59b094be2a74c556778ef5576c175e19e75"},
