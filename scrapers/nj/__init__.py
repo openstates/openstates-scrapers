@@ -64,7 +64,7 @@ class NewJersey(State):
             "active": False,
         },
         {
-            "_scraped_name": "2022-2023",
+            "_scraped_name": "2022-2023 Session",
             "identifier": "220",
             "name": "2022-2023 Regular Session",
             "start_date": "2022-01-11",

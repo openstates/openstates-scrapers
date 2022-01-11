@@ -373,7 +373,7 @@ class NJBillScraper(Scraper, MDBMixin):
             s_vote_url = f"https://www.njleg.state.nj.us/votes/{filename}.zip"
             try:
                 s_vote_zip, resp = self.urlretrieve(s_vote_url)
-            except scrapelib.FTPError:
+            except scrapelib.HTTPError:
                 self.warning("could not find %s" % s_vote_url)
                 continue
             zippedfile = zipfile.ZipFile(s_vote_zip)
