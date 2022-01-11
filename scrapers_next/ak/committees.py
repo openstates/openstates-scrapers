@@ -63,6 +63,11 @@ class CommitteeList(HtmlListPage):
         classification = item.getparent().getprevious().text_content().strip()
 
         if classification == "Finance Subcommittee":
+            # work around duplicate name of Judiciary committees
+            # a current limitation in how Open States can handle committees
+            # see https://github.com/openstates/issues/issues/598
+            if comm_name == "Judiciary":
+                comm_name = "Judiciary (Finance)"
             com = ScrapeCommittee(
                 name=comm_name,
                 classification="subcommittee",

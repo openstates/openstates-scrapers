@@ -296,7 +296,7 @@ class SenateCommitteeList(HtmlListPage):
 class AssemblyCommitteeList(HtmlListPage):
     source = URL("https://www.assembly.ca.gov/committees")
 
-    selector = CSS("div .block.block-views ul li", num_items=98)
+    selector = CSS("div .block.block-views ul li", min_items=90)
 
     def process_item(self, item):
         comm_name = CSS("a").match_one(item).text_content()

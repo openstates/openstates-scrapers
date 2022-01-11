@@ -83,7 +83,7 @@ class Vermont(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-06",
             "end_date": "2021-05-15",
-            "active": False,
+            "active": True,
         },
         {
             "_scraped_name": "2021 Special Session",
@@ -92,7 +92,7 @@ class Vermont(State):
             "name": "2021 Special Session",
             "start_date": "2021-11-22",
             "end_date": "2021-11-26",
-            "active": True,
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [

@@ -30,7 +30,11 @@ class MDEventScraper(Scraper, LXMLMixin):
             end_date = datetime.datetime.strptime(end, "%Y-%m-%d")
             end_date = end_date.strftime(self.date_format)
 
-        url = "http://mgaleg.maryland.gov/mgawebsite/Meetings/Day/{}{}?budget=show&cmte=allcommittees&updates=show&ys={}rs"
+        # regular gets an RS at the end, special gets nothing because s1 is in the session
+        if session[-2] != "s":
+            session += "rs"
+
+        url = "https://mgaleg.maryland.gov/mgawebsite/Meetings/Day/{}{}?budget=show&cmte=allcommittees&updates=show&ys={}"
         url = url.format(start_date, end_date, session)
 
         page = self.lxmlize(url)

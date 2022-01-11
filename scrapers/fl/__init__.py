@@ -2,7 +2,7 @@
 import logging
 from .bills import FlBillScraper
 
-# from .events import FlEventScraper
+from .events import FlEventScraper
 from utils import url_xpath
 from openstates.scrape import State
 
@@ -12,7 +12,7 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 class Florida(State):
     scrapers = {
         "bills": FlBillScraper,
-        # "events": FlEventScraper,
+        "events": FlEventScraper,
     }
     # Full session list through 2019:
     # https://flsenate.gov/PublishedContent/OFFICES/SECRETARY/SessionsoftheFloridaSenateFromStatehood.pdf

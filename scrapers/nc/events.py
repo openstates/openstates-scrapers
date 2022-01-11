@@ -71,8 +71,6 @@ class NCEventScraper(Scraper, LXMLMixin):
                     when = dateutil.parser.parse(date)
                     when = self._tz.localize(when).date()
 
-                when = self._tz.localize(when)
-
                 event = Event(
                     name=com_name,
                     start_date=when,

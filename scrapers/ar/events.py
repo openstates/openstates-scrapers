@@ -47,9 +47,12 @@ class AREventScraper(Scraper):
 
             if "call of the chair" in time.lower():
                 time = ""
-            else:
+            elif re.findall(r"\d+:\d+\s*[A|P]M", time):
                 times = re.findall(r"\d+:\d+\s*[A|P]M", time)
                 time = times[0]
+            else:
+                self.warning(f"Unable to determine time for {time}, skipping")
+                continue
 
             when = dateutil.parser.parse(f"{day} {time}")
             when = self._tz.localize(when)

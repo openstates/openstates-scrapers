@@ -1,4 +1,4 @@
-from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError, URL
+from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError, URL, SkipItem
 from openstates.models import ScrapeCommittee
 
 
@@ -48,7 +48,10 @@ class HouseCommitteeDetail(HtmlPage):
         com.add_source(self.source.url)
         com.add_link(self.source.url, note="homepage")
 
-        chairs = CSS(".chair-info").match(self.root)
+        try:
+            chairs = CSS(".chair-info").match(self.root)
+        except SelectorError:
+            raise SkipItem("skipping committee without full information")
 
         # in case there are co-chairs
         num_chairs = len(chairs)

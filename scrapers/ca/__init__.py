@@ -3,6 +3,7 @@ from utils import url_xpath
 from openstates.scrape import State
 from .bills import CABillScraper
 
+from .events import CAEventScraper
 
 settings = dict(SCRAPELIB_RPM=30)
 
@@ -10,6 +11,7 @@ settings = dict(SCRAPELIB_RPM=30)
 class California(State):
     scrapers = {
         "bills": CABillScraper,
+        "events": CAEventScraper,
     }
     legislative_sessions = [
         {

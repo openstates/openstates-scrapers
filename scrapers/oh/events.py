@@ -1,173 +1,72 @@
 import datetime
-import os
-import re
+import json
+import lxml
 
 import pytz
 
 from openstates.scrape import Scraper, Event
-from openstates.utils import convert_pdf
+
+import datetime as dt
+from dateutil.relativedelta import relativedelta
+import dateutil.parser
+import cloudscraper
 
 
 class OHEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
 
-    def scrape(self, chamber=None):
-        if chamber == "lower":
-            yield from self.scrape_lower()
-        elif chamber == "upper":
-            yield from self.scrape_upper()
+    base_url = "https://www.legislature.ohio.gov/schedules/"
+
+    scraper = cloudscraper.create_scraper()
+
+    def scrape(self, start=None, end=None):
+        if start is None:
+            start = dt.datetime.today()
         else:
-            yield from self.scrape_lower()
-            yield from self.scrape_upper()
+            start = dateutil.parser.parse(start)
 
-    def scrape_lower(self):
-        PDF_URL = "http://www.ohiohouse.gov/Assets/CommitteeSchedule/calendar.pdf"
-        (path, _response) = self.urlretrieve(PDF_URL)
-        text = convert_pdf(path, type="text-nolayout").decode()
-        os.remove(path)
+        if end is None:
+            end = start + relativedelta(months=+3)
+        else:
+            end = dateutil.parser.parse(end)
 
-        days = re.split(r"(\wF+day, \w+ \d{1,2}, 20\d{2})", text)
-        date = None
-        for day in enumerate(days[1:]):
-            if day[0] % 2 == 0:
-                date = day[1]
-            else:
+        start = start.strftime("%Y-%m-%d")
+        end = end.strftime("%Y-%m-%d")
 
-                events = re.split(r"\n((?:\w+\s?)+)\n", day[1])
-                comm = ""
-                for event in enumerate(events[1:]):
-                    if event[0] % 2 == 0:
-                        comm = event[1].strip()
-                    else:
+        url = f"{self.base_url}calendar-data?start={start}&end={end}"
+        data = json.loads(self.scraper.get(url).content)
 
-                        try:
-                            (time, location, description) = re.search(
-                                r"""(?mxs)
-                                    (\d{1,2}:\d{2}\s[ap]\.m\.)  # Meeting time
-                                    .*?,\s  # Potential extra text for meeting time
-                                    (.*?),\s  # Location, usually a room
-                                    .*?\n  # Chairman of committee holding event
-                                    (.*)  # Description of event
-                                    """,
-                                event[1],
-                            ).groups()
-                        except AttributeError:
-                            continue
+        for item in data:
+            name = item["title"].strip()
+            if "canceled" in name.lower():
+                continue
 
-                        time = time.replace(".", "").upper()
-                        time = datetime.datetime.strptime(
-                            time + "_" + date, "%I:%M %p_%A, %B %d, %Y"
-                        )
-                        time = self._tz.localize(time)
+            if "house session" in name.lower() or "senate session" in name.lower():
+                continue
 
-                        location = location.strip()
+            url = f"{self.base_url}{item['url']}"
 
-                        description = "\n".join(
-                            [
-                                x.strip()
-                                for x in description.split("\n")
-                                if x.strip() and not x.strip()[0].isdigit()
-                            ]
-                        )
+            when = dateutil.parser.parse(item["start"])
+            when = self._tz.localize(when)
 
-                        if not description:
-                            description = "[No description provided by state]"
+            page = self.scraper.get(url).content
+            page = lxml.html.fromstring(page)
 
-                        event = Event(
-                            name=description,
-                            start_date=time,
-                            location_name=location,
-                            description=description,
-                        )
-                        event.add_source(PDF_URL)
-                        event.add_participant(comm, type="committee", note="host")
-                        for line in description.split("\n"):
-                            related_bill = re.search(
-                                r"(H\.?(?:[JC]\.?)?[BR]\.?\s+\d+)\s+(.*)$", line
-                            )
-                            if related_bill:
-                                (related_bill, relation) = related_bill.groups()
-                                relation = relation.strip()
-                                related_bill = related_bill.replace(".", "")
-                                item = event.add_agenda_item(relation)
-                                item.add_bill(related_bill)
+            location = page.xpath(
+                '//div[contains(@class,"eventModule") and h3[contains(text(), "Location")]]/text()'
+            )[0].strip()
+            agenda_url = page.xpath(
+                '//a[contains(@class,"linkButton") and contains(text(),"Agenda")]/@href'
+            )[0]
 
-                        yield event
+            event = Event(
+                name=name,
+                start_date=when,
+                location_name=location,
+            )
 
-    def scrape_upper(self):
-        PDF_URL = "http://www.ohiosenate.gov/Assets/CommitteeSchedule/calendar.pdf"
-        (path, _response) = self.urlretrieve(PDF_URL)
-        text = convert_pdf(path, type="text").decode()
-        os.remove(path)
+            event.add_participant(name, type="committee", note="host")
+            event.add_document("Agenda", agenda_url, media_type="application/pdf")
+            event.add_source(url)
 
-        days = re.split(r"(\w+day, \w+ \d{1,2})", text)
-        date = None
-        for day in enumerate(days[1:]):
-            if day[0] % 2 == 0:
-                # Calendar is put out for the current week, so use that year
-                date = day[1] + ", " + str(datetime.datetime.now().year)
-            else:
-
-                events = re.split(r"\n\n((?:\w+\s?)+),\s", day[1])
-                comm = ""
-                for event in enumerate(events[1:]):
-                    if event[0] % 2 == 0:
-                        comm = event[1].strip()
-                    else:
-
-                        try:
-                            (time, location, description) = re.search(
-                                r"""(?mxs)
-                                    (\d{1,2}:\d{2}\s[AP]M)  # Meeting time
-                                    .*?,\s  # Potential extra text for meeting time
-                                    (.*?)\n  # Location, usually a room
-                                    .*?\n  # Chairman of committee holding event
-                                    (.*)  # Description of event
-                                    """,
-                                event[1],
-                            ).groups()
-                        except AttributeError:
-                            continue
-
-                        time = datetime.datetime.strptime(
-                            time + "_" + date, "%I:%M %p_%A, %B %d, %Y"
-                        )
-                        time = self._tz.localize(time)
-
-                        location = location.strip()
-
-                        description = "\n".join(
-                            [
-                                x.strip()
-                                for x in description.split("\n")
-                                if x.strip()
-                                and not x.strip().startswith("Page ")
-                                and not x.strip().startswith("*Possible Vote")
-                                and not x.strip() == "NO OTHER COMMITTEES WILL MEET"
-                            ]
-                        )
-
-                        if not description:
-                            description = "[No description provided by state]"
-
-                        event = Event(
-                            name=description,
-                            start_date=time,
-                            location_name=location,
-                            description=description,
-                        )
-
-                        event.add_source(PDF_URL)
-                        event.add_participant(comm, type="committee", note="host")
-                        for line in description.split("\n"):
-                            related_bill = re.search(
-                                r"(S\.?(?:[JC]\.?)?[BR]\.?\s+\d+)\s+(.*)$", line
-                            )
-                            if related_bill:
-                                (related_bill, relation) = related_bill.groups()
-                                relation = relation.strip()
-                                related_bill = related_bill.replace(".", "")
-                                item = event.add_agenda_item(relation)
-                                item.add_bill(related_bill)
-
-                        yield event
+            yield event

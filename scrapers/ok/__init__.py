@@ -114,9 +114,8 @@ class Oklahoma(State):
             "identifier": "2021SS1",
             "name": "2021 First Special Session",
             "start_date": "2021-11-15",
-            # TODO: update with accurate date
-            "end_date": "2021-12-03",
-            "active": True,
+            "end_date": "2021-11-26",
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [

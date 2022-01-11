@@ -1,12 +1,14 @@
 from openstates.scrape import State
 from .votes import NDVoteScraper
 from .bills import NDBillScraper
+from .events import NDEventScraper
 
 
 class NorthDakota(State):
     scrapers = {
         "votes": NDVoteScraper,
         "bills": NDBillScraper,
+        "events": NDEventScraper,
     }
     legislative_sessions = [
         {
@@ -59,7 +61,7 @@ class NorthDakota(State):
             "start_date": "2021-11-08",
             "end_date": "2021-11-12",
             "classification": "special",
-            "active": True,
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [

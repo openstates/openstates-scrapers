@@ -316,7 +316,11 @@ class HIBillScraper(Scraper):
                     " (Introduced by request of another party)", ""
                 )
             if sponsor != "":
-                b.add_sponsorship(sponsor, "primary", "person", True)
+                # all caps sponsors are primary, others are secondary
+                primary = sponsor.upper() == sponsor
+                b.add_sponsorship(
+                    sponsor, "primary" if primary else "secondary", "person", primary
+                )
 
         if "gm" in bill_id.lower():
             b.add_sponsorship("governor", "primary", "person", True)
