@@ -130,7 +130,7 @@ class AZBillScraper(Scraper):
         )
         page = json.loads(self.get(subjects_url).content.decode("utf-8"))
         for subject in page:
-            if "Name" in subject and len(subject["Name"]) > 0:
+            if subject["Name"] and len(subject["Name"]) > 0:
                 bill.add_subject(subject["Name"])
 
     def scrape_actions(self, bill, page, self_chamber):

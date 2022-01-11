@@ -13,7 +13,7 @@ class NJEventScraper(Scraper, MDBMixin):
     def initialize_committees(self, year_abr):
         chamber = {"A": "Assembly", "S": "Senate", "": ""}
 
-        com_csv = self.access_to_csv("Committee")
+        com_csv = self.to_csv("COMMITTEE.TXT")
 
         self._committees = {}
 
@@ -55,7 +55,7 @@ class NJEventScraper(Scraper, MDBMixin):
         year_abr = ((int(session) - 209) * 2) + 2000
         self._init_mdb(year_abr)
         self.initialize_committees(year_abr)
-        records = self.access_to_csv("Agendas")
+        records = self.to_csv("AGENDAS.TXT")
         for record in records:
             if record["Status"] != "Scheduled":
                 continue
