@@ -327,10 +327,10 @@ class NJBillScraper(Scraper, MDBMixin):
             document = document.split("\\")
             document = document[-2] + "/" + document[-1]
 
-            htm_url = "http://www.njleg.state.nj.us/Bills/{}/{}".format(
+            htm_url = "https://www.njleg.state.nj.us/Bills/{}/{}".format(
                 year_abr, document.replace(".DOC", ".HTM")
             )
-            pdf_url = "http://www.njleg.state.nj.us/Bills/{}/{}".format(
+            pdf_url = "https://www.njleg.state.nj.us/Bills/{}/{}".format(
                 year_abr, document.replace(".DOC", ".PDF")
             )
 
