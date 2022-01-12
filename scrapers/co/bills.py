@@ -11,7 +11,7 @@ from utils import LXMLMixin
 
 from .actions import Categorizer
 
-CO_URL_BASE = "http://leg.colorado.gov"
+CO_URL_BASE = "https://leg.colorado.gov"
 
 # from select#edit-field-sessions on
 # https://leg.colorado.gov/bill-search
@@ -28,7 +28,7 @@ SESSION_DATA_ID = {
 }
 
 BAD_URLS = [
-    "http://leg.colorado.gov/content/ssa2017a2017-05-04t104016z-hb17-1312-1-activity-vote-summary"
+    "https://leg.colorado.gov/content/ssa2017a2017-05-04t104016z-hb17-1312-1-activity-vote-summary"
 ]
 
 
@@ -77,7 +77,7 @@ class COBillScraper(Scraper, LXMLMixin):
     def scrape_bill_list(self, session, chamber, pageNumber):
         chamber_code_map = {"lower": 1, "upper": 2}
 
-        ajax_url = "http://leg.colorado.gov/views/ajax"
+        ajax_url = "https://leg.colorado.gov/views/ajax"
 
         form = {
             "field_chamber": chamber_code_map[chamber],
@@ -208,7 +208,7 @@ class COBillScraper(Scraper, LXMLMixin):
             action_date = dt.datetime.strptime(action_date, "%m/%d/%Y")
             action_date = self._tz.localize(action_date)
             # If an action has no chamber, it's joint
-            # e.g. http://leg.colorado.gov/bills/sb17-100
+            # e.g. https://leg.colorado.gov/bills/sb17-100
             if action.xpath("td[2]/text()"):
                 action_chamber = action.xpath("td[2]/text()")[0]
                 action_actor = chamber_map[action_chamber]
@@ -370,7 +370,7 @@ class COBillScraper(Scraper, LXMLMixin):
             self.warning("Vote Summary Page Broken ")
             return
 
-        # eg. http://leg.colorado.gov/content/sb18-033vote563ce6
+        # eg. https://leg.colorado.gov/content/sb18-033vote563ce6
         if ("AM" in motion or "PM" in motion) and "/" in motion:
             motion = "Motion not given."
 
@@ -401,7 +401,7 @@ class COBillScraper(Scraper, LXMLMixin):
                 abstain_count = int(abstain_counts[0])
 
             # fix for
-            # http://leg.colorado.gov/content/hb19-1029vote65e72e
+            # https://leg.colorado.gov/content/hb19-1029vote65e72e
             if absent_count == -1:
                 absent_count = 0
 
