@@ -327,8 +327,11 @@ class NJBillScraper(Scraper, MDBMixin):
             document = document.split("\\")
             document = document[-2] + "/" + document[-1]
 
-            htm_url = "http://www.njleg.state.nj.us/{}/Bills/{}".format(
+            htm_url = "https://www.njleg.state.nj.us/Bills/{}/{}".format(
                 year_abr, document.replace(".DOC", ".HTM")
+            )
+            pdf_url = "https://www.njleg.state.nj.us/Bills/{}/{}".format(
+                year_abr, document.replace(".DOC", ".PDF")
             )
 
             # name document based _doctype
@@ -339,9 +342,11 @@ class NJBillScraper(Scraper, MDBMixin):
             if rec["Comment"]:
                 doc_name += " " + rec["Comment"]
 
-            # Clean HTMX links.
+            # Clean links.
             if htm_url.endswith("HTMX"):
                 htm_url = re.sub("X$", "", htm_url)
+            if pdf_url.endswith("PDFX"):
+                pdf_url = re.sub("X$", "", pdf_url)
 
             if rec["DocType"] in self._version_types:
                 if htm_url.lower().endswith("htm"):
@@ -350,6 +355,9 @@ class NJBillScraper(Scraper, MDBMixin):
                     mimetype = "application/vnd.wordperfect"
                 try:
                     bill.add_version_link(doc_name, htm_url, media_type=mimetype)
+                    bill.add_version_link(
+                        doc_name, pdf_url, media_type="application/pdf"
+                    )
                 except ValueError:
                     self.warning("Couldn't find a document for bill {}".format(bill_id))
                     pass
@@ -373,7 +381,7 @@ class NJBillScraper(Scraper, MDBMixin):
             s_vote_url = f"https://www.njleg.state.nj.us/votes/{filename}.zip"
             try:
                 s_vote_zip, resp = self.urlretrieve(s_vote_url)
-            except scrapelib.FTPError:
+            except scrapelib.HTTPError:
                 self.warning("could not find %s" % s_vote_url)
                 continue
             zippedfile = zipfile.ZipFile(s_vote_zip)

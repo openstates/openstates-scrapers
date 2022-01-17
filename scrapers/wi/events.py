@@ -43,10 +43,9 @@ class WIEventScraper(Scraper, LXMLMixin):
         events = page.xpath("//table[@class='agenda-body']//tr")[1:]
 
         for event in events:
-            comit_url = event.xpath(".//a[contains(@href, '/Pages/comm-info.aspx?c=')]")
-
+            comit_url = event.xpath(".//a[contains(@title,'Committee Details')]")
             if len(comit_url) != 1:
-                raise Exception
+                continue
 
             comit_url = comit_url[0]
             who = self.scrape_participants(comit_url.attrib["href"])
