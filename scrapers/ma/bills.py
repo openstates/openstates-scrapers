@@ -3,7 +3,7 @@ import re
 import requests
 from spatula import JsonListPage, JsonPage, XPath, URL, SkipItem
 
-from openstates.scrape import Bill, Scraper, VoteEvent
+from openstates.scrape import Bill, Scraper
 from .actions import Categorizer
 
 
@@ -13,16 +13,6 @@ class PartialBill:
     session: str
     title: int
     chamber: str
-
-
-class PartialVote:
-    description: str
-    chamber: str
-    date: str
-    bill: Bill
-    yes: int
-    no: int
-    source: str
 
 
 categorizer = Categorizer()
@@ -119,7 +109,7 @@ class BillDetail(JsonPage):
                 )
 
         action_url = document["BillHistory"]
-        actions = self.process_actions(action_url)
+        actions = process_actions(action_url)
         for act in actions:
             action_text = act["action"]
             chamber = act["chamber"]
@@ -127,54 +117,6 @@ class BillDetail(JsonPage):
             attrs = categorizer.categorize(action_text)
             classification = attrs["classification"]
             action_date = re.match("(.*)T", date).group(1)
-
-            # full house vote details not available through api
-            if "No. " in action_text:
-                description = action_text.lower()
-                roll_call = re.search(r"no. (\d+)", description).group(1)
-                url = f"https://malegislature.gov/RollCall/192/{chamber}RollCall{roll_call}.pdf"
-
-                y_count = re.search(r"(\d+) yeas", description).group(1)
-                n_count = re.search(r"(\d+) nays", description).group(1)
-                result = "pass" if self.input.yes > self.input.no else "fail"
-
-                vote = VoteEvent(
-                    start_date=action_date,
-                    chamber=chamber,
-                    bill=b,
-                    motion_text=description,
-                    result=result,
-                    classification="passage",
-                )
-                vote.set_count("yes", y_count)
-                vote.set_count("no", n_count)
-                vote.add_source(url)
-
-            # senate votes do have a separate api page to pull details from
-            if "Roll Call" in action_text:
-                description = action_text.lower()
-                roll_call = re.search(r"roll call #(\d+)", description).group(1)
-                url = f"https://malegislature.gov/RollCall/192/{chamber}RollCall{roll_call}.pdf"
-
-                yeas_text = re.search(r"\((\d+) yeas|yeas (\d+)", description).group(0)
-                yeas_count = re.search(r"\d+", yeas_text).group(0)
-                nays_text = re.search(r"(\d+) nays|nays (\d+)\)", description).group(0)
-                nays_count = re.search(r"\d+", nays_text).group(0)
-
-                api_url = f"http://malegislature.gov/api/GeneralCourts/{session}/Branches/{chamber}/RollCalls/{roll_call}"
-
-                yield self.process_votes(
-                    PartialVote(
-                        description,
-                        chamber,
-                        date=action_date,
-                        bill=b,
-                        yes=yeas_count,
-                        no=nays_count,
-                        source=url,
-                    ),
-                    url=api_url,
-                )
 
             b.add_action(
                 action_text,
@@ -185,46 +127,19 @@ class BillDetail(JsonPage):
 
         return b
 
-    def process_actions(self, url):
-        sources = requests.Session()
-        action_list = sources.get(url, timeout=40, verify=False).json()
-        full_actions = []
-        for item in action_list:
-            act = {
-                "chamber": item["Branch"],
-                "action": item["Action"],
-                "date": item["Date"],
-            }
-            full_actions.append(act)
-        return full_actions
 
-    def process_votes(self, url):
-        print(self.input)
-        result = "pass" if self.input.yes > self.input.no else "fail"
-
-        vote = VoteEvent(
-            start_date=self.input.date,
-            chamber=self.input.chamber,
-            bill=self.input.bill,
-            motion_text=self.input.description,
-            result=result,
-            classification="passage",
-        )
-        vote.set_count("yes", self.input.yes)
-        vote.set_count("no", self.input.no)
-        vote.add_source(self.input.source)
-
-        sources = requests.Session()
-        vote_page = sources.get(url, timeout=30, verify=False).json()
-
-        for yea in vote_page["Yeas"]:
-            vote.yes("yes", yea["MemberCode"])
-        for no in vote_page["Nays"]:
-            vote.no("no", no["MemberCode"])
-        for absent in vote_page["Absent"]:
-            vote.vote("other", absent["MemberCode"])
-
-        yield vote
+def process_actions(url):
+    sources = requests.Session()
+    action_list = sources.get(url, timeout=40, verify=False).json()
+    full_actions = []
+    for item in action_list:
+        act = {
+            "chamber": item["Branch"],
+            "action": item["Action"],
+            "date": item["Date"],
+        }
+        full_actions.append(act)
+    return full_actions
 
 
 class MABillScraper(Scraper):
