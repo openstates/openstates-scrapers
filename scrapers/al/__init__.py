@@ -168,7 +168,7 @@ class Alabama(State):
             "_scraped_name": "First Special Session 2022",
             "classification": "special",
             "identifier": "2022s1",
-            "name": "First Special Session 2021",
+            "name": "First Special Session 2022",
             "start_date": "2022-01-12",
             "end_date": "2022-01-21",
             "active": True,
