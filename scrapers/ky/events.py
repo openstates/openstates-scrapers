@@ -89,7 +89,7 @@ class KYEventScraper(Scraper):
                 for mat in docs["mats"][lookup_date]:
                     event.add_document(mat["text"], mat["url"], on_duplicate="ignore")
 
-            if lookup_date in docs["minutes"]:
+            if "minutes" in docs and lookup_date in docs["minutes"]:
                 for mat in docs["minutes"][lookup_date]:
                     event.add_document(mat["text"], mat["url"], on_duplicate="ignore")
 
@@ -104,11 +104,15 @@ class KYEventScraper(Scraper):
 
         docs = {}
 
-        mats_link = page.xpath('//a[contains(text(), "Meeting Materials")]/@href')[0]
-        docs["mats"] = self.scrape_meeting_mats(mats_link)
+        if page.xpath('//a[contains(text(), "Meeting Materials")]/@href'):
+            mats_link = page.xpath('//a[contains(text(), "Meeting Materials")]/@href')[
+                0
+            ]
+            docs["mats"] = self.scrape_meeting_mats(mats_link)
 
-        minutes_link = page.xpath('//a[contains(text(), "Minutes")]/@href')[0]
-        docs["minutes"] = self.scrape_minutes(minutes_link)
+        if page.xpath('//a[contains(text(), "Minutes")]/@href'):
+            minutes_link = page.xpath('//a[contains(text(), "Minutes")]/@href')[0]
+            docs["minutes"] = self.scrape_minutes(minutes_link)
 
         return docs
 
