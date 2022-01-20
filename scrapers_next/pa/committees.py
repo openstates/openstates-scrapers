@@ -90,11 +90,3 @@ class SenateCommitteeList(CommitteeList):
 class HouseCommitteeList(CommitteeList):
     source = "https://www.legis.state.pa.us/cfdocs/CteeInfo/StandingCommittees.cfm?CteeBody=H"
     chamber = "lower"
-
-
-if __name__ == "__main__":
-    from spatula.cli import scrape
-
-    scrape(["committee"])
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
