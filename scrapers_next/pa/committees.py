@@ -27,6 +27,9 @@ class CommitteeDetail(HtmlPage):
                 .match(self.root)[0]
                 .text.strip()
             )
+        except IndexError:
+            pass
+        try:
             com.add_member(chair_member, chair_member_role)
             # Democratic Chair member and or the minority chair member
             demo_chair_member = (
@@ -53,7 +56,7 @@ class CommitteeDetail(HtmlPage):
                 major_member_name = CSS("div a").match_one(mem).text.strip()
                 major_mem_position = CSS(".position").match_one(mem).text.strip()
             except SelectorError:
-                major_mem_position = "Member"
+                major_mem_position = "member"
             com.add_member(major_member_name, major_mem_position)
         minority_members = CSS(
             ".Widget.CteeInfo-MinorityList .MemberInfoList-MemberWrapper.Member"
@@ -63,7 +66,7 @@ class CommitteeDetail(HtmlPage):
                 minor_member_name = CSS("div a").match_one(mem).text.strip()
                 minor_mem_position = CSS(".position").match_one(mem).text.strip()
             except SelectorError:
-                minor_mem_position = "Member"
+                minor_mem_position = "member"
             com.add_member(minor_member_name, minor_mem_position)
         return com
 
