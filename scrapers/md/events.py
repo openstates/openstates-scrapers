@@ -15,10 +15,6 @@ class MDEventScraper(Scraper, LXMLMixin):
     date_format = "%m%d%Y"
 
     def scrape(self, session=None, start=None, end=None):
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using latest")
-
         if start is None:
             start_date = datetime.datetime.now().strftime(self.date_format)
         else:
@@ -34,7 +30,11 @@ class MDEventScraper(Scraper, LXMLMixin):
             end_date = datetime.datetime.strptime(end, "%Y-%m-%d")
             end_date = end_date.strftime(self.date_format)
 
-        url = "http://mgaleg.maryland.gov/mgawebsite/Meetings/Day/{}{}?budget=show&cmte=allcommittees&updates=show&ys={}rs"
+        # regular gets an RS at the end, special gets nothing because s1 is in the session
+        if session[-2] != "s":
+            session += "rs"
+
+        url = "https://mgaleg.maryland.gov/mgawebsite/Meetings/Day/{}{}?budget=show&cmte=allcommittees&updates=show&ys={}"
         url = url.format(start_date, end_date, session)
 
         page = self.lxmlize(url)

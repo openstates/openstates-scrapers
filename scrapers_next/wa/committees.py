@@ -1,4 +1,4 @@
-from spatula import HtmlListPage, HtmlPage, CSS, URL, SelectorError, XPath
+from spatula import HtmlListPage, HtmlPage, CSS, URL, SelectorError, XPath, SkipItem
 from openstates.models import ScrapeCommittee
 
 
@@ -10,7 +10,7 @@ class CommitteeDetail(HtmlPage):
             members = CSS("div#CommitteeMembers tbody tr").match(self.root)
         except SelectorError:
             self.logger.warning(f"skipping members for {self.source.url}")
-            return com
+            raise SkipItem("empty")
         for member in members:
             dirty_name = CSS("a").match_one(member).text_content().strip().split(", ")
             last_name = dirty_name[0]
@@ -29,7 +29,7 @@ class CommitteeDetail(HtmlPage):
 
 class CommitteeList(HtmlListPage):
     source = URL("https://app.leg.wa.gov/ContentParts/LegislativeCommittees/Index")
-    selector = CSS("div ul li span a.ms-srch-item-link", num_items=57)
+    selector = CSS("div ul li span a.ms-srch-item-link", min_items=50)
 
     def process_item(self, item):
 

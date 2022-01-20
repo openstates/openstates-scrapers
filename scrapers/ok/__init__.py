@@ -1,4 +1,4 @@
-from utils import State
+from openstates.scrape import State
 from .bills import OKBillScraper
 from .events import OKEventScraper
 
@@ -107,9 +107,19 @@ class Oklahoma(State):
             "name": "2022 Regular Session",
             "start_date": "2022-02-01",
             "end_date": "2022-05-29",
+            "active": True,
+        },
+        {
+            "_scraped_name": "2021 First Special Session",
+            "identifier": "2021SS1",
+            "name": "2021 First Special Session",
+            "start_date": "2021-11-15",
+            "end_date": "2021-11-26",
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [
+        "2021 Regular Session - Web",
         "2020 Regular Session (web)",
         "2017 Regular Session",
         "2015 Regular Session",

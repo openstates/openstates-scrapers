@@ -53,7 +53,7 @@ class AssemblyList(HtmlListPage):
         for office in district_offices:
             district_address, district_phone = office.split("; ")
             p.add_office(
-                contact_type="District Office",
+                classification="district",
                 address=district_address.strip(),
                 voice=district_phone.strip(),
             )
@@ -115,7 +115,7 @@ class SenList(HtmlListPage):
                     continue
                 addr, phone = line.strip().replace(u"\xa0", " ").split("; ")
                 p.add_office(
-                    contact_type="District Office",
+                    classification="district",
                     address=addr.strip(),
                     voice=phone.strip(),
                 )
@@ -125,7 +125,7 @@ class SenList(HtmlListPage):
                     addr, phone = line.strip().replace(u"\xa0", " ").split(". (")
                     phone = "(" + phone
                     p.add_office(
-                        contact_type="District Office",
+                        classification="district",
                         address=addr.strip(),
                         voice=phone.strip(),
                     )

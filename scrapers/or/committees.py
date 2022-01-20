@@ -10,9 +10,6 @@ logger = logging.getLogger("openstates")
 class ORCommitteeScraper(Scraper):
     def scrape(self, session=None):
         self.api_client = OregonLegislatorODataClient(self)
-        if not session:
-            session = self.latest_session()
-
         yield from self.scrape_committees(session)
 
     def scrape_committees(self, session):

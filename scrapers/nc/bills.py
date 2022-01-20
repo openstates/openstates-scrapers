@@ -440,10 +440,6 @@ class NCBillScraper(Scraper):
                             break
 
     def scrape(self, session=None, chamber=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         chambers = [chamber] if chamber else ["upper", "lower"]
 
         if session in ["1997", "1999"]:

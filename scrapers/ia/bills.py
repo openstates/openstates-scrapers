@@ -7,10 +7,6 @@ from openstates.scrape import Scraper, Bill
 
 class IABillScraper(Scraper):
     def scrape(self, session=None, chamber=None, prefiles=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         # openstates/issues#252 - IA continues to prefile after session starts
         # so we'll continue scraping both
         yield from self.scrape_prefiles(session)

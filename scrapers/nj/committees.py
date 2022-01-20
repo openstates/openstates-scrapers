@@ -5,14 +5,10 @@ from .utils import MDBMixin
 
 class NJCommitteeScraper(Scraper, MDBMixin):
     def scrape(self, session=None):
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         year_abr = ((int(session) - 209) * 2) + 2000
         self._init_mdb(year_abr)
-        members_csv = self.access_to_csv("COMember")
-        info_csv = self.access_to_csv("Committee")
+        members_csv = self.to_csv("COMEMBER.TXT")
+        info_csv = self.to_csv("COMMITTEE.TXT")
 
         org_dictionary = {}
 

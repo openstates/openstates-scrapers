@@ -1,4 +1,5 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import DEBillScraper
 from .events import DEEventScraper
 
@@ -92,6 +93,7 @@ class Delaware(State):
             "name": "151st General Assembly (2021-2022)",
             "start_date": "2021-01-12",
             "end_date": "2022-05-06",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

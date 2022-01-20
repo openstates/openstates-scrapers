@@ -40,16 +40,19 @@ class AREventScraper(Scraper):
             if "no meeting" in time.lower() or "cancelled" in time.lower():
                 continue
 
-            if time == "Upon Adjournment Whichever is Later":
+            if "upon adjournment" in time.lower():
                 time = "1:00 PM"
 
             title = row.xpath("div[2]/b")[0].text_content().strip()
 
             if "call of the chair" in time.lower():
                 time = ""
-            else:
+            elif re.findall(r"\d+:\d+\s*[A|P]M", time):
                 times = re.findall(r"\d+:\d+\s*[A|P]M", time)
                 time = times[0]
+            else:
+                self.warning(f"Unable to determine time for {time}, skipping")
+                continue
 
             when = dateutil.parser.parse(f"{day} {time}")
             when = self._tz.localize(when)

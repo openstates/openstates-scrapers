@@ -24,7 +24,7 @@ class Legislators(JsonListPage):
             district=item["District"].lstrip("0"),
             chamber="upper" if item["MemberType"] == "S" else "lower",
             party=item["Politics"],
-            email=item["EmailState"],
+            email=item["EmailState"] or "",
             image="https://lawmakerdocuments.blob.core.usgovcloudapi.net/photos/"
             + item["Picture"].lower(),
         )
@@ -32,7 +32,7 @@ class Legislators(JsonListPage):
         address = item["HomeAddress1"]
         if item["HomeAddress2"]:
             address += "; " + item["HomeAddress2"]
-        address += f"{item['HomeCity']}, {item['HomeState']} {item['HomeZip']}"
+        address += f"; {item['HomeCity']}, {item['HomeState']} {item['HomeZip']}"
 
         p.district_office.address = address
         p.district_office.voice = item["HomePhone"] or ""

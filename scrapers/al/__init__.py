@@ -1,4 +1,4 @@
-from utils import State
+from openstates.scrape import State
 from .bills import ALBillScraper
 from .events import ALEventScraper
 
@@ -153,11 +153,30 @@ class Alabama(State):
             "start_date": "2022-01-11",
             # TODO: Real end date after session
             "end_date": "2022-05-18",
+            "active": True,
+        },
+        {
+            "_scraped_name": "First Special Session 2021",
+            "classification": "special",
+            "identifier": "2021s1",
+            "name": "First Special Session 2021",
+            "start_date": "2021-09-27",
+            "end_date": "2021-10-01",
+            "active": False,
+        },
+        {
+            "_scraped_name": "First Special Session 2022",
+            "classification": "special",
+            "identifier": "2022s1",
+            "name": "First Special Session 2022",
+            "start_date": "2022-01-12",
+            "end_date": "2022-01-21",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
         # TODO: add to scraped when prefiles up
-        "First Special Session 2021",
+        "Second Special Session 2021",
         "Regular Session 1998",
         "Organizational Session 1999",
         "Regular Session 1999",

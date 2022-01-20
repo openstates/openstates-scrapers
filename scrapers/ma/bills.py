@@ -58,9 +58,6 @@ class MABillScraper(Scraper):
     def scrape(
         self, chamber=None, session=None, bill_no=None, sort=None, page_limit=None
     ):
-        if not session:
-            session = self.latest_session()
-
         if page_limit:
             page_limit = int(page_limit)
 

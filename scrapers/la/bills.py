@@ -6,6 +6,7 @@ import re
 from collections import defaultdict
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
+from openstates.exceptions import EmptyScrape
 from utils import LXMLMixin
 
 
@@ -33,6 +34,7 @@ class LABillScraper(Scraper, LXMLMixin):
         "2020s1": "201ES",
         "2020s2": "202ES",
         "2021": "21RS",
+        "2022": "22RS",
     }
 
     def pdf_to_lxml(self, filename, type="html"):
@@ -43,6 +45,11 @@ class LABillScraper(Scraper, LXMLMixin):
         page = self.lxmlize(
             "http://www.legis.la.gov/legis/BillSearch.aspx?" "sid={}".format(session_id)
         )
+
+        if page.xpath("//span[contains(@id,'PageContent_labelNoBills')]"):
+            raise EmptyScrape
+            return
+
         select_options = page.xpath('//select[contains(@id, "InstTypes")]/option')
 
         bill_abbreviations = {"upper": [], "lower": []}
@@ -102,9 +109,6 @@ class LABillScraper(Scraper, LXMLMixin):
             return []
 
     def scrape(self, chamber=None, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         chambers = [chamber] if chamber else ["upper", "lower"]
         session_id = self._session_ids[session]
         # Scan bill abbreviation list if necessary.

@@ -5,6 +5,7 @@ import csv
 import pytz
 import zipfile
 import collections
+import dateutil.parser
 from datetime import datetime
 
 import scrapelib
@@ -217,7 +218,7 @@ class NJBillScraper(Scraper, MDBMixin):
     def initialize_committees(self, year_abr):
         chamber = {"A": "Assembly", "S": "Senate", "": ""}
 
-        com_csv = self.access_to_csv("Committee")
+        com_csv = self.to_csv("COMMITTEE.TXT")
 
         self._committees = {}
 
@@ -244,10 +245,6 @@ class NJBillScraper(Scraper, MDBMixin):
         return (act_str, None)
 
     def scrape(self, session=None):
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         year_abr = ((int(session) - 209) * 2) + 2000
         self._init_mdb(year_abr)
         self.initialize_committees(year_abr)
@@ -255,7 +252,7 @@ class NJBillScraper(Scraper, MDBMixin):
 
     def scrape_bills(self, session, year_abr):
         # Main Bill information
-        main_bill_csv = self.access_to_csv("MainBill")
+        main_bill_csv = self.to_csv("MAINBILL.TXT")
 
         # keep a dictionary of bills (mapping bill_id to Bill obj)
         bill_dict = {}
@@ -292,7 +289,7 @@ class NJBillScraper(Scraper, MDBMixin):
             bill_dict[bill_id] = bill
 
         # Sponsors
-        bill_sponsors_csv = self.access_to_csv("BillSpon")
+        bill_sponsors_csv = self.to_csv("BILLSPON.TXT")
 
         for rec in bill_sponsors_csv:
             bill_type = rec["BillType"].strip()
@@ -316,7 +313,7 @@ class NJBillScraper(Scraper, MDBMixin):
             )
 
         # Documents
-        bill_document_csv = self.access_to_csv("BillWP")
+        bill_document_csv = self.to_csv("BILLWP.TXT")
 
         for rec in bill_document_csv:
             bill_type = rec["BillType"].strip()
@@ -330,9 +327,11 @@ class NJBillScraper(Scraper, MDBMixin):
             document = document.split("\\")
             document = document[-2] + "/" + document[-1]
 
-            # doc_url = "ftp://www.njleg.state.nj.us/%s/%s" % (year, document)
-            htm_url = "http://www.njleg.state.nj.us/{}/Bills/{}".format(
+            htm_url = "https://www.njleg.state.nj.us/Bills/{}/{}".format(
                 year_abr, document.replace(".DOC", ".HTM")
+            )
+            pdf_url = "https://www.njleg.state.nj.us/Bills/{}/{}".format(
+                year_abr, document.replace(".DOC", ".PDF")
             )
 
             # name document based _doctype
@@ -343,9 +342,11 @@ class NJBillScraper(Scraper, MDBMixin):
             if rec["Comment"]:
                 doc_name += " " + rec["Comment"]
 
-            # Clean HTMX links.
+            # Clean links.
             if htm_url.endswith("HTMX"):
                 htm_url = re.sub("X$", "", htm_url)
+            if pdf_url.endswith("PDFX"):
+                pdf_url = re.sub("X$", "", pdf_url)
 
             if rec["DocType"] in self._version_types:
                 if htm_url.lower().endswith("htm"):
@@ -354,6 +355,9 @@ class NJBillScraper(Scraper, MDBMixin):
                     mimetype = "application/vnd.wordperfect"
                 try:
                     bill.add_version_link(doc_name, htm_url, media_type=mimetype)
+                    bill.add_version_link(
+                        doc_name, pdf_url, media_type="application/pdf"
+                    )
                 except ValueError:
                     self.warning("Couldn't find a document for bill {}".format(bill_id))
                     pass
@@ -374,10 +378,10 @@ class NJBillScraper(Scraper, MDBMixin):
         votes = {}
 
         for filename in vote_info_list:
-            s_vote_url = "ftp://www.njleg.state.nj.us/votes/%s.zip" % filename
+            s_vote_url = f"https://www.njleg.state.nj.us/votes/{filename}.zip"
             try:
                 s_vote_zip, resp = self.urlretrieve(s_vote_url)
-            except scrapelib.FTPError:
+            except scrapelib.HTTPError:
                 self.warning("could not find %s" % s_vote_url)
                 continue
             zippedfile = zipfile.ZipFile(s_vote_zip)
@@ -475,7 +479,7 @@ class NJBillScraper(Scraper, MDBMixin):
                 yield vote
 
         # Actions
-        bill_action_csv = self.access_to_csv("BillHist")
+        bill_action_csv = self.to_csv("BILLHIST.TXT")
         actor_map = {"A": "lower", "G": "executive", "S": "upper"}
 
         for rec in bill_action_csv:
@@ -488,7 +492,7 @@ class NJBillScraper(Scraper, MDBMixin):
             bill = bill_dict[bill_id]
             action = rec["Action"]
             date = rec["DateAction"]
-            date = datetime.strptime(date, "%m/%d/%y %H:%M:%S")
+            date = dateutil.parser.parse(date)
             actor = actor_map[rec["House"]]
             comment = rec["Comment"]
             action, atype = self.categorize_action(action, bill_id)
@@ -502,7 +506,7 @@ class NJBillScraper(Scraper, MDBMixin):
             )
 
         # Subjects
-        subject_csv = self.access_to_csv("BillSubj")
+        subject_csv = self.to_csv("BILLSUBJ.TXT")
         for rec in subject_csv:
             bill_id = rec["BillType"].strip() + str(int(rec["BillNumber"]))
             if bill_id not in bill_dict:

@@ -6,8 +6,6 @@ from openstates.scrape import Organization, Scraper
 
 class VTCommitteeScraper(Scraper):
     def scrape(self, session=None):
-        if session is None:
-            session = self.latest_session()
         year_slug = self.jurisdiction.get_year_slug(session)
 
         # Load all committees via the private API

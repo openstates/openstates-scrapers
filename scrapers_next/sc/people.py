@@ -142,7 +142,7 @@ class Legislators(HtmlListPage):
         img = CSS("img").match_one(item).get("src")
         p.image = img
 
-        return LegDetail(p, source=detail_link)
+        return LegDetail(p, source=URL(detail_link, timeout=20))
 
 
 class Senate(Legislators):

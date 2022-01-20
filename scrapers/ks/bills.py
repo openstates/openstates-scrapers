@@ -14,13 +14,9 @@ def _clean_spaces(title):
 
 
 class KSBillScraper(Scraper):
-    special_slugs = {"2020S1": "li_2020s"}
+    special_slugs = {"2020S1": "li_2020s", "2021S1": "li_2021s"}
 
     def scrape(self, chamber=None, session=None):
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
 
         for chamber in chambers:

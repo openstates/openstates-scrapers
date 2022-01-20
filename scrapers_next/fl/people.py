@@ -1,15 +1,19 @@
 import re
 import attr
-from spatula import HtmlListPage, HtmlPage, XPath
+from spatula import HtmlListPage, HtmlPage, XPath, URL
 from openstates.models import ScrapePerson
 
 
 def fix_name(name):
-    # handles cases like Watson, Jr., Clovis
     if ", " not in name:
         return name
-    last, first = name.rsplit(", ", 1)
-    return first + " " + last
+    if name.endswith(", Jr."):
+        last, first, suffix = name.split(", ")
+        return f"{first} {last}, {suffix}"
+    else:
+        # handles cases like Watson, Jr., Clovis
+        last, first = name.rsplit(", ", 1)
+        return f"{first} {last}"
 
 
 @attr.s(auto_attribs=True)
@@ -46,7 +50,7 @@ class SenDetail(HtmlPage):
     input_type = PartialPerson
 
     def get_source_from_input(self):
-        return self.input.url
+        return URL(self.input.url, timeout=10)
 
     def process_page(self):
         email = (
@@ -86,7 +90,7 @@ class SenDetail(HtmlPage):
         ]
 
         clean_address_lines = []
-        fax = phone = None
+        fax = phone = ""
         PHONE_RE = r"\(\d{3}\)\s\d{3}\-\d{4}"
         after_phone = False
 
@@ -105,7 +109,7 @@ class SenDetail(HtmlPage):
         address = "; ".join(clean_address_lines)
         address = re.sub(r"\s{2,}", " ", address)
         obj_office.address = address
-        obj_office.phone = phone
+        obj_office.voice = phone
         obj_office.fax = fax
 
 

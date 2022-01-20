@@ -105,10 +105,6 @@ class TXBillScraper(Scraper, LXMLMixin):
         return " ".join([identifier, number])
 
     def scrape(self, session=None, chamber=None):
-        if not session:
-            session = self.latest_session()
-            self.info("No session specified; using %s", session)
-
         chambers = [chamber] if chamber else ["upper", "lower"]
 
         session_code = self._format_session(session)

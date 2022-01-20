@@ -1,6 +1,8 @@
 import attr
-from spatula import HtmlListPage, HtmlPage, URL, CSS
+from spatula import HtmlListPage, HtmlPage, URL, CSS, ExcelListPage
 from openstates.models import ScrapePerson
+
+PARTIES = {"D": "Democratic", "R": "Republican"}
 
 
 @attr.s(auto_attribs=True)
@@ -46,8 +48,11 @@ class Representatives(HtmlListPage):
 class HouseDetail(HtmlPage):
     input_type = HousePartial
 
+    def get_source_from_input(self):
+        return self.input.url
+
     def process_page(self):
-        party = {"D": "Democratic", "R": "Republican"}[self.input.party]
+        party = PARTIES[self.input.party]
 
         photo = CSS("img#ContentPlaceHolder1_imgPhoto1").match_one(self.root).get("src")
 
@@ -61,8 +66,7 @@ class HouseDetail(HtmlPage):
             given_name=self.input.first_name,
             family_name=self.input.last_name,
         )
-        # TODO
-        # p.extras["hometown"] = self.input.hometown
+        p.extras["hometown"] = self.input.hometown
         p.capitol_office.voice = self.input.voice
         p.capitol_office.address = (
             "MO House of Representatives; 201 West Capitol Avenue; "
@@ -70,4 +74,30 @@ class HouseDetail(HtmlPage):
         )
         p.add_link(self.input.url)
         p.add_source(self.input.url)
+        return p
+
+
+class Senators(ExcelListPage):
+    source = "https://www.senate.mo.gov/21info/2021Sens.xlsx"
+    HEADERS = ("District", "First Name", "Last Name", "Address", "Party", "Phone")
+
+    def process_item(self, row):
+        if row == self.HEADERS:
+            self.skip("header row")
+        else:
+            row = dict(zip(self.HEADERS, row))
+
+        print(row)
+        name = f"{row['First Name']} {row['Last Name']}"
+        p = ScrapePerson(
+            name=name,
+            state="mo",
+            chamber="upper",
+            district=row["District"],
+            given_name=row["First Name"],
+            family_name=row["Last Name"],
+            party=PARTIES[row["Party"]],
+        )
+        p.capitol_office.address = row["Address"]
+        p.capitol_office.voice = row["Phone"]
         return p

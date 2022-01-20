@@ -3,6 +3,11 @@ from openstates.models import ScrapePerson
 import re
 
 
+def fix_phone(num):
+    num = num[:14]
+    return num.replace("(", "").replace(") ", "-")
+
+
 class LegDetail(HtmlPage):
     def process_page(self):
         p = self.input
@@ -34,28 +39,17 @@ class LegDetail(HtmlPage):
             ):
                 p.capitol_office.address = addr.strip()
                 if phone:
-                    p.capitol_office.voice = phone
+                    p.capitol_office.voice = fix_phone(phone)
                 if fax:
                     fax = re.search(r"(FAX|Fax|fax):\s(.+)", fax).groups()[1]
-                    p.capitol_office.fax = fax
+                    p.capitol_office.fax = fix_phone(fax)
             else:
-                if phone and fax:
+                p.district_office.address = addr.strip()
+                if phone:
+                    p.district_office.voice = fix_phone(phone)
+                if fax:
                     fax = re.search(r"(FAX|Fax|fax):\s(.+)", fax).groups()[1]
-                    p.add_office(
-                        contact_type="District Office",
-                        address=addr,
-                        voice=phone,
-                        fax=fax,
-                    )
-                elif phone:
-                    p.add_office(
-                        contact_type="District Office", address=addr, voice=phone
-                    )
-                elif fax:
-                    fax = re.search(r"(FAX|Fax|fax):\s(.+)", fax).groups()[1]
-                    p.add_office(contact_type="District Office", address=addr, fax=fax)
-                else:
-                    p.add_office(contact_type="District Office", address=addr)
+                    p.district_office.fax = fix_phone(fax)
 
         social_links = CSS("div.Widget.MemberBio-SocialLinks a").match(self.root)
         for link in social_links:
@@ -137,7 +131,7 @@ class LegList(HtmlListPage):
         name_dirty = CSS("a").match_one(item).text_content().strip().split(", ")
         name = name_dirty[1] + " " + name_dirty[0]
 
-        district = CSS("br").match_one(item).tail.strip()
+        district = CSS("br").match(item)[-1].tail.strip()
         district = re.search(r"District\s(.+)", district).groups()[0]
 
         party = CSS("b").match_one(item).tail.strip()
@@ -162,7 +156,7 @@ class LegList(HtmlListPage):
         p.add_source(detail_link)
         p.add_link(detail_link, note="homepage")
 
-        return LegDetail(p, source=detail_link)
+        return LegDetail(p, source=URL(detail_link, timeout=10))
 
 
 class Senate(LegList):

@@ -123,10 +123,6 @@ class GABillScraper(Scraper):
             "STH": None,
             "HTS": None,
         }
-
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         sid = SESSION_SITE_IDS[session]
 
         legislation = backoff(self.lservice.GetLegislationForSession, sid)[
@@ -160,6 +156,9 @@ class GABillScraper(Scraper):
             bill_id = "%s %s" % (bill_prefix, instrument["Number"])
             if instrument["Suffix"]:
                 bill_id += instrument["Suffix"]
+
+            # special session bills get a suffix that doesn't show up in the site
+            bill_id = bill_id.replace("EX", "")
 
             title = instrument["Caption"]
             description = instrument["Summary"]
@@ -276,6 +275,13 @@ class GABillScraper(Scraper):
                 name, url, doc_id, version_id = [
                     version[x] for x in ["Description", "Url", "Id", "Version"]
                 ]
+                if session == "2021_ss":
+                    # gets http://www.legis.ga.gov/Legislation/2021EX/202712.pdf
+                    # need https://www.legis.ga.gov/api/legislation/document/2021EX/202712
+                    bill_bit = re.search(r"n/(.*)\.pdf", url).group(1)
+                    url = (
+                        f"https://www.legis.ga.gov/api/legislation/document/{bill_bit}"
+                    )
                 link = bill.add_version_link(name, url, media_type="application/pdf")
                 link["extras"] = {
                     "_internal_document_id": doc_id,

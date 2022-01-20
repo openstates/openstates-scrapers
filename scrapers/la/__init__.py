@@ -1,4 +1,5 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .events import LAEventScraper
 from .bills import LABillScraper
 
@@ -193,9 +194,20 @@ class Louisiana(State):
             "name": "2021 Regular Session",
             "start_date": "2021-03-12",
             "end_date": "2021-06-10",
+            "active": True,
         },
+        # {
+        #     "_scraped_name": "2022 Regular Session",
+        #     "classification": "primary",
+        #     "identifier": "2022",
+        #     "name": "2022 Regular Session",
+        #     "start_date": "2022-03-12",
+        #     "end_date": "2022-06-10",
+        #     "active": True,
+        # },
     ]
     ignored_scraped_sessions = [
+        "2022 Regular Session",
         "2021 Veto Session",
         "2020 Organizational Session",
         "2016 Organizational Session",

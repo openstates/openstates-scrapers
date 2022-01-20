@@ -1,11 +1,14 @@
 import re
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import KYBillScraper
+from .events import KYEventScraper
 
 
 class Kentucky(State):
     scrapers = {
         "bills": KYBillScraper,
+        "events": KYEventScraper,
     }
     legislative_sessions = [
         {
@@ -136,6 +139,15 @@ class Kentucky(State):
             "name": "2022 Regular Session",
             "start_date": "2022-01-05",
             "end_date": "2022-03-30",
+            "active": True,
+        },
+        {
+            "_scraped_name": "2021 Special Session",
+            "classification": "special",
+            "identifier": "2021SS",
+            "name": "2021 Special Session",
+            "start_date": "2021-09-01",
+            "end_date": "2021-09-09",
         },
         {
             "_scraped_name": "2021 Regular Session",

@@ -1,7 +1,7 @@
 import re
 import requests
 import lxml.html
-from utils import State
+from openstates.scrape import State
 from .bills import MABillScraper
 from .events import MAEventScraper
 
@@ -67,6 +67,7 @@ class Massachusetts(State):
             "name": "192nd Legislature (2021-2022)",
             "start_date": "2021-01-06",
             "end_date": "2021-12-31",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = []

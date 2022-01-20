@@ -1,6 +1,6 @@
 import requests
 import re
-from utils import State
+from openstates.scrape import State
 from .bills import WYBillScraper
 from .events import WYEventScraper
 
@@ -108,9 +108,26 @@ class Wyoming(State):
             "start_date": "2021-02-12",
             "end_date": "2021-03-04",
         },
+        {
+            "_scraped_name": "2021S1",
+            "classification": "special",
+            "identifier": "2021S1",
+            "name": "2021 Special Session",
+            "start_date": "2021-10-26",
+            "end_date": "2021-10-28",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022",
+            "classification": "primary",
+            "identifier": "2022",
+            "name": "2022 Regular Session",
+            "start_date": "2022-02-14",
+            "end_date": "2022-03-11",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
-        "2021",
         "2010",
         "2009",
         "2008",

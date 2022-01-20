@@ -276,12 +276,13 @@ class NYBillScraper(Scraper):
                 )
             elif not bill_data["sponsor"]["budget"]:
                 primary_sponsor = bill_data["sponsor"]["member"]
-                bill.add_sponsorship(
-                    primary_sponsor["shortName"],
-                    entity_type="person",
-                    classification="primary",
-                    primary=True,
-                )
+                if primary_sponsor is not None:
+                    bill.add_sponsorship(
+                        primary_sponsor["shortName"],
+                        entity_type="person",
+                        classification="primary",
+                        primary=True,
+                    )
 
                 if bill_active_version:
                     # There *shouldn't* be cosponsors if there is no sponsor.
@@ -468,11 +469,6 @@ class NYBillScraper(Scraper):
     # NEW_YORK_API_KEY=key os-update ny bills --scrape window=5d1h
     def scrape(self, session=None, bill_no=None, window=None):
         self.api_client = OpenLegislationAPIClient(self)
-
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         self.term_start_year = session.split("-")[0]
 
         for bill in self._generate_bills(session, window):

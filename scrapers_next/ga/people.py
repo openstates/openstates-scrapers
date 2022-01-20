@@ -56,6 +56,10 @@ class DirectoryListing(JsonListPage):
     chamber_types = {1: "lower", 2: "upper"}
     chamber_names = {1: "house", 2: "senate"}
     party_ids = {0: "Democratic", 1: "Republican"}
+    source = URL(
+        "https://www.legis.ga.gov/api/members/list/1029?",
+        headers={"Authorization": get_token()},
+    )
 
     def process_item(self, item):
         chamber_id = item["district"]["chamberType"]
@@ -115,11 +119,3 @@ class DirectoryListing(JsonListPage):
         )
 
         return LegDetail(p, source=source)
-
-
-people = DirectoryListing(
-    source=URL(
-        "https://www.legis.ga.gov/api/members/list/1029?",
-        headers={"Authorization": get_token()},
-    )
-)

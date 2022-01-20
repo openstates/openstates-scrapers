@@ -1,4 +1,4 @@
-from spatula import URL, CSS, HtmlListPage, HtmlPage
+from spatula import URL, CSS, HtmlListPage, HtmlPage, SkipItem
 from openstates.models import ScrapeCommittee
 import re
 
@@ -7,7 +7,11 @@ class CommDetail(HtmlPage):
     def process_page(self):
         com = self.input
 
-        members = CSS("table.Grid a").match(self.root)
+        members = list(CSS("table.Grid a").match(self.root))
+
+        if not members:
+            raise SkipItem("empty committee")
+
         for member in members:
             name = member.text_content().strip()
             if re.search(r"\(", name):
@@ -57,7 +61,8 @@ class CommList(HtmlListPage):
             com.add_link(detail_link, note="homepage")
 
             return CommDetail(com, source=detail_link)
-        return com
+        else:
+            raise SkipItem("joint committee")
 
 
 class Senate(CommList):

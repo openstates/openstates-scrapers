@@ -1,4 +1,4 @@
-from utils import State
+from openstates.scrape import State
 from .bills import PRBillScraper
 from .votes import PRVoteScraper
 
@@ -38,6 +38,7 @@ class PuertoRico(State):
             "name": "2021-2024 Session",
             "start_date": "2021-01-01",
             "end_date": "2025-01-01",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = ["2005-2008", "2001-2004", "1997-2000", "1993-1996"]

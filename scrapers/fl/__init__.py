@@ -2,8 +2,9 @@
 import logging
 from .bills import FlBillScraper
 
-# from .events import FlEventScraper
-from utils import url_xpath, State
+from .events import FlEventScraper
+from utils import url_xpath
+from openstates.scrape import State
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -11,10 +12,10 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 class Florida(State):
     scrapers = {
         "bills": FlBillScraper,
-        # "events": FlEventScraper,
+        "events": FlEventScraper,
     }
     # Full session list through 2019:
-    # https://www.flsenate.gov/PublishedContent/OFFICES/SECRETARY/SessionsoftheFloridaSenateFromStatehood.pdf
+    # https://flsenate.gov/PublishedContent/OFFICES/SECRETARY/SessionsoftheFloridaSenateFromStatehood.pdf
     legislative_sessions = [
         {
             "name": "2011 Regular Session",
@@ -135,6 +136,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2021-03-02",
             "end_date": "2021-05-01",
+            "active": False,
         },
         {
             "name": "2021 Special Session A",
@@ -143,10 +145,25 @@ class Florida(State):
             "start_date": "2021-05-12",
             "end_date": "2021-05-21",
         },
+        {
+            "name": "2021 Special Session B",
+            "identifier": "2021B",
+            "classification": "special",
+            "start_date": "2021-11-15",
+            "end_date": "2021-11-19",
+            "active": False,
+        },
+        {
+            "name": "2022 Regular Session",
+            "identifier": "2022",
+            "classification": "primary",
+            "start_date": "2022-01-11",
+            "end_date": "2022-03-11",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         *(str(each) for each in range(1997, 2010)),
-        "2022",
         "2020 Org.",
         "2019 I",  # Empty, maybe informational session
         "2010",
@@ -195,4 +212,4 @@ class Florida(State):
 
         requests.packages.urllib3.disable_warnings()
         requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
-        return url_xpath("http://flsenate.gov", "//option/text()")
+        return url_xpath("https://flsenate.gov", "//option/text()", False)

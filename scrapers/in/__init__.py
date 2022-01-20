@@ -1,6 +1,6 @@
 import os
 import requests
-from utils import State
+from openstates.scrape import State
 from .bills import INBillScraper
 from .events import INEventScraper
 
@@ -110,9 +110,17 @@ class Indiana(State):
             "start_date": "2021-01-11",
             "end_date": "2021-04-29",
         },
+        {
+            "_scraped_name": "Second Regular Session 122nd General Assembly (2022)",
+            "classification": "primary",
+            "identifier": "2022",
+            "name": "2022 Regular Session",
+            "start_date": "2022-01-04",
+            "end_date": "2022-03-14",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
-        "Second Regular Session 122nd General Assembly (2022)",
         "2012 Regular Session",
         "2011 Regular Session",
         "2010 Regular Session",

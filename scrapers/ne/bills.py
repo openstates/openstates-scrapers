@@ -47,7 +47,7 @@ class NEBillScraper(Scraper, LXMLMixin):
         document_links = self.get_nodes(
             page,
             '//div[@class="main-content"]//div[@class="table-responsive"]//'
-            'table[@class="table"]/tbody/tr/td[1]/a',
+            "table/tbody/tr/td[1]/a",
         )
 
         for document_link in document_links:
@@ -66,8 +66,8 @@ class NEBillScraper(Scraper, LXMLMixin):
 
         document_links = self.get_nodes(
             page,
-            '//div[@class="main-content"]//div[@class="table-responsive"]//'
-            'table[@class="table"]/tbody/tr/td[1]/a',
+            '//div[@class="main-content"]//div[contains(@class,"table-responsive")]//'
+            'table[contains(@class,"table")]/tbody/tr/td[1]/a',
         )
 
         for document_link in document_links:

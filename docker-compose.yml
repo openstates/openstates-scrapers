@@ -4,6 +4,11 @@ networks:
   openstates-network:
       name: openstates-network
 
+volumes:
+  openstates-postgres:
+    name: openstates-postgres
+    external: true
+
 services:
   scrape:
     build: .
@@ -57,3 +62,16 @@ services:
     - mysql
     networks:
     - openstates-network
+  db:
+    image: "mdillon/postgis:11-alpine"
+    hostname: "db"
+    ports:
+      - "5405:5432"
+    environment:
+      POSTGRES_PASSWORD: openstates
+      POSTGRES_USER: openstates
+      POSTGRES_DB: openstatesorg
+    volumes:
+      - openstates-postgres:/var/lib/postgresql/data
+    networks:
+      - openstates-network

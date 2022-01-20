@@ -2,6 +2,8 @@ from spatula import HtmlListPage, CSS, XPath, HtmlPage, Page
 from openstates.models import ScrapePerson
 import xlrd
 
+EXCEL_URL = "http://www.rilegislature.gov/SiteAssets/MailingLists/Representatives.xls"
+
 
 class LegacyExcelPage(Page):
     """
@@ -67,16 +69,16 @@ class LegList(HtmlListPage):
 
         p.extras["City/Town Represented"] = city_town
         p.district_office.address = office_addr
-        p.district_office.voice = phone
+        # skip invalid phone numbers
+        if "401" in phone:
+            p.district_office.voice = phone
 
         bio = CSS("td center a").match_one(item).get("href")
 
         p.email = email
         p.add_link(bio)
         p.add_source(self.source.url, note="Contact Web Page")
-        p.add_source(
-            self.dependencies["detail_mapping"].source.url, note="Detail Excel Source"
-        )
+        p.add_source(EXCEL_URL, note="Detail Excel Source")
         p.add_source(bio, note="Image Source")
 
         return Image(p, source=bio)
@@ -88,7 +90,7 @@ class AssemblyList(LegList):
     chamber = "lower"
     dependencies = {
         "detail_mapping": LegacyExcelPage(
-            source="http://www.rilegislature.gov/SiteAssets/MailingLists/Representatives.xls"
+            source=EXCEL_URL,
         )
     }
 

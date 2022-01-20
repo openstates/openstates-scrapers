@@ -1,4 +1,5 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import WIBillScraper
 from .events import WIEventScraper
 
@@ -153,6 +154,7 @@ class Wisconsin(State):
             "start_date": "2021-01-04",
             # TODO: set a better end date once session ends
             "end_date": "2022-05-23",
+            "active": True,
         },
         {
             "_scraped_name": "January 2021 Special Session",
@@ -163,6 +165,7 @@ class Wisconsin(State):
             "start_date": "2021-02-17",
             # TODO: set a better end date once session ends
             "end_date": "2022-02-26",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
@@ -194,8 +197,12 @@ class Wisconsin(State):
     ]
 
     def get_session_list(self):
+        user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36"
+
         sessions = url_xpath(
             "http://docs.legis.wisconsin.gov/search",
             "//select[@name='sessionNumber']/option/text()",
+            verify=False,
+            user_agent=user_agent,
         )
         return [session.strip(" -") for session in sessions]

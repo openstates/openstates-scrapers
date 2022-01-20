@@ -199,9 +199,6 @@ class WABillScraper(Scraper, LXMLMixin):
         return self._bill_id_list
 
     def scrape(self, chamber=None, session=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         chambers = [chamber] if chamber else ["upper", "lower"]
 
         year = int(session[0:4])

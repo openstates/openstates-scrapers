@@ -24,10 +24,6 @@ class WAEventScraper(Scraper, LXMLMixin):
     }
 
     def scrape(self, chamber=None, session=None, start=None, end=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         now = datetime.datetime.now()
         print_format = "%Y-%m-%d"
 

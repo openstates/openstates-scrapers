@@ -55,10 +55,6 @@ class USVoteScraper(Scraper):
     )
 
     def scrape(self, session=None, chamber=None, year=None, start=None):
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         if start:
             start = datetime.datetime.strptime(start, "%Y-%m-%d %H:%I:%S")
         else:

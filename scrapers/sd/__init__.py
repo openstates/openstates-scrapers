@@ -1,11 +1,9 @@
-# import scrapelib
-# import lxml.html
 import json
 import requests
 
 from .bills import SDBillScraper
 from .events import SDEventScraper
-from utils import State
+from openstates.scrape import State
 
 
 class SouthDakota(State):
@@ -41,6 +39,7 @@ class SouthDakota(State):
             "name": "2011 Special Session",
             "start_date": "2011-10-24",
             "end_date": "2011-10-25",
+            "classification": "special",
         },
         {
             "_scraped_name": "2012",
@@ -90,6 +89,7 @@ class SouthDakota(State):
             "name": "2017 Special Session",
             "start_date": "2017-06-12",
             "end_date": "2017-06-12",
+            "classification": "special",
         },
         {
             "_scraped_name": "2018",
@@ -104,6 +104,7 @@ class SouthDakota(State):
             "name": "2018 Special Session",
             "start_date": "2018-09-12",
             "end_date": "2018-09-12",
+            "classification": "special",
         },
         {
             "_scraped_name": "2019",
@@ -125,6 +126,7 @@ class SouthDakota(State):
             "name": "2020 Special Session",
             "start_date": "2020-10-05",
             "end_date": "2020-10-05",
+            "classification": "special",
         },
         {
             "_scraped_name": "2021",
@@ -132,6 +134,30 @@ class SouthDakota(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-12",
             "end_date": "2021-03-29",
+        },
+        {
+            "_scraped_name": "2021r",
+            "identifier": "2021r",
+            "name": "2021 Special Session",
+            "start_date": "2021-11-08",
+            "end_date": "2021-11-12",
+            "classification": "special",
+        },
+        {
+            "_scraped_name": "2021i",
+            "identifier": "2021i",
+            "name": "2021 Second Special Session",
+            "start_date": "2021-11-08",
+            "end_date": "2021-11-12",
+            "classification": "special",
+        },
+        {
+            "_scraped_name": "2022",
+            "identifier": "2022",
+            "name": "2022 Regular Session",
+            "start_date": "2022-01-11",
+            "end_date": "2022-03-28",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = []

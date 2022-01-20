@@ -89,7 +89,10 @@ class RIEventScraper(Scraper, LXMLMixin):
         event = Event(
             name=event_desc, start_date=self._tz.localize(datetime), location_name=where
         )
+
+        event.add_document("Agenda", url, media_type="text/html", on_duplicate="ignore")
         event.add_source(url)
+
         # aight. Let's get us some bills!
         bills = page.xpath("//b/a")
         for bill in bills:
@@ -114,6 +117,27 @@ class RIEventScraper(Scraper, LXMLMixin):
 
             item = event.add_agenda_item(descr)
             item.add_bill(bill_id)
+
+        # sometimes bill references are just plain links or plain text.
+        bill_links = page.xpath('//a[contains(@href,"/BillText/")]/@href')
+        linked_bills = set()
+        for bill_link in bill_links:
+            bill_nums = re.findall(r"\/(\w+\d+)\.pdf", bill_link, flags=re.IGNORECASE)
+            for bill_num in bill_nums:
+                linked_bills.add(bill_num)
+
+        # sometimes (H 1234) ends up in the title or somewhere else unlinked
+        text_bill_nums = re.findall(
+            r"\((\w{1,3}\s?\d+)\)", page.text_content(), flags=re.IGNORECASE
+        )
+        for bill_num in text_bill_nums:
+            bill_num = bill_num.replace(" ", "")
+            linked_bills.add(bill_num)
+
+        if len(linked_bills) != 0:
+            item = event.add_agenda_item("Bills under consideration")
+            for bill in linked_bills:
+                item.add_bill(bill)
 
         if page.xpath("//span[@id='lblSession']"):
             committee = page.xpath("//span[@id='lblSession']")[0].text_content()

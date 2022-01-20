@@ -16,8 +16,7 @@ class VaEventScraper(Scraper):
     _tz = pytz.timezone("America/New_York")
     tzinfos = {"EDT": gettz("America/New_York"), "EST": gettz("America/New_York")}
 
-    def scrape(self):
-        session = self.latest_session()
+    def scrape(self, session):
         session_id = SESSION_SITE_IDS[session]
 
         yield from self.scrape_lower()

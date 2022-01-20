@@ -13,11 +13,6 @@ class MEEventScraper(Scraper, LXMLMixin):
     date_format = "%B  %d, %Y"
 
     def scrape(self, session=None, start=None, end=None):
-
-        if session is None:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
-
         # testimony url, we'll need it later in a loop
 
         # testmony query looks gnary but breaks down to:
@@ -139,7 +134,7 @@ class MEEventScraper(Scraper, LXMLMixin):
                                 )
                             )
 
-                            if test["FileType"] == "pdf":
+                            if test["FileType"].lower() == "pdf":
                                 media_type = "application/pdf"
 
                             event.add_document(

@@ -1,7 +1,7 @@
 import datetime
 import re
 import attr
-from spatula import HtmlPage, HtmlListPage, XPath
+from spatula import HtmlPage, HtmlListPage, XPath, URL
 from openstates.models import ScrapePerson
 
 PARTY_MAP = {"R": "Republican", "D": "Democratic", "I": "Independent"}
@@ -69,7 +69,7 @@ class PartialMember:
 
 
 class MemberList(HtmlListPage):
-    session_id = "211"  # 2021
+    session_id = "221"  # 2022
     source = f"http://lis.virginia.gov/{session_id}/mbr/MBR.HTM"
 
     def process_item(self, item):
@@ -81,7 +81,10 @@ class MemberList(HtmlListPage):
 
         name, action, date = clean_name(name)
 
-        return self.next_page_cls(PartialMember(name=name, url=item.get("href")))
+        return self.next_page_cls(
+            PartialMember(name=name, url=item.get("href")),
+            source=URL(item.get("href"), timeout=10),
+        )
 
 
 class MemberDetail(HtmlPage):
@@ -151,7 +154,7 @@ class SenatePhotoDetail(HtmlPage):
         if img and img.startswith("//"):
             img = "https:" + img
         self.input.image = img
-        return SenateDetail(self.input)
+        return SenateDetail(self.input, source=self.input.url)
 
 
 class DelegateDetail(MemberDetail):

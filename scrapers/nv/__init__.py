@@ -1,4 +1,5 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import NVBillScraper
 from .events import NVEventScraper
 
@@ -121,6 +122,16 @@ class Nevada(State):
             "name": "2021 Regular Session",
             "start_date": "2021-02-01",
             "end_date": "2021-06-01",
+            "active": True,
+        },
+        {
+            "_scraped_name": "33rd (2021) Special Session",
+            "classification": "special",
+            "identifier": "2021Special33",
+            "name": "33rd (2021) Special Session",
+            "start_date": "2021-11-12",
+            "end_date": "2021-11-16",
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [

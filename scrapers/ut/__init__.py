@@ -1,5 +1,6 @@
 import re
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .events import UTEventScraper
 from .bills import UTBillScraper
 
@@ -284,10 +285,29 @@ class Utah(State):
             "name": "2021 1st Senate Extraordinary Session",
             "start_date": "2021-05-19",
             "end_date": "2021-05-25",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2021 2nd Special Session",
+            "classification": "special",
+            "identifier": "2021S2",
+            "name": "2021 2nd Special Session",
+            "start_date": "2021-11-08",
+            # TODO: Proper end date after session
+            "end_date": "2020-11-12",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022 General Session",
+            "classification": "primary",
+            "identifier": "2022",
+            "name": "2022 General Session",
+            "start_date": "2022-01-18",
+            "end_date": "2022-03-04",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
-        "2022 General Session",
         "2013 1st House Session",
         "2011 Veto Override Session",
         "2010 2nd Special Session",

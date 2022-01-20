@@ -21,8 +21,6 @@ class OREventScraper(Scraper):
     # due to API limitations, each scrape will only scrape the events in that provided (or current) session
     def scrape(self, session=None, start_date=None):
         self.api_client = OregonLegislatorODataClient(self)
-        if not session:
-            session = self.latest_session()
         yield from self.scrape_events(session, start_date)
 
     def scrape_events(self, session, start_date):

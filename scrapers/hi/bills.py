@@ -5,7 +5,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from .utils import get_short_codes
 from urllib import parse as urlparse
 
-HI_URL_BASE = "https://www.capitol.hawaii.gov"
+HI_URL_BASE = "https://capitol.hawaii.gov"
 SHORT_CODES = "%s/committees/committees.aspx?chamber=all" % (HI_URL_BASE)
 
 
@@ -192,8 +192,8 @@ class HIBillScraper(Scraper):
                 name = http_href[0].text_content().strip()
                 pdf_href = tds[1].xpath("./a")
 
-                http_link = http_href[0].attrib["href"]
-                pdf_link = pdf_href[0].attrib["href"]
+                http_link = http_href[0].attrib["href"].replace("www.", "")
+                pdf_link = pdf_href[0].attrib["href"].replace("www.", "")
 
                 # some bills (and GMs) swap the order or double-link to the same format
                 # so detect the type, and ignore dupes
@@ -226,7 +226,7 @@ class HIBillScraper(Scraper):
         last_item = ""
 
         for link in links:
-            filename = link.attrib["href"]
+            filename = link.attrib["href"].replace("www.", "")
             name = link.text_content().strip()
             if name == "" and last_item != "":
                 name = last_item
@@ -244,7 +244,7 @@ class HIBillScraper(Scraper):
         last_item = ""
 
         for link in links:
-            filename = link.attrib["href"]
+            filename = link.attrib["href"].replace("www.", "")
             name = link.text_content().strip()
             if name == "" and last_item != "":
                 name = last_item
@@ -294,7 +294,7 @@ class HIBillScraper(Scraper):
         companion = meta["Companion"].strip()
         if companion:
             b.add_related_bill(
-                identifier=companion.replace(u"\xa0", " "),
+                identifier=companion.replace("\xa0", " "),
                 legislative_session=prior_session,
                 relation_type="companion",
             )
@@ -306,7 +306,7 @@ class HIBillScraper(Scraper):
             )[-1]
             if "carried over" in prior.lower():
                 b.add_related_bill(
-                    identifier=bill_id.replace(u"\xa0", " "),
+                    identifier=bill_id.replace("\xa0", " "),
                     legislative_session=prior_session,
                     relation_type="companion",
                 )
@@ -316,7 +316,11 @@ class HIBillScraper(Scraper):
                     " (Introduced by request of another party)", ""
                 )
             if sponsor != "":
-                b.add_sponsorship(sponsor, "primary", "person", True)
+                # all caps sponsors are primary, others are secondary
+                primary = sponsor.upper() == sponsor
+                b.add_sponsorship(
+                    sponsor, "primary" if primary else "secondary", "person", primary
+                )
 
         if "gm" in bill_id.lower():
             b.add_sponsorship("governor", "primary", "person", True)
@@ -325,10 +329,28 @@ class HIBillScraper(Scraper):
         self.parse_testimony(b, bill_page)
         self.parse_cmte_reports(b, bill_page)
 
+        if bill_page.xpath(
+            "//input[@id='ctl00_ContentPlaceHolderCol1_ImageButtonPDF']"
+        ):
+            self.parse_bill_header_versions(b, bill_id, session, bill_page)
+
         yield from self.parse_bill_actions_table(
             b, action_table, bill_id, session, url, chamber
         )
         yield b
+
+    # sometimes they link to a version that's only in the header,
+    # and works via a form submit, so hardcode it here
+    def parse_bill_header_versions(self, bill, bill_id, session, page):
+        pdf_link = (
+            f"https://capitol.hawaii.gov/session{session[0:4]}/bills/{bill_id}_.PDF"
+        )
+        bill.add_version_link(
+            bill_id,
+            pdf_link,
+            media_type="application/pdf",
+            on_duplicate="ignore",
+        )
 
     def parse_vote(self, action):
         vote_re = r"""
@@ -361,14 +383,11 @@ class HIBillScraper(Scraper):
         list_html = self.get(report_page_url).text
         list_page = lxml.html.fromstring(list_html)
         for bill_url in list_page.xpath("//a[@class='report']"):
-            bill_url = bill_url.attrib["href"]
+            bill_url = bill_url.attrib["href"].replace("www.", "")
             yield from self.scrape_bill(session, chamber, billtype_map, bill_url)
 
     def scrape(self, chamber=None, session=None):
         get_short_codes(self)
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified, using %s", session)
         bill_types = ["bill", "cr", "r"]
         chambers = [chamber] if chamber else ["lower", "upper"]
         for chamber in chambers:

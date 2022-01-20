@@ -6,6 +6,7 @@ from spatula import (
     XPath,
     SelectorError,
     ExcelListPage,
+    SkipItem,
 )
 from dataclasses import dataclass
 from openstates.models import ScrapePerson
@@ -41,6 +42,8 @@ class RepDetail(HtmlPage):
         # https://legislature.maine.gov/house/house/MemberProfiles/Details/1193 has no district
         if district != "":
             district = re.search(r"(\d+)\s+-", district).groups()[0]
+        else:
+            raise SkipItem("non-voting member")
 
         p = ScrapePerson(
             name=self.input.name,
@@ -82,17 +85,6 @@ class RepDetail(HtmlPage):
             )
             cell_phone = cell_phone.text_content().strip()
             p.extras["Cell Phone"] = cell_phone
-        except SelectorError:
-            pass
-
-        try:
-            home_phone = (
-                XPath("//*[@id='main-info']/p/span[contains(text(), 'Home')]")
-                .match_one(self.root)
-                .getnext()
-            )
-            home_phone = home_phone.text_content().strip()
-            p.extras["Home Phone"] = home_phone
         except SelectorError:
             pass
 
@@ -154,7 +146,7 @@ class RepDetail(HtmlPage):
 
 class House(HtmlListPage):
     source = URL("https://legislature.maine.gov/house/house/MemberProfiles/ListAlpha")
-    selector = CSS("table tr td", num_items=152)
+    selector = CSS("table tr td", min_items=152)
 
     def process_item(self, item):
         name_dirty = CSS("br").match(item)[0].tail.strip().split(", ")
@@ -197,24 +189,6 @@ class SenDetail(HtmlPage):
             )
         if addr != p.district_office.address:
             p.extras["Additional address"] = addr
-
-        try:
-            home_phones = (
-                XPath("//*[@id='content']/p/strong[contains(text(), 'Home')]")
-                .match_one(self.root)
-                .tail.strip()
-                .lstrip(":")
-                .strip()
-                .split("or")
-            )
-            for home_phone in home_phones:
-                if (
-                    home_phone.strip().split()[-1] != p.extras["phone"].split()[-1]
-                    and len(home_phone.strip().split()) == 2
-                ):
-                    p.extras["home phone"] = home_phone.strip()
-        except SelectorError:
-            pass
 
         try:
             state_phone = (
@@ -267,6 +241,10 @@ class Senate(ExcelListPage):
         name = first_name + " " + last_name
         district = item[0]
         party = item[2].strip()
+
+        if not district:
+            # non voting members ignored for now
+            raise SkipItem(f"not voting member {name}")
 
         p = ScrapePerson(
             name=name,

@@ -1,4 +1,5 @@
-from utils import url_xpath, State
+from utils import url_xpath
+from openstates.scrape import State
 from .bills import NYBillScraper
 from .events import NYEventScraper
 
@@ -60,6 +61,7 @@ class NewYork(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-06",
             "end_date": "2022-12-31",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = []

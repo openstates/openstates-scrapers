@@ -118,9 +118,6 @@ class PRBillScraper(Scraper):
     ):
         self.seen_votes = set()
         self.seen_bills = set()
-        if not session:
-            session = self.latest_session()
-            self.info("no session specified using %s", session)
 
         if bill_no:
             yield from self.scrape_chamber(

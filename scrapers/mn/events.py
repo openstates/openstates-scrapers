@@ -1,6 +1,7 @@
 import dateutil.parser
 import pytz
 import os
+import re
 from openstates.scrape import Scraper
 from openstates.scrape import Event
 from urllib.parse import urlparse
@@ -9,6 +10,10 @@ from utils import LXMLMixin
 from utils.media import get_media_type
 
 url = "http://www.leg.state.mn.us/calendarday.aspx?jday=all"
+
+
+def get_bill_ids(text):
+    return re.findall(r"[H|S]F \d+", text)
 
 
 class MNEventScraper(Scraper, LXMLMixin):
@@ -82,6 +87,9 @@ class MNEventScraper(Scraper, LXMLMixin):
 
             event.add_source(com_link)
 
+            for bill in get_bill_ids(desc):
+                event.add_bill(desc)
+
             if row.xpath(
                 ".//a[contains(@href,'/bills/bill.php') and contains(@class,'pull-left')]"
             ):
@@ -147,6 +155,9 @@ class MNEventScraper(Scraper, LXMLMixin):
                 classification="committee-meeting",
                 description=description,
             )
+
+            for bill in get_bill_ids(description):
+                event.add_bill(description)
 
             if "lrl_schedule_link" in row:
                 event.add_source(row["lrl_schedule_link"])
