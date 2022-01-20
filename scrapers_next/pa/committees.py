@@ -2,6 +2,16 @@ from spatula import CSS, HtmlPage, HtmlListPage, SelectorError
 from openstates.models import ScrapeCommittee
 
 
+def fix_name(name):
+    pieces = name.split(", ")
+    if len(pieces) == 2:
+        return f"{pieces[1]} {pieces[0]}"
+    if len(pieces) == 3:
+        return f"{pieces[1]} {pieces[0]}, {pieces[2]}"
+    else:
+        raise ValueError(f"unknown split pattern {name}")
+
+
 class CommitteeDetail(HtmlPage):
     example_source = "https://www.legis.state.pa.us/cfdocs/CteeInfo/index.cfm?Code=32&CteeBody=H&SessYear=2021"
     example_name = "Aging & Older Adult Services"
@@ -30,7 +40,7 @@ class CommitteeDetail(HtmlPage):
         except IndexError:
             pass
         try:
-            com.add_member(chair_member, chair_member_role)
+            com.add_member(fix_name(chair_member), chair_member_role)
             # Democratic Chair member and or the minority chair member
             demo_chair_member = (
                 CSS("div.MemberInfoList-MemberWrapper.ChairWrapper div.ChairNameText a")
@@ -45,7 +55,7 @@ class CommitteeDetail(HtmlPage):
                 .match(self.root)[1]
                 .text.strip()
             )
-            com.add_member(demo_chair_member, demo_chair_member_role)
+            com.add_member(fix_name(demo_chair_member), demo_chair_member_role)
         except IndexError:
             pass
         majority_members = CSS(
@@ -57,7 +67,7 @@ class CommitteeDetail(HtmlPage):
                 major_mem_position = CSS(".position").match_one(mem).text.strip()
             except SelectorError:
                 major_mem_position = "member"
-            com.add_member(major_member_name, major_mem_position)
+            com.add_member(fix_name(major_member_name), major_mem_position)
         minority_members = CSS(
             ".Widget.CteeInfo-MinorityList .MemberInfoList-MemberWrapper.Member"
         ).match(self.root)
@@ -67,7 +77,7 @@ class CommitteeDetail(HtmlPage):
                 minor_mem_position = CSS(".position").match_one(mem).text.strip()
             except SelectorError:
                 minor_mem_position = "member"
-            com.add_member(minor_member_name, minor_mem_position)
+            com.add_member(fix_name(minor_member_name), minor_mem_position)
         return com
 
 
