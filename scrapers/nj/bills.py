@@ -235,9 +235,12 @@ class NJBillScraper(Scraper, MDBMixin):
         for prefix, act_pair in self._com_actions.items():
             if act_str.startswith(prefix):
                 last3 = act_str.rsplit(" ", 1)[-1]
-                com_name = self._committees[last3]
                 action, acttype = act_pair
-                return (action + " " + com_name, acttype)
+                if last3 in self._committees:
+                    com_name = self._committees[last3]
+                    return (action + " " + com_name, acttype)
+                else:
+                    return (action, acttype)
 
         # warn about missing action
         self.warning("unknown action: {0} on {1}".format(act_str, bill_id))
