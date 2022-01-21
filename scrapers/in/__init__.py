@@ -4,6 +4,8 @@ from openstates.scrape import State
 from .bills import INBillScraper
 from .events import INEventScraper
 
+settings = dict(SCRAPELIB_TIMEOUT=600)
+
 
 class Indiana(State):
     scrapers = {
