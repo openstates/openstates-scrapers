@@ -194,7 +194,7 @@ class Louisiana(State):
             "name": "2021 Regular Session",
             "start_date": "2021-03-12",
             "end_date": "2021-06-10",
-            "active": True,
+            "active": False,
         },
         # {
         #     "_scraped_name": "2022 First Extraordinary Session",
@@ -205,15 +205,15 @@ class Louisiana(State):
         #     "end_date": "2022-02-20",
         #     "active": True,
         # },
-        # {
-        #     "_scraped_name": "2022 Regular Session",
-        #     "classification": "primary",
-        #     "identifier": "2022",
-        #     "name": "2022 Regular Session",
-        #     "start_date": "2022-03-12",
-        #     "end_date": "2022-06-10",
-        #     "active": True,
-        # },
+        {
+            "_scraped_name": "2022 Regular Session",
+            "classification": "primary",
+            "identifier": "2022",
+            "name": "2022 Regular Session",
+            "start_date": "2022-03-12",
+            "end_date": "2022-06-10",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "2022 First Extraordinary Session",
