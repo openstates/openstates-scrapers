@@ -68,6 +68,9 @@ class WIEventScraper(Scraper, LXMLMixin):
             when = ", ".join([date, str(dt.datetime.now().year), time])
             when = dt.datetime.strptime(when, "%a %b %d, %Y, %I:%M %p")
 
+            if cttie:
+                name = cttie.replace("Committee on", "")
+
             event = Event(
                 name=name, location_name=where, start_date=self._tz.localize(when)
             )
