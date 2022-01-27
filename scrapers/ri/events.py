@@ -65,6 +65,11 @@ class RIEventScraper(Scraper, LXMLMixin):
         if "CANCELLED" in datetime.upper() or "CANCELED" in datetime.upper():
             return
 
+        if page.xpath("//span[@id='lblSession']"):
+            event_desc = (
+                page.xpath("//span[@id='lblSession']")[0].text_content().strip()
+            )
+
         transtable = {
             "P.M": "PM",
             "PM.": "PM",
