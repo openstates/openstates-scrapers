@@ -384,9 +384,8 @@ class TNBillScraper(Scraper):
 
         # bill text
         btext = page.xpath("//span[@id='lblBillNumber']/a")[0]
-        bill.add_version_link(
-            "Current Version", btext.get("href"), media_type="application/pdf"
-        )
+        url = btext.get("href").replace("http:", "https:")
+        bill.add_version_link("Current Version", url, media_type="application/pdf")
 
         # documents
         summary = page.xpath('//a[contains(@href, "BillSummaryArchive")]')
@@ -397,9 +396,10 @@ class TNBillScraper(Scraper):
             bill.add_document_link("Fiscal Note", fiscal[0].get("href"))
         amendments = page.xpath('//a[contains(@href, "/Amend/")]')
         for amendment in amendments:
+            amd_url = amendment.get("href").replace("http:", "https:")
             bill.add_version_link(
                 "Amendment " + amendment.text,
-                amendment.get("href"),
+                amd_url,
                 media_type="application/pdf",
             )
         # amendment notes in image with alt text describing doc inside <a>

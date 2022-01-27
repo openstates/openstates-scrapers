@@ -72,7 +72,7 @@ class Nebraska(State):
             "identifier": "107S1",
             "name": "107th Legislature 1st Special Session",
             "start_date": "2021-09-13",
-            "end_date": "2021-09-30",
+            "end_date": "2022-09-30",
             "classification": "special",
             "active": False,
         },
