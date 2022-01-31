@@ -71,7 +71,7 @@ class Georgia(State):
             "identifier": "2021_22",
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-11",
-            "end_date": "2021-04-02",
+            "end_date": "2022-04-02",
             "active": True,
         },
         {
