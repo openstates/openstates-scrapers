@@ -460,7 +460,7 @@ class TNBillScraper(Scraper):
         motion_count = 1
 
         for raw_vote in raw_vote_data:
-            raw_vote = raw_vote.split(u"\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0")
+            raw_vote = raw_vote.split("\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0")
             motion = raw_vote[0]
 
             if len(raw_vote) < 2:

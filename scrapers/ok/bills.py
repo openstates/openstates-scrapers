@@ -218,7 +218,7 @@ class OKBillScraper(Scraper):
             )
 
     def scrape_votes(self, bill, url):
-        page = lxml.html.fromstring(self.get(url).text.replace(u"\xa0", " "))
+        page = lxml.html.fromstring(self.get(url).text.replace("\xa0", " "))
 
         seen_rcs = set()
 
@@ -249,7 +249,7 @@ class OKBillScraper(Scraper):
                 passed = None
 
             rcs_p = header.xpath("following-sibling::p[contains(., 'RCS#')]")[0]
-            rcs_line = rcs_p.xpath("string()").replace(u"\xa0", " ")
+            rcs_line = rcs_p.xpath("string()").replace("\xa0", " ")
             rcs = re.search(r"RCS#\s+(\d+)", rcs_line).group(1)
 
             if rcs in seen_rcs:

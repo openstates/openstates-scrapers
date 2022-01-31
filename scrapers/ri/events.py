@@ -17,8 +17,8 @@ replace = {
     "Senate Joint Resolution No.": "SJR",
     "Senate Resolution No.": "SR",
     "Senate Bill No.": "SB",
-    u"\xa0": " ",
-    u"\u00a0": " ",
+    "\xa0": " ",
+    "\u00a0": " ",
     "SUB A": "",
     "SUB A as amended": "",
     "PROPOSED SUBSTITUTE": "",
@@ -115,7 +115,7 @@ class RIEventScraper(Scraper, LXMLMixin):
             if "SCHEDULED FOR" in bill_id:
                 continue
 
-            descr = bill.getparent().getparent().text_content().replace(u"\u00a0", " ")
+            descr = bill.getparent().getparent().text_content().replace("\u00a0", " ")
 
             for thing in replace:
                 bill_id = bill_id.replace(thing, replace[thing])
