@@ -196,15 +196,15 @@ class Louisiana(State):
             "end_date": "2021-06-10",
             "active": False,
         },
-        # {
-        #     "_scraped_name": "2022 First Extraordinary Session",
-        #     "classification": "special",
-        #     "identifier": "2022s1",
-        #     "name": "2022 First Extraordinary Session",
-        #     "start_date": "2022-02-01",
-        #     "end_date": "2022-02-20",
-        #     "active": True,
-        # },
+        {
+            "_scraped_name": "2022 First Extraordinary Session",
+            "classification": "special",
+            "identifier": "2022s1",
+            "name": "2022 First Extraordinary Session",
+            "start_date": "2022-02-01",
+            "end_date": "2022-02-20",
+            "active": True,
+        },
         {
             "_scraped_name": "2022 Regular Session",
             "classification": "primary",
@@ -216,7 +216,6 @@ class Louisiana(State):
         },
     ]
     ignored_scraped_sessions = [
-        "2022 First Extraordinary Session",
         "2022 Regular Session",
         "2021 Veto Session",
         "2020 Organizational Session",
