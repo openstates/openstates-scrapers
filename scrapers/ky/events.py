@@ -34,8 +34,10 @@ class KYEventScraper(Scraper):
 
             row_text = time_row.text_content()
             row_text = row_text.replace("Noon", "PM")
-            # upon recess (of House|Senate)
-            row_text = re.sub(r"Upon Recess(\sof\s)?(House|Senate)?", "", row_text)
+            # upon (Recess|Adj.) (of) (the) (House|Senate)
+            row_text = re.sub(
+                r"Upon (Recess|Adj\.)\s*(of)?\s*(the)?\s*(House|Senate)?", "", row_text
+            )
             parts = re.split(r",|AM|PM", row_text)
             time = parts[0].strip()
             location = " ".join(x.replace(r"\xa0", "").strip() for x in parts[1:])
