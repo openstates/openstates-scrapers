@@ -172,7 +172,6 @@ class TXBillScraper(Scraper, LXMLMixin):
                 continue
 
             note = version.find("versionDescription").text
-            print(note)
             html_url = version.find("WebHTMLURL").text
             bill.add_version_link(note=note, url=html_url, media_type="text/html")
             pdf_url = version.find("WebPDFURL").text
