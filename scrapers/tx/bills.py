@@ -66,7 +66,7 @@ class TXBillScraper(Scraper, LXMLMixin):
                 ftp = ftplib.FTP(self._FTP_ROOT)
                 break
             except (EOFError, ftplib.error_temp):
-                time.sleep(2 ** i)
+                time.sleep(2**i)
         else:
             raise Exception
 
@@ -172,6 +172,7 @@ class TXBillScraper(Scraper, LXMLMixin):
                 continue
 
             note = version.find("versionDescription").text
+            print(note)
             html_url = version.find("WebHTMLURL").text
             bill.add_version_link(note=note, url=html_url, media_type="text/html")
             pdf_url = version.find("WebPDFURL").text
