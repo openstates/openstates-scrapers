@@ -145,7 +145,6 @@ class MNBillScraper(Scraper, LXMLMixin):
 
                 # Get each bill
                 for b in bills:
-                    print(b["version_url"])
                     yield self.get_bill_info(
                         chamber, session, b["bill_url"], b["version_url"]
                     )
@@ -496,6 +495,7 @@ class MNBillScraper(Scraper, LXMLMixin):
             version_resp = self.get(version_list_url)
         except scrapelib.HTTPError:
             self.warning("Bad version URL detected: {}".format(version_list_url))
+            # There are issues with scraping resolution versions in biannual session since the year could be different, so attempt new year here
             new_year_version = version_list_url.replace("2021", "2022")
             try:
                 version_resp = self.get(new_year_version)
