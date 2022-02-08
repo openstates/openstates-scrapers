@@ -2,7 +2,7 @@
 name = "openstates-scrapers"
 version = "2020.4"
 description = ""
-authors = ["James Turk <james@openstates.org>"]
+authors = ["James Turk <dev@jamesturk.net>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
