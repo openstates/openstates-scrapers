@@ -130,7 +130,7 @@ class AZBillScraper(Scraper):
         )
         page = json.loads(self.get(subjects_url).content.decode("utf-8"))
         for subject in page:
-            if subject["Name"] and len(subject["Name"]) > 0:
+            if "Name" in subject and len(subject["Name"]) > 0:
                 bill.add_subject(subject["Name"])
 
     def scrape_actions(self, bill, page, self_chamber):
@@ -332,11 +332,13 @@ class AZBillScraper(Scraper):
         bill_list_url = "https://www.azleg.gov/bills/"
 
         page = self.get(bill_list_url, cookies=req.cookies).content
-        assert f"SessionId={session_id}" in str(page), "Session ID not in bill list"
         # There's an errant close-comment that browsers handle
         # but LXML gets really confused.
         page = page.replace(b"--!>", b"-->")
         page = html.fromstring(page)
+        assert (
+            len(page.xpath(f"//option[@value={session_id} and @selected]")) == 1
+        ), "Session ID not in bill list"
 
         bill_rows = []
         chambers = [chamber] if chamber else ["upper", "lower"]

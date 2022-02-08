@@ -1,8 +1,8 @@
-import os
 import csv
 import re
 import pytz
 import datetime
+from paramiko.client import SSHClient, AutoAddPolicy
 from openstates.scrape import Scraper, Bill, VoteEvent
 from collections import defaultdict
 
@@ -43,10 +43,6 @@ ACTION_CLASSIFIERS = (
 
 class VaCSVBillScraper(Scraper):
 
-    _url_base = (
-        f"ftp://{os.environ['VIRGINIA_FTP_USER']}:{os.environ['VIRGINIA_FTP_PASSWORD']}"
-    )
-    _url_base += "@legis.virginia.gov/fromdlas/csv"
     _members = defaultdict(list)
     _sponsors = defaultdict(list)
     _amendments = defaultdict(list)
@@ -56,9 +52,21 @@ class VaCSVBillScraper(Scraper):
     _bills = defaultdict(list)
     _summaries = defaultdict(list)
 
+    def init_sftp(self, session_id):
+        client = SSHClient()
+        client.set_missing_host_key_policy(AutoAddPolicy)
+        client.connect(
+            "sftp.dlas.virginia.gov", username="rjohnson", password="E8Tmg%9Dn!e6dp"
+        )
+        self.sftp = client.open_sftp()
+        self.sftp.chdir(f"CSV{session_id}/csv{session_id}")
+
+    def get_file(self, filename):
+        return self.sftp.open(filename).read().decode()
+
     # Load members of legislative
     def load_members(self):
-        resp = self.get(self._url_base + "Members.csv").text
+        resp = self.get_file("Members.csv")
 
         reader = csv.reader(resp.splitlines(), delimiter=",")
         # ['MBR_HOU', 'MBR_MBRNO', 'MBR_NAME']
@@ -70,7 +78,7 @@ class VaCSVBillScraper(Scraper):
         return True
 
     def load_sponsors(self):
-        resp = self.get(self._url_base + "Sponsors.csv").text
+        resp = self.get_file("Sponsors.csv")
 
         reader = csv.reader(resp.splitlines(), delimiter=",")
         # ['MEMBER_NAME', 'MEMBER_ID', 'BILL_NUMBER', 'PATRON_TYPE']
@@ -86,7 +94,7 @@ class VaCSVBillScraper(Scraper):
         self.warning("Total Sponsors Loaded: " + str(len(self._sponsors)))
 
     def load_amendments(self):
-        resp = self.get(self._url_base + "Amendments.csv").text
+        resp = self.get_file("Amendments.csv")
         reader = csv.reader(resp.splitlines(), delimiter=",")
 
         # ['BILL_NUMBER', 'TXT_DOCID']
@@ -97,7 +105,7 @@ class VaCSVBillScraper(Scraper):
         self.warning("Total Amendments Loaded: " + str(len(self._amendments)))
 
     def load_fiscal_notes(self):
-        resp = self.get(self._url_base + "FiscalImpactStatements.csv").text
+        resp = self.get_file("FiscalImpactStatements.csv")
         reader = csv.reader(resp.splitlines(), delimiter=",")
 
         # ['BILL_NUMBER', 'HST_REFID']
@@ -106,7 +114,7 @@ class VaCSVBillScraper(Scraper):
         self.warning("Total Fiscal Notes Loaded: " + str(len(self._fiscal_notes)))
 
     def load_history(self):
-        resp = self.get(self._url_base + "HISTORY.CSV").text
+        resp = self.get_file("HISTORY.CSV")
         reader = csv.reader(resp.splitlines(), delimiter=",")
         # ['Bill_id', 'History_date', 'History_description', 'History_refid']
         for row in reader:
@@ -121,8 +129,8 @@ class VaCSVBillScraper(Scraper):
         self.warning("Total Actions Loaded: " + str(len(self._history)))
 
     def load_votes(self):
-        resp = self.get(self._url_base + "VOTE.CSV").text.splitlines()
-        for line in resp:
+        resp = self.get_file("VOTE.CSV")
+        for line in resp.splitlines():
             line = line.split(",")
             # First part of the line is always the history_refid number.
             #   It has extra quotes around it
@@ -153,7 +161,7 @@ class VaCSVBillScraper(Scraper):
         self.warning("Total Votes Loaded: " + str(len(self._votes)))
 
     def load_bills(self):
-        resp = self.get(self._url_base + "BILLS.CSV").text
+        resp = self.get_file("BILLS.CSV")
         reader = csv.DictReader(resp.splitlines(), delimiter=",")
         for row in reader:
             text_doc_data = [
@@ -186,7 +194,7 @@ class VaCSVBillScraper(Scraper):
         return re.sub(clean, "", text)
 
     def load_summaries(self):
-        resp = self.get(self._url_base + "Summaries.csv").text
+        resp = self.get_file("Summaries.csv")
         reader = csv.reader(resp.splitlines(), delimiter=",")
         # ["SUM_BILNO", "SUMMARY_DOCID", "SUMMARY_TYPE", "SUMMARY_TEXT"]
         for row in reader:
@@ -229,7 +237,7 @@ class VaCSVBillScraper(Scraper):
             is_special = True
 
         session_id = SESSION_SITE_IDS[session]
-        self._url_base += session_id + "/"
+        self.init_sftp(session_id)
         bill_url_base = "https://lis.virginia.gov/cgi-bin/"
 
         if not is_special:
@@ -237,12 +245,6 @@ class VaCSVBillScraper(Scraper):
             self.load_sponsors()
             self.load_fiscal_notes()
             self.load_summaries()
-        # in 2021 VA held a special to avoid a crossover deadline
-        # it carried over all the regular bills, so rather
-        # than duping them in a new session, just scrape the 2021S1 data
-        if session == "2021":
-            self._url_base = self._url_base.replace("211", "212")
-            session_id = "212"
         self.load_history()
         self.load_votes()
         self.load_bills()

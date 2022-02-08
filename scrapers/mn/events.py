@@ -88,7 +88,7 @@ class MNEventScraper(Scraper, LXMLMixin):
             event.add_source(com_link)
 
             for bill in get_bill_ids(desc):
-                event.add_bill(desc)
+                event.add_bill(bill)
 
             if row.xpath(
                 ".//a[contains(@href,'/bills/bill.php') and contains(@class,'pull-left')]"
@@ -157,7 +157,7 @@ class MNEventScraper(Scraper, LXMLMixin):
             )
 
             for bill in get_bill_ids(description):
-                event.add_bill(description)
+                event.add_bill(bill)
 
             if "lrl_schedule_link" in row:
                 event.add_source(row["lrl_schedule_link"])

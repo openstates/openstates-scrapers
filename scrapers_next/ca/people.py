@@ -101,7 +101,7 @@ class SenList(HtmlListPage):
             ".//div[contains(@class, 'views-field-field-senator-capitol-office')]//p"
         ).match_one(item)
         capitol_address, capitol_phone = (
-            capitol_office.text_content().replace(u"\xa0", " ").split("; ")
+            capitol_office.text_content().replace("\xa0", " ").split("; ")
         )
         p.capitol_office.address = capitol_address.strip()
         p.capitol_office.voice = capitol_phone.strip()
@@ -113,7 +113,7 @@ class SenList(HtmlListPage):
             try:
                 if re.search(r"District Offices?", line):
                     continue
-                addr, phone = line.strip().replace(u"\xa0", " ").split("; ")
+                addr, phone = line.strip().replace("\xa0", " ").split("; ")
                 p.add_office(
                     classification="district",
                     address=addr.strip(),
@@ -122,7 +122,7 @@ class SenList(HtmlListPage):
             except ValueError:
                 # Steven Bradford address/phone separated by period instead of semi-colon
                 if re.search(r"\w+\.\s\(\d{3}\)", line):
-                    addr, phone = line.strip().replace(u"\xa0", " ").split(". (")
+                    addr, phone = line.strip().replace("\xa0", " ").split(". (")
                     phone = "(" + phone
                     p.add_office(
                         classification="district",

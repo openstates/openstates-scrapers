@@ -123,8 +123,10 @@ class WVEventScraper(Scraper, LXMLMixin):
         # Feb is a tough one, isn't it?
         # After feburary, februarary, febuary, just give up and regex it
         when = re.sub(r"feb(.*?)y", "February", when, flags=re.IGNORECASE)
+        when = re.sub(r"Tuesdat", "Tuesday", when, flags=re.IGNORECASE)
         when = re.sub(r"Immediately(.*)", "", when, flags=re.IGNORECASE)
         when = re.sub(r"Time Announced(.*)", "", when, flags=re.IGNORECASE)
+        when = re.sub(r"After Floor Session", "", when, flags=re.IGNORECASE)
         when = re.sub(r"TB(.*)", "", when, flags=re.IGNORECASE)
         when = re.sub(r"\*", "", when, flags=re.IGNORECASE)
         when = re.sub(

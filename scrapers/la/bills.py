@@ -35,6 +35,7 @@ class LABillScraper(Scraper, LXMLMixin):
         "2020s2": "202ES",
         "2021": "21RS",
         "2022": "22RS",
+        "2022s1": "221ES",
     }
 
     def pdf_to_lxml(self, filename, type="html"):
@@ -192,7 +193,7 @@ class LABillScraper(Scraper, LXMLMixin):
 
         start_date = dt.datetime.strptime(date, "%m/%d/%Y")
         d = defaultdict(list)
-        for line in body.replace(u"\xa0", "\n").split("\n"):
+        for line in body.replace("\xa0", "\n").split("\n"):
             line = line.replace("&nbsp;", "").strip()
             # Skip blank lines and "Total --"
             if not line or "Total --" in line:

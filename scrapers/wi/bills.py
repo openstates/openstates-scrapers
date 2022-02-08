@@ -82,7 +82,7 @@ class WIBillScraper(Scraper):
                     preceding_subject = last_subject[0]
                 else:
                     preceding_subject = preceding_subject[-1]
-                preceding_subject = preceding_subject.replace(u"\xe2\x80\x94", "")
+                preceding_subject = preceding_subject.replace("\xe2\x80\x94", "")
                 self.subjects[bill_id].append(preceding_subject)
 
             # last subject on the page, in case we get a bill_id on next page

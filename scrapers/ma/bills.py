@@ -162,7 +162,7 @@ class MABillScraper(Scraper):
             response = self.get(bill_url)
             self.info("GET (with `requests`) - {}".format(bill_url))
         except requests.exceptions.RequestException:
-            self.warning(u"Server Error on {}".format(bill_url))
+            self.warning("Server Error on {}".format(bill_url))
             return False
 
         html = response.text
@@ -170,7 +170,7 @@ class MABillScraper(Scraper):
         page = lxml.html.fromstring(html)
 
         if not page.xpath('//div[contains(@class, "followable")]/h1/text()'):
-            self.warning(u"Server Error on {}".format(bill_url))
+            self.warning("Server Error on {}".format(bill_url))
             return False
 
         # The state website will periodically miss a few bills' titles for a few days
@@ -426,9 +426,7 @@ class MABillScraper(Scraper):
             (path, resp) = self.urlretrieve(vurl)
             pdflines = convert_pdf(path, "text")
             os.remove(path)
-            self.house_pdf_cache[vurl] = pdflines.decode("utf-8").replace(
-                u"\u2019", "'"
-            )
+            self.house_pdf_cache[vurl] = pdflines.decode("utf-8").replace("\u2019", "'")
         return self.house_pdf_cache[vurl]
 
     def scrape_house_vote(self, vote, vurl, supplement):
@@ -496,7 +494,7 @@ class MABillScraper(Scraper):
         # handle individual lines in pdf to id legislator votes
         for line in lines:
             line = line.strip()
-            line = line.decode("utf-8").replace(u"\u2212", "-")
+            line = line.decode("utf-8").replace("\u2212", "-")
             if line == "":
                 continue
             # change mode accordingly

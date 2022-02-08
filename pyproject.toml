@@ -2,23 +2,24 @@
 name = "openstates-scrapers"
 version = "2020.4"
 description = ""
-authors = ["James Turk <james@openstates.org>"]
+authors = ["James Turk <dev@jamesturk.net>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-openstates = "^6.10.0"
+openstates = "^6.10.6"
 xlrd = "<2"
 lxml = "^4.4"
 pytz = "^2019.3"
 feedparser = "^6.0"
 python-dateutil = "^2.8"
-spatula = "^0.8.7"
+spatula = "^0.8"
 chardet = "^3.0"
 suds-py3 = "^1.3"
 requests = {version = "^2.22", extras = ["security"]}
 mysqlclient = {version = "^1.4.6", optional=true}
 SQLAlchemy = {version = "^1.3", optional=true}
 cloudscraper = "^1.2.58"
+paramiko = "^2.9.2"
 
 [tool.poetry.extras]
 california = ["mysqlclient", "SQLAlchemy"]
@@ -26,7 +27,7 @@ california = ["mysqlclient", "SQLAlchemy"]
 
 
 [tool.poetry.dev-dependencies]
-black = "^21.6b0"
+black = "^22"
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"

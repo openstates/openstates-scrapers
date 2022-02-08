@@ -111,7 +111,7 @@ class KYBillScraper(Scraper, LXMLMixin):
             if re.search(r"\d{1,4}\.htm", link.attrib.get("href", "")):
                 bill_id = link.text
                 match = re.match(
-                    r".*\/([a-z]+)([\d+])\.html", link.attrib.get("href", "")
+                    r".*\/([a-z]+)([\d]+)\.html", link.attrib.get("href", "")
                 )
                 if match:
                     bill_abbr = match.group(1)

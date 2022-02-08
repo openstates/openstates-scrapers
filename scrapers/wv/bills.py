@@ -46,6 +46,7 @@ class WVBillScraper(Scraper):
         "20211S": "1x",
         "20212S": "2x",
         "20213S": "3x",
+        "20221S": "1X",
     }
 
     bill_types = {
@@ -83,7 +84,7 @@ class WVBillScraper(Scraper):
                 "year=%s&sessiontype=RS&btype=bill&orig=%s" % (session, orig)
             )
 
-        page = lxml.html.fromstring(self.get(url).text)
+        page = lxml.html.fromstring(self.get(url, timeout=80).text)
         page.make_links_absolute(url)
 
         # Debug code to scrape an individual bill:
@@ -122,7 +123,7 @@ class WVBillScraper(Scraper):
                 % (self.jurisdiction.legislative_sessions[-1]["_scraped_name"])
             )
 
-        doc = lxml.html.fromstring(self.get(res_url).text)
+        doc = lxml.html.fromstring(self.get(res_url, timeout=80).text)
         doc.make_links_absolute(res_url)
 
         # check for links originating in this house
@@ -260,7 +261,7 @@ class WVBillScraper(Scraper):
 
     def scrape_house_vote(self, bill, url):
         try:
-            filename, resp = self.urlretrieve(url)
+            filename, resp = self.urlretrieve(url, timeout=80)
         except scrapelib.HTTPError:
             self.warning("missing vote file %s" % url)
             return
