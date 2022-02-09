@@ -26,7 +26,7 @@ class AZBillScraper(Scraper):
             "https://apps.azleg.gov/api/Bill/?billNumber={}&sessionId={}&"
             "legislativeBody={}".format(bill_id, session_id, self.chamber_map[chamber])
         )
-        response = self.get(bill_json_url)
+        response = self.get(bill_json_url, timeout=80)
         page = json.loads(response.content.decode("utf-8"))
 
         if not page:
@@ -72,7 +72,7 @@ class AZBillScraper(Scraper):
         versions_url = "https://apps.azleg.gov/api/DocType/?billStatusId={}".format(
             internal_id
         )
-        page = json.loads(self.get(versions_url).content.decode("utf-8"))
+        page = json.loads(self.get(versions_url, timeout=80).content.decode("utf-8"))
         for document_set in page:
             type_ = document_set["DocumentGroupName"]
             for doc in document_set["Documents"]:
@@ -101,7 +101,7 @@ class AZBillScraper(Scraper):
         sponsors_url = "https://apps.azleg.gov/api/BillSponsor/?id={}".format(
             internal_id
         )
-        page = json.loads(self.get(sponsors_url).content.decode("utf-8"))
+        page = json.loads(self.get(sponsors_url, timeout=80).content.decode("utf-8"))
         for sponsor in page:
             if "Prime" in sponsor["SponsorType"]:
                 sponsor_type = "primary"
@@ -128,7 +128,7 @@ class AZBillScraper(Scraper):
         subjects_url = "https://apps.azleg.gov/api/Keyword/?billStatusId={}".format(
             internal_id
         )
-        page = json.loads(self.get(subjects_url).content.decode("utf-8"))
+        page = json.loads(self.get(subjects_url, timeout=80).content.decode("utf-8"))
         for subject in page:
             if subject.get("Name", None):
                 bill.add_subject(subject["Name"])
@@ -268,7 +268,7 @@ class AZBillScraper(Scraper):
                 "billStatusActionId": header["BillStatusActionId"],
                 "includeVotes": "true",
             }
-            resp = self.get(base_url, params=params)
+            resp = self.get(base_url, timeout=80, params=params)
             actions = json.loads(resp.content.decode("utf-8"))
 
             for action in actions:
@@ -311,7 +311,7 @@ class AZBillScraper(Scraper):
         session_id = session_metadata.session_id_meta_data[session]
 
         # Get the bills page to start the session
-        req = self.get("https://www.azleg.gov/bills/")
+        req = self.get("https://www.azleg.gov/bills/", timeout=80)
 
         session_form_url = "https://www.azleg.gov/azlegwp/setsession.php"
         form = {"sessionID": session_id}
@@ -331,7 +331,7 @@ class AZBillScraper(Scraper):
 
         bill_list_url = "https://www.azleg.gov/bills/"
 
-        page = self.get(bill_list_url, cookies=req.cookies).content
+        page = self.get(bill_list_url, timeout=80, cookies=req.cookies).content
         # There's an errant close-comment that browsers handle
         # but LXML gets really confused.
         page = page.replace(b"--!>", b"-->")
