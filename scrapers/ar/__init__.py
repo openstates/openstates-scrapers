@@ -191,8 +191,8 @@ class Arkansas(State):
         },
         {
             "_scraped_name": "Fiscal Session, 2022",
-            "classification": "special",
-            "identifier": "2022",
+            "classification": "primary",
+            "identifier": "2022F",
             "name": "2022 Fiscal Session",
             "start_date": "2022-02-14",
             "end_date": "2022-03-15",
