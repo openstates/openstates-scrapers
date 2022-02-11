@@ -62,7 +62,7 @@ class VaCSVBillScraper(Scraper):
         self.sftp.chdir(f"CSV{session_id}/csv{session_id}")
 
     def get_file(self, filename):
-        return self.sftp.open(filename).read().decode()
+        return self.sftp.open(filename).read().decode(errors="ignore")
 
     # Load members of legislative
     def load_members(self):
