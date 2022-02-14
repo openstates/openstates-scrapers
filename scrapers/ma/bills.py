@@ -84,6 +84,7 @@ class BillDetail(JsonPage):
             bill_summary = document["Pinslip"]
             b.add_abstract(bill_summary, "summary")
 
+        primary_sponsor = None
         if document["PrimarySponsor"]:
             primary_sponsor = document["PrimarySponsor"]["Name"]
             primary_sponsor_type = document["PrimarySponsor"]["Type"]
@@ -139,7 +140,11 @@ class BillDetail(JsonPage):
 
 def process_actions(url):
     sources = requests.Session()
-    action_list = sources.get(url, timeout=40, verify=False).json()
+    try:
+        action_list = sources.get(url, timeout=40, verify=False).json()
+    except Exception:
+        # TODO: convert to a page
+        action_list = []
     full_actions = []
     for item in action_list:
         act = {
@@ -158,6 +163,7 @@ class MABillScraper(Scraper):
         super().__init__(*args, **kwargs)
         self.retry_wait_seconds = 3
         self.raise_errors = False
+        self.timeout = 60
         self.retry_attempts = 1
         self.verify = False
 
