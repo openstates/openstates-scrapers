@@ -49,6 +49,15 @@ class BillList(JsonListPage):
 class BillDetail(JsonPage):
     example_source = "https://malegislature.gov/api/GeneralCourts/192/Documents/S756"
 
+    def accept_response(self, response):
+        if response.status_code != 200:
+            return False
+        try:
+            response.json()
+            return True
+        except Exception:
+            return False
+
     def process_page(self):
         document = self.data
         leg_type = document["LegislationTypeName"].lower()
