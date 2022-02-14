@@ -30,6 +30,7 @@ class USVoteScraper(Scraper):
         "Amendment Rejected": "fail",
         "Decision of Chair Sustained": "pass",
         "Motion Agreed to": "pass",
+        "Motion to Discharge Agreed to": "pass",
         "Motion to Table Failed": "fail",
         "Motion to Table Agreed to": "pass",
         "Motion to Table Motion to Recommit Agreed to": "pass",
