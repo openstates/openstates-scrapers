@@ -169,4 +169,5 @@ class MABillScraper(Scraper):
 
     def scrape(self, session=None):
         bill_list = BillList({"session": session})
-        yield from bill_list.do_scrape()
+        # need to pass self here to have spatula use the configured scraper
+        yield from bill_list.do_scrape(self)
