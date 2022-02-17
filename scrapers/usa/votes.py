@@ -15,6 +15,7 @@ class USVoteScraper(Scraper):
         "Nay": "no",
         "Not Voting": "not voting",
         "Present": "other",
+        "Present, Giving Live Pair": "other",
     }
 
     senate_statuses = {
