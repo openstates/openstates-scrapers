@@ -62,6 +62,8 @@ BILL_NAME_TRANSLATIONS = {
     "Senate Bill No.": "SB",
     "Senate Resolution No.": "SR",
     "House Resolution No.": "HR",
+    "Senate Concurrent Resolution No.": "SCR",
+    "House Concurrent Resolution No.": "HCR",
 }
 
 BILL_STRING_FLAGS = {
