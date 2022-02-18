@@ -273,7 +273,7 @@ class HIBillScraper(Scraper):
 
         meta = self.parse_bill_metainf_table(metainf_table)
 
-        subs = [s.strip() for s in meta["Report Title"].split(";")]
+        subs = [s.strip() for s in re.split(r";|,", meta["Report Title"])]
         if "" in subs:
             subs.remove("")
         b = Bill(
