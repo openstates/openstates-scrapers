@@ -175,6 +175,11 @@ class OKBillScraper(Scraper):
                 continue
             else:
                 version_urls.append(version_url)
+
+            if link.text is None:
+                self.warning("Skipping unnamed version.")
+                continue
+
             name = link.text.strip()
 
             if re.search("COMMITTEE REPORTS|SCHEDULED CCR", version_url, re.IGNORECASE):
