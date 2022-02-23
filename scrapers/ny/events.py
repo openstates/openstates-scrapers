@@ -43,6 +43,7 @@ class NYEventScraper(Scraper):
         end = end.strftime("%Y-%m-%d")
 
         yield from self.scrape_upper(start, end)
+        yield from self.scrape_lower()
 
     def scrape_lower(self):
         url = "https://nyassembly.gov/leg/?sh=agen"
