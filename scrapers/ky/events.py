@@ -7,6 +7,7 @@ import pytz
 from openstates.scrape import Scraper, Event
 
 import dateutil.parser
+from dateutil.parser import ParserError
 
 
 class KYEventScraper(Scraper):
@@ -43,7 +44,14 @@ class KYEventScraper(Scraper):
             location = " ".join(x.replace(r"\xa0", "").strip() for x in parts[1:])
 
             when = f"{date} {time}"
-            when = dateutil.parser.parse(when)
+            try:
+                when = dateutil.parser.parse(when)
+            except ParserError:
+                self.warning(
+                    f"Unable to parse {when}, trying date without time component"
+                )
+                when = dateutil.parser.parse(date)
+
             when = self._tz.localize(when)
 
             if not time_row.xpath(
