@@ -126,7 +126,9 @@ class WVEventScraper(Scraper, LXMLMixin):
         when = re.sub(r"Tuesdat", "Tuesday", when, flags=re.IGNORECASE)
         when = re.sub(r"Immediately(.*)", "", when, flags=re.IGNORECASE)
         when = re.sub(r"Time Announced(.*)", "", when, flags=re.IGNORECASE)
+        when = re.sub(r"\d+ min\. After Floor Session", "", when, flags=re.IGNORECASE)
         when = re.sub(r"After Floor Session", "", when, flags=re.IGNORECASE)
+        when = re.sub(r"To Be Announced", "", when, flags=re.IGNORECASE)
         when = re.sub(r"TB(.*)", "", when, flags=re.IGNORECASE)
         when = re.sub(r"\*", "", when, flags=re.IGNORECASE)
         when = re.sub(
