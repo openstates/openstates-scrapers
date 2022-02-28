@@ -127,7 +127,12 @@ class WVEventScraper(Scraper, LXMLMixin):
         when = re.sub(r"Immediately(.*)", "", when, flags=re.IGNORECASE)
         when = re.sub(r"Time Announced(.*)", "", when, flags=re.IGNORECASE)
         when = re.sub(r"\d+ min\. After Floor Session", "", when, flags=re.IGNORECASE)
-        when = re.sub(r"After Floor Session", "", when, flags=re.IGNORECASE)
+        when = re.sub(
+            r"(?:Shortly)?\s*(After|following)\s*(?:the)?\s*Floor Session",
+            "",
+            when,
+            flags=re.IGNORECASE,
+        )
         when = re.sub(r"To Be Announced", "", when, flags=re.IGNORECASE)
         when = re.sub(r"TB(.*)", "", when, flags=re.IGNORECASE)
         when = re.sub(r"\*", "", when, flags=re.IGNORECASE)
@@ -143,6 +148,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         when = re.sub(
             r"ONE HOUR BEFORE SENATE FLOOR SESSION(.*)", "", when, flags=re.IGNORECASE
         )
+        when = re.sub(r"\d+ (mins\.|minutes) After (.*)", "", when, flags=re.IGNORECASE)
         when = when.replace("22021", "2021")
         when = when.replace("20201", "2021")
         when = when.replace("20202", "2020")
