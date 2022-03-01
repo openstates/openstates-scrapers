@@ -334,6 +334,10 @@ class HIBillScraper(Scraper):
         ):
             self.parse_bill_header_versions(b, bill_id, session, bill_page)
 
+        current_referral = meta["Current Referral"].strip()
+        if current_referral:
+            b.extras["current_referral"] = current_referral
+
         yield from self.parse_bill_actions_table(
             b, action_table, bill_id, session, url, chamber
         )
