@@ -39,6 +39,7 @@ class USVoteScraper(Scraper):
         "Motion to Proceed Agreed to": "pass",
         "Motion to Proceed Rejected": "fail",
         "Bill Defeated": "fail",
+        "Joint Resolution Passed": "pass",
     }
 
     vote_classifiers = (
