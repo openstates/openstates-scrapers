@@ -191,6 +191,7 @@ class NJBillScraper(Scraper, MDBMixin):
         "r/SCS": "Reported out of Senate committee as a substitute",
         "r/Sca": "Reported out of Senate committee with amendments",
         "r/favorably": "Reported favorably out of committee",
+        "Not rep./Aca": "Not reported out of Assembly Committee with Amendments",
     }
 
     _doctypes = {
