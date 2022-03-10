@@ -156,7 +156,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                 atypes.append("reading-1")
 
             if action_text == "Do Pass":
-                if re.match(
+                if action["ActionCommittee"] is not None and re.match(
                     r"(Senate|House of Representatives)",
                     action["ActionCommittee"]["Name"],
                 ):
