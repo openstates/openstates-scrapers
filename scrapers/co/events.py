@@ -8,6 +8,8 @@ from utils import LXMLMixin
 class COEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("America/Denver")
 
+    chamber_names = {"upper": "Senate", "lower": "House"}
+
     def scrape(self, chamber=None, session=None):
         url = "http://leg.colorado.gov/content/committees"
         chambers = [chamber] if chamber else ["upper", "lower"]
@@ -51,6 +53,9 @@ class COEventScraper(Scraper, LXMLMixin):
                             '//header/h1[contains(@class,"node-title")]'
                         )[0]
                         title = title.text_content().strip()
+
+                        if chamber in self.chamber_names:
+                            title = f"{self.chamber_names[chamber]} {title}"
 
                         date_day = page.xpath(
                             '//div[contains(@class,"calendar-date")]'
