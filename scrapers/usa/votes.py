@@ -33,6 +33,7 @@ class USVoteScraper(Scraper):
         "Decision of Chair Sustained": "pass",
         "Motion Agreed to": "pass",
         "Motion to Discharge Agreed to": "pass",
+        "Motion to Discharge Rejected": "fail",
         "Motion to Table Failed": "fail",
         "Motion to Table Agreed to": "pass",
         "Motion to Table Motion to Recommit Agreed to": "pass",
