@@ -250,7 +250,7 @@ class TNBillScraper(Scraper):
         session_details = self.jurisdiction.sessions_by_id[session]
 
         # The index page gives us links to the paginated bill pages
-        index_page = "http://wapp.capitol.tn.gov/apps/indexes/"
+        index_page = f"http://wapp.capitol.tn.gov/apps/indexes/?year={session}"
         if session_details["classification"] == "special":
             xpath = '//a[contains(text(), "{}")]'.format(
                 session_details["_scraped_name"]
