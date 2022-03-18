@@ -394,6 +394,10 @@ class TNBillScraper(Scraper):
         fiscal = page.xpath('//span[@id="lblFiscalNote"]//a')
         if fiscal:
             bill.add_document_link("Fiscal Note", fiscal[0].get("href"))
+        # alternate fiscal note markup
+        alt_fiscal = page.xpath('//span[@id="lblFiscalNoteLink"]//a')
+        if alt_fiscal:
+            bill.add_document_link("Fiscal Note", alt_fiscal[0].get("href"))
         amendments = page.xpath('//a[contains(@href, "/Amend/")]')
         for amendment in amendments:
             amd_url = amendment.get("href").replace("http:", "https:")
