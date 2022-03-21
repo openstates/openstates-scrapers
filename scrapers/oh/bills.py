@@ -155,12 +155,9 @@ class OHBillScraper(Scraper):
                 chamber = "lower" if "H" in bill_id else "upper"
                 classification = "bill" if "B" in bill_id else "resolution"
 
-                if (
-                    not title
-                    and session == "134"
-                    and (bill_id == "HR 35" or bill_id == "SCR 14")
-                ):
-                    # Exception for HR 35 and SCR 14 which is a real bill
+                no_title_bills = ["HR 35", "SCR 14", "SR 259"]
+                if not title and session == "134" and bill_id in no_title_bills:
+                    # Exception for HR 35, SCR 14, and SR 259 which are real bills
                     title = "No title provided"
                 elif not title:
                     self.warning(f"no title for {bill_id}, skipping")
