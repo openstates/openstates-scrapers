@@ -128,7 +128,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         when = re.sub(r"Time Announced(.*)", "", when, flags=re.IGNORECASE)
         when = re.sub(r"\d+ min\. After Floor Session", "", when, flags=re.IGNORECASE)
         when = re.sub(
-            r"(?:Shortly)?\s*(After|following)\s*(?:the)?\s*Floor Session",
+            r"(?:Shortly)?\s*(After|following)\s*(?:the)?\s*(?:second)?\s*Floor Session",
             "",
             when,
             flags=re.IGNORECASE,
