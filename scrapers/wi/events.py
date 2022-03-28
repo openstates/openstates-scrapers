@@ -53,7 +53,7 @@ class WIEventScraper(Scraper, LXMLMixin):
             tds = event.xpath("./*")
             date = tds[0].text_content().strip()
             cttie = tds[1].text_content().strip()
-            _chamber, cttie = [x.strip() for x in cttie.split(" - ", 1)]
+            chamber, cttie = [x.strip() for x in cttie.split(" - ", 1)]
             info = tds[2]
             name = info.xpath("./a[contains(@href, 'raw')]")[0]
             notice = name.attrib["href"]
@@ -69,7 +69,9 @@ class WIEventScraper(Scraper, LXMLMixin):
             when = dt.datetime.strptime(when, "%a %b %d, %Y, %I:%M %p")
 
             if cttie:
-                name = cttie.replace("Committee on", "")
+                cttie = cttie.replace("Committee on", "").strip()
+                cttie = f"{chamber} {cttie}"
+                name = cttie
 
             event = Event(
                 name=name, location_name=where, start_date=self._tz.localize(when)
