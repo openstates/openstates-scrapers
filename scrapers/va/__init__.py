@@ -180,8 +180,17 @@ class Virginia(State):
             "end_date": "2022-03-12",
             "active": True,
         },
+        # {
+        #     "_scraped_name": "2022 Special Session I",
+        #     "identifier": "2022S1",
+        #     "name": "2022, 1st Special Session",
+        #     "start_date": "2022-04-04",
+        #     "end_date": "2022-04-08",
+        #     "active": True,
+        # },
     ]
     ignored_scraped_sessions = [
+        "2022 Special Session I",
         "2021 Special Session I",
         "2015 Special Session I",
         "2015 Session",
