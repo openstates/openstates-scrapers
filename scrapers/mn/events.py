@@ -125,7 +125,7 @@ class MNEventScraper(Scraper, LXMLMixin):
 
     def scrape_upper(self):
         url = "https://www.senate.mn/api/schedule/upcoming"
-        data = self.get(url).json()
+        data = self.get(url, verify=False).json()
 
         for row in data["events"]:
             com = row["committee"]["committee_name"]
