@@ -59,7 +59,10 @@ class VaCSVBillScraper(Scraper):
             "sftp.dlas.virginia.gov", username="rjohnson", password="E8Tmg%9Dn!e6dp"
         )
         self.sftp = client.open_sftp()
-        self.sftp.chdir(f"CSV{session_id}/csv{session_id}")
+        if session_id == "222":
+            self.sftp.chdir(f"CSV221/csv{session_id}")
+        else:
+            self.sftp.chdir(f"CSV{session_id}/csv{session_id}")
 
     def get_file(self, filename):
         return self.sftp.open(filename).read().decode(errors="ignore")
