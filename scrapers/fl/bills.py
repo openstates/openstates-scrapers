@@ -558,6 +558,7 @@ class HouseSearchPage(HtmlListPage):
         # Keep the digits and all following characters in the bill's ID
         bill_number = re.search(r"^\w+\s(\d+\w*)$", self.input.identifier).group(1)
         session_number = {
+            "2022C": "95",
             "2022": "93",
             "2021B": "94",
             "2021A": "92",
