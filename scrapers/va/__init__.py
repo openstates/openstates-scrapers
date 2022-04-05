@@ -178,6 +178,15 @@ class Virginia(State):
             "name": "2022 Regular Session",
             "start_date": "2022-01-12",
             "end_date": "2022-03-12",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022 Special Session I",
+            "classification": "special",
+            "identifier": "2022S1",
+            "name": "2022, 1st Special Session",
+            "start_date": "2022-04-04",
+            "end_date": "2022-04-08",
             "active": True,
         },
     ]

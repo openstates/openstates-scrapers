@@ -202,7 +202,8 @@ class Minnesota(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-05",
             # Just a guess. TODO: set after schedule is posted
-            "end_date": "2021-06-01",
+            "end_date": "2022-05-23",
+            "active": True,
         },
         {
             "_scraped_name": "92nd Legislature, 2021 1st Special Session",
@@ -211,7 +212,7 @@ class Minnesota(State):
             "name": "2021, First Special Session",
             "start_date": "2021-06-14",
             "end_date": "2021-06-18",
-            "active": True,
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [

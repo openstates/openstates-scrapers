@@ -15,6 +15,7 @@ class USVoteScraper(Scraper):
         "Nay": "no",
         "Not Voting": "not voting",
         "Present": "other",
+        "Present, Giving Live Pair": "other",
     }
 
     senate_statuses = {
@@ -27,14 +28,19 @@ class USVoteScraper(Scraper):
         "Cloture Motion Agreed to": "pass",
         "Cloture Motion Rejected": "fail",
         "Cloture on the Motion to Proceed Rejected": "fail",
+        "Cloture on the Motion to Proceed Agreed to": "pass",
         "Amendment Rejected": "fail",
         "Decision of Chair Sustained": "pass",
         "Motion Agreed to": "pass",
+        "Motion to Discharge Agreed to": "pass",
+        "Motion to Discharge Rejected": "fail",
         "Motion to Table Failed": "fail",
         "Motion to Table Agreed to": "pass",
         "Motion to Table Motion to Recommit Agreed to": "pass",
         "Motion to Proceed Agreed to": "pass",
         "Motion to Proceed Rejected": "fail",
+        "Bill Defeated": "fail",
+        "Joint Resolution Passed": "pass",
     }
 
     vote_classifiers = (

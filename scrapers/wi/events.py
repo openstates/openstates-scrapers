@@ -43,10 +43,9 @@ class WIEventScraper(Scraper, LXMLMixin):
         events = page.xpath("//table[@class='agenda-body']//tr")[1:]
 
         for event in events:
-            comit_url = event.xpath(".//a[contains(@href, '/Pages/comm-info.aspx?c=')]")
-
+            comit_url = event.xpath(".//a[contains(@title,'Committee Details')]")
             if len(comit_url) != 1:
-                raise Exception
+                continue
 
             comit_url = comit_url[0]
             who = self.scrape_participants(comit_url.attrib["href"])
@@ -54,7 +53,7 @@ class WIEventScraper(Scraper, LXMLMixin):
             tds = event.xpath("./*")
             date = tds[0].text_content().strip()
             cttie = tds[1].text_content().strip()
-            _chamber, cttie = [x.strip() for x in cttie.split(" - ", 1)]
+            chamber, cttie = [x.strip() for x in cttie.split(" - ", 1)]
             info = tds[2]
             name = info.xpath("./a[contains(@href, 'raw')]")[0]
             notice = name.attrib["href"]
@@ -68,6 +67,11 @@ class WIEventScraper(Scraper, LXMLMixin):
 
             when = ", ".join([date, str(dt.datetime.now().year), time])
             when = dt.datetime.strptime(when, "%a %b %d, %Y, %I:%M %p")
+
+            if cttie:
+                cttie = cttie.replace("Committee on", "").strip()
+                cttie = f"{chamber} {cttie}"
+                name = cttie
 
             event = Event(
                 name=name, location_name=where, start_date=self._tz.localize(when)

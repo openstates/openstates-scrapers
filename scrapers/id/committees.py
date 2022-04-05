@@ -13,7 +13,7 @@ _REV_CHAMBERS = {"senate": "upper", "house": "lower"}
 
 
 def clean_name(name):
-    return name.replace(u"\xa0", " ")
+    return name.replace("\xa0", " ")
 
 
 class IDCommitteeScraper(Scraper):
@@ -29,13 +29,13 @@ class IDCommitteeScraper(Scraper):
                 if len(member_string) > 1:
                     name = member_string[0]
                     role = member_string[1]
-                    for ch in ["Sen.", ",", u"\u00a0"]:
+                    for ch in ["Sen.", ",", "\u00a0"]:
                         name = name.replace(ch, " ").strip()
                         role = role.replace(ch, " ").strip()
                     org.add_member(name, role=role)
                 else:
                     name = member_string[0].replace("Sen.", " ").strip()
-                    for ch in ["Sen.", ",", u"\u00a0"]:
+                    for ch in ["Sen.", ",", "\u00a0"]:
                         name = name.replace(ch, " ").strip()
                     org.add_member(name)
             house_members = list(td.xpath("div[2]/div/div/div[2]/div/p/strong"))
@@ -44,13 +44,13 @@ class IDCommitteeScraper(Scraper):
                 if len(member_string) > 1:
                     name = member_string[0].replace("Rep.", " ").strip()
                     role = member_string[1].replace(",", " ").strip()
-                    for ch in ["Rep.", ",", u"\u00a0"]:
+                    for ch in ["Rep.", ",", "\u00a0"]:
                         name = name.replace(ch, " ").strip()
                         role = role.replace(ch, " ").strip()
                     org.add_member(name, role=role)
                 else:
                     name = member_string[0].replace("Rep.", " ").strip()
-                    for ch in ["Rep.", ",", u"\u00a0"]:
+                    for ch in ["Rep.", ",", "\u00a0"]:
                         name = name.replace(ch, " ").strip()
                     org.add_member(name)
         org.add_source(url)
@@ -67,7 +67,7 @@ class IDCommitteeScraper(Scraper):
             text = list(row[0].xpath("div")[0].itertext())
             attributes = [
                 list(
-                    value.replace(u"\xa0", " ")
+                    value.replace("\xa0", " ")
                     .replace("Secretary:", "")
                     .encode("ascii", "ignore")
                     for value in text

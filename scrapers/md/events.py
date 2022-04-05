@@ -39,6 +39,16 @@ class MDEventScraper(Scraper, LXMLMixin):
 
         page = self.lxmlize(url)
         for row in page.xpath('//div[@id="divAllHearings"]/hr'):
+            banner = row.xpath(
+                'preceding-sibling::div[contains(@class,"row")]/div/div[contains(@class,"hearsched-committee-banner")]'
+            )[-1]
+            banner_class = banner.xpath("@class")[0]
+            chamber = ""
+            if "house" in banner_class:
+                chamber = "Assembly"
+            elif "senate" in banner_class:
+                chamber = "Senate"
+
             meta = row.xpath(
                 'preceding-sibling::div[contains(@class,"hearsched-hearing-header")]'
             )[-1]
@@ -51,6 +61,9 @@ class MDEventScraper(Scraper, LXMLMixin):
             com_row = meta.xpath(
                 './/div[contains(@class,"font-weight-bold text-center")]/text()'
             )[1].strip()
+
+            if chamber != "":
+                com_row = f"{chamber} {com_row}"
 
             # if they strike all the header rows, its cancelled
             unstruck_count = len(

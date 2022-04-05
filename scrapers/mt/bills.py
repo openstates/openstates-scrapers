@@ -566,9 +566,9 @@ class MTBillScraper(Scraper, LXMLMixin):
         vote.set_count("absent", absent_count)
 
         for text in doc.xpath("//table")[2].xpath("tr/td/text()"):
-            if not text.strip(u"\xa0"):
+            if not text.strip("\xa0"):
                 continue
-            v, name = filter(None, text.split(u"\xa0"))
+            v, name = filter(None, text.split("\xa0"))
             # Considering Name is brackets as short name
             regex = re.compile(r".*?\((.*?)\)")
             short_name = re.findall(regex, name)

@@ -48,6 +48,7 @@ class UTEventScraper(Scraper, LXMLMixin):
                                     "Agenda",
                                     f"{self.base_url}{row['agenda']}",
                                     media_type="text/html",
+                                    on_duplicate="ignore",
                                 )
 
                             if "minutes" in row:
@@ -55,6 +56,7 @@ class UTEventScraper(Scraper, LXMLMixin):
                                     "Minutes",
                                     f"{self.base_url}{row['minutes']}",
                                     media_type="text/html",
+                                    on_duplicate="ignore",
                                 )
 
                             if "mediaurl" in row:
@@ -62,6 +64,7 @@ class UTEventScraper(Scraper, LXMLMixin):
                                     "Media",
                                     f"{self.base_url}{row['mediaurl']}",
                                     media_type="text/html",
+                                    on_duplicate="ignore",
                                 )
                                 if re.findall(r"mtgID=(\d+)", row["mediaurl"]):
                                     hearing_id = re.findall(
@@ -78,6 +81,7 @@ class UTEventScraper(Scraper, LXMLMixin):
                                                 mat["description"],
                                                 f"{self.base_url}{mat['docUrl']}",
                                                 media_type="application/pdf",
+                                                on_duplicate="ignore",
                                             )
 
                                             for bill_row in re.findall(

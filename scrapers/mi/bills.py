@@ -97,7 +97,7 @@ class MIBillScraper(Scraper):
         # sponsors
         sponsors = doc.xpath('//span[@id="frg_billstatus_SponsorList"]/a')
         for sponsor in sponsors:
-            name = sponsor.text.replace(u"\xa0", " ")
+            name = sponsor.text.replace("\xa0", " ")
             # sometimes district gets added as a link
             if name.isnumeric():
                 continue
@@ -311,13 +311,13 @@ class MIBillScraper(Scraper):
 
         # split the file into lines using the <p> tags
         pieces = [
-            p.text_content().replace(u"\xa0", " ").replace("\r\n", " ")
+            p.text_content().replace("\xa0", " ").replace("\r\n", " ")
             for p in vote_doc.xpath("//p")
         ]
 
         # go until we find the roll call
         for i, p in enumerate(pieces):
-            if p.startswith(u"Roll Call No. %s" % rc_num):
+            if p.startswith("Roll Call No. %s" % rc_num):
                 break
 
         vtype = None

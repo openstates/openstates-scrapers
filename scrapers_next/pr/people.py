@@ -128,8 +128,8 @@ class RepDetail(HtmlPage):
     def process_page(self):
         party_map = {
             "PNP": "Partido Nuevo Progresista",
-            "PPD": u"Partido Popular Democr\xe1tico",
-            "PIP": u"Partido Independentista Puertorrique\u00F1o",
+            "PPD": "Partido Popular Democr\xe1tico",
+            "PIP": "Partido Independentista Puertorrique\u00F1o",
         }
 
         try:
