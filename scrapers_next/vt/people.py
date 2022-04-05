@@ -50,7 +50,6 @@ class LegList(JsonPage):
                         name = leg["FirstName"].strip() + " " + leg["LastName"].strip()
 
                 except IndexError:
-                    print("HI")
                     name = (
                         leg["FirstName"].strip()
                         + " "
