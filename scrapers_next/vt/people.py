@@ -35,19 +35,21 @@ class LegDetail(HtmlPage):
 
 
 class LegList(JsonPage):
-    source = URL("https://legislature.vermont.gov/people/loadAll/2022")
+    source = URL("https://legislature.vermont.gov/people/loadAll/2022", timeout=40)
 
     def process_page(self):
         legislators = self.data["data"]
 
         for leg in legislators:
             if leg["MI"].strip() != "":
-                if (
-                    leg["FirstName"].strip() == "Terri Lynn"
-                    or "." in leg["FirstName"].strip()
-                ):
-                    name = leg["FirstName"].strip() + " " + leg["LastName"].strip()
-                else:
+                try:
+                    if (
+                        leg["MI"][0] in leg["FirstName"].split(" ")[1]
+                        or "." in leg["FirstName"].strip()
+                    ):
+                        name = leg["FirstName"].strip() + " " + leg["LastName"].strip()
+
+                except IndexError:
                     name = (
                         leg["FirstName"].strip()
                         + " "
