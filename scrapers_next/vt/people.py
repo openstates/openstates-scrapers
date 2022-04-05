@@ -42,13 +42,19 @@ class LegList(JsonPage):
 
         for leg in legislators:
             if leg["MI"].strip() != "":
-                name = (
-                    leg["FirstName"].strip()
-                    + " "
-                    + leg["MI"].strip()
-                    + ". "
-                    + leg["LastName"].strip()
-                )
+                if (
+                    leg["FirstName"].strip() == "Terri Lynn"
+                    or "." in leg["FirstName"].strip()
+                ):
+                    name = leg["FirstName"].strip() + " " + leg["LastName"].strip()
+                else:
+                    name = (
+                        leg["FirstName"].strip()
+                        + " "
+                        + leg["MI"].strip()
+                        + ". "
+                        + leg["LastName"].strip()
+                    )
             else:
                 name = leg["FirstName"].strip() + " " + leg["LastName"].strip()
 
