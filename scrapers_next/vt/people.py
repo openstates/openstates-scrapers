@@ -47,7 +47,6 @@ class LegList(JsonPage):
                     or "." in leg["FirstName"].strip()
                 ):
                     name = leg["FirstName"].strip() + " " + leg["LastName"].strip()
-                    print("NAME", name)
                 else:
                     name = (
                         leg["FirstName"].strip()
