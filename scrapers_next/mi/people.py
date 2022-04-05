@@ -11,6 +11,10 @@ def split_name(name):
         last, first = name.split(", ")
     else:
         raise ValueError(name)
+
+    if re.search("Dr.", first):
+        first = re.sub("Dr.", "", first)
+
     return {"given_name": first, "family_name": last, "name": f"{first} {last}"}
 
 
