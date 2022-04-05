@@ -12,7 +12,11 @@ class Legislators(JsonListPage):
         initial = item["Initial"]
 
         if initial:
-            name = f"{first} {initial}. {last}"
+            # V. J. puts his initials as his first name
+            if first == "V. J.":
+                name = f"{first} {last}"
+            else:
+                name = f"{first} {initial}. {last}"
         else:
             name = f"{first} {last}"
 
