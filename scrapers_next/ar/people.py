@@ -93,7 +93,13 @@ class LegDetail(HtmlPage):
 
 class LegList(HtmlListPage):
     source = "https://www.arkleg.state.ar.us/Legislators/List?sort=Type&by=desc&ddBienniumSession=2021%2F2021S1#SearchResults"
-    selector = XPath("//div[@class='col-sm-6 col-md-6']")
+    selector = XPath(
+        "//div[@role='grid']//div[contains(@class, 'row')]//div[@class='col-md-6']"
+    )
+    # contains(@class, 'measure-tab')
+    # selector = XPath("//div[@class='row tableRow']")
+    # selector = CSS("row tableRow")
+    # selector = XPath('//div[@class="row tableRow"]')
 
     def process_item(self, item):
         chamber_name = (
@@ -103,8 +109,12 @@ class LegList(HtmlListPage):
             .replace("                                        ", "   ")
             .split("   ")
         )
+
         chamber = chamber_name[0]
+
         name = chamber_name[1].replace("  ", " ")
+        if "(Resigned)" in name:
+            self.skip()
 
         if chamber == "Senator":
             chamber = "upper"
