@@ -240,11 +240,15 @@ class MIBillScraper(Scraper):
             parsed = self.parse_doc_row(row)
             if parsed:
                 name, url = parsed
+                # create 2 versions per url of bill version
                 if url.endswith(".pdf"):
-                    mimetype = "application/pdf"
+                    bill.add_version_link(name, url, media_type="application/pdf")
+                    html_url = re.sub("pdf", "htm", url)
+                    bill.add_version_link(name, html_url, media_type="text/html")
                 elif url.endswith(".htm"):
-                    mimetype = "text/html"
-                bill.add_version_link(name, url, media_type=mimetype)
+                    bill.add_version_link(name, url, media_type="text/html")
+                    pdf_url = re.sub("htm", "pdf", url)
+                    bill.add_version_link(name, pdf_url, media_type="application/pdf")
 
         # documents
         for row in doc.xpath('//table[@id="frg_billstatus_HlaTable"]/tr'):
