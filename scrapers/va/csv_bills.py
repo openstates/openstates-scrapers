@@ -403,6 +403,7 @@ class VaCSVBillScraper(Scraper):
                         bill_url_base
                         + f"legp604.exe?{session_id}+ful+{version['doc_abbr']}"
                     )
+                    pdf_url = version_url + "+pdf"
 
                     version_date = datetime.datetime.strptime(
                         version["doc_date"], "%m/%d/%y"
@@ -418,6 +419,13 @@ class VaCSVBillScraper(Scraper):
                         version_url,
                         date=version_date,
                         media_type="text/html",
+                        on_duplicate="ignore",
+                    )
+                    b.add_version_link(
+                        version_text,
+                        pdf_url,
+                        date=version_date,
+                        media_type="application/pdf",
                         on_duplicate="ignore",
                     )
 
