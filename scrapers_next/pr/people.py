@@ -132,9 +132,7 @@ class Senate(HtmlListPage):
 
 
 class RepDetail(HtmlPage):
-    # sometimes phone number, sometimes role
-
-    example_source = "https://www.camara.pr.gov/team/rafael-hernandez-montanez/"
+    # example_source = "https://www.camara.pr.gov/team/rafael-hernandez-montanez/"
 
     input_type = PartialRep
 
@@ -146,17 +144,6 @@ class RepDetail(HtmlPage):
             "PD": "Proyecto Dignidad",
             "MVC": "Movimiento Victoria Ciudadana",
         }
-
-        # try:
-        #     party = CSS("span.partyBio").match_one(self.root).text_content().strip()
-        #     party = party_map[party]
-        # except SelectorError:
-        #     # HON. LISIE J. BURGOS MUÑIZ, HON. JOSÉ B. MÁRQUEZ REYES, HON. MARIANA NOGALES MOLINELLI
-        #     # do not have their parties listed
-        #     party = "Independent"
-
-        # role
-
         party = CSS(".ova-experience span").match_one(self.root).text_content().strip()
         party = party_map[party]
 
@@ -169,8 +156,6 @@ class RepDetail(HtmlPage):
             email=self.input.email,
             image=self.input.image,
         )
-
-        # p.extras for role
 
         try:
             phone = CSS(".ova-phone a").match_one(self.root).text_content().strip()
@@ -186,7 +171,6 @@ class RepDetail(HtmlPage):
 
         try:
             socials = CSS(".ova-social li a").match(self.root)
-            print("SOCIALS", socials)
             for link in socials:
                 social_link = link.get("href")
                 split_social_link = social_link.split(".com/")[1]
@@ -200,7 +184,6 @@ class RepDetail(HtmlPage):
             pass
 
         resumen = CSS(".resumen-financiero a").match_one(self.root).get("href")
-        print("RSEUME", resumen)
         p.add_link(resumen, note="resumen financiero")
 
         try:
@@ -212,9 +195,7 @@ class RepDetail(HtmlPage):
                 .strip()
                 .split("Comisiones:-")
             )
-            print("HEY", committees)
             p.extras["committees"] = committees[1].strip()
-            print("COMMITTEES", committees)
         except IndexError:
             pass
 
@@ -250,7 +231,6 @@ class House(HtmlListPage):
         )
         image = CSS(".ova-media a img").match_one(item).get("src")
         detail_link = CSS(".ova-media a").match_one(item).get("href")
-        print(image, name, district, detail_link)
 
         partial = PartialRep(
             name=name,
@@ -259,6 +239,5 @@ class House(HtmlListPage):
             email=email,
             source=self.source.url,
         )
-        print("PARTIAL", partial)
 
         return RepDetail(partial, source=detail_link)
