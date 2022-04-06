@@ -12,6 +12,8 @@ from openstates.scrape import Scraper, Bill
 
 
 def session_slug(session):
+    if session == "2022S3":
+        return "22 Special"
     session_type = "Special" if "s" in session.lower() else "Regular"
     check_for_special_session_number = re.search(r"\d{2}S(\d)", session)
     if check_for_special_session_number is None:
