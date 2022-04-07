@@ -164,11 +164,6 @@ class BillDetail(HtmlPage):
                         on_duplicate="ignore",
                     )
 
-                    html_url = re.sub("PDF", "HTML", version_url)
-                    self.input.add_version_link(
-                        name, html_url, media_type="text/html", on_duplicate="ignore"
-                    )
-
                 elif version_url.endswith("HTML"):
                     self.input.add_version_link(
                         name, version_url, media_type="text/html", on_duplicate="ignore"
