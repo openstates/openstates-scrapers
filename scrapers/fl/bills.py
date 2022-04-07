@@ -157,13 +157,30 @@ class BillDetail(HtmlPage):
                 name = tr.xpath("string(td[1])").strip()
                 version_url = tr.xpath("td/a[1]")[0].attrib["href"]
                 if version_url.endswith("PDF"):
-                    mimetype = "application/pdf"
-                elif version_url.endswith("HTML"):
-                    mimetype = "text/html"
+                    self.input.add_version_link(
+                        name,
+                        version_url,
+                        media_type="application/pdf",
+                        on_duplicate="ignore",
+                    )
 
-                self.input.add_version_link(
-                    name, version_url, media_type=mimetype, on_duplicate="ignore"
-                )
+                    html_url = re.sub("PDF", "HTML", version_url)
+                    self.input.add_version_link(
+                        name, html_url, media_type="text/html", on_duplicate="ignore"
+                    )
+
+                elif version_url.endswith("HTML"):
+                    self.input.add_version_link(
+                        name, version_url, media_type="text/html", on_duplicate="ignore"
+                    )
+                    pdf_url = re.sub("HTML", "PDF", version_url)
+                    self.input.add_version_link(
+                        name,
+                        pdf_url,
+                        media_type="application/pdf",
+                        on_duplicate="ignore",
+                    )
+
         except IndexError:
             self.input.extras["places"] = []  # set places to something no matter what
             self.logger.warning("No version table for {}".format(self.input.identifier))
