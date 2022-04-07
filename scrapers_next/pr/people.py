@@ -11,10 +11,19 @@ class PartialSen:
     source: str
 
 
+# @dataclass
+# class PartialRep:
+#     name: str
+#     district: str
+#     source: str
+
+
 @dataclass
 class PartialRep:
     name: str
+    image: str
     district: str
+    email: str
     source: str
 
 
@@ -123,6 +132,8 @@ class Senate(HtmlListPage):
 
 
 class RepDetail(HtmlPage):
+    # example_source = "https://www.camara.pr.gov/team/rafael-hernandez-montanez/"
+
     input_type = PartialRep
 
     def process_page(self):
@@ -130,15 +141,11 @@ class RepDetail(HtmlPage):
             "PNP": "Partido Nuevo Progresista",
             "PPD": "Partido Popular Democr\xe1tico",
             "PIP": "Partido Independentista Puertorrique\u00F1o",
+            "PD": "Proyecto Dignidad",
+            "MVC": "Movimiento Victoria Ciudadana",
         }
-
-        try:
-            party = CSS("span.partyBio").match_one(self.root).text_content().strip()
-            party = party_map[party]
-        except SelectorError:
-            # HON. LISIE J. BURGOS MUÑIZ, HON. JOSÉ B. MÁRQUEZ REYES, HON. MARIANA NOGALES MOLINELLI
-            # do not have their parties listed
-            party = "Independent"
+        party = CSS(".ova-experience span").match_one(self.root).text_content().strip()
+        party = party_map[party]
 
         p = ScrapePerson(
             name=self.input.name,
@@ -146,81 +153,91 @@ class RepDetail(HtmlPage):
             chamber="lower",
             district=self.input.district,
             party=party,
+            email=self.input.email,
+            image=self.input.image,
         )
+
+        try:
+            phone = CSS(".ova-phone a").match_one(self.root).text_content().strip()
+            p.capitol_office.voice = phone
+        except SelectorError:
+            pass
+
+        try:
+            role = CSS(".job").match_one(self.root).text_content().strip()
+            p.extras["role"] = role
+        except SelectorError:
+            pass
+
+        try:
+            socials = CSS(".ova-social li a").match(self.root)
+            for link in socials:
+                social_link = link.get("href")
+                split_social_link = social_link.split(".com/")[1]
+                if "twitter" in social_link:
+                    p.ids.twitter = split_social_link
+                elif "facebook" in social_link:
+                    p.ids.facebook = split_social_link
+                elif "instagram" in social_link:
+                    p.ids.instagram = split_social_link
+        except SelectorError:
+            pass
+
+        resumen = CSS(".resumen-financiero a").match_one(self.root).get("href")
+        p.add_link(resumen, note="resumen financiero")
+
+        try:
+            committees = (
+                CSS(".ova-excerpt-team")
+                .match_one(self.root)
+                .text_content()
+                .replace("\r\n", "")
+                .strip()
+                .split("Comisiones:-")
+            )
+            p.extras["committees"] = committees[1].strip()
+        except IndexError:
+            pass
 
         p.add_source(self.input.source)
         p.add_source(self.source.url)
         p.add_link(self.source.url, note="homepage")
 
-        img = CSS("div.container-biography img").match(self.root)[0].get("src")
-        p.image = img
-
-        title = CSS("span.name br").match_one(self.root).tail.strip()
-        if title != "":
-            p.extras["title"] = title
-
-        phones = (
-            CSS("h6 span span span")
-            .match(self.root)[0]
-            .text_content()
-            .strip()
-            .split("\n")
-        )
-        phone1 = re.search(r"Tel\.\s(.+)", phones[0]).groups()[0]
-        phone2 = re.search(r"Tel\.\s?(.+)?", phones[1]).groups()[0]
-        # http://www.tucamarapr.org/dnncamara/ComposiciondelaCamara/biografia.aspx?rep=251 has an incomplete phone
-        if phone1.strip() != "" and phone1.strip() != "(787":
-            p.district_office.voice = phone1.strip()
-        if phone2 and phone2.strip() != "":
-            p.extras["phone 2"] = phone2.strip()
-
-        fax = (
-            CSS("h6 span span span")
-            .match(self.root)[1]
-            .text_content()
-            .strip()
-            .split("\n")
-        )
-        fax1 = re.search(r"Fax\.\s(.+)", fax[0]).groups()[0]
-        if fax1.strip() != "":
-            p.district_office.fax = fax1.strip()
-        tty = re.search(r"TTY\.\s?(.+)?", fax[1]).groups()[0]
-        if tty and tty.strip() != "":
-            p.extras["TTY"] = tty
-
-        # these addresses do not look complete but capturing them anyway
-        addr = XPath(
-            "//*[@id='dnn_ctr1108_ViewWebRepresentatives_WebRepresentatives1_pnlRepresentative']/h6/text()[1]"
-        ).match_one(self.root)
-        if addr != "":
-            p.district_office.address = addr.strip()
-
         return p
 
 
 class House(HtmlListPage):
-    source = URL(
-        "http://www.tucamarapr.org/dnncamara/ComposiciondelaCamara/Biografia.aspx"
+    source = URL("https://www.camara.pr.gov/page-team/")
+    selector = XPath(
+        "//div[@class='items elementor-items']//div[@class='content_info']"
     )
-    selector = CSS("ul.list-article li", num_items=49)
 
     def process_item(self, item):
-        bio_info = (
-            CSS("div.biodiv a").match_one(item).text_content().strip().split("\n")
+        name = (
+            XPath(".//a[@class='name second_font']")
+            .match_one(item)
+            .text_content()
+            .strip()
         )
-        name = bio_info[0].strip()
-        name = re.sub(r"^Hon\.", "", name, flags=re.IGNORECASE).strip()
+        district = (
+            CSS(".ova-info-content .ova-expertise span")
+            .match_one(item)
+            .text_content()
+            .strip()
+            .split("-")[0]
+        )
+        email = (
+            CSS(".ova-info-content .ova-email").match_one(item).text_content().strip()
+        )
+        image = CSS(".ova-media a img").match_one(item).get("src")
+        detail_link = CSS(".ova-media a").match_one(item).get("href")
 
-        district = bio_info[2].strip()
-        if district == "Representante por Acumulación":
-            district = "At-Large"
-        else:
-            district = re.search(
-                r"Representante\sdel\sDistrito\s(.+)", district
-            ).groups()[0]
-
-        partial = PartialRep(name=name, district=district, source=self.source.url)
-
-        detail_link = CSS("a").match_one(item).get("href")
+        partial = PartialRep(
+            name=name,
+            image=image,
+            district=district,
+            email=email,
+            source=self.source.url,
+        )
 
         return RepDetail(partial, source=detail_link)
