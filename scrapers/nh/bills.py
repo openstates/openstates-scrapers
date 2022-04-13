@@ -6,6 +6,7 @@ import pytz
 import lxml.html
 
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
+from openstates.exceptions import EmptyScrape
 
 from .legacyBills import NHLegacyBillScraper
 
@@ -87,7 +88,8 @@ class NHBillScraper(Scraper):
             .split("\n")
         ):
             line = line.split("|")
-            if len(line) < 1:
+            if len(line) < 2:
+                raise EmptyScrape
                 continue
 
             if len(line) < 36:
