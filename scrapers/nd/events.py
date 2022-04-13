@@ -6,6 +6,8 @@ from openstates.scrape import Scraper, Event
 
 class NDEventScraper(Scraper):
     _tz = pytz.timezone("US/Central")
+    event_months = set()
+    events = {}
 
     def scrape(self, session=None):
 
@@ -35,6 +37,8 @@ class NDEventScraper(Scraper):
                 date = dateutil.parser.parse(date)
                 date = self._tz.localize(date)
 
+                self.event_months.add(date.strftime("%Y-%m"))
+
                 location = "See Agenda"
 
                 event = Event(name=com, start_date=date, location_name=location)
@@ -52,4 +56,49 @@ class NDEventScraper(Scraper):
                         link_text, link.xpath("@href")[0], media_type="application/pdf"
                     )
 
-                yield event
+                self.events[event_url] = event
+                # yield event
+
+        for year_month in self.event_months:
+            self.scrape_calendar(year_month)
+
+        for key in self.events:
+            yield self.events[key]
+
+    # the listing page has all the events and attachments, but no dates or locations
+    # the calendar page has dates and locations, but no attachments
+    def scrape_calendar(self, year_month):
+        self.info(f"Scraping calendar for {year_month}")
+        cal_url = f"https://ndlegis.gov/events/{year_month}"
+        page = self.get(cal_url).content
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(cal_url)
+
+        for row in page.xpath("//div[contains(@class,'calendar-item')]"):
+            if row.xpath(
+                ".//div[contains(@class,'event-count') and (contains(text(), '2 of') or contains(text(), '3 of'))]"
+            ):
+                self.info("Skipping later day of multi-day event")
+                continue
+
+            if not row.xpath(".//span[contains(@class,'date-display-start')]"):
+                continue
+
+            event_url = row.xpath(".//div[contains(@class,'event-title')]/a/@href")[0]
+
+            if event_url not in self.events:
+                self.info(f"Skipping {event_url}, not on hearing listing page.")
+                continue
+
+            event_time = row.xpath(
+                ".//span[contains(@class,'date-display-start')]/text()"
+            )[0]
+            event_date = (
+                self.events[event_url].as_dict()["start_date"].strftime("%Y-%m-%d")
+            )
+            new_start = f"{event_date} {event_time}"
+
+            date = dateutil.parser.parse(new_start)
+            date = self._tz.localize(date)
+
+            self.events[event_url].__setattr__("start_date", date)
