@@ -58,7 +58,6 @@ class NDEventScraper(Scraper):
                     )
 
                 self.events[event_url] = event
-                # yield event
 
         for year_month in self.event_months:
             self.scrape_calendar(year_month)
