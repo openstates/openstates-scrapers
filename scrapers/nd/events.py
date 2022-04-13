@@ -1,6 +1,7 @@
 import dateutil.parser
 import lxml
 import pytz
+import re
 from openstates.scrape import Scraper, Event
 
 
@@ -100,5 +101,15 @@ class NDEventScraper(Scraper):
 
             date = dateutil.parser.parse(new_start)
             date = self._tz.localize(date)
-
             self.events[event_url].__setattr__("start_date", date)
+
+            if row.xpath(".//div[contains(@class,'vcard')]"):
+                raw_loc = row.xpath(".//div[contains(@class,'vcard')]")[
+                    0
+                ].text_content()
+                loc = raw_loc.strip()
+                loc = re.sub(r"\s+", " ", loc)
+                loc = loc.replace("State Capitol", "600 East Boulevard Avenue")
+                loc_dict = {"name": loc, "note": "", "coordinates": None}
+                if len(loc) > 0:
+                    self.events[event_url].__setattr__("location", loc_dict)
