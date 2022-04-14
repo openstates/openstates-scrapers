@@ -470,7 +470,10 @@ class ALBillScraper(Scraper):
         capture_vote = False
         name = ""
         for item in voters_and_votes:
-            if capture_vote:
+            item = item.replace("\xa0", " ").strip()
+            if item == "":
+                return
+            elif capture_vote:
                 capture_vote = False
                 if name:
                     voters[item].append(name)
