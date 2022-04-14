@@ -24,7 +24,7 @@ def chamber_name(chamber):
 class MDBMixin(object):
     def _init_mdb(self, year):
         url = (
-            f"https://www.njleg.state.nj.us/leg-databases/{year}data/DB{year}_TEXT.zip"
+            f"https://pub.njleg.state.nj.us/leg-databases/{year}data/DB{year}_TEXT.zip"
         )
         fname, resp = self.urlretrieve(url)
         self.zipfile = zipfile.ZipFile(fname)
