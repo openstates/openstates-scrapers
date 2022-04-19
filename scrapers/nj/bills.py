@@ -331,10 +331,10 @@ class NJBillScraper(Scraper, MDBMixin):
             document = document.split("\\")
             document = document[-2] + "/" + document[-1]
 
-            htm_url = "https://www.njleg.state.nj.us/Bills/{}/{}".format(
+            htm_url = "https://pub.njleg.state.nj.us/Bills/{}/{}".format(
                 year_abr, document.replace(".DOC", ".HTM")
             )
-            pdf_url = "https://www.njleg.state.nj.us/Bills/{}/{}".format(
+            pdf_url = "https://pub.njleg.state.nj.us/Bills/{}/{}".format(
                 year_abr, document.replace(".DOC", ".PDF")
             )
 
@@ -508,6 +508,11 @@ class NJBillScraper(Scraper, MDBMixin):
                 classification=atype,
                 chamber=actor,
             )
+
+            source_url = (
+                f"https://www.njleg.state.nj.us/bill-search/{year_abr}/{bill_id}"
+            )
+            bill.add_source(source_url)
 
         # Subjects
         subject_csv = self.to_csv("BILLSUBJ.TXT")
