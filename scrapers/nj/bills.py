@@ -509,6 +509,11 @@ class NJBillScraper(Scraper, MDBMixin):
                 chamber=actor,
             )
 
+            source_url = (
+                f"https://www.njleg.state.nj.us/bill-search/{year_abr}/{bill_id}"
+            )
+            bill.add_source(source_url)
+
         # Subjects
         subject_csv = self.to_csv("BILLSUBJ.TXT")
         for rec in subject_csv:
