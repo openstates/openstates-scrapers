@@ -231,6 +231,13 @@ class KYBillScraper(Scraper, LXMLMixin):
             bdr = bdr_no.xpath("text()")[0].strip()
             bill.extras["BDR"] = bdr
 
+        summary = (
+            self.parse_bill_field(page, "Summary of Original Version")
+            .text_content()
+            .strip()
+        )
+        bill.add_abstract(summary, note="Summary of Original Version")
+
         yield bill
 
     def parse_versions(self, page, bill):
