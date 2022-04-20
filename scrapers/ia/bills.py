@@ -243,6 +243,23 @@ class IABillScraper(Scraper):
             elif "No history is recorded at this time." in date:
                 return
             if date == "":
+                for anchor in tr.xpath(".//a"):
+                    link_text = anchor.text_content()
+                    link_url = anchor.xpath("@href")[0]
+                    if "signed" in link_text.lower():
+                        bill.add_version_link(
+                            note=link_text, url=link_url, media_type="application/pdf"
+                        )
+                    elif "acts" in link_text.lower():
+                        bill.add_document_link(
+                            note=link_text, url=link_url, media_type="application/pdf"
+                        )
+                        bill.add_citation(
+                            f"IA Acts, {session}",
+                            link_text.replace("Acts", ""),
+                            citation_type="chapter",
+                            url=link_url,
+                        )
                 continue
 
             date = datetime.datetime.strptime(date, "%B %d, %Y").date()
@@ -269,6 +286,31 @@ class IABillScraper(Scraper):
                             version_urls.append(amd_url)
                         else:
                             self.info("Already Added {}, skipping".format(amd_url))
+            else:
+                for anchor in tr.xpath(".//a"):
+                    link_text = anchor.text_content()
+                    link_url = anchor.xpath("@href")[0]
+                    action_date = date.strftime("%m/%d/%Y")
+                    if "fiscal" in link_text.lower() or "summary" in link_text.lower():
+                        # there can be multiple fiscal notes or summaries, so date them
+                        doc_title = f"{link_text} {action_date}"
+                        bill.add_document_link(
+                            note=doc_title, url=link_url, media_type="application/pdf"
+                        )
+                    elif "signed" in link_text.lower():
+                        bill.add_version_link(
+                            note=link_text, url=link_url, media_type="application/pdf"
+                        )
+                    elif "acts" in link_text.lower():
+                        bill.add_document_link(
+                            note=link_text, url=link_url, media_type="application/pdf"
+                        )
+                        bill.add_citation(
+                            f"IA Acts, {session}",
+                            link_text.replace("Acts", ""),
+                            citation_type="chapter",
+                            url=link_url,
+                        )
 
             if "S.J." in action or "SCS" in action:
                 actor = "upper"
