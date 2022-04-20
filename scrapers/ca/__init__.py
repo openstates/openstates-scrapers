@@ -202,6 +202,7 @@ class California(State):
             "name": "2005-2006 Regular Session",
             "start_date": "2004-12-06",
             "end_date": "2006-11-30",
+            "active": True,
         },
         {
             "classification": "special",
