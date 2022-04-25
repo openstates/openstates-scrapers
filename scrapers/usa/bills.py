@@ -446,7 +446,6 @@ class USBillScraper(Scraper):
 
             for version in row.findall("formats/item"):
                 url = self.get_xpath(version, "url")
-                print(f"Version URL: {url}")
                 bill.add_version_link(
                     note=version_title,
                     url=url,
