@@ -178,7 +178,7 @@ class WestVirginia(State):
             "start_date": "2021-01-10",
             # TODO: update end date
             "end_date": "2021-01-12",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2022",
@@ -187,6 +187,16 @@ class WestVirginia(State):
             "name": "2022 Regular",
             "start_date": "2022-01-12",
             "end_date": "2022-06-25",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022",
+            "classification": "special",
+            "identifier": "20222S",
+            "name": "2022 Second Special Session",
+            "start_date": "2022-04-25",
+            # TODO: update end date
+            "end_date": "2021-04-29",
             "active": True,
         },
     ]
