@@ -79,10 +79,18 @@ class ARBillScraper(Scraper):
                     primary=True,
                 )
 
-            version_url = (
-                "ftp://www.arkleg.state.ar.us/Bills/"
-                "%s/Public/Searchable/%s.pdf" % (self.slug, bill_id.replace(" ", ""))
-            )
+            # need year before if its a fiscal or special session beyond first
+            year = session[0:4]
+            if len(session) > 4 and session[-1] != "1":
+                year = int(year) - 1
+            bill_url = bill_id.replace(" ", "")
+
+            # versions for special sessions have a different format
+            is_special = True if len(session) > 5 else False
+            if is_special:
+                version_url = f"https://www.arkleg.state.ar.us/Bills/FTPDocument?path=%2FBills%2F{self.slug}%2FPublic%2F{bill_url}.pdf"
+            else:
+                version_url = f"https://www.arkleg.state.ar.us/assembly/{year}/{self.slug}/Bills/{bill_url}.pdf"
             bill.add_version_link(bill_id, version_url, media_type="application/pdf")
 
             yield from self.scrape_bill_page(bill)
