@@ -87,6 +87,13 @@ class AZBillScraper(Scraper):
                     url = "https://apps.azleg.gov{}".format(url)
 
                 if type_ in version_types:
+                    if media_type == "text/html":
+                        pdf_url = url.lower().replace(r"(.docx)?.htm(l)?$", ".pdf")
+                        bill.add_version_link(
+                            note=doc["DocumentName"],
+                            url=pdf_url,
+                            media_type="application/pdf",
+                        )
                     bill.add_version_link(
                         note=doc["DocumentName"], url=url, media_type=media_type
                     )
