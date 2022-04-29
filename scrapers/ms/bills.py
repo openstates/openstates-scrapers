@@ -156,6 +156,13 @@ class MSBillScraper(Scraper):
                     on_duplicate="ignore",
                     media_type="text/html",
                 )
+                curr_pdf_url = re.sub("html?", "pdf", curr_version_url)
+                bill.add_version_link(
+                    "Current version",
+                    curr_pdf_url,
+                    on_duplicate="ignore",
+                    media_type="application/pdf",
+                )
 
             intro_version = details_root.xpath("string(//INTRO_OTHER)").replace(
                 "../../../../", ""
@@ -167,6 +174,13 @@ class MSBillScraper(Scraper):
                     intro_version_url,
                     on_duplicate="ignore",
                     media_type="text/html",
+                )
+                intro_pdf_url = re.sub("html?", "pdf", intro_version_url)
+                bill.add_version_link(
+                    "As Introduced",
+                    intro_pdf_url,
+                    on_duplicate="ignore",
+                    media_type="application/pdf",
                 )
 
             comm_version = details_root.xpath("string(//CMTESUB_OTHER" ")").replace(
@@ -180,6 +194,14 @@ class MSBillScraper(Scraper):
                     on_duplicate="ignore",
                     media_type="text/html",
                 )
+                comm_pdf_url = re.sub("html?", "pdf", comm_version_url)
+                bill.add_version_link(
+                    "Committee Substitute",
+                    comm_pdf_url,
+                    on_duplicate="ignore",
+                    media_type="application/pdf",
+                )
+
             passed_version = details_root.xpath("string(//PASSED_OTHER" ")").replace(
                 "../../../../", ""
             )
@@ -194,6 +216,13 @@ class MSBillScraper(Scraper):
                     on_duplicate="ignore",
                     media_type="text/html",
                 )
+                passed_pdf_url = re.sub("html?", "pdf", passed_version_url)
+                bill.add_version_link(
+                    title,
+                    passed_pdf_url,
+                    on_duplicate="ignore",
+                    media_type="application/pdf",
+                )
 
             asg_version = details_root.xpath("string(//ASG_OTHER)").replace(
                 "../../../../", ""
@@ -205,6 +234,13 @@ class MSBillScraper(Scraper):
                     asg_version_url,
                     on_duplicate="ignore",
                     media_type="text/html",
+                )
+                asg_pdf_url = re.sub("html?", "pdf", asg_version_url)
+                bill.add_version_link(
+                    "Approved by the Governor",
+                    asg_pdf_url,
+                    on_duplicate="ignore",
+                    media_type="application/pdf",
                 )
 
             # amendments
