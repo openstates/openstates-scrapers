@@ -255,10 +255,13 @@ class AKBillScraper(Scraper):
             version_name = version_row.xpath("td[@data-label='Amended Name']")[
                 0
             ].text_content()
-            pdf_url = version_row.xpath("td[@data-label='PDF']/span/a/@href")[0]
-
             bill.add_version_link(version_name, html_url, media_type="text/html")
-            bill.add_version_link(version_name, pdf_url, media_type="application/pdf")
+
+            if version_row.xpath("td[@data-label='PDF']/span/a/@href"):
+                pdf_url = version_row.xpath("td[@data-label='PDF']/span/a/@href")[0]
+                bill.add_version_link(
+                    version_name, pdf_url, media_type="application/pdf"
+                )
 
         # Get documents - to do
         doc_list_url = (
