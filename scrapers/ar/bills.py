@@ -7,7 +7,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 
 import lxml.html
 
-from .common import get_slug_for_session
+from .common import get_slug_for_session, get_biennium_year
 
 TIMEZONE = pytz.timezone("US/Central")
 
@@ -25,6 +25,12 @@ def get_utf_16_ftp_content(url):
 class ARBillScraper(Scraper):
     def scrape(self, chamber=None, session=None):
         self.slug = get_slug_for_session(session)
+
+        for i in self.jurisdiction.legislative_sessions:
+            if i["identifier"] == session:
+                self.session_name = i["name"]
+                self.biennium = get_biennium_year(self.session_name)
+
         chambers = [chamber] if chamber else ["upper", "lower"]
         self.bills = {}
 
@@ -237,6 +243,31 @@ class ARBillScraper(Scraper):
                 classification="amendment",
                 date=date,
                 media_type="application/pdf",
+            )
+
+        acts_link_xpath = (
+            "//a[contains(@aria-label, 'Act') and contains(@href, '/Acts/')"
+            " and contains(@aria-label,'.PDF')]"
+        )
+
+        if page.xpath(acts_link_xpath):
+            act_link = page.xpath(acts_link_xpath)[0]
+            act_link_parent = "//div[a[contains(@aria-label, 'Act') and contains(@href, '/Acts/') and contains(@aria-label,'.PDF')]]/text()"
+            # two text matches here, before the image (blank), and after
+            act_num = page.xpath(act_link_parent)[1].strip()
+            act_num = f"Act {act_num}"
+            act_url = act_link.xpath("@href")[0]
+            bill.add_version_link(
+                act_num,
+                act_url,
+                media_type="application/pdf",
+                classification="became-law",
+            )
+            bill.add_citation(
+                f"AR Acts, {self.biennium} - {self.session_name}",
+                act_num,
+                citation_type="chapter",
+                url=act_url,
             )
 
         FI_path = page.xpath(
