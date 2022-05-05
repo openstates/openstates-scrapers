@@ -239,6 +239,25 @@ class ARBillScraper(Scraper):
                 media_type="application/pdf",
             )
 
+        acts_link_xpath = (
+            "//a[contains(@aria-label, 'Act') and contains(@href, '/Acts/')"
+            " and contains(@aria-label,'.PDF')]"
+        )
+
+        if page.xpath(acts_link_xpath):
+            act_link = page.xpath(acts_link_xpath)[0]
+            act_link_parent = "//div[a[contains(@aria-label, 'Act') and contains(@href, '/Acts/') and contains(@aria-label,'.PDF')]]/text()"
+            # two text matches here, before the image (blank), and after
+            act_num = page.xpath(act_link_parent)[1].strip()
+            act_num = f"Act {act_num}"
+            act_url = act_link.xpath("@href")[0]
+            bill.add_version_link(
+                act_num,
+                act_url,
+                media_type="application/pdf",
+                classification="became-law",
+            )
+
         FI_path = page.xpath(
             "//h3[text()[contains(.,'DFA Fiscal Impacts')"
             " or contains(.,'BLR Fiscal Impacts')"
