@@ -7,7 +7,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 
 import lxml.html
 
-from .common import get_slug_for_session
+from .common import get_slug_for_session, get_biennium_year
 
 TIMEZONE = pytz.timezone("US/Central")
 
@@ -25,6 +25,12 @@ def get_utf_16_ftp_content(url):
 class ARBillScraper(Scraper):
     def scrape(self, chamber=None, session=None):
         self.slug = get_slug_for_session(session)
+
+        for i in self.jurisdiction.legislative_sessions:
+            if i["identifier"] == session:
+                self.session_name = i["name"]
+                self.biennium = get_biennium_year(self.session_name)
+
         chambers = [chamber] if chamber else ["upper", "lower"]
         self.bills = {}
 
@@ -256,6 +262,12 @@ class ARBillScraper(Scraper):
                 act_url,
                 media_type="application/pdf",
                 classification="became-law",
+            )
+            bill.add_citation(
+                f"AR Acts, {self.biennium} - {self.session_name}",
+                act_num,
+                citation_type="chapter",
+                url=act_url,
             )
 
         FI_path = page.xpath(
