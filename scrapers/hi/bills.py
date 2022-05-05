@@ -7,6 +7,7 @@ from urllib import parse as urlparse
 
 HI_URL_BASE = "https://capitol.hawaii.gov"
 SHORT_CODES = "%s/committees/committees.aspx?chamber=all" % (HI_URL_BASE)
+repeated_action = ["Excused: none", "Representative(s) Eli"]
 
 
 def create_bill_report_url(chamber, year, bill_type):
@@ -128,6 +129,13 @@ class HIBillScraper(Scraper):
                         real_committees.append(committee)
                     except KeyError:
                         pass
+            # there are some double actions on the source site
+            if (
+                bill_id == "HB2466"
+                and date == "2022-04-29"
+                and any(description in string for description in repeated_action)
+            ):
+                continue
             act = bill.add_action(string, date, chamber=actor, classification=act_type)
 
             for committee in real_committees:
