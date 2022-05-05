@@ -39,6 +39,7 @@ class USVoteScraper(Scraper):
         "Motion to Table Motion to Recommit Agreed to": "pass",
         "Motion to Proceed Agreed to": "pass",
         "Motion to Proceed Rejected": "fail",
+        "Motion Rejected": "fail",
         "Bill Defeated": "fail",
         "Joint Resolution Passed": "pass",
     }
