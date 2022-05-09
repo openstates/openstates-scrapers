@@ -470,6 +470,22 @@ class WVBillScraper(Scraper):
             # split name out of HTML - Introduced Version - SB 1
             name = link.xpath("@title")[0].split("-")[1].strip()
             yield {"note": name, "url": link.get("href"), "media_type": "text/html"}
+        for link in page.xpath("//a[starts-with(@title, 'PDF -')]"):
+            # split name out of HTML - Introduced Version - SB 1
+            name = link.xpath("@title")[0].split("-")[1].strip()
+            yield {
+                "note": name,
+                "url": link.get("href"),
+                "media_type": "application/pdf",
+            }
+        for link in page.xpath("//a[starts-with(@title, 'DOCX -')]"):
+            # split name out of HTML - Introduced Version - SB 1
+            name = link.xpath("@title")[0].split("-")[1].strip()
+            yield {
+                "note": name,
+                "url": link.get("href"),
+                "media_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            }
 
     def scrape_amendments(self, page, bill):
         for row in page.xpath(
