@@ -1,7 +1,6 @@
 import re
 import datetime
 import urllib.parse
-import scrapelib
 from collections import defaultdict
 import lxml.html
 
@@ -298,8 +297,7 @@ class MNBillScraper(Scraper, LXMLMixin):
         # Add Actions performed on the bill.
         bill = self.extract_actions(bill, doc, chamber)
 
-        # Get all versions of the bill.
-        bill = self.extract_versions(bill, doc, chamber, version_list_url)
+        bill = self.extract_versions(bill, doc)
 
         yield bill
 
@@ -486,43 +484,31 @@ class MNBillScraper(Scraper, LXMLMixin):
 
         return bill
 
-    def extract_versions(self, bill, doc, chamber, version_list_url):
-        """
-        Versions of a bill are on a separate page, linked to from the column
-        labeled, "Bill Text", on the search results page.
-        """
-        try:
-            version_resp = self.get(version_list_url)
-        except scrapelib.HTTPError:
-            self.warning("Bad version URL detected: {}".format(version_list_url))
-            # There are issues with scraping resolution versions in biannual session
-            # since the year could be different, so attempt new year here
-            new_year_version = version_list_url.replace("2021", "2022")
-            try:
-                version_resp = self.get(new_year_version)
-            except scrapelib.HTTPError:
-                self.warning(
-                    "Really bad version URL detected: {}".format(new_year_version)
-                )
-                return bill
-
-        version_html = version_resp.text
-        if "resolution" in version_resp.url:
+    def extract_versions(self, bill, doc):
+        # Get all versions of the bill.
+        for row in doc.xpath("//div[@id='versions']/table/tr[td]"):
+            html_link = row.xpath("td[1]/a")[0]
+            version_title = html_link.text_content().strip().replace("  ", " ")
+            version_day = row.xpath("td[3]/text()")[0].strip()
+            version_day = version_day.replace("Posted on", "").strip()
+            version_day = datetime.datetime.strptime(version_day, "%m/%d/%Y").date()
+            html_url = html_link.xpath("@href")[0]
             bill.add_version_link(
-                "resolution text", version_resp.url, media_type="text/html"
+                version_title,
+                html_url,
+                date=version_day,
+                media_type="text/html",
+                on_duplicate="ignore",
             )
-        else:
-            version_doc = lxml.html.fromstring(version_html)
-            for v in version_doc.xpath('//a[starts-with(@href, "text.php")]'):
-                version_url = urllib.parse.urljoin(VERSION_URL_BASE, v.get("href"))
-                if "pdf" not in version_url:
-                    bill.add_version_link(
-                        v.text.strip(),
-                        version_url,
-                        media_type="text/html",
-                        on_duplicate="ignore",
-                    )
-
+            if row.xpath("td[2]/a[@aria-label='PDF document']"):
+                pdf_url = row.xpath("td[2]/a[@aria-label='PDF document']/@href")[0]
+                bill.add_version_link(
+                    version_title,
+                    pdf_url,
+                    date=version_day,
+                    media_type="applcation/pdf",
+                    on_duplicate="ignore",
+                )
         return bill
 
     # def extract_vote_from_action(self, bill, action, chamber, action_row):
