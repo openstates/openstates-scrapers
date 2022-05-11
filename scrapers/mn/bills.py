@@ -128,7 +128,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                     bill_url = BILL_DETAIL_URL % (
                         self.search_chamber(chamber),
                         b,
-                        "2019",
+                        "2022",
                     )
                     version_url = VERSION_URL % (
                         self.search_session(session)[-4:],
@@ -299,6 +299,8 @@ class MNBillScraper(Scraper, LXMLMixin):
 
         bill = self.extract_versions(bill, doc)
 
+        bill = self.extract_citations(bill, doc)
+
         yield bill
 
     def get_bill_topics(self, chamber, session):
@@ -459,6 +461,43 @@ class MNBillScraper(Scraper, LXMLMixin):
                 committee = action["committees"]
                 act.add_related_entity(committee, "organization")
 
+        return bill
+
+    # MN provides data in two parts,
+    # the session law (or chaptered law), which makes the list of changes legal until a new code is printed
+    # and all the various parts of the code that are getting amended by the given bill.
+    def extract_citations(self, bill, bill_doc):
+        for link in bill_doc.xpath(
+            '//div[contains(string(.), "Session Law Chapter") and a[contains(@href,"/laws")]]/a'
+        ):
+            cite_url = link.xpath("@href")[0]
+            chapter = link.xpath("text()")[0]
+            html = self.get(cite_url).text
+            doc = lxml.html.fromstring(html)
+
+            title = doc.xpath(
+                "string(//div[contains(@class,'col-12 col-md-8')]/h1)"
+            ).strip()
+            bill.add_citation(
+                title,
+                f"Chapter {chapter}",
+                citation_type="chapter",
+                url=cite_url,
+            )
+
+            amends = self.get_nodes(
+                doc,
+                "//h1[contains(@class,'bill_sec_header') and contains(text(),'is amended')]",
+            )
+            for amend in amends:
+                full_cite = amend.xpath("text()")[0]
+                cite_parts = full_cite.split(",")
+                bill.add_citation(
+                    cite_parts[0].strip(),
+                    "".join(cite_parts[1:-1]).strip(),
+                    citation_type="final",
+                    url=cite_url,
+                )
         return bill
 
     def extract_sponsors(self, bill, doc, chamber):
