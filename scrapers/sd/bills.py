@@ -71,34 +71,34 @@ class SDBillScraper(Scraper, LXMLMixin):
         bill.add_source(f"https://sdlegislature.gov/Session/Bill/{api_id}")
         bill.add_source(url)
 
-        version_rows = page["Documents"]
-        assert len(version_rows) > 0
-        for version in version_rows:
-            date = version["DocumentDate"]
-            if date:
-                match = re.match(r"\d{4}-\d{2}-\d{2}", date)
-                date = datetime.datetime.strptime(match.group(0), "%Y-%m-%d").date()
+        if "Documents" in page:
+            version_rows = page["Documents"]
+            for version in version_rows:
+                date = version["DocumentDate"]
+                if date:
+                    match = re.match(r"\d{4}-\d{2}-\d{2}", date)
+                    date = datetime.datetime.strptime(match.group(0), "%Y-%m-%d").date()
 
-                html_link = f"https://sdlegislature.gov/Session/Bill/{api_id}/{version['DocumentId']}"
-                pdf_link = f"https://mylrc.sdlegislature.gov/api/Documents/{version['DocumentId']}.pdf"
+                    html_link = f"https://sdlegislature.gov/Session/Bill/{api_id}/{version['DocumentId']}"
+                    pdf_link = f"https://mylrc.sdlegislature.gov/api/Documents/{version['DocumentId']}.pdf"
 
-                note = version["BillVersion"]
-                bill.add_version_link(
-                    note,
-                    html_link,
-                    date=date,
-                    media_type="text/html",
-                    on_duplicate="ignore",
-                )
-                bill.add_version_link(
-                    note,
-                    pdf_link,
-                    date=date,
-                    media_type="application/pdf",
-                    on_duplicate="ignore",
-                )
-            else:
-                self.warning("Version listed but no date or documents")
+                    note = version["BillVersion"]
+                    bill.add_version_link(
+                        note,
+                        html_link,
+                        date=date,
+                        media_type="text/html",
+                        on_duplicate="ignore",
+                    )
+                    bill.add_version_link(
+                        note,
+                        pdf_link,
+                        date=date,
+                        media_type="application/pdf",
+                        on_duplicate="ignore",
+                    )
+                else:
+                    self.warning("Version listed but no date or documents")
 
         sponsors = page["BillSponsor"]
         if sponsors:
@@ -125,7 +125,7 @@ class SDBillScraper(Scraper, LXMLMixin):
             )
 
         for keyword in page["Keywords"]:
-            bill.add_subject(keyword["Keyword"]["Keyword"])
+            bill.add_subject(keyword["Keyword"])
 
         actions_url = f"https://sdlegislature.gov/api/Bills/ActionLog/{api_id}"
         yield from self.scrape_action(bill, actions_url, chamber)
