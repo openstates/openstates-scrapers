@@ -169,17 +169,16 @@ class Florida(State):
             "end_date": "2022-04-22",
             "active": True,
         },
-        # {
-        #     "name": "2022 Special Session D",
-        #     "identifier": "2022D",
-        #     "classification": "special",
-        #     "start_date": "2022-05-23",
-        #     "end_date": "2022-05-30",
-        #     "active": True,
-        # },
+        {
+            "name": "2022 Special Session D",
+            "identifier": "2022D",
+            "classification": "special",
+            "start_date": "2022-05-23",
+            "end_date": "2022-05-30",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
-        "2022D",
         *(str(each) for each in range(1997, 2010)),
         "2020 Org.",
         "2019 I",  # Empty, maybe informational session
