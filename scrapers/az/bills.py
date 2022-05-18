@@ -356,7 +356,7 @@ class AZBillScraper(Scraper):
             else:
                 bill_rows = page.xpath('//div[@name="SBTable"]//tbody//tr')
             for row in bill_rows:
-                bill_id = row.xpath("td/a/text()")[0]
+                bill_id = row.xpath("th/a/text()")[0]
                 yield from self.scrape_bill(chamber, session, bill_id, session_id)
 
         # TODO: MBTable - Non-bill Misc Motions?
