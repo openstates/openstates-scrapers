@@ -107,7 +107,7 @@ class Oklahoma(State):
             "name": "2022 Regular Session",
             "start_date": "2022-02-01",
             "end_date": "2022-05-29",
-            # "active": True,
+            "active": True,
         },
         {
             "_scraped_name": "2021 First Special Session",
