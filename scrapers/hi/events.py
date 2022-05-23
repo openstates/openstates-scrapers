@@ -1,6 +1,7 @@
 from utils import LXMLMixin
 import datetime as dt
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 from .utils import get_short_codes
 from requests import HTTPError
 import pytz
@@ -46,6 +47,10 @@ class HIEventScraper(Scraper, LXMLMixin):
 
         get_short_codes(self)
         page = self.lxmlize(URL)
+
+        if page.xpath("//td[contains(string(.),'No Hearings')]"):
+            raise EmptyScrape
+
         table = page.xpath("//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']")[0]
 
         for event in table.xpath(".//tr")[1:]:
