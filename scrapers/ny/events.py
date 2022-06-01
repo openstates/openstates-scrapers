@@ -68,7 +68,8 @@ class NYEventScraper(Scraper):
         com_name = re.sub(r"\(.*\)", "", meta[0])
         com_name = f"Assembly {com_name}"
 
-        when = dateutil.parser.parse(meta[1])
+        when = self.clean_date(meta[1])
+        when = dateutil.parser.parse(when)
         when = self._tz.localize(when)
         location = meta[2]
 
@@ -153,3 +154,7 @@ class NYEventScraper(Scraper):
                 agenda.add_bill(bill["billId"]["printNo"])
 
             yield event
+
+    def clean_date(self, date: str) -> str:
+        date = date.replace("OFF THE FLOOR,", "")
+        return date
