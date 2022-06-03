@@ -142,6 +142,9 @@ class USVoteScraper(Scraper):
         # for some reason these are "H R 123" which nobody uses, so fix to "HR 123"
         bill_id = re.sub(r"([A-Z])\s([A-Z])", r"\1\2", bill_id)
 
+        if re.match(r"PN\d*", bill_id):
+            return
+
         roll_call = page.xpath("//rollcall-vote/vote-metadata/rollcall-num/text()")[0]
 
         vote_id = "us-{}-lower-{}".format(when.year, roll_call)
@@ -239,6 +242,9 @@ class USVoteScraper(Scraper):
             bill_id = page.xpath("//roll_call_vote/document/document_name/text()")[
                 0
             ].replace(".", "")
+
+        if re.match(r"PN\d*", bill_id):
+            return
 
         motion = page.xpath("//roll_call_vote/vote_question_text/text()")[0]
 
