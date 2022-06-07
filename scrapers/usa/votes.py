@@ -103,6 +103,13 @@ class USVoteScraper(Scraper):
 
             vote_url = row.xpath("td[1]/a/@href")[0]
 
+            # There are some votes that are on adjournment or quorum, not a related bill. Skip for validation step.
+            bad_house_rolls = ["1", "62", "142"]
+            roll_id = re.search(r"number=(\d+)", vote_url).group(1)
+            if roll_id in bad_house_rolls:
+                self.info("No related bill for this vote.")
+                continue
+
             # Dates are in the format of 20-Nov, so add the year
             vote_date = row.xpath("td[2]/font/text()")[0]
             vote_date = "{}-{}".format(vote_date, year)
@@ -141,9 +148,6 @@ class USVoteScraper(Scraper):
 
         # for some reason these are "H R 123" which nobody uses, so fix to "HR 123"
         bill_id = re.sub(r"([A-Z])\s([A-Z])", r"\1\2", bill_id)
-
-        if re.match(r"PN\d*", bill_id):
-            return
 
         roll_call = page.xpath("//rollcall-vote/vote-metadata/rollcall-num/text()")[0]
 
