@@ -123,16 +123,16 @@ class Oklahoma(State):
             "name": "2022 Second Special Session",
             "start_date": "2022-05-18",
             "end_date": "2022-05-27",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022 Third Special Session",
+            "identifier": "2022SS3",
+            "name": "2022 Third Special Session",
+            "start_date": "2022-06-13",
+            "end_date": "2022-06-23",
             "active": True,
         },
-        # {
-        #     "_scraped_name": "2022 Third Special Session",
-        #     "identifier": "2022SS3",
-        #     "name": "2022 Third Special Session",
-        #     "start_date": "2022-06-13",
-        #     "end_date": "2022-06-23",
-        #     "active": True,
-        # },
         # {
         #     "_scraped_name": "2023 Regular Session",
         #     "identifier": "2023",
@@ -144,7 +144,6 @@ class Oklahoma(State):
         # },
     ]
     ignored_scraped_sessions = [
-        "2022 Third Special Session",
         "2023 Regular Session",
         "2021 Regular Session - Web",
         "2020 Regular Session (web)",
