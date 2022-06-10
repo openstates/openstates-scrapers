@@ -79,6 +79,7 @@ class Minnesota(State):
             "name": "2013-2014 Regular Session",
             "start_date": "2013-01-08",
             "end_date": "2014-05-16",
+            "active": True,
         },
         {
             "_scraped_name": "88th Legislature, 2013 1st Special Session",
@@ -95,6 +96,7 @@ class Minnesota(State):
             "name": "2015-2016 Regular Session",
             "start_date": "2015-01-06",
             "end_date": "2016-05-23",
+            "active": True,
         },
         {
             "_scraped_name": "89th Legislature, 2015 1st Special Session",
