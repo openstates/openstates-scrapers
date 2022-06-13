@@ -96,7 +96,7 @@ class Minnesota(State):
             "name": "2015-2016 Regular Session",
             "start_date": "2015-01-06",
             "end_date": "2016-05-23",
-            "active": True,
+#             "active": True,
         },
         {
             "_scraped_name": "89th Legislature, 2015 1st Special Session",
@@ -205,7 +205,7 @@ class Minnesota(State):
             "start_date": "2021-01-05",
             # Just a guess. TODO: set after schedule is posted
             "end_date": "2022-05-23",
-            "active": True,
+#             "active": True,
         },
         {
             "_scraped_name": "92nd Legislature, 2021 1st Special Session",
