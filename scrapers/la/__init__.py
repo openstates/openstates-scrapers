@@ -203,7 +203,7 @@ class Louisiana(State):
             "name": "2022 First Extraordinary Session",
             "start_date": "2022-02-01",
             "end_date": "2022-02-20",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2022 Regular Session",
@@ -211,7 +211,16 @@ class Louisiana(State):
             "identifier": "2022",
             "name": "2022 Regular Session",
             "start_date": "2022-03-12",
-            "end_date": "2022-06-10",
+            "end_date": "2022-06-06",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022 Second Extraordinary Session",
+            "classification": "special",
+            "identifier": "2022s2",
+            "name": "2022 Second Extraordinary Session",
+            "start_date": "2022-06-15",
+            "end_date": "2022-06-17",
             "active": True,
         },
     ]
