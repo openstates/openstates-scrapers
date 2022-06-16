@@ -79,7 +79,6 @@ class Minnesota(State):
             "name": "2013-2014 Regular Session",
             "start_date": "2013-01-08",
             "end_date": "2014-05-16",
-            "active": True,
         },
         {
             "_scraped_name": "88th Legislature, 2013 1st Special Session",
