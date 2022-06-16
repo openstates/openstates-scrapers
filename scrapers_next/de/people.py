@@ -83,7 +83,7 @@ class LegList(JsonPage):
             p.add_source(detail_link.url)
             p.add_link(detail_link.url, note="homepage")
 
-            yield LegDetail(p, source=detail_link.url)
+            yield LegDetail(p, source=URL(detail_link.url, timeout=30))
 
 
 class Senate(LegList):
