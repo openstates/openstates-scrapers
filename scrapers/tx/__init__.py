@@ -84,7 +84,6 @@ class Texas(State):
             "identifier": "84",
             "name": "84th Legislature (2015)",
             "start_date": "2015-01-13",
-            "active": True,
         },
         {
             "_scraped_name": "85(R) - 2017",
@@ -93,7 +92,6 @@ class Texas(State):
             "identifier": "85",
             "name": "85th Legislature (2017)",
             "start_date": "2017-01-13",
-            # "active": True,
         },
         {
             "_scraped_name": "85(1) - 2017",
@@ -118,7 +116,7 @@ class Texas(State):
             "identifier": "87",
             "name": "87th Legislature (2021)",
             "start_date": "2021-01-12",
-            "active": False,
+            "active": True,
         },
         {
             "_scraped_name": "87(1) - 2021",
@@ -127,7 +125,7 @@ class Texas(State):
             "identifier": "871",
             "name": "87th Legislature, 1st Called Session (2021)",
             "start_date": "2021-07-08",
-            "active": False,
+            "active": True,
         },
         {
             "_scraped_name": "87(2) - 2021",
@@ -136,7 +134,7 @@ class Texas(State):
             "identifier": "872",
             "name": "87th Legislature, 2nd Called Session (2021)",
             "start_date": "2021-08-07",
-            "active": False,
+            "active": True,
         },
         {
             "_scraped_name": "87(3) - 2021",
@@ -145,7 +143,7 @@ class Texas(State):
             "identifier": "873",
             "name": "87th Legislature, 3rd Called Session (2021)",
             "start_date": "2021-09-20",
-            "active": False,
+            "active": True,
         },
         # TODO: Re-enable vote scraper when adding next regular session
     ]
