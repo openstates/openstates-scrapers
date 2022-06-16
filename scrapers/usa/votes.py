@@ -20,6 +20,7 @@ class USVoteScraper(Scraper):
 
     senate_statuses = {
         "Agreed to": "pass",
+        "Amendment Agreed to": "pass",
         "Bill Passed": "pass",
         "Confirmed": "pass",
         "Rejected": "fail",
