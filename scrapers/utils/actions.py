@@ -1,4 +1,4 @@
-import re
+import regex
 from collections import namedtuple, defaultdict, Iterable
 from six import string_types
 
@@ -26,13 +26,13 @@ class Rule(namedtuple("Rule", "regexes types stop attrs")):
             regexes = (regexes,)
         compiled_regexes = []
         # pre-compile any string regexes
-        for regex in regexes:
-            if isinstance(regex, string_types):
+        for r in regexes:
+            if isinstance(r, string_types):
                 if flexible_whitespace:
-                    regex = re.sub(r"\s{1,4}", r"\\s{,10}", regex)
-                compiled_regexes.append(re.compile(regex))
+                    c_regex = regex.sub(r"\s{1,4}", r"\\s{,10}", r)
+                compiled_regexes.append(regex.compile(c_regex))
             else:
-                compiled_regexes.append(regex)
+                compiled_regexes.append(r)
 
         # Types can be a string or a sequence.
         if isinstance(types, string_types):
@@ -45,8 +45,8 @@ class Rule(namedtuple("Rule", "regexes types stop attrs")):
         attrs = {}
         matched = False
 
-        for regex in self.regexes:
-            m = regex.search(text)
+        for r in self.regexes:
+            m = r.search(text)
             if m:
                 matched = True
                 # add any matched attrs
