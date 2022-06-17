@@ -211,7 +211,7 @@ class Minnesota(State):
             "name": "2021, First Special Session",
             "start_date": "2021-06-14",
             "end_date": "2021-06-18",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
