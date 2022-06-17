@@ -26,7 +26,8 @@ RUN apt-get update -qq \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-ADD . /opt/openstates/openstates
+ADD poetry.lock /opt/openstates/openstates/
+ADD pyproject.toml /opt/openstates/openstates/
 WORKDIR /opt/openstates/openstates/
 ENV PYTHONPATH=./scrapers
 
@@ -41,5 +42,7 @@ RUN pip --no-cache-dir --disable-pip-version-check install poetry \
     && apt-get autoremove -y -qq \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+ADD . /opt/openstates/openstates/
 
 ENTRYPOINT ["poetry", "run", "os-update"]
