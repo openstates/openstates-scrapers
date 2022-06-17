@@ -5,14 +5,17 @@ ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PYTHONIOENCODING='utf-8' LANG='
 
 RUN apt-get update -qq \
     && apt-get install -y -qq --no-install-recommends \
-      git \
-      build-essential \
       curl \
+      wget \
       unzip \
+      mdbtools \
+      libpq5 \
+      libgdal28 \
+      build-essential \
+      git \
       libssl-dev \
       libffi-dev \
       freetds-dev \
-      python3-virtualenv \
       libxml2-dev \
       libxslt-dev \
       libyaml-dev \
@@ -20,10 +23,6 @@ RUN apt-get update -qq \
       libpq-dev \
       libgdal-dev \
       libgeos-dev \
-      wget \
-      unzip \
-#     libcrypto1.1 \
-      mdbtools \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -34,6 +33,13 @@ ENV PYTHONPATH=./scrapers
 # the last step cleans out temporarily downloaded artifacts for poetry, shrinking our build
 RUN pip --no-cache-dir --disable-pip-version-check install poetry \
     && poetry install \
-    && rm -r /root/.cache/pypoetry/cache /root/.cache/pypoetry/artifacts/
+    && rm -r /root/.cache/pypoetry/cache /root/.cache/pypoetry/artifacts/ \
+    && apt-get remove -y -qq \
+      build-essential \
+      git \
+      libpq-dev \
+    && apt-get autoremove -y -qq \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 ENTRYPOINT ["poetry", "run", "os-update"]
