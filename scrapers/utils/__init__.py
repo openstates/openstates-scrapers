@@ -4,9 +4,7 @@ from .lxmlize import LXMLMixin  # noqa
 from .lxmlize import url_xpath  # noqa
 
 _phone_pattern = re.compile(r"\(?\d{3}\)?\s?-?\d{3}-?\d{4}")
-_email_pattern = re.compile(
-    r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\." r"[a-zA-Z]{2,}\b"
-)
+_email_pattern = re.compile(r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\." r"[a-zA-Z]{2,}\b")
 
 
 def validate_phone_number(phone_number):
