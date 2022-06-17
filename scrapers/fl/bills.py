@@ -110,13 +110,6 @@ class BillList(HtmlListPage):
         subj_bill_id = re.sub(r"(H|S)\w+ 0*(\d+)", r"\1\2", bill_id)
         bill.subject = list(self.subjects[subj_bill_id])
 
-        sponsor = re.sub(r"^(?:Rep|Sen)\.\s", "", sponsor)
-        sponsor = re.sub(r",\s+(Jr|Sr)\.", r" \1.", sponsor)
-        for sp in sponsor.split(", "):
-            sp = sp.strip()
-            sp_type = "organization" if "committee" in sp.lower() else "person"
-            bill.add_sponsorship(sp, "primary", sp_type, True)
-
         return BillDetail(bill)
 
 
@@ -132,6 +125,7 @@ class BillDetail(HtmlPage):
 
     def process_page(self):
         if self.root.xpath("//div[@id = 'tabBodyBillHistory']//table"):
+            self.process_sponsors()
             self.process_history()
             self.process_versions()
             self.process_analysis()
@@ -140,6 +134,31 @@ class BillDetail(HtmlPage):
         yield self.input  # the bill, now augmented
         yield HouseSearchPage(self.input)
         yield from self.process_votes()
+
+    def process_sponsors(self):
+        sponsor = self.root.xpath(
+            'string(//div[@id="main"]/div/div/p[span[contains(text(),"by")]])'
+        ).strip()
+       
+        SPONSOR_RE = re.compile(r"by\s+(?P<sponsors>[^(]+)(\(CO-INTRODUCERS\)\s+(?P<cosponsors>[\s\S]+))?")
+        match = SPONSOR_RE.search(sponsor)
+        sponsors = match.groupdict()["sponsors"]
+        sponsors = re.sub(r"^(?:Rep|Sen)\.\s", "", sponsors)
+        sponsors = re.sub(r",\s+(Jr|Sr)\.", r" \1.", sponsors)
+        for sp in sponsors.split("; "):
+            sp = sp.strip()
+            if sp:
+                sp_type = "organization" if "committee" in sp.lower() else "person"
+                self.input.add_sponsorship(sp, "primary", sp_type, True)
+
+        cosponsors = match.groupdict()["cosponsors"]
+        cosponsors = re.sub(r"^(?:Rep|Sen)\.\s", "", cosponsors)
+        cosponsors = re.sub(r",\s+(Jr|Sr)\.", r" \1.", cosponsors)
+        for csp in cosponsors.split("; "):
+            csp = csp.strip()
+            if csp:
+                csp_type = "organization" if "committee" in csp.lower() else "person"
+                self.input.add_sponsorship(csp, "cosponsor", csp_type, False)
 
     def process_summary(self):
         summary = self.root.xpath(
