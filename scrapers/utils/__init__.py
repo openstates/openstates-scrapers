@@ -1,10 +1,10 @@
-import regex
+import re
 
 from .lxmlize import LXMLMixin  # noqa
 from .lxmlize import url_xpath  # noqa
 
-_phone_pattern = regex.compile(r"\(?\d{3}\)?\s?-?\d{3}-?\d{4}")
-_email_pattern = regex.compile(
+_phone_pattern = re.compile(r"\(?\d{3}\)?\s?-?\d{3}-?\d{4}")
+_email_pattern = re.compile(
     r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\." r"[a-zA-Z]{2,}\b"
 )
 

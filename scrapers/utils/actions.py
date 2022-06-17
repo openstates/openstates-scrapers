@@ -1,4 +1,4 @@
-import regex
+import re
 from collections import namedtuple, defaultdict, Iterable
 from six import string_types
 
@@ -29,8 +29,8 @@ class Rule(namedtuple("Rule", "regexes types stop attrs")):
         for r in regexes:
             if isinstance(r, string_types):
                 if flexible_whitespace:
-                    c_regex = regex.sub(r"\s{1,4}", r"\\s{,10}", r)
-                compiled_regexes.append(regex.compile(c_regex))
+                    c_regex = re.sub(r"\s{1,4}", r"\\s{,10}", r)
+                compiled_regexes.append(re.compile(c_regex))
             else:
                 compiled_regexes.append(r)
 
