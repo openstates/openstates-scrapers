@@ -3,7 +3,8 @@ LABEL maintainer="James Turk <dev@jamesturk.net>"
 
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PYTHONIOENCODING='utf-8' LANG='C.UTF-8'
 
-RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends \
+RUN apt-get update -qq \
+    && apt-get install -y -qq --no-install-recommends \
       git \
       build-essential \
       curl \
@@ -22,8 +23,9 @@ RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends \
       wget \
       unzip \
 #     libcrypto1.1 \
-      mdbtools && \
-      rm -rf /var/lib/apt/lists/*
+      mdbtools \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 ADD . /opt/openstates/openstates
 WORKDIR /opt/openstates/openstates/
