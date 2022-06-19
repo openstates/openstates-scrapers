@@ -152,13 +152,14 @@ class BillDetail(HtmlPage):
                 self.input.add_sponsorship(sp, "primary", sp_type, True)
 
         cosponsors = match.groupdict()["cosponsors"]
-        cosponsors = re.sub(r"^(?:Rep|Sen)\.\s", "", cosponsors)
-        cosponsors = re.sub(r",\s+(Jr|Sr)\.", r" \1.", cosponsors)
-        for csp in cosponsors.split("; "):
-            csp = csp.strip()
-            if csp:
-                csp_type = "organization" if "committee" in csp.lower() else "person"
-                self.input.add_sponsorship(csp, "cosponsor", csp_type, False)
+        if cosponsors is not None:
+            cosponsors = re.sub(r"^(?:Rep|Sen)\.\s", "", cosponsors)
+            cosponsors = re.sub(r",\s+(Jr|Sr)\.", r" \1.", cosponsors)
+            for csp in cosponsors.split("; "):
+                csp = csp.strip()
+                if csp:
+                    csp_type = "organization" if "committee" in csp.lower() else "person"
+                    self.input.add_sponsorship(csp, "cosponsor", csp_type, False)
 
     def process_summary(self):
         summary = self.root.xpath(
