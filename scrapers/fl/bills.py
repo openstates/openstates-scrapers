@@ -81,7 +81,6 @@ class BillList(HtmlListPage):
     def process_item(self, item):
         bill_id = item.text.strip()
         title = item.xpath("string(../following-sibling::td[1])").strip()
-        sponsor = item.xpath("string(../following-sibling::td[2])").strip()
         bill_url = item.attrib["href"] + "/ByCategory"
 
         if bill_id.startswith(("SB ", "HB ", "SPB ", "HPB ")):
@@ -143,6 +142,8 @@ class BillDetail(HtmlPage):
         SPONSOR_RE = re.compile(r"by\s+(?P<sponsors>[^(]+)(\(CO-INTRODUCERS\)\s+(?P<cosponsors>[\s\S]+))?")
         match = SPONSOR_RE.search(sponsor)
         sponsors = match.groupdict()["sponsors"]
+        if not sponsors:
+            raise ValueError("Failed to find sponsors for {}".format(self.input.identifier))
         sponsors = re.sub(r"^(?:Rep|Sen)\.\s", "", sponsors)
         sponsors = re.sub(r",\s+(Jr|Sr)\.", r" \1.", sponsors)
         for sp in sponsors.split("; "):
@@ -152,7 +153,7 @@ class BillDetail(HtmlPage):
                 self.input.add_sponsorship(sp, "primary", sp_type, True)
 
         cosponsors = match.groupdict()["cosponsors"]
-        if cosponsors is not None:
+        if cosponsors:
             cosponsors = re.sub(r"^(?:Rep|Sen)\.\s", "", cosponsors)
             cosponsors = re.sub(r",\s+(Jr|Sr)\.", r" \1.", cosponsors)
             for csp in cosponsors.split("; "):
