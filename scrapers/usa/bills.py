@@ -156,6 +156,28 @@ class USBillScraper(Scraper):
         last_name = self.get_xpath(row, "lastName")
         return " ".join(filter(None, [first_name, middle_name, last_name]))
 
+    # LOC actions don't make the chamber clear, but you can deduce it from the codes
+    # https://github.com/usgpo/bill-status/blob/main/BILLSTATUS-XML_User_User-Guide.md
+    def classify_actor_by_code(self, action_code: str):
+        if action_code is None:
+            return False
+
+        if action_code[0:1] == "H":
+            return "lower"
+        elif action_code[0:1] == "E":
+            return "executive"
+
+        if action_code.isdigit():
+            code = int(action_code)
+            if code < 10000:
+                return "lower"
+            elif code < 28000:
+                return "upper"
+            else:
+                return "executive"
+
+        return False
+
     def classify_action_by_code(self, action):
         if action is None:
             return None
@@ -230,6 +252,13 @@ class USBillScraper(Scraper):
                     actor = "lower"
                 elif action_type == "BecameLaw" or action_type == "President":
                     actor = "executive"
+
+                # LOC doesn't make the actor clear, but you can back into it
+                # from the actions
+                if source == "Library of Congress":
+                    actor = self.classify_actor_by_code(
+                        self.get_xpath(row, "actionCode")
+                    )
 
                 # house actions give a time, senate just a date
                 if row.findall("actionTime"):
