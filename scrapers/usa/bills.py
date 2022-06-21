@@ -57,9 +57,7 @@ class USBillScraper(Scraper):
         root = ET.fromstring(sitemaps)
 
         # if you want to test a bill:
-        yield from self.parse_bill(
-            "https://www.govinfo.gov/bulkdata/BILLSTATUS/117/s/BILLSTATUS-117s1098.xml"
-        )
+        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/116/hr/BILLSTATUS-116hr3884.xml')
 
         for link in root.findall("us:sitemap/us:loc", self.ns):
             # split by /, then check that "116s" matches the chamber
