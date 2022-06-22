@@ -27,14 +27,16 @@
   },
   {
     "name": "ca",
-    "people": [
+    "people": [],
+    "_people": [
       "scrapers_next.ca.people.AssemblyList",
       "scrapers_next.ca.people.SenList"
     ]
   },
   {
     "name": "co",
-    "people": [
+    "people": [],
+    "_people": [
       "scrapers_next.co.people.LegList"
     ]
   },
