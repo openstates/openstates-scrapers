@@ -4,11 +4,6 @@ networks:
   openstates-network:
       name: openstates-network
 
-volumes:
-  openstates-postgres:
-    name: openstates-postgres
-    external: true
-
 services:
   scrape:
     build: .
@@ -72,6 +67,6 @@ services:
       POSTGRES_USER: openstates
       POSTGRES_DB: openstatesorg
     volumes:
-      - openstates-postgres:/var/lib/postgresql/data
+      - ./openstates-postgres/:/var/lib/postgresql/data
     networks:
       - openstates-network

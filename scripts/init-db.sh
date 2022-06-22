@@ -5,7 +5,6 @@ unset DATABASE_URL
 
 # stop database and remove volume
 docker-compose down
-docker volume rm openstates-postgres || true
 docker-compose up -d db
 sleep 3
 
