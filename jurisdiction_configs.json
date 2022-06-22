@@ -1,0 +1,210 @@
+[
+  {
+    "name": "ak",
+    "people": ["scrapers_next.ak.people.Legislators"]
+  },
+  {
+    "name": "al",
+    "people": ["scrapers_next.al.people.SenList","scrapers_next.al.people.RepList"]
+  },
+  {
+  "name": "ar",
+    "people": ["scrapers_next.ar.people.LegList"]
+  },
+  {
+  "name": "az",
+    "people": ["scrapers_next.az.people.SenList","scrapers_next.az.people.RepList"]
+  },
+  {
+  "name": "ca",
+    "people": ["scrapers_next.ca.people.AssemblyList","scrapers_next.ca.people.SenList"]
+  },
+  {
+  "name": "co",
+    "people": ["scrapers_next.co.people.LegList"]
+  },
+  {
+  "name": "ct",
+    "people": ["scrapers_next.ct.people.LegList"]
+  },
+  {
+  "name": "dc",
+    "people": ["scrapers_next.dc.people.CouncilList"]
+  },
+  {
+  "name": "de",
+    "people": ["scrapers_next.de.people.Senate","scrapers_next.de.people.House"]
+  },
+  {
+  "name": "fl",
+    "people": ["scrapers_next.fl.people.Senators","scrapers_next.fl.people.Representatives"]
+  },
+  {
+  "name": "ga",
+    "people": ["scrapers_next.ga.people.DirectoryListing"]
+  },
+  {
+  "name": "hi",
+    "people": ["scrapers_next.hi.people.Legislators"]
+  },
+  {
+  "name": "ia",
+    "people": ["scrapers_next.ia.people.SenList","scrapers_next.ia.people.RepList"]
+  },
+  {
+  "name": "id",
+    "people": []
+  },
+  {
+  "name": "il",
+    "people": []
+  },
+  {
+  "name": "in",
+    "people": []
+  },
+  {
+  "name": "ks",
+    "people": []
+  },
+  {
+  "name": "ky",
+    "people": []
+  },
+  {
+  "name": "la",
+    "people": []
+  },
+  {
+  "name": "ma",
+    "people": []
+  },
+  {
+  "name": "md",
+    "people": []
+  },
+  {
+  "name": "me",
+    "people": []
+  },
+  {
+  "name": "mi",
+    "people": []
+  },
+  {
+  "name": "mn",
+    "people": []
+  },
+  {
+  "name": "mo",
+    "people": []
+  },
+  {
+  "name": "ms",
+    "people": []
+  },
+  {
+  "name": "mt",
+    "people": []
+  },
+  {
+  "name": "nc",
+    "people": []
+  },
+  {
+  "name": "nd",
+    "people": []
+  },
+  {
+  "name": "ne",
+    "people": []
+  },
+  {
+  "name": "nh",
+    "people": []
+  },
+  {
+  "name": "nj",
+    "people": []
+  },
+  {
+  "name": "nm",
+    "people": []
+  },
+  {
+  "name": "nv",
+    "people": []
+  },
+  {
+  "name": "ny",
+    "people": []
+  },
+  {
+  "name": "oh",
+    "people": []
+  },
+  {
+  "name": "ok",
+    "people": []
+  },
+  {
+  "name": "or",
+    "people": []
+  },
+  {
+  "name": "pa",
+    "people": []
+  },
+  {
+  "name": "pr",
+    "people": []
+  },
+  {
+  "name": "ri",
+    "people": []
+  },
+  {
+  "name": "sc",
+    "people": []
+  },
+  {
+  "name": "sd",
+    "people": []
+  },
+  {
+  "name": "tn",
+    "people": []
+  },
+  {
+  "name": "tx",
+    "people": []
+  },
+  {
+  "name": "ut",
+    "people": []
+  },
+  {
+  "name": "va",
+    "people": []
+  },
+  {
+  "name": "vt",
+    "people": []
+  },
+  {
+  "name": "wa",
+    "people": []
+  },
+  {
+  "name": "wi",
+    "people": []
+  },
+  {
+  "name": "wv",
+    "people": []
+  },
+  {
+  "name": "wy",
+    "people": []
+  }
+]

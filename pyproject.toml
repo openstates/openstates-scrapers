@@ -24,8 +24,6 @@ paramiko = "^2.9.2"
 [tool.poetry.extras]
 california = ["mysqlclient", "SQLAlchemy"]
 
-
-
 [tool.poetry.dev-dependencies]
 black = "^22"
 [build-system]

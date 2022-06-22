@@ -91,7 +91,7 @@ class CouncilDetail(HtmlPage):
 
 
 class CouncilList(HtmlListPage):
-    source = URL("http://dccouncil.us/councilmembers/")
+    source = URL("https://dccouncil.us/councilmembers/")
     selector = CSS("li.column", num_items=14)
 
     def process_item(self, item):
