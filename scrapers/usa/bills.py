@@ -256,9 +256,11 @@ class USBillScraper(Scraper):
                 # LOC doesn't make the actor clear, but you can back into it
                 # from the actions
                 if source == "Library of Congress":
-                    actor = self.classify_actor_by_code(
+                    possible_actor = self.classify_actor_by_code(
                         self.get_xpath(row, "actionCode")
                     )
+                    if possible_actor is not None:
+                        actor = possible_actor
 
                 # house actions give a time, senate just a date
                 if row.findall("actionTime"):
