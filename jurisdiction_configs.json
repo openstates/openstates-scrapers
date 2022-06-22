@@ -1,210 +1,347 @@
 [
   {
     "name": "ak",
-    "people": ["scrapers_next.ak.people.Legislators"]
+    "people": [
+      "scrapers_next.ak.people.Legislators"
+    ]
   },
   {
     "name": "al",
-    "people": ["scrapers_next.al.people.SenList","scrapers_next.al.people.RepList"]
+    "people": [
+      "scrapers_next.al.people.SenList",
+      "scrapers_next.al.people.RepList"
+    ]
   },
   {
-  "name": "ar",
-    "people": ["scrapers_next.ar.people.LegList"]
+    "name": "ar",
+    "people": [
+      "scrapers_next.ar.people.LegList"
+    ]
   },
   {
-  "name": "az",
-    "people": ["scrapers_next.az.people.SenList","scrapers_next.az.people.RepList"]
+    "name": "az",
+    "people": [
+      "scrapers_next.az.people.SenList",
+      "scrapers_next.az.people.RepList"
+    ]
   },
   {
-  "name": "ca",
-    "people": ["scrapers_next.ca.people.AssemblyList","scrapers_next.ca.people.SenList"]
+    "name": "ca",
+    "people": [
+      "scrapers_next.ca.people.AssemblyList",
+      "scrapers_next.ca.people.SenList"
+    ]
   },
   {
-  "name": "co",
-    "people": ["scrapers_next.co.people.LegList"]
+    "name": "co",
+    "people": [
+      "scrapers_next.co.people.LegList"
+    ]
   },
   {
-  "name": "ct",
-    "people": ["scrapers_next.ct.people.LegList"]
+    "name": "ct",
+    "people": [
+      "scrapers_next.ct.people.LegList"
+    ]
   },
   {
-  "name": "dc",
-    "people": ["scrapers_next.dc.people.CouncilList"]
+    "name": "dc",
+    "people": [
+      "scrapers_next.dc.people.CouncilList"
+    ]
   },
   {
-  "name": "de",
-    "people": ["scrapers_next.de.people.Senate","scrapers_next.de.people.House"]
+    "name": "de",
+    "people": [
+      "scrapers_next.de.people.Senate",
+      "scrapers_next.de.people.House"
+    ]
   },
   {
-  "name": "fl",
-    "people": ["scrapers_next.fl.people.Senators","scrapers_next.fl.people.Representatives"]
+    "name": "fl",
+    "people": [
+      "scrapers_next.fl.people.Senators",
+      "scrapers_next.fl.people.Representatives"
+    ]
   },
   {
-  "name": "ga",
-    "people": ["scrapers_next.ga.people.DirectoryListing"]
+    "name": "ga",
+    "people": [
+      "scrapers_next.ga.people.DirectoryListing"
+    ]
   },
   {
-  "name": "hi",
-    "people": ["scrapers_next.hi.people.Legislators"]
+    "name": "hi",
+    "people": [
+      "scrapers_next.hi.people.Legislators"
+    ]
   },
   {
-  "name": "ia",
-    "people": ["scrapers_next.ia.people.SenList","scrapers_next.ia.people.RepList"]
+    "name": "ia",
+    "people": [
+      "scrapers_next.ia.people.SenList",
+      "scrapers_next.ia.people.RepList"
+    ]
   },
   {
-  "name": "id",
-    "people": []
+    "name": "id",
+    "people": [
+      "scrapers_next.id.people.Senate",
+      "scrapers_next.id.people.House"
+    ]
   },
   {
-  "name": "il",
-    "people": []
+    "name": "il",
+    "people": [
+      "scrapers_next.il.people.Senate",
+      "scrapers_next.il.people.House"
+    ]
   },
   {
-  "name": "in",
-    "people": []
+    "name": "in",
+    "people": [
+      "scrapers_next.in.people.RepublicanHouse",
+      "scrapers_next.in.people.DemocraticHouse",
+      "scrapers_next.in.people.DemocraticSenate",
+      "scrapers_next.in.people.RepublicanSenate"
+    ]
   },
   {
-  "name": "ks",
-    "people": []
+    "name": "ks",
+    "people": [
+      "scrapers_next.ks.people.Legislators"
+    ]
   },
   {
-  "name": "ky",
-    "people": []
+    "name": "ky",
+    "people": [
+      "scrapers_next.ky.people.Senate",
+      "scrapers_next.ky.people.House"
+    ]
   },
   {
-  "name": "la",
-    "people": []
+    "name": "la",
+    "people": [
+      "scrapers_next.la.people.Senate",
+      "scrapers_next.la.people.House"
+    ]
   },
   {
-  "name": "ma",
-    "people": []
+    "name": "ma",
+    "people": [
+      "scrapers_next.ma.people.LegList"
+    ]
   },
   {
-  "name": "md",
-    "people": []
+    "name": "md",
+    "people": [
+      "scrapers_next.md.people.DelegateList",
+      "scrapers_next.md.people.SenatorList"
+    ]
   },
   {
-  "name": "me",
-    "people": []
+    "name": "me",
+    "people": [
+      "scrapers_next.me.people.Senate",
+      "scrapers_next.me.people.House"
+    ]
   },
   {
-  "name": "mi",
-    "people": []
+    "name": "mi",
+    "people": [
+      "scrapers_next.mi.people.Senators",
+      "scrapers_next.mi.people.Representatives"
+    ]
   },
   {
-  "name": "mn",
-    "people": []
+    "name": "mn",
+    "people": [
+      "scrapers_next.mn.people.Senators",
+      "scrapers_next.mn.people.Representatives"
+    ]
   },
   {
-  "name": "mo",
-    "people": []
+    "name": "mo",
+    "people": [
+      "scrapers_next.mo.people.Senators",
+      "scrapers_next.mo.people.Representatives"
+    ]
   },
   {
-  "name": "ms",
-    "people": []
+    "name": "ms",
+    "people": [
+      "scrapers_next.ms.people.Senate",
+      "scrapers_next.ms.people.House"
+    ]
   },
   {
-  "name": "mt",
-    "people": []
+    "name": "mt",
+    "people": [
+      "scrapers_next.mt.people.Legislators"
+    ]
   },
   {
-  "name": "nc",
-    "people": []
+    "name": "nc",
+    "people": [
+      "scrapers_next.nc.people.SenList",
+      "scrapers_next.nc.people.RepList"
+    ]
   },
   {
-  "name": "nd",
-    "people": []
+    "name": "nd",
+    "people": [
+      "scrapers_next.nd.people.LegList"
+    ]
   },
   {
-  "name": "ne",
-    "people": []
+    "name": "ne",
+    "people": [
+      "scrapers_next.ne.people.LegPageGenerator"
+    ]
   },
   {
-  "name": "nh",
-    "people": []
+    "name": "nh",
+    "people": [
+      "scrapers_next.nh.people.Legislators"
+    ]
   },
   {
-  "name": "nj",
-    "people": []
+    "name": "nj",
+    "people": [
+      "scrapers_next.nj.people.LegList"
+    ]
   },
   {
-  "name": "nm",
-    "people": []
+    "name": "nm",
+    "people": [
+      "scrapers_next.nm.people.Senate",
+      "scrapers_next.nm.people.House"
+    ]
   },
   {
-  "name": "nv",
-    "people": []
+    "name": "nv",
+    "people": [
+      "scrapers_next.nv.people.Senate",
+      "scrapers_next.nv.people.House"
+    ]
   },
   {
-  "name": "ny",
-    "people": []
+    "name": "ny",
+    "people": [
+      "scrapers_next.ny.people.Assembly"
+    ]
   },
   {
-  "name": "oh",
-    "people": []
+    "name": "oh",
+    "people": [
+      "scrapers_next.oh.people.House"
+    ]
   },
   {
-  "name": "ok",
-    "people": []
+    "name": "ok",
+    "people": [
+      "scrapers_next.ok.people.Senate",
+      "scrapers_next.ok.people.House"
+    ]
   },
   {
-  "name": "or",
-    "people": []
+    "name": "or",
+    "people": [
+      "scrapers_next.or.people.LegList"
+    ]
   },
   {
-  "name": "pa",
-    "people": []
+    "name": "pa",
+    "people": [
+      "scrapers_next.pa.people.Senate",
+      "scrapers_next.pa.people.House"
+    ]
   },
   {
-  "name": "pr",
-    "people": []
+    "name": "pr",
+    "people": [
+      "scrapers_next.pr.people.Senate",
+      "scrapers_next.pr.people.House"
+    ]
   },
   {
-  "name": "ri",
-    "people": []
+    "name": "ri",
+    "people": [
+      "scrapers_next.ri.people.AssemblyList",
+      "scrapers_next.ri.people.SenList"
+    ]
   },
   {
-  "name": "sc",
-    "people": []
+    "name": "sc",
+    "people": [
+      "scrapers_next.sc.people.Senate",
+      "scrapers_next.sc.people.House"
+    ]
   },
   {
-  "name": "sd",
-    "people": []
+    "name": "sd",
+    "people": [
+      "scrapers_next.sd.people.Legislators"
+    ]
   },
   {
-  "name": "tn",
-    "people": []
+    "name": "tn",
+    "people": [
+      "scrapers_next.tn.people.Senate",
+      "scrapers_next.tn.people.House"
+    ]
   },
   {
-  "name": "tx",
-    "people": []
+    "name": "tx",
+    "people": [
+      "scrapers_next.tx.people.SenatorList",
+      "scrapers_next.tx.people.RepresentativeList"
+    ]
   },
   {
-  "name": "ut",
-    "people": []
+    "name": "ut",
+    "people": [
+      "scrapers_next.ut.people.LegList"
+    ]
   },
   {
-  "name": "va",
-    "people": []
+    "name": "va",
+    "people": [
+      "scrapers_next.va.people.MemberList"
+    ]
   },
   {
-  "name": "vt",
-    "people": []
+    "name": "vt",
+    "people": [
+      "scrapers_next.vt.people.LegList"
+    ]
   },
   {
-  "name": "wa",
-    "people": []
+    "name": "wa",
+    "people": [
+      "scrapers_next.wa.people.RepList",
+      "scrapers_next.wa.people.SenList"
+    ]
   },
   {
-  "name": "wi",
-    "people": []
+    "name": "wi",
+    "people": [
+      "scrapers_next.wi.people.Senate",
+      "scrapers_next.wi.people.House"
+    ]
   },
   {
-  "name": "wv",
-    "people": []
+    "name": "wv",
+    "people": [
+      "scrapers_next.wv.people.Senate",
+      "scrapers_next.wv.people.House"
+    ]
   },
   {
-  "name": "wy",
-    "people": []
+    "name": "wy",
+    "people": [
+      "scrapers_next.wy.people.Senate",
+      "scrapers_next.wy.people.House"
+    ]
   }
 ]
