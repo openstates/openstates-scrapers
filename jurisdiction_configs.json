@@ -308,7 +308,8 @@
   {
     "name": "va",
     "people": [
-      "scrapers_next.va.people.MemberList"
+      "scrapers_next.va.people.House",
+      "scrapers_next.va.people.Senate"
     ]
   },
   {
