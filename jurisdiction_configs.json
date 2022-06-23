@@ -228,7 +228,7 @@
   },
   {
     "name": "ny",
-    "people": [
+    "_people": [
       "scrapers_next.ny.people.Assembly"
     ]
   },
