@@ -34,7 +34,8 @@
   },
   {
     "name": "co",
-    "people": [
+    "people": [],
+    "_people": [
       "scrapers_next.co.people.LegList"
     ]
   },

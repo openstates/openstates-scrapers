@@ -51,7 +51,7 @@ class LegDetail(HtmlPage):
 
 class LegList(HtmlListPage):
     source = "http://leg.colorado.gov/legislators"
-    selector = CSS("tbody tr", num_items=103)
+    selector = CSS("tbody tr", min_items=101)
 
     def process_item(self, item):
         title = CSS("td").match(item)[0].text_content().strip()
