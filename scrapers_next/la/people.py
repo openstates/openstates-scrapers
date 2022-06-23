@@ -20,24 +20,15 @@ class LegislatorDetail(HtmlPage):
 
         for addr in district_addr_lst:
             district_addr_temp += addr.strip()
-            if (
-                self.da_re.search(district_addr_temp)
-                and not district_addr1
-            ):
+            if self.da_re.search(district_addr_temp) and not district_addr1:
                 district_addr1 = district_addr_temp
                 district_addr_temp = ""
                 p.district_office.address = district_addr1
-            elif (
-                self.da_re.search(district_addr_temp)
-                and not district_addr2
-            ):
+            elif self.da_re.search(district_addr_temp) and not district_addr2:
                 district_addr2 = district_addr_temp
                 district_addr_temp = ""
                 p.add_office("district", address=district_addr2)
-            elif (
-                self.da_re.search(district_addr_temp)
-                and not district_addr3
-            ):
+            elif self.da_re.search(district_addr_temp) and not district_addr3:
                 district_addr3 = district_addr_temp
                 district_addr_temp = ""
                 p.add_office("district", address=district_addr3)
@@ -68,9 +59,7 @@ class LegislatorDetail(HtmlPage):
                 .strip()
             )
             if phone2 != "":
-                phone2 = self.phone_re.search(phone2).groups()[
-                    0
-                ]
+                phone2 = self.phone_re.search(phone2).groups()[0]
                 p.extras["second phone"] = phone2
         except SelectorError:
             pass
