@@ -125,44 +125,46 @@ class Legislators(HtmlListPage):
             return
         elif CSS("td").match(item)[1].text_content().strip() == "Martin, Greg":
             return
-        else:
-            name_dirty = CSS("td").match(item)[1].text_content().strip().split(", ")
-            name = name_dirty[1] + " " + name_dirty[0]
-            if "Speaker" in name:
-                name = re.sub(r"Speaker ", "", name)
 
-            party = CSS("td").match(item)[2].text_content().strip()
-            if party == "D":
-                party = "Democratic"
-            elif party == "R":
-                party = "Republican"
+        name_dirty = CSS("td").match(item)[1].text_content().strip().split(", ")
+        name = name_dirty[1] + " " + name_dirty[0]
+        if "Speaker" in name:
+            name = re.sub(r"Speaker ", "", name)
 
-            district = CSS("td").match(item)[4].text_content().strip()
-            district = re.search(r"District\s(.+)", district).groups()[0]
+        party = CSS("td").match(item)[2].text_content().strip()
+        if party == "D":
+            party = "Democratic"
+        elif party == "R":
+            party = "Republican"
+        elif party == "I":
+            party = "Independent"
 
-            p = ScrapePerson(
-                name=name,
-                state="tn",
-                chamber=self.chamber,
-                district=district,
-                party=party,
-            )
+        district = CSS("td").match(item)[4].text_content().strip()
+        district = re.search(r"District\s(.+)", district).groups()[0]
 
-            detail_link = CSS("td a").match(item)[1].get("href")
+        p = ScrapePerson(
+            name=name,
+            state="tn",
+            chamber=self.chamber,
+            district=district,
+            party=party,
+        )
 
-            p.add_source(self.source.url)
-            p.add_source(detail_link)
-            p.add_link(detail_link, note="homepage")
+        detail_link = CSS("td a").match(item)[1].get("href")
 
-            email = CSS("td a").match(item)[0].get("href")
-            email = re.search(r"mailto:(.+)", email).groups()[0]
-            p.email = email
+        p.add_source(self.source.url)
+        p.add_source(detail_link)
+        p.add_link(detail_link, note="homepage")
 
-            # this is also being grabbed above in capitol_office.address
-            office_room = CSS("td").match(item)[5].text_content().strip()
-            p.extras["office"] = office_room
+        email = CSS("td a").match(item)[0].get("href")
+        email = re.search(r"mailto:(.+)", email).groups()[0]
+        p.email = email
 
-            return LegDetail(p, source=detail_link)
+        # this is also being grabbed above in capitol_office.address
+        office_room = CSS("td").match(item)[5].text_content().strip()
+        p.extras["office"] = office_room
+
+        return LegDetail(p, source=detail_link)
 
 
 class Senate(Legislators):
