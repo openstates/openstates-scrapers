@@ -42,4 +42,4 @@ RUN pip --no-cache-dir --disable-pip-version-check install poetry \
 
 ADD . /opt/openstates/openstates
 
-ENTRYPOINT ["poetry", "run"]
+ENTRYPOINT ["poetry", "run", "os-update"]
