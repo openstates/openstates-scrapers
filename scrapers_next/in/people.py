@@ -197,7 +197,7 @@ class BlueSenList(HtmlListPage):
         p.add_link(detail_link, note="homepage")
         p.add_source(self.source.url)
         p.add_source(detail_link)
-        return BlueSenDetail(p, source=detail_link)
+        return BlueSenDetail(p, source=URL(detail_link, timeout=30))
 
 
 class RedSenList(HtmlListPage):
@@ -226,7 +226,7 @@ class RedSenList(HtmlListPage):
         p.add_source(self.source.url)
         p.add_source(detail_link)
         p.add_link(detail_link, note="homepage")
-        return RedSenDetail(p, source=detail_link)
+        return RedSenDetail(p, source=URL(detail_link, timeout=30))
 
 
 class BlueRepList(HtmlListPage):
@@ -255,7 +255,7 @@ class BlueRepList(HtmlListPage):
 
         p.add_source(self.source.url)
 
-        return BlueRepDetail(p, source=detail_link_full)
+        return BlueRepDetail(p, source=URL(detail_link_full, timeout=30))
 
 
 class RedRepDetail(HtmlPage):
@@ -325,13 +325,11 @@ class RedRepList(HtmlListPage):
         p.add_source(detail_link)
         p.add_source(self.source.url.split("?")[0])
 
-        return RedRepDetail(p, source=URL(detail_link, timeout=10))
+        return RedRepDetail(p, source=URL(detail_link, timeout=30))
 
 
 class RepublicanHouse(RedRepList):
-    source = URL(
-        "https://www.indianahouserepublicans.com/members/?pos=0,100,100", timeout=10
-    )
+    source = URL("https://www.indianahouserepublicans.com/members/?pos=0,100,100")
     selector = CSS("div.member-list a", min_items=60, max_items=100)
     chamber = "lower"
     party = "Republican"
