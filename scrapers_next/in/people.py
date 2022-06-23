@@ -188,9 +188,26 @@ class BlueSenList(HtmlListPage):
     """
 
     def process_item(self, item):
-        name = CSS("div.person-desc div.person-author div.person-author-wrapper span.person-name").match_one(item).text_content().removeprefix("Senator ")
-        img = CSS("div.person-shortcode-image-wrapper div a img").match_one(item).get("src")
-        district = CSS("div.person-desc div.person-author div.person-author-wrapper span.person-title").match_one(item).text_content()
+        name = (
+            CSS(
+                "div.person-desc div.person-author div.person-author-wrapper span.person-name"
+            )
+            .match_one(item)
+            .text_content()
+            .removeprefix("Senator ")
+        )
+        img = (
+            CSS("div.person-shortcode-image-wrapper div a img")
+            .match_one(item)
+            .get("src")
+        )
+        district = (
+            CSS(
+                "div.person-desc div.person-author div.person-author-wrapper span.person-title"
+            )
+            .match_one(item)
+            .text_content()
+        )
         # special titles applied before the district name
         if "|" in district:
             district = district.split("|")[1]
@@ -205,7 +222,9 @@ class BlueSenList(HtmlListPage):
             image=img,
         )
 
-        detail_link = CSS("div.person-shortcode-image-wrapper div a").match_one(item).get("href")
+        detail_link = (
+            CSS("div.person-shortcode-image-wrapper div a").match_one(item).get("href")
+        )
         p.add_link(detail_link, note="homepage")
         p.add_source(self.source.url)
         p.add_source(detail_link)
