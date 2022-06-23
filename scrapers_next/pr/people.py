@@ -31,14 +31,28 @@ class SenDetail(HtmlPage):
     input_type = PartialSen
 
     def process_page(self):
-        district = (
-            CSS(
-                "span#DeltaPlaceHolderMain section div.row.profile-container div ul li a"
-            )
-            .match(self.root)[1]
-            .text_content()
-            .strip()
-        )
+        """
+        <div class="row">
+	<div class="col-md-10 col-md-offset-1">
+		<div class="row">
+			<div class="col-md-3">
+				<img src="document_vault/senator/12/FourYearPeriods/14/photo/MARIALLY GONZALEZ.jpg" class="senator_image" />
+				<br /><br />
+				<div class="section_titles">Senadora por Distrito</div>
+				<br />
+				<div class="section_titles">Partido Popular Democrático</div>
+				<br />
+				<div class="section_titles"><a href="news.cfm?SenatorFilter=12&filterform=1" style="text-decoration: none;    color: inherit;">Comunicaciones y Prensa</a></div>
+				<br />
+				<img src="document_vault/senator_template/phone.jpg" style="width: 50px;margin: 0px auto;display: inherit;" />
+				<div class="contact_titles">787-724-2030</div>
+				<br />
+				<img src="document_vault/senator_template/email.png" style="width: 50px;margin: 0px auto;display: inherit;" />
+				<div class="contact_titles">magonzalez@senado.pr.gov</div>
+			</div>
+        No district indications, but we can leave the old code in place as it doesn't _fail_.
+        """
+        district = CSS("div.row div.col-md-10 div.row div.col-md-3 div.section_titles").match(self.root)[0].text_content().strip()
         if district == "Senador por Acumulación":
             district = "At-Large"
         elif district == "Senadora por Distrito":
@@ -71,27 +85,24 @@ class SenDetail(HtmlPage):
         p.add_link(self.source.url, note="homepage")
 
         try:
-            img = CSS("div.avatar img").match_one(self.root).get("src")
+            img = CSS("div.row div.col-md-10 div.row div.col-md-3 img").match(self.root)[0].get("src")
             p.image = img
         except SelectorError:
             pass
 
-        email = (
-            CSS("a.contact-data.email")
-            .match_one(self.root)
-            .text_content()
-            .replace("\u200b", "")
-            .strip()
-        )
+        email = CSS("div.row div.col-md-10 div.row div.col-md-3 div.contact_titles").match(self.root)[1].text_content().strip()
         p.email = email
 
+        """
         title = CSS("span.position").match_one(self.root).text_content().strip()
         if title != "":
             p.extras["title"] = title
-
-        phone = CSS("a.contact-data.tel").match_one(self.root).text_content().strip()
+        """
+        phone = CSS("div.row div.col-md-10 div.row div.col-md-3 div.contact_titles").match(self.root)[0].text_content().strip()
         p.capitol_office.voice = phone
 
+        """
+        Addresses all seem to be missing, so we'll disable those for now
         addresses = CSS("div.pre-footer div div div div p").match(self.root)
         cap_addr = CSS("br").match(addresses[0])
         capitol_address = ""
@@ -108,20 +119,21 @@ class SenDetail(HtmlPage):
                 mailing_address += line.tail.strip()
                 mailing_address += " "
         p.extras["Mailing address"] = mailing_address.strip()
+        """
 
         return p
 
 
 class Senate(HtmlListPage):
-    source = URL("https://senado.pr.gov/Pages/Senadores.aspx")
-    selector = CSS("ul.senadores-list li", num_items=27)
+    source = URL("https://senado.pr.gov/index.cfm?module=senadores")
+    selector = CSS("div.senator_cont")
 
     def process_item(self, item):
         # Convert names to title case as they are in all-caps
-        name = CSS("span.name").match_one(item).text_content().strip()
+        name = CSS("a span.name").match_one(item).text_content().strip()
         name = re.sub(r"^Hon\.", "", name, flags=re.IGNORECASE).strip().title()
 
-        party = CSS("span.partido").match_one(item).text_content().strip()
+        party = CSS("a span.partido").match_one(item).text_content().strip()
         # Translate to English since being an Independent is a universal construct
         if party == "Independiente":
             party = "Independent"
