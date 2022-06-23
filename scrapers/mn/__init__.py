@@ -212,6 +212,7 @@ class Minnesota(State):
         },
     ]
     ignored_scraped_sessions = [
+        "93rd Legislature, 2023-2024",
         "85th Legislature, 2007-2008",
         "85th Legislature, 2007 1st Special Session",
         "84th Legislature, 2005-2006",
