@@ -7,6 +7,11 @@ from .utils import get_token
 class LegDetail(JsonPage):
     def process_page(self):
         p = self.input
+
+        # hack to get around required email field in pydantic
+        if not p.email:
+            return None
+
         p.add_source(self.source.url, note="Detail page (requires authorization token)")
 
         p.email = self.data["email"]
@@ -116,6 +121,7 @@ class DirectoryListing(JsonListPage):
         source = URL(
             f"https://www.legis.ga.gov/api/members/detail/{item['id']}?session=1029&chamber={chamber_id}",
             headers={"Authorization": get_token()},
+            timeout=30,
         )
 
         return LegDetail(p, source=source)

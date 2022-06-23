@@ -39,6 +39,8 @@ class Senators(HtmlListPage):
         district = item.xpath("string(../../td[1])")
         party = item.xpath("string(../../td[2])")
         leg_url = item.get("href")
+
+        # retired members have missing fields
         if not district or not party or not leg_url:
             self.skip()
 
@@ -60,7 +62,6 @@ class SenDetail(HtmlPage):
             .get("href")
             .split(":")[-1]
         )
-        print(self.input)
         p = ScrapePerson(
             state="fl",
             chamber="upper",
@@ -164,15 +165,17 @@ class Representatives(HtmlListPage):
 
     def process_item(self, item):
         name = item.xpath("./a/div[@class='team-txt']/h5/text()")[0].strip()
+
+        # hack for empty chairs
         if name == "Pending, Election":
             self.skip()
+
         party = item.xpath("./a/div[@class='team-txt']/p[1]/text()")[0].split()[0]
         district = item.xpath("./a/div[@class='team-txt']/p[1]/span/text()")[0].split()[
             -1
         ]
         image = self.IMAGE_BASE + item.xpath(".//img")[0].attrib["data-src"]
         link = str(item.xpath("./a/@href")[0])
-        print(name, party, district)
 
         return RepContact(
             PartialPerson(
