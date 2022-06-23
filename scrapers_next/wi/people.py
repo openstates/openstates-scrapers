@@ -49,6 +49,7 @@ class LegDetail(HtmlPage):
 
 class Legislators(HtmlListPage):
     selector = CSS("div.box-content div")
+    party_re = re.compile(r"\(([A-Z])\s-\s.+\)")
 
     def process_item(self, item):
         # skip header rows
@@ -58,10 +59,17 @@ class Legislators(HtmlListPage):
         name_dirty = (
             CSS("span.info strong").match(item)[0].text_content().strip().split(", ")
         )
-        name = name_dirty[1] + " " + name_dirty[0]
+        if len(name_dirty) > 1:
+            name = f"{name_dirty[1]} {name_dirty[0]}"
+        elif len(name_dirty) == 1:
+            name = name_dirty[0]
+        else:
+            self.skip()
+        if name == "Vacant":
+            self.skip()
 
         party = CSS("span.info small").match(item)[0].text_content().strip()
-        party = re.search(r"\(([A-Z])\s-\s.+\)", party).groups()[0]
+        party = self.party_re.search(party).groups()[0]
         if party == "D":
             party = "Democratic"
         elif party == "R":
