@@ -174,6 +174,7 @@ class RepDetail(HtmlPage):
             "PIP": "Partido Independentista Puertorrique\u00F1o",
             "PD": "Proyecto Dignidad",
             "MVC": "Movimiento Victoria Ciudadana",
+            "Independiente": "Independent",
         }
         party = CSS(".ova-experience span").match_one(self.root).text_content().strip()
         party = party_map[party]
