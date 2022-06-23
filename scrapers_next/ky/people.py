@@ -133,6 +133,5 @@ class Senate(LegList):
 
 
 class House(LegList):
-    source = URL(
-        "https://legislature.ky.gov/Legislators/house-of-representatives")
+    source = URL("https://legislature.ky.gov/Legislators/house-of-representatives")
     chamber = "lower"
