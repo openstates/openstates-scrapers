@@ -33,26 +33,31 @@ class SenDetail(HtmlPage):
     def process_page(self):
         """
         <div class="row">
-	<div class="col-md-10 col-md-offset-1">
-		<div class="row">
-			<div class="col-md-3">
-				<img src="document_vault/senator/12/FourYearPeriods/14/photo/MARIALLY GONZALEZ.jpg" class="senator_image" />
-				<br /><br />
-				<div class="section_titles">Senadora por Distrito</div>
-				<br />
-				<div class="section_titles">Partido Popular Democrático</div>
-				<br />
-				<div class="section_titles"><a href="news.cfm?SenatorFilter=12&filterform=1" style="text-decoration: none;    color: inherit;">Comunicaciones y Prensa</a></div>
-				<br />
-				<img src="document_vault/senator_template/phone.jpg" style="width: 50px;margin: 0px auto;display: inherit;" />
-				<div class="contact_titles">787-724-2030</div>
-				<br />
-				<img src="document_vault/senator_template/email.png" style="width: 50px;margin: 0px auto;display: inherit;" />
-				<div class="contact_titles">magonzalez@senado.pr.gov</div>
-			</div>
+        <div class="col-md-10 col-md-offset-1">
+                <div class="row">
+                        <div class="col-md-3">
+                                <img src="document_vault/senator/12/FourYearPeriods/14/photo/MARIALLY GONZALEZ.jpg" class="senator_image" />
+                                <br /><br />
+                                <div class="section_titles">Senadora por Distrito</div>
+                                <br />
+                                <div class="section_titles">Partido Popular Democrático</div>
+                                <br />
+                                <div class="section_titles"><a href="news.cfm?SenatorFilter=12&filterform=1" style="text-decoration: none;    color: inherit;">Comunicaciones y Prensa</a></div>
+                                <br />
+                                <img src="document_vault/senator_template/phone.jpg" style="width: 50px;margin: 0px auto;display: inherit;" />
+                                <div class="contact_titles">787-724-2030</div>
+                                <br />
+                                <img src="document_vault/senator_template/email.png" style="width: 50px;margin: 0px auto;display: inherit;" />
+                                <div class="contact_titles">magonzalez@senado.pr.gov</div>
+                        </div>
         No district indications, but we can leave the old code in place as it doesn't _fail_.
         """
-        district = CSS("div.row div.col-md-10 div.row div.col-md-3 div.section_titles").match(self.root)[0].text_content().strip()
+        district = (
+            CSS("div.row div.col-md-10 div.row div.col-md-3 div.section_titles")
+            .match(self.root)[0]
+            .text_content()
+            .strip()
+        )
         if district == "Senador por Acumulación":
             district = "At-Large"
         elif district == "Senadora por Distrito":
@@ -85,12 +90,21 @@ class SenDetail(HtmlPage):
         p.add_link(self.source.url, note="homepage")
 
         try:
-            img = CSS("div.row div.col-md-10 div.row div.col-md-3 img").match(self.root)[0].get("src")
+            img = (
+                CSS("div.row div.col-md-10 div.row div.col-md-3 img")
+                .match(self.root)[0]
+                .get("src")
+            )
             p.image = img
         except SelectorError:
             pass
 
-        email = CSS("div.row div.col-md-10 div.row div.col-md-3 div.contact_titles").match(self.root)[1].text_content().strip()
+        email = (
+            CSS("div.row div.col-md-10 div.row div.col-md-3 div.contact_titles")
+            .match(self.root)[1]
+            .text_content()
+            .strip()
+        )
         p.email = email
 
         """
@@ -98,7 +112,12 @@ class SenDetail(HtmlPage):
         if title != "":
             p.extras["title"] = title
         """
-        phone = CSS("div.row div.col-md-10 div.row div.col-md-3 div.contact_titles").match(self.root)[0].text_content().strip()
+        phone = (
+            CSS("div.row div.col-md-10 div.row div.col-md-3 div.contact_titles")
+            .match(self.root)[0]
+            .text_content()
+            .strip()
+        )
         p.capitol_office.voice = phone
 
         """
