@@ -32,7 +32,11 @@ class HouseDetail(HtmlPage):
     party_css = CSS(prefix + "Party")
 
     def process_page(self):
-        name = self.name_css.match_one(self.root).text.split(maxsplit=1)[1]
+        name = self.name_css.match_one(self.root).text.split(maxsplit=1)
+        if len(name) < 2:
+            # empty seat
+            return None
+        name = name[1]
         p = ScrapePerson(
             name=name,
             state="ok",
