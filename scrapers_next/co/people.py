@@ -1,4 +1,4 @@
-from spatula import CSS, HtmlListPage, HtmlPage, SelectorError
+from spatula import URL, CSS, HtmlListPage, HtmlPage, SelectorError
 from openstates.models import ScrapePerson
 
 
