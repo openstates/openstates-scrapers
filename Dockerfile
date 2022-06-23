@@ -1,7 +1,10 @@
 FROM python:3.9-slim
 LABEL maintainer="James Turk <dev@jamesturk.net>"
 
-ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PYTHONIOENCODING='utf-8' LANG='C.UTF-8'
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONIOENCODING='utf-8'
+ENV LANG='C.UTF-8'
 
 RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends \
       git \
@@ -41,5 +44,6 @@ RUN pip --no-cache-dir --disable-pip-version-check install poetry \
     && rm -rf /var/lib/apt/lists/*
 
 ADD . /opt/openstates/openstates
+ENV OPENSSL_CONF=/opt/openstates/openstates/openssl.cnf
 
 ENTRYPOINT ["poetry", "run", "os-update"]

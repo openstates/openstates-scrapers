@@ -5,7 +5,7 @@ IMAGE_NAME=openstates-scrapers_scrape:latest
 
 if [[ -z $* ]]; then
     echo "You must provide commands to run!"
-    echo "e.g. os-update usa votes year=2022"
+    echo "e.g. usa votes year=2022"
     exit 1
 fi
 
