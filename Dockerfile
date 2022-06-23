@@ -3,7 +3,7 @@ LABEL maintainer="James Turk <dev@jamesturk.net>"
 
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PYTHONIOENCODING='utf-8' LANG='C.UTF-8'
 
-RUN apt update && apt install -y --no-install-recommends \
+RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends \
       git \
       build-essential \
       curl \
@@ -11,7 +11,6 @@ RUN apt update && apt install -y --no-install-recommends \
       libssl-dev \
       libffi-dev \
       freetds-dev \
-      python3-virtualenv \
       libxml2-dev \
       libxslt-dev \
       libyaml-dev \
@@ -21,16 +20,26 @@ RUN apt update && apt install -y --no-install-recommends \
       libgeos-dev \
       wget \
       unzip \
-#     libcrypto1.1 \
       mdbtools && \
+      apt-get clean && \
       rm -rf /var/lib/apt/lists/*
 
-ADD . /opt/openstates/openstates
 WORKDIR /opt/openstates/openstates/
+ADD pyproject.toml /opt/openstates/openstates
+ADD poetry.lock /opt/openstates/openstates
+
 ENV PYTHONPATH=./scrapers
 
-RUN set -ex \
-    && pip install poetry \
-    && poetry install
+RUN pip --no-cache-dir --disable-pip-version-check install poetry \
+    && poetry install -q \
+    && rm -r /root/.cache/pypoetry/cache /root/.cache/pypoetry/artifacts/ \
+    && apt-get remove -y -qq \
+      build-essential \
+      libpq-dev \
+    && apt-get autoremove -y -qq \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-ENTRYPOINT ["poetry", "run", "os-update"]
+ADD . /opt/openstates/openstates
+
+ENTRYPOINT ["poetry", "run"]
