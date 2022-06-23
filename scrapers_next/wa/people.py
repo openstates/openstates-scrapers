@@ -104,12 +104,16 @@ class LegList(HtmlListPage):
 
 
 class RepList(LegList):
-    source = URL("https://app.leg.wa.gov/ContentParts/MemberDirectory/?a=House", timeout=30)
+    source = URL(
+        "https://app.leg.wa.gov/ContentParts/MemberDirectory/?a=House", timeout=30
+    )
     selector = CSS("#allMembers .memberInformation", num_items=98)
     chamber = "lower"
 
 
 class SenList(LegList):
-    source = URL("https://app.leg.wa.gov/ContentParts/MemberDirectory/?a=Senate", timeout=30)
+    source = URL(
+        "https://app.leg.wa.gov/ContentParts/MemberDirectory/?a=Senate", timeout=30
+    )
     selector = CSS("#allMembers .memberInformation", min_items=45, max_items=49)
     chamber = "upper"
