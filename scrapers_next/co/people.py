@@ -83,4 +83,4 @@ class LegList(HtmlListPage):
         p.add_source(detail_link)
         p.add_link(detail_link, note="homepage")
 
-        return LegDetail(p, source=detail_link)
+        return LegDetail(p, source=URL(detail_link, timeout=30))
