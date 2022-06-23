@@ -50,7 +50,11 @@ class LegislatorDetail(HtmlPage):
         if phone == "504-83POLLY (837-6559)":
             phone = "(504) 837-6559"
         else:
-            phone = re.search(r"(\(\d{3}\)\s?\d{3}-\d{4})(.+)?", phone).groups()[0]
+            phone = re.search(r"(\(\d{3}\)\s?\d{3}-\d{4})(.+)?", phone)
+            if phone:
+                phone = phone.groups()[0]
+            else:
+                phone = ""
         p.district_office.voice = phone
 
         try:
