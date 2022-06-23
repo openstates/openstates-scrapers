@@ -11,14 +11,19 @@ fi
 
 set -eo pipefail
 
-pushd "${SCRIPT_DIR}/../" > /dev/null 2>&1 || exit 1
-
-docker buildx build . --tag "${IMAGE_NAME}"
+docker buildx build "${SCRIPT_DIR}/../" --tag "${IMAGE_NAME}"
 
 docker run --rm \
-    --user "$(id -u):$(id -g)" \
     -v "${SCRIPT_DIR}/../_data:/opt/openstates/openstates/_data" \
     -v "${SCRIPT_DIR}/../_cache:/opt/openstates/openstates/_cache" \
     -v "${SCRIPT_DIR}/../_scrapes:/opt/openstates/openstates/_scrapes" \
     "${IMAGE_NAME}" \
     "$@"
+
+# fix any permissions
+docker run --rm \
+    -v "${SCRIPT_DIR}/../_data:/opt/openstates/openstates/_data" \
+    -v "${SCRIPT_DIR}/../_cache:/opt/openstates/openstates/_cache" \
+    -v "${SCRIPT_DIR}/../_scrapes:/opt/openstates/openstates/_scrapes" \
+    "${IMAGE_NAME}" \
+    chmod -R go+rwx /opt/openstates/openstates/_data /opt/openstates/openstates/_cache /opt/openstates/openstates/_scrapes
