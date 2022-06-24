@@ -34,14 +34,10 @@ class AssemblyList(HtmlListPage):
             image=photo_url,
         )
         capitol_office_header = CSS("h3").match(item)[0].text_content()
-        capitol_office_text = (
-            XPath(
-                "./td[4]/text()"
-            )
-            .match(item)[1]
-            .strip()
+        capitol_office_text = XPath("./td[4]/text()").match(item)[1].strip()
+        capitol_office_full_address, capitol_office_phone = capitol_office_text.split(
+            "; "
         )
-        capitol_office_full_address, capitol_office_phone = capitol_office_text.split("; ")
         capitol_office_pobox, office_city = capitol_office_full_address.split(",", 1)
         capitol_office_address = f"{capitol_office_header.removeprefix('Capitol Office, ')} {office_city.strip()}"
 
