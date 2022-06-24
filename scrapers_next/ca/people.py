@@ -17,7 +17,7 @@ class AssemblyList(HtmlListPage):
 
         district = CSS("td").match(item)[1].text_content().strip().lstrip("0")
 
-        # District 18 has a vacant spot
+        # vacant districts show up with an interesting name
         if name == "edit":
             self.skip("skipping Vacant seat in District {}".format(district))
 
@@ -49,14 +49,23 @@ class AssemblyList(HtmlListPage):
         p.capitol_office.voice = capitol_office_phone
 
         district_offices = XPath(".//td/p[1]/text()").match(item)
+        office = district_offices[0]
+        district_address, district_phone = office.split("; ")
+        p.district_office.address = district_address.strip()
+        p.district_office.voice = district_phone.strip()
 
-        for office in district_offices:
-            district_address, district_phone = office.split("; ")
-            p.add_office(
-                classification="district",
-                address=district_address.strip(),
-                voice=district_phone.strip(),
-            )
+        if len(district_offices) > 1:
+            for office in district_offices[1:]:
+                district_address, district_phone = office.split("; ")
+                if not district_address.strip() or not district_phone.strip():
+                    # don't add empty addresses
+                    continue
+                p.add_office(
+                    classification="district",
+                    address=district_address.strip(),
+                    voice=district_phone.strip(),
+                )
+        print(p.__dict__)
 
         url = CSS("a").match(item)[0].get("href")
         p.add_link(url)
