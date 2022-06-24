@@ -36,7 +36,7 @@ for scraper in ${JURISDICTIONS}; do
 	FOLDER="${SCRIPT_DIR}/../$(tail -1 "${SCRIPT_DIR}/../_scrapes/${TODAY}-scrape.tmp" | rev | cut -d" " -f1 | rev)"
 	rm -f "${SCRIPT_DIR}/../_scrapes/${TODAY}-scrape.tmp"
 	echo "Syncing from ${FOLDER} to ${REPO_FOLDER}..."
-	OS_PEOPLE_DIRECTORY="${REPO_FOLDER}" poetry run os-people merge "${ABBR}" "${FOLDER}"
+	OS_PEOPLE_DIRECTORY="${REPO_FOLDER}" poetry run os-people merge "${ABBR}" "${FOLDER}" --reset-offices
 done
 
 rm -rf "${SCRIPT_DIR}/../_scrapes/${TODAY}"
