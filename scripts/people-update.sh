@@ -21,6 +21,7 @@ fi
 
 # clean up processing folders
 rm -rf "${SCRIPT_DIR}/../_scrapes/${TODAY}"
+mkdir -p "${SCRIPT_DIR}/../_scrapes"
 
 echo "Cloning people repo..."
 REPO_FOLDER=/tmp/people-git
