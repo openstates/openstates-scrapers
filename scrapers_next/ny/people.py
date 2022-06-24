@@ -229,20 +229,21 @@ class Senate(HtmlListPage):
         elif party == "(R, C, IP)":
             party == "Republican/Conservative/Independence"
 
-        try:
-            p = ScrapePerson(
-                state="ny",
-                chamber="upper",
-                image=img,
-                party=party,
-                district=district,
-                name=name,
-            )
-            """
-            some additional detail on Senator's detail pages,
-            but the detail link is weirdly outside the div we can successfully use to pull Senators.
-            """
+        p = ScrapePerson(
+            state="ny",
+            chamber="upper",
+            image=img,
+            party=party,
+            district=district,
+            name=name,
+        )
+        """
+        some additional detail on Senator's detail pages,
+        but the detail link is weirdly outside the div we can successfully use to pull Senators.
+        We could try and guess at the link name:
+        The pattern is /senators/<name>/contact for everything we need.
+        The only issue is some senators have unicode characters in their names, which are converted
+        to non-unicode characters in the link.
+        """
 
-            return p
-        except Exception:
-            pass
+        return p
