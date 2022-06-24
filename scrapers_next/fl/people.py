@@ -26,7 +26,7 @@ class PartialPerson:
 
 
 class Senators(HtmlListPage):
-    source = "https://flsenate.gov/Senators/"
+    source = "https://www.flsenate.gov/Senators/"
     selector = XPath("//a[@class='senatorLink']")
 
     def process_item(self, item):
@@ -157,7 +157,7 @@ class RepContact(HtmlPage):
 
 
 class Representatives(HtmlListPage):
-    source = "https://myfloridahouse.gov/Representatives"
+    source = "https://www.myfloridahouse.gov/Representatives"
     # kind of wonky xpath to not get the partial term people at the bottom of the page
     selector = XPath("(//div[@class='team-page'])[1]//div[@class='team-box']")
 
