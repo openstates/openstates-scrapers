@@ -50,19 +50,29 @@ class AssemblyList(HtmlListPage):
         p.extras["P.O. Box"] = f"{capitol_office_pobox} {office_city}"
 
         district_offices = XPath(".//td/p[1]/text()").match(item)
+        district_phones = list()
         office = district_offices[0]
         district_address, district_phone = office.split("; ")
         p.district_office.address = district_address.strip()
         p.district_office.voice = district_phone.strip()
+        district_phones.append(district_phone.strip())
 
         if len(district_offices) > 1:
             for office in district_offices[1:]:
                 district_address, district_phone = office.split("; ")
-                p.add_office(
-                    classification="district",
-                    address=district_address.strip(),
-                    voice=district_phone.strip(),
-                )
+                dist_phone = district_phone.strip()
+                if dist_phone not in district_phones:
+                    district_phones.append(dist_phone)
+                    p.add_office(
+                        classification="district",
+                        address=district_address.strip(),
+                        voice=dist_phone,
+                    )
+                else:
+                    p.add_office(
+                        classification="district",
+                        address=district_address.strip(),
+                    )
 
         url = CSS("a").match(item)[0].get("href")
         p.add_link(url)
