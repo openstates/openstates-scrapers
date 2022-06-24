@@ -203,6 +203,15 @@ class Senate(HtmlListPage):
             .text_content()
             .strip()
         )
+        district = (
+            CSS("div.nys-senator--info span.nys-senator--district")
+            .match_one(item)
+            .text_content()
+            .strip()
+            .removeprefix(party)
+            .strip()
+        )
+
         if party == "(D)":
             party = "Democratic"
         elif party == "(R)":
@@ -220,26 +229,20 @@ class Senate(HtmlListPage):
         elif party == "(R, C, IP)":
             party == "Republican/Conservative/Independence"
 
-        district = (
-            CSS("div.nys-senator--info span.nys-senator--district")
-            .match_one(item)
-            .text_content()
-            .strip()
-            .removeprefix(party)
-            .strip()
-        )
+        try:
+            p = ScrapePerson(
+                state="ny",
+                chamber="upper",
+                image=img,
+                party=party,
+                district=district,
+                name=name,
+            )
+            """
+            some additional detail on Senator's detail pages,
+            but the detail link is weirdly outside the div we can successfully use to pull Senators.
+            """
 
-        p = ScrapePerson(
-            state="ny",
-            chamber="upper",
-            image=img,
-            party=party,
-            district=district,
-            name=name,
-        )
-        """
-        some additional detail on Senator's detail pages,
-        but the detail link is weirdly outside the div we can successfully use to pull Senators.
-        """
-
-        return p
+            return p
+        except Exception:
+            pass
