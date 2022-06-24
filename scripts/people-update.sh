@@ -5,6 +5,7 @@ set -eo pipefail
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 OPENSSL_CONF="${SCRIPT_DIR}/../openssl.cnf"
 export OPENSSL_CONF
+TODAY=$(date +%Y-%m-%d)
 
 # get a list of all configured jurisdictions for this tool
 JUR_NAMES=$(jq -r .[].name < "${SCRIPT_DIR}/../jurisdiction_configs.json" | xargs)
@@ -19,18 +20,23 @@ else
 fi
 
 # clean up processing folders
-rm -rf "${SCRIPT_DIR}/../_scrapes/$(date +%Y-%m-%d)/" "${SCRIPT_DIR}/../_auto-people"
+rm -rf "${SCRIPT_DIR}/../_scrapes/${TODAY}"
+
+echo "Cloning people repo..."
+REPO_FOLDER=/tmp/people-git
+rm -rf "${REPO_FOLDER}"
+git clone git@github.com:openstates/people.git "${REPO_FOLDER}"
+pushd "${REPO_FOLDER}" > /dev/null || exit 1
+git checkout -b "${TODAY}-auto-people-merge"
+popd > /dev/null || exit 1
 
 for scraper in ${JURISDICTIONS}; do
-    poetry run spatula scrape "${scraper}"
+    poetry run spatula scrape "${scraper}" | tee "${SCRIPT_DIR}/../_scrapes/${TODAY}-scrape.tmp"
+	ABBR=$(echo "${scraper}" | cut -d"." -f2)
+	FOLDER="${SCRIPT_DIR}/../$(tail -1 "${SCRIPT_DIR}/../_scrapes/${TODAY}-scrape.tmp" | rev | cut -d" " -f1 | rev)"
+	rm -f "${SCRIPT_DIR}/../_scrapes/${TODAY}-scrape.tmp"
+	echo "Syncing from ${FOLDER} to ${REPO_FOLDER}..."
+	OS_PEOPLE_DIRECTORY="${REPO_FOLDER}" poetry run os-people merge "${ABBR}" "${FOLDER}"
 done
 
-mkdir -p "${SCRIPT_DIR}/../_auto-people"
-
-if [[ ! -d "${SCRIPT_DIR}/../_scrapes/$(date +%Y-%m-%d)" ]]; then
-    echo "No output generated!"
-    exit 1
-fi
-find "${SCRIPT_DIR}/../_scrapes/$(date +%Y-%m-%d)" -type f -name "*.json" -exec cp {} "${SCRIPT_DIR}/../_auto-people/" \;
-rm -rf "${SCRIPT_DIR}/../_scrapes/$(date +%Y-%m-%d)"
-
+rm -rf "${SCRIPT_DIR}/../_scrapes/${TODAY}"
