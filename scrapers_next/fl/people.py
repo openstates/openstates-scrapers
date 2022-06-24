@@ -157,7 +157,7 @@ class RepContact(HtmlPage):
 
 
 class Representatives(HtmlListPage):
-    source = "https://www.myfloridahouse.gov/Representatives"
+    source = "https://myfloridahouse.gov/Representatives"
     # kind of wonky xpath to not get the partial term people at the bottom of the page
     selector = XPath("(//div[@class='team-page'])[1]//div[@class='team-box']")
 
