@@ -10,6 +10,8 @@ from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage, URL
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
 import requests
 
+SPONSOR_RE = re.compile(r"by\s+(?P<sponsors>[^(]+)(\(CO-INTRODUCERS\)\s+(?P<cosponsors>[\s\S]+))?")
+
 requests.packages.urllib3.disable_warnings()
 requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
 
@@ -139,7 +141,6 @@ class BillDetail(HtmlPage):
             'string(//div[@id="main"]/div/div/p[span[contains(text(),"by")]])'
         ).strip()
 
-        SPONSOR_RE = re.compile(r"by\s+(?P<sponsors>[^(]+)(\(CO-INTRODUCERS\)\s+(?P<cosponsors>[\s\S]+))?")
         match = SPONSOR_RE.search(sponsor)
         sponsors = match.groupdict()["sponsors"]
         if not sponsors:
