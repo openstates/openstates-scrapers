@@ -11,6 +11,7 @@ RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends \
       build-essential \
       curl \
       unzip \
+      libgdal28 \
       libssl-dev \
       libffi-dev \
       freetds-dev \
