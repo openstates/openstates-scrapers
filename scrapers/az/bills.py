@@ -299,6 +299,7 @@ class AZBillScraper(Scraper):
                 if (
                     action.get("UnanimouslyAdopted", False)
                     or action["Action"] == "Passed"
+                    or action.get("Ayes", 0) > action.get("Nays", 0)
                 ):
                     result = "pass"
 
