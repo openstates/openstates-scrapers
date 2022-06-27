@@ -288,16 +288,20 @@ class AZBillScraper(Scraper):
                 action_date = datetime.datetime.strptime(
                     cleaned_date, "%Y-%m-%dT%H:%M:%S"
                 )
-                vote = VoteEvent(
-                    chamber={"S": "upper", "H": "lower"}[header["LegislativeBody"]],
-                    motion_text=action["Action"],
-                    classification="passage",
-                    result=(
+                if not action.get("Ayes", None) or not action.get("Nays", None):
+                    result = "fail"
+                else:
+                    result = (
                         "pass"
                         if action["UnanimouslyAdopted"]
                         or action["Ayes"] > action["Nays"]
                         else "fail"
-                    ),
+                    )
+                vote = VoteEvent(
+                    chamber={"S": "upper", "H": "lower"}[header["LegislativeBody"]],
+                    motion_text=action["Action"],
+                    classification="passage",
+                    result=result,
                     start_date=action_date.strftime("%Y-%m-%d"),
                     bill=bill,
                 )
