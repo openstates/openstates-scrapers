@@ -138,7 +138,7 @@ class BillDetail(HtmlPage):
         sponsor = self.root.xpath(
             'string(//div[@id="main"]/div/div/p[span[contains(text(),"by")]])'
         ).strip()
-       
+
         SPONSOR_RE = re.compile(r"by\s+(?P<sponsors>[^(]+)(\(CO-INTRODUCERS\)\s+(?P<cosponsors>[\s\S]+))?")
         match = SPONSOR_RE.search(sponsor)
         sponsors = match.groupdict()["sponsors"]
