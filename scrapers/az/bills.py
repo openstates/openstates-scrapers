@@ -288,6 +288,7 @@ class AZBillScraper(Scraper):
                 action_date = datetime.datetime.strptime(
                     cleaned_date, "%Y-%m-%dT%H:%M:%S"
                 )
+                # handle empty vote objects
                 if not action.get("Ayes", None) or not action.get("Nays", None):
                     result = "fail"
                 else:
@@ -306,12 +307,12 @@ class AZBillScraper(Scraper):
                     bill=bill,
                 )
                 vote.add_source(resp.url)
-                vote.set_count("yes", action["Ayes"] or 0)
-                vote.set_count("no", action["Nays"] or 0)
-                vote.set_count("other", (action["Present"] or 0))
-                vote.set_count("absent", (action["Absent"] or 0))
-                vote.set_count("excused", (action["Excused"] or 0))
-                vote.set_count("not voting", (action["NotVoting"] or 0))
+                vote.set_count("yes", action.get("Ayes", 0))
+                vote.set_count("no", action.get("Nays", 0))
+                vote.set_count("other", action.get("Present", 0))
+                vote.set_count("absent", action.get("Absent", 0))
+                vote.set_count("excused", action.get("Excused", 0))
+                vote.set_count("not voting", action.get("NotVoting", 0))
 
                 for v in action["Votes"]:
                     vote_type = {"Y": "yes", "N": "no"}.get(v["Vote"], "other")
