@@ -288,16 +288,20 @@ class AZBillScraper(Scraper):
                 action_date = datetime.datetime.strptime(
                     cleaned_date, "%Y-%m-%dT%H:%M:%S"
                 )
-                # handle empty vote objects
-                if not action.get("Ayes", None) or not action.get("Nays", None):
-                    result = "fail"
-                else:
-                    result = (
-                        "pass"
-                        if action["UnanimouslyAdopted"]
-                        or action["Ayes"] > action["Nays"]
-                        else "fail"
-                    )
+                """
+                safer to fall back to negative results than
+                to incorrectly mark votes as passed
+
+                Some example votes don't have every key we expect, either,
+                so we should try to handle comparisons cleanly
+                """
+                result = "fail"
+                if (
+                    action.get("UnanimouslyAdopted", False)
+                    or action["Action"] == "Passed"
+                ):
+                    result = "pass"
+
                 vote = VoteEvent(
                     chamber={"S": "upper", "H": "lower"}[header["LegislativeBody"]],
                     motion_text=action["Action"],
@@ -307,6 +311,7 @@ class AZBillScraper(Scraper):
                     bill=bill,
                 )
                 vote.add_source(resp.url)
+                # safely handle empty keys with `.get()` functions
                 vote.set_count("yes", action.get("Ayes", 0))
                 vote.set_count("no", action.get("Nays", 0))
                 vote.set_count("other", action.get("Present", 0))
