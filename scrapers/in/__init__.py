@@ -121,8 +121,17 @@ class Indiana(State):
             "end_date": "2022-03-14",
             "active": True,
         },
+        # {
+        #     "_scraped_name": "First Special Session 122nd General Assembly (2022)",
+        #     "classification": "primary",
+        #     "identifier": "2022S1",
+        #     "name": "2022 Special Session",
+        #     "start_date": "2021-01-11",
+        #     "end_date": "2021-04-29",
+        # },
     ]
     ignored_scraped_sessions = [
+        "First Special Session 122nd General Assembly (2022)",
         "2012 Regular Session",
         "2011 Regular Session",
         "2010 Regular Session",

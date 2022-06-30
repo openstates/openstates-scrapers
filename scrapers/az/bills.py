@@ -288,26 +288,37 @@ class AZBillScraper(Scraper):
                 action_date = datetime.datetime.strptime(
                     cleaned_date, "%Y-%m-%dT%H:%M:%S"
                 )
+                """
+                safer to fall back to negative results than
+                to incorrectly mark votes as passed
+
+                Some example votes don't have every key we expect, either,
+                so we should try to handle comparisons cleanly
+                """
+                result = "fail"
+                if (
+                    action.get("UnanimouslyAdopted", False)
+                    or action.get("Ayes", 0) > action.get("Nays", 0)
+                    or action["Action"] == "Passed"
+                ):
+                    result = "pass"
+
                 vote = VoteEvent(
                     chamber={"S": "upper", "H": "lower"}[header["LegislativeBody"]],
                     motion_text=action["Action"],
                     classification="passage",
-                    result=(
-                        "pass"
-                        if action["UnanimouslyAdopted"]
-                        or action["Ayes"] > action["Nays"]
-                        else "fail"
-                    ),
+                    result=result,
                     start_date=action_date.strftime("%Y-%m-%d"),
                     bill=bill,
                 )
                 vote.add_source(resp.url)
-                vote.set_count("yes", action["Ayes"] or 0)
-                vote.set_count("no", action["Nays"] or 0)
-                vote.set_count("other", (action["Present"] or 0))
-                vote.set_count("absent", (action["Absent"] or 0))
-                vote.set_count("excused", (action["Excused"] or 0))
-                vote.set_count("not voting", (action["NotVoting"] or 0))
+                # safely handle empty keys with `.get()` functions
+                vote.set_count("yes", action.get("Ayes", 0))
+                vote.set_count("no", action.get("Nays", 0))
+                vote.set_count("other", action.get("Present", 0))
+                vote.set_count("absent", action.get("Absent", 0))
+                vote.set_count("excused", action.get("Excused", 0))
+                vote.set_count("not voting", action.get("NotVoting", 0))
 
                 for v in action["Votes"]:
                     vote_type = {"Y": "yes", "N": "no"}.get(v["Vote"], "other")
