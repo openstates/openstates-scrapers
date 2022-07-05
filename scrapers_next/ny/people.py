@@ -28,12 +28,8 @@ class PartyAugmentation(HtmlPage):
             tds = row.getchildren()
             dist = tds[0].text_content().strip()
             name = tds[2].text_content().strip()
-            print(dist + " " + name)
-            party = CSS("[style]").match_one(tds[2])
-            print(party)
-            # party = CSS("td:first-child").match_one(row).get("style")
-            # if "[" in party:
-            #     party = party.split("[")[0]
+            party_style = tds[1].get("style")[-6:]
+            party = "Democrat" if party_style == "3333FF" else "Republican"
             mapping[dist] = (name, party)
         return mapping
 
