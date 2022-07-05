@@ -28,7 +28,8 @@ class PartyAugmentation(HtmlPage):
             tds = row.getchildren()
             dist = tds[0].text_content().strip()
             name = tds[2].text_content().strip()
-            # get the last 6 characters off the background-color to see if it's red or blue
+            # party is indicated by just a red or blue cell in the table
+            # get the last 6 characters off the background-color to see which color it is
             party_style = tds[1].get("style")[-6:]
             party = "Democrat" if party_style == "3333FF" else "Republican"
             mapping[dist] = (name, party)
