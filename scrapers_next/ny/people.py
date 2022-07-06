@@ -24,13 +24,14 @@ class PartyAugmentation(HtmlPage):
     def process_page(self):
         mapping = {}
         rows = self.find_rows()
-        for row in rows:
+        for row in rows[1:]:
             tds = row.getchildren()
             dist = tds[0].text_content().strip()
-            name = tds[1].text_content().strip()
-            party = tds[2].text_content().strip()
-            if "[" in party:
-                party = party.split("[")[0]
+            name = tds[2].text_content().strip()
+            # party is indicated by just a red or blue cell in the table
+            # get the last 6 characters off the background-color to see which color it is
+            party_style = tds[1].get("style")[-6:]
+            party = "Democrat" if party_style == "3333FF" else "Republican"
             mapping[dist] = (name, party)
         return mapping
 
