@@ -9,9 +9,10 @@ on:
       - "poetry.lock"
       - "Dockerfile.california"
       - "scrapers/ca/*"
-jobs: 
+jobs:
   publish:
-    steps: 
+    runs-on: ubuntu-latest
+    steps:
       - uses: actions/checkout@v2
       - name: build california docker image
         uses: docker/build-push-action@v1.1.0
@@ -22,4 +23,3 @@ jobs:
           dockerfile: /github/workspace/Dockerfile.california
           tag_with_ref: true
           tags: latest
-    runs-on: ubuntu-18.04
