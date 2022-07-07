@@ -36,8 +36,7 @@ ENV PYTHONPATH=./scrapers
 
 # the last step cleans out temporarily downloaded artifacts for poetry, shrinking our build
 RUN pip --no-cache-dir --disable-pip-version-check install poetry \
-    && poetry install \
-    && rm -r /root/.cache/pypoetry/cache /root/.cache/pypoetry/artifacts/ \
+    && poetry install --no-root \
     && apt-get remove -y -qq \
       build-essential \
       git \
@@ -47,5 +46,7 @@ RUN pip --no-cache-dir --disable-pip-version-check install poetry \
     && rm -rf /var/lib/apt/lists/*
 
 ADD . /opt/openstates/openstates/
+RUN poetry install \
+    && rm -r /root/.cache/pypoetry/cache /root/.cache/pypoetry/artifacts/
 
 ENTRYPOINT ["poetry", "run", "os-update"]
