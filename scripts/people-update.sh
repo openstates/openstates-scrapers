@@ -23,6 +23,9 @@ fi
 rm -rf "${SCRIPT_DIR}/../_scrapes/${TODAY}"
 mkdir -p "${SCRIPT_DIR}/../_scrapes"
 
+echo "ensuring depdendencies are up to date"
+poetry install
+
 echo "Cloning people repo..."
 REPO_FOLDER=/tmp/people-git
 rm -rf "${REPO_FOLDER}"
@@ -33,7 +36,9 @@ popd > /dev/null || exit 1
 
 for scraper in ${JURISDICTIONS}; do
     poetry run spatula scrape "${scraper}" | tee "${SCRIPT_DIR}/../_scrapes/${TODAY}-scrape.tmp"
+	# last portion of the scraper name will be the jurisdiction abbreviation
 	ABBR=$(echo "${scraper}" | cut -d"." -f2)
+	# the last line of output in a scrape indicates the relative folder path where data lives
 	FOLDER="${SCRIPT_DIR}/../$(tail -1 "${SCRIPT_DIR}/../_scrapes/${TODAY}-scrape.tmp" | rev | cut -d" " -f1 | rev)"
 	rm -f "${SCRIPT_DIR}/../_scrapes/${TODAY}-scrape.tmp"
 	echo "Syncing from ${FOLDER} to ${REPO_FOLDER}..."
