@@ -498,7 +498,7 @@ et-xmlfile = "*"
 
 [[package]]
 name = "openstates"
-version = "6.10.10"
+version = "6.11.0"
 description = "core infrastructure for the openstates project"
 category = "main"
 optional = false
@@ -510,13 +510,13 @@ boto3 = ">=1.17.79,<2.0.0"
 chardet = ">=3.0,<4.0"
 click = ">=8.0,<9.0"
 dj_database_url = ">=0.5.0,<0.6.0"
-Django = ">=3.2.0,<4.0.0"
+Django = "3.2.13"
 jsonschema = ">=3.2.0,<4.0.0"
 psycopg2-binary = ">=2.8.4,<3.0.0"
 pydantic = ">=1.8.2,<2.0.0"
 pytz = ">=2019.3,<2020.0"
 PyYAML = ">=5.3.1,<6.0.0"
-scrapelib = ">=2.0.2,<3.0.0"
+scrapelib = ">=2.0.7,<3.0.0"
 spatula = ">=0.8.9,<1.0"
 textract = ">=1.6,<2.0"
 us = ">=2.0.2,<3.0.0"
@@ -775,7 +775,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
 
 [[package]]
 name = "requests"
-version = "2.28.0"
+version = "2.28.1"
 description = "Python HTTP for Humans."
 category = "main"
 optional = false
@@ -783,13 +783,13 @@ python-versions = ">=3.7, <4"
 
 [package.dependencies]
 certifi = ">=2017.4.17"
-charset-normalizer = ">=2.0.0,<2.1.0"
+charset-normalizer = ">=2,<3"
 idna = ">=2.5,<4"
 urllib3 = ">=1.21.1,<1.27"
 
 [package.extras]
 socks = ["PySocks (>=1.5.6,!=1.5.7)"]
-use_chardet_on_py3 = ["chardet (>=3.0.2,<5)"]
+use_chardet_on_py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
 name = "requests-toolbelt"
@@ -818,14 +818,14 @@ crt = ["botocore[crt] (>=1.20.29,<2.0a.0)"]
 
 [[package]]
 name = "scrapelib"
-version = "2.0.6"
+version = "2.0.7"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.7,<4.0"
 
 [package.dependencies]
-requests = {version = ">=2.25.1,<3.0.0", extras = ["security"]}
+requests = {version = ">=2.28.1,<3.0.0", extras = ["security"]}
 
 [[package]]
 name = "sgmllib3k"
@@ -1060,7 +1060,7 @@ california = ["mysqlclient", "SQLAlchemy"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "aed64e0a022770be538052a7e8570d15e976a136ae6bf3a4f15b923157b98c48"
+content-hash = "e2319c9d368b77597c3ed5b5bb621c1b61e34abeac3d591b5e97b296fdc9f588"
 
 [metadata.files]
 appnope = [
@@ -1442,8 +1442,8 @@ openpyxl = [
     {file = "openpyxl-3.0.10.tar.gz", hash = "sha256:e47805627aebcf860edb4edf7987b1309c1b3632f3750538ed962bbcc3bd7449"},
 ]
 openstates = [
-    {file = "openstates-6.10.10-py3-none-any.whl", hash = "sha256:6d76025885ab2847b17d6750367ba28510537dddf2d3bac83a8ca8cf41857c41"},
-    {file = "openstates-6.10.10.tar.gz", hash = "sha256:59a84265f19541e6fe3d287cf018454e2bc290842642e94040d6d69a4a35b1fd"},
+    {file = "openstates-6.11.0-py3-none-any.whl", hash = "sha256:b5e83233cfc135d543e9d220002923e6ea97934098fe8efb748b0c63632523c7"},
+    {file = "openstates-6.11.0.tar.gz", hash = "sha256:8ba7ae70b0c9e2c2fef305bafa754b5c408fe642da0bb814c5ec3f43ffadfc3d"},
 ]
 paramiko = [
     {file = "paramiko-2.11.0-py2.py3-none-any.whl", hash = "sha256:655f25dc8baf763277b933dfcea101d636581df8d6b9774d1fb653426b72c270"},
@@ -1742,8 +1742,8 @@ pyyaml = [
     {file = "PyYAML-5.4.1.tar.gz", hash = "sha256:607774cbba28732bfa802b54baa7484215f530991055bb562efbed5b2f20a45e"},
 ]
 requests = [
-    {file = "requests-2.28.0-py3-none-any.whl", hash = "sha256:bc7861137fbce630f17b03d3ad02ad0bf978c844f3536d0edda6499dafce2b6f"},
-    {file = "requests-2.28.0.tar.gz", hash = "sha256:d568723a7ebd25875d8d1eaf5dfa068cd2fc8194b2e483d7b1f7c81918dbec6b"},
+    {file = "requests-2.28.1-py3-none-any.whl", hash = "sha256:8fefa2a1a1365bf5520aac41836fbee479da67864514bdb821f31ce07ce65349"},
+    {file = "requests-2.28.1.tar.gz", hash = "sha256:7c5599b102feddaa661c826c56ab4fee28bfd17f5abca1ebbe3e7f19d7c97983"},
 ]
 requests-toolbelt = [
     {file = "requests-toolbelt-0.9.1.tar.gz", hash = "sha256:968089d4584ad4ad7c171454f0a5c6dac23971e9472521ea3b6d49d610aa6fc0"},
@@ -1754,8 +1754,8 @@ s3transfer = [
     {file = "s3transfer-0.6.0.tar.gz", hash = "sha256:2ed07d3866f523cc561bf4a00fc5535827981b117dd7876f036b0c1aca42c947"},
 ]
 scrapelib = [
-    {file = "scrapelib-2.0.6-py3-none-any.whl", hash = "sha256:3d490fd79399e108c7aebc6242feba3014ca2eedf91201fabcacc6a0f59e6e11"},
-    {file = "scrapelib-2.0.6.tar.gz", hash = "sha256:848eca858991fc06509b69239d3880d3348953ee0bd558a4afff7ac17e396e60"},
+    {file = "scrapelib-2.0.7-py3-none-any.whl", hash = "sha256:f8b6dbec769da060cf77e83dbb12da852dcc5feb6b79f930a324e77e78a79836"},
+    {file = "scrapelib-2.0.7.tar.gz", hash = "sha256:a67bde378b666fdd0316ee2946bc7d5c6ec224c257898d0528b29734d447c9a6"},
 ]
 sgmllib3k = [
     {file = "sgmllib3k-1.0.0.tar.gz", hash = "sha256:7868fb1c8bfa764c1ac563d3cf369c381d1325d36124933a726f29fcdaa812e9"},
