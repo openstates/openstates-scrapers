@@ -289,6 +289,13 @@ class AZBillScraper(Scraper):
                     cleaned_date, "%Y-%m-%dT%H:%M:%S"
                 )
                 """
+                safely handle empty keys with ternary operators
+                Basically, if the vote type exists in the dict and is non-falsey (0/None/etc.)
+                use the value. Otherwise, use 0
+                """
+                ayes = action["Ayes"] if "Ayes" in action and action["Ayes"] else 0
+                nays = action["Nays"] if "Nays" in action and action["Nays"] else 0
+                """
                 safer to fall back to negative results than
                 to incorrectly mark votes as passed
 
@@ -298,7 +305,7 @@ class AZBillScraper(Scraper):
                 result = "fail"
                 if (
                     action.get("UnanimouslyAdopted", False)
-                    or action.get("Ayes", 0) > action.get("Nays", 0)
+                    or ayes > nays
                     or action["Action"] == "Passed"
                 ):
                     result = "pass"
@@ -312,18 +319,35 @@ class AZBillScraper(Scraper):
                     bill=bill,
                 )
                 vote.add_source(resp.url)
-                # safely handle empty keys with `.get()` functions
-                vote.set_count("yes", action.get("Ayes", 0))
-                vote.set_count("no", action.get("Nays", 0))
-                vote.set_count("other", action.get("Present", 0))
-                vote.set_count("absent", action.get("Absent", 0))
-                vote.set_count("excused", action.get("Excused", 0))
-                vote.set_count("not voting", action.get("NotVoting", 0))
+                vote.set_count("yes", ayes)
+                vote.set_count("no", nays)
+                vote.set_count(
+                    "other",
+                    action["Present"]
+                    if "Present" in action and action["Present"]
+                    else 0,
+                )
+                vote.set_count(
+                    "absent",
+                    action["Absent"] if "Absent" in action and action["Absent"] else 0,
+                )
+                vote.set_count(
+                    "excused",
+                    action["Excused"]
+                    if "Present" in action and action["Present"]
+                    else 0,
+                )
+                vote.set_count(
+                    "not voting",
+                    action["NotVoting"]
+                    if "NotVoting" in action and action["NotVoting"]
+                    else 0,
+                )
 
                 for v in action["Votes"]:
                     vote_type = {"Y": "yes", "N": "no"}.get(v["Vote"], "other")
                     vote.vote(vote_type, v["Legislator"]["FullName"])
-                vote.dedupe_key = resp.url + str(action["ReferralNumber"])
+                vote.dedupe_key = f"{resp.url}{action['ReferralNumber']}"
                 yield vote
 
     def scrape(self, chamber=None, session=None):
