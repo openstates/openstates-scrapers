@@ -12,9 +12,6 @@ SKIP_JURISDICTIONS=${SKIP_JURISDICTIONS:-}
 # inclusive filter (only run these)
 SPECIFIC_JURISDICTIONS=${SPECIFIC_JURISDICTIONS:-}
 
-# get a list of all configured jurisdictions for this tool
-JUR_NAMES=$(jq -r .[].name < "${SCRIPT_DIR}/../jurisdiction_configs.json" | xargs)
-
 # if we supply specific jurisdictions...
 if [[ -n "${SPECIFIC_JURISDICTIONS}" ]]; then
     NAMES=$(echo "${SPECIFIC_JURISDICTIONS}" | tr ',' '|')
