@@ -7,13 +7,21 @@ OPENSSL_CONF="${SCRIPT_DIR}/../openssl.cnf"
 export OPENSSL_CONF
 TODAY=$(date +%Y-%m-%d)
 
+# exclusive filter (don't run these)
+SKIP_JURISDICTIONS=${SKIP_JURISDICTIONS:-}
+# inclusive filter (only run these)
+SPECIFIC_JURISDICTIONS=${SPECIFIC_JURISDICTIONS:-}
+
 # get a list of all configured jurisdictions for this tool
 JUR_NAMES=$(jq -r .[].name < "${SCRIPT_DIR}/../jurisdiction_configs.json" | xargs)
 
 # if we supply specific jurisdictions...
-if [[ -n "$@" ]]; then
-    NAMES=$(echo "$@" | tr ' ' '|')
+if [[ -n "${SPECIFIC_JURISDICTIONS}" ]]; then
+    NAMES=$(echo "${SPECIFIC_JURISDICTIONS}" | tr ',' '|')
     JURISDICTIONS=$(jq --arg n "${NAMES}" -r '.[] | select(.name | test($n)) | .people // [] | .[]' < "${SCRIPT_DIR}/../jurisdiction_configs.json" | xargs)
+elif [[ -n "${SKIP_JURISDICTIONS}" ]]; then
+    NAMES=$(echo "${SKIP_JURISDICTIONS}" | tr ',' '|')
+    JURISDICTIONS=$(jq --arg n "${NAMES}" -r '.[] | select(.name | test($n)|not) | .people // [] | .[]' < "${SCRIPT_DIR}/../jurisdiction_configs.json" | xargs)
 # otherwise we should collect them all
 else
     JURISDICTIONS=$(jq -r '.[].people // [] | .[]' < "${SCRIPT_DIR}/../jurisdiction_configs.json" | xargs)
