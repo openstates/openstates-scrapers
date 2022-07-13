@@ -34,9 +34,8 @@ ADD pyproject.toml /opt/openstates/openstates/
 WORKDIR /opt/openstates/openstates/
 ENV PYTHONPATH=./scrapers
 
-# the last step cleans out temporarily downloaded artifacts for poetry, shrinking our build
 RUN pip --no-cache-dir --disable-pip-version-check install poetry \
-    && poetry install --no-root \
+    && poetry install --no-root -q \
     && apt-get remove -y -qq \
       build-essential \
       git \
@@ -46,7 +45,8 @@ RUN pip --no-cache-dir --disable-pip-version-check install poetry \
     && rm -rf /var/lib/apt/lists/*
 
 ADD . /opt/openstates/openstates/
-RUN poetry install \
+# the last step cleans out temporarily downloaded artifacts for poetry, shrinking our build
+RUN poetry install -q \
     && rm -r /root/.cache/pypoetry/cache /root/.cache/pypoetry/artifacts/
 
 ENV OPENSSL_CONF=/opt/openstates/openstates/openssl.cnf
