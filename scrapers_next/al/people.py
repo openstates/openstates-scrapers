@@ -110,7 +110,10 @@ class LegDetail(HtmlPage):
 
 class SenList(HtmlListPage):
     selector = XPath("//input[@type='image']")
-    source = URL("http://www.legislature.state.al.us/aliswww/ISD/Senate/ALSenators.aspx", timeout=30)
+    source = URL(
+        "http://www.legislature.state.al.us/aliswww/ISD/Senate/ALSenators.aspx",
+        timeout=30,
+    )
     chamber = "upper"
 
     def process_item(self, item):
@@ -130,7 +133,6 @@ class RepList(HtmlListPage):
     source = URL(
         "http://www.legislature.state.al.us/aliswww/ISD/House/ALRepresentatives.aspx",
         timeout=30,
-
     )
     chamber = "lower"
 
