@@ -9,7 +9,6 @@ from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 
 from .legacyBills import NHLegacyBillScraper
 
-
 body_code = {"lower": "H", "upper": "S"}
 bill_type_map = {
     "B": "bill",
@@ -423,8 +422,12 @@ class NHBillScraper(Scraper):
 
             # 2016|H|2|330795||Yea|
             # 2012    | H   | 2    | 330795  | 964 |  HB309  | Yea | 1/4/2012 8:27:03 PM
-            session_yr, body, v_num, _, employee, bill_id, vote, date = line.split("|")
-
+            try:
+                session_yr, body, v_num, _, employee, bill_id, vote, date = line.split("|")
+            except ValueError:
+                # not enough keys in the split
+                self.warning(f"Skipping {line}, didn't have all needed data for vote")
+                continue
             if not bill_id:
                 continue
 
@@ -432,7 +435,7 @@ class NHBillScraper(Scraper):
                 try:
                     leg = " ".join(self.legislators[employee]["name"].split())
                 except KeyError:
-                    self.warning("Error, can't find person %s" % employee)
+                    self.warning(f"Error, can't find person {employee}")
                     continue
 
                 vote = vote.strip()
