@@ -7,7 +7,7 @@ SEN_HTML_URL = "http://www.senate.mn/members/index.php"
 
 
 class Senators(JsonPage):
-    source = URL("https://www.senate.mn/api/members")
+    source = URL("https://www.senate.mn/api/members", verify=False)
 
     def process_page(self):
         for row in self.data["members"]:
