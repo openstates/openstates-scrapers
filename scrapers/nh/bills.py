@@ -423,7 +423,9 @@ class NHBillScraper(Scraper):
             # 2016|H|2|330795||Yea|
             # 2012    | H   | 2    | 330795  | 964 |  HB309  | Yea | 1/4/2012 8:27:03 PM
             try:
-                session_yr, body, v_num, _, employee, bill_id, vote, date = line.split("|")
+                session_yr, body, v_num, _, employee, bill_id, vote, date = line.split(
+                    "|"
+                )
             except ValueError:
                 # not enough keys in the split
                 self.warning(f"Skipping {line}, didn't have all needed data for vote")
