@@ -5,6 +5,7 @@ from openstates.models import ScrapePerson
 
 class FormSource:
     """a WIP generic source for POSTing a form, and getting back results"""
+
     retries = 3
 
     def __init__(self, url, form_xpath, button_label):
