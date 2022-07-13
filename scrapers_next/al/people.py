@@ -1,6 +1,6 @@
 import re
 import attr
-from spatula import HtmlListPage, HtmlPage, XPath, CSS, SkipItem
+from spatula import HtmlListPage, HtmlPage, XPath, CSS, SkipItem, URL
 from openstates.models import ScrapePerson
 
 
@@ -110,7 +110,7 @@ class LegDetail(HtmlPage):
 
 class SenList(HtmlListPage):
     selector = XPath("//input[@type='image']")
-    source = "http://www.legislature.state.al.us/aliswww/ISD/Senate/ALSenators.aspx"
+    source = URL("http://www.legislature.state.al.us/aliswww/ISD/Senate/ALSenators.aspx", timeout=30)
     chamber = "upper"
 
     def process_item(self, item):
@@ -127,8 +127,10 @@ class SenList(HtmlListPage):
 
 class RepList(HtmlListPage):
     selector = XPath("//input[@type='image']")
-    source = (
-        "http://www.legislature.state.al.us/aliswww/ISD/House/ALRepresentatives.aspx"
+    source = URL(
+        "http://www.legislature.state.al.us/aliswww/ISD/House/ALRepresentatives.aspx",
+        timeout=30,
+
     )
     chamber = "lower"
 
