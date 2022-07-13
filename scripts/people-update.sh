@@ -46,3 +46,12 @@ for scraper in ${JURISDICTIONS}; do
 done
 
 rm -rf "${SCRIPT_DIR}/../_scrapes/${TODAY}"
+
+# Show local changes
+pushd "${REPO_FOLDER}" > /dev/null || exit 1
+git add *
+# make sure all output is printed and we exit the diff screen
+echo | git diff
+# commit and push data to new branch
+git commit -as -m "${TODAY} full people update"
+git push --set-upstream origin "${TODAY}-auto-people-merge"
