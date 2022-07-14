@@ -8,13 +8,10 @@ class LegDetail(JsonPage):
     def process_page(self):
         p = self.input
 
-        # hack to get around required email field in pydantic
-        if not p.email:
-            return None
-
         p.add_source(self.source.url, note="Detail page (requires authorization token)")
 
-        p.email = self.data["email"]
+        if self.data["email"]:
+            p.email = self.data["email"]
 
         try:
             capitol_office = (
@@ -30,6 +27,7 @@ class LegDetail(JsonPage):
             if self.data["capitolAddress"]["fax"]:
                 p.capitol_office.fax = self.data["capitolAddress"]["fax"]
         except TypeError:
+            self.logger.warning("Empty capitol address for {p.name}")
             pass
 
         extras = [
@@ -62,7 +60,7 @@ class DirectoryListing(JsonListPage):
     chamber_names = {1: "house", 2: "senate"}
     party_ids = {0: "Democratic", 1: "Republican"}
     source = URL(
-        "https://www.legis.ga.gov/api/members/list/1029?",
+        "https://www.legis.ga.gov/api/members/list/1029",
         headers={"Authorization": get_token()},
     )
 
@@ -79,11 +77,12 @@ class DirectoryListing(JsonListPage):
             suffix=item["name"]["suffix"] or "",
             party=self.party_ids[item["party"]],
         )
-
         # district address
         da = item["districtAddress"]
         if da["email"]:
             p.email = da["email"]
+        else:
+            p.email = "missing@invalid.no"
 
         if da["phone"]:
             p.district_office.voice = da["phone"]
