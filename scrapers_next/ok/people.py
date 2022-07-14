@@ -27,7 +27,6 @@ class House(HtmlListPage):
         return HouseDetail({"name": " ".join(name)}, source=item.get("href"))
 
 
-
 class HouseDetail(HtmlPage):
     image_selector = SimilarLink("https://www.okhouse.gov/Members/Pictures/HiRes/")
     prefix = "#ctl00_ContentPlaceHolder1_lbl"
