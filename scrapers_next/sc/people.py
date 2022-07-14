@@ -151,10 +151,14 @@ class Legislators(HtmlListPage):
 
 
 class Senate(Legislators):
-    source = URL("https://www.scstatehouse.gov/member.php?chamber=S", timeout=30, retries=3)
+    source = URL(
+        "https://www.scstatehouse.gov/member.php?chamber=S", timeout=30, retries=3
+    )
     chamber = "upper"
 
 
 class House(Legislators):
-    source = URL("https://www.scstatehouse.gov/member.php?chamber=H", timeout=30, retries=3)
+    source = URL(
+        "https://www.scstatehouse.gov/member.php?chamber=H", timeout=30, retries=3
+    )
     chamber = "lower"
