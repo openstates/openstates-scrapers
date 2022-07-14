@@ -11,7 +11,7 @@ class PartialMember:
 
 
 class LegDetail(HtmlPage):
-    example_source = "http://www.legislature.state.al.us/aliswww/ISD/ALRepresentative.aspx?NAME=Alexander&OID_SPONSOR=100537&OID_PERSON=7710&SESSNAME=Regular%20Session%202022"
+    example_source = "https://www.legislature.state.al.us/aliswww/ISD/ALRepresentative.aspx?NAME=Alexander&OID_SPONSOR=100537&OID_PERSON=7710&SESSNAME=Regular%20Session%202022"
 
     def process_page(self):
 
@@ -111,7 +111,7 @@ class LegDetail(HtmlPage):
 class SenList(HtmlListPage):
     selector = XPath("//input[@type='image']")
     source = URL(
-        "http://www.legislature.state.al.us/aliswww/ISD/Senate/ALSenators.aspx",
+        "https://www.legislature.state.al.us/aliswww/ISD/Senate/ALSenators.aspx",
         timeout=30,
     )
     chamber = "upper"
@@ -122,16 +122,16 @@ class SenList(HtmlListPage):
         oid_person = item.get("alt")
 
         oid_sponsor = item.get("longdesc").split("Senate/")[1]
-        url = f"http://www.legislature.state.al.us/aliswww/ISD/ALSenator.aspx?NAME={last_name}&OID_SPONSOR={oid_sponsor}&OID_PERSON={oid_person}&SESSNAME=Regular%20Session%202022"
+        url = f"https://www.legislature.state.al.us/aliswww/ISD/ALSenator.aspx?NAME={last_name}&OID_SPONSOR={oid_sponsor}&OID_PERSON={oid_person}&SESSNAME=Regular%20Session%202022"
         p = PartialMember(url=self.source.url, chamber=self.chamber)
 
-        return LegDetail(p, source=url)
+        return LegDetail(p, source=URL(url, timeout=30))
 
 
 class RepList(HtmlListPage):
     selector = XPath("//input[@type='image']")
     source = URL(
-        "http://www.legislature.state.al.us/aliswww/ISD/House/ALRepresentatives.aspx",
+        "https://www.legislature.state.al.us/aliswww/ISD/House/ALRepresentatives.aspx",
         timeout=30,
     )
     chamber = "lower"
@@ -144,7 +144,7 @@ class RepList(HtmlListPage):
         oid_person = item.get("alt")
 
         oid_sponsor = item.get("longdesc").split("House/")[1]
-        url = f"http://www.legislature.state.al.us/aliswww/ISD/ALRepresentative.aspx?NAME={last_name}&OID_SPONSOR={oid_sponsor}&OID_PERSON={oid_person}&SESSNAME="
+        url = f"https://www.legislature.state.al.us/aliswww/ISD/ALRepresentative.aspx?NAME={last_name}&OID_SPONSOR={oid_sponsor}&OID_PERSON={oid_person}&SESSNAME="
         p = PartialMember(url=self.source.url, chamber=self.chamber)
 
-        return LegDetail(p, source=url)
+        return LegDetail(p, source=URL(url, timeout=30))
