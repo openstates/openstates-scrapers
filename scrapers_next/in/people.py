@@ -361,7 +361,9 @@ class RedRepList(HtmlListPage):
 
 
 class RepublicanHouse(RedRepList):
-    source = URL("https://www.indianahouserepublicans.com/members/?pos=0,100,100", timeout=30)
+    source = URL(
+        "https://www.indianahouserepublicans.com/members/?pos=0,100,100", timeout=30
+    )
     selector = CSS("div.member-list a", min_items=60, max_items=100)
     chamber = "lower"
     party = "Republican"

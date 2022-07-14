@@ -9,8 +9,11 @@ class LegPage(HtmlPage):
     address_css = CSS("address")
 
     def process_page(self):
-        name = self.name_css.match_one(self.root).text.replace("Sen. ", "").strip()
         district = self.district_css.match_one(self.root).text.split()[1]
+        name = self.name_css.match_one(self.root).text.replace("Sen. ", "").strip()
+        if name == "Vacant":
+            self.logger.warning(f"Vacant seat in {district}")
+            return
         image = self.image_css.match_one(self.root).get("src")
         addrlines = self.address_css.match_one(self.root).text_content()
 
@@ -62,4 +65,6 @@ class LegPageGenerator(ListPage):
 
     def process_page(self):
         for n in range(1, 50):
-            yield LegPage(source=f"http://news.legislature.ne.gov/dist{n:02d}/")
+            res = LegPage(source=f"http://news.legislature.ne.gov/dist{n:02d}/")
+            if res:
+                yield res
