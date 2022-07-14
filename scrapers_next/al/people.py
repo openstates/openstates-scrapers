@@ -1,5 +1,6 @@
 import re
 import attr
+from html import unescape
 from spatula import HtmlListPage, HtmlPage, XPath, CSS, SkipItem, URL
 from openstates.models import ScrapePerson
 
@@ -25,7 +26,7 @@ class LegDetail(HtmlPage):
             name_split = re.split("SENATOR|, ", name)
         elif self.input.chamber == "lower":
             name_split = re.split("REPRESENTATIVE|, ", name)
-        full_name = name_split[2] + name_split[1]
+        full_name = unescape(f"{name_split[2]}{name_split[1]}")
 
         table = CSS("#ContentPlaceHolder1_TabSenator_TabLeg_gvLEG").match_one(self.root)
 
@@ -87,7 +88,7 @@ class LegDetail(HtmlPage):
         p.add_source(self.input.url)
 
         # This address is the capitol office
-        if re.search("11 South Union Street", street):
+        if "11 South Union Street" in street:
             p.capitol_office.address = address
             p.capitol_office.voice = phone
             try:
