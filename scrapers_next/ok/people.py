@@ -21,21 +21,22 @@ class House(HtmlListPage):
     source = "https://www.okhouse.gov/Members/Default.aspx"
 
     def process_item(self, item):
-        return HouseDetail({"name": item.text.strip()}, source=item.get("href"))
+        name = item.text.strip().split()
+        if len(name) < 2:
+            self.skip("vacancy")
+        return HouseDetail({"name": " ".join(name)}, source=item.get("href"))
+
 
 
 class HouseDetail(HtmlPage):
     image_selector = SimilarLink("https://www.okhouse.gov/Members/Pictures/HiRes/")
     prefix = "#ctl00_ContentPlaceHolder1_lbl"
-    name_css = CSS(prefix + "Name")
-    district_css = CSS(prefix + "District")
-    party_css = CSS(prefix + "Party")
+    name_css = CSS(f"{prefix}Name")
+    district_css = CSS(f"{prefix}District")
+    party_css = CSS(f"{prefix}Party")
 
     def process_page(self):
         name = self.name_css.match_one(self.root).text.split(maxsplit=1)
-        if len(name) < 2:
-            # empty seat
-            return None
         name = name[1]
         p = ScrapePerson(
             name=name,
