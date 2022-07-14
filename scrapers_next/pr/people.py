@@ -29,6 +29,7 @@ class PartialRep:
 
 class SenDetail(HtmlPage):
     input_type = PartialSen
+    sen_re = re.compile("​DISTRITO|\u200b")
 
     def process_page(self):
         """
@@ -63,7 +64,7 @@ class SenDetail(HtmlPage):
         elif district == "Senadora por Distrito":
             # every Senator except for this link are missing a district number
             # https://senado.pr.gov/Pages/Senators/HON--MIGDALIA-PADILLA-ALVELO.aspx
-            district = ""
+            district = "missing"
             try:
                 district = (
                     CSS("div.module-distrito span.headline")
@@ -71,8 +72,7 @@ class SenDetail(HtmlPage):
                     .text_content()
                     .strip()
                 )
-                district = re.sub("​DISTRITO", "", district)
-                district = re.sub("\u200b", "", district)
+                district = self.sen_re.sub("", district)
                 district = district.strip()
             except SelectorError:
                 pass
