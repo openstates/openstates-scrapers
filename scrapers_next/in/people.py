@@ -334,6 +334,7 @@ class RedRepDetail(HtmlPage):
         p.extras["press contact phone"] = press_phone
         p.extras["press contact email"] = press_email
 
+        self.logger.info(p.__dict__)
         return p
 
 
@@ -360,21 +361,21 @@ class RedRepList(HtmlListPage):
 
 
 class RepublicanHouse(RedRepList):
-    source = URL("https://www.indianahouserepublicans.com/members/?pos=0,100,100")
+    source = URL("https://www.indianahouserepublicans.com/members/?pos=0,100,100", timeout=30)
     selector = CSS("div.member-list a", min_items=60, max_items=100)
     chamber = "lower"
     party = "Republican"
 
 
 class DemocraticHouse(BlueRepList):
-    source = URL("https://indianahousedemocrats.org/members")
+    source = URL("https://indianahousedemocrats.org/members", timeout=30)
     selector = CSS("section.member-listing a", num_items=29)
     chamber = "lower"
     party = "Democratic"
 
 
 class DemocraticSenate(BlueSenList):
-    source = URL("https://www.indianasenatedemocrats.org/senators/")
+    source = URL("https://www.indianasenatedemocrats.org/senators/", timeout=30)
     selector = CSS(
         "div.fusion-person",
         num_items=11,
@@ -384,7 +385,7 @@ class DemocraticSenate(BlueSenList):
 
 
 class RepublicanSenate(RedSenList):
-    source = URL("https://www.indianasenaterepublicans.com/senators")
+    source = URL("https://www.indianasenaterepublicans.com/senators", timeout=30)
     selector = CSS("div.senator-list div.senator-item", num_items=39)
     chamber = "upper"
     party = "Republican"
