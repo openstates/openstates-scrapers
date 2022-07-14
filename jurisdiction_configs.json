@@ -196,7 +196,7 @@
   {
     "name": "ne",
     "people": [
-      "scrapers_next.ne.people.LegPageGenerator"
+      "scrapers_next.ne.people.Legislature"
     ]
   },
   {

@@ -1,6 +1,6 @@
 import re
 import attr
-from spatula import HtmlListPage, HtmlPage, CSS
+from spatula import HtmlListPage, HtmlPage, CSS, URL
 from openstates.models import ScrapePerson
 
 background_image_re = re.compile(r"background-image:url\((.*?)\)")
@@ -16,7 +16,9 @@ class HousePartial:
 
 
 class House(HtmlListPage):
-    source = "https://www.legislature.ohio.gov/legislators/house-directory"
+    source = URL(
+        "https://www.legislature.ohio.gov/legislators/house-directory", timeout=30
+    )
     selector = CSS(".mediaGrid a[target='_blank']", num_items=99)
 
     def process_item(self, item):
