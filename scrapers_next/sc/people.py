@@ -147,14 +147,14 @@ class Legislators(HtmlListPage):
         img = CSS("img").match_one(item).get("src")
         p.image = img
 
-        return LegDetail(p, source=URL(detail_link, timeout=60, retries=3))
+        return LegDetail(p, source=URL(detail_link, timeout=60, retries=5))
 
 
 class Senate(Legislators):
-    source = URL("https://www.scstatehouse.gov/member.php?chamber=S", timeout=30)
+    source = URL("https://www.scstatehouse.gov/member.php?chamber=S", timeout=30, retries=3)
     chamber = "upper"
 
 
 class House(Legislators):
-    source = URL("https://www.scstatehouse.gov/member.php?chamber=H", timeout=30)
+    source = URL("https://www.scstatehouse.gov/member.php?chamber=H", timeout=30, retries=3)
     chamber = "lower"
