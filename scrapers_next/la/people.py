@@ -112,8 +112,9 @@ class Legislators(HtmlListPage):
         name_dirty = name_dirty.split(", ")
         split_length = len(name_dirty)
         # 3 means something like 'Beaullieu, IV, Gerald "Beau"'
+        # also, we can't have more than one comma in a name (per Person model)
         if split_length == 3:
-            last_name = f"{name_dirty[0]}, {name_dirty[1]}"
+            last_name = f"{name_dirty[0]} {name_dirty[1]}"
             first_name = name_dirty[2]
         # 2 means something like 'Bagley, Larry'
         elif split_length == 2:
@@ -123,7 +124,6 @@ class Legislators(HtmlListPage):
             first_name = first_name.split(" ")[0]
             last_name += " Jr."
         name = f"{first_name} {last_name}"
-        self.logger.info(name)
 
         district = CSS("i.fa.fa-map").match_one(item).getnext().text_content().strip()
         party = CSS("i.fa.fa-users").match_one(item).getnext().text_content().strip()
