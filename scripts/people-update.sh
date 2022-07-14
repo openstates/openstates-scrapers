@@ -58,7 +58,7 @@ git add *
 # make sure all output is printed and we exit the diff screen
 echo | git diff
 # commit and push data to new branch
-git commit -as -m "${TODAY} full people update"
+git commit -a -m "${TODAY} full people update"
 git push --set-upstream origin "${TODAY}-auto-people-merge"
 popd > /dev/null || exit 1
 
