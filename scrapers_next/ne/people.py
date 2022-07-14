@@ -72,6 +72,8 @@ class Legislature(HtmlListPage):
             self.skip("not a person")
         if "Vacant" in name:
             self.skip("vacant")
+        last, first = name.split(",")
+        name = f"{first} {last}"
         district = int(CSS("a div span").match(item)[1].text)
         return LegPage(
             LegPartial(
