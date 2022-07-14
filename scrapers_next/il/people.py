@@ -71,8 +71,8 @@ class LegDetail(HtmlPage):
                     "Additional District Addresses",
                 ]
                 or any(
-                    line.startswith(l)
-                    for l in ["Senator", "Representative", "Years served:"]
+                    line.startswith(s)
+                    for s in ["Senator", "Representative", "Years served:"]
                 )
             ):
                 continue
@@ -94,7 +94,7 @@ class LegDetail(HtmlPage):
             elif (
                 district_addr_lines == 2
                 and not line.strip().startswith("(")
-                and not "Email:" in line
+                and "Email:" not in line
             ):
                 district_addr += " "
                 district_addr += line
