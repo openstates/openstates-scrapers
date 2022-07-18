@@ -171,6 +171,27 @@ class Senate(HtmlListPage):
     source = URL("https://www.nysenate.gov/senators-committees")
     selector = CSS("div.c-senator-block", num_items=63)
 
+    def _parties(self, party):
+        if party == "(D)" or party == "(D, IP)":
+            return "Democratic"
+        if party == "(R)":
+            return "Republican"
+        if party == "(R, C, IP, RFM)":
+            return "Republican/Conservative/Independence/Reform"
+        if party == "(D, WF)":
+            return "Democratic/Working Families"
+        if party == "(R, C, IP, LIBT)":
+            return "Republican/Conservative/Independence/Libertarian"
+        if party == "(D, IP, WF)":
+            return "Democratic/Independence/Working Families"
+        if party == "(R, C)":
+            return "Republican/Conservative"
+        if party == "(R, C, IP)":
+            return "Republican/Conservative/Independence"
+        # if party == "(D, IP)":
+        #     return "Democratic/Independence"
+        return party
+
     def process_item(self, item):
         """
                       <div class="u-even">
@@ -212,23 +233,7 @@ class Senate(HtmlListPage):
             .removeprefix(party)
             .strip()
         )
-
-        if party == "(D)":
-            party = "Democratic"
-        elif party == "(R)":
-            party = "Republican"
-        elif party == "(R, C, IP, RFM)":
-            party = "Republican/Conservative/Independence/Reform"
-        elif party == "(D, WF)":
-            party = "Democratic/Working Families"
-        elif party == "(R, C, IP, LIBT)":
-            party = "Republican/Conservative/Independence/Libertarian"
-        elif party == "(D, IP, WF)":
-            party == "Democratic/Independence/Working Families"
-        elif party == "(R, C)":
-            party = "Republican/Conservative"
-        elif party == "(R, C, IP)":
-            party == "Republican/Conservative/Independence"
+        party = self._parties(party)
 
         p = ScrapePerson(
             state="ny",
