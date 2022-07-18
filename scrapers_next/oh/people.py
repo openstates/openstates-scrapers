@@ -7,12 +7,44 @@ background_image_re = re.compile(r"background-image:url\((.*?)\)")
 
 
 @attr.s
-class HousePartial:
+class LegPartial:
     name = attr.ib()
     district = attr.ib()
     party = attr.ib()
     url = attr.ib()
     image = attr.ib()
+    chamber = attr.ib()
+
+
+class Senate(HtmlListPage):
+    source = URL(
+        "https://www.legislature.ohio.gov/legislators/senate-directory", timeout=30
+    )
+    selector = CSS(".mediaGrid a[target='_blank']", num_items=33)
+
+    def process_item(self, item):
+        name = CSS(".mediaCaptionTitle").match_one(item).text
+
+        if name == "Vacant":
+            self.skip("vacant")
+        subtitle = CSS(".mediaCaptionSubtitle").match_one(item).text
+        image = CSS(".photo").match_one(item).get("style")
+        image = background_image_re.findall(image)[0]
+        # e.g. District 25 | D
+        district, party = subtitle.split(" | ")
+        district = district.split()[1]
+        party = {"D": "Democratic", "R": "Republican"}[party]
+
+        return LegDetail(
+            LegPartial(
+                name=name,
+                district=district,
+                party=party,
+                url=item.get("href"),
+                chamber="upper",
+                image=image,
+            )
+        )
 
 
 class House(HtmlListPage):
@@ -34,19 +66,20 @@ class House(HtmlListPage):
         district = district.split()[1]
         party = {"D": "Democratic", "R": "Republican"}[party]
 
-        return HouseDetail(
-            HousePartial(
+        return LegDetail(
+            LegPartial(
                 name=name,
                 district=district,
                 party=party,
                 url=item.get("href"),
                 image=image,
+                chamber="lower",
             )
         )
 
 
-class HouseDetail(HtmlPage):
-    input_type = HousePartial
+class LegDetail(HtmlPage):
+    input_type = LegPartial
 
     def get_source_from_input(self):
         return self.input.url
@@ -55,7 +88,7 @@ class HouseDetail(HtmlPage):
         # construct person from the details from above
         p = ScrapePerson(
             state="oh",
-            chamber="lower",
+            chamber=self.input.chamber,
             district=self.input.district,
             name=self.input.name,
             party=self.input.party,
@@ -64,24 +97,83 @@ class HouseDetail(HtmlPage):
         p.add_source(self.input.url)
         p.add_link(self.input.url)
 
-        divs = CSS(".member-info-bar-module").match(self.root)
-        # last div is contact details
-        contact_details = CSS(".member-info-bar-value").match(divs[-1])
-        for div in contact_details:
-            dtc = div.text_content()
-            if ", OH" in dtc:
-                # join parts of the div together to make whole address
-                children = div.getchildren()
-                p.capitol_office.address = "; ".join(
-                    [
-                        children[0].text.strip(),
-                        children[0].tail.strip(),
-                        children[1].tail.strip(),
-                    ]
-                )
-            elif "Phone:" in dtc:
-                p.capitol_office.voice = dtc.split(": ")[1]
-            elif "Fax:" in dtc:
-                p.capitol_office.fax = dtc.split(": ")[1]
+        if self.input.chamber == "lower":
+            # House path
+            divs = CSS(".member-info-bar-module").match(self.root)
+            # last div is contact details
+            contact_details = CSS(".member-info-bar-value").match(divs[-1])
+            for div in contact_details:
+                dtc = div.text_content()
+                if ", OH" in dtc:
+                    # join parts of the div together to make whole address
+                    children = div.getchildren()
+                    p.capitol_office.address = "; ".join(
+                        [
+                            children[0].text.strip(),
+                            children[0].tail.strip(),
+                            children[1].tail.strip(),
+                        ]
+                    )
+                elif "Phone:" in dtc:
+                    p.capitol_office.voice = dtc.split(": ")[1]
+                elif "Fax:" in dtc:
+                    p.capitol_office.fax = dtc.split(": ")[1]
+        elif self.input.chamber == "upper":
+            """
+                2022-07-18:
+                 <div class="generalInfoModule">
+
+                <div class="name">
+                    Senator Rob McColley
+                </div>
+
+                <div class="address">
+                    <span>Senate Building<br />1 Capitol Square<br />2nd Floor</span>
+                    <div>Columbus, OH  43215</div>
+                </div>
+
+                <div class="hometown">
+                    Hometown: Napoleon
+                </div>
+
+                <div class="phone">
+                    <span>(614) 466-8150</span>
+                </div>
+
+                <div class="email">
+                    <a href='../senators/mccolley/contact'>Email Senator McColley</a>
+                </div>
+
+                <div class='quickConnectModule'><div class='quickConnectLabel'>Connect:</div><div class='quickConnectLabelLinks'><a target='_blank' href='https://www.facebook.com/McColley4Ohio/'><img src='../Assets/Global/SocialMedia/Facebook.png' /></a><a target='_blank' href='https://twitter.com/Rob_McColley?lang=en'><img src='../Assets/Global/SocialMedia/Twitter.png' /></a><a target='_blank' href='https://www.youtube.com/user/ohiosenategop/videos'><img src='../Assets/Global/SocialMedia/YouTube.png' /></a></div></div>
+
+            </div>
+            """
+            # Senate path
+            phone = (
+                CSS(".generalInfoModule div.phone span")
+                .match_one(self.root)
+                .text_content()
+            )
+            p.capitol_office.voice = phone
+            address1 = (
+                CSS(".generalInfoModule div.address span")
+                .match_one(self.root)
+                .text_content()
+            )
+            address2 = (
+                CSS(".generalInfoModule div.address div")
+                .match_one(self.root)
+                .text_content()
+            )
+            # <br /> turns into nothing, so we get some weird spacing...
+            p.capitol_office.address = f"{address1} {address2}"
+            hometown = (
+                CSS(".generalInfoModule div.hometown")
+                .match_one(self.root)
+                .text_content()
+                .strip()
+                .removeprefix("Hometown: ")
+            )
+            p.extras["hometown"] = hometown
 
         return p

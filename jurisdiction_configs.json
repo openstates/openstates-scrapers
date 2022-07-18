@@ -235,7 +235,8 @@
   {
     "name": "oh",
     "people": [
-      "scrapers_next.oh.people.House"
+      "scrapers_next.oh.people.House",
+      "scrapers_next.oh.people.Senate"
     ]
   },
   {
