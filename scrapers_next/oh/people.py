@@ -149,6 +149,44 @@ class LegDetail(HtmlPage):
             </div>
             """
             # Senate path
+
+            # Senators *may* have social media stuff...let's try to grab it
+            try:
+                social = CSS(
+                    ".quickConnectModule .quickConnectLabelLinks a[target='_blank']"
+                ).match(self.root)
+            except Exception:
+                social = []
+            for site in social:
+                url = site.get("href").strip("/")
+                self.logger.info(f"{url=}")
+                if "facebook" in url:
+                    p.ids.facebook = (
+                        url.removeprefix("https://www.facebook.com/")
+                        .split("?")[0]
+                        .strip("/")
+                    )
+                elif "twitter" in url:
+                    p.ids.twitter = url.removeprefix("https://twitter.com/").split("?")[
+                        0
+                    ]
+                elif "youtube" in url:
+                    if "user" in url:
+                        p.ids.youtube = url.removeprefix(
+                            "https://www.youtube.com/user/"
+                        ).removesuffix("/videos")
+                    elif "channel" in url:
+                        p.ids.youtube = url.removeprefix(
+                            "https://www.youtube.com/channel/"
+                        )
+                elif "instagram" in url:
+                    p.ids.instagram = (
+                        url.removeprefix("https://www.instagram.com/")
+                        .split("?")[0]
+                        .strip("/")
+                    )
+                else:
+                    self.logger.info(f"NOT MATCHED: {url}")
             phone = (
                 CSS(".generalInfoModule div.phone span")
                 .match_one(self.root)
@@ -167,6 +205,7 @@ class LegDetail(HtmlPage):
             )
             # <br /> turns into nothing, so we get some weird spacing...
             p.capitol_office.address = f"{address1} {address2}"
+
             hometown = (
                 CSS(".generalInfoModule div.hometown")
                 .match_one(self.root)
