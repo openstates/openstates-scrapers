@@ -159,7 +159,6 @@ class LegDetail(HtmlPage):
                 social = []
             for site in social:
                 url = site.get("href").strip("/")
-                self.logger.info(f"{url=}")
                 if "facebook" in url:
                     p.ids.facebook = (
                         url.removeprefix("https://www.facebook.com/")
@@ -186,7 +185,7 @@ class LegDetail(HtmlPage):
                         .strip("/")
                     )
                 else:
-                    self.logger.info(f"NOT MATCHED: {url}")
+                    self.logger.info(f"SOCIAL NOT MATCHED: {url}")
             phone = (
                 CSS(".generalInfoModule div.phone span")
                 .match_one(self.root)
