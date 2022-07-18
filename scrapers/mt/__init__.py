@@ -51,6 +51,15 @@ class Montana(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-04",
             "end_date": "2021-04-25",
+            "active": False,
+        },
+        {
+            "_scraped_name": "20231",
+            "identifier": "2023",
+            "name": "2023 Regular Session",
+            # TODO: update dates
+            "start_date": "2023-01-04",
+            "end_date": "2023-04-25",
             "active": True,
         },
     ]
