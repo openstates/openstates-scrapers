@@ -394,7 +394,7 @@ class California(State):
             "identifier": "20212022",
             "name": "2021-2022 Regular Session",
             "start_date": "2020-12-07",
-            "end_date": "2021-12-31",
+            "end_date": "2022-12-31",
             "active": True,
         },
     ]
