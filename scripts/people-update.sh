@@ -52,6 +52,8 @@ done
 
 rm -rf "${SCRIPT_DIR}/../_scrapes/${TODAY}"
 
+OS_PEOPLE_DIRECTORY="${REPO_FOLDER}" poetry run os-people lint --fix --save-all --municipal
+
 # Show local changes
 pushd "${REPO_FOLDER}" > /dev/null || exit 1
 git add *
