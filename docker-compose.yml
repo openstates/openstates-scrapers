@@ -21,6 +21,9 @@ services:
     entrypoint: ["poetry", "run", "os-update"]
     networks:
       - openstates-network
+    depends_on:
+      db:
+        condition: service_healthy
   mysql:
     image: mariadb:10.3
 #    command: mysqld_safe --max_allowed_packet=512M
@@ -70,3 +73,8 @@ services:
       - ./openstates-postgres/:/var/lib/postgresql/data
     networks:
       - openstates-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
