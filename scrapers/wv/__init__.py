@@ -197,6 +197,16 @@ class WestVirginia(State):
             "start_date": "2022-04-25",
             # TODO: update end date
             "end_date": "2021-04-29",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022",
+            "classification": "special",
+            "identifier": "20223S",
+            "name": "2022 Third Special Session",
+            "start_date": "2022-07-25",
+            # TODO: update end date
+            "end_date": "2022-08-05",
             "active": True,
         },
     ]
