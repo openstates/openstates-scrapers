@@ -162,7 +162,6 @@ class Representatives(HtmlListPage):
 
     def process_item(self, item):
         name = item.xpath("./a/div[@class='team-txt']/h5/text()")[0].strip()
-
         party = item.xpath("./a/div[@class='team-txt']/p[1]/text()")[0].split()[0]
         district = item.xpath("./a/div[@class='team-txt']/p[1]/span/text()")[0].split()[
             -1
