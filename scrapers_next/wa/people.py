@@ -1,5 +1,5 @@
 import re
-from spatula import HtmlListPage, CSS, XPath, URL
+from spatula import HtmlListPage, CSS, XPath
 from openstates.models import ScrapePerson
 
 
@@ -104,16 +104,12 @@ class LegList(HtmlListPage):
 
 
 class RepList(LegList):
-    source = URL(
-        "https://app.leg.wa.gov/ContentParts/MemberDirectory/?a=House", timeout=30
-    )
+    source = "https://app.leg.wa.gov/ContentParts/MemberDirectory/?a=House"
     selector = CSS("#allMembers .memberInformation", num_items=98)
     chamber = "lower"
 
 
 class SenList(LegList):
-    source = URL(
-        "https://app.leg.wa.gov/ContentParts/MemberDirectory/?a=Senate", timeout=30
-    )
+    source = "https://app.leg.wa.gov/ContentParts/MemberDirectory/?a=Senate"
     selector = CSS("#allMembers .memberInformation", min_items=45, max_items=49)
     chamber = "upper"
