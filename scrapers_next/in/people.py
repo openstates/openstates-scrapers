@@ -164,18 +164,54 @@ class BlueRepDetail(HtmlPage):
 
 
 class BlueSenList(HtmlListPage):
-    def process_item(self, item):
-        name = CSS("div a").match(item)[1].text_content()
-        district = (
-            CSS("div .esg-content.eg-senators-grid-element-1")
+    """
+    Indiana Dem Sen list page has objects like this (2022-06-23):
+    <div class="fusion-person person fusion-person-center fusion-person-1 fusion-person-icon-top senator-select">
+      <div class="person-shortcode-image-wrapper">
+        <div class="person-image-container hover-type-zoomin person-rounded-overflow" style="-webkit-border-radius:100px;-moz-border-radius:100px;border-radius:100px;border:8px solid #e8e8e8;-webkit-border-radius:100px;-moz-border-radius:100px;border-radius:100px;">
+          <a href="https://www.indianasenatedemocrats.org/senators/s33/" target="_self">
+            <img class="lazyload person-img img-responsive wp-image-24774" width="200" height="300" src="https://www.indianasenatedemocrats.org/wp-content/uploads/2020/12/Senator-Taylor.jpg" data-orig-src="https://www.indianasenatedemocrats.org/wp-content/uploads/2020/12/Senator-Taylor-200x300.jpg" alt="Senator Greg Taylor" srcset="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27600%27%20height%3D%27900%27%20viewBox%3D%270%200%20600%20900%27%3E%3Crect%20width%3D%27600%27%20height%3D%27900%27%20fill-opacity%3D%220%22%2F%3E%3C%2Fsvg%3E" data-srcset="https://www.indianasenatedemocrats.org/wp-content/uploads/2020/12/Senator-Taylor-200x300.jpg 200w, https://www.indianasenatedemocrats.org/wp-content/uploads/2020/12/Senator-Taylor-400x600.jpg 400w, https://www.indianasenatedemocrats.org/wp-content/uploads/2020/12/Senator-Taylor.jpg 600w" data-sizes="auto" data-orig-sizes="(max-width: 992px) 100vw, (max-width: 767px) 100vw, 200px" />
+          </a>
+        </div>
+      </div>
+      <div class="person-desc">
+        <div class="person-author">
+          <div class="person-author-wrapper">
+            <span class="person-name">Senator Greg Taylor</span>
+            <span class="person-title">Minority Caucus Leader | District 33</span>
+          </div>
+        </div>
+        <div class="person-content fusion-clearfix">
+        </div>
+      </div>
+    </div>
+    """
+
+     def process_item(self, item):
+        name = (
+            CSS(
+                "div.person-desc div.person-author div.person-author-wrapper span.person-name"
+            )
             .match_one(item)
             .text_content()
-            .split("|")[1]
-            .strip()
-            .lower()
+            .removeprefix("Senator ")
         )
-        district = re.search(r"district\s(\d+)", district).groups()[0]
-        img = CSS("div img").match_one(item).get("data-lazysrc")
+        img = (
+            CSS("div.person-shortcode-image-wrapper div a img")
+            .match_one(item)
+            .get("src")
+        )
+        district = (
+            CSS(
+                "div.person-desc div.person-author div.person-author-wrapper span.person-title"
+            )
+            .match_one(item)
+            .text_content()
+        )
+        # special titles applied before the district name
+        if "|" in district:
+            district = district.split("|")[1]
+        district = district.removeprefix("District ")
 
         p = ScrapePerson(
             name=name,
@@ -186,18 +222,12 @@ class BlueSenList(HtmlListPage):
             image=img,
         )
 
-        city = (
-            CSS("div .esg-content.eg-senators-grid-element-27")
-            .match_one(item)
-            .text_content()
-        )
-        p.extras["city"] = city
-
-        detail_link = CSS("div a").match(item)[1].get("href")
+        detail_link = (
+            CSS("div.person-shortcode-image-wrapper div a").match_one(item).get("href")
         p.add_link(detail_link, note="homepage")
         p.add_source(self.source.url)
         p.add_source(detail_link)
-        return BlueSenDetail(p, source=detail_link)
+        return BlueSenDetail(p, source=URL(detail_link, timeout=30))
 
 
 class RedSenList(HtmlListPage):
@@ -226,7 +256,7 @@ class RedSenList(HtmlListPage):
         p.add_source(self.source.url)
         p.add_source(detail_link)
         p.add_link(detail_link, note="homepage")
-        return RedSenDetail(p, source=detail_link)
+        return RedSenDetail(p, source=URL(detail_link, timeout=30))
 
 
 class BlueRepList(HtmlListPage):
@@ -255,7 +285,7 @@ class BlueRepList(HtmlListPage):
 
         p.add_source(self.source.url)
 
-        return BlueRepDetail(p, source=detail_link_full)
+        return BlueRepDetail(p, source=URL(detail_link_full, timeout=30))
 
 
 class RedRepDetail(HtmlPage):
@@ -325,12 +355,12 @@ class RedRepList(HtmlListPage):
         p.add_source(detail_link)
         p.add_source(self.source.url.split("?")[0])
 
-        return RedRepDetail(p, source=URL(detail_link, timeout=10))
+        return RedRepDetail(p, source=URL(detail_link, timeout=30))
 
 
 class RepublicanHouse(RedRepList):
     source = URL(
-        "https://www.indianahouserepublicans.com/members/?pos=0,100,100", timeout=10
+        "https://www.indianahouserepublicans.com/members/?pos=0,100,100", timeout=30
     )
     selector = CSS("div.member-list a", min_items=60, max_items=100)
     chamber = "lower"
@@ -338,16 +368,16 @@ class RepublicanHouse(RedRepList):
 
 
 class DemocraticHouse(BlueRepList):
-    source = URL("https://indianahousedemocrats.org/members")
+    source = URL("https://indianahousedemocrats.org/members", timeout=30)
     selector = CSS("section.member-listing a", num_items=29)
     chamber = "lower"
     party = "Democratic"
 
 
 class DemocraticSenate(BlueSenList):
-    source = URL("https://www.indianasenatedemocrats.org/senators/")
+    source = URL("https://www.indianasenatedemocrats.org/senators/", timeout=30)
     selector = CSS(
-        "article ul li",
+        "div.fusion-person",
         num_items=11,
     )
     chamber = "upper"
