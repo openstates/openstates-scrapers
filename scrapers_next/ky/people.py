@@ -124,16 +124,16 @@ class LegList(HtmlListPage):
         p.add_source(detail_link)
         p.add_link(detail_link, note="homepage")
 
-        return LegDetail(p, source=URL(detail_link, timeout=30))
+        return LegDetail(p, source=detail_link)
 
 
 class Senate(LegList):
-    source = URL("https://legislature.ky.gov/Legislators/senate", timeout=30)
+    source = URL("https://legislature.ky.gov/Legislators/senate", verify=False)
     chamber = "upper"
 
 
 class House(LegList):
     source = URL(
-        "https://legislature.ky.gov/Legislators/house-of-representatives", timeout=30
+        "https://legislature.ky.gov/Legislators/house-of-representatives", verify=False
     )
     chamber = "lower"
