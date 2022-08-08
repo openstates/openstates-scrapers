@@ -110,7 +110,7 @@ class LegDetail(HtmlPage):
 
 class SenList(HtmlListPage):
     selector = XPath("//input[@type='image']")
-    source = ("http://www.legislature.state.al.us/aliswww/ISD/Senate/ALSenators.aspx",)
+    source = "http://www.legislature.state.al.us/aliswww/ISD/Senate/ALSenators.aspx"
     chamber = "upper"
 
     def process_item(self, item):
@@ -128,7 +128,7 @@ class SenList(HtmlListPage):
 class RepList(HtmlListPage):
     selector = XPath("//input[@type='image']")
     source = (
-        "http://www.legislature.state.al.us/aliswww/ISD/House/ALRepresentatives.aspx",
+        "http://www.legislature.state.al.us/aliswww/ISD/House/ALRepresentatives.aspx"
     )
     chamber = "lower"
 
@@ -140,7 +140,7 @@ class RepList(HtmlListPage):
         oid_person = item.get("alt")
 
         oid_sponsor = item.get("longdesc").split("House/")[1]
-        url = f"https://www.legislature.state.al.us/aliswww/ISD/ALRepresentative.aspx?NAME={last_name}&OID_SPONSOR={oid_sponsor}&OID_PERSON={oid_person}&SESSNAME="
+        url = f"http://www.legislature.state.al.us/aliswww/ISD/ALRepresentative.aspx?NAME={last_name}&OID_SPONSOR={oid_sponsor}&OID_PERSON={oid_person}&SESSNAME="
         p = PartialMember(url=self.source.url, chamber=self.chamber)
 
         return LegDetail(p, source=url)
