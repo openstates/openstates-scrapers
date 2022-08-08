@@ -87,7 +87,6 @@ class Senators(ExcelListPage):
         else:
             row = dict(zip(self.HEADERS, row))
 
-        print(row)
         name = f"{row['First Name']} {row['Last Name']}"
         p = ScrapePerson(
             name=name,

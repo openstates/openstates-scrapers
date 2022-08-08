@@ -9,7 +9,6 @@ class Legislators(HtmlListPage):
     def process_item(self, item):
         name_title = XPath(".//td/span/a/text()").match(item)
         name_dirty = name_title[0].split(", ")
-        print(name_dirty)
         if name_dirty[0] == "Vacant":
             raise SkipItem("vacant")
         name = name_dirty[1] + " " + name_dirty[0]
