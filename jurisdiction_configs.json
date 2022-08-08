@@ -228,7 +228,9 @@
   {
     "name": "ny",
     "people": [
-      "scrapers_next.ny.people.Assembly",
+      "scrapers_next.ny.people.Assembly"
+    ],
+    "_people": [
       "scrapers_next.ny.people.Senate"
     ]
   },
