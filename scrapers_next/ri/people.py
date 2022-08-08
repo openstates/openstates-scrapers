@@ -1,11 +1,8 @@
-from spatula import HtmlListPage, CSS, XPath, HtmlPage, Page, URL
+from spatula import HtmlListPage, CSS, XPath, HtmlPage, Page
 from openstates.models import ScrapePerson
 import xlrd
 
-EXCEL_URL = URL(
-    "http://www.rilegislature.gov/SiteAssets/MailingLists/Representatives.xls",
-    timeout=30,
-)
+EXCEL_URL = "http://www.rilegislature.gov/SiteAssets/MailingLists/Representatives.xls"
 
 
 class LegacyExcelPage(Page):
@@ -81,16 +78,14 @@ class LegList(HtmlListPage):
         p.email = email
         p.add_link(bio)
         p.add_source(self.source.url, note="Contact Web Page")
-        p.add_source(EXCEL_URL.url, note="Detail Excel Source")
+        p.add_source(EXCEL_URL, note="Detail Excel Source")
         p.add_source(bio, note="Image Source")
 
         return Image(p, source=bio)
 
 
 class AssemblyList(LegList):
-    source = URL(
-        "http://webserver.rilin.state.ri.us/Email/RepEmailListDistrict.asp", timeout=30
-    )
+    source = "http://webserver.rilin.state.ri.us/Email/RepEmailListDistrict.asp"
     selector = XPath("//tr[@valign='TOP']", num_items=75)
     chamber = "lower"
     dependencies = {
@@ -101,16 +96,11 @@ class AssemblyList(LegList):
 
 
 class SenList(LegList):
-    source = URL(
-        "http://webserver.rilegislature.gov/Email/SenEmailListDistrict.asp", timeout=30
-    )
+    source = "http://webserver.rilegislature.gov/Email/SenEmailListDistrict.asp"
     selector = XPath("//tr[@valign='TOP']", num_items=38)
     chamber = "upper"
     dependencies = {
         "detail_mapping": LegacyExcelPage(
-            source=URL(
-                "http://www.rilegislature.gov/SiteAssets/MailingLists/Senators.xls",
-                timeout=30,
-            )
+            source="http://www.rilegislature.gov/SiteAssets/MailingLists/Senators.xls"
         )
     }
