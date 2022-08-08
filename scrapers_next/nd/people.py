@@ -45,16 +45,13 @@ class LegDetail(HtmlPage):
         except SelectorError:
             pass
 
-        try:
-            email = (
-                XPath("//*[@id='block-system-main']//div[contains(text(), 'Email')]")
-                .match_one(self.root)
-                .getnext()
-                .text_content()
-                .strip()
-            )
-        except SelectorError:
-            email = ""
+        email = (
+            XPath("//*[@id='block-system-main']//div[contains(text(), 'Email')]")
+            .match_one(self.root)
+            .getnext()
+            .text_content()
+            .strip()
+        )
         p.email = email
 
         try:
@@ -76,7 +73,7 @@ class LegList(HtmlListPage):
     source = URL(
         "https://www.legis.nd.gov/assembly/67-2021/members/members-by-district"
     )
-    selector = CSS("div.view-content > div", min_items=142)
+    selector = CSS("div.view-content > div", num_items=142)
 
     def process_item(self, item):
         name = CSS("div.name").match_one(item).text_content().strip()
