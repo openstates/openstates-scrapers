@@ -197,7 +197,7 @@ class BlueSenList(HtmlListPage):
         p.add_link(detail_link, note="homepage")
         p.add_source(self.source.url)
         p.add_source(detail_link)
-        return BlueSenDetail(p, source=URL(detail_link, timeout=10))
+        return BlueSenDetail(p, source=detail_link)
 
 
 class RedSenList(HtmlListPage):
@@ -325,7 +325,7 @@ class RedRepList(HtmlListPage):
         p.add_source(detail_link)
         p.add_source(self.source.url.split("?")[0])
 
-        return RedRepDetail(p, source=detail_link)
+        return RedRepDetail(p, source=URL(detail_link, timeout=10))
 
 
 class RepublicanHouse(RedRepList):
