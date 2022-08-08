@@ -78,15 +78,12 @@ class LegDetail(HtmlPage):
             .strip()
             == "Staff Contacts"
         ):
-            try:
-                staff_contacts = (
-                    XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[3]")
-                    .match(self.root)[0]
-                    .text_content()
-                )
-                p_num = 3
-            except Exception:
-                staff_contacts = ""
+            staff_contacts = (
+                XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[3]")
+                .match(self.root)[0]
+                .text_content()
+            )
+            p_num = 3
 
         counter = 0
         for line in staff_contacts.split("\n"):
@@ -125,50 +122,47 @@ class Legislators(HtmlListPage):
 
     def process_item(self, item):
         if CSS("td").match(item)[1].text_content().strip() == "Vacant":
-            self.skip("vacant")
+            return
+        elif CSS("td").match(item)[1].text_content().strip() == "Martin, Greg":
+            return
+        else:
+            name_dirty = CSS("td").match(item)[1].text_content().strip().split(", ")
+            name = name_dirty[1] + " " + name_dirty[0]
+            if "Speaker" in name:
+                name = re.sub(r"Speaker ", "", name)
 
-        name_dirty = CSS("td").match(item)[1].text_content().strip().split(", ")
-        name = name_dirty[1] + " " + name_dirty[0]
-        if "Speaker" in name:
-            name = re.sub(r"Speaker ", "", name)
+            party = CSS("td").match(item)[2].text_content().strip()
+            if party == "D":
+                party = "Democratic"
+            elif party == "R":
+                party = "Republican"
 
-        party = CSS("td").match(item)[2].text_content().strip()
-        # sometimes members don't have a party listed?!
-        if not party:
-            self.skip("missing party")
-        if party == "D":
-            party = "Democratic"
-        elif party == "R":
-            party = "Republican"
-        elif party == "I":
-            party = "Independent"
+            district = CSS("td").match(item)[4].text_content().strip()
+            district = re.search(r"District\s(.+)", district).groups()[0]
 
-        district = CSS("td").match(item)[4].text_content().strip()
-        district = re.search(r"District\s(.+)", district).groups()[0]
+            p = ScrapePerson(
+                name=name,
+                state="tn",
+                chamber=self.chamber,
+                district=district,
+                party=party,
+            )
 
-        p = ScrapePerson(
-            name=name,
-            state="tn",
-            chamber=self.chamber,
-            district=district,
-            party=party,
-        )
+            detail_link = CSS("td a").match(item)[1].get("href")
 
-        detail_link = CSS("td a").match(item)[1].get("href")
+            p.add_source(self.source.url)
+            p.add_source(detail_link)
+            p.add_link(detail_link, note="homepage")
 
-        p.add_source(self.source.url)
-        p.add_source(detail_link)
-        p.add_link(detail_link, note="homepage")
+            email = CSS("td a").match(item)[0].get("href")
+            email = re.search(r"mailto:(.+)", email).groups()[0]
+            p.email = email
 
-        email = CSS("td a").match(item)[0].get("href")
-        email = re.search(r"mailto:(.+)", email).groups()[0]
-        p.email = email
+            # this is also being grabbed above in capitol_office.address
+            office_room = CSS("td").match(item)[5].text_content().strip()
+            p.extras["office"] = office_room
 
-        # this is also being grabbed above in capitol_office.address
-        office_room = CSS("td").match(item)[5].text_content().strip()
-        p.extras["office"] = office_room
-
-        return LegDetail(p, source=detail_link)
+            return LegDetail(p, source=detail_link)
 
 
 class Senate(Legislators):
