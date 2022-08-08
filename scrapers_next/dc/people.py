@@ -54,11 +54,8 @@ class CouncilDetail(HtmlPage):
         p.capitol_office.voice = phone
 
         all_text = CSS("p.byline").match_one(self.root).text_content().strip()
-        try:
-            fax = all_text.split("Fax: ")[1]
-            p.capitol_office.fax = fax
-        except IndexError:
-            pass
+        fax = all_text.split("Fax: ")[1]
+        p.capitol_office.fax = fax
 
         if len(CSS("section.aside-section a").match(self.root)) == 2:
             # no extra info
@@ -94,7 +91,7 @@ class CouncilDetail(HtmlPage):
 
 
 class CouncilList(HtmlListPage):
-    source = URL("https://dccouncil.us/councilmembers/")
+    source = URL("http://dccouncil.us/councilmembers/")
     selector = CSS("li.column", num_items=14)
 
     def process_item(self, item):
