@@ -83,7 +83,7 @@ class LegList(JsonPage):
             p.add_source(detail_link.url)
             p.add_link(detail_link.url, note="homepage")
 
-            yield LegDetail(p, source=detail_link.url
+            yield LegDetail(p, source=detail_link.url)
 
 
 class Senate(LegList):
@@ -93,6 +93,6 @@ class Senate(LegList):
 
 class House(LegList):
     source = URL(
-        "https://legis.delaware.gov/json/House/GetRepresentatives", method="POST",
+        "https://legis.delaware.gov/json/House/GetRepresentatives", method="POST"
     )
     chamber = "lower"
