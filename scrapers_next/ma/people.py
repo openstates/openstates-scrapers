@@ -1,4 +1,4 @@
-from spatula import XPath, JsonListPage, JsonPage, SelectorError
+from spatula import XPath, JsonListPage, JsonPage, SelectorError, URL
 from openstates.models import ScrapePerson
 
 
@@ -76,10 +76,10 @@ class LegDetail(JsonPage):
 
 class LegList(JsonListPage):
 
-    source = list_url()
+    source = URL(list_url(), timeout=30)
     selector = XPath("//LegislativeMemberSummary/Details")
 
     def process_item(self, item):
 
         url = item["Details"]
-        return LegDetail(source=url)
+        return LegDetail(source=URL(url, timeout=30))
