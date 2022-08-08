@@ -273,8 +273,8 @@ class Senate(ExcelListPage):
 
         mailing_address = item[5].strip()
         zipcode = item[8].strip()
-        address = f"{mailing_address}, {city}, ME {zipcode}"
         city = item[6].strip()
+        address = f"{mailing_address}, {city}, ME {zipcode}"
         if re.search(r"St(\s|,)", address):
             address = re.sub(r"St\s", "Street ", address)
             address = re.sub(r"St,", "Street,", address)
