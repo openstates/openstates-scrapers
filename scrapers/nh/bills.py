@@ -54,6 +54,12 @@ class NHBillScraper(Scraper):
     cachebreaker = dt.datetime.now().strftime("%Y%d%d%H%I%s")
 
     def scrape(self, chamber=None, session=None):
+        est = pytz.timezone("America/New_York")
+        time_est = dt.datetime.now(est)
+
+        if time_est.hour > 6 and time_est.hour < 21:
+            self.warning("NH bans scraping between 6am and 9pm. This may fail.")
+
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
