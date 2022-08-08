@@ -63,8 +63,6 @@ class Legislators(CsvListPage):
             party = "Democratic"
         elif party == "R" or party == "r":
             party = "Republican"
-        elif party in ["i", "I"]:
-            party = "Independent"
 
         p = ScrapePerson(
             name=name, state="nh", chamber=chamber, district=district, party=party

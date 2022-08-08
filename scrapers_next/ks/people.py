@@ -1,6 +1,3 @@
-"""
-2022-07-14: KS Leg site does not support HTTPS
-"""
 from spatula import JsonPage, URL
 from openstates.models import ScrapePerson
 
