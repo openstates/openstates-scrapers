@@ -88,6 +88,8 @@ class SenDetail(HtmlPage):
         title = CSS("span.position").match_one(self.root).text_content().strip()
         if title != "":
             p.extras["title"] = title
+
+        phone = CSS("a.contact-data.tel").match_one(self.root).text_content().strip()
         p.capitol_office.voice = phone
 
         addresses = CSS("div.pre-footer div div div div p").match(self.root)
