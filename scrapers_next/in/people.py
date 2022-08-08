@@ -166,7 +166,8 @@ class BlueRepDetail(HtmlPage):
 class BlueSenList(HtmlListPage):
     def process_item(self, item):
         name = CSS("div a").match(item)[1].text_content()
-        district = ("div .esg-content.eg-senators-grid-element-1")
+        district = (
+            CSS("div .esg-content.eg-senators-grid-element-1")
             .match_one(item)
             .text_content()
             .split("|")[1]
@@ -196,7 +197,7 @@ class BlueSenList(HtmlListPage):
         p.add_link(detail_link, note="homepage")
         p.add_source(self.source.url)
         p.add_source(detail_link)
-        return BlueSenDetail(p, source=detail_link)
+        return BlueSenDetail(p, source=URL(detail_link, timeout=10))
 
 
 class RedSenList(HtmlListPage):
@@ -346,7 +347,7 @@ class DemocraticHouse(BlueRepList):
 class DemocraticSenate(BlueSenList):
     source = URL("https://www.indianasenatedemocrats.org/senators/")
     selector = CSS(
-        "div.fusion-person",
+        "article ul li",
         num_items=11,
     )
     chamber = "upper"
