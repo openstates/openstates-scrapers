@@ -55,17 +55,13 @@ class LegDetail(HtmlPage):
         for line_number, line in enumerate(addresses):
             line = line.text_content().strip()
             if (
-                not line
-                or line
-                in [
-                    "Springfield Office:",
-                    "District Office:",
-                    "Additional District Addresses",
-                ]
-                or any(
-                    line.startswith(s)
-                    for s in ["Senator", "Representative", "Years served:"]
-                )
+                line == "Springfield Office:"
+                or line == "District Office:"
+                or line == ""
+                or line == "Additional District Addresses"
+                or line.startswith("Senator")
+                or line.startswith("Representative")
+                or line.startswith("Years served:")
             ):
                 continue
 
@@ -88,7 +84,7 @@ class LegDetail(HtmlPage):
             elif (
                 district_addr_lines == 2
                 and not line.strip().startswith("(")
-                and not re.search("Email:", line)
+                and not re.search(r"Email:", line)
             ):
                 district_addr += " "
                 district_addr += line
