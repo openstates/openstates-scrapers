@@ -10,7 +10,7 @@ from spatula import (
 )
 from dataclasses import dataclass
 from openstates.models import ScrapePerson
-import regex as re
+import re
 
 
 @dataclass
@@ -31,6 +31,7 @@ _party_map = {
 
 class RepDetail(HtmlPage):
     input_type = PartialPerson
+    district_re = re.compile(r"(\d+)\s+-")
 
     def process_page(self):
         district = (
@@ -41,7 +42,7 @@ class RepDetail(HtmlPage):
         district = XPath("text()").match(district)[0].strip()
         # https://legislature.maine.gov/house/house/MemberProfiles/Details/1193 has no district
         if district != "":
-            district = re.search(r"(\d+)\s+-", district).groups()[0]
+            district = self.district_re.search(district).groups()[0]
         else:
             raise SkipItem("non-voting member")
 
@@ -147,14 +148,15 @@ class RepDetail(HtmlPage):
 class House(HtmlListPage):
     source = URL("https://legislature.maine.gov/house/house/MemberProfiles/ListAlpha")
     selector = CSS("table tr td", min_items=152)
+    party_re = re.compile(r"\(([A-Z])\s-(.+)")
 
     def process_item(self, item):
         name_dirty = CSS("br").match(item)[0].tail.strip().split(", ")
         name = name_dirty[1] + " " + name_dirty[0]
 
         party = CSS("br").match(item)[2].tail.strip()
-        if re.search(r"\(([A-Z])\s-(.+)", party):
-            party = re.search(r"\(([A-Z])\s-(.+)", party).groups()[0]
+        if self.party_re.search(party):
+            party = self.party_re.search(party).groups()[0]
         party = _party_map[party]
 
         partial = PartialPerson(name=name, party=party, source=self.source.url)
@@ -167,14 +169,18 @@ class House(HtmlListPage):
         ):
             self.skip()
 
-        return RepDetail(partial, source=detail_link)
+        return RepDetail(partial, source=URL(detail_link, timeout=30))
 
 
 class SenDetail(HtmlPage):
     def process_page(self):
         p = self.input
 
-        img = CSS("div#content p img").match_one(self.root).get("src")
+        # some Senators don't have images
+        try:
+            img = CSS("div#content p img").match_one(self.root).get("src")
+        except Exception:
+            img = ""
         p.image = img
 
         if self.source.url == "https://legislature.maine.gov/District-22":
@@ -266,9 +272,9 @@ class Senate(ExcelListPage):
         p.extras["county represented"] = county
 
         mailing_address = item[5].strip()
+        zipcode = item[8].strip()
+        address = f"{mailing_address}, {city}, ME {zipcode}"
         city = item[6].strip()
-        zip = item[8].strip()
-        address = mailing_address + ", " + city + ", ME " + zip
         if re.search(r"St(\s|,)", address):
             address = re.sub(r"St\s", "Street ", address)
             address = re.sub(r"St,", "Street,", address)
