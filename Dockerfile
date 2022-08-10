@@ -8,6 +8,7 @@ ENV LANG='C.UTF-8'
 
 RUN apt-get update -qq \
     && apt-get install -y -qq --no-install-recommends \
+      ca-certificates \
       curl \
       wget \
       unzip \
@@ -35,7 +36,7 @@ WORKDIR /opt/openstates/openstates/
 ENV PYTHONPATH=./scrapers
 
 RUN pip --no-cache-dir --disable-pip-version-check install poetry \
-    && poetry install --no-root -q \
+    && poetry install --no-root \
     && apt-get remove -y -qq \
       build-essential \
       git \
@@ -46,7 +47,7 @@ RUN pip --no-cache-dir --disable-pip-version-check install poetry \
 
 ADD . /opt/openstates/openstates/
 # the last step cleans out temporarily downloaded artifacts for poetry, shrinking our build
-RUN poetry install -q \
+RUN poetry install \
     && rm -r /root/.cache/pypoetry/cache /root/.cache/pypoetry/artifacts/
 
 ENV OPENSSL_CONF=/opt/openstates/openstates/openssl.cnf
