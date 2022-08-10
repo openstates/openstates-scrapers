@@ -201,7 +201,7 @@ class Arkansas(State):
         {
             "_scraped_name": "Third Extraordinary Session, 2022",
             "classification": "special",
-            "identifier": "2021S3",
+            "identifier": "2022S3",
             "name": "2022 Third Extraordinary Session",
             "start_date": "2022-08-08",
             "end_date": "2022-08-12",
