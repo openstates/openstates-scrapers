@@ -162,10 +162,7 @@ class Assembly(HtmlListPage):
 
 class Senate(HtmlListPage):
     """
-    Not fully functional yet...
-    We need additional parties added https://github.com/openstates/openstates-core/pull/52
-    before we can properly register all parties that exist
-    Also, contact information is harder to collect in a reasonable manner
+    Contact information is harder to collect in a reasonable manner
     """
 
     source = URL("https://www.nysenate.gov/senators-committees")
