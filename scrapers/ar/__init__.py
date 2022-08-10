@@ -196,6 +196,15 @@ class Arkansas(State):
             "name": "2022 Fiscal Session",
             "start_date": "2022-02-14",
             "end_date": "2022-03-15",
+            "active": False,
+        },
+        {
+            "_scraped_name": "Third Extraordinary Session, 2022",
+            "classification": "special",
+            "identifier": "2022S3",
+            "name": "2022 Third Extraordinary Session",
+            "start_date": "2022-08-08",
+            "end_date": "2022-08-12",
             "active": True,
         },
     ]
