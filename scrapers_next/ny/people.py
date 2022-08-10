@@ -166,7 +166,8 @@ class Senate(HtmlListPage):
     """
 
     source = URL("https://www.nysenate.gov/senators-committees")
-    selector = CSS("div.c-senator-block", num_items=63)
+    district_re = re.compile("\d+")
+    selector = CSS("div.c-senator-block", min_items=62)
 
     def _parties(self, party):
         if party == "(D)" or party == "(D, IP)":
@@ -222,7 +223,7 @@ class Senate(HtmlListPage):
             .text_content()
             .strip()
         )
-        district = (
+        district = self.district_re.match(
             CSS("div.nys-senator--info span.nys-senator--district")
             .match_one(item)
             .text_content()
@@ -230,6 +231,11 @@ class Senate(HtmlListPage):
             .removeprefix(party)
             .strip()
         )
+        if district:
+            district = district[0]
+        else:
+            self.skip("missing district")
+
         party = self._parties(party)
 
         p = ScrapePerson(
