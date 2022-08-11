@@ -155,7 +155,11 @@ class NHBillScraper(Scraper):
                         resolution_url, allow_redirects=True
                     ).content.decode("utf-8")
                     page = lxml.html.fromstring(resolution_page)
-                    version_href = page.xpath("//a[2]/@href")[1]
+                    try:
+                        version_href = page.xpath("//a[2]/@href")[1]
+                    except Exception:
+                        self.logger.warning(f"{bill_id} missing version link")
+                        continue
                     true_version = re.search(r"id=(\d+)&", version_href)[1]
                     self.versions_by_lsr[lsr] = true_version
 
