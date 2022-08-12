@@ -27,13 +27,9 @@ class LegDetail(HtmlPage):
             ).match(self.root)
         except ValueError:
             try:
-                email = XPath("//a[contains(@href, 'mailto')]").match_one(self.root)
+                email = XPath("//a[contains(@href, 'mailto')]").match_one(self.root).text_content()
             except Exception:
                 email = ""
-        try:
-            email = email.text_content()
-        except AttributeError:
-            email = ""
 
         image = (
             XPath("//img[contains(@src, '/Members/MemberImage')]")
