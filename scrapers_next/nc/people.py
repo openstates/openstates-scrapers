@@ -27,7 +27,11 @@ class LegDetail(HtmlPage):
             ).match(self.root)
         except ValueError:
             try:
-                email = XPath("//a[contains(@href, 'mailto')]").match_one(self.root).text_content()
+                email = (
+                    XPath("//a[contains(@href, 'mailto')]")
+                    .match_one(self.root)
+                    .text_content()
+                )
             except Exception:
                 email = ""
 
