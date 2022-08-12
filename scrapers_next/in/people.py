@@ -209,11 +209,9 @@ class BlueSenList(HtmlListPage):
             .text_content()
         )
         # special titles applied before the district name
-        print(f"Unclean district: '{district}'")
         if "|" in district:
             district = district.split("|")[1].strip()
         district = district.strip().removeprefix("District ")
-        print(f"{name}: '{district}'")
 
         p = ScrapePerson(
             name=name,
