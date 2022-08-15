@@ -30,7 +30,6 @@ class Georgia(State):
             "name": "2013-2014 Regular Session",
             "start_date": "2013-01-14",
             "end_date": "2014-03-21",
-            "active": True,
         },
         {
             "_scraped_name": "2015-2016 Regular Session",
@@ -38,7 +37,6 @@ class Georgia(State):
             "name": "2015-2016 Regular Session",
             "start_date": "2015-01-12",
             "end_date": "2016-03-24",
-            "active": True,
         },
         {
             "_scraped_name": "2017-2018 Regular Session",
