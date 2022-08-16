@@ -361,9 +361,7 @@ class OHBillScraper(Scraper):
 
                 if "disapprove" in bill_version:
                     disapprove_url = base_url + bill_version["disapprove"][0]["link"]
-                    disapprove_json = self.get(
-                        disapprove_url
-                    ).json()
+                    disapprove_json = self.get(disapprove_url).json()
                     if len(disapprove_json["items"]) > 0:
                         raise AssertionError(
                             "Whoa, a disapprove! We've never"
@@ -483,7 +481,8 @@ class OHBillScraper(Scraper):
             url = base_url + "chamber/{chamber}/legislators?per_page=100"
             self.logger.info(f"Downloading from {url} with {self.headers}")
             doc = self.get(
-                url.format(chamber=chamber), verify=False,
+                url.format(chamber=chamber),
+                verify=False,
             )
             leg_json = doc.json()
             for leg in leg_json["items"]:
@@ -758,14 +757,10 @@ class OHBillScraper(Scraper):
         doc = lxml.html.fromstring(html)
         for a in doc.xpath('//a[starts-with(@href, "/bills.cfm")]/@href'):
             if a != piece:
-                _get_html_or_pdf_version_old(
-                    self.get(base_url + a).text
-                )
+                _get_html_or_pdf_version_old(self.get(base_url + a).text)
         for a in doc.xpath('//a[starts-with(@href, "/res.cfm")]/@href'):
             if a != piece:
-                _get_html_or_pdf_version_old(
-                    self.get(base_url + a).text
-                )
+                _get_html_or_pdf_version_old(self.get(base_url + a).text)
 
     def scrape_votes_old(self, bill, billname, session):
         vote_url = (
