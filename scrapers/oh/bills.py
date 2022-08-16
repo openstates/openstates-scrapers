@@ -15,6 +15,7 @@ BAD_BILLS = [("134", "SB 92")]
 
 class OHBillScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
+    headers = {"User-Agent": "curl 7.82.0"}
 
     # Vote Motion Dictionary was created by comparing vote codes to
     # the actions tables via dates and chambers. If it made sense, the
@@ -187,7 +188,7 @@ class OHBillScraper(Scraper):
                         bill_id.lower().replace(" ", ""),
                     )
                 )
-                data = self.get(bill_api_url, verify=False).json()
+                data = self.get(bill_api_url, verify=False, headers=self.headers).json()
                 if len(data["items"]) == 0:
                     self.logger.warning(
                         "Data for bill {bill_id} has empty 'items' array,"
@@ -251,7 +252,9 @@ class OHBillScraper(Scraper):
 
                 try:
                     action_doc = self.get(
-                        base_url + bill_version["action"][0]["link"], verify=False
+                        base_url + bill_version["action"][0]["link"],
+                        verify=False,
+                        headers=self.headers,
                     )
                 except scrapelib.HTTPError:
                     pass
@@ -291,7 +294,7 @@ class OHBillScraper(Scraper):
                 # votes
                 vote_url = base_url + bill_version["votes"][0]["link"]
                 try:
-                    vote_doc = self.get(vote_url)
+                    vote_doc = self.get(vote_url, headers=self.headers)
                 except scrapelib.HTTPError:
                     self.warning("Vote page not loading; skipping: {}".format(vote_url))
                     yield bill
@@ -310,7 +313,7 @@ class OHBillScraper(Scraper):
                 vote_url = base_url
                 vote_url += bill_version["cmtevotes"][0]["link"]
                 try:
-                    vote_doc = self.get(vote_url)
+                    vote_doc = self.get(vote_url, headers=self.headers)
                 except scrapelib.HTTPError:
                     self.warning("Vote page not loading; skipping: {}".format(vote_url))
                     yield bill
@@ -348,7 +351,7 @@ class OHBillScraper(Scraper):
                 # life is fragile. so are our scrapers.
                 if "veto" in bill_version:
                     veto_url = base_url + bill_version["veto"][0]["link"]
-                    veto_json = self.get(veto_url).json()
+                    veto_json = self.get(veto_url, headers=self.headers).json()
                     if len(veto_json["items"]) > 0:
                         raise AssertionError(
                             "Whoa, a veto! We've never"
@@ -359,7 +362,9 @@ class OHBillScraper(Scraper):
 
                 if "disapprove" in bill_version:
                     disapprove_url = base_url + bill_version["disapprove"][0]["link"]
-                    disapprove_json = self.get(disapprove_url).json()
+                    disapprove_json = self.get(
+                        disapprove_url, headers=self.headers
+                    ).json()
                     if len(disapprove_json["items"]) > 0:
                         raise AssertionError(
                             "Whoa, a disapprove! We've never"
@@ -371,11 +376,11 @@ class OHBillScraper(Scraper):
                 yield bill
 
     def pages(self, base_url, first_page):
-        page = self.get(first_page)
+        page = self.get(first_page, headers=self.headers)
         page = page.json()
         yield page
         while "nextLink" in page:
-            page = self.get(base_url + page["nextLink"])
+            page = self.get(base_url + page["nextLink"], headers=self.headers)
             page = page.json()
             yield page
 
@@ -477,7 +482,9 @@ class OHBillScraper(Scraper):
         legislators = {}
         for chamber in ["House", "Senate"]:
             url = base_url + "chamber/{chamber}/legislators?per_page=100"
-            doc = self.get(url.format(chamber=chamber), verify=False)
+            doc = self.get(
+                url.format(chamber=chamber), verify=False, headers=self.headers
+            )
             leg_json = doc.json()
             for leg in leg_json["items"]:
                 if leg["med_id"]:
@@ -495,7 +502,7 @@ class OHBillScraper(Scraper):
                 v["yeas"]
             except KeyError:
                 # sometimes the actual vote is buried a second layer deep
-                v = self.get(base_url + v["link"]).json()
+                v = self.get(base_url + v["link"], headers=self.headers).json()
                 try:
                     v["yeas"]
                 except KeyError:
@@ -619,7 +626,7 @@ class OHBillScraper(Scraper):
             "https://www.legislature.ohio.gov/legislation/status-reports"
         )
 
-        doc = self.get(status_report_url).text
+        doc = self.get(status_report_url, headers=self.headers).text
         doc = lxml.html.fromstring(doc)
         doc.make_links_absolute(status_report_url)
         xpath = "//div[contains(text(),'{}')]/following-sibling::table"
@@ -741,7 +748,7 @@ class OHBillScraper(Scraper):
                     name, base_url + link, media_type="application/pdf"
                 )
 
-        html = self.get(base_url + piece).text
+        html = self.get(base_url + piece, headers=self.headers).text
         # pass over missing bills - (unclear why this happens)
         if "could not be found." in html:
             self.warning("missing page: %s" % base_url + piece)
@@ -751,10 +758,14 @@ class OHBillScraper(Scraper):
         doc = lxml.html.fromstring(html)
         for a in doc.xpath('//a[starts-with(@href, "/bills.cfm")]/@href'):
             if a != piece:
-                _get_html_or_pdf_version_old(self.get(base_url + a).text)
+                _get_html_or_pdf_version_old(
+                    self.get(base_url + a, headers=self.headers).text
+                )
         for a in doc.xpath('//a[starts-with(@href, "/res.cfm")]/@href'):
             if a != piece:
-                _get_html_or_pdf_version_old(self.get(base_url + a).text)
+                _get_html_or_pdf_version_old(
+                    self.get(base_url + a, headers=self.headers).text
+                )
 
     def scrape_votes_old(self, bill, billname, session):
         vote_url = (
@@ -764,7 +775,7 @@ class OHBillScraper(Scraper):
             + billname
         )
 
-        page = self.get(vote_url).text
+        page = self.get(vote_url, headers=self.headers).text
         page = lxml.html.fromstring(page)
 
         for jlink in page.xpath("//a[contains(@href, 'JournalText')]"):
