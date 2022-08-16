@@ -479,7 +479,6 @@ class OHBillScraper(Scraper):
         legislators = {}
         for chamber in ["House", "Senate"]:
             url = base_url + "chamber/{chamber}/legislators?per_page=100"
-            self.logger.info(f"Downloading from {url} with {self.headers}")
             doc = self.get(
                 url.format(chamber=chamber),
                 verify=False,
