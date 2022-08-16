@@ -48,7 +48,7 @@ class OHBillScraper(Scraper):
     def scrape(self, session=None, chambers=None):
         # Bills endpoint can sometimes take a very long time to load
         self.timeout = 300
-        self.headers["User-Agent"] = "curl/7.82.0"
+        self.headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36"
 
         if int(session) < 128:
             raise AssertionError("No data for period {}".format(session))
