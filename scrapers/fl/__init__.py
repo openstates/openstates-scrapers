@@ -108,6 +108,7 @@ class Florida(State):
             "classification": "special",
             "start_date": "2017-06-07",
             "end_date": "2017-06-09",
+            "active": True,
         },
         {
             "name": "2018 Regular Session",
@@ -115,6 +116,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2018-01-09",
             "end_date": "2018-03-11",
+            "active": True,
         },
         {
             "name": "2019 Regular Session",
@@ -122,6 +124,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2019-03-05",
             "end_date": "2019-05-03",
+            "active": True,
         },
         {
             "name": "2020 Regular Session",
@@ -129,6 +132,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2020-01-14",
             "end_date": "2020-03-19",
+            "active": True,
         },
         {
             "name": "2021 Regular Session",
@@ -136,7 +140,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2021-03-02",
             "end_date": "2021-05-01",
-            "active": False,
+            "active": True,
         },
         {
             "name": "2021 Special Session A",
@@ -144,6 +148,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2021-05-12",
             "end_date": "2021-05-21",
+            "active": True,
         },
         {
             "name": "2021 Special Session B",
@@ -151,7 +156,7 @@ class Florida(State):
             "classification": "special",
             "start_date": "2021-11-15",
             "end_date": "2021-11-19",
-            "active": False,
+            "active": True,
         },
         {
             "name": "2022 Regular Session",
