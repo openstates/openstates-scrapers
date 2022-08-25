@@ -163,7 +163,7 @@ class Kentucky(State):
             "identifier": "2022SS",
             "name": "2022 Special Session",
             "start_date": "2022-08-24",
-            "end_date": "2021-08-25",
+            "end_date": "2021-08-26",
             "active": True,
         },
     ]
