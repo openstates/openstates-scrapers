@@ -139,7 +139,7 @@ class Kentucky(State):
             "name": "2022 Regular Session",
             "start_date": "2022-01-05",
             "end_date": "2022-03-30",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2021 Special Session",
@@ -156,6 +156,15 @@ class Kentucky(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-05",
             "end_date": "2021-03-30",
+        },
+        {
+            "_scraped_name": "2022 Special Session",
+            "classification": "special",
+            "identifier": "2022SS",
+            "name": "2022 Special Session",
+            "start_date": "2022-08-24",
+            "end_date": "2021-08-25",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
