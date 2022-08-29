@@ -78,12 +78,15 @@ class LegDetail(HtmlPage):
             .strip()
             == "Staff Contacts"
         ):
-            staff_contacts = (
-                XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[3]")
-                .match(self.root)[0]
-                .text_content()
-            )
-            p_num = 3
+            try:
+                staff_contacts = (
+                    XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[3]")
+                    .match(self.root)[0]
+                    .text_content()
+                )
+                p_num = 3
+            except Exception:
+                staff_contacts = ""
 
         counter = 0
         for line in staff_contacts.split("\n"):
@@ -121,14 +124,24 @@ class Legislators(HtmlListPage):
     selector = CSS("tbody tr")
 
     def process_item(self, item):
+        if CSS("td").match(item)[1].text_content().strip() == "Vacant":
+            self.skip("vacant")
+
         name_dirty = CSS("td").match(item)[1].text_content().strip().split(", ")
         name = name_dirty[1] + " " + name_dirty[0]
+        if "Speaker" in name:
+            name = re.sub(r"Speaker ", "", name)
 
         party = CSS("td").match(item)[2].text_content().strip()
+        # sometimes members don't have a party listed?!
+        if not party:
+            self.skip("missing party")
         if party == "D":
             party = "Democratic"
         elif party == "R":
             party = "Republican"
+        elif party == "I":
+            party = "Independent"
 
         district = CSS("td").match(item)[4].text_content().strip()
         district = re.search(r"District\s(.+)", district).groups()[0]

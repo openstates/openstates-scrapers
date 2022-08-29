@@ -142,8 +142,7 @@ class Oregon(State):
             "identifier": "2020S2",
             "name": "2020 Special Session 2",
             "start_date": "2020-08-10",
-            # TODO: real end date when session ends
-            "end_date": "2020-08-14",
+            "end_date": "2020-08-10",
         },
         {
             "_scraped_name": "2020 3rd Special Session",
@@ -151,15 +150,14 @@ class Oregon(State):
             "identifier": "2020S3",
             "name": "2020 Special Session 3",
             "start_date": "2020-12-21",
-            # TODO: real end date when session ends
-            "end_date": "2020-12-23",
+            "end_date": "2020-12-21",
         },
         {
             "_scraped_name": "2021 Regular Session",
             "identifier": "2021 Regular Session",
             "name": "2021 Regular Session",
-            "start_date": "2020-01-19",
-            "end_date": "2020-07-11",
+            "start_date": "2021-01-19",
+            "end_date": "2021-06-26",
         },
         {
             "_scraped_name": "2021 1st Special Session",
@@ -167,7 +165,7 @@ class Oregon(State):
             "name": "2021 Special Session",
             "start_date": "2021-09-20",
             "end_date": "2021-09-25",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2021 2nd Special Session",
@@ -175,6 +173,14 @@ class Oregon(State):
             "name": "2021 Special Session 2",
             "start_date": "2021-12-13",
             "end_date": "2021-12-25",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022 Regular Session",
+            "identifier": "2022R1",
+            "name": "2022 Regular Session",
+            "start_date": "2022-02-01",
+            "end_date": "2022-03-08",
             "active": True,
         },
     ]

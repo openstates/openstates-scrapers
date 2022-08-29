@@ -7,6 +7,7 @@ import pytz
 from openstates.scrape import Scraper, Event
 
 import dateutil.parser
+from dateutil.parser import ParserError
 
 
 class KYEventScraper(Scraper):
@@ -34,14 +35,23 @@ class KYEventScraper(Scraper):
 
             row_text = time_row.text_content()
             row_text = row_text.replace("Noon", "PM")
-            # upon recess (of House|Senate)
-            row_text = re.sub(r"Upon Recess(\sof\s)?(House|Senate)?", "", row_text)
+            # upon (Recess|Adj.) (of) (the) (House|Senate)
+            row_text = re.sub(
+                r"Upon (Recess|Adj\.)\s*(of)?\s*(the)?\s*(House|Senate)?", "", row_text
+            )
             parts = re.split(r",|AM|PM", row_text)
             time = parts[0].strip()
             location = " ".join(x.replace(r"\xa0", "").strip() for x in parts[1:])
 
             when = f"{date} {time}"
-            when = dateutil.parser.parse(when)
+            try:
+                when = dateutil.parser.parse(when)
+            except ParserError:
+                self.warning(
+                    f"Unable to parse {when}, trying date without time component"
+                )
+                when = dateutil.parser.parse(date)
+
             when = self._tz.localize(when)
 
             if not time_row.xpath(
@@ -89,7 +99,7 @@ class KYEventScraper(Scraper):
                 for mat in docs["mats"][lookup_date]:
                     event.add_document(mat["text"], mat["url"], on_duplicate="ignore")
 
-            if lookup_date in docs["minutes"]:
+            if "minutes" in docs and lookup_date in docs["minutes"]:
                 for mat in docs["minutes"][lookup_date]:
                     event.add_document(mat["text"], mat["url"], on_duplicate="ignore")
 
@@ -104,11 +114,15 @@ class KYEventScraper(Scraper):
 
         docs = {}
 
-        mats_link = page.xpath('//a[contains(text(), "Meeting Materials")]/@href')[0]
-        docs["mats"] = self.scrape_meeting_mats(mats_link)
+        if page.xpath('//a[contains(text(), "Meeting Materials")]/@href'):
+            mats_link = page.xpath('//a[contains(text(), "Meeting Materials")]/@href')[
+                0
+            ]
+            docs["mats"] = self.scrape_meeting_mats(mats_link)
 
-        minutes_link = page.xpath('//a[contains(text(), "Minutes")]/@href')[0]
-        docs["minutes"] = self.scrape_minutes(minutes_link)
+        if page.xpath('//a[contains(text(), "Minutes")]/@href'):
+            minutes_link = page.xpath('//a[contains(text(), "Minutes")]/@href')[0]
+            docs["minutes"] = self.scrape_minutes(minutes_link)
 
         return docs
 

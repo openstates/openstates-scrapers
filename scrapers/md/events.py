@@ -5,6 +5,7 @@ import re
 
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 # http://mgaleg.maryland.gov/mgawebsite/Meetings/Day/0128202102282021?budget=show&cmte=allcommittees&updates=show&ys=2021rs
 
@@ -38,7 +39,25 @@ class MDEventScraper(Scraper, LXMLMixin):
         url = url.format(start_date, end_date, session)
 
         page = self.lxmlize(url)
+
+        # if both "<house banner> No Hearings Message" and "<senate banner> No Hearings Message"
+        empty_chamber = "//div[contains(., 'No hearings')]/preceding-sibling::div[contains(.,'{chamber}')]"
+        if page.xpath(empty_chamber.format(chamber="Senate")) and page.xpath(
+            empty_chamber.format(chamber="House")
+        ):
+            raise EmptyScrape
+
         for row in page.xpath('//div[@id="divAllHearings"]/hr'):
+            banner = row.xpath(
+                'preceding-sibling::div[contains(@class,"row")]/div/div[contains(@class,"hearsched-committee-banner")]'
+            )[-1]
+            banner_class = banner.xpath("@class")[0]
+            chamber = ""
+            if "house" in banner_class:
+                chamber = "Assembly"
+            elif "senate" in banner_class:
+                chamber = "Senate"
+
             meta = row.xpath(
                 'preceding-sibling::div[contains(@class,"hearsched-hearing-header")]'
             )[-1]
@@ -51,6 +70,9 @@ class MDEventScraper(Scraper, LXMLMixin):
             com_row = meta.xpath(
                 './/div[contains(@class,"font-weight-bold text-center")]/text()'
             )[1].strip()
+
+            if chamber != "":
+                com_row = f"{chamber} {com_row}"
 
             # if they strike all the header rows, its cancelled
             unstruck_count = len(

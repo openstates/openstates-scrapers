@@ -71,6 +71,7 @@ class WABillScraper(Scraper, LXMLMixin):
         chamber = {"lower": "House", "upper": "Senate"}[chamber]
 
         for bill_type in bill_types:
+            print(base_url + chamber + " " + bill_type)
             try:
                 doc = self.lxmlize(base_url + chamber + " " + bill_type)
             except scrapelib.HTTPError:
@@ -111,6 +112,10 @@ class WABillScraper(Scraper, LXMLMixin):
                     self.versions[bill_id] = []
                 self.versions[bill_id].append(
                     {"note": name, "url": link, "media_type": "text/html"}
+                )
+                pdf_url = link.replace("/Htm/", "/Pdf/").replace(".htm", ".pdf")
+                self.versions[bill_id].append(
+                    {"note": name, "url": pdf_url, "media_type": "application/pdf"}
                 )
 
     def _load_documents(self, chamber):

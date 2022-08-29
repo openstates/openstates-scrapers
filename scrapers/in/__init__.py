@@ -4,6 +4,8 @@ from openstates.scrape import State
 from .bills import INBillScraper
 from .events import INEventScraper
 
+settings = dict(SCRAPELIB_TIMEOUT=600)
+
 
 class Indiana(State):
     scrapers = {
@@ -117,10 +119,20 @@ class Indiana(State):
             "name": "2022 Regular Session",
             "start_date": "2022-01-04",
             "end_date": "2022-03-14",
+            "active": False,
+        },
+        {
+            "_scraped_name": "Special Session 122nd General Assembly (2022)",
+            "classification": "primary",
+            "identifier": "2022ss1",
+            "name": "2022 Special Session",
+            "start_date": "2022-07-25",
+            "end_date": "2022-08-14",
             "active": True,
         },
     ]
     ignored_scraped_sessions = [
+        "First Special Session 122nd General Assembly (2022)",
         "2012 Regular Session",
         "2011 Regular Session",
         "2010 Regular Session",

@@ -90,6 +90,15 @@ class Connecticut(State):
             "start_date": "2021-01-06",
             # TODO: fill out actual end date
             "end_date": "2022-05-06",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022",
+            "identifier": "2022",
+            "name": "2022 Regular Session",
+            "start_date": "2022-02-09",
+            # TODO: fill out actual end date
+            "end_date": "2022-05-06",
             "active": True,
         },
     ]

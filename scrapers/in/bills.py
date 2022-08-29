@@ -12,6 +12,7 @@ from openstates.utils import convert_pdf
 
 from .apiclient import ApiClient
 
+settings = dict(SCRAPELIB_TIMEOUT=600)
 
 PROXY_BASE_URL = "http://in-proxy.openstates.org"
 SCRAPE_WEB_VERSIONS = "INDIANA_SCRAPE_WEB_VERSIONS" in os.environ

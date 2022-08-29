@@ -168,6 +168,45 @@ class WestVirginia(State):
             "name": "2021 Third Special Session",
             "start_date": "2021-06-24",
             "end_date": "2021-06-25",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022",
+            "classification": "special",
+            "identifier": "20221S",
+            "name": "2022 First Special Session",
+            "start_date": "2021-01-10",
+            # TODO: update end date
+            "end_date": "2021-01-12",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022",
+            "classification": "primary",
+            "identifier": "2022",
+            "name": "2022 Regular",
+            "start_date": "2022-01-12",
+            "end_date": "2022-06-25",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022",
+            "classification": "special",
+            "identifier": "20222S",
+            "name": "2022 Second Special Session",
+            "start_date": "2022-04-25",
+            # TODO: update end date
+            "end_date": "2021-04-29",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022",
+            "classification": "special",
+            "identifier": "20223S",
+            "name": "2022 Third Special Session",
+            "start_date": "2022-07-25",
+            # TODO: update end date
+            "end_date": "2022-08-05",
             "active": True,
         },
     ]

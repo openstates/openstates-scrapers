@@ -1,8 +1,7 @@
-import os
+import io
 import re
 import csv
 import zipfile
-import subprocess
 
 
 def clean_committee_name(comm_name):
@@ -24,23 +23,13 @@ def chamber_name(chamber):
 
 class MDBMixin(object):
     def _init_mdb(self, year):
-        if year < 2018:
-            self.mdbfile = "DB%s.mdb" % year
-            url = "ftp://www.njleg.state.nj.us/ag/%sdata/DB%s.zip" % (year, year)
-            fname, resp = self.urlretrieve(url)
-            zf = zipfile.ZipFile(fname)
-            zf.extract(self.mdbfile)
-            os.remove(fname)
-        else:
-            url = "ftp://www.njleg.state.nj.us/ag/%sdata/DB%s.mdb" % (year, year)
-            fname, resp = self.urlretrieve(url)
-            self.mdbfile = fname
-            self.info("mdb filename = " + fname)
+        url = (
+            f"https://pub.njleg.state.nj.us/leg-databases/{year}data/DB{year}_TEXT.zip"
+        )
+        fname, resp = self.urlretrieve(url)
+        self.zipfile = zipfile.ZipFile(fname)
 
-    # stolen from nm/bills.py
-    def access_to_csv(self, table):
-        """using mdbtools, read access tables as CSV"""
-        commands = ["mdb-export", self.mdbfile, table]
-        pipe = subprocess.Popen(commands, stdout=subprocess.PIPE, close_fds=True).stdout
-        csvfile = csv.DictReader(line.decode() for line in pipe)
+    def to_csv(self, table):
+        buf = io.StringIO(self.zipfile.read(table).decode("cp1252"))
+        csvfile = csv.DictReader(buf)
         return csvfile

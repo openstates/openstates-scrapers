@@ -13,8 +13,8 @@ class NoSuchBill(Exception):
 
 _classifiers = (
     ("Radicado", "", "introduction"),
-    (u"Aprobado por Cámara en Votación Final", "lower", "passage"),
-    (u"Aprobado por el Senado en Votación", "upper", "passage"),
+    ("Aprobado por Cámara en Votación Final", "lower", "passage"),
+    ("Aprobado por el Senado en Votación", "upper", "passage"),
     ("Aparece en Primera Lectura del", "upper", "reading-1"),
     ("Aparece en Primera Lectura de la", "lower", "reading-1"),
     ("Enviado al Gobernador", "executive", "executive-receipt"),
@@ -27,8 +27,8 @@ _classifiers = (
     ("1er Informe", "", "amendment-amendment"),
     ("2do Informe", "", "amendment-amendment"),
     ("Aprobado con enmiendas", "", "amendment-passage"),
-    (u"Remitido a Comisión", "", "referral-committee"),
-    (u"Referido a Comisión", "", "referral-committee"),
+    ("Remitido a Comisión", "", "referral-committee"),
+    ("Referido a Comisión", "", "referral-committee"),
     ("Retirada por su Autor", "", "withdrawal"),
     (
         "Comisión : * no recomienda aprobación de la medida",
@@ -274,9 +274,9 @@ class PRBillScraper(Scraper):
         return html.strip().replace("&nbsp", "")
 
     def parse_vote_chamber(self, bill_chamber, vote_name):
-        if u"Confirmado por Senado" in vote_name:
+        if "Confirmado por Senado" in vote_name:
             vote_chamber = "upper"
-        elif u"Votación Final" in vote_name:
+        elif "Votación Final" in vote_name:
             (vote_chamber, vote_name) = re.search(
                 r"(?u)^\w+ por (.*?) en (.*)$", vote_name
             ).groups()
@@ -289,32 +289,32 @@ class PRBillScraper(Scraper):
             vote_name = re.search(r"(?u)^Cuerpo de Origen (.*)$", vote_name).group(1)
             vote_chamber = bill_chamber
 
-        elif u"informe de Comisión de Conferencia" in vote_name:
+        elif "informe de Comisión de Conferencia" in vote_name:
             # (vote_chamber, vote_name) = re.search(
             #     r"(?u)^(\w+) (\w+ informe de Comisi\wn de Conferencia)$",
             #     vote_name,
             # ).groups()
             if "Senado" in vote_name:
                 vote_chamber = "upper"
-            elif u"Cámara" in vote_name:
+            elif "Cámara" in vote_name:
                 vote_chamber = "lower"
             else:
                 raise AssertionError(
-                    u"Unable to identify vote chamber: {}".format(vote_name)
+                    "Unable to identify vote chamber: {}".format(vote_name)
                 )
         # TODO replace bill['votes']
-        elif u"Se reconsideró" in vote_name:
+        elif "Se reconsideró" in vote_name:
             vote_chamber = bill_chamber
         elif "por Senado" in vote_name:
             vote_chamber = "upper"
         elif "Cámara aprueba" in vote_name:
             vote_chamber = "lower"
-        elif u"Senado aprueba" in vote_name:
+        elif "Senado aprueba" in vote_name:
             vote_chamber = "upper"
-        elif u"Aprobado mediante votación por lista":
+        elif "Aprobado mediante votación por lista":
             vote_chamber = bill_chamber
         else:
-            raise AssertionError(u"Unknown vote text found: {}".format(vote_name))
+            raise AssertionError("Unknown vote text found: {}".format(vote_name))
         return vote_chamber
 
     def parse_vote(self, chamber, bill, row, action_text, action_date, url):
@@ -341,7 +341,7 @@ class PRBillScraper(Scraper):
 
         vote_chamber = self.parse_vote_chamber(chamber, action_text)
 
-        classification = "passage" if u"Votación Final" in action_text else []
+        classification = "passage" if "Votación Final" in action_text else []
 
         vote = Vote(
             chamber=vote_chamber,

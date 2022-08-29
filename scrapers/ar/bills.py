@@ -7,7 +7,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 
 import lxml.html
 
-from .common import get_slug_for_session
+from .common import get_slug_for_session, get_biennium_year
 
 TIMEZONE = pytz.timezone("US/Central")
 
@@ -25,6 +25,12 @@ def get_utf_16_ftp_content(url):
 class ARBillScraper(Scraper):
     def scrape(self, chamber=None, session=None):
         self.slug = get_slug_for_session(session)
+
+        for i in self.jurisdiction.legislative_sessions:
+            if i["identifier"] == session:
+                self.session_name = i["name"]
+                self.biennium = get_biennium_year(self.session_name)
+
         chambers = [chamber] if chamber else ["upper", "lower"]
         self.bills = {}
 
@@ -79,10 +85,18 @@ class ARBillScraper(Scraper):
                     primary=True,
                 )
 
-            version_url = (
-                "ftp://www.arkleg.state.ar.us/Bills/"
-                "%s/Public/Searchable/%s.pdf" % (self.slug, bill_id.replace(" ", ""))
-            )
+            # need year before if its a fiscal or special session beyond first
+            year = session[0:4]
+            if len(session) > 4 and session[-1] != "1":
+                year = int(year) - 1
+            bill_url = bill_id.replace(" ", "")
+
+            # versions for special sessions have a different format
+            is_special = True if len(session) > 5 else False
+            if is_special:
+                version_url = f"https://www.arkleg.state.ar.us/Bills/FTPDocument?path=%2FBills%2F{self.slug}%2FPublic%2F{bill_url}.pdf"
+            else:
+                version_url = f"https://www.arkleg.state.ar.us/assembly/{year}/{self.slug}/Bills/{bill_url}.pdf"
             bill.add_version_link(bill_id, version_url, media_type="application/pdf")
 
             yield from self.scrape_bill_page(bill)
@@ -231,6 +245,31 @@ class ARBillScraper(Scraper):
                 media_type="application/pdf",
             )
 
+        acts_link_xpath = (
+            "//a[contains(@aria-label, 'Act') and contains(@href, '/Acts/')"
+            " and contains(@aria-label,'.PDF')]"
+        )
+
+        if page.xpath(acts_link_xpath):
+            act_link = page.xpath(acts_link_xpath)[0]
+            act_link_parent = "//div[a[contains(@aria-label, 'Act') and contains(@href, '/Acts/') and contains(@aria-label,'.PDF')]]/text()"
+            # two text matches here, before the image (blank), and after
+            act_num = page.xpath(act_link_parent)[1].strip()
+            act_num = f"Act {act_num}"
+            act_url = act_link.xpath("@href")[0]
+            bill.add_version_link(
+                act_num,
+                act_url,
+                media_type="application/pdf",
+                classification="became-law",
+            )
+            bill.add_citation(
+                f"AR Acts, {self.biennium} - {self.session_name}",
+                act_num,
+                citation_type="chapter",
+                url=act_url,
+            )
+
         FI_path = page.xpath(
             "//h3[text()[contains(.,'DFA Fiscal Impacts')"
             " or contains(.,'BLR Fiscal Impacts')"
@@ -303,18 +342,24 @@ class ARBillScraper(Scraper):
 
             votevals = ["yes", "no", "not voting", "other"]
             yes_count = int(
-                page.xpath("substring-after(//h3[contains(text(), 'Yeas')], ': ')")
+                page.xpath(
+                    "substring-after(//*[@id='bodyContent']/div/div/div/b[contains(text(), 'Yeas')], ': ')"
+                )
             )
             no_count = int(
-                page.xpath("substring-after(//h3[contains(text(), 'Nays')], ': ')")
+                page.xpath(
+                    "substring-after(//*[@id='bodyContent']/div/div/div/b[contains(text(), 'Nays')], ': ')"
+                )
             )
             not_voting_count = int(
                 page.xpath(
-                    "substring-after(//h3[contains(text(), 'Non Voting')], ': ')"
+                    "substring-after(//*[@id='bodyContent']/div/div/div/b[contains(text(), 'Non Voting')], ': ')"
                 )
             )
             other_count = int(
-                page.xpath("substring-after(//h3[contains(text(), 'Present')], ': ')")
+                page.xpath(
+                    "substring-after(//*[@id='bodyContent']/div/div/div/b[contains(text(), 'Present')], ': ')"
+                )
             )
             passed = yes_count > no_count + not_voting_count + other_count
             vote_type = []
@@ -332,7 +377,7 @@ class ARBillScraper(Scraper):
             try:
                 excused_count = int(
                     page.xpath(
-                        "substring-after(//h3[contains(text(), 'Excused')], ': ')"
+                        "substring-after(//*[@id='bodyContent']/div/div/div/b[contains(text(), 'Excused')], ': ')"
                     )
                 )
                 vote.set_count("excused", excused_count)
@@ -345,12 +390,7 @@ class ARBillScraper(Scraper):
             vote.set_count("other", other_count)
             vote.add_source(url)
 
-            xpath = (
-                '//h3[contains(text(), "Yeas")]/'
-                'following::div[(contains(@class, "row")'
-                'and descendant::div/a[contains(@href, "/Legislators/")])'
-                'or (contains(@class, "row") and not(div))]'
-            )
+            xpath = '//*[@id="bodyContent"]/div/div/div[(contains(@class, "voteList"))]'
 
             divs = page.xpath(xpath)
 

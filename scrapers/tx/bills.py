@@ -66,7 +66,7 @@ class TXBillScraper(Scraper, LXMLMixin):
                 ftp = ftplib.FTP(self._FTP_ROOT)
                 break
             except (EOFError, ftplib.error_temp):
-                time.sleep(2 ** i)
+                time.sleep(2**i)
         else:
             raise Exception
 

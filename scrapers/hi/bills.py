@@ -7,6 +7,7 @@ from urllib import parse as urlparse
 
 HI_URL_BASE = "https://capitol.hawaii.gov"
 SHORT_CODES = "%s/committees/committees.aspx?chamber=all" % (HI_URL_BASE)
+repeated_action = ["Excused: none", "Representative(s) Eli"]
 
 
 def create_bill_report_url(chamber, year, bill_type):
@@ -128,6 +129,13 @@ class HIBillScraper(Scraper):
                         real_committees.append(committee)
                     except KeyError:
                         pass
+            # there are some double actions on the source site
+            if (
+                bill_id == "HB2466"
+                and date == "2022-04-29"
+                and any(description in string for description in repeated_action)
+            ):
+                continue
             act = bill.add_action(string, date, chamber=actor, classification=act_type)
 
             for committee in real_committees:
@@ -273,7 +281,7 @@ class HIBillScraper(Scraper):
 
         meta = self.parse_bill_metainf_table(metainf_table)
 
-        subs = [s.strip() for s in meta["Report Title"].split(";")]
+        subs = [s.strip() for s in re.split(r";|,", meta["Report Title"])]
         if "" in subs:
             subs.remove("")
         b = Bill(
@@ -294,7 +302,7 @@ class HIBillScraper(Scraper):
         companion = meta["Companion"].strip()
         if companion:
             b.add_related_bill(
-                identifier=companion.replace(u"\xa0", " "),
+                identifier=companion.replace("\xa0", " "),
                 legislative_session=prior_session,
                 relation_type="companion",
             )
@@ -306,7 +314,7 @@ class HIBillScraper(Scraper):
             )[-1]
             if "carried over" in prior.lower():
                 b.add_related_bill(
-                    identifier=bill_id.replace(u"\xa0", " "),
+                    identifier=bill_id.replace("\xa0", " "),
                     legislative_session=prior_session,
                     relation_type="companion",
                 )
@@ -329,10 +337,32 @@ class HIBillScraper(Scraper):
         self.parse_testimony(b, bill_page)
         self.parse_cmte_reports(b, bill_page)
 
+        if bill_page.xpath(
+            "//input[@id='ctl00_ContentPlaceHolderCol1_ImageButtonPDF']"
+        ):
+            self.parse_bill_header_versions(b, bill_id, session, bill_page)
+
+        current_referral = meta["Current Referral"].strip()
+        if current_referral:
+            b.extras["current_referral"] = current_referral
+
         yield from self.parse_bill_actions_table(
             b, action_table, bill_id, session, url, chamber
         )
         yield b
+
+    # sometimes they link to a version that's only in the header,
+    # and works via a form submit, so hardcode it here
+    def parse_bill_header_versions(self, bill, bill_id, session, page):
+        pdf_link = (
+            f"https://capitol.hawaii.gov/session{session[0:4]}/bills/{bill_id}_.PDF"
+        )
+        bill.add_version_link(
+            bill_id,
+            pdf_link,
+            media_type="application/pdf",
+            on_duplicate="ignore",
+        )
 
     def parse_vote(self, action):
         vote_re = r"""

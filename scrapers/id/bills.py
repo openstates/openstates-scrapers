@@ -293,7 +293,7 @@ class IDBillScraper(Scraper):
             # some td's text is seperated by br elements
             if len(row[2]):
                 action = "".join(row[2].itertext())
-            action = action.replace(u"\xa0", " ").strip()
+            action = action.replace("\xa0", " ").strip()
             atype = get_action(actor, action)
             if atype and "passage" in atype:
                 has_moved_chambers = True
@@ -313,10 +313,10 @@ class IDBillScraper(Scraper):
     def get_names(self, name_text):
         """both of these are unicode non-breaking spaces"""
         if name_text:
-            name_text = name_text.replace(u"\xa0--\xa0", "")
-            name_text = name_text.replace(u"\u00a0", " ")
+            name_text = name_text.replace("\xa0--\xa0", "")
+            name_text = name_text.replace("\u00a0", " ")
             name_list = [
-                name.replace(u"\u2013", "").strip()
+                name.replace("\u2013", "").strip()
                 for name in name_text.split(",")
                 if name
             ]
@@ -329,7 +329,7 @@ class IDBillScraper(Scraper):
         takes the actor, date and row element and returns a Vote object
         """
         spans = row.xpath(".//span")
-        motion = row.text.replace(u"\u00a0", " ").replace("-", "").strip()
+        motion = row.text.replace("\u00a0", " ").replace("-", "").strip()
         motion = motion if motion else "passage"
         passed, yes_count, no_count, other_count = (
             spans[0].text_content().rsplit("-", 3)

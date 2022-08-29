@@ -250,7 +250,7 @@ class TNBillScraper(Scraper):
         session_details = self.jurisdiction.sessions_by_id[session]
 
         # The index page gives us links to the paginated bill pages
-        index_page = "http://wapp.capitol.tn.gov/apps/indexes/"
+        index_page = f"http://wapp.capitol.tn.gov/apps/indexes/?year={session}"
         if session_details["classification"] == "special":
             xpath = '//a[contains(text(), "{}")]'.format(
                 session_details["_scraped_name"]
@@ -384,9 +384,8 @@ class TNBillScraper(Scraper):
 
         # bill text
         btext = page.xpath("//span[@id='lblBillNumber']/a")[0]
-        bill.add_version_link(
-            "Current Version", btext.get("href"), media_type="application/pdf"
-        )
+        url = btext.get("href").replace("http:", "https:")
+        bill.add_version_link("Current Version", url, media_type="application/pdf")
 
         # documents
         summary = page.xpath('//a[contains(@href, "BillSummaryArchive")]')
@@ -395,11 +394,16 @@ class TNBillScraper(Scraper):
         fiscal = page.xpath('//span[@id="lblFiscalNote"]//a')
         if fiscal:
             bill.add_document_link("Fiscal Note", fiscal[0].get("href"))
+        # alternate fiscal note markup
+        alt_fiscal = page.xpath('//span[@id="lblFiscalNoteLink"]//a')
+        if alt_fiscal:
+            bill.add_document_link("Fiscal Note", alt_fiscal[0].get("href"))
         amendments = page.xpath('//a[contains(@href, "/Amend/")]')
         for amendment in amendments:
+            amd_url = amendment.get("href").replace("http:", "https:")
             bill.add_version_link(
                 "Amendment " + amendment.text,
-                amendment.get("href"),
+                amd_url,
                 media_type="application/pdf",
             )
         # amendment notes in image with alt text describing doc inside <a>
@@ -460,7 +464,7 @@ class TNBillScraper(Scraper):
         motion_count = 1
 
         for raw_vote in raw_vote_data:
-            raw_vote = raw_vote.split(u"\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0")
+            raw_vote = raw_vote.split("\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0")
             motion = raw_vote[0]
 
             if len(raw_vote) < 2:

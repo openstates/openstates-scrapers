@@ -250,18 +250,18 @@ class AKBillScraper(Scraper):
         for subj in doc.xpath('//a[contains(@href, "subject")]/text()'):
             bill.add_subject(subj.strip())
 
-        # Get versions - to do
-        text_list_url = (
-            f"https://www.akleg.gov/basis/Bill/Detail/{session}?Root={bill_id}#tab1_4"
-        )
-        bill.add_source(text_list_url)
+        for version_row in doc.xpath("//tr[td[@data-label='Version']]"):
+            html_url = version_row.xpath("td[@data-label='Version']/span/a/@href")[0]
+            version_name = version_row.xpath("td[@data-label='Amended Name']")[
+                0
+            ].text_content()
+            bill.add_version_link(version_name, html_url, media_type="text/html")
 
-        text_doc = lxml.html.fromstring(self.get(text_list_url).text)
-        text_doc.make_links_absolute(text_list_url)
-        for link in text_doc.xpath('//a[contains(@href, "/Text/")]'):
-            name = link.text_content()
-            text_url = link.get("href")
-            bill.add_version_link(name, text_url, media_type="text/html")
+            if version_row.xpath("td[@data-label='PDF']/span/a/@href"):
+                pdf_url = version_row.xpath("td[@data-label='PDF']/span/a/@href")[0]
+                bill.add_version_link(
+                    version_name, pdf_url, media_type="application/pdf"
+                )
 
         # Get documents - to do
         doc_list_url = (

@@ -9,7 +9,6 @@ from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 
 from .legacyBills import NHLegacyBillScraper
 
-
 body_code = {"lower": "H", "upper": "S"}
 bill_type_map = {
     "B": "bill",
@@ -55,6 +54,12 @@ class NHBillScraper(Scraper):
     cachebreaker = dt.datetime.now().strftime("%Y%d%d%H%I%s")
 
     def scrape(self, chamber=None, session=None):
+        est = pytz.timezone("America/New_York")
+        time_est = dt.datetime.now(est)
+
+        if time_est.hour > 6 and time_est.hour < 21:
+            self.warning("NH bans scraping between 6am and 9pm. This may fail.")
+
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
@@ -109,7 +114,11 @@ class NHBillScraper(Scraper):
             expanded_bill_id = line[9]
             bill_id = line[10]
 
-            if body == body_code[chamber] and session_yr == session:
+            if (
+                body == body_code[chamber]
+                and session_yr == session
+                and expanded_bill_id != ""
+            ):
                 if expanded_bill_id.startswith("CACR"):
                     bill_type = "constitutional amendment"
                 elif expanded_bill_id.startswith("PET"):
@@ -146,7 +155,11 @@ class NHBillScraper(Scraper):
                         resolution_url, allow_redirects=True
                     ).content.decode("utf-8")
                     page = lxml.html.fromstring(resolution_page)
-                    version_href = page.xpath("//a[2]/@href")[1]
+                    try:
+                        version_href = page.xpath("//a[2]/@href")[1]
+                    except Exception:
+                        self.logger.warning(f"{bill_id} missing version link")
+                        continue
                     true_version = re.search(r"id=(\d+)&", version_href)[1]
                     self.versions_by_lsr[lsr] = true_version
 
@@ -419,8 +432,14 @@ class NHBillScraper(Scraper):
 
             # 2016|H|2|330795||Yea|
             # 2012    | H   | 2    | 330795  | 964 |  HB309  | Yea | 1/4/2012 8:27:03 PM
-            session_yr, body, v_num, _, employee, bill_id, vote, date = line.split("|")
-
+            try:
+                session_yr, body, v_num, _, employee, bill_id, vote, date = line.split(
+                    "|"
+                )
+            except ValueError:
+                # not enough keys in the split
+                self.warning(f"Skipping {line}, didn't have all needed data for vote")
+                continue
             if not bill_id:
                 continue
 
@@ -428,7 +447,7 @@ class NHBillScraper(Scraper):
                 try:
                     leg = " ".join(self.legislators[employee]["name"].split())
                 except KeyError:
-                    self.warning("Error, can't find person %s" % employee)
+                    self.warning(f"Error, can't find person {employee}")
                     continue
 
                 vote = vote.strip()

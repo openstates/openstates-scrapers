@@ -165,11 +165,22 @@ class NewMexico(State):
             "identifier": "2022",
             "name": "2022 Regular Session",
             "start_date": "2022-01-18",
-            "end_date": "2022-03-20",
+            "end_date": "2022-02-17",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022 3rd Special",
+            "classification": "special",
+            "identifier": "2022S3",
+            "name": "2022 Third Special Session",
+            "start_date": "2022-04-05",
+            # TODO: update with actual end date
+            "end_date": "2022-04-20",
             "active": True,
         },
     ]
     ignored_scraped_sessions = [
+        "2022 3rd Special",
         "2021 2nd Special",
         "2010 2nd Special",
         "2010 Regular",

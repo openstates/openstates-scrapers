@@ -219,7 +219,7 @@ class SCBillScraper(Scraper):
                 result,
             ) = tds
 
-            timestamp = timestamp.text.replace(u"\xa0", " ")
+            timestamp = timestamp.text.replace("\xa0", " ")
             timestamp = datetime.datetime.strptime(timestamp, "%m/%d/%Y %H:%M %p")
 
             yeas = int(yeas.text)
@@ -377,7 +377,7 @@ class SCBillScraper(Scraper):
                 entity_type="person",
             )
         for sponsor in doc.xpath('//a[contains(@href, "committee.php")]/text()'):
-            sponsor = sponsor.replace(u"\xa0", " ").strip()
+            sponsor = sponsor.replace("\xa0", " ").strip()
             bill.add_sponsorship(
                 name=sponsor,
                 classification="primary",
@@ -399,6 +399,12 @@ class SCBillScraper(Scraper):
                 url=version.get("href"),
                 on_duplicate="ignore",
                 media_type="text/html",  # Still a MIME type
+            )
+            bill.add_version_link(
+                note=version.text,
+                url=version.get("href").replace(".htm", ".docx"),
+                on_duplicate="ignore",
+                media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             )
 
         # actions

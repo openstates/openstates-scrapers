@@ -237,7 +237,7 @@ class PABillScraper(Scraper):
 
     def parse_actions(self, bill, chamber, page):
         for tr in page.xpath("//table[@class='DataTable']//tr"):
-            action = tr.xpath("string()").replace(u"\xa0", " ").strip()
+            action = tr.xpath("string()").replace("\xa0", " ").strip()
 
             if action == "In the House":
                 chamber = "lower"

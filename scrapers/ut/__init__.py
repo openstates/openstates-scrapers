@@ -306,8 +306,19 @@ class Utah(State):
             "end_date": "2022-03-04",
             "active": True,
         },
+        {
+            "_scraped_name": "2022 3rd Special Session",
+            "classification": "special",
+            "identifier": "2022S3",
+            "name": "2022 3rd Special Session",
+            "start_date": "2022-03-25",
+            # TODO: Proper end date after session
+            "end_date": "2022-04-12",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
+        "2023 General Session",
         "2013 1st House Session",
         "2011 Veto Override Session",
         "2010 2nd Special Session",

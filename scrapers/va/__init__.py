@@ -180,6 +180,25 @@ class Virginia(State):
             "end_date": "2022-03-12",
             "active": True,
         },
+        {
+            "_scraped_name": "2022 Special Session I",
+            "classification": "special",
+            "identifier": "2022S1",
+            "name": "2022, 1st Special Session",
+            "start_date": "2022-04-04",
+            "end_date": "2022-04-08",
+            "active": True,
+        },
+        {
+            "_scraped_name": "2023 Session",
+            # TODO: remove classification when more than bills, histories, & votes posted
+            "classification": "special",
+            "identifier": "2023",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-11",
+            "end_date": "2023-03-11",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "2021 Special Session I",

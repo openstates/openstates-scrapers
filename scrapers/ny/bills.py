@@ -247,6 +247,13 @@ class NYBillScraper(Scraper):
             (prefix, number, active_version),
         ) = details
 
+        if str(bill_data["session"]) != self.term_start_year:
+            self.warning(self.term_start_year)
+            self.warning(
+                f"Bill {bill_id} appears to be from previous session: {bill_data['session']}. Skipping"
+            )
+            return
+
         bill = Bill(
             bill_id,
             legislative_session=session,

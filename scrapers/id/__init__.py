@@ -40,7 +40,7 @@ class Idaho(State):
             "identifier": "2014",
             "name": "63nd Legislature, 1st Regular Session (2014)",
             "start_date": "2014-01-06",
-            "end_date": "2014-03-21",
+            "end_date": "2014-03-20",
         },
         {
             "_scraped_name": "2015 Session",
@@ -48,7 +48,7 @@ class Idaho(State):
             "identifier": "2015",
             "name": "64th Legislature, 1st Regular Session (2015)",
             "start_date": "2015-01-12",
-            "end_date": "2015-04-10",
+            "end_date": "2015-04-11",
         },
         {
             "_scraped_name": "2015 Extraordinary Session",
@@ -72,7 +72,7 @@ class Idaho(State):
             "identifier": "2017",
             "name": "64th Legislature, 1st Regular Session (2017)",
             "start_date": "2017-01-09",
-            "end_date": "2017-04-07",
+            "end_date": "2017-03-29",
         },
         {
             "_scraped_name": "2018 Session",
@@ -80,7 +80,7 @@ class Idaho(State):
             "identifier": "2018",
             "name": "64th Legislature, 2nd Regular Session (2018)",
             "start_date": "2018-01-08",
-            "end_date": "2018-03-27",
+            "end_date": "2018-03-28",
         },
         {
             "_scraped_name": "2019 Session",
@@ -88,7 +88,7 @@ class Idaho(State):
             "identifier": "2019",
             "name": "65th Legislature, 1st Regular Session (2019)",
             "start_date": "2019-01-07",
-            "end_date": "2019-03-29",
+            "end_date": "2019-04-11",
         },
         {
             "_scraped_name": "2020 Session",
@@ -96,7 +96,7 @@ class Idaho(State):
             "identifier": "2020",
             "name": "65th Legislature, 2nd Regular Session (2020)",
             "start_date": "2020-01-06",
-            "end_date": "2020-03-27",
+            "end_date": "2020-03-20",
         },
         {
             "_scraped_name": "2020 Extraordinary Session",
@@ -104,16 +104,15 @@ class Idaho(State):
             "identifier": "2020spcl",
             "name": "65th Legislature, First Extraordinary Session (2020)",
             "start_date": "2020-08-24",
-            # TODO: Set real end date after session completes
-            "end_date": "2020-08-28",
+            "end_date": "2020-08-26",
         },
         {
             "_scraped_name": "2021 Session",
             "classification": "primary",
             "identifier": "2021",
             "name": "66th Legislature, 1st Regular Session (2021)",
-            "start_date": "2020-01-11",
-            "end_date": "2020-04-07",
+            "start_date": "2021-01-11",
+            "end_date": "2021-11-17",
             "active": False,
         },
         {
@@ -125,8 +124,19 @@ class Idaho(State):
             "end_date": "2022-03-31",
             "active": True,
         },
+        # {
+        #     "_scraped_name": "2022 Extraordinary Session",
+        #     "classification": "special",
+        #     "identifier": "2022spcl",
+        #     "name": "66th Legislature, First Extraordinary Session (2022)",
+        #     "start_date": "2022-09-01",
+        #     # TODO: update end date
+        #     "end_date": "2022-09-08",
+        #     "active": True,
+        # },
     ]
     ignored_scraped_sessions = [
+        "2022 Extraordinary Session",
         "2021 Session",
         "2020 Session",
         "2010 Session",
