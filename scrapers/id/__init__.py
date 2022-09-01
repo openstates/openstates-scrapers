@@ -122,21 +122,20 @@ class Idaho(State):
             "name": "66th Legislature, 2nd Regular Session (2022)",
             "start_date": "2022-01-10",
             "end_date": "2022-03-31",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022 Extraordinary Session",
+            "classification": "special",
+            "identifier": "2022spcl",
+            "name": "66th Legislature, First Extraordinary Session (2022)",
+            "start_date": "2022-09-01",
+            # TODO: update end date
+            "end_date": "2022-09-08",
             "active": True,
         },
-        # {
-        #     "_scraped_name": "2022 Extraordinary Session",
-        #     "classification": "special",
-        #     "identifier": "2022spcl",
-        #     "name": "66th Legislature, First Extraordinary Session (2022)",
-        #     "start_date": "2022-09-01",
-        #     # TODO: update end date
-        #     "end_date": "2022-09-08",
-        #     "active": True,
-        # },
     ]
     ignored_scraped_sessions = [
-        "2022 Extraordinary Session",
         "2021 Session",
         "2020 Session",
         "2010 Session",
