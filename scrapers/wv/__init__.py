@@ -207,7 +207,7 @@ class WestVirginia(State):
             "start_date": "2022-07-25",
             # TODO: update end date
             "end_date": "2022-08-05",
-            "active": False,
+            "active": True,
         },
         {
             "_scraped_name": "2022",
