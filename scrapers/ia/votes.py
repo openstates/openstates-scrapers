@@ -3,7 +3,6 @@ from datetime import datetime, time, timezone, timedelta
 import re
 import collections
 import lxml.etree
-import pprint
 
 from openstates.utils import convert_pdf
 from openstates.scrape import Scraper, VoteEvent
@@ -87,8 +86,8 @@ class IAVoteScraper(Scraper):
         ]
 
         # Do not process headers or completely empty lines
-        header_date_re = re.compile("\d+\w{2} Day\s+\w+DAY, \w+ \d{1,2}, \d{4}\s+\d+")
-        header_journal_re = re.compile("\d+\s+JOURNAL OF THE \w+\s+\d+\w{2} Day")
+        header_date_re = re.compile(r"\d+\w{2} Day\s+\w+DAY, \w+ \d{1,2}, \d{4}\s+\d+")
+        header_journal_re = re.compile(r"\d+\s+JOURNAL OF THE \w+\s+\d+\w{2} Day")
         lines = iter(
             [
                 line
@@ -104,9 +103,9 @@ class IAVoteScraper(Scraper):
         # bill_id -> motion -> count
         motions_per_bill = collections.defaultdict(collections.Counter)
 
-        bill_re = re.compile("\(\s*([A-Z\.]+\s\d+)\s*\)")
+        bill_re = re.compile(r"\(\s*([A-Z\.]+\s\d+)\s*\)")
         chamber_motion_re = {
-            "upper": re.compile(".* the vote was:\s*"),
+            "upper": re.compile(r".* the vote was:\s*"),
             "lower": re.compile(r'.*Shall.*(?:\?"?|")(\s{bill_re.pattern})?\s*'),
         }
 
@@ -293,7 +292,7 @@ class IAVoteScraper(Scraper):
                 try:
                     text = next(lines)
                 except StopIteration:
-                    self.logger.warning(f"End of file while still iterating on voters")
+                    self.logger.warning("End of file while still iterating on voters")
                     # hack to force break of outer loop
                     text = "Division"
                     break
