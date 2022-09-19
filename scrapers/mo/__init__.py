@@ -83,15 +83,16 @@ class Missouri(State):
             "end_date": "2022-05-20",
             "active": True,
         },
-        # {
-        #     "_scraped_name": "2022 1st Extraordinary Session",
-        #     "classification": "primary",
-        #     "identifier": "2022S1",
-        #     "name": "2022 1st Extraordinary Session",
-        #     "start_date": "2022-09-06",
-        #     # TODO: real end date when session is over
-        #     "end_date": "2021-09-08",
-        # },
+        {
+            "_scraped_name": "2022 1st Extraordinary Session",
+            "classification": "primary",
+            "identifier": "2022S1",
+            "name": "2022 1st Extraordinary Session",
+            "start_date": "2022-09-15",
+            # TODO: real end date when session is over
+            "end_date": "2021-09-23",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "2022 1st Extraordinary Session",
