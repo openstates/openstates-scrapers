@@ -24,7 +24,7 @@ class IAVoteScraper(Scraper):
         if chamber:
             yield from self.scrape_chamber(chamber, session)
         else:
-            yield from self.scrape_chamber("upper", session)
+            # yield from self.scrape_chamber("upper", session)
             yield from self.scrape_chamber("lower", session)
 
     def scrape_chamber(self, chamber, session):
@@ -176,15 +176,11 @@ class IAVoteScraper(Scraper):
             # it could be OK, but is probably something we'd want to check
             if not passed and votes["yes_count"] > votes["no_count"]:
                 self.logger.warning(
-                    "The bill got a majority but did not pass. "
+                    f"{bill_id} got a majority but did not pass. "
                     "Could be worth confirming."
                 )
-
-            result = ""
-            if passed:
-                result = "pass"
-            else:
-                result = "fail"
+            # ternary operator to define `result` cleanly
+            result = "pass" if passed else "fail"
 
             # check for duplicate motions and number second and up if needed
             motion_text = re.sub(r"\xad", "-", motion)
@@ -246,26 +242,45 @@ class IAVoteScraper(Scraper):
             for blurb, key in boundaries:
                 if text.strip().startswith(blurb):
                     return key
-
-        self.logger.info("Starting vote processing...")
+        vote_re = re.compile(r"\d+")
+        """
+        First step:
+        move to the first line that has a "boundary" string
+        """
         while True:
             text = next(lines)
-            self.logger.info(f"First while loop, processing {text}")
             if is_boundary(text):
                 break
 
+        """
+        Second step:
+        Start actually parsing lines for votes until we find a "DONE" marker
+        This step can be confusing because of the inner while loop that _also_
+        iterates the `lines` object forward
+        Because of this pattern, we need to handle the edge case of a vote object
+        not having a clear is_boundary() demarcation before the end of the current journal.
+        We currently handle this by catching StopIteration errors in both the inner
+        _and_ outer loops.
+        """
         while True:
-            self.logger.info(f"second while loop, processing {text}")
             key = is_boundary(text)
             if key is DONE:
-                passage_line = text + " " + next(lines)
+                try:
+                    passage_line = text + " " + next(lines)
+                except StopIteration:
+                    """
+                    we just don't add any additional lines here
+                    no need for a log message. If it still matches
+                    a passage_string, cool
+                    """
+                    passage_line = text
                 passed = False
                 if any(p in passage_line for p in passage_strings):
                     passed = True
                 break
 
             # Get the vote count.
-            m = re.search(r"\d+", text)
+            m = vote_re.search(text)
             if not m:
                 if "none" in text:
                     votecount = 0
@@ -275,9 +290,13 @@ class IAVoteScraper(Scraper):
 
             # Get the voter names.
             while True:
-                self.logger.info(f"third while loop, processing {text}")
-                text = next(lines)
-                self.logger.info(f"third while loop, iterated to {text}")
+                try:
+                    text = next(lines)
+                except StopIteration:
+                    self.logger.warning(f"End of file while still iterating on voters")
+                    # hack to force break of outer loop
+                    text = "Division"
+                    break
                 if is_boundary(text):
                     break
                 elif not text.strip() or text.strip().isdigit():
