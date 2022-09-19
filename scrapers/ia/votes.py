@@ -23,7 +23,7 @@ class IAVoteScraper(Scraper):
         if chamber:
             yield from self.scrape_chamber(chamber, session)
         else:
-            # yield from self.scrape_chamber("upper", session)
+            yield from self.scrape_chamber("upper", session)
             yield from self.scrape_chamber("lower", session)
 
     def scrape_chamber(self, chamber, session):
