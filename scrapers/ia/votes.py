@@ -124,9 +124,7 @@ class IAVoteScraper(Scraper):
             try:
                 bill_id = bill_re.search(line).group(1)
             except AttributeError:
-                self.warning(
-                    f"This motion did not pertain to legislation: {line}"
-                )
+                self.warning(f"This motion did not pertain to legislation: {line}")
                 continue
 
             # Get the motion text
@@ -241,6 +239,7 @@ class IAVoteScraper(Scraper):
             for blurb, key in boundaries:
                 if text.strip().startswith(blurb):
                     return key
+
         vote_re = re.compile(r"\d+")
         """
         First step:
