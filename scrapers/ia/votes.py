@@ -3,6 +3,7 @@ from datetime import datetime, time, timezone, timedelta
 import re
 import collections
 import lxml.etree
+import pprint
 
 from openstates.utils import convert_pdf
 from openstates.scrape import Scraper, VoteEvent
@@ -52,7 +53,7 @@ class IAVoteScraper(Scraper):
                     elif chamber == "lower":
                         journal_format = journal_template.format("HJNL")
                     else:
-                        raise ValueError("Unknown chamber: {}".format(chamber))
+                        raise ValueError(f"Unknown chamber: {chamber}")
 
                     date = datetime.strptime(filename, journal_format)
                     date = datetime.combine(
@@ -70,7 +71,7 @@ class IAVoteScraper(Scraper):
     def scrape_journal(self, url, chamber, session, date):
 
         filename, response = self.urlretrieve(url)
-        self.logger.info("Saved journal to %r" % filename)
+        self.logger.info(f"Saved journal to {filename}")
         all_text = convert_pdf(filename, type="text")
 
         lines = all_text.split(b"\n")
@@ -86,22 +87,28 @@ class IAVoteScraper(Scraper):
         ]
 
         # Do not process headers or completely empty lines
-        header_date_re = r"\d+\w{2} Day\s+\w+DAY, \w+ \d{1,2}, \d{4}\s+\d+"
-        header_journal_re = r"\d+\s+JOURNAL OF THE \w+\s+\d+\w{2} Day"
+        header_date_re = re.compile("\d+\w{2} Day\s+\w+DAY, \w+ \d{1,2}, \d{4}\s+\d+")
+        header_journal_re = re.compile("\d+\s+JOURNAL OF THE \w+\s+\d+\w{2} Day")
         lines = iter(
             [
                 line
                 for line in lines
                 if not (
                     line == ""
-                    or re.match(header_date_re, line)
-                    or re.match(header_journal_re, line)
+                    or header_date_re.match(line)
+                    or header_journal_re.match(line)
                 )
             ]
         )
 
         # bill_id -> motion -> count
         motions_per_bill = collections.defaultdict(collections.Counter)
+
+        bill_re = re.compile("\(\s*([A-Z\.]+\s\d+)\s*\)")
+        chamber_motion_re = {
+            "upper": re.compile(".* the vote was:\s*"),
+            "lower": re.compile(r'.*Shall.*(?:\?"?|")(\s{bill_re.pattern})?\s*'),
+        }
 
         for line in lines:
             # Go through with vote parse if any of
@@ -111,23 +118,15 @@ class IAVoteScraper(Scraper):
 
             # Get the bill_id
             bill_id = None
-            bill_re = r"\(\s*([A-Z\.]+\s\d+)\s*\)"
 
-            # The Senate ends its motion text with a vote announcement
-            if chamber == "upper":
-                end_of_motion_re = r".* the vote was:\s*"
-            # The House may or may not end motion text with a bill name
-            elif chamber == "lower":
-                end_of_motion_re = r'.*Shall.*(?:\?"?|")(\s{})?\s*'.format(bill_re)
-
-            while not re.match(end_of_motion_re, line, re.IGNORECASE):
+            while not chamber_motion_re[chamber].match(line, re.IGNORECASE):
                 line += " " + next(lines)
 
             try:
-                bill_id = re.search(bill_re, line).group(1)
+                bill_id = bill_re.search(line).group(1)
             except AttributeError:
                 self.warning(
-                    "This motion did not pertain to legislation: {}".format(line)
+                    f"This motion did not pertain to legislation: {line}"
                 )
                 continue
 
@@ -143,7 +142,7 @@ class IAVoteScraper(Scraper):
                     """.format(
                 # in at least one case [SF 457 from 2020] the bill number is followed by )0
                 # seemingly just a typo, this gets around that
-                bill_re,
+                bill_re.pattern,
                 r",?.*?the\svote\swas:" if chamber == "upper" else r"\d?",
             )
             # print("motion candidate line:", line)
@@ -188,7 +187,7 @@ class IAVoteScraper(Scraper):
                 result = "fail"
 
             # check for duplicate motions and number second and up if needed
-            motion_text = re.sub("\xad", "-", motion)
+            motion_text = re.sub(r"\xad", "-", motion)
             motions_per_bill[bill_id][motion_text] += 1
             new_count = motions_per_bill[bill_id][motion_text]
             if new_count > 1:
@@ -207,16 +206,15 @@ class IAVoteScraper(Scraper):
 
             # add votes and counts
             for vtype in ("yes", "no", "absent", "abstain"):
-                vcount = votes["{}_count".format(vtype)] or 0
+                vcount = votes[f"{vtype}_count"] or 0
                 vote.set_count(vtype, vcount)
-                for voter in votes["{}_votes".format(vtype)]:
+                for voter in votes[f"{vtype}_votes"]:
                     vote.vote(vtype, voter)
 
             vote.add_source(url)
             yield vote
 
     def parse_votes(self, lines):
-
         counts = collections.defaultdict(list)
         DONE = 1
         boundaries = [
@@ -242,7 +240,6 @@ class IAVoteScraper(Scraper):
             ("The joint resolution", DONE),
             ("Under the", DONE),
         ]
-
         passage_strings = ["passed", "adopted", "prevailed"]
 
         def is_boundary(text, patterns={}):
@@ -250,12 +247,15 @@ class IAVoteScraper(Scraper):
                 if text.strip().startswith(blurb):
                     return key
 
+        self.logger.info("Starting vote processing...")
         while True:
             text = next(lines)
+            self.logger.info(f"First while loop, processing {text}")
             if is_boundary(text):
                 break
 
         while True:
+            self.logger.info(f"second while loop, processing {text}")
             key = is_boundary(text)
             if key is DONE:
                 passage_line = text + " " + next(lines)
@@ -271,18 +271,21 @@ class IAVoteScraper(Scraper):
                     votecount = 0
             else:
                 votecount = int(m.group())
-            counts["%s_count" % key] = votecount
+            counts[f"{key}_count"] = votecount
 
             # Get the voter names.
             while True:
+                self.logger.info(f"third while loop, processing {text}")
                 text = next(lines)
+                self.logger.info(f"third while loop, iterated to {text}")
                 if is_boundary(text):
                     break
                 elif not text.strip() or text.strip().isdigit():
                     continue
                 else:
-                    for name in self.split_names(text):
-                        counts["%s_votes" % key].append(name.strip())
+                    counts[f"{key}_votes"].extend(
+                        [name.strip() for name in self.split_names(text)]
+                    )
 
         return counts, passed
 
@@ -309,7 +312,7 @@ class IAVoteScraper(Scraper):
         # Similar changes to the final name in the sequence.
         name = " ".join(name).strip(",")
         if names and len(name) < 3:
-            names[-1] += " %s" % name
+            names[-1] += f" {name}"
         elif name and (name not in names) and (name not in junk):
             names.append(name)
         return names
