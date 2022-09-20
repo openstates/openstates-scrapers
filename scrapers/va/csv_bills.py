@@ -69,13 +69,18 @@ class VaCSVBillScraper(Scraper):
                 )
             except paramiko.ssh_exception.AuthenticationException:
                 attempts += 1
-                time.sleep(10)
+                self.logger.warning(
+                    "Auth failure...sleeping {attempts * 30} seconds and retrying"
+                )
+                # hacky backoff!
+                time.sleep(attempts * 30)
             else:
                 connected = True
+            # importantly, we shouldn't try forever
             if attempts > 3:
                 break
         if not connected:
-            raise paramiko.ssh_exception.SSHException
+            raise paramiko.ssh_exception.AuthenticationException
         self.sftp = client.open_sftp()
         if session_id == "222" or session_id == "231":
             self.sftp.chdir(f"CSV221/csv{session_id}")
