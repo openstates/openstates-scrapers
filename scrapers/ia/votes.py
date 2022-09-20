@@ -52,7 +52,7 @@ class IAVoteScraper(Scraper):
                     elif chamber == "lower":
                         journal_format = journal_template.format("HJNL")
                     else:
-                        raise ValueError("Unknown chamber: {}".format(chamber))
+                        raise ValueError(f"Unknown chamber: {chamber}")
 
                     date = datetime.strptime(filename, journal_format)
                     date = datetime.combine(
@@ -70,7 +70,7 @@ class IAVoteScraper(Scraper):
     def scrape_journal(self, url, chamber, session, date):
 
         filename, response = self.urlretrieve(url)
-        self.logger.info("Saved journal to %r" % filename)
+        self.logger.info(f"Saved journal to {filename}")
         all_text = convert_pdf(filename, type="text")
 
         lines = all_text.split(b"\n")
@@ -86,22 +86,28 @@ class IAVoteScraper(Scraper):
         ]
 
         # Do not process headers or completely empty lines
-        header_date_re = r"\d+\w{2} Day\s+\w+DAY, \w+ \d{1,2}, \d{4}\s+\d+"
-        header_journal_re = r"\d+\s+JOURNAL OF THE \w+\s+\d+\w{2} Day"
+        header_date_re = re.compile(r"\d+\w{2} Day\s+\w+DAY, \w+ \d{1,2}, \d{4}\s+\d+")
+        header_journal_re = re.compile(r"\d+\s+JOURNAL OF THE \w+\s+\d+\w{2} Day")
         lines = iter(
             [
                 line
                 for line in lines
                 if not (
                     line == ""
-                    or re.match(header_date_re, line)
-                    or re.match(header_journal_re, line)
+                    or header_date_re.match(line)
+                    or header_journal_re.match(line)
                 )
             ]
         )
 
         # bill_id -> motion -> count
         motions_per_bill = collections.defaultdict(collections.Counter)
+
+        bill_re = re.compile(r"\(\s*([A-Z\.]+\s\d+)\s*\)")
+        chamber_motion_re = {
+            "upper": re.compile(r".* the vote was:\s*"),
+            "lower": re.compile(r'.*Shall.*(?:\?"?|")(\s{bill_re.pattern})?\s*'),
+        }
 
         for line in lines:
             # Go through with vote parse if any of
@@ -111,24 +117,14 @@ class IAVoteScraper(Scraper):
 
             # Get the bill_id
             bill_id = None
-            bill_re = r"\(\s*([A-Z\.]+\s\d+)\s*\)"
 
-            # The Senate ends its motion text with a vote announcement
-            if chamber == "upper":
-                end_of_motion_re = r".* the vote was:\s*"
-            # The House may or may not end motion text with a bill name
-            elif chamber == "lower":
-                end_of_motion_re = r'.*Shall.*(?:\?"?|")(\s{})?\s*'.format(bill_re)
-
-            while not re.match(end_of_motion_re, line, re.IGNORECASE):
+            while not chamber_motion_re[chamber].match(line, re.IGNORECASE):
                 line += " " + next(lines)
 
             try:
-                bill_id = re.search(bill_re, line).group(1)
+                bill_id = bill_re.search(line).group(1)
             except AttributeError:
-                self.warning(
-                    "This motion did not pertain to legislation: {}".format(line)
-                )
+                self.warning(f"This motion did not pertain to legislation: {line}")
                 continue
 
             # Get the motion text
@@ -143,7 +139,7 @@ class IAVoteScraper(Scraper):
                     """.format(
                 # in at least one case [SF 457 from 2020] the bill number is followed by )0
                 # seemingly just a typo, this gets around that
-                bill_re,
+                bill_re.pattern,
                 r",?.*?the\svote\swas:" if chamber == "upper" else r"\d?",
             )
             # print("motion candidate line:", line)
@@ -177,18 +173,14 @@ class IAVoteScraper(Scraper):
             # it could be OK, but is probably something we'd want to check
             if not passed and votes["yes_count"] > votes["no_count"]:
                 self.logger.warning(
-                    "The bill got a majority but did not pass. "
+                    f"{bill_id} got a majority but did not pass. "
                     "Could be worth confirming."
                 )
-
-            result = ""
-            if passed:
-                result = "pass"
-            else:
-                result = "fail"
+            # ternary operator to define `result` cleanly
+            result = "pass" if passed else "fail"
 
             # check for duplicate motions and number second and up if needed
-            motion_text = re.sub("\xad", "-", motion)
+            motion_text = re.sub(r"\xad", "-", motion)
             motions_per_bill[bill_id][motion_text] += 1
             new_count = motions_per_bill[bill_id][motion_text]
             if new_count > 1:
@@ -207,16 +199,15 @@ class IAVoteScraper(Scraper):
 
             # add votes and counts
             for vtype in ("yes", "no", "absent", "abstain"):
-                vcount = votes["{}_count".format(vtype)] or 0
+                vcount = votes[f"{vtype}_count"] or 0
                 vote.set_count(vtype, vcount)
-                for voter in votes["{}_votes".format(vtype)]:
+                for voter in votes[f"{vtype}_votes"]:
                     vote.vote(vtype, voter)
 
             vote.add_source(url)
             yield vote
 
     def parse_votes(self, lines):
-
         counts = collections.defaultdict(list)
         DONE = 1
         boundaries = [
@@ -242,7 +233,6 @@ class IAVoteScraper(Scraper):
             ("The joint resolution", DONE),
             ("Under the", DONE),
         ]
-
         passage_strings = ["passed", "adopted", "prevailed"]
 
         def is_boundary(text, patterns={}):
@@ -250,39 +240,69 @@ class IAVoteScraper(Scraper):
                 if text.strip().startswith(blurb):
                     return key
 
+        vote_re = re.compile(r"\d+")
+        """
+        First step:
+        move to the first line that has a "boundary" string
+        """
         while True:
             text = next(lines)
             if is_boundary(text):
                 break
 
+        """
+        Second step:
+        Start actually parsing lines for votes until we find a "DONE" marker
+        This step can be confusing because of the inner while loop that _also_
+        iterates the `lines` object forward
+        Because of this pattern, we need to handle the edge case of a vote object
+        not having a clear is_boundary() demarcation before the end of the current journal.
+        We currently handle this by catching StopIteration errors in both the inner
+        _and_ outer loops.
+        """
         while True:
             key = is_boundary(text)
             if key is DONE:
-                passage_line = text + " " + next(lines)
+                try:
+                    passage_line = text + " " + next(lines)
+                except StopIteration:
+                    """
+                    we just don't add any additional lines here
+                    no need for a log message. If it still matches
+                    a passage_string, cool
+                    """
+                    passage_line = text
                 passed = False
                 if any(p in passage_line for p in passage_strings):
                     passed = True
                 break
 
             # Get the vote count.
-            m = re.search(r"\d+", text)
+            m = vote_re.search(text)
             if not m:
                 if "none" in text:
                     votecount = 0
             else:
                 votecount = int(m.group())
-            counts["%s_count" % key] = votecount
+            counts[f"{key}_count"] = votecount
 
             # Get the voter names.
             while True:
-                text = next(lines)
+                try:
+                    text = next(lines)
+                except StopIteration:
+                    self.logger.warning("End of file while still iterating on voters")
+                    # hack to force break of outer loop
+                    text = "Division"
+                    break
                 if is_boundary(text):
                     break
                 elif not text.strip() or text.strip().isdigit():
                     continue
                 else:
-                    for name in self.split_names(text):
-                        counts["%s_votes" % key].append(name.strip())
+                    counts[f"{key}_votes"].extend(
+                        [name.strip() for name in self.split_names(text)]
+                    )
 
         return counts, passed
 
@@ -309,7 +329,7 @@ class IAVoteScraper(Scraper):
         # Similar changes to the final name in the sequence.
         name = " ".join(name).strip(",")
         if names and len(name) < 3:
-            names[-1] += " %s" % name
+            names[-1] += f" {name}"
         elif name and (name not in names) and (name not in junk):
             names.append(name)
         return names
