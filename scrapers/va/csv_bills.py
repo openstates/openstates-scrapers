@@ -54,11 +54,7 @@ class VaCSVBillScraper(Scraper):
     _bills = defaultdict(list)
     _summaries = defaultdict(list)
 
-    def __init__(self, *args, **kwargs):
-        # first initialize the upstream object properly
-        super(self.__class__, self).__init__(*args, **kwargs)
-
-        # then log in to SFTP site _once_
+    def _init_sftp(self, session_id):
         client = SSHClient()
         client.set_missing_host_key_policy(AutoAddPolicy)
         connected = False
@@ -86,8 +82,6 @@ class VaCSVBillScraper(Scraper):
         if not connected:
             raise paramiko.ssh_exception.AuthenticationException
         self.sftp = client.open_sftp()
-
-    def _set_sftp_dir(self, session_id):
         """
         Set working directory for sftp client based on session
         """
@@ -276,7 +270,7 @@ class VaCSVBillScraper(Scraper):
             is_special = True
 
         session_id = SESSION_SITE_IDS[session]
-        self._set_sftp_dir(session_id)
+        self._init_sftp(session_id)
         bill_url_base = "https://lis.virginia.gov/cgi-bin/"
 
         if not is_special:
@@ -466,3 +460,4 @@ class VaCSVBillScraper(Scraper):
                     )
 
             yield b
+        self.sftp.close()
