@@ -6,6 +6,7 @@ from paramiko.client import SSHClient, AutoAddPolicy
 import paramiko
 from openstates.scrape import Scraper, Bill, VoteEvent
 from collections import defaultdict
+import time
 
 from .common import SESSION_SITE_IDS
 
@@ -68,6 +69,7 @@ class VaCSVBillScraper(Scraper):
                 )
             except paramiko.ssh_exception.AuthenticationException:
                 attempts += 1
+                time.sleep(10)
             else:
                 connected = True
             if attempts > 3:
