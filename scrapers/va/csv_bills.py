@@ -8,7 +8,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from collections import defaultdict
 import time
 
-from .common import SESSION_SITE_IDS
+from .common import SESSION_SITE_IDS, COMBINED_SESSIONS
 
 tz = pytz.timezone("America/New_York")
 SKIP = "~~~SKIP~~~"
@@ -54,7 +54,7 @@ class VaCSVBillScraper(Scraper):
     _bills = defaultdict(list)
     _summaries = defaultdict(list)
 
-    def init_sftp(self, session_id):
+    def _init_sftp(self, session_id):
         client = SSHClient()
         client.set_missing_host_key_policy(AutoAddPolicy)
         connected = False
@@ -70,7 +70,7 @@ class VaCSVBillScraper(Scraper):
             except paramiko.ssh_exception.AuthenticationException:
                 attempts += 1
                 self.logger.warning(
-                    "Auth failure...sleeping {attempts * 30} seconds and retrying"
+                    f"Auth failure...sleeping {attempts * 30} seconds and retrying"
                 )
                 # hacky backoff!
                 time.sleep(attempts * 30)
@@ -82,10 +82,20 @@ class VaCSVBillScraper(Scraper):
         if not connected:
             raise paramiko.ssh_exception.AuthenticationException
         self.sftp = client.open_sftp()
-        if session_id == "222" or session_id == "231":
-            self.sftp.chdir(f"CSV221/csv{session_id}")
+        """
+        Set working directory for sftp client based on session
+        """
+        for k, sessions in COMBINED_SESSIONS.items():
+            if session_id in sessions:
+                self.sftp.chdir(f"/CSV{k}/csv{session_id}")
+                break
         else:
-            self.sftp.chdir(f"CSV{session_id}/csv{session_id}")
+            """
+            for -> else blocks only work when you've gone through
+            every step in a for loop without breaking
+            so this is kinda like setting a default
+            """
+            self.sftp.chdir(f"/CSV{session_id}/csv{session_id}")
 
     def get_file(self, filename):
         return self.sftp.open(filename).read().decode(errors="ignore")
@@ -240,7 +250,7 @@ class VaCSVBillScraper(Scraper):
     def scrape(self, session=None):
         if not session:
             session = self.jurisdiction.legislative_sessions[-1]["identifier"]
-            self.info("no session specified, using %s", session)
+            self.info(f"no session specified, using {session}")
         chamber_types = {
             "H": "lower",
             "S": "upper",
@@ -256,14 +266,11 @@ class VaCSVBillScraper(Scraper):
         )
 
         is_special = False
-        if (
-            "classification" in session_details
-            and session_details["classification"] == "special"
-        ):
+        if session_details.get("classification", "general") == "special":
             is_special = True
 
         session_id = SESSION_SITE_IDS[session]
-        self.init_sftp(session_id)
+        self._init_sftp(session_id)
         bill_url_base = "https://lis.virginia.gov/cgi-bin/"
 
         if not is_special:
@@ -453,3 +460,4 @@ class VaCSVBillScraper(Scraper):
                     )
 
             yield b
+        self.sftp.close()
