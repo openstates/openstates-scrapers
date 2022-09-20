@@ -3,8 +3,10 @@ import re
 import pytz
 import datetime
 from paramiko.client import SSHClient, AutoAddPolicy
+import paramiko
 from openstates.scrape import Scraper, Bill, VoteEvent
 from collections import defaultdict
+import time
 
 from .common import SESSION_SITE_IDS
 
@@ -55,9 +57,30 @@ class VaCSVBillScraper(Scraper):
     def init_sftp(self, session_id):
         client = SSHClient()
         client.set_missing_host_key_policy(AutoAddPolicy)
-        client.connect(
-            "sftp.dlas.virginia.gov", username="rjohnson", password="E8Tmg%9Dn!e6dp"
-        )
+        connected = False
+        attempts = 0
+        while not connected:
+            try:
+                client.connect(
+                    "sftp.dlas.virginia.gov",
+                    username="rjohnson",
+                    password="E8Tmg%9Dn!e6dp",
+                    compress=True,
+                )
+            except paramiko.ssh_exception.AuthenticationException:
+                attempts += 1
+                self.logger.warning(
+                    "Auth failure...sleeping {attempts * 30} seconds and retrying"
+                )
+                # hacky backoff!
+                time.sleep(attempts * 30)
+            else:
+                connected = True
+            # importantly, we shouldn't try forever
+            if attempts > 3:
+                break
+        if not connected:
+            raise paramiko.ssh_exception.AuthenticationException
         self.sftp = client.open_sftp()
         if session_id == "222" or session_id == "231":
             self.sftp.chdir(f"CSV221/csv{session_id}")
@@ -77,7 +100,7 @@ class VaCSVBillScraper(Scraper):
             self._members[row[1]].append(
                 {"chamber": row[0], "member_id": row[1], "name": row[2].strip()}
             )
-        self.warning("Total Members Loaded: " + str(len(self._members)))
+        self.info("Total Members Loaded: " + str(len(self._members)))
         return True
 
     def load_sponsors(self):
@@ -94,7 +117,7 @@ class VaCSVBillScraper(Scraper):
                     "patron_type": row[3],
                 }
             )
-        self.warning("Total Sponsors Loaded: " + str(len(self._sponsors)))
+        self.info("Total Sponsors Loaded: " + str(len(self._sponsors)))
 
     def load_amendments(self):
         resp = self.get_file("Amendments.csv")
@@ -105,7 +128,7 @@ class VaCSVBillScraper(Scraper):
             self._amendments[row[0].strip()].append(
                 {"bill_number": row[0].strip(), "txt_docid": row[1].strip()}
             )
-        self.warning("Total Amendments Loaded: " + str(len(self._amendments)))
+        self.info("Total Amendments Loaded: " + str(len(self._amendments)))
 
     def load_fiscal_notes(self):
         resp = self.get_file("FiscalImpactStatements.csv")
@@ -114,7 +137,7 @@ class VaCSVBillScraper(Scraper):
         # ['BILL_NUMBER', 'HST_REFID']
         for row in reader:
             self._fiscal_notes[row[0].strip()].append({"refid": row[1].strip()})
-        self.warning("Total Fiscal Notes Loaded: " + str(len(self._fiscal_notes)))
+        self.info("Total Fiscal Notes Loaded: " + str(len(self._fiscal_notes)))
 
     def load_history(self):
         resp = self.get_file("HISTORY.CSV")
@@ -129,7 +152,7 @@ class VaCSVBillScraper(Scraper):
                     "history_refid": row[3],
                 }
             )
-        self.warning("Total Actions Loaded: " + str(len(self._history)))
+        self.info("Total Actions Loaded: " + str(len(self._history)))
 
     def load_votes(self):
         resp = self.get_file("VOTE.CSV")
@@ -161,7 +184,7 @@ class VaCSVBillScraper(Scraper):
                         self._votes[history_refid].append(
                             {"member_id": member, "vote_result": vote_result}
                         )
-        self.warning("Total Votes Loaded: " + str(len(self._votes)))
+        self.info("Total Votes Loaded: " + str(len(self._votes)))
 
     def load_bills(self):
         resp = self.get_file("BILLS.CSV")
@@ -189,7 +212,7 @@ class VaCSVBillScraper(Scraper):
                     "text_docs": text_doc_data,
                 }
             )
-        self.warning("Total Bills Loaded: " + str(len(self._bills)))
+        self.info("Total Bills Loaded: " + str(len(self._bills)))
 
     # Used to clean summary texts
     def remove_html_tags(self, text):
@@ -212,7 +235,7 @@ class VaCSVBillScraper(Scraper):
                     "summary_text": self.remove_html_tags(row[3]),
                 }
             )
-        self.warning("Total Sponsors Loaded: " + str(len(self._summaries)))
+        self.info("Total Sponsors Loaded: " + str(len(self._summaries)))
 
     def scrape(self, session=None):
         if not session:
