@@ -3,6 +3,7 @@ import re
 import pytz
 import datetime
 from paramiko.client import SSHClient, AutoAddPolicy
+import paramiko
 from openstates.scrape import Scraper, Bill, VoteEvent
 from collections import defaultdict
 
@@ -55,9 +56,24 @@ class VaCSVBillScraper(Scraper):
     def init_sftp(self, session_id):
         client = SSHClient()
         client.set_missing_host_key_policy(AutoAddPolicy)
-        client.connect(
-            "sftp.dlas.virginia.gov", username="rjohnson", password="E8Tmg%9Dn!e6dp"
-        )
+        connected = False
+        attempts = 0
+        while not connected:
+            try:
+                client.connect(
+                    "sftp.dlas.virginia.gov",
+                    username="rjohnson",
+                    password="E8Tmg%9Dn!e6dp",
+                    compress=True,
+                )
+            except paramiko.ssh_exception.AuthenticationException:
+                attempts += 1
+            else:
+                connected = True
+            if attempts > 3:
+                break
+        if not connected:
+            raise paramiko.ssh_exception.SSHException
         self.sftp = client.open_sftp()
         if session_id == "222" or session_id == "231":
             self.sftp.chdir(f"CSV221/csv{session_id}")
