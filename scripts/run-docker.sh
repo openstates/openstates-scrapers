@@ -14,6 +14,7 @@ set -eo pipefail
 docker buildx build "${SCRIPT_DIR}/../" --tag "${IMAGE_NAME}"
 
 docker run --rm \
+    --env-file <(env | grep API_KEY) \
     -v "${SCRIPT_DIR}/../_data:/opt/openstates/openstates/_data" \
     -v "${SCRIPT_DIR}/../_cache:/opt/openstates/openstates/_cache" \
     -v "${SCRIPT_DIR}/../_scrapes:/opt/openstates/openstates/_scrapes" \
