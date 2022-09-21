@@ -81,7 +81,7 @@ class DistrictOfColumbia(State):
         requests.packages.urllib3.disable_warnings()
         requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
         resp = requests.get(
-            "http://lims.dccouncil.us/api/v2/PublicData/CouncilPeriods",
+            "https://lims.dccouncil.us/api/v2/PublicData/CouncilPeriods",
             headers=headers,
             verify=False,
         )
