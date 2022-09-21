@@ -77,11 +77,8 @@ class DistrictOfColumbia(State):
             "Accept": "application/json",
             "User-Agent": useragent,
         }
-        # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
-        requests.packages.urllib3.disable_warnings()
-        requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
         resp = requests.get(
-            "http://lims.dccouncil.us/api/v2/PublicData/CouncilPeriods",
+            "http://lims.dccouncil.gov/api/v2/PublicData/CouncilPeriods",
             headers=headers,
             verify=False,
         )
