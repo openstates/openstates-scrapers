@@ -187,7 +187,7 @@ class Virginia(State):
             "name": "2022, 1st Special Session",
             "start_date": "2022-04-04",
             "end_date": "2022-04-08",
-            "active": False,
+            "active": True,
         },
         {
             "_scraped_name": "2023 Session",

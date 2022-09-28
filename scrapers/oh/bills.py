@@ -48,6 +48,9 @@ class OHBillScraper(Scraper):
     def scrape(self, session=None, chambers=None):
         # Bills endpoint can sometimes take a very long time to load
         self.timeout = 300
+        self.headers[
+            "User-Agent"
+        ] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36"
 
         if int(session) < 128:
             raise AssertionError("No data for period {}".format(session))
@@ -251,7 +254,8 @@ class OHBillScraper(Scraper):
 
                 try:
                     action_doc = self.get(
-                        base_url + bill_version["action"][0]["link"], verify=False
+                        base_url + bill_version["action"][0]["link"],
+                        verify=False,
                     )
                 except scrapelib.HTTPError:
                     pass
@@ -477,7 +481,10 @@ class OHBillScraper(Scraper):
         legislators = {}
         for chamber in ["House", "Senate"]:
             url = base_url + "chamber/{chamber}/legislators?per_page=100"
-            doc = self.get(url.format(chamber=chamber), verify=False)
+            doc = self.get(
+                url.format(chamber=chamber),
+                verify=False,
+            )
             leg_json = doc.json()
             for leg in leg_json["items"]:
                 if leg["med_id"]:

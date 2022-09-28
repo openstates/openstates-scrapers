@@ -4,6 +4,7 @@ import urllib
 import datetime
 import pytz
 from openstates.scrape import Scraper, Bill, VoteEvent
+from openstates.exceptions import EmptyScrape
 
 import lxml.html
 
@@ -37,6 +38,8 @@ class ARBillScraper(Scraper):
         for Chamber in chambers:
             yield from self.scrape_bill(Chamber, session)
         self.scrape_actions()
+        if not self.bills:
+            raise EmptyScrape
         for bill_id, bill in self.bills.items():
             yield bill
 

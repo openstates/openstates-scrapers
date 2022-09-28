@@ -209,6 +209,16 @@ class WestVirginia(State):
             "end_date": "2022-08-05",
             "active": True,
         },
+        {
+            "_scraped_name": "2022",
+            "classification": "special",
+            "identifier": "20224S",
+            "name": "2022 Fourth Special Session",
+            "start_date": "2022-09-12",
+            # TODO: update end date
+            "end_date": "2022-09-16",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "2029",

@@ -26,7 +26,7 @@ class PartialPerson:
 
 
 class Senators(HtmlListPage):
-    source = "https://www.flsenate.gov/Senators/"
+    source = URL("https://flsenate.gov/Senators/", timeout=30)
     selector = XPath("//a[@class='senatorLink']")
 
     def process_item(self, item):
@@ -40,6 +40,10 @@ class Senators(HtmlListPage):
         party = item.xpath("string(../../td[2])")
         leg_url = item.get("href")
 
+        # retired members have missing fields
+        if not district or not party or not leg_url:
+            self.skip()
+
         return SenDetail(
             PartialPerson(name=name, party=party, district=district, url=leg_url)
         )
@@ -50,7 +54,7 @@ class SenDetail(HtmlPage):
     input_type = PartialPerson
 
     def get_source_from_input(self):
-        return URL(self.input.url, timeout=10)
+        return URL(self.input.url, timeout=30)
 
     def process_page(self):
         email = (
@@ -154,14 +158,19 @@ class RepContact(HtmlPage):
 
 
 class Representatives(HtmlListPage):
-    source = "https://www.myfloridahouse.gov/Representatives"
+    source = URL("https://myfloridahouse.gov/Representatives", timeout=30)
     # kind of wonky xpath to not get the partial term people at the bottom of the page
     selector = XPath("(//div[@class='team-page'])[1]//div[@class='team-box']")
 
-    IMAGE_BASE = "https://www.myfloridahouse.gov/"
+    IMAGE_BASE = "https://myfloridahouse.gov/"
 
     def process_item(self, item):
         name = item.xpath("./a/div[@class='team-txt']/h5/text()")[0].strip()
+
+        # hack for empty chairs
+        if name == "Pending, Election":
+            self.skip()
+
         party = item.xpath("./a/div[@class='team-txt']/p[1]/text()")[0].split()[0]
         district = item.xpath("./a/div[@class='team-txt']/p[1]/span/text()")[0].split()[
             -1
