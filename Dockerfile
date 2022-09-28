@@ -27,6 +27,12 @@ RUN apt-get update -qq \
       libpq-dev \
       libgdal-dev \
       libgeos-dev \
+      gnupg \
+    && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update -qq \
+    && apt-get install -y -qq --no-install-recommends gh \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -39,7 +45,6 @@ RUN pip --no-cache-dir --disable-pip-version-check install poetry \
     && poetry install --no-root \
     && apt-get remove -y -qq \
       build-essential \
-      git \
       libpq-dev \
     && apt-get autoremove -y -qq \
     && apt-get clean \
