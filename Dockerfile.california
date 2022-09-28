@@ -52,4 +52,6 @@ ADD . /opt/openstates/openstates/
 RUN poetry install --extras "california" -q \
     && rm -r /root/.cache/pypoetry/cache /root/.cache/pypoetry/artifacts/
 
+ENV OPENSSL_CONF=/opt/openstates/openstates/openssl.cnf
+
 ENTRYPOINT ["poetry", "run", "os-update"]
