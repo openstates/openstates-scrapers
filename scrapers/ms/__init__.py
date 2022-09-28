@@ -224,8 +224,19 @@ class Mississippi(State):
             "end_date": "2022-03-15",
             "active": True,
         },
+        # {
+        #     "_scraped_name": "2023 Regular Session",
+        #     "classification": "primary",
+        #     "identifier": "2023",
+        #     "name": "2023 Regular Session",
+        #     # TODO: update dates
+        #     "start_date": "2023-01-04",
+        #     "end_date": "2023-03-15",
+        #     "active": True,
+        # },
     ]
     ignored_scraped_sessions = [
+        "2023 Regular Session",
         "2008 First Extraordinary Session",
         "2007 Regular Session",
         "2007 First Extraordinary Session",
