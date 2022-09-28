@@ -16,6 +16,8 @@ services:
     - DC_API_KEY
     - VIRGINIA_FTP_USER
     - VIRGINIA_FTP_PASSWORD
+    - ARKANSAS_FTP_USER
+    - ARKANSAS_FTP_PASSWORD
     volumes:
       - .:/opt/openstates/openstates/
     entrypoint: ["poetry", "run", "os-update"]
