@@ -3,6 +3,8 @@ import csv
 import urllib
 import datetime
 import pytz
+import os
+from ftplib import FTP
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.exceptions import EmptyScrape
 
@@ -11,11 +13,15 @@ import lxml.html
 from .common import get_slug_for_session, get_biennium_year
 
 TIMEZONE = pytz.timezone("US/Central")
+user = os.environ["ARKANSAS_FTP_USER"]
+password = os.environ["ARKANSAS_FTP_PASSWORD"]
 
 
 def get_utf_16_ftp_content(url):
     # Rough to do this within Scrapelib, as it doesn't allow custom decoding
-    raw = urllib.request.urlopen(url).read().decode("utf-16")
+    ftp = FTP(url)
+    ftp.login(user=user, passwd=password)
+    raw = urllib.request.urlopen(ftp).read().decode("utf-16")
     # Also, legislature may use `NUL` bytes when a cell is empty
     NULL_BYTE_CODE = "\x00"
     text = raw.replace(NULL_BYTE_CODE, "")
