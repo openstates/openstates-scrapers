@@ -4,7 +4,6 @@ import urllib
 import datetime
 import pytz
 import os
-from ftplib import FTP
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.exceptions import EmptyScrape
 
@@ -17,15 +16,52 @@ user = os.environ["ARKANSAS_FTP_USER"]
 password = os.environ["ARKANSAS_FTP_PASSWORD"]
 
 
+class FTPSWrapper(urllib.request.ftpwrapper):
+    """
+    Like urllib.request.ftpwrapper, but enforces FTPS.
+    """
+
+    def init(self):
+        # This code was copied and modified from the standard library.
+        # https://github.com/python/cpython/blob/f14ced6062ecdd3c654f3c558f79e1edf4f10cc8/Lib/urllib/request.py#L2412-L2419
+        import ftplib
+
+        self.busy = 0
+        # Specify FTPS here
+        self.ftp = ftplib.FTP_TLS()
+        self.ftp.debug(2)
+        self.ftp.connect(self.host, self.port, self.timeout)
+        self.ftp.login(user, passwd=password)
+        # Set up a secure data connection
+        self.ftp.prot_p()
+        _target = "/".join(self.dirs)
+        self.ftp.cwd(_target)
+
+
+class FTPSHandler(urllib.request.FTPHandler):
+    """
+    Like urllib.request.FTPHandler, but enforces FTPS.
+    """
+
+    def connect_ftp(self, *args):
+        # Use the subclass we defined above.
+        return FTPSWrapper(*args, persistent=False)
+
+
 def get_utf_16_ftp_content(url):
     # Rough to do this within Scrapelib, as it doesn't allow custom decoding
-    ftp = FTP(url)
-    ftp.login(user=user, passwd=password)
-    raw = urllib.request.urlopen(ftp).read().decode("utf-16")
+    print("trying")
+    urllib.request.install_opener(urllib.request.build_opener(FTPSHandler))
+    print("made opener")
+    response = urllib.request.urlopen(url)
+    print("got file")
+    raw = response.read().decode("utf-16")
     # Also, legislature may use `NUL` bytes when a cell is empty
+    print("made it")
     NULL_BYTE_CODE = "\x00"
     text = raw.replace(NULL_BYTE_CODE, "")
     text = text.replace("\r", "")
+    print("got it all")
     return text
 
 
