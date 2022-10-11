@@ -454,9 +454,9 @@ class NCBillScraper(Scraper):
             yield from self.scrape_chamber(chamber, session)
 
     def scrape_chamber(self, chamber, session):
-        chamber = {"lower": "H", "upper": "S"}[chamber]
-        print(f"scraping {chamber}")
-        url = f"https://www.ncleg.gov/Legislation/Bills/FiledBillsFeed/{session}/{chamber}"
+        chamber = {"lower": "House", "upper": "Senate"}[chamber]
+        chamber_abbr = "S" if chamber == "Senate" else "H"
+        url = f"https://www.ncleg.gov/Legislation/Bills/FiledBillsFeed/{session}/{chamber_abbr}"
 
         page = self.get(url).content
         data = lxml.etree.fromstring(page)
