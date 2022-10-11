@@ -1,6 +1,6 @@
 import datetime as dt
-import json
 
+import lxml.etree
 import lxml.html
 import re
 from openstates.scrape import Bill, Scraper, VoteEvent
@@ -44,7 +44,7 @@ class NCBillScraper(Scraper):
         "Veto Overridden": "veto-override-passage",
     }
 
-    def scrape_bill(self, chamber, session, bill_id):
+    def scrape_bill(self, chamber, session, bill_id, bill_type, bill_title):
         # there will be a space in bill_id if we're doing a one-off bill scrape
         # convert HB 102 into H102
         if " " in bill_id:
@@ -66,19 +66,15 @@ class NCBillScraper(Scraper):
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(bill_detail_url)
 
-        title_div_txt = doc.xpath('//div[contains(@class, "h2")]/text()')[0]
-        if "Joint Resolution" in title_div_txt:
+        if "JR" in bill_type:
             bill_type = "joint resolution"
             bill_id = bill_id[0] + "JR " + bill_id[1:]
-        elif "Resolution" in title_div_txt:
+        elif "R" in bill_type:
             bill_type = "resolution"
             bill_id = bill_id[0] + "R " + bill_id[1:]
-        elif "Bill" in title_div_txt:
+        elif "B" in bill_type:
             bill_type = "bill"
             bill_id = bill_id[0] + "B " + bill_id[1:]
-
-        bill_title = doc.xpath("//main//div[@class='col-12'][1]")[0]
-        bill_title = bill_title.text_content().strip()
 
         # For special cases where bill title is blank, a new title is created using Bill ID
         if not bill_title:
@@ -126,32 +122,38 @@ class NCBillScraper(Scraper):
             )
 
         # sponsors
-        spon_row = doc.xpath(
-            '//div[contains(text(), "Sponsors")]/following-sibling::div'
-        )[0]
-        # first sponsors are primary, until we see (Primary)
-        spon_type = "primary"
-        spon_lines = spon_row.text_content().replace("\r\n", ";").replace("\n", ";")
-        for leg in spon_lines.split(";"):
-            name = leg.replace("\xa0", " ").strip()
-            if name.startswith("(Primary)") or name.endswith("(Primary)"):
-                name = name.replace("(Primary)", "").strip()
-                spon_type = "cosponsor"
-            if not name:
-                continue
-            bill.add_sponsorship(
-                name,
-                classification=spon_type,
-                entity_type="person",
-                primary=(spon_type == "primary"),
-            )
+        try:
+            spon_row = doc.xpath("//main/div[3]/div[2]/div/div[4]")[0]
+            spon_lines = spon_row.text_content().replace("\r\n", ";").replace("\n", ";")
+            # first sponsors are primary, until we see (Primary)
+            spon_type = "primary"
+            for leg in spon_lines.split(";"):
+                name = leg.replace("\xa0", " ").strip()
+                if name.startswith("(Primary)") or name.endswith("(Primary)"):
+                    name = name.replace("(Primary)", "").strip()
+                    spon_type = "cosponsor"
+                if not name:
+                    continue
+                bill.add_sponsorship(
+                    name,
+                    classification=spon_type,
+                    entity_type="person",
+                    primary=(spon_type == "primary"),
+                )
+        except IndexError:
+            self.warning("No sponsors")
+            pass
 
         # keywords
-        kw_row = doc.xpath(
-            '//div[contains(text(), "Keywords:")]/following-sibling::div'
-        )[0]
-        for subject in kw_row.text_content().split(", "):
-            bill.add_subject(subject)
+        try:
+            kw_row = doc.xpath(
+                '//div[contains(text(), "Keywords:")]/following-sibling::div'
+            )[0]
+            for subject in kw_row.text_content().split(", "):
+                bill.add_subject(subject)
+        except IndexError:
+            self.warning("No subjects")
+            pass
 
         # actions
         action_tr_xpath = (
@@ -456,20 +458,22 @@ class NCBillScraper(Scraper):
         print(f"scraping {chamber}")
         url = f"https://www.ncleg.gov/Legislation/Bills/FiledBillsFeed/{session}/{chamber}"
 
-        data = self.get(url).text
-        print(json.load(data))
+        page = self.get(url).content
+        data = lxml.etree.fromstring(page)
 
-        for item in data:
-            print(item)
-            bill_id = item["bill"]
-            print(bill_id)
+        for item in data[0][4:]:
+            bill_id = item[1].text
+            bill_type = item[7].text
+            bill_title = item[4].text
 
             # Special cases for a page that 404s
             if session == "2009" and bill_id == "H234":
                 continue
             if session == "2003E3" and bill_id == "S2":
                 continue
-            yield from self.scrape_bill(chamber, session, bill_id)
+            yield from self.scrape_bill(
+                chamber, session, bill_id, bill_type, bill_title
+            )
 
 
 def vote_list_to_names(names):
