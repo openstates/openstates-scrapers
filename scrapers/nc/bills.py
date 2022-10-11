@@ -1,4 +1,6 @@
 import datetime as dt
+import json
+
 import lxml.html
 import re
 from openstates.scrape import Bill, Scraper, VoteEvent
@@ -450,14 +452,17 @@ class NCBillScraper(Scraper):
             yield from self.scrape_chamber(chamber, session)
 
     def scrape_chamber(self, chamber, session):
-        chamber = {"lower": "House", "upper": "Senate"}[chamber]
-        url = "https://www3.ncleg.gov/gascripts/SimpleBillInquiry/displaybills.pl"
-        post_data = {"Session": session, "tab": "Chamber", "Chamber": chamber}
+        chamber = {"lower": "H", "upper": "S"}[chamber]
+        print(f"scraping {chamber}")
+        url = f"https://www.ncleg.gov/Legislation/Bills/FiledBillsFeed/{session}/{chamber}"
 
-        data = self.post(url, post_data).text
-        doc = lxml.html.fromstring(data)
-        for row in doc.xpath("//table[@cellpadding=3]/tr")[1:]:
-            bill_id = row.xpath("td[1]/a/text()")[0]
+        data = self.get(url).text
+        print(json.load(data))
+
+        for item in data:
+            print(item)
+            bill_id = item["bill"]
+            print(bill_id)
 
             # Special cases for a page that 404s
             if session == "2009" and bill_id == "H234":
