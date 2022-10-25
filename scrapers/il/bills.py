@@ -539,7 +539,7 @@ class IlBillScraper(Scraper):
 
         # now add sponsors
         for spontype, sponsor, chamber, official_type in sponsor_list:
-            if official_type == "primary":
+            if spontype == "primary":
                 primary = True
             else:
                 primary = False
