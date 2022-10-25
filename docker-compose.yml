@@ -1,9 +1,5 @@
 version: "3.5"
 
-networks:
-  openstates-network:
-      name: openstates-network
-
 services:
   scrape:
     build: .
@@ -19,8 +15,6 @@ services:
     volumes:
       - .:/opt/openstates/openstates/
     entrypoint: ["poetry", "run", "os-update"]
-    networks:
-      - openstates-network
   mysql:
     image: mariadb:10.3
 #    command: mysqld_safe --max_allowed_packet=512M
@@ -29,8 +23,6 @@ services:
     environment:
       - MYSQL_DATABASE=capublic
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
-    networks:
-      - openstates-network
   ca-scrape:
     build:
       context: .
@@ -42,8 +34,6 @@ services:
     volumes:
       - .:/opt/openstates/openstates/
     entrypoint: ["poetry", "run", "os-update"]
-    networks:
-    - openstates-network
   ca-download:
     build:
       context: .
@@ -55,8 +45,6 @@ services:
       - .:/opt/openstates/openstates/
     depends_on:
       - mysql
-    networks:
-      - openstates-network
   db:
     image: "mdillon/postgis:11-alpine"
     hostname: "db"
@@ -68,5 +56,3 @@ services:
       POSTGRES_DB: openstatesorg
     volumes:
       - ./openstates-postgres/:/var/lib/postgresql/data
-    networks:
-      - openstates-network
