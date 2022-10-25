@@ -105,7 +105,7 @@ class MIBillScraper(Scraper):
             if len(sponsors) > 1:
                 classification = (
                     "primary"
-                    if sponsor.tail and "primary" in sponsor.tail
+                    if sponsor.tail and "district" in sponsor.tail
                     else "cosponsor"
                 )
             else:
