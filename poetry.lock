@@ -1060,7 +1060,7 @@ california = ["mysqlclient", "SQLAlchemy"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "e904166fbdee452f36ac59ba45a7f5a2571f94c0d00de331f0e13c9f3f5b1d30"
+content-hash = "b5f49ecac4bc3f7587ac19ca97fbb9063d9ee459e55dadad536be93eed1ad6dc"
 
 [metadata.files]
 appnope = [
