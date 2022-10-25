@@ -20,13 +20,13 @@ RUN apt-get update -qq \
       libpq-dev \
       libgdal-dev \
       libgeos-dev \
-      gnupg
-RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
+      gnupg \
+    && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
     && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list \
     && apt-get update -qq \
-    && apt-get install -y -qq --no-install-recommends gh
-RUN pip --no-cache-dir --disable-pip-version-check install wheel \
+    && apt-get install -y -qq --no-install-recommends gh \
+    && pip --no-cache-dir --disable-pip-version-check install wheel \
     && pip --no-cache-dir --disable-pip-version-check install poetry crcmod
 
 ADD poetry.lock /opt/openstates/openstates/
