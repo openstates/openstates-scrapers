@@ -20,9 +20,7 @@ class NDBillScraper(Scraper, LXMLMixin):
     senate_list_url = (
         "http://www.legis.nd.gov/assembly/%s-%s/%sbill-text/senate-bill.html"
     )
-    subjects_url = (
-        "http://www.legis.nd.gov/assembly/%s-%s/%ssubject-index/major-topic.html"
-    )
+    subjects_url = "https://www.ndlegis.gov/assembly/%s-%s/bill-index.html"
 
     url_session = ""
     special_url_slug = ""
