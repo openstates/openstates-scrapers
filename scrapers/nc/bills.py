@@ -56,10 +56,7 @@ class NCBillScraper(Scraper):
         elif chamber == "House":
             chamber = "lower"
 
-        bill_detail_url = (
-            "http://www.ncleg.net/gascripts/"
-            "BillLookUp/BillLookUp.pl?Session=%s&BillID=%s&votesToView=all"
-        ) % (session, bill_id)
+        bill_detail_url = f"https://www.ncleg.gov/BillLookUp/{session}/{bill_id}"
 
         # parse the bill data page, finding the latest html text
         data = self.get(bill_detail_url).text
