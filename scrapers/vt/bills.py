@@ -12,34 +12,35 @@ class VTBillScraper(Scraper, LXMLMixin):
 
     # Dictionary matching bill action phrases to classifications
     _actions = {
-        "signed by governor": ["executive-signature"],
-        "become law without signature of governor": ["became-law", "executive"],
-        "vetoed by the governor": ["executive-veto"],
         "read first": ["introduction"],
         "read 1st time": ["introduction"],
         "first read": ["introduction"],
-        "reported favorably": ["committee-passage-favorable"],
         "read second": ["reading-2"],
         "read 2nd": ["reading-2"],
         "second read": ["reading-2"],
         "read third": ["reading-3"],
         "read 3rd": ["reading-3"],
         "third read": ["reading-3"],
+        "reported favorably": ["committee-passage-favorable"],
         "rules suspended & messaged to house forthwith": ["passage"],
-        "overrid": ["veto-override-passage"],
         "delivered to governor": ["executive-receipt"],
+        "signed by governor": ["executive-signature"],
+        "vetoed by the governor": ["executive-veto"],
         "vetoed": ["executive-veto"],
+        "overrid": ["veto-override-passage"],
+        "proposal of amendment": ["amendment-introduction"],
+        "become law without signature of governor": ["became-law", "executive"],
         "governor allowed to become law": ["became-law"],
         "allowed to go into effect without the signature of the governor": [
             "became-law"
         ],
-        "proposal of amendment": ["amendment-introduction"],
     }
 
-    def categorize_actions(self, action_string):
+    # Takes in a string description of an action and returns the respective OS classification
+    def categorize_actions(self, action_description):
         for action_key in list(self._actions):
-            # If we can detect a phrase that we have mapped an action classification for
-            if action_key in action_string:
+            # If we can detect a phrase that there is an OS action classification for
+            if action_key in action_description:
                 return self._actions[action_key]
         return None
 
@@ -243,7 +244,10 @@ class VTBillScraper(Scraper, LXMLMixin):
                     if len(action_classification) > 1:
                         actor = action_classification[1]
 
-                # More action categorization (these were the tricky ones)
+                # More action categorization
+                # These classifications are done separately because they require more rules
+                # in order to correctly classify
+
                 elif actor == "lower" and any(
                     x.lower().startswith("aspassed")
                     for x in action["keywords"].split(";")
