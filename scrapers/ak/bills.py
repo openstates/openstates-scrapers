@@ -65,6 +65,29 @@ class AKBillScraper(Scraper):
         "ENE": "Energy",
     }
 
+    # Dictionary matching bill action phrases to classifications. Classifications can be found here:
+    # https://github.com/openstates/openstates-core/blob/5b16776b1882da925e8e8d5c0a07160a7d649c69/openstates/data/common.py#L87
+    _actions = {
+        "read the first time": ["reading-1"],
+        "read the second time": ["reading-2"],
+        "read the third time": ["reading-3"],
+        "in third": ["reading-3"],
+        "advanced to third reading": ["reading-3"],
+        "transmitted to governor": ["executive-receipt"],
+        "signed into law": ["executive-signature"],
+        "approved by the governor": ["executive-signature"],
+        "veto": ["executive-veto"],
+        "do pass": ["committee-passage"],
+        "do not pass": ["committee-failure"],
+        "(s) transmitted to (h)": ["passage"],
+        "(h) transmitted to (s)": ["passage"],
+        "passed": ["passage"],
+        "referred to": ["referral-committee"],
+        "prefile released": ["filing"],
+        "law w/o gov": ["became-law"],
+        "effective date(s) of law": ["became-law"],
+    }
+
     _comm_re = re.compile(r"^(%s)\s" % "|".join(_comm_mapping.keys()))
     _current_comm = None
 
@@ -479,40 +502,31 @@ class AKBillScraper(Scraper):
         action = action.replace("PREFILE RELEASED", "Prefile released")
 
         atype = []
-        if "READ THE FIRST TIME" in action:
-            atype.append("introduction")
-            atype.append("reading-1")
-            action = action.replace("READ THE FIRST TIME", "Read the first time")
-        if "READ THE SECOND TIME" in action:
-            atype.append("reading-2")
-            action = action.replace("READ THE SECOND TIME", "Read the second time")
-        if "READ THE THIRD TIME" in action:
-            atype.append("reading-3")
-            action = action.replace("READ THE THIRD TIME", "Read the third time")
-        if "TRANSMITTED TO GOVERNOR" in action:
-            atype.append("executive-receipt")
-            action = action.replace(
-                "TRANSMITTED TO GOVERNOR", "Transmitted to Governor"
-            )
-        if "SIGNED INTO LAW" in action:
-            atype.append("executive-signature")
-            action = action.replace("SIGNED INTO LAW", "Signed into law")
-        if "Do Pass" in action:
-            atype.append("committee-passage")
-        if "Do Not Pass" in action:
-            atype.append("committee-failure")
-        if action.startswith("PASSED"):
-            atype.append("passage")
-        if "(S) TRANSMITTED TO (H)" in action:
-            atype.append("passage")
-        if "(H) TRANSMITTED TO (S)" in action:
-            atype.append("passage")
-        if "REFERRED TO" in action:
-            atype.append("referral-committee")
-            action = action.replace("REFERRED TO", "Referred to")
-        if "Prefile released" in action:
-            atype.append("filing")
-        if "Approved by the Governor" in action:
-            atype.append("executive-signature")
+        for action_key in self._actions.keys():
+            # If we can detect a phrase that there is an OS action classification for
+            if action_key in action.lower():
+                # Our classification method for AK allows for more than one classification for certain actions
+                actions = self._actions[action_key]
+                [atype.append(this_action) for this_action in actions]
+
+                # Some cleaning that was done in the original code
+                if "TRANSMITTED TO GOVERNOR" in action:
+                    action = action.replace(
+                        "TRANSMITTED TO GOVERNOR", "Transmitted to Governor"
+                    )
+
+                if "SIGNED INTO LAW" in action:
+                    action = action.replace("SIGNED INTO LAW", "Signed into law")
+
+        # These classifications are being done separately because they require more rules for
+        # an accurate classification
+        if "failed" in action.lower() and "am no" not in action.lower():
+            atype.append("failure")
+
+        elif "failed" in action.lower() and "am no" in action.lower():
+            atype.append("amendment-failure")
+
+        elif "adopted" in action.lower() and "am no" in action.lower():
+            atype.append("amendment-passage")
 
         return action, atype
