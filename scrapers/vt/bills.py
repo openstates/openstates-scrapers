@@ -10,7 +10,8 @@ from utils import LXMLMixin
 
 class VTBillScraper(Scraper, LXMLMixin):
 
-    # Dictionary matching bill action phrases to classifications
+    # Dictionary matching bill action phrases to classifications. Classifications can be found here:
+    # https://github.com/openstates/openstates-core/blob/5b16776b1882da925e8e8d5c0a07160a7d649c69/openstates/data/common.py#L87
     _actions = {
         "read first": ["introduction"],
         "read 1st time": ["introduction"],
