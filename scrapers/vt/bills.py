@@ -38,7 +38,7 @@ class VTBillScraper(Scraper, LXMLMixin):
 
     # Takes in a string description of an action and returns the respective OS classification
     def categorize_actions(self, action_description):
-        for action_key in list(self._actions):
+        for action_key in self._actions.keys():
             # If we can detect a phrase that there is an OS action classification for
             if action_key in action_description:
                 return self._actions[action_key]
