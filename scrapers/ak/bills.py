@@ -507,7 +507,7 @@ class AKBillScraper(Scraper):
             if action_key in action.lower():
                 # Our classification method for AK allows for more than one classification for certain actions
                 actions = self._actions[action_key]
-                [atype.append(this_action) for this_action in actions]
+                atype.extend(a for a in actions)
 
                 # Some cleaning that was done in the original code
                 if "TRANSMITTED TO GOVERNOR" in action:
