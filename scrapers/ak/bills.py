@@ -502,12 +502,11 @@ class AKBillScraper(Scraper):
         action = action.replace("PREFILE RELEASED", "Prefile released")
 
         atype = []
-        for action_key in self._actions.keys():
+        for classification_phrase, classifications in self._actions.items():
             # If we can detect a phrase that there is an OS action classification for
-            if action_key in action.lower():
+            if classification_phrase in action.lower():
                 # Our classification method for AK allows for more than one classification for certain actions
-                actions = self._actions[action_key]
-                atype.extend(a for a in actions)
+                atype.extend(a for a in classifications)
 
                 # Some cleaning that was done in the original code
                 if "TRANSMITTED TO GOVERNOR" in action:
