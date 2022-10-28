@@ -71,9 +71,8 @@ class LegList(HtmlListPage):
         elif chamber == "Representative":
             chamber = "lower"
 
-        # print(chamber)
         source = item.get("href")
-        # print(source)
+
         p = PartialMember(chamber=chamber, url=self.source.url)
 
         return LegDetail(p, source=source)
