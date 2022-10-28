@@ -223,16 +223,16 @@ _actions = {
 # Takes in a string description of an action and returns the respective OS classification
 def categorize_actions(act_desc):
     atype = []
-    for action_key in _actions.keys():
+    for action_key, data in _actions.items():
 
         # If the action requires regex to be correctly classified
-        if _actions[action_key]["type"] == "regex":
+        if data["type"] == "regex":
             if re.search(action_key, act_desc.lower()):
                 # Add all action classifications in the list, excluding regex marker
-                atype.extend(a for a in _actions[action_key]["mappings"])
+                atype.extend(a for a in data["mappings"])
 
         else:
             if action_key in act_desc.lower():
-                atype.extend(a for a in _actions[action_key]["mappings"])
+                atype.extend(a for a in data["mappings"])
 
     return atype
