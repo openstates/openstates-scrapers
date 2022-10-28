@@ -1,4 +1,3 @@
-# import the objects I will need
 import attr
 from spatula import HtmlPage, HtmlListPage, XPath, CSS, SelectorError
 from openstates.models import ScrapePerson
