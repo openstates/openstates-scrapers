@@ -1,69 +1,80 @@
-from spatula import XmlListPage, URL, XPath
+# import the objects I will need
+import attr
+from spatula import HtmlPage, HtmlListPage, XPath, CSS, SelectorError
 from openstates.models import ScrapePerson
 
 
-ELEMENTS = (
-    "FirstName",
-    "MiddleName",
-    "LastName",
-    "EMail",
-    "Phone",
-    "District",
-    "Party",
-    "Building",
-    "Room",
-)
+@attr.s(auto_attribs=True)
+class PartialMember:
+    url: str
+    chamber: str = ""
 
 
-def _get_if_exists(item, elem):
-    val = item.xpath(f"./{elem}/text()")
-    if val:
-        return str(val[0])
+class LegDetail(HtmlPage):
+    example_source = "http://www.akleg.gov/basis/Member/Detail/32?code=BCH"
+
+    def process_page(self):
+
+        details_div = CSS(".bioright").match(self.root)[0]
+
+        name_span = CSS(".formal_name").match(details_div)[0].text_content()
+        name_list = name_span.split(" ")
+        given_name = name_list[1]
+        family_name = " ".join(name_list[2:])
+
+        email = CSS("a").match(details_div)[0].text_content().strip()
+
+        div_text = details_div.text_content().replace("\r\n", " ").split(" ")
+        # TODO: Write a faster way to get untagged text elements on page
+        text_list = [x for x in div_text if len(x)]
+        district_index = text_list.index("District:")
+        if not district_index == 5:
+            print(district_index)
+
+        party = "Democrat"
+
+        p = ScrapePerson(
+            name=f"{given_name} {family_name}",
+            given_name=given_name,
+            family_name=family_name,
+            state="ak",
+            chamber=self.input.chamber,
+            party=party,
+            image="",
+            district="",
+            email=email,
+        )
+
+        try:
+            leadership_title = (
+                CSS(".leadership_title").match(details_div)[0].text_content()
+            )
+        except SelectorError:
+            leadership_title = ""
+
+        p.extras["title"] = leadership_title
+
+        return p
 
 
-class Legislators(XmlListPage):
+class LegList(HtmlListPage):
     session_num = "32"
-    source = URL(
-        "http://www.legis.state.ak.us/publicservice/basis/members"
-        f"?minifyresult=false&session={session_num}",
-        headers={"X-Alaska-Legislature-Basis-Version": "1.4"},
-    )
-    selector = XPath("//Member/MemberDetails")
+    source = f"https://www.akleg.gov/basis/mbr_info.asp?session={session_num}"
+    selector = XPath("//html/body/div[2]/div/div/table//tr[position()>1]/td[1]/nobr/a")
 
     def process_item(self, item):
-        item_dict = {elem: _get_if_exists(item, elem) for elem in ELEMENTS}
-        chamber = item.attrib["chamber"]
-        code = item.attrib["code"].lower()
+        title = item.text_content()
+        title_list = title.strip().split(" ")
+        chamber = title_list[0]
 
-        party = item_dict["Party"]
-        if party == "N":
-            party = "Independent"
+        if chamber == "Senator":
+            chamber = "upper"
+        elif chamber == "Representative":
+            chamber = "lower"
 
-        person = ScrapePerson(
-            name="{FirstName} {LastName}".format(**item_dict),
-            given_name=item_dict["FirstName"],
-            family_name=item_dict["LastName"],
-            state="ak",
-            party=party,
-            chamber=("upper" if chamber == "S" else "lower"),
-            district=item_dict["District"],
-            image=f"http://akleg.gov/images/legislators/{code}.jpg",
-            email=item_dict["EMail"],
-        )
-        person.add_link(
-            "http://www.akleg.gov/basis/Member/Detail/{}?code={}".format(
-                self.session_num, code
-            )
-        )
-        person.add_source("http://w3.akleg.gov/")
+        # print(chamber)
+        source = item.get("href")
+        # print(source)
+        p = PartialMember(chamber=chamber, url=self.source.url)
 
-        if item_dict["Phone"]:
-            phone = "907-" + item_dict["Phone"][0:3] + "-" + item_dict["Phone"][3:]
-            person.capitol_office.voice = phone
-
-        if item_dict["Building"] == "CAPITOL":
-            person.capitol_office.address = (
-                "State Capitol Room {}; Juneau, AK, 99801".format(item_dict["Room"])
-            )
-
-        return person
+        return LegDetail(p, source=source)
