@@ -1,3 +1,4 @@
+import re
 import attr
 from spatula import HtmlPage, HtmlListPage, XPath, CSS, SelectorError
 from openstates.models import ScrapePerson
@@ -23,14 +24,49 @@ class LegDetail(HtmlPage):
 
         email = CSS("a").match(details_div)[0].text_content().strip()
 
-        div_text = details_div.text_content().replace("\r\n", " ").split(" ")
-        # TODO: Write a faster way to get untagged text elements on page
-        text_list = [x for x in div_text if len(x)]
-        district_index = text_list.index("District:")
-        if not district_index == 5:
-            print(district_index)
+        div_text = details_div.text_content().replace("\r\n", " ")
 
-        party = "Democrat"
+        details = {}
+
+        detail_patterns = [
+            "District",
+            "Party",
+            "Toll-Free",
+            "Phone",
+            "Fax",
+        ]
+
+        for pattern in detail_patterns:
+            match = re.search(rf"{pattern}:\s\S+", div_text)
+            if match:
+                detail = div_text[match.start() + len(pattern) + 2 : match.end()]
+                details[pattern] = detail
+
+        address_patterns = [r"Interim.+99\d\d\d", r"Session.+99801"]
+        for address_pattern in address_patterns:
+            address_match = re.search(address_pattern, div_text)
+            if address_match:
+                detail_content = div_text[address_match.start() : address_match.end()]
+                detail = " ".join(detail_content.split()[2:])
+                details[address_pattern] = detail
+
+        district_phone_pattern = r"Interim.+Phone:\s\S+"
+        district_phone_match = re.search(district_phone_pattern, div_text)
+        if district_phone_match:
+            district_phone = div_text[
+                district_phone_match.end() - 12 : district_phone_match.end()
+            ]
+            details[district_phone_pattern] = district_phone
+
+        party_formatting = {
+            "Democrat": "Democratic",
+            "Republican": "Republican",
+            "Not": "Independent",
+        }
+        listed_party = details["Party"]
+        party = party_formatting[listed_party]
+
+        image = CSS(".legpic").match_one(self.root).get("src")
 
         p = ScrapePerson(
             name=f"{given_name} {family_name}",
@@ -39,8 +75,8 @@ class LegDetail(HtmlPage):
             state="ak",
             chamber=self.input.chamber,
             party=party,
-            image="",
-            district="",
+            image=image,
+            district=details["District"],
             email=email,
         )
 
@@ -48,10 +84,39 @@ class LegDetail(HtmlPage):
             leadership_title = (
                 CSS(".leadership_title").match(details_div)[0].text_content()
             )
+            p.extras["title"] = leadership_title
         except SelectorError:
-            leadership_title = ""
+            pass
 
-        p.extras["title"] = leadership_title
+        if details.get("Phone"):
+            p.capitol_office.voice = details["Phone"]
+
+        if details.get(district_phone_pattern):
+            p.district_office.voice = details[district_phone_pattern]
+
+        if details.get("Fax"):
+            p.district_office.fax = details["Fax"]
+
+        if details.get(address_patterns[0]):
+            p.district_office.address = details[address_patterns[0]]
+        p.district_office.name = "interim contact"
+
+        if details.get(address_patterns[1]):
+            p.capitol_office.address = details[address_patterns[1]]
+        p.capitol_office.name = "session contact"
+
+        if details.get("Toll-Free"):
+            p.extras["toll_free_phone"] = details["Toll-Free"]
+
+        source_url = str(self.source)
+        p.add_source(source_url, "member detail page")
+
+        session_match = re.search(r"Detail/\d+", source_url)
+        session = source_url[session_match.start() + 7 : session_match.end()]
+        p.add_source(
+            f"https://www.akleg.gov/basis/mbr_info.asp?session={session}",
+            "member list page",
+        )
 
         return p
 
