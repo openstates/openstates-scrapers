@@ -4,12 +4,13 @@ import re
 
 import lxml.etree
 from openstates.scrape import Scraper, Bill, VoteEvent
-
+from . import actions
 from utils import LXMLMixin
 
 
 class VTBillScraper(Scraper, LXMLMixin):
 
+    """
     # Dictionary matching bill action phrases to classifications. Classifications can be found here:
     # https://github.com/openstates/openstates-core/blob/5b16776b1882da925e8e8d5c0a07160a7d649c69/openstates/data/common.py#L87
     _actions = {
@@ -44,6 +45,7 @@ class VTBillScraper(Scraper, LXMLMixin):
             if action_key in action_description:
                 return classification
         return None
+    """
 
     def scrape(self, session=None):
         HTML_TAGS_RE = r"<.*?>"
@@ -212,16 +214,16 @@ class VTBillScraper(Scraper, LXMLMixin):
 
             # Checks if page actually has json posted
             if "json" in actions_json.headers.get("Content-Type"):
-                actions = json.loads(actions_json.text)["data"]
+                these_actions = json.loads(actions_json.text)["data"]
                 # Checks to see if any data is actually there
-                if actions == "":
+                if these_actions == "":
                     continue
             else:
                 continue
             bill.add_source(actions_url)
 
             chambers_passed = set()
-            for action in actions:
+            for action in these_actions:
                 action = {k: v for k, v in action.items() if v is not None}
 
                 if "Signed by Governor" in action["FullStatus"]:
@@ -234,7 +236,7 @@ class VTBillScraper(Scraper, LXMLMixin):
                     raise AssertionError("Unknown actor for bill action")
 
                 # Categorize action
-                action_classification = self.categorize_actions(
+                action_classification = actions.categorize_actions(
                     action["FullStatus"].lower()
                 )
 
