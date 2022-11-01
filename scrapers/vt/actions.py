@@ -31,7 +31,7 @@ _actions = {
     },
     "become law without signature of governor": {
         "type": "compare",
-        "mappings": ["became-law", "executive"],
+        "mappings": ["became-law"],
     },
     "governor allowed to become law": {"type": "compare", "mappings": ["became-law"]},
     "allowed to go into effect without the signature of the governor": {
