@@ -228,7 +228,7 @@ class Mississippi(State):
             "_scraped_name": "2022 First Extraordinary Session",
             "classification": "special",
             "identifier": "20221E",
-            "name": "2022 Extraordinary Session",
+            "name": "2022 First Extraordinary Session",
             "start_date": "2022-11-02",
             "end_date": "2022-11-04",
             "active": True,
