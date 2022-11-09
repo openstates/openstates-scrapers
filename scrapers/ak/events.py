@@ -9,7 +9,7 @@ from openstates.scrape import Scraper, Event
 
 class AKEventScraper(Scraper, LXMLMixin):
     _TZ = pytz.timezone("US/Alaska")
-    API_BASE = "http://www.legis.state.ak.us/publicservice/basis"
+    API_BASE = "https://www.akleg.gov/publicservice/basis"
     NS = {"ak": "http://www.legis.state.ak.us/Basis"}
     CHAMBERS = {"S": "upper", "H": "lower", "J": "joint"}
     COMMITTEES = {"upper": {}, "lower": {}, "joint": {}}
@@ -69,8 +69,19 @@ class AKEventScraper(Scraper, LXMLMixin):
         location = row.xpath("string(Location)").strip()
 
         # events with no location all seem to be committee hearings
-        if location == "":
+        if location == "" or re.match(r"^\w+\s\d+$", location):
             location = "Alaska State Capitol, 120 4th St, Juneau, AK 99801"
+        elif re.match(r"^\w+\s\d+$", location) or re.match(
+            r"(HOUSE|SENATE)\s\w+(\s\d+)?", location
+        ):
+            location = f"{location}, Alaska State Capitol, 120 4th St, Juneau, AK 99801"
+        elif "anch lio" in location.lower():
+            location = re.sub(
+                r"anch lio",
+                "Anchorage Legislative Affairs Office, 1500 W Benson Blvd, Anchorage, AK 99503",
+                location,
+                flags=re.IGNORECASE,
+            )
 
         start_date = dateutil.parser.parse(row.xpath("string(Schedule)"))
         # todo: do i need to self._TZ.localize() ?
@@ -81,6 +92,22 @@ class AKEventScraper(Scraper, LXMLMixin):
 
         if committee_code in self.COMMITTEES[chamber]:
             event.add_participant(committee_name, type="committee", note="host")
+
+        coords = None
+        if "state capitol" in event.location.get("name").lower():
+            coords = {
+                "latitude": "39.16196376710227",
+                "longitude": "-119.76626916663172",
+            }
+        if "anchorage legislative affairs" in event.location.get("name").lower():
+            coords = {
+                "latitude": "61.19311529903147",
+                "longitude": "-149.91182077226256",
+            }
+
+        if coords:
+            loc_dict = {"name": event.location.get("name"), "coordinates": coords}
+            event.__setattr__("location", loc_dict)
 
         for item in row.xpath("Agenda/Item"):
             agenda_desc = item.xpath("string(Text)").strip()
@@ -119,6 +146,6 @@ class AKEventScraper(Scraper, LXMLMixin):
         headers["X-Alaska-Legislature-Basis-Version"] = "1.2"
 
         url = "{}{}".format(self.API_BASE, path)
-        page = self.get(url, params=args, headers=headers)
+        page = self.get(url, params=args, headers=headers, verify=False)
         page = lxml.etree.fromstring(page.content)
         return page
