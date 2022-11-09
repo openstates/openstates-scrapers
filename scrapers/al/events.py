@@ -3,6 +3,7 @@ import pytz
 import re
 
 from utils import LXMLMixin
+from utils.events import set_coordinates
 from openstates.scrape import Scraper, Event
 
 
@@ -33,6 +34,9 @@ class ALEventScraper(Scraper, LXMLMixin):
 
             location = row.xpath("td")[2].text_content().strip()
 
+            if re.match(r"^Room", location, flags=re.IGNORECASE):
+                location = f"{location}, 11 South Union Street, Montgomery, Alabama, United States"
+
             # 11 South Union Street, Montgomery, Alabama, United States
             # TODO: IF location is "room (X)" add state house
             # TODO: REplace "state house" with address
@@ -50,6 +54,9 @@ class ALEventScraper(Scraper, LXMLMixin):
                 location_name=location,
                 description=details,
             )
+
+            if "11 south union" in location.lower():
+                set_coordinates(event, 32.37707594063977, -86.29919861850152)
 
             event.add_source(EVENTS_URL)
 
