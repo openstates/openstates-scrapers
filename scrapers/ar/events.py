@@ -4,7 +4,7 @@ import dateutil.parser
 import lxml
 import pytz
 from openstates.scrape import Scraper, Event
-from utils.events import set_coordinates
+from utils.events import match_coordinates
 
 
 # usage:
@@ -97,10 +97,13 @@ class AREventScraper(Scraper):
                 bill_url = row.xpath(".//a[@aria-label='Referred']/@href")[0]
                 self.scrape_referred_bills(event, bill_url)
 
-            if "1 capitol mall" in location.lower():
-                set_coordinates(event, "34.74710754332397", "-92.290421823471")
-            elif "500 woodlane" in location.lower():
-                set_coordinates(event, "34.74640441284063", "-92.2895327976071")
+            match_coordinates(
+                event,
+                [
+                    ("1 capitol mall", ("34.74710754332397", "-92.290421823471")),
+                    ("500 woodlane", ("34.74640441284063", "-92.2895327976071")),
+                ],
+            )
 
             yield event
 
