@@ -59,7 +59,7 @@ class NYEventScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        table = page.xpath('//section[@id="leg-agenda-mod"]/div/table')[0]
+        table = page.xpath('//section[@id="inline_file"]/div/table')[0]
         meta = table.xpath("tr[1]/td[1]/text()")
 
         # careful, the committee name in the page #committee_div
