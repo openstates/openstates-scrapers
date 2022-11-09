@@ -61,6 +61,23 @@ class NVEventScraper(Scraper, LXMLMixin):
             description=notes,
         )
 
+        coordinates = None
+        # Grant Sawyer office building
+        if "555 e. washington ave" in address.lower():
+            coordinates = {
+                "latitude": "36.18278967322847",
+                "longitude": "-115.13231621695132",
+            }
+        # State capitol
+        elif "legislative building" in address.lower():
+            coordinates = {
+                "latitude": "39.16196376710227",
+                "longitude": "-119.76626916663172",
+            }
+        if coordinates:
+            loc_dict = {"name": address, "note": "", "coordinates": coordinates}
+            event.__setattr__("location", loc_dict)
+
         event.add_source(self.URL)
 
         if info_td.xpath('a[contains(font/text(),"agenda")]'):
