@@ -4,6 +4,7 @@ import dateutil.parser
 import re
 
 from utils import LXMLMixin
+from utils.events import set_coordinates
 from openstates.scrape import Scraper, Event
 
 
@@ -93,21 +94,10 @@ class AKEventScraper(Scraper, LXMLMixin):
         if committee_code in self.COMMITTEES[chamber]:
             event.add_participant(committee_name, type="committee", note="host")
 
-        coords = None
         if "state capitol" in event.location.get("name").lower():
-            coords = {
-                "latitude": "39.16196376710227",
-                "longitude": "-119.76626916663172",
-            }
+            set_coordinates(event, "39.16196376710227", "-119.76626916663172")
         if "anchorage legislative affairs" in event.location.get("name").lower():
-            coords = {
-                "latitude": "61.19311529903147",
-                "longitude": "-149.91182077226256",
-            }
-
-        if coords:
-            loc_dict = {"name": event.location.get("name"), "coordinates": coords}
-            event.__setattr__("location", loc_dict)
+            set_coordinates(event, "61.19311529903147", "-149.91182077226256")
 
         for item in row.xpath("Agenda/Item"):
             agenda_desc = item.xpath("string(Text)").strip()
