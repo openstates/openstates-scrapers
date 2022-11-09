@@ -96,13 +96,13 @@ class AKEventScraper(Scraper, LXMLMixin):
 
         match_coordinates(
             event,
-            [
-                ("state capitol", ("58.302068966269374", "-134.41033234349783")),
-                (
-                    "anchorage legislative information",
-                    ("61.19311529903147", "-149.91182077226256"),
+            {
+                "state capitol": ("58.302068966269374", "-134.41033234349783"),
+                "anchorage legislative information": (
+                    "61.19311529903147",
+                    "-149.91182077226256",
                 ),
-            ],
+            },
         )
 
         for item in row.xpath("Agenda/Item"):

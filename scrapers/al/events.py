@@ -3,7 +3,7 @@ import pytz
 import re
 
 from utils import LXMLMixin
-from utils.events import set_coordinates
+from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
 
 
@@ -55,8 +55,9 @@ class ALEventScraper(Scraper, LXMLMixin):
                 description=details,
             )
 
-            if "11 south union" in location.lower():
-                set_coordinates(event, 32.37707594063977, -86.29919861850152)
+            match_coordinates(
+                {"11 south union": (32.37707594063977, -86.29919861850152)}
+            )
 
             event.add_source(EVENTS_URL)
 

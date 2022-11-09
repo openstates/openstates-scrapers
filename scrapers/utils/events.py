@@ -16,7 +16,7 @@ def set_coordinates(event, lat, lon):
 # ("location string", (lat, lon)) tuples
 # and update the location lat/lon if any matches are found
 def match_coordinates(event, locations):
-    for location, coords in locations:
+    for location, coords in locations.items():
         if location.lower() in event.location.get("name").lower():
             set_coordinates(event, coords[0], coords[1])
             return
