@@ -12,8 +12,8 @@ def set_coordinates(event, lat, lon):
     event.__setattr__("location", loc_dict)
 
 
-# loop through a list of
-# ("location string", (lat, lon)) tuples
+# loop through a dict of
+# {"location string", (lat, lon)} entries
 # and update the location lat/lon if any matches are found
 def match_coordinates(event, locations):
     for location, coords in locations.items():
