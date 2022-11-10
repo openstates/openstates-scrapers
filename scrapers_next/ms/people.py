@@ -179,8 +179,8 @@ class Legislators(HtmlPage):
             else:
                 for mem in grouper(member, 3):
                     name = mem[0].text_content().strip()
-                    # Dean Kirby listed twice (already scraped above)
-                    if name == "Dean Kirby":
+
+                    if "vacancy" in name.lower():
                         continue
 
                     link_id = mem[1].text_content().strip()
