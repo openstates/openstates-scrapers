@@ -9,7 +9,7 @@ from openstates.scrape import Scraper, Event
 
 class AKEventScraper(Scraper, LXMLMixin):
     _TZ = pytz.timezone("US/Alaska")
-    API_BASE = "http://www.legis.state.ak.us/publicservice/basis"
+    API_BASE = "https://www.akleg.gov/publicservice/basis"
     NS = {"ak": "http://www.legis.state.ak.us/Basis"}
     CHAMBERS = {"S": "upper", "H": "lower", "J": "joint"}
     COMMITTEES = {"upper": {}, "lower": {}, "joint": {}}
