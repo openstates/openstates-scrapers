@@ -70,3 +70,8 @@ services:
       - ./openstates-postgres/:/var/lib/postgresql/data
     networks:
       - openstates-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -q -d db -U db"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
