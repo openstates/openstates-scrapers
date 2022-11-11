@@ -157,19 +157,23 @@ class LegDetail(HtmlPage):
 class Legislators(HtmlPage):
     def process_page(self):
         members = self.root.getchildren()
+        count = 0
         for member in members:
+            count += 1
             children = member.getchildren()
-            if children == []:
+            if not children:
                 continue
             elif len(children) == 3:
+                lt_gov = "President of the Senate"
+                pres_pro_temp = "President Pro Tempore"
                 title = children[0].text_content().strip()
-                name = children[1].text_content().strip()
-                link_id = children[2].text_content().strip()
-                # skip Lt. Gov. Delbert Hosemann
-                if link_id == "http://ltgovhosemann.ms.gov/":
+                if title in (lt_gov, pres_pro_temp):
                     continue
-                else:
-                    link = "http://billstatus.ls.state.ms.us/members/" + link_id
+
+                name = children[1].text_content().strip()
+
+                link_id = children[2].text_content().strip()
+                link = "http://billstatus.ls.state.ms.us/members/" + link_id
 
                 partial_p = PartialPerson(
                     name=name, title=title, chamber=self.chamber, source=self.source.url
@@ -180,10 +184,9 @@ class Legislators(HtmlPage):
                 for mem in grouper(member, 3):
                     name = mem[0].text_content().strip()
 
-                    if "vacancy" in name.lower():
-                        continue
-
                     link_id = mem[1].text_content().strip()
+                    if not re.search(r"\.xml", link_id):
+                        continue
                     link = "http://billstatus.ls.state.ms.us/members/" + link_id
 
                     partial_p = PartialPerson(
