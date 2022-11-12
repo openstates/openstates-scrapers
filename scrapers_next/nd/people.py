@@ -12,6 +12,10 @@ class PartyError(Exception):
     pass
 
 
+class MissingAddress(Exception):
+    pass
+
+
 @attr.s(auto_attribs=True)
 class PartialMember:
     image: str
@@ -28,27 +32,31 @@ class LegDetail(HtmlPage):
 
     def process_page(self):
         name_list = self.input.name.split()
-        given_name = name_list.pop(0)
-        family_name_list = [x for x in name_list if "." not in x]
-        family_name = " ".join(family_name_list)
+        given_name = name_list[0]
+        family_name_list = [x for x in name_list[1:] if "." not in x]
+        family_name = re.sub(",", "", (" ".join(family_name_list)))
 
-        address_span = CSS(".address").match(self.root)[0].text_content()
-        address = ", ".join(address_span.split("\n")[:-1])
+        if self.root.xpath(".//p[@class='address']"):
+            address_span = CSS(".address").match(self.root)[0].text_content()
+            address = ", ".join(address_span.split("\n")[:-1])
+        else:
+            address = ""
 
         node_content = CSS(".node__content").match(self.root)[0].text_content()
         contact_node = node_content.replace("\n", "").replace("\t", "")
 
-        contact_patterns = ["Cell", "Fax", "Home", "Work", "Email"]
-        collected_contacts = {}
+        collected_contacts = {
+            "Cell": "",
+            "Fax": "",
+            "Home": "",
+            "Work": "",
+            "Email": "",
+        }
 
-        for pattern in contact_patterns:
-            pattern_match = re.search(rf"{pattern}\s+\S+", contact_node)
+        for pattern in collected_contacts.keys():
+            pattern_match = re.search(rf"({pattern}\s+)(\S+)", contact_node)
             if pattern_match:
-                field = contact_node[pattern_match.start() : pattern_match.end()]
-                contact = field.split()[1]
-                collected_contacts[pattern] = contact
-            else:
-                collected_contacts[pattern] = ""
+                collected_contacts[pattern] = pattern_match.groups()[-1]
 
         p = ScrapePerson(
             name=self.input.name,
@@ -74,10 +82,6 @@ class LegDetail(HtmlPage):
 
         members_list_url = str(self.input.url)
         p.add_source(members_list_url, "members list page")
-
-        url_match = re.search(r".+members", members_list_url)
-        first_list_page = members_list_url[url_match.start() : url_match.end()]
-        p.add_source(first_list_page, "first page of members list")
 
         return p
 
@@ -129,10 +133,7 @@ class LegList(HtmlListPage):
                 start_date = status_text.split()[-1].strip()
 
         district_div = item.find_class("district")[0].text_content().strip()
-        dist_match = re.search(r"District\s+\S+", district_div)
-        if dist_match:
-            district_text = district_div[dist_match.start() : dist_match.end()]
-            district = district_text.split()[-1].strip()
+        district = re.search(r"(District\s+)(\S+)", district_div).groups()[-1]
 
         party_dict = {
             "D": "Democratic",
