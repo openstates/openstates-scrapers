@@ -36,10 +36,11 @@ class EventConsolidator:
             location = item["location"]
             event_key = f"{item_date}-{committee}-{location}"
 
-            if not self.events.get(event_key):
-                self.events[event_key] = {}
-                self.events[event_key]["event_start_time"] = item_time
-                self.events[event_key]["item_keys"] = set()
+            if not self.events.get(event_key, None):
+                self.events[event_key] = {
+                    "event_start_time": item_time,
+                    "item_keys": set(),
+                }
             else:
                 current_start = self.events[event_key]["event_start_time"]
                 if time_is_earlier(item_time, current_start):
@@ -58,7 +59,6 @@ class EventConsolidator:
         yield from self.create_events()
 
     def create_events(self):
-        event_collection = []
 
         for event in self.events.keys():
             date, com, loc = re.search(r"(.+)\-(.+)\-(.+)", event).groups()
@@ -90,9 +90,7 @@ class EventConsolidator:
 
             event_obj.add_source(self.url)
 
-            event_collection.append(event_obj)
-
-        return event_collection
+            yield event_obj
 
 
 class BillNameScraper(HtmlPage):
@@ -125,6 +123,9 @@ class EventsTable(HtmlPage):
                 columns_content = columns_content[:-1]
 
             bill, part_date, com, sub_com, loc, descr = columns_content
+            # Example Column:
+            #   bill      part_date          com      sub_com  loc       descr
+            # HB 1111 | 12/08 2:00 PM | Joint Approps |      | 327E | Funding bill
 
             full_bill_name_match = re.search(r"[A-Z]{1,4}\s+\d+", bill)
             if full_bill_name_match:
@@ -148,7 +149,7 @@ class EventsTable(HtmlPage):
                 event_year = end_year
             else:
                 event_year = start_year
-            date_time_parts[0] = date_time_parts[0] + f"/{event_year}"
+            date_time_parts[0] += f"/{event_year}"
             date_time = " ".join(date_time_parts)
 
             agenda_item = {
@@ -163,7 +164,7 @@ class EventsTable(HtmlPage):
             agenda_items_list.append(agenda_item)
 
         events = EventConsolidator(agenda_items_list, self.source.url)
-        return events.consolidate()
+        yield from events.consolidate()
 
 
 class NDEventScraper(Scraper):
