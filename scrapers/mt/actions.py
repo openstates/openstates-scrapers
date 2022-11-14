@@ -219,7 +219,6 @@ _actions = {
 }
 
 
-# TODO: write function description comment, remove unncessary comments, CHANGE MT INIT FILE BACK
 # Takes in a string description of an action and returns the respective OS classification
 def categorize_actions(act_desc):
     atype = []
