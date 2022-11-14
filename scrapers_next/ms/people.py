@@ -157,34 +157,43 @@ class LegDetail(HtmlPage):
 class Legislators(HtmlPage):
     def process_page(self):
         members = self.root.getchildren()
+        member_links = set()
         for member in members:
             children = member.getchildren()
-            if children == []:
+            if not children:
                 continue
             elif len(children) == 3:
+                lt_gov = "President of the Senate"
                 title = children[0].text_content().strip()
-                name = children[1].text_content().strip()
-                link_id = children[2].text_content().strip()
-                # skip Lt. Gov. Delbert Hosemann
-                if link_id == "http://ltgovhosemann.ms.gov/":
+                if title == lt_gov:
                     continue
-                else:
-                    link = "http://billstatus.ls.state.ms.us/members/" + link_id
+
+                name = children[1].text_content().strip()
+
+                link_id = children[2].text_content().strip().lower()
+                link = "http://billstatus.ls.state.ms.us/members/" + link_id
+                member_links.add(link)
 
                 partial_p = PartialPerson(
-                    name=name, title=title, chamber=self.chamber, source=self.source.url
+                    name=name,
+                    title=title,
+                    chamber=self.chamber,
+                    source=self.source.url,
                 )
 
                 yield LegDetail(partial_p, source=link)
             else:
                 for mem in grouper(member, 3):
                     name = mem[0].text_content().strip()
-                    # Dean Kirby listed twice (already scraped above)
-                    if name == "Dean Kirby":
+
+                    link_id = mem[1].text_content().strip().lower()
+                    if not re.search(r"\.xml", link_id):
                         continue
 
-                    link_id = mem[1].text_content().strip()
                     link = "http://billstatus.ls.state.ms.us/members/" + link_id
+                    if link in member_links:
+                        continue
+                    member_links.add(link)
 
                     partial_p = PartialPerson(
                         name=name,
