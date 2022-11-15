@@ -143,6 +143,16 @@ class Texas(State):
             "identifier": "873",
             "name": "87th Legislature, 3rd Called Session (2021)",
             "start_date": "2021-09-20",
+            "active": False,
+        },
+        # date source: https://lrl.texas.gov/sessions/sessionyears.cfm
+        {
+            "_scraped_name": "88(R) - 2023",
+            "classification": "regular",
+            "end_date": "2023-05-29",
+            "identifier": "88",
+            "name": "88th Legislature (2023)",
+            "start_date": "2023-01-10",
             "active": True,
         },
         # TODO: Re-enable vote scraper when adding next regular session
