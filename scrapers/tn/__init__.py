@@ -99,7 +99,7 @@ class Tennessee(State):
             "name": "112th Regular Session (2021-2022)",
             "start_date": "2021-01-12",
             "end_date": "2021-05-06",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "Second Extraordinary Session (October 2021)",
@@ -118,6 +118,16 @@ class Tennessee(State):
             "start_date": "2021-10-27",
             "end_date": "2021-10-29",
             "active": False,
+        },
+        {
+            "_scraped_name": "113th General Assembly",
+            "classification": "primary",
+            "identifier": "113",
+            "name": "113th Regular Session (2023-2024)",
+            "start_date": "2023-01-10",
+            # TODO: end date approximate
+            "end_date": "2023-05-06",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
