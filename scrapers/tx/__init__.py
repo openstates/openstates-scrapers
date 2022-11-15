@@ -150,7 +150,7 @@ class Texas(State):
             "_scraped_name": "88(R) - 2023",
             "classification": "regular",
             "end_date": "2023-05-29",
-            "identifier": "873",
+            "identifier": "88",
             "name": "88th Legislature (2023)",
             "start_date": "2023-01-10",
             "active": False,
