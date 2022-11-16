@@ -370,7 +370,7 @@ class RepublicanHouse(RedRepList):
 
 class DemocraticHouse(BlueRepList):
     source = URL("https://indianahousedemocrats.org/members", timeout=30)
-    selector = CSS("section.member-listing a", num_items=29)
+    selector = CSS("section.member-listing a", num_items=30)
     chamber = "lower"
     party = "Democratic"
 
