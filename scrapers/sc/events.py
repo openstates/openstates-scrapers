@@ -76,6 +76,9 @@ class SCEventScraper(Scraper):
     #         r'Summary: (.*)', bill_description).group(1).strip()
     #     return bill_description
 
+    def get_stream_id(self, onclick: str) -> str:
+        return re.findall(r"live_stream\((\d+)|$", onclick)[0]
+
     def scrape(self, chamber=None, session=None):
         """
         Scrape the events data from all dates from the sc meetings page,
@@ -131,12 +134,12 @@ class SCEventScraper(Scraper):
 
             for meeting in date.xpath("li"):
                 time_string = meeting.xpath("span")[0].text_content()
-
+                status = "tentative"
                 if (
                     time_string == "CANCELED"
                     or len(meeting.xpath('.//span[contains(text(), "CANCELED")]')) > 0
                 ):
-                    continue
+                    status = "cancelled"
 
                 time_string = normalize_time(time_string)
                 date_time = datetime.datetime.strptime(
@@ -150,16 +153,21 @@ class SCEventScraper(Scraper):
                     r"-- (.*?) -- (.*)", meeting_info
                 ).groups()
 
-                # if re.search(r'committee', description, re.I):
-                #     meeting_type = 'committee:meeting'
-                # else:
-                #     meeting_type = 'other:meeting'
+                if re.search(r"committee", description, re.I):
+                    classification = "committee-meeting"
+                else:
+                    classification = "other-meeting"
 
                 event = Event(
                     name=description,  # Event Name
                     start_date=date_time,  # When the event will take place
                     location_name=location,
-                )  # Where the event will be
+                    classification=classification,
+                    status=status,
+                )
+
+                if "committee" in description.lower():
+                    event.add_participant(description, type="committee", note="host")
 
                 event.add_source(events_url)
 
@@ -172,15 +180,42 @@ class SCEventScraper(Scraper):
                         note="Agenda", url=agenda_url, media_type="application/pdf"
                     )
 
-                    agenda_page = self.get_page_from_url(agenda_url)
+                    if ".pdf" not in agenda_url:
+                        agenda_page = self.get_page_from_url(agenda_url)
 
-                    for bill in agenda_page.xpath(
-                        ".//a[contains(@href,'billsearch.php')]"
-                    ):
-                        # bill_url = bill.attrib['href']
-                        bill_id = bill.text_content().replace(".", "").replace(" ", "")
-                        # bill_description = self.get_bill_description(bill_url)
+                        for bill in agenda_page.xpath(
+                            ".//a[contains(@href,'billsearch.php')]"
+                        ):
+                            # bill_url = bill.attrib['href']
+                            bill_id = (
+                                bill.text_content().replace(".", "").replace(" ", "")
+                            )
+                            # bill_description = self.get_bill_description(bill_url)
 
-                        event.add_bill(bill_id)
+                            event.add_bill(bill_id)
+
+                for row in meeting.xpath(".//a[text()='Live Broadcast']"):
+                    stream_id = self.get_stream_id(row.xpath("@onclick")[0])
+                    if not stream_id:
+                        self.warning("Unable to extract stream id")
+                        continue
+
+                    event.add_media_link(
+                        "Video Stream",
+                        f"https://www.scstatehouse.gov/video/stream.php?key={stream_id}&audio=0",
+                        media_type="text/html",
+                    )
+
+                for row in meeting.xpath(".//a[text()='Live Broadcast - Audio Only']"):
+                    stream_id = self.get_stream_id(row.xpath("@onclick")[0])
+                    if not stream_id:
+                        self.warning("Unable to extract stream id")
+                        continue
+
+                    event.add_media_link(
+                        "Audio Stream",
+                        f"https://www.scstatehouse.gov/video/stream.php?key={stream_id}&audio=1",
+                        media_type="text/html",
+                    )
 
                 yield event
