@@ -4,6 +4,13 @@ from spatula import HtmlPage, HtmlListPage, XPath, CSS, SelectorError
 from openstates.models import ScrapePerson
 
 
+def format_address(ad_str):
+    whitespace_collapsed = re.sub(r"\s\s+", " ", ad_str)
+    city_state_comma = re.sub(" AK", ", AK", whitespace_collapsed)
+    addr_lines_comma = re.sub(r"(\d+) (\d+)", r"\1, \2", city_state_comma)
+    return addr_lines_comma
+
+
 @attr.s(auto_attribs=True)
 class PartialMember:
     url: str
@@ -26,37 +33,39 @@ class LegDetail(HtmlPage):
 
         div_text = details_div.text_content().replace("\r\n", " ")
 
-        details = {}
+        details = {
+            "District": "",
+            "Party": "",
+            "Toll-Free": "",
+            "Phone": "",
+            "Fax": "",
+        }
 
-        detail_patterns = [
-            "District",
-            "Party",
-            "Toll-Free",
-            "Phone",
-            "Fax",
-        ]
+        for pattern in details.keys():
+            pattern_match = re.search(rf"({pattern})(:\s+)(\S+)", div_text)
+            if pattern_match:
+                details[pattern] = pattern_match.groups()[-1]
 
-        for pattern in detail_patterns:
-            match = re.search(rf"{pattern}:\s\S+", div_text)
-            if match:
-                detail = div_text[match.start() + len(pattern) + 2 : match.end()]
-                details[pattern] = detail
+        cap_ad_match = re.search(
+            r"(State.+Room \d+)\s+(.+\s+AK,\s99801)(.+Contact)", div_text
+        )
+        if cap_ad_match:
+            raw_session_contact = ", ".join(cap_ad_match.groups()[:2])
+            session_contact = format_address(raw_session_contact)
+            details["Capitol Address"] = session_contact
 
-        address_patterns = [r"Interim.+99\d\d\d", r"Session.+99801"]
-        for address_pattern in address_patterns:
-            address_match = re.search(address_pattern, div_text)
-            if address_match:
-                detail_content = div_text[address_match.start() : address_match.end()]
-                detail = " ".join(detail_content.split()[2:])
-                details[address_pattern] = detail
+        dist_ad_match = re.search(
+            r"(Interim Contact)\s+(\S+.+\S)\s\s+(.+99\d{3})", div_text
+        )
+        if dist_ad_match:
+            raw_district_contact = ", ".join(dist_ad_match.groups()[1:])
+            district_contact = format_address(raw_district_contact)
+            details["District Address"] = district_contact
 
-        district_phone_pattern = r"Interim.+Phone:\s\S+"
-        district_phone_match = re.search(district_phone_pattern, div_text)
-        if district_phone_match:
-            district_phone = div_text[
-                district_phone_match.end() - 12 : district_phone_match.end()
-            ]
-            details[district_phone_pattern] = district_phone
+        dist_phone_match = re.search(r"(Interim.+Phone:)\s+(\S+)", div_text)
+        if dist_phone_match:
+            district_phone = dist_phone_match.groups()[1]
+            details["District Phone"] = district_phone
 
         party_formatting = {
             "Democrat": "Democratic",
@@ -91,18 +100,18 @@ class LegDetail(HtmlPage):
         if details.get("Phone"):
             p.capitol_office.voice = details["Phone"]
 
-        if details.get(district_phone_pattern):
-            p.district_office.voice = details[district_phone_pattern]
+        if details.get("District Phone"):
+            p.district_office.voice = details["District Phone"]
 
         if details.get("Fax"):
             p.district_office.fax = details["Fax"]
 
-        if details.get(address_patterns[0]):
-            p.district_office.address = details[address_patterns[0]]
+        if details.get("District Address"):
+            p.district_office.address = details["District Address"]
         p.district_office.name = "interim contact"
 
-        if details.get(address_patterns[1]):
-            p.capitol_office.address = details[address_patterns[1]]
+        if details.get("Capitol Address"):
+            p.capitol_office.address = details["Capitol Address"]
         p.capitol_office.name = "session contact"
 
         if details.get("Toll-Free"):
@@ -111,8 +120,8 @@ class LegDetail(HtmlPage):
         source_url = str(self.source)
         p.add_source(source_url, "member detail page")
 
-        session_match = re.search(r"Detail/\d+", source_url)
-        session = source_url[session_match.start() + 7 : session_match.end()]
+        session_match = re.search(r"(Detail/)(\d+)", source_url)
+        session = session_match.groups()[1]
         p.add_source(
             f"https://www.akleg.gov/basis/mbr_info.asp?session={session}",
             "member list page",
