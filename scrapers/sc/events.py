@@ -166,6 +166,9 @@ class SCEventScraper(Scraper):
                     status=status,
                 )
 
+                if "committee" in description.lower():
+                    event.add_participant(description, type="committee", note="host")
+
                 event.add_source(events_url)
 
                 agenda_url = meeting.xpath(".//a[contains(@href,'agendas')]")
