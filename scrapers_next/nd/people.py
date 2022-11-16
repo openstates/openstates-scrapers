@@ -109,8 +109,11 @@ class LegList(HtmlListPage):
         return next_urls[0]
 
     def process_item(self, item):
-        img_elem = item.find_class("image-style-member-list-photo")[0]
-        img_src = img_elem.get("src")
+        try:
+            img_elem = item.find_class("image-style-member-list-photo")[0]
+            img_src = img_elem.get("src")
+        except Exception:
+            img_src = ""
 
         name_wrapper = item.find_class("strong member-name")[0]
         name_tag = name_wrapper.getchildren()[0]
