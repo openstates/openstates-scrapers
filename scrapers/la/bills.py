@@ -8,6 +8,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 from openstates.exceptions import EmptyScrape
 from utils import LXMLMixin
+from . import actions
 
 
 class LABillScraper(Scraper, LXMLMixin):
@@ -267,7 +268,7 @@ class LABillScraper(Scraper, LXMLMixin):
 
         title = page.xpath("//span[@id='ctl00_PageBody_LabelShortTitle']/text()")[0]
         title = title.replace("\u00a0\u00a0", " ")
-        actions = page.xpath(
+        these_actions = page.xpath(
             "//div[@id='ctl00_PageBody_PanelBillInfo']/"
             "/table[@style='font-size:small']/tr"
         )
@@ -315,18 +316,6 @@ class LABillScraper(Scraper, LXMLMixin):
                     media_type="application/pdf",
                 )
 
-        flags = {
-            "prefiled": ["filing"],
-            "referred to the committee": ["referral-committee"],
-            "sent to the house": ["passage"],
-            "ordered returned to the house": ["passage"],
-            "ordered to the senate": ["passage"],
-            "signed by the governor": ["executive-signature"],
-            "sent to the governor": ["executive-receipt"],
-            "becomes Act": ["became-law"],
-            "vetoed by the governor": ["executive-veto"],
-        }
-
         try:
             votes_link = page.xpath("//a[text() = 'Votes']")[0]
             yield from self.scrape_votes(bill, votes_link.attrib["href"])
@@ -334,7 +323,7 @@ class LABillScraper(Scraper, LXMLMixin):
             # Some bills don't have any votes
             pass
 
-        for action in actions:
+        for action in these_actions:
             date, chamber, page, text = [x.text for x in action.xpath(".//td")]
             session_year = self.jurisdiction.legislative_sessions[-1]["start_date"][0:4]
             # Session is April -> June. Prefiles look like they're in
@@ -343,10 +332,7 @@ class LABillScraper(Scraper, LXMLMixin):
             date = dt.datetime.strptime(date, "%m/%d/%Y")
             chamber = self._chambers[chamber]
 
-            cat = []
-            for flag in flags:
-                if flag in text.lower():
-                    cat += flags[flag]
+            cat = actions.categorize_actions(text.lower())
 
             bill.add_action(
                 description=text,
