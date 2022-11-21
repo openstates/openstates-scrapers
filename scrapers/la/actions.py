@@ -1,78 +1,38 @@
-# Dictionary matching bill action phrases to classifications. Classifications can be found here:
-# https://github.com/openstates/openstates-core/blob/5b16776b1882da925e8e8d5c0a07160a7d649c69/openstates/data/common.py#L87
-_actions = [
-    {
-        "type": "compare",
-        "value": "vetoed by the governor",
-        "mappings": ["executive-veto"],
-    },
-    {"type": "compare", "value": "becomes Act", "mappings": ["became-law"]},
-    {
-        "type": "compare",
-        "value": "sent to the governor",
-        "mappings": ["executive-receipt"],
-    },
-    {
-        "type": "compare",
-        "value": "signed by the governor",
-        "mappings": ["executive-signature"],
-    },
-    {"type": "compare", "value": "ordered to the senate", "mappings": ["passage"]},
-    {
-        "type": "compare",
-        "value": "ordered returned to the house",
-        "mappings": ["passage"],
-    },
-    {"type": "compare", "value": "sent to the house", "mappings": ["passage"]},
-    {
-        "type": "compare",
-        "value": "referred to the committee",
-        "mappings": ["referral-committee"],
-    },
-    {"type": "compare", "value": "prefiled", "mappings": ["filing"]},
-    {"type": "compare", "value": "passed to 3rd reading", "mappings": ["reading-3"]},
-    {"type": "compare", "value": "inially passed", "mappings": ["passage"]},
-    {"type": "compare", "value": "assed by", "mappings": ["passage"]},
-    {
-        "type": "compare",
-        "value": "sent to the governor",
-        "mappings": ["executive-receipt"],
-    },
-    {
-        "type": "compare",
-        "value": "reported with amendments",
-        "mappings": ["committee-passage-favorable"],
-    },
-    {
-        "type": "compare",
-        "value": "reported favorably",
-        "mappings": ["committee-passage-favorable"],
-    },
-    {"type": "compare", "value": "enrolled", "mappings": ["enrolled"]},
-    {
-        "type": "compare",
-        "value": "read by title and passed to third reading",
-        "mappings": ["reading-3"],
-    },
-    {"type": "compare", "value": "read first time by title", "mappings": ["reading-1"]},
-    {
-        "type": "compare",
-        "value": "read second time by title",
-        "mappings": ["reading-2"],
-    },
-    {
-        "type": "compare",
-        "value": "read second time by title",
-        "mappings": ["reading-2"],
-    },
-    {"type": "compare", "value": "received from", "mappings": ["receipt"]},
-]
+from utils.actions import Rule, BaseCategorizer
 
 
-def categorize_actions(action_description):
-    atype = []
-    for action_dict in _actions:
-        if action_dict["value"] in action_description.lower():
-            atype.extend(a for a in action_dict["mappings"])
+rules = (
+    Rule(
+        r"Vetoed by the Governor",
+        "executive-veto",
+    ),
+    Rule(r"Becomes Act No", "became-law"),
+    Rule(r"Sent to the Governor", "executive-receipt"),
+    Rule(r"Signed by the Governor", "executive-signature"),
+    Rule(r"ordered to the Senate", "passage"),
+    Rule(r"ordered returned to the House", "passage"),
+    Rule(r"sent to the House", "passage"),
+    Rule(r"referred to the Committee", "referral-committee"),
+    Rule(r"Prefiled", "filing"),
+    Rule(r"passed to 3rd reading", "reading-3"),
+    Rule(r"Finally passed", "passage"),
+    Rule(r"passed by", "passage"),
+    Rule(r"Sent to the Governor", "executive-receipt"),
+    Rule(r"Reported with amendments", "committee-passage-favorable"),
+    Rule(r"Reported favorably", "committee-passage-favorable"),
+    Rule(r"Enrolled", "enrolled"),
+    Rule(r"Read by title and passed to third reading", "reading-3"),
+    Rule(r"Read first time by title", "reading-1"),
+    Rule(r"Read second time by title", "reading-2"),
+    Rule(r"Received from", "receipt"),
+)
 
-    return atype
+
+class Categorizer(BaseCategorizer):
+    rules = rules
+
+    def categorize(self, text):
+        """Wrap categorize"""
+        attrs = BaseCategorizer.categorize(self, text)
+
+        return attrs

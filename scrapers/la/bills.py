@@ -8,10 +8,14 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 from openstates.exceptions import EmptyScrape
 from utils import LXMLMixin
-from . import actions
+
+# from . import actions
+from .actions import Categorizer
 
 
 class LABillScraper(Scraper, LXMLMixin):
+    categorizer = Categorizer()
+
     _chambers = {"S": "upper", "H": "lower", "J": "legislature"}
 
     _bill_types = {
@@ -332,13 +336,13 @@ class LABillScraper(Scraper, LXMLMixin):
             date = dt.datetime.strptime(date, "%m/%d/%Y")
             chamber = self._chambers[chamber]
 
-            cat = actions.categorize_actions(text.lower())
+            attrs = self.categorizer.categorize(text)
 
             bill.add_action(
                 description=text,
                 date=date.strftime("%Y-%m-%d"),
                 chamber=chamber,
-                classification=cat,
+                classification=attrs["classification"],
             )
 
         yield bill
