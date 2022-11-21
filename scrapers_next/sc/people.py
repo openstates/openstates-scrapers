@@ -17,7 +17,7 @@ class LegDetail(HtmlPage):
             .match_one(self.root)
             .getnext()
         )
-        cap_addr = cap_addr_path.text
+        cap_addr = cap_addr_path.text or ""
         cap_addr += " "
         line2 = cap_addr_path.getchildren()[0].tail
         if " SC " not in line2:
