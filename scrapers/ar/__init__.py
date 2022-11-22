@@ -205,6 +205,16 @@ class Arkansas(State):
             "name": "2022 Third Extraordinary Session",
             "start_date": "2022-08-08",
             "end_date": "2022-08-12",
+            "active": False,
+        },
+        {
+            "_scraped_name": "Regular Session, 2023",
+            "classification": "primary",
+            "identifier": "2023",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-09",
+            # TODO: end date is approximate
+            "end_date": "2023-03-12",
             "active": True,
         },
     ]
