@@ -8,6 +8,8 @@ services:
   scrape:
     build: .
     environment:
+    - AR_FTP_USER
+    - AR_FTP_PASSWORD
     - MYSQL_HOST=mysql
     - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
     - PYTHONPATH=./scrapers
