@@ -62,9 +62,18 @@ class Washington(State):
             "end_date": "2021-04-25",
             "active": True,
         },
+        {
+            "_scraped_name": "2023-24",
+            "classification": "primary",
+            "identifier": "2023-2024",
+            "name": "2023-2024 Regular Session",
+            "start_date": "2023-01-09",
+            # TODO: update end date
+            "end_date": "2023-04-25",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
-        "2021-22",
         "2007-08",
         "2005-06",
         "2003-04",
