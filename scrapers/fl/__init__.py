@@ -159,7 +159,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2022-01-11",
             "end_date": "2022-03-11",
-            "active": True,
+            "active": False,
         },
         {
             "name": "2022 Special Session C",
@@ -167,7 +167,7 @@ class Florida(State):
             "classification": "special",
             "start_date": "2022-04-19",
             "end_date": "2022-04-22",
-            "active": True,
+            "active": False,
         },
         {
             "name": "2022 Special Session D",
@@ -175,7 +175,7 @@ class Florida(State):
             "classification": "special",
             "start_date": "2022-05-23",
             "end_date": "2022-05-30",
-            "active": True,
+            "active": False,
         },
         {
             "name": "2023 Regular Session",

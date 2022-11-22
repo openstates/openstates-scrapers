@@ -370,7 +370,7 @@ class RepublicanHouse(RedRepList):
 
 class DemocraticHouse(BlueRepList):
     source = URL("https://indianahousedemocrats.org/members", timeout=30)
-    selector = CSS("section.member-listing a", num_items=29)
+    selector = CSS("section.member-listing a", min_items=29)
     chamber = "lower"
     party = "Democratic"
 
@@ -379,7 +379,7 @@ class DemocraticSenate(BlueSenList):
     source = URL("https://www.indianasenatedemocrats.org/senators/", timeout=30)
     selector = CSS(
         "div.fusion-person",
-        num_items=11,
+        min_items=9,
     )
     chamber = "upper"
     party = "Democratic"
@@ -387,6 +387,6 @@ class DemocraticSenate(BlueSenList):
 
 class RepublicanSenate(RedSenList):
     source = URL("https://www.indianasenaterepublicans.com/senators")
-    selector = CSS("div.senator-list div.senator-item", num_items=39)
+    selector = CSS("div.senator-list div.senator-item", min_items=39)
     chamber = "upper"
     party = "Republican"

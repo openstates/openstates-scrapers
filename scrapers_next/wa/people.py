@@ -107,7 +107,7 @@ class RepList(LegList):
     source = URL(
         "https://app.leg.wa.gov/ContentParts/MemberDirectory/?a=House", timeout=30
     )
-    selector = CSS("#allMembers .memberInformation", num_items=98)
+    selector = CSS("#allMembers .memberInformation", min_items=97)
     chamber = "lower"
 
 
