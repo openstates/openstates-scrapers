@@ -28,27 +28,34 @@ class LegDetail(HtmlPage):
         img = CSS("img.framed-photo").match_one(self.root).get("src")
         p.image = img
 
-        if (
-            XPath(
-                "/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/h2[2]/text()"
-            ).match(self.root)[0]
-            == "District Address"
-        ):
-            district_addr_lst = XPath(
-                "/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[2]/text()"
-            ).match(self.root)
-            distr_address = ""
-            for line in district_addr_lst:
-                if re.search(r"Phone", line):
-                    distr_phone = re.search(r"Phone:?\s(.+)", line).groups()[0].strip()
-                    p.district_office.voice = distr_phone
-                elif re.search(r"Fax", line):
-                    distr_fax = re.search(r"Fax:?\s(.+)", line).groups()[0].strip()
-                    p.district_office.fax = distr_fax
-                else:
-                    distr_address += line.strip()
-                    distr_address += " "
-            p.district_office.address = distr_address.strip()
+        try:
+            if (
+                XPath(
+                    "/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/h2[2]/text()"
+                ).match(self.root)[0]
+                == "District Address"
+            ):
+                district_addr_lst = XPath(
+                    "/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[2]/text()"
+                ).match(self.root)
+                distr_address = ""
+                for line in district_addr_lst:
+                    if re.search(r"Phone", line):
+                        distr_phone = (
+                            re.search(r"Phone:?\s(.+)", line).groups()[0].strip()
+                        )
+                        p.district_office.voice = distr_phone
+                    elif re.search(r"Fax", line):
+                        distr_fax = re.search(r"Fax:?\s(.+)", line).groups()[0].strip()
+                        p.district_office.fax = distr_fax
+                    else:
+                        distr_address += line.strip()
+                        distr_address += " "
+                p.district_office.address = distr_address.strip()
+        except SelectorError:
+            p.district_office.voice = ""
+            p.district_office.fax = ""
+            p.district_office.address = ""
 
         extra_info = XPath(
             "/html/body/div[1]/div/div/div[2]/div/div[2]/ul[2]/li[1]/ul/li"
@@ -58,35 +65,38 @@ class LegDetail(HtmlPage):
             for line in extra_info:
                 p.extras["personal info"] += [line.text_content().strip()]
 
-        if (
-            XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/h2")
-            .match(self.root)[1]
-            .text_content()
-            .strip()
-            == "Staff Contacts"
-        ):
-            staff_contacts = (
-                XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[2]")
-                .match(self.root)[0]
+        try:
+            if (
+                XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/h2")
+                .match(self.root)[1]
                 .text_content()
-            )
-            p_num = 2
-        elif (
-            XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/h2")
-            .match(self.root)[2]
-            .text_content()
-            .strip()
-            == "Staff Contacts"
-        ):
-            try:
+                .strip()
+                == "Staff Contacts"
+            ):
                 staff_contacts = (
-                    XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[3]")
+                    XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[2]")
                     .match(self.root)[0]
                     .text_content()
                 )
-                p_num = 3
-            except Exception:
-                staff_contacts = ""
+                p_num = 2
+            elif (
+                XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/h2")
+                .match(self.root)[2]
+                .text_content()
+                .strip()
+                == "Staff Contacts"
+            ):
+                try:
+                    staff_contacts = (
+                        XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[3]")
+                        .match(self.root)[0]
+                        .text_content()
+                    )
+                    p_num = 3
+                except Exception:
+                    staff_contacts = ""
+        except IndexError:
+            staff_contacts = ""
 
         counter = 0
         for line in staff_contacts.split("\n"):

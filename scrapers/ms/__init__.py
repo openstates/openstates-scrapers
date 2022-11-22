@@ -222,10 +222,30 @@ class Mississippi(State):
             "name": "2022 Regular Session",
             "start_date": "2022-01-04",
             "end_date": "2022-03-15",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022 First Extraordinary Session",
+            "classification": "special",
+            "identifier": "20221E",
+            "name": "2022 First Extraordinary Session",
+            "start_date": "2022-11-02",
+            "end_date": "2022-11-04",
             "active": True,
         },
+        # {
+        #     "_scraped_name": "2023 Regular Session",
+        #     "classification": "primary",
+        #     "identifier": "2023",
+        #     "name": "2023 Regular Session",
+        #     # TODO: update dates
+        #     "start_date": "2023-01-04",
+        #     "end_date": "2023-03-15",
+        #     "active": True,
+        # },
     ]
     ignored_scraped_sessions = [
+        "2023 Regular Session",
         "2008 First Extraordinary Session",
         "2007 Regular Session",
         "2007 First Extraordinary Session",

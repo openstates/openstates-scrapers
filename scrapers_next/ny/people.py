@@ -167,7 +167,7 @@ class Senate(HtmlListPage):
 
     source = URL("https://www.nysenate.gov/senators-committees")
     district_re = re.compile(r"\d+")
-    selector = CSS("div.c-senator-block", min_items=62)
+    selector = CSS("div.c-senator-block", min_items=61)
 
     def _parties(self, party):
         if party == "(D)" or party == "(D, IP)":

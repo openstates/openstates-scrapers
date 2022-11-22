@@ -8,7 +8,6 @@ class LegDetail(JsonPage):
     def process_page(self):
         p = self.input
         p.add_source(self.source.url, note="Detail page (requires authorization token)")
-
         if self.data["email"]:
             p.email = self.data["email"]
 
@@ -26,7 +25,7 @@ class LegDetail(JsonPage):
             if self.data["capitolAddress"]["fax"]:
                 p.capitol_office.fax = self.data["capitolAddress"]["fax"]
         except TypeError:
-            self.logger.warning("Empty capitol address for {p.name}")
+            self.logger.warning(f"Empty capitol address for {p.name}")
             pass
 
         extras = [
@@ -44,8 +43,12 @@ class LegDetail(JsonPage):
             if info:
                 if type_info == "staff":
                     info = re.split("mailto:|>|<", info)
-                    p.extras["staff"] = info[3]
-                    p.extras["staff email"] = info[2].replace('"', "")
+                    if len(info) > 1:
+                        p.extras["staff"] = info[3]
+                        p.extras["staff email"] = info[2].replace('"', "")
+                    else:
+                        p.extras["staff"] = info[0]
+                        p.extras["staff email"] = ""
                 else:
                     p.extras[type_info] = info
 

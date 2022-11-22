@@ -33,7 +33,7 @@ class Senate(HtmlListPage):
         # e.g. District 25 | D
         district, party = subtitle.split(" | ")
         district = district.split()[1]
-        party = {"D": "Democratic", "R": "Republican"}[party]
+        party = {"D": "Democratic", "R": "Republican", "I": "Independent"}[party]
 
         return LegDetail(
             LegPartial(
@@ -64,7 +64,7 @@ class House(HtmlListPage):
         # e.g. District 25 | D
         district, party = subtitle.split(" | ")
         district = district.split()[1]
-        party = {"D": "Democratic", "R": "Republican"}[party]
+        party = {"D": "Democratic", "R": "Republican", "I": "Independent"}[party]
 
         return LegDetail(
             LegPartial(
