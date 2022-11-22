@@ -379,7 +379,7 @@ class DemocraticSenate(BlueSenList):
     source = URL("https://www.indianasenatedemocrats.org/senators/", timeout=30)
     selector = CSS(
         "div.fusion-person",
-        num_items=11,
+        min_items=9,
     )
     chamber = "upper"
     party = "Democratic"
