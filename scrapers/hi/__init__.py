@@ -91,6 +91,15 @@ class Hawaii(State):
             "end_date": "2022-04-28",
             "active": True,
         },
+        {
+            "_scraped_name": "2023",
+            "identifier": "2023 Regular Session",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-18",
+            # TODO: update dates
+            "end_date": "2023-04-28",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2011",
@@ -111,8 +120,7 @@ class Hawaii(State):
     def get_session_list(self):
         # doesn't include current session, we need to change it
         sessions = url_xpath(
-            "https://capitol.hawaii.gov/archives/main.aspx",
-            "//div[@class='roundedrect gradientgray shadow archiveyears']/a/text()",
+            "https://www.capitol.hawaii.gov/session/archives/main.aspx",
+            "//*[@id='ctl00_MainContent_yearList']/option/text()",
         )
-        sessions.remove("Archives Main")
         return sessions
