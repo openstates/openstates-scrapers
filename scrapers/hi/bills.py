@@ -6,7 +6,7 @@ from .utils import get_short_codes
 from urllib import parse as urlparse
 
 HI_URL_BASE = "https://capitol.hawaii.gov"
-SHORT_CODES = "%s/committees/committees.aspx?chamber=all" % (HI_URL_BASE)
+SHORT_CODES = "%s/legislature/committees.aspx?chamber=all" % (HI_URL_BASE)
 repeated_action = ["Excused: none", "Representative(s) Eli"]
 
 
