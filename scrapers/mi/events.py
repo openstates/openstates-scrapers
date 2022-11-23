@@ -98,7 +98,9 @@ class MIEventScraper(Scraper):
             if part_html == "":
                 continue
             part = lxml.html.fromstring(part_html)
-            part_text = part.text_content()
+            part_text = part.text_content().strip()
+            if part_text == "":
+                continue
             item = event.add_agenda_item(part_text)
 
             related_bills = part.xpath("//a[contains(@href, 'getObject')]")
