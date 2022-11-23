@@ -94,6 +94,15 @@ class Vermont(State):
             "end_date": "2021-11-26",
             "active": False,
         },
+        {
+            "_scraped_name": "2023-2024 Session",
+            "classification": "primary",
+            "identifier": "2023-2024",
+            "name": "2023-2024 Regular Session",
+            "start_date": "2023-01-04",
+            "end_date": "2023-05-15",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2021 Special Session",
