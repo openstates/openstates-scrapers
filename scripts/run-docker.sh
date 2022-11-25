@@ -11,7 +11,7 @@ fi
 
 set -eo pipefail
 
-docker buildx build "${SCRIPT_DIR}/../" --tag "${IMAGE_NAME}"
+docker buildx build "${SCRIPT_DIR}/../" --tag "${IMAGE_NAME}" --load
 
 docker run --rm \
     --env-file <(env | grep API_KEY) \
