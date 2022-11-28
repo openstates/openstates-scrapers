@@ -128,18 +128,17 @@ class Indiana(State):
             "name": "2022 Special Session",
             "start_date": "2022-07-25",
             "end_date": "2022-08-14",
+            "active": False,
+        },
+        {
+            "_scraped_name": "First Regular Session 123rd General Assembly (2023)",
+            "classification": "primary",
+            "identifier": "2023",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-10",
+            "end_date": "2023-04-29",
             "active": True,
         },
-        # {
-        #     "_scraped_name": "First Regular Session 123rd General Assembly (2023)",
-        #     "classification": "primary",
-        #     "identifier": "2023",
-        #     "name": "2023 Regular Session",
-        #     # TODO: update dates
-        #     "start_date": "2023-01-11",
-        #     "end_date": "2023-04-29",
-        #     "active": True,
-        # },
     ]
     ignored_scraped_sessions = [
         "First Regular Session 123rd General Assembly (2023)",
