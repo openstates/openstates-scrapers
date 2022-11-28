@@ -336,9 +336,9 @@ class TNBillScraper(Scraper):
 
         title = page.xpath("//span[@id='lblAbstract']")[0].text
         if title is None:
+            title = "[No title given by state]"
             msg = "%s detail page was missing title info."
             self.logger.warning(msg % bill_id)
-            return
 
         # bill subject
         subject_pos = title.find("-")
