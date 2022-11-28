@@ -143,6 +143,7 @@ class PRBillScraper(Scraper):
         tipo=None,
         bill_no=None,
     ):
+        print("scrape chamber")
         start_year = session[0:4]
         chamber_letter = {"lower": "C", "upper": "S"}[chamber]
 
