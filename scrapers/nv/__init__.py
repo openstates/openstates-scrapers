@@ -122,7 +122,7 @@ class Nevada(State):
             "name": "2021 Regular Session",
             "start_date": "2021-02-01",
             "end_date": "2021-06-01",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "33rd (2021) Special Session",
@@ -133,9 +133,17 @@ class Nevada(State):
             "end_date": "2021-11-16",
             "active": False,
         },
+        {
+            "_scraped_name": "82nd (2023) Session",
+            "classification": "primary",
+            "identifier": "82",
+            "name": "2023 Regular Session",
+            "start_date": "2023-02-01",
+            "end_date": "2023-06-01",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
-        "82nd (2023) Session",
         "25th (2008) Special Session",
         "24th (2008) Special Session",
         "23rd (2007) Special Session",
