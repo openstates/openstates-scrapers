@@ -337,13 +337,14 @@ class TNBillScraper(Scraper):
         title = page.xpath("//span[@id='lblAbstract']")[0].text
         if title is None:
             title = "[No title given by state]"
+            subjects = []
             msg = "%s detail page was missing title info."
             self.logger.warning(msg % bill_id)
-
-        # bill subject
-        subject_pos = title.find("-")
-        subjects = [s.strip() for s in title[: subject_pos - 1].split(",")]
-        subjects = filter(None, subjects)
+        else:
+            # bill subject
+            subject_pos = title.find("-")
+            subjects = [s.strip() for s in title[: subject_pos - 1].split(",")]
+            subjects = filter(None, subjects)
 
         bill = Bill(
             bill_id,
