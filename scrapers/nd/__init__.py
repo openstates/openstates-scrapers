@@ -2,7 +2,6 @@ from openstates.scrape import State
 from .votes import NDVoteScraper
 from .bills import NDBillScraper
 from .events import NDEventScraper
-from .new_bills import NewNDBillsScraper
 
 
 class NorthDakota(State):
@@ -10,7 +9,6 @@ class NorthDakota(State):
         "votes": NDVoteScraper,
         "bills": NDBillScraper,
         "events": NDEventScraper,
-        "new_bills": NewNDBillsScraper,
     }
     legislative_sessions = [
         {
