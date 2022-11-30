@@ -15,6 +15,11 @@ import feedparser
 
 
 class WABillScraper(Scraper, LXMLMixin):
+    # TODO:
+    # - only on passed bills
+    # https://wslwebservices.leg.wa.gov/legislationservice.asmx/GetSessionLawChapter
+    # https://wslwebservices.leg.wa.gov/legislationservice.asmx?op=GetRcwCitesAffected
+    # https://app.leg.wa.gov/RCW/default.aspx?cite=4.48
     # API Docs: http://wslwebservices.leg.wa.gov/legislationservice.asmx
 
     _base_url = "http://wslwebservices.leg.wa.gov/legislationservice.asmx"
@@ -513,3 +518,54 @@ class WABillScraper(Scraper, LXMLMixin):
                     vote.vote("other", name)
 
             yield vote
+
+    def scrape_chapter(self, bill):
+        # https://wslwebservices.leg.wa.gov/legislationservice.asmx/GetSessionLawChapter
+        bill_id = bill.identifier.replace(" ", "%20")
+        url = (
+            "https://wslwebservices.leg.wa.gov/legislationservice.asmx/"
+            "GetSessionLawChapter?billId=%s&biennium=%s" % (bill_id, self.biennium)
+        )
+
+        page = self.get(url)
+        page = lxml.etree.fromstring(page.content)
+        year = ""
+        chapter = ""
+        effective = ""
+        bill.add_citation(
+            f"WA {year} Laws",
+            f"Chapter {chapter}",
+            type="chapter",
+            url=f"https://leg.wa.gov/CodeReviser/Pages/SessionLaw/{year}%20Session%20Laws.aspx",
+            effective=effective,
+        )
+
+    def scrape_cites(self, bill, became_law=False):
+        # https://wslwebservices.leg.wa.gov/legislationservice.asmx/GetRcwCitesAffected
+        bill_id = bill.identifier.replace(" ", "%20")
+
+        url = (
+            "https://wslwebservices.leg.wa.gov/legislationservice.asmx/"
+            "GetRcwCitesAffected?billId=%s&biennium=%s" % (bill_id, self.biennium)
+        )
+
+        page = self.get(url)
+        page = lxml.etree.fromstring(page.content)
+        for row in xpath(page, "//wa:RcwCiteAffected"):
+            cite = xpath(row, "string(wa:RcwCite)").strip()
+            # action_date = datetime.datetime.strptime(action_date, "%Y-%m-%dT%H:%M:%S")
+
+            if became_law:
+                bill.add_citation(
+                    "Revised Code of Washington",
+                    cite,
+                    type="final",
+                    url=f"https://app.leg.wa.gov/RCW/default.aspx?cite={cite}",
+                )
+            else:
+                bill.add_citation(
+                    "Revised Code of Washington",
+                    cite,
+                    type="proposed",
+                    url=f"https://app.leg.wa.gov/RCW/default.aspx?cite={cite}",
+                )
