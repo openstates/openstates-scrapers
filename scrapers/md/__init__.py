@@ -146,7 +146,7 @@ class Maryland(State):
             "identifier": "2019",
             "name": "2019 Regular Session",
             "start_date": "2019-01-09",
-            "end_date": "2019-04-11",
+            "end_date": "2019-04-08",
         },
         {
             "_scraped_name": "2020 Regular Session",
@@ -154,14 +154,14 @@ class Maryland(State):
             "identifier": "2020",
             "name": "2020 Regular Session",
             "start_date": "2020-01-08",
-            "end_date": "2020-03-16",
+            "end_date": "2020-03-18",
         },
         {
             "_scraped_name": "2021 Regular Session",
             "classification": "primary",
             "identifier": "2021",
             "name": "2021 Regular Session",
-            "start_date": "2021-01-12",
+            "start_date": "2021-01-13",
             "end_date": "2021-04-12",
         },
         {
@@ -170,7 +170,7 @@ class Maryland(State):
             "identifier": "2021s1",
             "name": "2021, 1st Special Session",
             "start_date": "2021-12-06",
-            "end_date": "2021-12-12",
+            "end_date": "2021-12-09",
         },
         {
             "_scraped_name": "2022 Regular Session",
