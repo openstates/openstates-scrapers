@@ -1,6 +1,7 @@
 import re
 import datetime
 import scrapelib
+import requests
 import pytz
 from collections import defaultdict
 
@@ -11,7 +12,6 @@ from utils import LXMLMixin
 
 import lxml.etree
 import lxml.html
-import feedparser
 
 
 class WABillScraper(Scraper, LXMLMixin):
@@ -46,19 +46,27 @@ class WABillScraper(Scraper, LXMLMixin):
     }
 
     def build_subject_mapping(self, year):
+        # no need to run this more than once
+        if len(self._subjects) > 0:
+            return
+
         url = "http://apps.leg.wa.gov/billsbytopic/Results.aspx?year=%s" % year
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute("http://apps.leg.wa.gov/billsbytopic/")
-        for link in doc.xpath('//a[contains(@href, "ResultsRss")]/@href'):
-            subject = link.rsplit("=", 1)[-1]
-            link = link.replace(" ", "%20")
 
-            # Strip invalid characters
-            rss = re.sub(r"^[^<]+", "", self.get(link).text)
-            rss = feedparser.parse(rss)
-            for e in rss["entries"]:
-                match = re.match(r"\w\w \d{4}", e["title"])
+        subject = ""
+
+        for row in doc.xpath("//table[@style='width: 100%']/tr"):
+            if row.xpath("td[@colspan='2']/a/b"):
+                subject = row.xpath("td[@colspan='2']/a/b/text()")[0].strip()
+                self.info(subject)
+                continue
+            if row.xpath("td[2]/a[contains(@href,'billsummary')]"):
+                link_text = row.xpath("td[2]/a[contains(@href,'billsummary')]/text()")[
+                    0
+                ].strip()
+                match = re.match(r"\w\w \d{4}", link_text)
                 if match:
                     self._subjects[match.group()].append(subject)
 
@@ -76,7 +84,6 @@ class WABillScraper(Scraper, LXMLMixin):
         chamber = {"lower": "House", "upper": "Senate"}[chamber]
 
         for bill_type in bill_types:
-            print(base_url + chamber + " " + bill_type)
             try:
                 doc = self.lxmlize(base_url + chamber + " " + bill_type)
             except scrapelib.HTTPError:
@@ -414,6 +421,8 @@ class WABillScraper(Scraper, LXMLMixin):
 
         action_year = 0
 
+        became_law = False
+
         for header in headers:
             header_text = header.text_content().lower()
 
@@ -466,6 +475,12 @@ class WABillScraper(Scraper, LXMLMixin):
                     classification=classification,
                     related_entities=related_entities,
                 )
+
+                if "chapter" in action_text.lower():
+                    became_law = True
+                    self.scrape_chapter(bill)
+
+        self.scrape_cites(bill, became_law)
 
     def scrape_votes(self, bill):
         bill_num = bill.identifier.split()[1]
@@ -526,16 +541,26 @@ class WABillScraper(Scraper, LXMLMixin):
             "https://wslwebservices.leg.wa.gov/legislationservice.asmx/"
             "GetSessionLawChapter?billId=%s&biennium=%s" % (bill_id, self.biennium)
         )
+        # manually using requests here instead of self (scrapelib)
+        # to avoid auto-retries
+        try:
+            self.info(url)
+            page = requests.get(url)
+        except requests.exceptions.HTTPError:
+            # WA fires a 500 error if there's no sessions laws for a bill
+            return
 
-        page = self.get(url)
         page = lxml.etree.fromstring(page.content)
-        year = ""
-        chapter = ""
-        effective = ""
+        year = xpath(page, "string(wa:Year)").strip()
+        chapter = xpath(page, "string(wa:ChapterNumber)").strip()
+        effective = xpath(page, "string(wa:EffectiveDate)").strip()
+        effective = effective.split("T")[
+            0
+        ]  # ignore the always zero time component of date
         bill.add_citation(
             f"WA {year} Laws",
             f"Chapter {chapter}",
-            type="chapter",
+            citation_type="chapter",
             url=f"https://leg.wa.gov/CodeReviser/Pages/SessionLaw/{year}%20Session%20Laws.aspx",
             effective=effective,
         )
@@ -549,7 +574,14 @@ class WABillScraper(Scraper, LXMLMixin):
             "GetRcwCitesAffected?billId=%s&biennium=%s" % (bill_id, self.biennium)
         )
 
-        page = self.get(url)
+        # manually using requests here instead of self (scrapelib)
+        # to avoid auto-retries
+        try:
+            self.info(url)
+            page = requests.get(url)
+        except requests.exceptions.HTTPError:
+            # WA fires a 500 error if there's no sessions laws for a bill
+            return
         page = lxml.etree.fromstring(page.content)
         for row in xpath(page, "//wa:RcwCiteAffected"):
             cite = xpath(row, "string(wa:RcwCite)").strip()
@@ -559,13 +591,13 @@ class WABillScraper(Scraper, LXMLMixin):
                 bill.add_citation(
                     "Revised Code of Washington",
                     cite,
-                    type="final",
+                    citation_type="final",
                     url=f"https://app.leg.wa.gov/RCW/default.aspx?cite={cite}",
                 )
             else:
                 bill.add_citation(
                     "Revised Code of Washington",
                     cite,
-                    type="proposed",
+                    citation_type="proposed",
                     url=f"https://app.leg.wa.gov/RCW/default.aspx?cite={cite}",
                 )
