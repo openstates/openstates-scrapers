@@ -74,7 +74,7 @@ class Vermont(State):
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-09",
-            "end_date": "2020-05-08",
+            "end_date": "2020-09-25",
         },
         {
             "_scraped_name": "2021-2022 Session",
@@ -82,7 +82,7 @@ class Vermont(State):
             "identifier": "2021-2022",
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-06",
-            "end_date": "2021-05-15",
+            "end_date": "2021-05-12",
             "active": True,
         },
         {
@@ -91,7 +91,7 @@ class Vermont(State):
             "identifier": "2021S1",
             "name": "2021 Special Session",
             "start_date": "2021-11-22",
-            "end_date": "2021-11-26",
+            "end_date": "2021-11-22",
             "active": False,
         },
         {

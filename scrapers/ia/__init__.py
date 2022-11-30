@@ -39,14 +39,14 @@ class Iowa(State):
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-09",
-            "end_date": "2018-05-05",
+            "end_date": "2017-04-29",
         },
         {
             "_scraped_name": "General Assembly: 88",
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-14",
-            "end_date": "2020-04-21",
+            "end_date": "2020-04-27",
         },
         {
             "_scraped_name": "General Assembly: 89",
@@ -54,7 +54,7 @@ class Iowa(State):
             "identifier": "2021-2022",
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-11",
-            "end_date": "2021-03-30",
+            "end_date": "2021-06-19",
             "active": True,
         },
     ]
