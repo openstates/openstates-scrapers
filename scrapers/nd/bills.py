@@ -2,19 +2,9 @@ import logging
 import re
 import requests
 import lxml.html
-import time
-import random
 import datetime as dt
 from openstates.scrape import Scraper, Bill
 from spatula import HtmlListPage, HtmlPage, XPath, CSS
-
-
-def random_sleep(avg_secs):
-    inverse_frequency = round(7 * avg_secs)
-    duration = 14 * random.random() * avg_secs
-    if random.randint(1, inverse_frequency) == 1:
-        print(f"Sleeping for {round(duration, 2)} seconds...")
-        time.sleep(duration)
 
 
 def get_committee_names(session):
@@ -38,7 +28,6 @@ class BillList(HtmlListPage):
     def process_item(self, item):
         bill_id_elem = CSS(".bill-name").match(item)[0]
         bill_id = bill_id_elem.text_content().strip()
-        print(bill_id)
 
         bill_type_abbr = bill_id[0:3].strip()
         bill_type = "bill"
@@ -98,9 +87,7 @@ class BillDetail(HtmlPage):
         return self.input.sources[0]["url"]
 
     def process_page(self):
-        random_sleep(0.5)
         self.process_versions()
-        random_sleep(0.5)
         self.process_actions()
         yield self.input
 
