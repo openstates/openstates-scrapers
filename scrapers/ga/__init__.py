@@ -29,7 +29,7 @@ class Georgia(State):
             "identifier": "2013_14",
             "name": "2013-2014 Regular Session",
             "start_date": "2013-01-14",
-            "end_date": "2014-03-21",
+            "end_date": "2014-03-20",
         },
         {
             "_scraped_name": "2015-2016 Regular Session",
@@ -57,21 +57,21 @@ class Georgia(State):
             "identifier": "2020_ss",
             "name": "2020 Special Session",
             "start_date": "2020-03-16",
-            "end_date": "2020-03-20",
+            "end_date": "2020-03-16",
         },
         {
             "_scraped_name": "2019-2020 Regular Session",
             "identifier": "2019_20",
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-14",
-            "end_date": "2020-04-03",
+            "end_date": "2020-06-26",
         },
         {
             "_scraped_name": "2021-2022 Regular Session",
             "identifier": "2021_22",
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-11",
-            "end_date": "2022-04-02",
+            "end_date": "2022-04-04",
             "active": False,
         },
         {

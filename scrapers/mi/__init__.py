@@ -40,7 +40,7 @@ class Michigan(State):
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-11",
-            "end_date": "2018-12-31",
+            "end_date": "2018-12-28",
         },
         {
             "_scraped_name": "2019-2020",
@@ -56,7 +56,7 @@ class Michigan(State):
             "identifier": "2021-2022",
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-13",
-            "end_date": "2022-12-31",
+            "end_date": "2022-12-22",
             "active": True,
         },
     ]

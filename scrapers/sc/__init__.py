@@ -48,8 +48,8 @@ class SouthCarolina(State):
             "classification": "primary",
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
-            "start_date": "2019-01-09",
-            "end_date": "2020-05-14",
+            "start_date": "2019-01-08",
+            "end_date": "2020-06-25",
         },
         {
             "_scraped_name": "124 - (2021-2022)",
@@ -57,7 +57,7 @@ class SouthCarolina(State):
             "identifier": "2021-2022",
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-12",
-            "end_date": "2022-05-14",
+            "end_date": "2022-05-12",
             "active": True,
         },
         {
