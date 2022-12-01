@@ -7,8 +7,10 @@ unset DATABASE_URL
 docker compose down
 
 # only remove volume if it exists
+set +e
 VOLNAME=$(docker volume ls -q | grep openstates-postgres)
 [[ -n "${VOLNAME}" ]] && docker volume rm "${VOLNAME}"
+set -e
 
 docker compose up --wait db
 

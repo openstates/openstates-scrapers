@@ -5,22 +5,29 @@ networks:
       name: openstates-network
 
 volumes:
-  openstates-postgres: {}
+  openstates-postgres:
+    name: openstates-postgres
 
 services:
   scrape:
     build: .
     environment:
-    - AR_FTP_USER
-    - AR_FTP_PASSWORD
-    - MYSQL_HOST=mysql
-    - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
-    - PYTHONPATH=./scrapers
-    - NEW_YORK_API_KEY
-    - INDIANA_API_KEY
-    - DC_API_KEY
-    - VIRGINIA_FTP_USER
-    - VIRGINIA_FTP_PASSWORD
+      - AR_FTP_USER
+      - AR_FTP_PASSWORD
+      - MYSQL_HOST=mysql
+      - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
+      - PYTHONPATH=./scrapers
+      - NEW_YORK_API_KEY
+      - INDIANA_API_KEY
+      - DC_API_KEY
+      - VIRGINIA_FTP_USER
+      - VIRGINIA_FTP_PASSWORD
+      - STATS_ENABLED
+      - STATS_RETRIES=1
+      - STATS_ENDPOINT
+      - STATS_JWT_TOKEN
+      # - STATS_PREFIX
+      # - STATS_BATCH_SIZE
     volumes:
       - .:/opt/openstates/openstates/
     entrypoint: ["poetry", "run", "os-update"]
