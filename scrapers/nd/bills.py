@@ -3,6 +3,7 @@ import re
 import requests
 import lxml.html
 import datetime as dt
+from .actions import NDCategorizer
 from openstates.scrape import Scraper, Bill
 from spatula import HtmlListPage, HtmlPage, XPath, CSS
 
@@ -111,7 +112,7 @@ class BillDetail(HtmlPage):
                 if type_badge:
                     (vers_type,) = type_badge[0].xpath("@title")
                     if vers_type.strip() == "Marked up":
-                        name += "(Marked up)"
+                        name += " (Marked up)"
                 else:
                     vers_type = None
 
@@ -124,6 +125,7 @@ class BillDetail(HtmlPage):
                     self.input.add_document_link(note=name, url=url, media_type="pdf")
 
     def process_actions(self):
+        categorizer = NDCategorizer()
         source = re.sub("overview/bo", "actions/ba", self.source.url)
         response = requests.get(source)
         content = lxml.html.fromstring(response.content)
@@ -145,12 +147,13 @@ class BillDetail(HtmlPage):
             (date,) = row.xpath("td[1]/b/text()")
             date += f"/{self.input.legislative_session}"
             date = dt.datetime.strptime(date, "%m/%d/%Y")
+            classifier = categorizer.categorize(action)
 
             self.input.add_action(
                 action,
                 date.strftime("%Y-%m-%d"),
                 chamber=actor,
-                classification="introduction",
+                classification=classifier["classification"],
             )
 
 
