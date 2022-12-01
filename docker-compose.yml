@@ -1,16 +1,21 @@
 version: "3.5"
 
+# shared network so other openstates packages (core, etc.) can reach these services
 networks:
   openstates-network:
       name: openstates-network
 
+# shared postgres volume so other openstates packages can read the data more consistently
 volumes:
   openstates-postgres:
     name: openstates-postgres
 
 services:
   scrape:
-    build: .
+    build:
+      context: .
+      no_cache: true
+      pull: true
     environment:
       - AR_FTP_USER
       - AR_FTP_PASSWORD
@@ -33,6 +38,9 @@ services:
     entrypoint: ["poetry", "run", "os-update"]
     networks:
       - openstates-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   mysql:
     image: mariadb:10.3
 #    command: mysqld_safe --max_allowed_packet=512M

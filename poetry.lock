@@ -101,14 +101,14 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "boto3"
-version = "1.26.20"
+version = "1.26.21"
 description = "The AWS SDK for Python"
 category = "main"
 optional = false
 python-versions = ">= 3.7"
 
 [package.dependencies]
-botocore = ">=1.29.20,<1.30.0"
+botocore = ">=1.29.21,<1.30.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.6.0,<0.7.0"
 
@@ -117,7 +117,7 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.29.20"
+version = "1.29.21"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
@@ -501,32 +501,24 @@ version = "6.11.1"
 description = "core infrastructure for the openstates project"
 category = "main"
 optional = false
-python-versions = "^3.9"
-develop = false
+python-versions = ">=3.9,<4.0"
 
 [package.dependencies]
-attrs = "^20.2.0"
-boto3 = "^1.17.79"
-chardet = "^3.0"
-click = "^8.0"
-dj_database_url = "^0.5.0"
+attrs = ">=20.2.0,<21.0.0"
+boto3 = ">=1.17.79,<2.0.0"
+chardet = ">=3.0,<4.0"
+click = ">=8.0,<9.0"
+dj_database_url = ">=0.5.0,<0.6.0"
 Django = "3.2.14"
-jsonschema = "^3.2.0"
-psycopg2-binary = "^2.8.4"
-pydantic = "^1.8.2"
-PyJWT = "^2.5.0"
-pytz = "^2019.3"
-PyYAML = "^5.3.1"
-scrapelib = "^2.0.7"
+jsonschema = ">=3.2.0,<4.0.0"
+psycopg2-binary = ">=2.8.4,<3.0.0"
+pydantic = ">=1.8.2,<2.0.0"
+pytz = ">=2019.3,<2020.0"
+PyYAML = ">=5.3.1,<6.0.0"
+scrapelib = ">=2.0.7,<3.0.0"
 spatula = ">=0.8.9,<1.0"
-textract = "^1.6"
-us = "^2.0.2"
-
-[package.source]
-type = "git"
-url = "https://github.com/johnseekins/openstates-core.git"
-reference = "instrument"
-resolved_reference = "a233880824726e70ca4dd5d41ff2b23be10c8e0e"
+textract = ">=1.6,<2.0"
+us = ">=2.0.2,<3.0.0"
 
 [[package]]
 name = "paramiko"
@@ -697,20 +689,6 @@ python-versions = ">=3.6"
 
 [package.extras]
 plugins = ["importlib-metadata"]
-
-[[package]]
-name = "pyjwt"
-version = "2.6.0"
-description = "JSON Web Token implementation in Python"
-category = "main"
-optional = false
-python-versions = ">=3.7"
-
-[package.extras]
-crypto = ["cryptography (>=3.4.0)"]
-dev = ["sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface", "cryptography (>=3.4.0)", "pytest (>=6.0.0,<7.0.0)", "coverage[toml] (==5.0.4)", "pre-commit"]
-docs = ["sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
-tests = ["pytest (>=6.0.0,<7.0.0)", "coverage[toml] (==5.0.4)"]
 
 [[package]]
 name = "pynacl"
@@ -1085,7 +1063,7 @@ california = ["mysqlclient", "SQLAlchemy"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "0ad61ada9f875adff9b756039086c0ad654339c44b9feaa6c7248d98605cff79"
+content-hash = "1230351e5f241142ce60233157b2e53d02c115fcc129e54de7b14b58065025a1"
 
 [metadata.files]
 appnope = [
@@ -1446,7 +1424,6 @@ pycparser = [
 pycryptodome = []
 pydantic = []
 pygments = []
-pyjwt = []
 pynacl = [
     {file = "PyNaCl-1.5.0-cp36-abi3-macosx_10_10_universal2.whl", hash = "sha256:401002a4aaa07c9414132aaed7f6836ff98f59277a234704ff66878c2ee4a0d1"},
     {file = "PyNaCl-1.5.0-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:52cb72a79269189d4e0dc537556f4740f7f0a9ec41c1322598799b0bdad4ef92"},
