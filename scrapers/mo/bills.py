@@ -688,7 +688,14 @@ class MOBillScraper(Scraper, LXMLMixin):
         yield from self._parse_house_billpage(bill_page_url, year)
 
     def scrape(self, chamber=None, session=None):
-        self._scrape_subjects(session)
+
+        if session == "2023":
+            # HACK TODO: Remove once correct data is posted.
+            self.info(
+                "MO Senate Website is still showing 2022 data for 2023. Skipping Subjects"
+            )
+        else:
+            self._scrape_subjects(session)
         # special sessions and other year manipulation messes up the session variable
         # but we need it for correct output
         self._session_id = session
@@ -698,7 +705,13 @@ class MOBillScraper(Scraper, LXMLMixin):
         #                                   session)
 
         if chamber in ["upper", None]:
-            yield from self._scrape_upper_chamber(session)
+            if session == "2023":
+                # HACK TODO: Remove once correct data is posted.
+                self.info(
+                    "MO Senate Website is still showing 2022 data for 2023. Skipping Senate Bills"
+                )
+            else:
+                yield from self._scrape_upper_chamber(session)
         if chamber in ["lower", None]:
             yield from self._scrape_lower_chamber(session)
 
