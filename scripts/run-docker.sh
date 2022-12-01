@@ -15,7 +15,7 @@ docker buildx build "${SCRIPT_DIR}/../" --tag "${IMAGE_NAME}" --load
 
 # shellcheck disable=SC2048
 docker run --rm \
-    --env-file <(env | grep -E "API_KEY|STATS_") \
+    --env-file <(env | grep -E "API_KEY|STATS_|POSTGRES_") \
     -v "${SCRIPT_DIR}/../_data:/opt/openstates/openstates/_data" \
     -v "${SCRIPT_DIR}/../_cache:/opt/openstates/openstates/_cache" \
     -v "${SCRIPT_DIR}/../_scrapes:/opt/openstates/openstates/_scrapes" \
