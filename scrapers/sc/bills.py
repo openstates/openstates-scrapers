@@ -406,6 +406,14 @@ class SCBillScraper(Scraper):
                 on_duplicate="ignore",
                 media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             )
+        # for prefiles, the link just points right to the version, not to a versions page
+        if "/bills/" in version_url.lower():
+            bill.add_version_link(
+                note="Filed",
+                url=version_url,
+                on_duplicate="ignore",
+                media_type="text/html",  # Still a MIME type
+            )
 
         # actions
         for row in bill_div.xpath("table/tr"):
