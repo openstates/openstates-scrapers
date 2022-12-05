@@ -5,6 +5,7 @@ from collections import defaultdict
 from openstates.scrape import Scraper, Event
 
 from .utils import MDBMixin
+from utils.events import match_coordinates
 
 
 class NJEventScraper(Scraper, MDBMixin):
@@ -88,10 +89,16 @@ class NJEventScraper(Scraper, MDBMixin):
 
             description = "Meeting of the {}".format(hr_name)
 
+            location = (
+                record["Location"]
+                or "New Jersey Statehouse, 125 W State St, Trenton, NJ 08608"
+            )
+            location = self.clean_location(location)
+
             event = Event(
                 name=description,
                 start_date=self._tz.localize(date_time),
-                location_name=record["Location"] or "Statehouse",
+                location_name=location,
                 classification="committee-meeting",
                 status=status,
             )
@@ -122,25 +129,49 @@ class NJEventScraper(Scraper, MDBMixin):
                     f"/media-player?committee={record['CommHouse']}&agendaDate={url_date}&agendaType={agenda_type_code}&av=A"
                 )
                 event.add_media_link("Hearing Audio", media_url, "text/html")
+
+            match_coordinates(
+                event,
+                {
+                    "125 W State St": (40.22006, -74.77091),
+                    "State House Annex": (40.22060, -74.77082),
+                    "153 Halsey St.": (40.73734, -74.17325),  # commission offices
+                },
+            )
+
             yield event
 
     def scrape_bills(self):
         rows = self.to_csv("BAGENDA.TXT")
-        temp = self.ndd()
+        temp_bills = self.new_default_dict()
         for row in rows:
             chamber = row["CommHouse"][0]
             com = row["CommHouse"]
             lookupdate = f"{row['Date']}{row['Time']}"
 
-            if not temp[chamber][com][lookupdate]:
-                temp[chamber][com][lookupdate] = []
+            if not temp_bills[chamber][com][lookupdate]:
+                temp_bills[chamber][com][lookupdate] = []
 
-            temp[chamber][com][lookupdate].append(
+            temp_bills[chamber][com][lookupdate].append(
                 f"{row['BillType']} {row['BillNumber']}"
             )
+        self._event_bills = temp_bills
 
-        print(temp)
-        self._event_bills = temp
+    def clean_location(self, location: str) -> str:
+        location = location.replace(
+            "State House Annex, Trenton, NJ",
+            "State House Annex, 131-137 W State St, Trenton, NJ 08608",
+        )
+        location = location.replace(
+            "Assembly Chambers",
+            "Assembly Chambers, New Jersey Statehouse, 125 W State St, Trenton, NJ 08608",
+        )
+        location = location.replace(
+            "Senate Chambers",
+            "Senate Chambers, New Jersey Statehouse, 125 W State St, Trenton, NJ 08608",
+        )
+        return location
 
-    def ndd(self):
-        return defaultdict(self.ndd)
+    # easier way to 3 level nested dict without a big if then tree
+    def new_default_dict(self):
+        return defaultdict(self.new_default_dict)
