@@ -5,6 +5,8 @@ from .bills import IABillScraper
 from .votes import IAVoteScraper
 from .events import IAEventScraper
 
+settings = {"SCRAPELIB_RPM": 30}
+
 
 class Iowa(State):
     scrapers = {
@@ -56,6 +58,15 @@ class Iowa(State):
             "start_date": "2021-01-11",
             "end_date": "2021-06-19",
             "active": True,
+        },
+        {
+            "_scraped_name": "General Assembly: 90",
+            "classification": "primary",
+            "identifier": "2023-2024",
+            "name": "2023-2024 Regular Session",
+            "start_date": "2023-01-09",
+            "end_date": "2023-04-18",
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [
