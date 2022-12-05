@@ -398,7 +398,7 @@ class California(State):
             "active": False,
         },
         {
-            "_scraped_name": "2023-20224",
+            "_scraped_name": "2023-2024",
             "classification": "primary",
             "identifier": "20232024",
             "name": "2023-2024 Regular Session",
