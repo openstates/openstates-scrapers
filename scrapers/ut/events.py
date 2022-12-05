@@ -26,6 +26,19 @@ class UTEventScraper(Scraper, LXMLMixin):
                             title = row["desc"]
                             where = row["location"]
 
+                            print(where)
+                            if re.match(r"State Capitol", where, flags=re.I):
+                                where = (
+                                    f"{where}, 350 State St, Salt Lake City, UT 84103"
+                                )
+                            elif re.match(
+                                r"[House|Senate]+ Building", where, flags=re.I
+                            ):
+                                where = f"{where}, Utah State Capitol, 350 State St, Salt Lake City, UT 84103"
+                            else:
+                                print("NO")
+                            print(where)
+
                             when = dateutil.parser.parse(
                                 f"{day_row['year']}-{str(int(day_row['month'])+1)}-{day_row['day']} {row['time']}"
                             )
@@ -42,6 +55,8 @@ class UTEventScraper(Scraper, LXMLMixin):
                                 classification="committee-meeting",
                                 status=status,
                             )
+
+                            event.add_committee(title, note="host")
 
                             if "agenda" in row:
                                 event.add_document(
