@@ -101,7 +101,12 @@ class USEventScraper(Scraper, LXMLMixin):
 
             event_date = self._TZ.localize(event_date)
 
-            event = Event(start_date=event_date, name=com, location_name=address)
+            event = Event(
+                start_date=event_date,
+                name=com,
+                location_name=address,
+                classification="committee-meeting",
+            )
 
             agenda_item = event.add_agenda_item(description=agenda)
 
@@ -210,7 +215,12 @@ class USEventScraper(Scraper, LXMLMixin):
             )
             address = "{}, Room {}".format(building, room)
 
-        event = Event(start_date=start_dt, name=title, location_name=address)
+        event = Event(
+            start_date=start_dt,
+            name=title,
+            location_name=address,
+            classification="committee-meeting",
+        )
 
         event.add_source(source_url)
 
