@@ -26,13 +26,14 @@ class UTEventScraper(Scraper, LXMLMixin):
                             title = row["desc"]
                             where = row["location"]
 
-                            print(where)
-                            if re.match(r"State Capitol", where, flags=re.I):
+                            if "state capitol" in where.lower():
                                 where = (
                                     f"{where}, 350 State St, Salt Lake City, UT 84103"
                                 )
                             elif re.match(
-                                r"[House|Senate]+ Building", where, flags=re.I
+                                r"(.*) (House|Senate) Building",
+                                where,
+                                flags=re.IGNORECASE,
                             ):
                                 where = f"{where}, Utah State Capitol, 350 State St, Salt Lake City, UT 84103"
                             else:
