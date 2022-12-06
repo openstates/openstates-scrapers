@@ -227,7 +227,7 @@ class WABillScraper(Scraper, LXMLMixin):
 
         # de-dup bill_id
         for bill_id in list(set(self._bill_id_list)):
-            yield from self.scrape_bill(chamber, session, bill_id)
+            yield from self.scrape_bill(chamber, session, bill_id, year)
 
     def scrape_chamber(self, chamber, session):
         self.biennium = "%s-%s" % (session[0:4], session[7:9])
@@ -275,8 +275,10 @@ class WABillScraper(Scraper, LXMLMixin):
 
                 self._bill_id_list.append(bill_id_norm[0])
 
-    def scrape_bill(self, chamber, session, bill_id):
+    def scrape_bill(self, chamber, session, bill_id, year):
         bill_num = bill_id.split()[1]
+        prefile_year = year - 1
+        second_year = year + 1
 
         url = "%s/GetLegislation?biennium=%s&billNumber" "=%s" % (
             self._base_url,
@@ -336,7 +338,7 @@ class WABillScraper(Scraper, LXMLMixin):
             pass
 
         self.scrape_sponsors(bill)
-        self.scrape_actions(bill, chamber, fake_source)
+        self.scrape_actions(bill, chamber, fake_source, prefile_year, second_year)
         self.scrape_hearings(bill, bill_num)
         yield from self.scrape_votes(bill)
         bill.subject = list(set(self._subjects[bill_id]))
@@ -406,10 +408,14 @@ class WABillScraper(Scraper, LXMLMixin):
             )
             bill.add_action(action_name, action_date, chamber=action_actor)
 
-    def scrape_actions(self, bill, chamber, bill_url):
+    def scrape_actions(self, bill, chamber, bill_url, prefile_year, second_year):
         # we previously used the API endpoint at
         # http://wslwebservices.leg.wa.gov/legislationservice.asmx/GetLegislativeStatusChangesByBillNumber
         # for this, but it does not provide the actor chamber.
+
+        # prefiled actions have the wrong year on the website some of the time,
+        # but correct info in the api
+        api_actions = self.scrape_api_actions(bill, prefile_year, second_year)
 
         page = lxml.html.fromstring(self.get(bill_url).content)
         headers = page.xpath(
@@ -458,6 +464,18 @@ class WABillScraper(Scraper, LXMLMixin):
                     )
                 )
 
+                # some actions have the wrong year on the website, but right day
+                if action_text in api_actions:
+                    api_date = api_actions[action_text]
+                    # there might be multiple actions with the same name, but diff dates
+                    # we can ignore those, because that won't happen with the prefiles
+                    # that we need to correct the date info on
+                    if (
+                        action_date.month == api_date.month
+                        and action_date.day == api_date.day
+                    ):
+                        action_date = api_date
+
                 temp = self.categorizer.categorize(action_text)
                 classification = temp["classification"]
                 try:
@@ -481,6 +499,34 @@ class WABillScraper(Scraper, LXMLMixin):
                     self.scrape_chapter(bill)
 
         self.scrape_cites(bill, became_law)
+
+    def scrape_api_actions(self, bill, prefile_year, second_year):
+        api_actions = {}
+        bill_num = bill.identifier.split()[1]
+
+        api_url = (
+            "http://wslwebservices.leg.wa.gov/legislationservice.asmx/"
+            f"GetLegislativeStatusChangesByBillNumber?billNumber={bill_num}"
+            f"&biennium={self.biennium}&beginDate={prefile_year}-11-01&endDate={second_year}-12-31"
+        )
+
+        # api drops 500 errors if there are no actions,
+        try:
+            page = self.get(api_url)
+        except requests.exceptions.HTTPError:
+            return {}
+
+        page = lxml.etree.fromstring(page.content)
+
+        for row in xpath(page, "//wa:LegislativeStatus"):
+            action_text = xpath(row, "string(wa:HistoryLine)")
+            action_date = xpath(row, "string(wa:ActionDate)")
+            action_date = datetime.datetime.strptime(
+                action_date, "%Y-%m-%dT%H:%M:%S"
+            ).date()
+            api_actions[action_text] = action_date
+
+        return api_actions
 
     def scrape_votes(self, bill):
         bill_num = bill.identifier.split()[1]
@@ -546,11 +592,11 @@ class WABillScraper(Scraper, LXMLMixin):
         try:
             self.info(url)
             page = requests.get(url)
-        except requests.exceptions.HTTPError:
+            page = lxml.etree.fromstring(page.content)
+        except (requests.exceptions.HTTPError, lxml.etree.XMLSyntaxError):
             # WA fires a 500 error if there's no sessions laws for a bill
             return
 
-        page = lxml.etree.fromstring(page.content)
         year = xpath(page, "string(wa:Year)").strip()
         chapter = xpath(page, "string(wa:ChapterNumber)").strip()
         effective = xpath(page, "string(wa:EffectiveDate)").strip()
