@@ -96,7 +96,7 @@ class Nevada(State):
             "identifier": "80",
             "name": "2019 Regular Session",
             "start_date": "2019-02-04",
-            "end_date": "2019-06-03",
+            "end_date": "2019-06-04",
         },
         {
             "_scraped_name": "31st (2020) Special Session",
@@ -112,8 +112,7 @@ class Nevada(State):
             "identifier": "2020Special32",
             "name": "32nd (2020) Special Session",
             "start_date": "2020-07-31",
-            # TODO: correct end date after special completes
-            "end_date": "2020-08-07",
+            "end_date": "2020-08-06",
         },
         {
             "_scraped_name": "81st (2021) Session",

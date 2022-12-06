@@ -55,7 +55,7 @@ class Nebraska(State):
             "end_date": "2020-12-31",
             "identifier": "106",
             "name": "106th Legislature (2019-2020)",
-            "start_date": "2019-01-04",
+            "start_date": "2019-01-09",
             "classification": "primary",
         },
         {
@@ -72,7 +72,7 @@ class Nebraska(State):
             "identifier": "107S1",
             "name": "107th Legislature 1st Special Session",
             "start_date": "2021-09-13",
-            "end_date": "2022-09-30",
+            "end_date": "2022-09-14",
             "classification": "special",
             "active": False,
         },

@@ -52,15 +52,15 @@ class NewYork(State):
             "_scraped_name": "2019",
             "identifier": "2019-2020",
             "name": "2019 Regular Session",
-            "start_date": "2019-01-03",
-            "end_date": "2020-12-31",
+            "start_date": "2019-01-09",
+            "end_date": "2020-01-08",
         },
         {
             "_scraped_name": "2021",
             "identifier": "2021-2022",
             "name": "2021 Regular Session",
             "start_date": "2021-01-06",
-            "end_date": "2022-12-31",
+            "end_date": "2022-06-10",
             "active": True,
         },
     ]

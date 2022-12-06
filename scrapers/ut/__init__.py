@@ -193,7 +193,7 @@ class Utah(State):
             "identifier": "2019",
             "name": "2019 General Session",
             "start_date": "2019-01-28",
-            "end_date": "2019-03-08",
+            "end_date": "2019-03-14",
         },
         {
             "_scraped_name": "2019 1st Special Session",
@@ -224,16 +224,16 @@ class Utah(State):
             "classification": "special",
             "identifier": "2020S3",
             "name": "2020 3rd Special Session",
-            "start_date": "2020-04-15",
-            "end_date": "2020-04-17",
+            "start_date": "2020-04-16",
+            "end_date": "2020-04-23",
         },
         {
             "_scraped_name": "2020 4th Special Session",
             "classification": "special",
             "identifier": "2020S4",
             "name": "2020 4th Special Session",
-            "start_date": "2020-04-27",
-            "end_date": "2020-05-01",
+            "start_date": "2020-04-23",
+            "end_date": "2020-04-23",
         },
         {
             "_scraped_name": "2020 5th Special Session",
@@ -241,7 +241,7 @@ class Utah(State):
             "identifier": "2020S5",
             "name": "2020 5th Special Session",
             "start_date": "2020-06-18",
-            "end_date": "2020-06-20",
+            "end_date": "2020-06-18",
         },
         {
             "_scraped_name": "2020 6th Special Session",
@@ -249,8 +249,7 @@ class Utah(State):
             "identifier": "2020S6",
             "name": "2020 6th Special Session",
             "start_date": "2020-08-20",
-            # TODO: Proper end date after session
-            "end_date": "2020-08-28",
+            "end_date": "2020-08-20",
         },
         {
             "_scraped_name": "2021 General Session",
@@ -258,8 +257,7 @@ class Utah(State):
             "identifier": "2021",
             "name": "2021 General Session",
             "start_date": "2021-01-19",
-            # TODO: proper end date after session
-            "end_date": "2021-03-12",
+            "end_date": "2021-03-05",
         },
         {
             "_scraped_name": "2021 1st Special Session",
@@ -267,8 +265,7 @@ class Utah(State):
             "identifier": "2021S1",
             "name": "2021 1st Special Session",
             "start_date": "2021-05-19",
-            # TODO: Proper end date after session
-            "end_date": "2020-05-28",
+            "end_date": "2020-05-19",
         },
         {
             "_scraped_name": "2021 1st House Extraordinary Session",
@@ -276,7 +273,7 @@ class Utah(State):
             "identifier": "2021S1H",
             "name": "2021 1st House Extraordinary Session",
             "start_date": "2021-05-19",
-            "end_date": "2021-05-25",
+            "end_date": "2021-05-19",
         },
         {
             "_scraped_name": "2021 1st Senate Extraordinary Session",
@@ -284,7 +281,7 @@ class Utah(State):
             "identifier": "2021S1S",
             "name": "2021 1st Senate Extraordinary Session",
             "start_date": "2021-05-19",
-            "end_date": "2021-05-25",
+            "end_date": "2021-05-19",
             "active": False,
         },
         {
@@ -292,9 +289,8 @@ class Utah(State):
             "classification": "special",
             "identifier": "2021S2",
             "name": "2021 2nd Special Session",
-            "start_date": "2021-11-08",
-            # TODO: Proper end date after session
-            "end_date": "2020-11-12",
+            "start_date": "2021-11-09",
+            "end_date": "2021-11-10",
             "active": False,
         },
         {
@@ -312,8 +308,7 @@ class Utah(State):
             "identifier": "2022S3",
             "name": "2022 3rd Special Session",
             "start_date": "2022-03-25",
-            # TODO: Proper end date after session
-            "end_date": "2022-04-12",
+            "end_date": "2022-03-25",
             "active": True,
         },
     ]

@@ -207,7 +207,7 @@ class Arizona(State):
         {
             "_scraped_name": "2017 - Fifty-third Legislature - First Regular Session",
             "classification": "primary",
-            "end_date": "2017-05-03",
+            "end_date": "2017-05-10",
             "identifier": "53rd-1st-regular",
             "name": "53rd Legislature - 1st Regular Session",
             "start_date": "2017-01-09",
@@ -218,7 +218,7 @@ class Arizona(State):
             "identifier": "53rd-1st-special",
             "name": "53rd Legislature - 1st Special Session",
             "start_date": "2018-01-22",
-            "end_date": "2018-01-26",
+            "end_date": "2018-01-25",
         },
         {
             "_scraped_name": "2018 - Fifty-third Legislature - Second Regular Session",
@@ -226,7 +226,7 @@ class Arizona(State):
             "identifier": "53rd-2nd-regular",
             "name": "53rd Legislature - 2nd Regular Session",
             "start_date": "2018-01-08",
-            "end_date": "2018-05-03",
+            "end_date": "2018-05-04",
         },
         {
             "_scraped_name": "2019 - Fifty-fourth Legislature - First Regular Session",
@@ -234,7 +234,7 @@ class Arizona(State):
             "identifier": "54th-1st-regular",
             "name": "54th Legislature - 1st Regular Session",
             "start_date": "2019-01-14",
-            "end_date": "2019-03-29",
+            "end_date": "2019-03-28",
         },
         {
             "_scraped_name": "2020 - Fifty-fourth Legislature - Second Regular Session",
@@ -242,15 +242,15 @@ class Arizona(State):
             "identifier": "54th-2nd-regular",
             "name": "54th Legislature - 2nd Regular Session",
             "start_date": "2020-01-13",
-            "end_date": "2020-05-27",
+            "end_date": "2020-05-26",
         },
         {
             "_scraped_name": "2021 - Fifty-fifth Legislature - First Special Session",
             "classification": "special",
             "identifier": "55th-1st-special",
             "name": "55th Legislature - 1st Special Session",
-            "start_date": "2021-06-14",
-            "end_date": "2021-06-18",
+            "start_date": "2021-06-15",
+            "end_date": "2021-06-17",
         },
         {
             "_scraped_name": "2021 - Fifty-fifth Legislature - First Regular Session",
@@ -267,7 +267,7 @@ class Arizona(State):
             "identifier": "55th-2nd-regular",
             "name": "Fifty-fifth Legislature - Second Regular Session",
             "start_date": "2022-01-10",
-            "end_date": "2022-05-13",
+            "end_date": "2022-06-25",
             "active": True,
         },
         {

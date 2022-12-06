@@ -51,7 +51,7 @@ class UnitedStates(State):
             "identifier": "117",
             "name": "117th Congress",
             "start_date": "2021-01-03",
-            "end_date": "2023-01-02",
+            "end_date": "2023-01-03",
             "active": True,
         },
     ]
