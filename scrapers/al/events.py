@@ -55,8 +55,10 @@ class ALEventScraper(Scraper, LXMLMixin):
                 description=details,
             )
 
+            event.add_commitee(name, note="host")
+
             match_coordinates(
-                {"11 south union": (32.37707594063977, -86.29919861850152)}
+                event, {"11 south union": (32.37707594063977, -86.29919861850152)}
             )
 
             event.add_source(EVENTS_URL)
