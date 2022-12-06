@@ -114,7 +114,7 @@ class Wyoming(State):
             "name": "2021 Special Session",
             "start_date": "2021-10-26",
             "end_date": "2021-11-03",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2022",
@@ -123,18 +123,17 @@ class Wyoming(State):
             "name": "2022 Regular Session",
             "start_date": "2022-02-14",
             "end_date": "2022-03-11",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023",
+            "classification": "primary",
+            "identifier": "2023",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-10",
+            "end_date": "2023-03-10",
             "active": True,
         },
-        # {
-        #     "_scraped_name": "2023",
-        #     "classification": "primary",
-        #     "identifier": "2023",
-        #     "name": "2023 Regular Session",
-        #     # TODO: update to actual date
-        #     "start_date": "2023-02-14",
-        #     "end_date": "2023-03-11",
-        #     "active": True,
-        # },
     ]
     ignored_scraped_sessions = [
         "2023",
