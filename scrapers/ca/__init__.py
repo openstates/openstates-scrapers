@@ -403,8 +403,7 @@ class California(State):
             "identifier": "20232024",
             "name": "2023-2024 Regular Session",
             "start_date": "2022-12-05",
-            # TODO: update end date
-            "end_date": "2023-09-10",
+            "end_date": "2023-09-15",
             "active": True,
         },
     ]

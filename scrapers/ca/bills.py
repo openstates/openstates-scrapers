@@ -291,7 +291,8 @@ class CABillScraper(Scraper, LXMLMixin):
         for bill in bills:
             bill_session = session
             if bill.session_num != "0":
-                bill_session += " Special Session %s" % bill.session_num
+                if not bill.session_num == 1 and bill_session == "20232024":
+                    bill_session += " Special Session %s" % bill.session_num
 
             bill_id = bill.short_bill_id
             if bill_id.strip() == "SB77" and session == "20052006":
