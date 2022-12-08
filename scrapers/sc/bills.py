@@ -104,12 +104,12 @@ class SCBillScraper(Scraper):
 
     urls = {
         "lower": {
-            "daily-bill-index": "https://www.scstatehouse.gov/hintro/hintros.php",
+            "daily-bill-index": "https://www.scstatehouse.gov/sessphp/hintros.php",
             "prefile-index": "https://www.scstatehouse.gov/sessphp/prefil"
             "{last_two_digits_of_session_year}.php",
         },
         "upper": {
-            "daily-bill-index": "https://www.scstatehouse.gov/sintro/sintros.php",
+            "daily-bill-index": "https://www.scstatehouse.gov/sessphp/sintros.php",
             "prefile-index": "https://www.scstatehouse.gov/sessphp/prefil"
             "{last_two_digits_of_session_year}.php",
         },

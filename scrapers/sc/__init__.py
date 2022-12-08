@@ -93,8 +93,8 @@ class SouthCarolina(State):
 
     def get_session_list(self):
         """Get session list from billsearch page using xpath"""
-        url = "http://www.scstatehouse.gov/billsearch.php"
+        url = "https://www.scstatehouse.gov/billsearch.php"
         path = "//select[@id='session']/option/text()"
-
+        self.info(url)
         doc = lxml.html.fromstring(requests.get(url).text)
         return doc.xpath(path)
