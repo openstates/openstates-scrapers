@@ -162,7 +162,7 @@ class Wisconsin(State):
             "name": "January 2021 Special Session",
             "start_date": "2021-01-19",
             "end_date": "2021-02-21",
-            "active": True,
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [
@@ -197,7 +197,7 @@ class Wisconsin(State):
         user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36"
 
         sessions = url_xpath(
-            "http://docs.legis.wisconsin.gov/search",
+            "https://docs.legis.wisconsin.gov/search",
             "//select[@name='sessionNumber']/option/text()",
             verify=False,
             user_agent=user_agent,
