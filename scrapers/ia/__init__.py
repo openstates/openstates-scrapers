@@ -57,7 +57,7 @@ class Iowa(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-11",
             "end_date": "2021-06-19",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "General Assembly: 90",
@@ -66,7 +66,7 @@ class Iowa(State):
             "name": "2023-2024 Regular Session",
             "start_date": "2023-01-09",
             "end_date": "2023-04-18",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
