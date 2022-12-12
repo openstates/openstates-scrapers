@@ -220,7 +220,6 @@ class IDBillScraper(Scraper):
             if len(row[2]):
                 action = "".join(row[2].itertext())
             action = action.replace("\xa0", " ").strip()
-            # atype = get_action(actor, action)
             attrs = self.categorizer.categorize(action)
             atype = attrs["classification"]
             if atype and "passage" in atype:
