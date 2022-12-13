@@ -2,6 +2,7 @@ import re
 import csv
 import urllib
 import datetime
+import os
 import pytz
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.exceptions import EmptyScrape
@@ -13,18 +14,19 @@ from .common import get_slug_for_session, get_biennium_year
 TIMEZONE = pytz.timezone("US/Central")
 
 
-def get_utf_16_ftp_content(url):
-    # Rough to do this within Scrapelib, as it doesn't allow custom decoding
-    raw = urllib.request.urlopen(url).read().decode("utf-16")
-    # Also, legislature may use `NUL` bytes when a cell is empty
-    NULL_BYTE_CODE = "\x00"
-    text = raw.replace(NULL_BYTE_CODE, "")
-    text = text.replace("\r", "")
-    return text
-
-
 class ARBillScraper(Scraper):
+    ftp_user = ""
+    ftp_pass = ""
+
     def scrape(self, chamber=None, session=None):
+
+        self.ftp_user = os.environ.get("AR_FTP_USER", None)
+        self.ftp_pass = os.environ.get("AR_FTP_PASSWORD", None)
+
+        if not self.ftp_user or not self.ftp_pass:
+            self.error("AR_FTP_USER and AR_FTP_PASSWORD env variables are required.")
+            raise EmptyScrape
+
         self.slug = get_slug_for_session(session)
 
         for i in self.jurisdiction.legislative_sessions:
@@ -45,7 +47,7 @@ class ARBillScraper(Scraper):
 
     def scrape_bill(self, chamber, session):
         url = "ftp://www.arkleg.state.ar.us/SessionInformation/LegislativeMeasures.txt"
-        page = csv.reader(get_utf_16_ftp_content(url).splitlines(), delimiter="|")
+        page = csv.reader(self.get_utf_16_ftp_content(url).splitlines(), delimiter="|")
 
         for row in page:
             bill_chamber = {"H": "lower", "S": "upper"}[row[0]]
@@ -65,6 +67,9 @@ class ARBillScraper(Scraper):
             }[type_spec]
 
             if row[-1] != self.slug:
+                self.warning(
+                    f"Skipping row in session {row[-1]} because it does not match {self.slug}"
+                )
                 continue
 
             bill = Bill(
@@ -108,7 +113,7 @@ class ARBillScraper(Scraper):
 
     def scrape_actions(self):
         url = "ftp://www.arkleg.state.ar.us/SessionInformation/ChamberActions.txt"
-        page = csv.reader(get_utf_16_ftp_content(url).splitlines(), delimiter="|")
+        page = csv.reader(self.get_utf_16_ftp_content(url).splitlines(), delimiter="|")
 
         for row in page:
             bill_id = "%s%s %s" % (row[1], row[2], row[3])
@@ -412,3 +417,16 @@ class ARBillScraper(Scraper):
     def scrape_cosponsors(self, bill, url):
         page = self.get(url).text
         page = lxml.html.fromstring(page)
+
+    def get_utf_16_ftp_content(self, url):
+        # hacky code alert:
+        # inserting the credentials inline plays nice with urllib.urlretrieve
+        # when other methods dont
+        url = url.replace("ftp://", f"ftp://{self.ftp_user}:{self.ftp_pass}@")
+        local_file, headers = urllib.request.urlretrieve(url)
+        raw = open(local_file, "rb")
+        raw = raw.read().decode("utf-16")
+        # Also, legislature may use `NUL` bytes when a cell is empty
+        NULL_BYTE_CODE = "\x00"
+        text = raw.replace(NULL_BYTE_CODE, "")
+        return text

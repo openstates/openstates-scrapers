@@ -2,6 +2,7 @@ import re
 import datetime
 
 from openstates.scrape import Scraper, Bill, VoteEvent
+from openstates.exceptions import EmptyScrape
 
 from utils import LXMLMixin
 
@@ -11,6 +12,7 @@ SESSION_IDS = {
     "2021r": "65",
     "2021i": "66",
     "2022": "64",
+    "2023": "68",
 }
 
 
@@ -31,6 +33,10 @@ class SDBillScraper(Scraper, LXMLMixin):
                 bill_abbr = "H"
 
             data = self.get(url).json()
+
+            if len(data) == 0:
+                raise EmptyScrape
+
             for item in data:
                 bill_id = f'{item["BillType"]} {item["BillNumberOnly"]}'
                 title = item["Title"]

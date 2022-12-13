@@ -43,9 +43,11 @@ class IABillScraper(Scraper):
     # IA does prefiles on a seperate page, with no bill numbers,
     # after introduction they'll link bill numbers to the prefile doc id
     def scrape_prefiles(self, session):
-        url = "https://www.legis.iowa.gov/legislation/billTracking/prefiledBills"
-        page = lxml.html.fromstring(self.get(url).content)
-        page.make_links_absolute(url)
+        prefile_url = (
+            "https://www.legis.iowa.gov/legislation/billTracking/prefiledBills"
+        )
+        page = lxml.html.fromstring(self.get(prefile_url).content)
+        page.make_links_absolute(prefile_url)
 
         for row in page.xpath('//table[contains(@class, "sortable")]/tr[td]'):
             title = row.xpath("td[2]/a/text()")[0].strip()
@@ -75,7 +77,7 @@ class IABillScraper(Scraper):
                 note="Prefiled", url=url, media_type="application/pdf"
             )
 
-            bill.add_source(url)
+            bill.add_source(prefile_url)
 
             yield bill
 
@@ -376,6 +378,8 @@ class IABillScraper(Scraper):
         yield bill
 
     def get_session_id(self, session):
+        # https://www.legis.iowa.gov/legislation/BillBook
+        # select[@name="gaList"]
         return {
             "2011-2012": "84",
             "2013-2014": "85",
@@ -383,4 +387,5 @@ class IABillScraper(Scraper):
             "2017-2018": "87",
             "2019-2020": "88",
             "2021-2022": "89",
+            "2023-2024": "90",
         }[session]

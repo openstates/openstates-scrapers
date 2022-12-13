@@ -65,22 +65,22 @@ class Hawaii(State):
             "_scraped_name": "2019",
             "identifier": "2019 Regular Session",
             "name": "2019 Regular Session",
-            "start_date": "2019-01-15",
-            "end_date": "2019-04-12",
+            "start_date": "2019-01-16",
+            "end_date": "2019-05-02",
         },
         {
             "_scraped_name": "2020",
             "identifier": "2020 Regular Session",
             "name": "2020 Regular Session",
             "start_date": "2020-01-15",
-            "end_date": "2020-05-07",
+            "end_date": "2020-07-10",
         },
         {
             "_scraped_name": "2021",
             "identifier": "2021 Regular Session",
             "name": "2021 Regular Session",
             "start_date": "2021-01-20",
-            "end_date": "2021-05-09",
+            "end_date": "2021-04-29",
             "active": False,
         },
         {
@@ -88,8 +88,17 @@ class Hawaii(State):
             "identifier": "2022 Regular Session",
             "name": "2022 Regular Session",
             "start_date": "2022-01-19",
-            "end_date": "2022-04-28",
+            "end_date": "2022-05-05",
             "active": True,
+        },
+        {
+            "_scraped_name": "2023",
+            "identifier": "2023 Regular Session",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-18",
+            # TODO: update dates
+            "end_date": "2023-04-28",
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [
@@ -111,8 +120,7 @@ class Hawaii(State):
     def get_session_list(self):
         # doesn't include current session, we need to change it
         sessions = url_xpath(
-            "https://capitol.hawaii.gov/archives/main.aspx",
-            "//div[@class='roundedrect gradientgray shadow archiveyears']/a/text()",
+            "https://www.capitol.hawaii.gov/session/archives/main.aspx",
+            "//*[@id='ctl00_MainContent_yearList']/option/text()",
         )
-        sessions.remove("Archives Main")
         return sessions

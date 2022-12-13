@@ -72,6 +72,7 @@ class WVEventScraper(Scraper, LXMLMixin):
             return
 
         com = page.xpath('//div[@id="wrapleftcol"]/h3[1]/text()')[0].strip()
+        com = re.sub(r"[\s\-]+Agenda", "", com)
         when = page.xpath('//div[@id="wrapleftcol"]/h1[1]/text()')[0].strip()
 
         if "time to be announced" in when.lower() or "tba" in when.lower():
@@ -106,9 +107,13 @@ class WVEventScraper(Scraper, LXMLMixin):
             description=desc,
         )
 
+        event.add_committee(com, note="host")
+
         for row in page.xpath('//div[@id="wrapleftcol"]/blockquote[1]/p'):
             if row.text_content().strip() != "":
-                agenda = event.add_agenda_item(row.text_content().strip())
+                agenda = event.add_agenda_item(
+                    row.text_content().strip().replace("\u25a1", "")
+                )
                 for bill in re.findall(self.bill_regex, row.text_content()):
                     bill_id = re.sub(r"\.\s*", "", bill[0], flags=re.IGNORECASE)
                     bill_id = re.sub(r"house bill", "HB", bill_id, flags=re.IGNORECASE)

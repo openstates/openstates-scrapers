@@ -36,7 +36,7 @@ class DistrictOfColumbia(State):
             "_scraped_name": "22",
             "identifier": "22",
             "name": "22nd Council Period (2017-2018)",
-            "start_date": "2017-01-01",
+            "start_date": "2017-01-02",
             "end_date": "2018-12-31",
         },
         {

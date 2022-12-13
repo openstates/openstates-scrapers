@@ -6,7 +6,7 @@ from .utils import get_short_codes
 from urllib import parse as urlparse
 
 HI_URL_BASE = "https://capitol.hawaii.gov"
-SHORT_CODES = "%s/committees/committees.aspx?chamber=all" % (HI_URL_BASE)
+SHORT_CODES = "%s/legislature/committees.aspx?chamber=all" % (HI_URL_BASE)
 repeated_action = ["Excused: none", "Representative(s) Eli"]
 
 
@@ -186,22 +186,20 @@ class HIBillScraper(Scraper):
         return name.strip()
 
     def parse_bill_versions_table(self, bill, versions):
-        versions = versions.xpath("./*")
-        if versions == []:
+        if not versions:
             raise Exception("Missing bill versions.")
 
         for version in versions:
-            tds = version.xpath("./td")
-            if "No other versions" in tds[0].text_content():
+            td = version.xpath("./a")[0]
+            if "No other versions" in td.text_content():
                 return
 
-            if version.xpath("./td/a"):
-                http_href = tds[0].xpath("./a")
-                name = http_href[0].text_content().strip()
-                pdf_href = tds[1].xpath("./a")
+            if version.xpath("./a"):
+                http_href = td.attrib["href"]
+                name = td.text_content().strip()
 
-                http_link = http_href[0].attrib["href"].replace("www.", "")
-                pdf_link = pdf_href[0].attrib["href"].replace("www.", "")
+                http_link = f"{HI_URL_BASE}{http_href}"
+                pdf_link = http_link.replace("HTM", "PDF")
 
                 # some bills (and GMs) swap the order or double-link to the same format
                 # so detect the type, and ignore dupes
@@ -270,7 +268,9 @@ class HIBillScraper(Scraper):
 
         qs = dict(urlparse.parse_qsl(urlparse.urlparse(url).query))
         bill_id = "{}{}".format(qs["billtype"], qs["billnumber"])
-        versions = bill_page.xpath("//table[contains(@id, 'GridViewVersions')]")[0]
+        versions = bill_page.xpath(
+            "//*[@id='ctl00_MainContent_UpdatePanel2']/div/div/div"
+        )
 
         metainf_table = bill_page.xpath(
             '//div[contains(@id, "itemPlaceholder")]//table[1]'
@@ -396,6 +396,7 @@ class HIBillScraper(Scraper):
         list_page = lxml.html.fromstring(list_html)
         for bill_url in list_page.xpath("//a[@class='report']"):
             bill_url = bill_url.attrib["href"].replace("www.", "")
+            bill_url = f"{HI_URL_BASE}{bill_url}"
             yield from self.scrape_bill(session, chamber, billtype_map, bill_url)
 
     def scrape(self, chamber=None, session=None):

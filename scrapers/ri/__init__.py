@@ -80,7 +80,7 @@ class RhodeIsland(State):
             "identifier": "2020",
             "name": "2020 Regular Session",
             "start_date": "2020-01-07",
-            "end_date": "2020-06-30",
+            "end_date": "2020-08-30",
         },
         {
             "_scraped_name": "2021",
@@ -88,7 +88,7 @@ class RhodeIsland(State):
             "identifier": "2021",
             "name": "2021 Regular Session",
             "start_date": "2021-01-05",
-            "end_date": "2021-06-30",
+            "end_date": "2021-07-01",
             "active": False,
         },
         {

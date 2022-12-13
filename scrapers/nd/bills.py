@@ -1,227 +1,164 @@
-from datetime import datetime
-import lxml.html
-from openstates.scrape import Scraper, Bill
-from .actions import NDCategorizer
+import logging
 import re
-from utils import LXMLMixin
+import requests
+import lxml.html
+import datetime as dt
+from .actions import NDCategorizer
+from openstates.scrape import Scraper, Bill
+from spatula import HtmlListPage, HtmlPage, XPath, CSS
 
 
-class NDBillScraper(Scraper, LXMLMixin):
-    """
-    Scrapes available legislative information from the website of the North
-    Dakota legislature and stores it in the openstates  backend.
-    """
+def get_committee_names(session):
+    source = f"http://www.ndlegis.gov/assembly/{session}/committees"
+    response = requests.get(source)
+    content = lxml.html.fromstring(response.content)
+    committee_names = set()
+    committees = content.xpath(".//div[@class='grouping-wrapper']//a/text()")
+    for committee in committees:
+        committee_names.add(committee.strip())
+    return committee_names
 
-    categorizer = NDCategorizer()
 
-    house_list_url = (
-        "http://www.legis.nd.gov/assembly/%s-%s/%sbill-text/house-bill.html"
-    )
-    senate_list_url = (
-        "http://www.legis.nd.gov/assembly/%s-%s/%sbill-text/senate-bill.html"
-    )
-    subjects_url = "https://www.ndlegis.gov/assembly/%s-%s/bill-index.html"
+class BillList(HtmlListPage):
+    url_session = "67-2021"
+    session_components = url_session.split("-")
+    source = f"http://www.ndlegis.gov/assembly/{url_session}/bill-index.html"
+    selector = XPath(".//div[@class='col bill']")
+    committees = get_committee_names(url_session)
 
-    url_session = ""
-    special_url_slug = ""
+    def process_item(self, item):
+        bill_id_elem = CSS(".bill-name").match(item)[0]
+        bill_id = bill_id_elem.text_content().strip()
 
-    def scrape_actions(self, session, href):
-        page = self.lxmlize(href)
-
-        (bid,) = page.xpath('//h1[@id="page-title"]/text()')
-        bid = re.sub(r"^Bill Actions for ", "", bid)
-        subjects = self.subjects.get(bid, [])
-
-        # some pages say "Measure Number Breakdown", others "Bill..."
-        table = page.xpath("//table[contains(@summary, 'Number Breakdown')]")
-        table = table[0]
-        ttrows = page.xpath("//div[@id='application']/p")
-        descr = ttrows[-2]
-
-        title = re.sub(r"\s+", " ", descr.text_content()).strip()
-        ttrows = ttrows[:-1]
-
-        if bid[0] not in ["H", "S"]:
-            self.warning(f"Unable to determine bill type for {bid[0]}")
-            return
-
-        chamber = {"H": "lower", "S": "upper"}[bid[0]]
-
-        type_ = bid[1:3]
+        bill_type_abbr = bill_id[0:3].strip()
         bill_type = "bill"
-        if type_.startswith("B"):
-            bill_type = "bill"
-
-        if type_.startswith("R"):
+        if bill_type_abbr in ("HR", "SR"):
             bill_type = "resolution"
-
-        if type_ == "CR":
+        if bill_type_abbr in ("HCR", "SCR"):
             bill_type = "concurrent resolution"
+        if bill_type_abbr in ("HMR", "SMR"):
+            bill_type = "memorial"
+
+        bill_url = CSS(".card-link").match(item)[0].get("href")
+
+        bill_card = CSS(".card-body").match(item)[0]
+        title = bill_card.xpath(".//p")[0].text_content().strip()
 
         bill = Bill(
-            bid,
-            legislative_session=session,
-            chamber=chamber,
-            title=title,
+            bill_id,
+            self.session_components[1],
+            title,
+            chamber="lower" if bill_id[0] == "H" else "upper",
             classification=bill_type,
         )
-        bill.subject = subjects
-        bill.add_source(href)
 
-        for row in ttrows:
-            if isinstance(row, lxml.html.HtmlComment):
-                continue  # ignore HTML comments, no text_content()
-            sponsors = row.text_content().strip()
-            sinf = re.match(
-                r"(?i)introduced by( (rep\.|sen\.))? (?P<sponsors>.*)", sponsors
+        bill.add_source(bill_url)
+
+        sponsors_div = bill_card.xpath(".//div[@class='sponsors scroll']")[0]
+        sponsors_text = sponsors_div.text_content().split("Introduced by")[1].strip()
+        if ", " in sponsors_text:
+            sponsors_list = sponsors_text.split(", ")
+        else:
+            sponsors_list = [sponsors_text]
+        for sponsor in sponsors_list:
+            if sponsor in self.committees:
+                entity_type = "organization"
+            else:
+                entity_type = "person"
+            bill.add_sponsorship(
+                sponsor,
+                classification="cosponsor",
+                entity_type=entity_type,
+                primary=False,
             )
-            if sinf:
-                sponsors = sinf.groupdict()
-                for sponsor in [x.strip() for x in sponsors["sponsors"].split(",")]:
-                    bill.add_sponsorship(
-                        sponsor,
-                        classification="primary",
-                        entity_type="person",
-                        primary=True,
-                    )
+        return BillDetail(bill)
 
-        dt = None
-        oldchamber = "other"
-        for row in table.xpath(".//tr"):
-            if row.text_content().strip() == "":
-                continue
 
-            if "Meeting Description" in [x.strip() for x in row.xpath(".//th/text()")]:
-                continue
+class BillDetail(HtmlPage):
+    input_type = Bill
+    example_input = Bill(
+        "HB 1001",
+        "2021",
+        "[title]",
+        chamber="lower",
+        classification="bill",
+    )
 
-            row = row.xpath("./*")
-            row = [x.text_content().strip() for x in row]
+    def get_source_from_input(self):
+        return self.input.sources[0]["url"]
 
-            if len(row) > 3:
-                row = row[:3]
+    def process_page(self):
+        self.process_versions()
+        self.process_actions()
+        yield self.input
 
-            date, chamber, action = row
+    def process_versions(self):
+        source = re.sub("overview/bo", "index/bi", self.source.url)
+        response = requests.get(source)
+        content = lxml.html.fromstring(response.content)
 
-            try:
-                chamber = {"House": "lower", "Senate": "upper"}[chamber]
-                oldchamber = chamber
-            except KeyError:
-                chamber = oldchamber
+        version_rows = content.xpath(".//table[@id='version-table']/tbody//tr")
+        for row in version_rows:
+            vers_links = row.xpath("td[1]//a")
 
-            if date != "":
-                dt = datetime.strptime("%s %s" % (date, self.year), "%m/%d %Y")
+            for link in vers_links:
+                name = row.xpath("td[2]/text()")
+                if name:
+                    (name,) = name
+                else:
+                    (name,) = link.xpath("text()")
 
-            classif = self.categorizer.categorize(action)
+                type_badge = link.xpath("span[@data-toggle='tooltip']")
+                if type_badge:
+                    (vers_type,) = type_badge[0].xpath("@title")
+                    if vers_type.strip() == "Marked up":
+                        name += " (Marked up)"
+                else:
+                    vers_type = None
 
-            bill.add_action(
-                chamber=chamber,
-                description=action,
-                date=dt.strftime("%Y-%m-%d"),
-                classification=classif["classification"],
+                (href,) = link.xpath("@href")
+                url = re.sub("/bill-index.+", href[2:], source)
+
+                if not vers_type or vers_type.strip() == "Engrossment":
+                    self.input.add_version_link(note=name, url=url, media_type="pdf")
+                else:
+                    self.input.add_document_link(note=name, url=url, media_type="pdf")
+
+    def process_actions(self):
+        categorizer = NDCategorizer()
+        source = re.sub("overview/bo", "actions/ba", self.source.url)
+        response = requests.get(source)
+        content = lxml.html.fromstring(response.content)
+
+        action_rows = content.xpath(".//table[@id='action-table']/tbody//tr")
+        for row in action_rows:
+            (action,) = row.xpath("td[3]/text()")
+
+            actor = "legislature"
+            chambers_dict = {"House": "lower", "Senate": "upper"}
+            chamber = row.xpath("td[2]/text()")
+            if chamber:
+                chamber = chamber[0].strip()
+                if chamber in chambers_dict.keys():
+                    actor = chambers_dict[chamber]
+            if "governor" in action.lower():
+                actor = "executive"
+
+            (date,) = row.xpath("td[1]/b/text()")
+            date += f"/{self.input.legislative_session}"
+            date = dt.datetime.strptime(date, "%m/%d/%Y")
+            classifier = categorizer.categorize(action)
+
+            self.input.add_action(
+                action,
+                date.strftime("%Y-%m-%d"),
+                chamber=actor,
+                classification=classifier["classification"],
             )
 
-        version_url = page.xpath("//a[contains(text(), 'Versions')]")
-        if len(version_url) == 1:
-            href = version_url[0].attrib["href"]
-            bill = self.scrape_versions(bill, href)
 
-        yield bill
-
-    def scrape_versions(self, bill, href):
-        page = self.lxmlize(href)
-        version_rows = page.xpath('//table[contains(@summary, "Breakdown")]//tr')
-
-        for row in version_rows[1:]:
-            try:
-                (name,) = row.xpath("td[2]/text()")
-            except ValueError:
-                self.warning("No action name found to use as bill version name")
-                (name,) = row.xpath("td[1]/a/text()")
-            (url,) = row.xpath("td[1]/a/@href")
-            bill.add_version_link(note=name, url=url, media_type="application/pdf")
-
-            try:
-                (marked_up_url,) = row.xpath("td[3]/a/@href")
-                bill.add_version_link(
-                    "{} (Marked Up)".format(name),
-                    marked_up_url,
-                    media_type="application/pdf",
-                )
-            except ValueError:
-                pass
-
-        return bill
-
-    def scrape_subjects(self, session):
-        page = self.get(self.subjects_url).text
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(self.subjects_url)
-        subjects = page.xpath(
-            "//div[@id='application']//a[not(contains(@href, 'major-topic'))]"
-        )
-        for subject in subjects:
-            subject_name = subject.xpath("text()")
-            if (
-                subject_name == []
-                or subject_name[0].strip() == ""
-                or "href" not in subject.attrib
-            ):
-                continue
-
-            href = subject.attrib["href"]
-            self.scrape_subject(href, subject.text.strip())
-
-    def scrape_subject(self, href, subject):
-        page = self.get(href).text
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(href)
-        bills = page.xpath("//a[contains(@href, 'bill-actions')]")
-        for bill in bills:
-            bt = bill.text_content().strip().split()
-            try:
-                typ, idd = bt[0], bt[1]
-                bid = "%s %s" % (typ, idd)
-                if bid not in self.subjects.keys():
-                    self.subjects[bid] = []
-                self.subjects[bid].append(subject)
-            except IndexError:
-                self.warning("Bill ID and Type Not Found!")
-
-    def scrape(self, session=None, chamber=None):
-        self.url_session = session
-        # chambers = [chamber] if chamber else ['upper', 'lower']
-        # figuring out starting year from metadata
-        for item in self.jurisdiction.legislative_sessions:
-            if item["identifier"] == session:
-                start_year = item["start_date"][:4]
-                self.year = start_year
-                if "classification" in item and item["classification"] == "special":
-                    self.special_url_slug = "/special-session/"
-                    self.url_session = session[0:2]
-                break
-        # Get the subjects for every bill
-        # Sometimes, at least with prefiles, a bill will not be given subjects
-        self.subjects_url = self.subjects_url % (
-            self.url_session,
-            start_year,
-            self.special_url_slug,
-        )
-        self.subjects = {}
-        self.scrape_subjects(session)
-
-        for chamber, url in {
-            "lower": self.house_list_url
-            % (self.url_session, start_year, self.special_url_slug),
-            "upper": self.senate_list_url
-            % (self.url_session, start_year, self.special_url_slug),
-        }.items():
-            doc = self.lxmlize(url)
-            bill_urls = doc.xpath(
-                "//table["
-                'contains(@summary, "Bills")'
-                'or contains(@summary, "Resolutions")'
-                "]//tr/th/a/@href"
-            )
-            # Each version of a bill is its own row, so de-dup the links
-            for bill_url in set(bill_urls):
-                yield from self.scrape_actions(session, bill_url)
+class NDBillScraper(Scraper):
+    def scrape(self, session=None):
+        logging.getLogger("scrapelib").setLevel(logging.WARNING)
+        bill_list = BillList({"session": session})
+        yield from bill_list.do_scrape()

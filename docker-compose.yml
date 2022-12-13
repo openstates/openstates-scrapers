@@ -8,6 +8,8 @@ services:
   scrape:
     build: .
     environment:
+    - AR_FTP_USER
+    - AR_FTP_PASSWORD
     - MYSQL_HOST=mysql
     - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
     - PYTHONPATH=./scrapers
@@ -29,6 +31,7 @@ services:
     environment:
       - MYSQL_DATABASE=capublic
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_LOG_CONSOLE=yes
     networks:
       - openstates-network
   ca-scrape:
@@ -70,3 +73,9 @@ services:
       - ./openstates-postgres/:/var/lib/postgresql/data
     networks:
       - openstates-network
+    command: ["postgres", "-c", "log_statement=all"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -q -d db -U db"]
+      interval: 10s
+      timeout: 5s
+      retries: 15

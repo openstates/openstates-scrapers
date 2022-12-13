@@ -21,7 +21,7 @@ class Missouri(State):
             "identifier": "2019",
             "name": "2019 Regular Session",
             "start_date": "2019-01-09",
-            "end_date": "2019-05-17",
+            "end_date": "2019-05-29",
         },
         {
             "_scraped_name": "2019 1st Extraordinary Session",
@@ -37,7 +37,7 @@ class Missouri(State):
             "identifier": "2020",
             "name": "2020 Regular Session",
             "start_date": "2020-01-08",
-            "end_date": "2020-05-15",
+            "end_date": "2020-05-27",
         },
         {
             "_scraped_name": "2020 1st Extraordinary Session",
@@ -45,17 +45,15 @@ class Missouri(State):
             "identifier": "2020S1",
             "name": "2020 First Extraordinary Session",
             "start_date": "2020-07-27",
-            # TODO: real end date when session is over
-            "end_date": "2020-07-31",
+            "end_date": "2020-09-16",
         },
         {
             "_scraped_name": "2020 2nd Extraordinary Session",
             "classification": "primary",
             "identifier": "2020S2",
             "name": "2020 Second Extraordinary Session",
-            "start_date": "2020-11-04",
-            # TODO: real end date when session is over
-            "end_date": "2020-11-12",
+            "start_date": "2020-11-05",
+            "end_date": "2020-12-10",
         },
         {
             "_scraped_name": "2021 Regular Session",
@@ -63,7 +61,7 @@ class Missouri(State):
             "identifier": "2021",
             "name": "2021 Regular Session",
             "start_date": "2021-01-06",
-            "end_date": "2021-05-30",
+            "end_date": "2021-05-25",
         },
         {
             "_scraped_name": "2021 1st Extraordinary Session",
@@ -71,8 +69,7 @@ class Missouri(State):
             "identifier": "2021S1",
             "name": "2021 1st Extraordinary Session",
             "start_date": "2021-06-23",
-            # TODO: real end date when session is over
-            "end_date": "2021-06-25",
+            "end_date": "2021-06-30",
         },
         {
             "_scraped_name": "2022 Regular Session",
@@ -80,8 +77,8 @@ class Missouri(State):
             "identifier": "2022",
             "name": "2022 Regular Session",
             "start_date": "2022-01-05",
-            "end_date": "2022-05-20",
-            "active": True,
+            "end_date": "2022-05-13",
+            "active": False,
         },
         {
             "_scraped_name": "2022 1st Extraordinary Session",
@@ -91,6 +88,15 @@ class Missouri(State):
             "start_date": "2022-09-15",
             # TODO: real end date when session is over
             "end_date": "2021-09-23",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023 Regular Session",
+            "classification": "primary",
+            "identifier": "2023",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-04",
+            "end_date": "2023-05-14",
             "active": True,
         },
     ]
