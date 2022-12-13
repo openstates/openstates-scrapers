@@ -238,11 +238,14 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         # some pages are updated and use different structure
         if not version_tags:
-            version_tags = versions_page.xpath('//tr/td/a[contains(@href, ".pdf")]')
+            version_tags = versions_page.xpath("//tr/td/a")
 
         for version_tag in version_tags:
-            description = version_tag.text_content()
+            description = version_tag.text_content().strip()
             pdf_url = version_tag.attrib["href"]
+            if description == "" and "intro" in pdf_url:
+                description = "Introduced"
+
             if pdf_url.endswith("pdf"):
                 mimetype = "application/pdf"
             else:
@@ -688,14 +691,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         yield from self._parse_house_billpage(bill_page_url, year)
 
     def scrape(self, chamber=None, session=None):
-
-        if session == "2023":
-            # HACK TODO: Remove once correct data is posted.
-            self.info(
-                "MO Senate Website is still showing 2022 data for 2023. Skipping Subjects"
-            )
-        else:
-            self._scrape_subjects(session)
+        self._scrape_subjects(session)
         # special sessions and other year manipulation messes up the session variable
         # but we need it for correct output
         self._session_id = session
@@ -705,13 +701,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         #                                   session)
 
         if chamber in ["upper", None]:
-            if session == "2023":
-                # HACK TODO: Remove once correct data is posted.
-                self.info(
-                    "MO Senate Website is still showing 2022 data for 2023. Skipping Senate Bills"
-                )
-            else:
-                yield from self._scrape_upper_chamber(session)
+            yield from self._scrape_upper_chamber(session)
         if chamber in ["lower", None]:
             yield from self._scrape_lower_chamber(session)
 

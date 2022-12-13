@@ -46,7 +46,7 @@ class BillList(HtmlListPage):
 
         bill = Bill(
             bill_id,
-            self.session_components[1],
+            self.session_components[0],
             title,
             chamber="lower" if bill_id[0] == "H" else "upper",
             classification=bill_type,
@@ -78,7 +78,7 @@ class BillDetail(HtmlPage):
     input_type = Bill
     example_input = Bill(
         "HB 1001",
-        "2021",
+        "67",
         "[title]",
         chamber="lower",
         classification="bill",
@@ -145,7 +145,7 @@ class BillDetail(HtmlPage):
                 actor = "executive"
 
             (date,) = row.xpath("td[1]/b/text()")
-            date += f"/{self.input.legislative_session}"
+            date += "/2021"
             date = dt.datetime.strptime(date, "%m/%d/%Y")
             classifier = categorizer.categorize(action)
 
