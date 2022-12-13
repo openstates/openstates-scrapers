@@ -79,6 +79,14 @@ class Maine(State):
             "name": "130th Legislature (2021-2022)",
             "start_date": "2020-12-02",
             "end_date": "2021-05-09",
+            "active": False,
+        },
+        {
+            "_scraped_name": "131st Legislature",
+            "identifier": "131",
+            "name": "131st Legislature (2023-2024)",
+            "start_date": "2022-12-07",
+            "end_date": "2023-06-12",
             "active": True,
         },
     ]
@@ -86,7 +94,7 @@ class Maine(State):
 
     def get_session_list(self):
         sessions = url_xpath(
-            "http://www.mainelegislature.org/LawMakerWeb/advancedsearch.asp",
+            "https://www.mainelegislature.org/LawMakerWeb/advancedsearch.asp",
             '//select[@name="LegSession"]/option/text()',
         )
         return sessions

@@ -58,7 +58,7 @@ class SouthCarolina(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-12",
             "end_date": "2022-05-12",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "125 - (2023-2024)",
@@ -67,7 +67,7 @@ class SouthCarolina(State):
             "name": "2023-2024 Regular Session",
             "start_date": "2023-01-10",
             "end_date": "2023-05-14",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
@@ -93,8 +93,7 @@ class SouthCarolina(State):
 
     def get_session_list(self):
         """Get session list from billsearch page using xpath"""
-        url = "http://www.scstatehouse.gov/billsearch.php"
+        url = "https://www.scstatehouse.gov/billsearch.php"
         path = "//select[@id='session']/option/text()"
-
         doc = lxml.html.fromstring(requests.get(url).text)
         return doc.xpath(path)

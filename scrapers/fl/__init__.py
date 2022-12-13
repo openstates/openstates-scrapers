@@ -185,6 +185,16 @@ class Florida(State):
             "end_date": "2023-05-05",
             "active": True,
         },
+        # Yes, 2022 Special Session A
+        # occurred after B,C, and D
+        {
+            "name": "2022 Special Session A",
+            "identifier": "2022A",
+            "classification": "special",
+            "start_date": "2022-12-12",
+            "end_date": "2022-12-16",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         *(str(each) for each in range(1997, 2010)),

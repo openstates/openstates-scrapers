@@ -395,7 +395,24 @@ class California(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2020-12-07",
             "end_date": "2021-09-10",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023-2024",
+            "classification": "primary",
+            "identifier": "20232024",
+            "name": "2023-2024 Regular Session",
+            "start_date": "2022-12-05",
+            "end_date": "2023-09-15",
             "active": True,
+        },
+        {
+            "classification": "special",
+            "identifier": "20232024 Special Session 1",
+            "name": "2023-2024 Special Sesssion 1",
+            "start_date": "2022-12-05",
+            "end_date": "2022-12-15",
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [

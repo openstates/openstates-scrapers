@@ -4,6 +4,9 @@ from .bills import NDBillScraper
 from .events import NDEventScraper
 
 
+settings = {"SCRAPELIB_RPM": 20}
+
+
 class NorthDakota(State):
     scrapers = {
         "votes": NDVoteScraper,
