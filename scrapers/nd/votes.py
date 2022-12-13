@@ -4,12 +4,14 @@ from openstates.scrape import Scraper, VoteEvent as Vote
 from spatula import HtmlPage
 
 
-# TODO: Identify method for scraping how each individual lawmaker voted
-#  (does not yet seem to be available on page)
+# TODO: Develop method for ingesting how each individual lawmaker voted,
+#  could be from scraping the House and Senate Journal PDFs at
+#  https://www.ndlegis.gov/assembly/67-2021/regular/journals/journal-index.html
 class VotePage(HtmlPage):
     # url of actual page to scrape
     source = "http://www.ndlegis.gov/rollcall/rollcall.htm"
-    # TODO: Delete below source reassignment when new session vote data appears
+    # TODO: Delete below source reassignment when/before
+    #  new session vote data appears
     # url of web archived version of page with scrape-able past content
     #  to be used for testing scraper (until new session starts)
     source = f"http://web.archive.org/web/20221115164931/{source}"
