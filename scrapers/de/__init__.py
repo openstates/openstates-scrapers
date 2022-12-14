@@ -78,22 +78,30 @@ class Delaware(State):
             "identifier": "149",
             "name": "149th General Assembly (2017-2018)",
             "start_date": "2017-01-10",
-            "end_date": "2018-05-09",
+            "end_date": "2018-06-30",
         },
         {
             "_scraped_name": "2018 - 2020 (GA 150)",
             "identifier": "150",
             "name": "150th General Assembly (2019-2020)",
             "start_date": "2019-01-08",
-            "end_date": "2020-05-06",
+            "end_date": "2020-06-30",
         },
         {
             "_scraped_name": "2020 - 2022 (GA 151)",
             "identifier": "151",
             "name": "151st General Assembly (2021-2022)",
             "start_date": "2021-01-12",
-            "end_date": "2022-05-06",
+            "end_date": "2022-06-30",
             "active": True,
+        },
+        {
+            "_scraped_name": "2022 - 2024 (GA 152)",
+            "identifier": "152",
+            "name": "152nd General Assembly (2022-2023)",
+            "start_date": "2022-01-12",
+            "end_date": "2022-05-06",
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [

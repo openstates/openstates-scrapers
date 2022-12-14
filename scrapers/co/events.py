@@ -2,6 +2,7 @@ import datetime as dt
 import pytz
 
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 from utils import LXMLMixin
 
 
@@ -13,6 +14,8 @@ class COEventScraper(Scraper, LXMLMixin):
     def scrape(self, chamber=None, session=None):
         url = "http://leg.colorado.gov/content/committees"
         chambers = [chamber] if chamber else ["upper", "lower"]
+        total_events = 0
+
         for chamber in chambers:
             if chamber == "lower":
                 xpath = (
@@ -104,7 +107,10 @@ class COEventScraper(Scraper, LXMLMixin):
 
                             item = event.add_agenda_item("hearing item")
                             item.add_bill(bill_id)
-
+                        total_events += 1
                         yield event
                     except Exception:  # TODO: this is awful
                         pass
+
+        if total_events == 0:
+            raise EmptyScrape

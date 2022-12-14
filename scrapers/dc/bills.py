@@ -31,7 +31,7 @@ class DCBillScraper(Scraper):
         ("Referred to", "referral-committee"),
     )
 
-    _API_BASE_URL = "https://lims.dccouncil.us/api/v2/PublicData/"
+    _API_BASE_URL = "https://lims.dccouncil.gov/api/v2/PublicData/"
 
     _headers = {
         "Authorization": os.environ["DC_API_KEY"],
@@ -72,7 +72,7 @@ class DCBillScraper(Scraper):
                 )
                 bill.add_source(leg_listing_url)
                 bill_url = (
-                    f"https://lims.dccouncil.us/Legislation/{leg['legislationNumber']}"
+                    f"https://lims.dccouncil.gov/Legislation/{leg['legislationNumber']}"
                 )
                 bill.add_source(bill_url)
 
@@ -102,7 +102,7 @@ class DCBillScraper(Scraper):
                     if hist["downloadURL"] and ("download" in hist["downloadURL"]):
                         download = hist["downloadURL"]
                         if not download.startswith("http"):
-                            download = "https://lims.dccouncil.us/" + download
+                            download = "https://lims.dccouncil.gov/" + download
 
                         mimetype = (
                             "application/pdf" if download.endswith("pdf") else None

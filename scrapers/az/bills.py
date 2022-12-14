@@ -1,5 +1,6 @@
 import json
 import datetime
+import re
 
 from lxml import html
 from openstates.scrape import Scraper, Bill, VoteEvent
@@ -87,6 +88,13 @@ class AZBillScraper(Scraper):
                     url = "https://apps.azleg.gov{}".format(url)
 
                 if type_ in version_types:
+                    if media_type == "text/html":
+                        pdf_url = re.sub("(.docx)?.htm(l)?$", ".pdf", url.lower())
+                        bill.add_version_link(
+                            note=doc["DocumentName"],
+                            url=pdf_url,
+                            media_type="application/pdf",
+                        )
                     bill.add_version_link(
                         note=doc["DocumentName"], url=url, media_type=media_type
                     )
@@ -280,31 +288,66 @@ class AZBillScraper(Scraper):
                 action_date = datetime.datetime.strptime(
                     cleaned_date, "%Y-%m-%dT%H:%M:%S"
                 )
+                """
+                safely handle empty keys with ternary operators
+                Basically, if the vote type exists in the dict and is non-falsey (0/None/etc.)
+                use the value. Otherwise, use 0
+                """
+                ayes = action["Ayes"] if "Ayes" in action and action["Ayes"] else 0
+                nays = action["Nays"] if "Nays" in action and action["Nays"] else 0
+                """
+                safer to fall back to negative results than
+                to incorrectly mark votes as passed
+
+                Some example votes don't have every key we expect, either,
+                so we should try to handle comparisons cleanly
+                """
+                result = "fail"
+                if (
+                    action.get("UnanimouslyAdopted", False)
+                    or ayes > nays
+                    or action["Action"] == "Passed"
+                ):
+                    result = "pass"
+
                 vote = VoteEvent(
                     chamber={"S": "upper", "H": "lower"}[header["LegislativeBody"]],
                     motion_text=action["Action"],
                     classification="passage",
-                    result=(
-                        "pass"
-                        if action["UnanimouslyAdopted"]
-                        or action["Ayes"] > action["Nays"]
-                        else "fail"
-                    ),
+                    result=result,
                     start_date=action_date.strftime("%Y-%m-%d"),
                     bill=bill,
                 )
                 vote.add_source(resp.url)
-                vote.set_count("yes", action["Ayes"] or 0)
-                vote.set_count("no", action["Nays"] or 0)
-                vote.set_count("other", (action["Present"] or 0))
-                vote.set_count("absent", (action["Absent"] or 0))
-                vote.set_count("excused", (action["Excused"] or 0))
-                vote.set_count("not voting", (action["NotVoting"] or 0))
+                vote.set_count("yes", ayes)
+                vote.set_count("no", nays)
+                vote.set_count(
+                    "other",
+                    action["Present"]
+                    if "Present" in action and action["Present"]
+                    else 0,
+                )
+                vote.set_count(
+                    "absent",
+                    action["Absent"] if "Absent" in action and action["Absent"] else 0,
+                )
+                vote.set_count(
+                    "excused",
+                    action["Excused"]
+                    if "Present" in action and action["Present"]
+                    else 0,
+                )
+                vote.set_count(
+                    "not voting",
+                    action["NotVoting"]
+                    if "NotVoting" in action and action["NotVoting"]
+                    else 0,
+                )
 
                 for v in action["Votes"]:
                     vote_type = {"Y": "yes", "N": "no"}.get(v["Vote"], "other")
                     vote.vote(vote_type, v["Legislator"]["FullName"])
-                vote.dedupe_key = resp.url + str(action["ReferralNumber"])
+                vote.dedupe_key = f"{resp.url}{action['ReferralNumber']}"
                 yield vote
 
     def scrape(self, chamber=None, session=None):
@@ -348,7 +391,7 @@ class AZBillScraper(Scraper):
             else:
                 bill_rows = page.xpath('//div[@name="SBTable"]//tbody//tr')
             for row in bill_rows:
-                bill_id = row.xpath("td/a/text()")[0]
+                bill_id = row.xpath("th/a/text()")[0]
                 yield from self.scrape_bill(chamber, session, bill_id, session_id)
 
         # TODO: MBTable - Non-bill Misc Motions?

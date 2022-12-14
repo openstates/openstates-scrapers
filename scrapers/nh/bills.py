@@ -6,10 +6,9 @@ import pytz
 import lxml.html
 
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
-from openstates.exceptions import EmptyScrape
+from .actions import Categorizer
 
 from .legacyBills import NHLegacyBillScraper
-
 
 body_code = {"lower": "H", "upper": "S"}
 bill_type_map = {
@@ -23,27 +22,9 @@ bill_type_map = {
     "SSSB": "bill",
     "SSHB": "bill",
 }
-action_classifiers = [
-    ("Minority Committee Report", None),  # avoid calling these passage
-    ("Ought to Pass", ["passage"]),
-    ("Passed by Third Reading", ["reading-3", "passage"]),
-    (".*Ought to Pass", ["committee-passage-favorable"]),
-    (".*Introduced(.*) and (R|r)eferred", ["introduction", "referral-committee"]),
-    ("Proposed(.*) Amendment", "amendment-introduction"),
-    ("Amendment .* Adopted", "amendment-passage"),
-    ("Amendment .* Failed", "amendment-failure"),
-    ("Signed", "executive-signature"),
-    ("Vetoed", "executive-veto"),
-]
+
 VERSION_URL = "http://www.gencourt.state.nh.us/legislation/%s/%s.html"
 AMENDMENT_URL = "http://www.gencourt.state.nh.us/legislation/amendments/%s.html"
-
-
-def classify_action(action):
-    for regex, classification in action_classifiers:
-        if re.match(regex, action):
-            return classification
-    return None
 
 
 def extract_amendment_id(action):
@@ -54,8 +35,15 @@ def extract_amendment_id(action):
 
 class NHBillScraper(Scraper):
     cachebreaker = dt.datetime.now().strftime("%Y%d%d%H%I%s")
+    categorizer = Categorizer()
 
     def scrape(self, chamber=None, session=None):
+        est = pytz.timezone("America/New_York")
+        time_est = dt.datetime.now(est)
+
+        if time_est.hour > 6 and time_est.hour < 21:
+            self.warning("NH bans scraping between 6am and 9pm. This may fail.")
+
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
@@ -88,8 +76,7 @@ class NHBillScraper(Scraper):
             .split("\n")
         ):
             line = line.split("|")
-            if len(line) < 2:
-                raise EmptyScrape
+            if len(line) < 1:
                 continue
 
             if len(line) < 36:
@@ -152,7 +139,11 @@ class NHBillScraper(Scraper):
                         resolution_url, allow_redirects=True
                     ).content.decode("utf-8")
                     page = lxml.html.fromstring(resolution_page)
-                    version_href = page.xpath("//a[2]/@href")[1]
+                    try:
+                        version_href = page.xpath("//a[2]/@href")[1]
+                    except Exception:
+                        self.logger.warning(f"{bill_id} missing version link")
+                        continue
                     true_version = re.search(r"id=(\d+)&", version_href)[1]
                     self.versions_by_lsr[lsr] = true_version
 
@@ -282,12 +273,14 @@ class NHBillScraper(Scraper):
                 actor = "lower" if body == "H" else "upper"
                 time = dt.datetime.strptime(timestamp, "%m/%d/%Y %H:%M:%S %p")
                 action = action.strip()
-                atype = classify_action(action)
+                action_attr = self.categorizer.categorize(action)
+                classification = action_attr["classification"]
+
                 self.bills[lsr].add_action(
                     chamber=actor,
                     description=action,
                     date=time.strftime("%Y-%m-%d"),
-                    classification=atype,
+                    classification=classification,
                 )
                 amendment_id = extract_amendment_id(action)
                 if amendment_id:
@@ -425,8 +418,14 @@ class NHBillScraper(Scraper):
 
             # 2016|H|2|330795||Yea|
             # 2012    | H   | 2    | 330795  | 964 |  HB309  | Yea | 1/4/2012 8:27:03 PM
-            session_yr, body, v_num, _, employee, bill_id, vote, date = line.split("|")
-
+            try:
+                session_yr, body, v_num, _, employee, bill_id, vote, date = line.split(
+                    "|"
+                )
+            except ValueError:
+                # not enough keys in the split
+                self.warning(f"Skipping {line}, didn't have all needed data for vote")
+                continue
             if not bill_id:
                 continue
 
@@ -434,7 +433,7 @@ class NHBillScraper(Scraper):
                 try:
                     leg = " ".join(self.legislators[employee]["name"].split())
                 except KeyError:
-                    self.warning("Error, can't find person %s" % employee)
+                    self.warning(f"Error, can't find person {employee}")
                     continue
 
                 vote = vote.strip()

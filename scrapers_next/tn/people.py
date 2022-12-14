@@ -28,62 +28,80 @@ class LegDetail(HtmlPage):
         img = CSS("img.framed-photo").match_one(self.root).get("src")
         p.image = img
 
-        if (
-            XPath(
-                "/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/h2[2]/text()"
-            ).match(self.root)[0]
-            == "District Address"
-        ):
-            district_addr_lst = XPath(
-                "/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[2]/text()"
-            ).match(self.root)
-            distr_address = ""
-            for line in district_addr_lst:
-                if re.search(r"Phone", line):
-                    distr_phone = re.search(r"Phone:?\s(.+)", line).groups()[0].strip()
-                    p.district_office.voice = distr_phone
-                elif re.search(r"Fax", line):
-                    distr_fax = re.search(r"Fax:?\s(.+)", line).groups()[0].strip()
-                    p.district_office.fax = distr_fax
-                else:
-                    distr_address += line.strip()
-                    distr_address += " "
-            p.district_office.address = distr_address.strip()
+        try:
+            if (
+                XPath(
+                    "/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/h2[2]/text()"
+                ).match(self.root)[0]
+                == "District Address"
+            ):
+                district_addr_lst = XPath(
+                    "/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[2]/text()"
+                ).match(self.root)
+                distr_address = ""
+                for line in district_addr_lst:
+                    if re.search(r"Phone", line):
+                        distr_phone = (
+                            re.search(r"Phone:?\s(.+)", line).groups()[0].strip()
+                        )
+                        p.district_office.voice = distr_phone
+                    elif re.search(r"Fax", line):
+                        distr_fax = re.search(r"Fax:?\s(.+)", line).groups()[0].strip()
+                        p.district_office.fax = distr_fax
+                    else:
+                        distr_address += line.strip()
+                        distr_address += " "
+                p.district_office.address = distr_address.strip()
+        except SelectorError:
+            p.district_office.voice = ""
+            p.district_office.fax = ""
+            p.district_office.address = ""
 
-        extra_info = XPath(
-            "/html/body/div[1]/div/div/div[2]/div/div[2]/ul[2]/li[1]/ul/li"
-        ).match(self.root)
+        try:
+            extra_info = XPath(
+                "/html/body/div[1]/div/div/div[2]/div/div[2]/ul[2]/li[1]/ul/li"
+            ).match(self.root)
+
+        except SelectorError:
+            extra_info = []
+
         if len(extra_info) > 0:
             p.extras["personal info"] = []
             for line in extra_info:
                 p.extras["personal info"] += [line.text_content().strip()]
 
-        if (
-            XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/h2")
-            .match(self.root)[1]
-            .text_content()
-            .strip()
-            == "Staff Contacts"
-        ):
-            staff_contacts = (
-                XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[2]")
-                .match(self.root)[0]
+        try:
+            if (
+                XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/h2")
+                .match(self.root)[1]
                 .text_content()
-            )
-            p_num = 2
-        elif (
-            XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/h2")
-            .match(self.root)[2]
-            .text_content()
-            .strip()
-            == "Staff Contacts"
-        ):
-            staff_contacts = (
-                XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[3]")
-                .match(self.root)[0]
+                .strip()
+                == "Staff Contacts"
+            ):
+                staff_contacts = (
+                    XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[2]")
+                    .match(self.root)[0]
+                    .text_content()
+                )
+                p_num = 2
+            elif (
+                XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/h2")
+                .match(self.root)[2]
                 .text_content()
-            )
-            p_num = 3
+                .strip()
+                == "Staff Contacts"
+            ):
+                try:
+                    staff_contacts = (
+                        XPath("/html/body/div[1]/div/div/div[2]/div/div[1]/div[2]/p[3]")
+                        .match(self.root)[0]
+                        .text_content()
+                    )
+                    p_num = 3
+                except Exception:
+                    staff_contacts = ""
+        except IndexError:
+            staff_contacts = ""
 
         counter = 0
         for line in staff_contacts.split("\n"):
@@ -122,54 +140,61 @@ class Legislators(HtmlListPage):
 
     def process_item(self, item):
         if CSS("td").match(item)[1].text_content().strip() == "Vacant":
-            return
-        elif CSS("td").match(item)[1].text_content().strip() == "Martin, Greg":
-            return
-        else:
-            name_dirty = CSS("td").match(item)[1].text_content().strip().split(", ")
-            name = name_dirty[1] + " " + name_dirty[0]
-            if "Speaker" in name:
-                name = re.sub(r"Speaker ", "", name)
+            self.skip("vacant")
 
-            party = CSS("td").match(item)[2].text_content().strip()
-            if party == "D":
-                party = "Democratic"
-            elif party == "R":
-                party = "Republican"
+        name_dirty = CSS("td").match(item)[1].text_content().strip().split(", ")
+        name = name_dirty[1] + " " + name_dirty[0]
+        if "Speaker" in name:
+            name = re.sub(r"Speaker ", "", name)
 
-            district = CSS("td").match(item)[4].text_content().strip()
-            district = re.search(r"District\s(.+)", district).groups()[0]
+        party = CSS("td").match(item)[2].text_content().strip()
+        # sometimes members don't have a party listed?!
+        if not party:
+            self.skip("missing party")
+        if party == "D":
+            party = "Democratic"
+        elif party == "R":
+            party = "Republican"
+        elif party == "I":
+            party = "Independent"
 
-            p = ScrapePerson(
-                name=name,
-                state="tn",
-                chamber=self.chamber,
-                district=district,
-                party=party,
-            )
+        district = CSS("td").match(item)[4].text_content().strip()
+        district = re.search(r"District\s(.+)", district).groups()[0]
 
-            detail_link = CSS("td a").match(item)[1].get("href")
+        p = ScrapePerson(
+            name=name,
+            state="tn",
+            chamber=self.chamber,
+            district=district,
+            party=party,
+        )
 
-            p.add_source(self.source.url)
-            p.add_source(detail_link)
-            p.add_link(detail_link, note="homepage")
+        detail_link = CSS("td a").match(item)[1].get("href")
 
-            email = CSS("td a").match(item)[0].get("href")
-            email = re.search(r"mailto:(.+)", email).groups()[0]
-            p.email = email
+        p.add_source(self.source.url)
+        p.add_source(detail_link)
+        p.add_link(detail_link, note="homepage")
 
-            # this is also being grabbed above in capitol_office.address
-            office_room = CSS("td").match(item)[5].text_content().strip()
-            p.extras["office"] = office_room
+        email = CSS("td a").match(item)[0].get("href")
+        email = re.search(r"mailto:(.+)", email).groups()[0]
+        p.email = email
 
-            return LegDetail(p, source=detail_link)
+        # this is also being grabbed above in capitol_office.address
+        office_room = CSS("td").match(item)[5].text_content().strip()
+        p.extras["office"] = office_room
+
+        return LegDetail(p, source=detail_link)
 
 
 class Senate(Legislators):
-    source = URL("https://www.capitol.tn.gov/senate/members/")
+    source = URL(
+        "http://wapp.capitol.tn.gov/apps/LegislatorInfo/directory.aspx?chamber=S"
+    )
     chamber = "upper"
 
 
 class House(Legislators):
-    source = URL("https://www.capitol.tn.gov/house/members/")
+    source = URL(
+        "http://wapp.capitol.tn.gov/apps/LegislatorInfo/directory.aspx?chamber=H"
+    )
     chamber = "lower"

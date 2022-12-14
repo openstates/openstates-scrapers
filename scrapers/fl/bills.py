@@ -10,6 +10,10 @@ from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage, URL
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
 import requests
 
+SPONSOR_RE = re.compile(
+    r"by\s+(?P<sponsors>[^(]+)(\(CO-INTRODUCERS\)\s+(?P<cosponsors>[\s\S]+))?"
+)
+
 requests.packages.urllib3.disable_warnings()
 requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
 
@@ -81,7 +85,6 @@ class BillList(HtmlListPage):
     def process_item(self, item):
         bill_id = item.text.strip()
         title = item.xpath("string(../following-sibling::td[1])").strip()
-        sponsor = item.xpath("string(../following-sibling::td[2])").strip()
         bill_url = item.attrib["href"] + "/ByCategory"
 
         if bill_id.startswith(("SB ", "HB ", "SPB ", "HPB ")):
@@ -110,13 +113,6 @@ class BillList(HtmlListPage):
         subj_bill_id = re.sub(r"(H|S)\w+ 0*(\d+)", r"\1\2", bill_id)
         bill.subject = list(self.subjects[subj_bill_id])
 
-        sponsor = re.sub(r"^(?:Rep|Sen)\.\s", "", sponsor)
-        sponsor = re.sub(r",\s+(Jr|Sr)\.", r" \1.", sponsor)
-        for sp in sponsor.split(", "):
-            sp = sp.strip()
-            sp_type = "organization" if "committee" in sp.lower() else "person"
-            bill.add_sponsorship(sp, "primary", sp_type, True)
-
         return BillDetail(bill)
 
 
@@ -132,6 +128,7 @@ class BillDetail(HtmlPage):
 
     def process_page(self):
         if self.root.xpath("//div[@id = 'tabBodyBillHistory']//table"):
+            self.process_sponsors()
             self.process_history()
             self.process_versions()
             self.process_analysis()
@@ -140,6 +137,37 @@ class BillDetail(HtmlPage):
         yield self.input  # the bill, now augmented
         yield HouseSearchPage(self.input)
         yield from self.process_votes()
+
+    def process_sponsors(self):
+        sponsor = self.root.xpath(
+            'string(//div[@id="main"]/div/div/p[span[contains(text(),"by")]])'
+        ).strip()
+
+        match = SPONSOR_RE.search(sponsor)
+        sponsors = match.groupdict()["sponsors"]
+        if not sponsors:
+            raise ValueError(
+                "Failed to find sponsors for {}".format(self.input.identifier)
+            )
+        sponsors = re.sub(r"^(?:Rep|Sen)\.\s", "", sponsors)
+        sponsors = re.sub(r",\s+(Jr|Sr)\.", r" \1.", sponsors)
+        for sp in sponsors.split("; "):
+            sp = sp.strip()
+            if sp:
+                sp_type = "organization" if "committee" in sp.lower() else "person"
+                self.input.add_sponsorship(sp, "primary", sp_type, True)
+
+        cosponsors = match.groupdict()["cosponsors"]
+        if cosponsors:
+            cosponsors = re.sub(r"^(?:Rep|Sen)\.\s", "", cosponsors)
+            cosponsors = re.sub(r",\s+(Jr|Sr)\.", r" \1.", cosponsors)
+            for csp in cosponsors.split("; "):
+                csp = csp.strip()
+                if csp:
+                    csp_type = (
+                        "organization" if "committee" in csp.lower() else "person"
+                    )
+                    self.input.add_sponsorship(csp, "cosponsor", csp_type, False)
 
     def process_summary(self):
         summary = self.root.xpath(
@@ -570,6 +598,9 @@ class HouseSearchPage(HtmlListPage):
         # Keep the digits and all following characters in the bill's ID
         bill_number = re.search(r"^\w+\s(\d+\w*)$", self.input.identifier).group(1)
         session_number = {
+            "2022A": "101",
+            "2023": "99",
+            "2022D": "96",
             "2022C": "95",
             "2022": "93",
             "2021B": "94",

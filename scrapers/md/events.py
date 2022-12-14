@@ -5,6 +5,7 @@ import re
 
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 # http://mgaleg.maryland.gov/mgawebsite/Meetings/Day/0128202102282021?budget=show&cmte=allcommittees&updates=show&ys=2021rs
 
@@ -38,6 +39,14 @@ class MDEventScraper(Scraper, LXMLMixin):
         url = url.format(start_date, end_date, session)
 
         page = self.lxmlize(url)
+
+        # if both "<house banner> No Hearings Message" and "<senate banner> No Hearings Message"
+        empty_chamber = "//div[div/div[contains(@class,'{chamber}')]]/following-sibling::text()[contains(.,'No hearings')]"
+        if page.xpath(empty_chamber.format(chamber="Senate")) and page.xpath(
+            empty_chamber.format(chamber="House")
+        ):
+            raise EmptyScrape
+
         for row in page.xpath('//div[@id="divAllHearings"]/hr'):
             banner = row.xpath(
                 'preceding-sibling::div[contains(@class,"row")]/div/div[contains(@class,"hearsched-committee-banner")]'
@@ -102,6 +111,9 @@ class MDEventScraper(Scraper, LXMLMixin):
                 start_date=when,
                 classification="committee-meeting",
             )
+
+            com_name = re.sub(r"[\s\-]*Work Session", "", com_row)
+            event.add_participant(name=com_name, type="committee", note="host")
 
             event.add_source("https://mgaleg.maryland.gov/mgawebsite/Meetings/Week/")
 

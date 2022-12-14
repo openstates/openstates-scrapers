@@ -401,7 +401,7 @@ class PRBillScraper(Scraper):
 
     def scrape_author_table(self, year, bill, bill_id):
         report_url = "https://sutra.oslpr.org/osl/esutra/VerSQLReportingPRM.aspx?rpt=SUTRA-011&Q={}&Medida={}".format(
-            "2017", bill_id
+            year, bill_id
         )
         html = self.get(report_url).text
         page = lxml.html.fromstring(html)

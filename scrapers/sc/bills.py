@@ -104,12 +104,12 @@ class SCBillScraper(Scraper):
 
     urls = {
         "lower": {
-            "daily-bill-index": "https://www.scstatehouse.gov/hintro/hintros.php",
+            "daily-bill-index": "https://www.scstatehouse.gov/sessphp/hintros.php",
             "prefile-index": "https://www.scstatehouse.gov/sessphp/prefil"
             "{last_two_digits_of_session_year}.php",
         },
         "upper": {
-            "daily-bill-index": "https://www.scstatehouse.gov/sintro/sintros.php",
+            "daily-bill-index": "https://www.scstatehouse.gov/sessphp/sintros.php",
             "prefile-index": "https://www.scstatehouse.gov/sessphp/prefil"
             "{last_two_digits_of_session_year}.php",
         },
@@ -397,6 +397,20 @@ class SCBillScraper(Scraper):
                 note=version.text,  # Description of the version from the state;
                 #  eg, 'As introduced', 'Amended', etc.
                 url=version.get("href"),
+                on_duplicate="ignore",
+                media_type="text/html",  # Still a MIME type
+            )
+            bill.add_version_link(
+                note=version.text,
+                url=version.get("href").replace(".htm", ".docx"),
+                on_duplicate="ignore",
+                media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+        # for prefiles, the link just points right to the version, not to a versions page
+        if "/bills/" in version_url.lower():
+            bill.add_version_link(
+                note="Filed",
+                url=version_url,
                 on_duplicate="ignore",
                 media_type="text/html",  # Still a MIME type
             )

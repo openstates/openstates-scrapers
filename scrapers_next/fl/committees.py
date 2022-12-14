@@ -97,7 +97,6 @@ class SenComDetail(HtmlPage):
                 name = name.replace("Committee on ", "")
             parent = None
             chamber = "upper"
-        print(name)
         comm = ScrapeCommittee(
             name=name, classification="committee", chamber=chamber, parent=parent
         )

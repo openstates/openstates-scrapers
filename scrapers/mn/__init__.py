@@ -110,7 +110,7 @@ class Minnesota(State):
             "identifier": "2017s1",
             "name": "2017, 1st Special Session",
             "start_date": "2017-05-23",
-            "end_date": "2017-05-30",
+            "end_date": "2017-05-27",
         },
         {
             "_scraped_name": "90th Legislature, 2017-2018",
@@ -126,7 +126,7 @@ class Minnesota(State):
             "identifier": "2019s1",
             "name": "2019, First Special Session",
             "start_date": "2019-05-24",
-            "end_date": "2019-05-29",
+            "end_date": "2019-05-24",
         },
         {
             "_scraped_name": "91st Legislature, 2019-2020",
@@ -134,14 +134,14 @@ class Minnesota(State):
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-08",
-            "end_date": "2019-06-20",
+            "end_date": "2019-05-17",
         },
         {
             "_scraped_name": "91st Legislature, 2020 1st Special Session",
             "classification": "primary",
             "identifier": "2020s1",
             "name": "2020, First Special Session",
-            "start_date": "2020-06-13",
+            "start_date": "2020-06-12",
             "end_date": "2020-06-19",
         },
         {
@@ -166,7 +166,6 @@ class Minnesota(State):
             "identifier": "2020s4",
             "name": "2020, Fourth Special Session",
             "start_date": "2020-09-11",
-            # Just a guess. TODO: set after end of special
             "end_date": "2020-09-11",
         },
         {
@@ -174,9 +173,8 @@ class Minnesota(State):
             "classification": "special",
             "identifier": "2020s5",
             "name": "2020, Fifth Special Session",
-            "start_date": "2020-09-16",
-            # Just a guess. TODO: set after end of special
-            "end_date": "2020-09-16",
+            "start_date": "2020-10-12",
+            "end_date": "2020-10-15",
         },
         {
             "_scraped_name": "91st Legislature, 2020 6th Special Session",
@@ -191,9 +189,8 @@ class Minnesota(State):
             "classification": "special",
             "identifier": "2020s7",
             "name": "2020, Seventh Special Session",
-            "start_date": "2020-12-12",
-            # Just a guess. TODO: set after end of special
-            "end_date": "2020-12-13",
+            "start_date": "2020-12-14",
+            "end_date": "2020-12-15",
         },
         {
             "_scraped_name": "92nd Legislature, 2021-2022",
@@ -201,7 +198,6 @@ class Minnesota(State):
             "identifier": "2021-2022",
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-05",
-            # Just a guess. TODO: set after schedule is posted
             "end_date": "2022-05-23",
             "active": True,
         },
@@ -211,11 +207,11 @@ class Minnesota(State):
             "identifier": "2021s1",
             "name": "2021, First Special Session",
             "start_date": "2021-06-14",
-            "end_date": "2021-06-18",
-            "active": False,
+            "end_date": "2021-07-07",
         },
     ]
     ignored_scraped_sessions = [
+        "93rd Legislature, 2023-2024",
         "85th Legislature, 2007-2008",
         "85th Legislature, 2007 1st Special Session",
         "84th Legislature, 2005-2006",

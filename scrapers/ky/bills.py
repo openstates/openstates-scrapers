@@ -1,3 +1,4 @@
+import dateutil
 import re
 import scrapelib
 import os
@@ -168,13 +169,18 @@ class KYBillScraper(Scraper, LXMLMixin):
             self.logger.warning(e)
             return
 
+        withdrawn = False
+
         if self.parse_bill_field(page, "Last Action") != "":
             last_action = self.parse_bill_field(page, "Last Action").xpath("text()")[0]
             if "WITHDRAWN" in last_action.upper():
                 self.info("{} Withdrawn, skipping".format(bill_id))
-                return
+                withdrawn = True
 
-        title = self.parse_bill_field(page, "Title").text_content()
+        if withdrawn:
+            title = "Withdrawn."
+        else:
+            title = self.parse_bill_field(page, "Title").text_content()
 
         if "CR" in bill_id:
             bill_type = "concurrent resolution"
@@ -195,12 +201,7 @@ class KYBillScraper(Scraper, LXMLMixin):
         bill.subject = self._subjects[bill_id]
         bill.add_source(url)
 
-        version_ct = self.parse_versions(page, bill)
-
-        if version_ct < 1:
-            # Bill withdrawn
-            self.logger.warning("Bill withdrawn.")
-            return
+        self.parse_versions(page, bill)
 
         self.parse_actions(page, bill, chamber)
         self.parse_subjects(page, bill)
@@ -214,7 +215,10 @@ class KYBillScraper(Scraper, LXMLMixin):
 
             bill.add_document_link("Fiscal Note", source_url, media_type=mimetype)
 
-        for link in page.xpath("//td/span/a[contains(@href, 'Legislator-Profile')]"):
+        # only grab links in the first table, because proposed amendments have sponsors that are not bill sponsors.
+        for link in page.xpath(
+            "//div[contains(@class,'bill-table')][1]//td/span/a[contains(@href, 'Legislator-Profile')]"
+        ):
             bill.add_sponsorship(
                 link.text.strip(),
                 classification="primary",
@@ -230,6 +234,22 @@ class KYBillScraper(Scraper, LXMLMixin):
         if bdr_no != "" and bdr_no.xpath("text()"):
             bdr = bdr_no.xpath("text()")[0].strip()
             bill.extras["BDR"] = bdr
+
+        if self.parse_bill_field(page, "Summary of Original Version") != "":
+            summary = (
+                self.parse_bill_field(page, "Summary of Original Version")
+                .text_content()
+                .strip()
+            )
+            bill.add_abstract(summary, note="Summary of Original Version")
+
+        if withdrawn:
+            action = self.parse_bill_field(page, "Last Action").text_content().strip()
+            wd_date = re.findall(r"\d{2}\/\d{2}\/\d+", action)[0]
+            wd_date = dateutil.parser.parse(wd_date).date()
+            bill.add_action(
+                action, wd_date, chamber=chamber, classification="withdrawal"
+            )
 
         yield bill
 

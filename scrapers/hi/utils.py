@@ -1,18 +1,18 @@
 import lxml
 
 HI_URL_BASE = "https://capitol.hawaii.gov"
-SHORT_CODES = "%s/committees/committees.aspx?chamber=all" % (HI_URL_BASE)
+SHORT_CODES = "%s/legislature/committees.aspx?chamber=all" % (HI_URL_BASE)
 
 
 def get_short_codes(scraper):
     list_html = scraper.get(SHORT_CODES).text
     list_page = lxml.html.fromstring(list_html)
-    rows = list_page.xpath("//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']/tr")
+    rows = list_page.xpath("//*[@id='ctl00_MainContent_GridView1']//tr")
     scraper.short_ids = {"CONF": {"chamber": "joint", "name": "Conference Committee"}}
 
     for row in rows:
         tds = row.xpath("./td")
-        short = tds[0]
+        short = tds[0].xpath("./a")[0]
         clong = tds[1]
         chamber = clong.xpath("./span")[0].text_content()
         clong = clong.xpath("./a")[0]

@@ -106,7 +106,7 @@ class Virginia(State):
             "identifier": "2017",
             "name": "2017 Regular Session",
             "start_date": "2017-01-11",
-            "end_date": "2017-02-09",
+            "end_date": "2017-02-25",
         },
         {
             "_scraped_name": "2018 Session",
@@ -120,14 +120,14 @@ class Virginia(State):
             "identifier": "2018specialI",
             "name": "2018, 1st Special Session",
             "start_date": "2018-04-11",
-            "end_date": "2018-06-11",
+            "end_date": "2018-05-30",
         },
         {
             "_scraped_name": "2018 Special Session II",
             "identifier": "2018specialI",
             "name": "2018, 2nd Special Session",
             "start_date": "2018-08-30",
-            "end_date": "2018-08-30",
+            "end_date": "2018-11-30",
         },
         {
             "_scraped_name": "2019 Session",
@@ -148,7 +148,7 @@ class Virginia(State):
             "identifier": "2020",
             "name": "2020 Regular Session",
             "start_date": "2020-01-08",
-            "end_date": "2020-07-15",
+            "end_date": "2020-03-12",
         },
         {
             "_scraped_name": "2020 Special Session I",
@@ -169,8 +169,8 @@ class Virginia(State):
             "classification": "special",
             "identifier": "2021S2",
             "name": "2021, 2nd Special Session",
-            "start_date": "2021-08-04",
-            "end_date": "2021-08-10",
+            "start_date": "2021-08-02",
+            "end_date": "2021-11-01",
         },
         {
             "_scraped_name": "2022 Session",
@@ -186,7 +186,17 @@ class Virginia(State):
             "identifier": "2022S1",
             "name": "2022, 1st Special Session",
             "start_date": "2022-04-04",
-            "end_date": "2022-04-08",
+            "end_date": "2022-05-04",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023 Session",
+            # TODO: remove classification when more than bills, histories, & votes posted
+            "classification": "special",
+            "identifier": "2023",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-11",
+            "end_date": "2023-03-11",
             "active": True,
         },
     ]

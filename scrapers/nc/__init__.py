@@ -16,7 +16,7 @@ class NorthCarolina(State):
             "identifier": "1985",
             "name": "1985-1986 Session",
             "start_date": "1985-02-05",
-            "end_date": "1986-07-18",
+            "end_date": "1986-07-15",
         },
         {
             "_scraped_name": "1986 Special Session",
@@ -32,14 +32,14 @@ class NorthCarolina(State):
             "identifier": "1987",
             "name": "1987-1988 Session",
             "start_date": "1987-02-09",
-            "end_date": "1988-07-12",
+            "end_date": "1988-07-05",
         },
         {
             "_scraped_name": "1989-1990 Session",
             "classification": "primary",
             "identifier": "1989",
             "name": "1989-1990 Session",
-            "start_date": "1989-01-11",
+            "start_date": "1989-01-13",
             "end_date": "1990-07-28",
         },
         {
@@ -64,7 +64,7 @@ class NorthCarolina(State):
             "identifier": "1991",
             "name": "1991-1992 Session",
             "start_date": "1991-01-30",
-            "end_date": "1992-07-25",
+            "end_date": "1992-07-20",
         },
         {
             "_scraped_name": "1991 Special Session",
@@ -79,7 +79,7 @@ class NorthCarolina(State):
             "classification": "primary",
             "identifier": "1993",
             "name": "1993-1994 Session",
-            "start_date": "1993-01-27",
+            "start_date": "1993-02-11",
             "end_date": "1994-07-17",
         },
         {
@@ -87,8 +87,8 @@ class NorthCarolina(State):
             "classification": "special",
             "identifier": "1993E1",
             "name": "1994 Special Session",
-            "start_date": "1994-02-08",
-            "end_date": "1994-03-26",
+            "start_date": "1994-03-03",
+            "end_date": "1994-03-16",
         },
         {
             "_scraped_name": "1995-1996 Session",
@@ -112,7 +112,7 @@ class NorthCarolina(State):
             "identifier": "1995E2",
             "name": "1996 Special Session 2",
             "start_date": "1996-07-08",
-            "end_date": "1996-08-03",
+            "end_date": "1996-07-23",
         },
         {
             "_scraped_name": "1997-1998 Session",
@@ -120,7 +120,7 @@ class NorthCarolina(State):
             "identifier": "1997",
             "name": "1997-1998 Session",
             "start_date": "1997-01-29",
-            "end_date": "1998-10-29",
+            "end_date": "1998-10-01",
         },
         {
             "_scraped_name": "1998 Special Session",
@@ -128,7 +128,7 @@ class NorthCarolina(State):
             "identifier": "1997E1",
             "name": "1998 Special Session",
             "start_date": "1998-03-24",
-            "end_date": "1998-05-11",
+            "end_date": "1998-04-30",
         },
         {
             "_scraped_name": "1999-2000 Session",
@@ -255,7 +255,7 @@ class NorthCarolina(State):
             "classification": "primary",
             "identifier": "2013",
             "name": "2013-2014 Session",
-            "start_date": "2013-01-30",
+            "start_date": "2013-01-09",
             "end_date": "2014-08-20",
         },
         {
@@ -263,7 +263,7 @@ class NorthCarolina(State):
             "classification": "primary",
             "identifier": "2015",
             "name": "2015-2016 Session",
-            "start_date": "2015-01-30",
+            "start_date": "2015-01-14",
             "end_date": "2016-07-01",
         },
         {
@@ -272,7 +272,7 @@ class NorthCarolina(State):
             "identifier": "2015E1",
             "name": "2016 Extra Session 1",
             "start_date": "2016-02-18",
-            "end_date": "2016-02-23",
+            "end_date": "2016-02-19",
         },
         {
             "_scraped_name": "2016 Second Extra Session",
@@ -288,7 +288,7 @@ class NorthCarolina(State):
             "identifier": "2015E3",
             "name": "2016 Extra Session 3",
             "start_date": "2016-12-13",
-            "end_date": "2016-12-15",
+            "end_date": "2016-12-14",
         },
         {
             "_scraped_name": "2016 Fourth Extra Session",
@@ -296,7 +296,7 @@ class NorthCarolina(State):
             "identifier": "2015E4",
             "name": "2016 Extra Session 4",
             "start_date": "2016-12-14",
-            "end_date": "2016-12-19",
+            "end_date": "2016-12-16",
         },
         {
             "_scraped_name": "2016 Fifth Extra Session",
@@ -312,7 +312,7 @@ class NorthCarolina(State):
             "identifier": "2017",
             "name": "2017-2018 Session",
             "start_date": "2017-01-11",
-            "end_date": "2018-08-01",
+            "end_date": "2018-07-04",
         },
         {
             "_scraped_name": "2018 First Extra Session",
@@ -336,24 +336,23 @@ class NorthCarolina(State):
             "identifier": "2017E3",
             "name": "2018 Extra Session 3",
             "start_date": "2018-10-02",
-            "end_date": "2018-10-16",
+            "end_date": "2018-10-15",
         },
         {
             "_scraped_name": "2019-2020 Session",
             "classification": "primary",
             "identifier": "2019",
             "name": "2019-2020 Session",
-            "start_date": "2019-01-03",
-            "end_date": "2020-08-01",
+            "start_date": "2019-01-09",
+            "end_date": "2020-09-03",
         },
         {
             "_scraped_name": "2021-2022 Session",
             "classification": "primary",
             "identifier": "2021",
             "name": "2021-2022 Session",
-            "start_date": "2021-01-04",
-            # TODO: fix this when session ends
-            "end_date": "2022-08-01",
+            "start_date": "2021-01-13",
+            "end_date": "2022-07-01",
             "active": True,
         },
     ]

@@ -6,12 +6,14 @@ import re
 
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 class MAEventScraper(Scraper, LXMLMixin):
     _TZ = pytz.timezone("US/Eastern")
     date_format = "%m/%d/%Y"
     verify = False
+    non_session_count = 0
 
     def scrape(self, chamber=None, start=None, end=None):
         if start is None:
@@ -45,6 +47,7 @@ class MAEventScraper(Scraper, LXMLMixin):
         page.make_links_absolute("https://malegislature.gov/")
 
         rows = page.xpath("//table[contains(@class,'eventTable')]/tbody/tr")
+
         for row in rows:
             # Some rows have an additional TD at the start,
             # so index em all as offsets
@@ -57,6 +60,9 @@ class MAEventScraper(Scraper, LXMLMixin):
 
             url = row.xpath("td[{}]/a/@href".format(td_ct - 2))[0]
             yield from self.scrape_event_page(url, event_type)
+
+        if self.non_session_count == 0:
+            raise EmptyScrape
 
     def scrape_event_page(self, url, event_type):
         page = self.lxmlize(url)
@@ -132,4 +138,5 @@ class MAEventScraper(Scraper, LXMLMixin):
         if event_type == "Hearing":
             event.add_participant(title, type="committee", note="host")
 
+        self.non_session_count += 1
         yield event

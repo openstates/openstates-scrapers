@@ -371,7 +371,7 @@ class MTBillScraper(Scraper, LXMLMixin):
             action_date = datetime.strptime(
                 action.xpath("td[2]")[0].text, "%m/%d/%Y"
             ).date()
-            action_type = actions.categorize(action_name)
+            action_type = actions.categorize_actions(action_name)
 
             # grab committees here
             try:

@@ -55,7 +55,7 @@ class Kansas(State):
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-14",
-            "end_date": "2020-05-31",
+            "end_date": "2020-05-21",
         },
         {
             "_scraped_name": "b2020s",
@@ -63,7 +63,7 @@ class Kansas(State):
             "identifier": "2020S1",
             "name": "2020 Special Session",
             "start_date": "2019-06-03",
-            "end_date": "2020-06-05",
+            "end_date": "2020-06-04",
         },
         {
             "_scraped_name": "b2021_22",
@@ -71,8 +71,7 @@ class Kansas(State):
             "identifier": "2021-2022",
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-11",
-            # TODO: set real end date
-            "end_date": "2022-05-31",
+            "end_date": "2022-05-23",
             "active": True,
         },
         {
@@ -81,7 +80,7 @@ class Kansas(State):
             "identifier": "2021S1",
             "name": "2021 Special Session",
             "start_date": "2021-11-22",
-            "end_date": "2021-11-25",
+            "end_date": "2021-11-21",
             "active": False,
         },
     ]
