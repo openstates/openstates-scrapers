@@ -20,9 +20,19 @@ class BlueSenDetail(HtmlPage):
         phones = (
             CSS("div .fusion-text.fusion-text-2 p").match(self.root)[1].text_content()
         )
-        phone1, phone2 = re.search(
-            r"Phone:\s(\d{3}-\d{3}-\d{4})\s\|\s(.+)", phones
-        ).groups()
+
+        try:
+            phone1, phone2 = re.search(
+                r"Phone:\s(\d{3}-\d{3}-\d{4})\s\|\s(.+)", phones
+            ).groups()
+        except AttributeError:
+            try:
+                phone1 = re.search(r"(Phone:)\s+(\d{3}-\d{3}-\d{4})", phones).groups()[
+                    1
+                ]
+                phone2 = None
+            except AttributeError:
+                phone1, phone2 = None, None
 
         media_contact = (
             CSS("div .fusion-text.fusion-text-2 p").match(self.root)[3].text_content()
@@ -36,24 +46,40 @@ class BlueSenDetail(HtmlPage):
             .strip()
         )
 
-        twitter = CSS("div .fusion-social-links a").match(self.root)[0].get("href")
-        twitter_id = re.search(r"https://twitter\.com/(.+)", twitter).groups()[0]
-
-        fb = CSS("div .fusion-social-links a").match(self.root)[1].get("href")
-        fb_id = (
-            re.search(r"https://(www\.)?facebook\.com/(.+)", fb).groups()[1].rstrip("/")
-        )
+        social_dict = {
+            "facebook": None,
+            "instagram": None,
+            "twitter": None,
+            "youtube": None,
+        }
+        social_links = CSS("div .fusion-social-links a").match(self.root)
+        for link in social_links:
+            href = link.get("href").lower()
+            for soc in social_dict.keys():
+                if soc in href:
+                    raw_handle = re.search(rf"(.+)({soc}\.com/)(.+)", href).groups()[-1]
+                    handle = re.sub("/", "", raw_handle)
+                    social_dict[soc] = handle
 
         p.capitol_office.address = addr
-        p.capitol_office.voice = phone1
-        p.extras["second phone"] = phone2
+
+        if phone1:
+            p.capitol_office.voice = phone1
+        if phone2:
+            p.extras["second phone"] = phone2
 
         p.extras["assistant"] = assistant
         p.extras["media contact name"] = media_contact_name
         p.extras["media contact email"] = media_contact_email
 
-        p.ids.twitter = twitter_id
-        p.ids.facebook = fb_id
+        if social_dict["facebook"]:
+            p.ids.facebook = social_dict["facebook"]
+        if social_dict["instagram"]:
+            p.ids.instagram = social_dict["instagram"]
+        if social_dict["twitter"]:
+            p.ids.twitter = social_dict["twitter"]
+        if social_dict["youtube"]:
+            p.ids.youtube = social_dict["youtube"]
 
         return p
 
