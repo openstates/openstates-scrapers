@@ -55,6 +55,8 @@ class LegList(HtmlListPage):
     def process_item(self, item):
         name_party = CSS("span").match(item)[0].text_content().strip().split(" - ")
         name = name_party[0].strip()
+        if not re.search(r"[a-z]", name) or "vacant" in name.lower():
+            self.skip("vacant")
         party = name_party[1].strip()
         if party == "(D)":
             party = "Democratic"
