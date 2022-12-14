@@ -84,6 +84,14 @@ class NewHampshire(State):
             "name": "2022 Regular Session",
             "start_date": "2022-01-05",
             "end_date": "2022-05-26",
+            "active": False,
+        },
+        {
+            "identifier": "2023",
+            "classification": "primary",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-04",
+            "end_date": "2023-06-30",
             "active": True,
         },
     ]
