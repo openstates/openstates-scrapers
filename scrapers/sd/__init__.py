@@ -163,9 +163,8 @@ class SouthDakota(State):
             "_scraped_name": "2023",
             "identifier": "2023",
             "name": "2023 Regular Session",
-            # TODO: Start and end dates
-            "start_date": "2023-01-11",
-            "end_date": "2023-03-28",
+            "start_date": "2023-01-10",
+            "end_date": "2023-03-27",
             "active": False,
         },
     ]
