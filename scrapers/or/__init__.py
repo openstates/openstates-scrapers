@@ -183,8 +183,17 @@ class Oregon(State):
             "end_date": "2022-03-04",
             "active": True,
         },
+        {
+            "_scraped_name": "2023 Regular Session",
+            "identifier": "2023R1",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-09",
+            "end_date": "2023-06-25",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
+        "Mock Session 2023",
         "2021-2022 Interim",
         "Mock Session 2020",
         "Today",
