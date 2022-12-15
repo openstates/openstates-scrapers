@@ -110,7 +110,7 @@ class WestVirginia(State):
             "classification": "special",
             "identifier": "20182S",
             "name": "2018 Second Special Session",
-            "start_date": "2018-08-12",
+            "start_date": "2018-06-26",
             "end_date": "2018-10-15",
         },
         {
@@ -118,7 +118,7 @@ class WestVirginia(State):
             "classification": "primary",
             "identifier": "2019",
             "name": "2019 Regular Session",
-            "start_date": "2019-01-14",
+            "start_date": "2019-01-09",
             "end_date": "2019-03-09",
         },
         {
@@ -126,8 +126,8 @@ class WestVirginia(State):
             "classification": "special",
             "identifier": "20191S",
             "name": "2019 First Special Session",
-            "start_date": "2019-05-20",
-            "end_date": "2019-10-01",
+            "start_date": "2019-03-10",
+            "end_date": "2019-07-23",
         },
         {
             "_scraped_name": "2020",
@@ -151,7 +151,7 @@ class WestVirginia(State):
             "identifier": "20211S",
             "name": "2021 First Special Session",
             "start_date": "2021-06-07",
-            "end_date": "2021-06-11",
+            "end_date": "2021-06-07",
         },
         {
             "_scraped_name": "2021",
@@ -159,15 +159,15 @@ class WestVirginia(State):
             "identifier": "20212S",
             "name": "2021 Second Special Session",
             "start_date": "2021-06-24",
-            "end_date": "2021-06-25",
+            "end_date": "2021-07-24",
         },
         {
             "_scraped_name": "2021",
             "classification": "special",
             "identifier": "20213S",
             "name": "2021 Third Special Session",
-            "start_date": "2021-06-24",
-            "end_date": "2021-06-25",
+            "start_date": "2021-10-11",
+            "end_date": "2021-10-20",
             "active": False,
         },
         {
@@ -175,9 +175,8 @@ class WestVirginia(State):
             "classification": "special",
             "identifier": "20221S",
             "name": "2022 First Special Session",
-            "start_date": "2021-01-10",
-            # TODO: update end date
-            "end_date": "2021-01-12",
+            "start_date": "2021-02-10",
+            "end_date": "2022-01-11",
             "active": False,
         },
         {
@@ -186,7 +185,7 @@ class WestVirginia(State):
             "identifier": "2022",
             "name": "2022 Regular",
             "start_date": "2022-01-12",
-            "end_date": "2022-06-25",
+            "end_date": "2022-03-12",
             "active": False,
         },
         {
@@ -194,9 +193,28 @@ class WestVirginia(State):
             "classification": "special",
             "identifier": "20222S",
             "name": "2022 Second Special Session",
-            "start_date": "2022-04-25",
+            "start_date": "2022-06-25",
+            "end_date": "2022-08-25",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022",
+            "classification": "special",
+            "identifier": "20223S",
+            "name": "2022 Third Special Session",
+            "start_date": "2022-07-25",
             # TODO: update end date
-            "end_date": "2021-04-29",
+            "end_date": "2022-08-05",
+            "active": True,
+        },
+        {
+            "_scraped_name": "2022",
+            "classification": "special",
+            "identifier": "20224S",
+            "name": "2022 Fourth Special Session",
+            "start_date": "2022-09-12",
+            # TODO: update end date
+            "end_date": "2022-09-16",
             "active": True,
         },
     ]

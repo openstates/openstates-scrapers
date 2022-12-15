@@ -4,15 +4,12 @@ networks:
   openstates-network:
       name: openstates-network
 
-volumes:
-  openstates-postgres:
-    name: openstates-postgres
-    external: true
-
 services:
   scrape:
     build: .
     environment:
+    - AR_FTP_USER
+    - AR_FTP_PASSWORD
     - MYSQL_HOST=mysql
     - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
     - PYTHONPATH=./scrapers
@@ -21,31 +18,34 @@ services:
     - DC_API_KEY
     - VIRGINIA_FTP_USER
     - VIRGINIA_FTP_PASSWORD
+    - S3_REALTIME_BASE=s3://openstates-realtime-bills
+
     volumes:
-    - .:/opt/openstates/openstates/
+      - .:/opt/openstates/openstates/
     entrypoint: ["poetry", "run", "os-update"]
     networks:
-    - openstates-network
+      - openstates-network
   mysql:
     image: mariadb:10.3
 #    command: mysqld_safe --max_allowed_packet=512M
     ports:
-    - "3306:3306"
+      - "3306:3306"
     environment:
-    - MYSQL_DATABASE=capublic
-    - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_DATABASE=capublic
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_LOG_CONSOLE=yes
     networks:
-    - openstates-network
+      - openstates-network
   ca-scrape:
     build:
       context: .
       dockerfile: Dockerfile.california
     environment:
-    - MYSQL_HOST=mysql
-    - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
-    - PYTHONPATH=./scrapers
+      - MYSQL_HOST=mysql
+      - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
+      - PYTHONPATH=./scrapers
     volumes:
-    - .:/opt/openstates/openstates/
+      - .:/opt/openstates/openstates/
     entrypoint: ["poetry", "run", "os-update"]
     networks:
     - openstates-network
@@ -55,13 +55,13 @@ services:
       dockerfile: Dockerfile.california
     entrypoint: /opt/openstates/openstates/scrapers/ca/download.sh
     environment:
-    - MYSQL_HOST=mysql
+      - MYSQL_HOST=mysql
     volumes:
-    - .:/opt/openstates/openstates/
+      - .:/opt/openstates/openstates/
     depends_on:
-    - mysql
+      - mysql
     networks:
-    - openstates-network
+      - openstates-network
   db:
     image: "mdillon/postgis:11-alpine"
     hostname: "db"
@@ -72,6 +72,12 @@ services:
       POSTGRES_USER: openstates
       POSTGRES_DB: openstatesorg
     volumes:
-      - openstates-postgres:/var/lib/postgresql/data
+      - ./openstates-postgres/:/var/lib/postgresql/data
     networks:
       - openstates-network
+    command: ["postgres", "-c", "log_statement=all"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -q -d db -U db"]
+      interval: 10s
+      timeout: 5s
+      retries: 15

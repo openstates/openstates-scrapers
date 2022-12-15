@@ -46,6 +46,14 @@ rules = (
     Rule(
         r"(?<![Aa]mendment)READ and (PASSED|ADOPTED)(, in concurrence)?\.$", "passage"
     ),
+    Rule(r"ENGROSSED", "reading-3"),
+    Rule(r"Received by the ", "receipt"),
+    Rule(r"(?=.*Committee Amendment)(?=.*ADOPTED)", "committee-passage-favorable"),
+    Rule(r"DEAD", "failure"),
+    Rule(r"(?=.*Committee Amendment)(?=.*FAILED)", "amendment-failure"),
+    Rule(r"Withdraw", "withdrawal"),
+    Rule(r"REFER to the Committee", "referral-committee"),
+    Rule(r"Majority Ought Not to Pass Report was ACCEPTED", "committee-failure"),
 )
 
 

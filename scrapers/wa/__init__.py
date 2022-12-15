@@ -44,13 +44,13 @@ class Washington(State):
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-09",
-            "end_date": "2018-03-09",
+            "end_date": "2018-03-08",
         },
         {
             "_scraped_name": "2019-20",
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
-            "start_date": "2019-01-04",
+            "start_date": "2019-01-14",
             "end_date": "2020-03-12",
         },
         {
@@ -59,12 +59,21 @@ class Washington(State):
             "identifier": "2021-2022",
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-11",
-            "end_date": "2021-04-25",
+            "end_date": "2022-03-10",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023-24",
+            "classification": "primary",
+            "identifier": "2023-2024",
+            "name": "2023-2024 Regular Session",
+            "start_date": "2023-01-09",
+            # TODO: update end date
+            "end_date": "2023-04-25",
             "active": True,
         },
     ]
     ignored_scraped_sessions = [
-        "2021-22",
         "2007-08",
         "2005-06",
         "2003-04",

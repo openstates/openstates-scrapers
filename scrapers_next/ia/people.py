@@ -1,5 +1,4 @@
 import attr
-import re
 from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError
 from openstates.models import ScrapePerson
 
@@ -46,10 +45,10 @@ class LegDetail(HtmlPage):
         try:
             for link in CSS(".link_list a").match(self.root):
                 url = link.get("href")
-                if re.search("leaving?", url):
+                if "leaving?" in url:
                     url = url.replace("https://www.legis.iowa.gov/leaving?forward=", "")
-                if not re.search("http://", url) or re.search("https://", url):
-                    url = "http://" + url
+                if not url.startswith("http://") or not url.startswith("https://"):
+                    url = f"http://{url}"
                 p.add_link(url)
         except SelectorError:
             pass

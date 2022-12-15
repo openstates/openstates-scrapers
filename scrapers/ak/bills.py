@@ -4,70 +4,10 @@ import datetime
 import lxml.html
 
 from openstates.scrape import Scraper, Bill, VoteEvent
+from . import actions
 
 
 class AKBillScraper(Scraper):
-    _fiscal_dept_mapping = {
-        "ADM": "Administration",
-        "CED": "Commerce, Community & Economic Development",
-        "COR": "Corrections",
-        "CRT": "Court System",
-        "EED": "Education and Early Development",
-        "DEC": "Environmental Conservation ",
-        "DFG": "Fish and Game",
-        "GOV": "Governor's Office",
-        "DHS": "Health and Social Services",
-        "LWF": "Labor and Workforce Development",
-        "LAW": "Law",
-        "LEG": "Legislative Agency",
-        "MVA": "Military and Veterans' Affairs",
-        "DNR": "Natural Resources",
-        "DPS": "Public Safety",
-        "REV": "Revenue",
-        "DOT": "Transportation and Public Facilities",
-        "UA": "University of Alaska",
-        "ALL": "All Departments",
-    }
-
-    _comm_vote_type = {
-        "DP": "Do Pass",
-        "DNP": "Do Not Pass",
-        "NR": "No Recommendation",
-        "AM": "Amend",
-    }
-
-    _comm_mapping = {
-        "AET": "Arctic Policy, Economic Development, & Tourism",
-        "CRA": "Community & Regional Affairs",
-        "EDC": "Education",
-        "FIN": "Finance",
-        "HSS": "Health & Social Services",
-        "JUD": "Judiciary",
-        "L&C": "Labor & Commerce",
-        "RES": "Resources",
-        "RLS": "Rules",
-        "STA": "State Affairs",
-        "TRA": "Transportation",
-        "EDT": "Economic Development, Trade & Tourism",
-        "NRG": "Energy",
-        "FSH": "Fisheries",
-        "MLV": "Military & Veterans",
-        "WTR": "World Trade",
-        "ARR": "Administrative Regulation Review",
-        "ASC": "Armed Services Committee",
-        "BUD": "Legislative Budget & Audit",
-        "ECR": "Higher Education/Career Readiness Task Force",
-        "EFF": "Education Fuding District Cost Factor Committee",
-        "ETH": "Select Committee on Legislative Ethics",
-        "LEC": "Legislative Council",
-        "ARC": "Special Committee on the Arctic",
-        "EDA": "Economic Development, Trade, Tourism & Arctic Policy",
-        "ENE": "Energy",
-    }
-
-    _comm_re = re.compile(r"^(%s)\s" % "|".join(_comm_mapping.keys()))
-    _current_comm = None
-
     def scrape(self, chamber=None, session=None):
         bill_types = {
             "B": "bill",
@@ -203,7 +143,7 @@ class AKBillScraper(Scraper):
                     )
 
         # Get actions
-        self._current_comm = None
+        actions._current_comm = None
         act_rows = doc.xpath("//div[@id='tab6_4']//tr")[1:]
         for row in act_rows:
             date, journal, action = row.xpath("td")
@@ -232,7 +172,7 @@ class AKBillScraper(Scraper):
                         vote_href,
                     )
 
-            action, atype = self.clean_action(action)
+            action, atype = actions.clean_action(action)
 
             match = re.search(r"^Prefile released (\d+/\d+/\d+)$", action)
             if match:
@@ -425,94 +365,3 @@ class AKBillScraper(Scraper):
 
         #     vote.add_source(url)
         # yield vote
-
-    def clean_action(self, action):
-        # Clean up some acronyms
-        match = re.match(r"^FN(\d+): (ZERO|INDETERMINATE)?\((\w+)\)", action)
-        if match:
-            num = match.group(1)
-
-            if match.group(2) == "ZERO":
-                impact = "No fiscal impact"
-            elif match.group(2) == "INDETERMINATE":
-                impact = "Indeterminate fiscal impact"
-            else:
-                impact = ""
-
-            dept = match.group(3)
-            dept = self._fiscal_dept_mapping.get(dept, dept)
-
-            action = "Fiscal Note {num}: {impact} ({dept})".format(
-                num=num, impact=impact, dept=dept
-            )
-
-        match = self._comm_re.match(action)
-        if match:
-            self._current_comm = match.group(1)
-
-        match = re.match(r"^(DP|DNP|NR|AM):\s(.*)$", action)
-        if match:
-            vtype = self._comm_vote_type[match.group(1)]
-
-            action = f"{self._current_comm} {vtype}: {match.group(2)}"
-
-        match = re.match(r"^COSPONSOR\(S\): (.*)$", action)
-        if match:
-            action = f"Cosponsors added: {match.group(1)}"
-
-        match = re.match("^([A-Z]{3,3}), ([A-Z]{3,3})$", action)
-        if match:
-            action = f"REFERRED TO {self._comm_mapping[match.group(1)]} and"
-            "{self._comm_mapping[match.group(2)]}"
-
-        match = re.match("^([A-Z]{3,3})$", action)
-        if match:
-            action = f"REFERRED TO {self._comm_mapping[action]}"
-
-        match = re.match("^REFERRED TO (.*)$", action)
-        if match:
-            comms = match.group(1).title().replace(" And ", " and ")
-            action = f"REFERRED TO {comms}"
-
-        action = re.sub(r"\s+", " ", action)
-
-        action = action.replace("PREFILE RELEASED", "Prefile released")
-
-        atype = []
-        if "READ THE FIRST TIME" in action:
-            atype.append("introduction")
-            atype.append("reading-1")
-            action = action.replace("READ THE FIRST TIME", "Read the first time")
-        if "READ THE SECOND TIME" in action:
-            atype.append("reading-2")
-            action = action.replace("READ THE SECOND TIME", "Read the second time")
-        if "READ THE THIRD TIME" in action:
-            atype.append("reading-3")
-            action = action.replace("READ THE THIRD TIME", "Read the third time")
-        if "TRANSMITTED TO GOVERNOR" in action:
-            atype.append("executive-receipt")
-            action = action.replace(
-                "TRANSMITTED TO GOVERNOR", "Transmitted to Governor"
-            )
-        if "SIGNED INTO LAW" in action:
-            atype.append("executive-signature")
-            action = action.replace("SIGNED INTO LAW", "Signed into law")
-        if "Do Pass" in action:
-            atype.append("committee-passage")
-        if "Do Not Pass" in action:
-            atype.append("committee-failure")
-        if action.startswith("PASSED"):
-            atype.append("passage")
-        if "(S) TRANSMITTED TO (H)" in action:
-            atype.append("passage")
-        if "(H) TRANSMITTED TO (S)" in action:
-            atype.append("passage")
-        if "REFERRED TO" in action:
-            atype.append("referral-committee")
-            action = action.replace("REFERRED TO", "Referred to")
-        if "Prefile released" in action:
-            atype.append("filing")
-        if "Approved by the Governor" in action:
-            atype.append("executive-signature")
-
-        return action, atype

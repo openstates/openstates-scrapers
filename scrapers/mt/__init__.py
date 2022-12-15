@@ -36,21 +36,30 @@ class Montana(State):
             "identifier": "2017",
             "name": "2017 Regular Session",
             "start_date": "2017-01-02",
-            "end_date": "2017-04-28",
+            "end_date": "2017-04-29",
         },
         {
             "_scraped_name": "20191",
             "identifier": "2019",
             "name": "2019 Regular Session",
             "start_date": "2019-01-07",
-            "end_date": "2019-04-25",
+            "end_date": "2019-04-29",
         },
         {
             "_scraped_name": "20211",
             "identifier": "2021",
             "name": "2021 Regular Session",
             "start_date": "2021-01-04",
-            "end_date": "2021-04-25",
+            "end_date": "2021-05-13",
+            "active": False,
+        },
+        {
+            "_scraped_name": "20231",
+            "identifier": "2023",
+            "name": "2023 Regular Session",
+            # TODO: update dates
+            "start_date": "2023-01-04",
+            "end_date": "2023-04-25",
             "active": True,
         },
     ]

@@ -29,25 +29,21 @@ class LegDetail(HtmlPage):
             p.district_office.address = district_addr
         # storing 'Address' as district_office.address
 
-        capitol_phone = CSS("span").match_one(all_info[5]).text_content().strip()
-        if capitol_phone != "(505)":
-            p.capitol_office.voice = capitol_phone
-
-        capitol_room = CSS("span").match_one(all_info[6]).text_content().strip()
+        capitol_room = CSS("span").match_one(all_info[5]).text_content().strip()
         if capitol_room != "":
             cap_addr = f"Room {capitol_room} State Capitol;490 Old Santa Fe Trail, Santa Fe, NM 87501"
             p.capitol_office.address = cap_addr
             # this address was found using google search
 
-        office_phone = CSS("span").match_one(all_info[7]).text_content().strip()
+        office_phone = CSS("span").match_one(all_info[6]).text_content().strip()
         if office_phone != "":
             p.district_office.voice = office_phone
 
-        home_phone = CSS("span").match_one(all_info[8]).text_content().strip()
+        home_phone = CSS("span").match_one(all_info[7]).text_content().strip()
         if home_phone != "":
             p.extras["home phone"] = home_phone
 
-        email = CSS("a").match_one(all_info[9]).text_content().strip()
+        email = CSS("a").match_one(all_info[8]).text_content().strip()
         p.email = email
 
         return p
@@ -59,6 +55,8 @@ class LegList(HtmlListPage):
     def process_item(self, item):
         name_party = CSS("span").match(item)[0].text_content().strip().split(" - ")
         name = name_party[0].strip()
+        if not re.search(r"[a-z]", name) or "vacant" in name.lower():
+            self.skip("vacant")
         party = name_party[1].strip()
         if party == "(D)":
             party = "Democratic"

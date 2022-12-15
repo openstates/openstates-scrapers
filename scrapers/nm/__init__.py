@@ -98,8 +98,8 @@ class NewMexico(State):
             "classification": "primary",
             "identifier": "2018",
             "name": "2018 Regular Session",
-            "start_date": "2018-01-17",
-            "end_date": "2018-03-18",
+            "start_date": "2018-01-15",
+            "end_date": "2018-03-16",
         },
         {
             "_scraped_name": "2019 Regular",
@@ -123,7 +123,7 @@ class NewMexico(State):
             "identifier": "2020S",
             "name": "2020 Special Session",
             "start_date": "2020-06-18",
-            "end_date": "2020-06-20",
+            "end_date": "2020-06-22",
         },
         {
             "_scraped_name": "2020 2nd Special",
@@ -131,7 +131,7 @@ class NewMexico(State):
             "identifier": "2020S2",
             "name": "2020 Second Special Session",
             "start_date": "2020-11-24",
-            "end_date": "2020-11-27",
+            "end_date": "2020-11-24",
         },
         {
             "_scraped_name": "2021 Special",
@@ -156,7 +156,7 @@ class NewMexico(State):
             "identifier": "2021S2",
             "name": "2021 Second Special Session",
             "start_date": "2021-12-06",
-            "end_date": "2021-12-20",
+            "end_date": "2021-12-17",
             "active": False,
         },
         {
@@ -174,8 +174,7 @@ class NewMexico(State):
             "identifier": "2022S3",
             "name": "2022 Third Special Session",
             "start_date": "2022-04-05",
-            # TODO: update with actual end date
-            "end_date": "2022-04-20",
+            "end_date": "2022-04-05",
             "active": True,
         },
     ]

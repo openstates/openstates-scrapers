@@ -4,6 +4,9 @@ import re
 
 
 class LegDetail(HtmlPage):
+    zipcode_re = re.compile(r"Columbia,?\s\s?(\d{5})")
+    zip2_re = re.compile(r"(.+),?\s(\d{5})")
+
     def process_page(self):
         p = self.input
 
@@ -14,12 +17,12 @@ class LegDetail(HtmlPage):
             .match_one(self.root)
             .getnext()
         )
-        cap_addr = cap_addr_path.text
+        cap_addr = cap_addr_path.text or ""
         cap_addr += " "
         line2 = cap_addr_path.getchildren()[0].tail
-        if not re.search(r"SC", line2):
-            zipcode = re.search(r"Columbia,?\s\s?(\d{5})", line2).groups()[0]
-            line2 = "Columbia, SC " + zipcode
+        if " SC " not in line2:
+            zipcode = self.zipcode_re.search(line2).groups()[0]
+            line2 = f"Columbia, SC {zipcode}"
         cap_addr += line2
         p.capitol_office.address = cap_addr
 
@@ -34,9 +37,9 @@ class LegDetail(HtmlPage):
             home_addr = home_addr_path.text
             home_addr += " "
             home_line2 = home_addr_path.getchildren()[0].tail
-            if not re.search(r"SC", home_line2):
-                city, h_zip = re.search(r"(.+),?\s(\d{5})", home_line2).groups()
-                home_line2 = city + ", SC " + h_zip
+            if " SC " not in home_line2:
+                city, h_zip = self.zip2_re.search(home_line2).groups()
+                home_line2 = f"{city}, SC {h_zip}"
             home_addr += home_line2
             p.district_office.address = home_addr
         except SelectorError:
@@ -111,10 +114,12 @@ class LegDetail(HtmlPage):
 
 class Legislators(HtmlListPage):
     selector = CSS("div.member")
+    district_re = re.compile(r"District\s(.+)")
+    title_re = re.compile(r"(Senator|Representative)\s(.+)")
 
     def process_item(self, item):
         name = CSS("a.membername").match_one(item).text_content()
-        name = re.search(r"(Senator|Representative)\s(.+)", name).groups()[1]
+        name = self.title_re.search(name).groups()[1]
 
         party = CSS("a.membername").match_one(item).tail.strip()
         if party == "(D)":
@@ -123,7 +128,7 @@ class Legislators(HtmlListPage):
             party = "Republican"
 
         district = CSS("div.district a").match_one(item).text_content().strip()
-        district = re.search(r"District\s(.+)", district).groups()[0]
+        district = self.district_re.search(district).groups()[0]
 
         p = ScrapePerson(
             name=name,
@@ -142,14 +147,14 @@ class Legislators(HtmlListPage):
         img = CSS("img").match_one(item).get("src")
         p.image = img
 
-        return LegDetail(p, source=URL(detail_link, timeout=20))
+        return LegDetail(p, source=URL(detail_link, timeout=60, retries=5))
 
 
 class Senate(Legislators):
-    source = URL("https://www.scstatehouse.gov/member.php?chamber=S")
+    source = URL("https://scstatehouse.gov/member.php?chamber=S", timeout=30, retries=3)
     chamber = "upper"
 
 
 class House(Legislators):
-    source = URL("https://www.scstatehouse.gov/member.php?chamber=H")
+    source = URL("https://scstatehouse.gov/member.php?chamber=H", timeout=30, retries=3)
     chamber = "lower"

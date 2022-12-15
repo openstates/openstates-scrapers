@@ -67,7 +67,7 @@ class LegDetail(HtmlPage):
         )
 
         if table["Biography:"] != "":
-            p.add_link(table["Biography:"])
+            p.add_link(table["Biography:"], "Biography")
 
         for key in table:
             if (

@@ -78,7 +78,7 @@ class LegList(JsonPage):
 
             p.add_source(self.source.url)
             detail_link = URL(
-                f"https://legis.delaware.gov/LegislatorDetail?personId={item['PersonId']}"
+                f"https://legis.delaware.gov/LegislatorDetail?personId={item['PersonId']}",
             )
             p.add_source(detail_link.url)
             p.add_link(detail_link.url, note="homepage")
@@ -93,6 +93,7 @@ class Senate(LegList):
 
 class House(LegList):
     source = URL(
-        "https://legis.delaware.gov/json/House/GetRepresentatives", method="POST"
+        "https://legis.delaware.gov/json/House/GetRepresentatives",
+        method="POST",
     )
     chamber = "lower"

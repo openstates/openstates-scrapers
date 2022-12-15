@@ -3,6 +3,7 @@ import datetime
 import lxml
 
 from utils import LXMLMixin
+from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
 
 
@@ -59,6 +60,14 @@ class NVEventScraper(Scraper, LXMLMixin):
             name=title,
             location_name=address,
             description=notes,
+        )
+
+        match_coordinates(
+            event,
+            {
+                "555 e. washington ave": (36.18278967322847, -115.13231621695132),
+                "legislative building": (39.16196376710227, -119.76626916663172),
+            },
         )
 
         event.add_source(self.URL)

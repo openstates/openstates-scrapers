@@ -281,15 +281,7 @@ class MNBillScraper(Scraper, LXMLMixin):
         for subject in self._subject_mapping[bill_id]:
             bill.add_subject(subject)
 
-        # Get companion bill.
-        companion = doc.xpath(
-            '//table[@class="status_info"]//tr[1]/td[2]'
-            '/a[starts-with(@href, "?")]/text()'
-        )
-        companion = self.make_bill_id(companion[0]) if len(companion) > 0 else None
-        companion_chamber = self.chamber_from_bill(companion)
-        if companion is not None:
-            bill.add_companion(companion, chamber=companion_chamber)
+        bill = self.extract_companion(bill, doc, session)
 
         # Grab sponsors
         bill = self.extract_sponsors(bill, doc, chamber)
@@ -498,6 +490,23 @@ class MNBillScraper(Scraper, LXMLMixin):
                     citation_type="final",
                     url=cite_url,
                 )
+        return bill
+
+    def extract_companion(self, bill, doc, session):
+        companion = doc.xpath(
+            "//div[contains(text(), 'Companion:') and not(contains(text(), 'None'))]/a[1]"
+        )
+
+        if not companion:
+            return bill
+
+        bill_id = self.make_bill_id(companion[0].xpath("text()")[0])
+        if companion:
+            bill.add_related_bill(
+                identifier=bill_id,
+                legislative_session=session,
+                relation_type="companion",
+            )
         return bill
 
     def extract_sponsors(self, bill, doc, chamber):
