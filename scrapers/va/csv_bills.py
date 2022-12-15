@@ -9,38 +9,10 @@ from collections import defaultdict
 import time
 
 from .common import SESSION_SITE_IDS, COMBINED_SESSIONS
+from .actions import Categorizer
 
 tz = pytz.timezone("America/New_York")
 SKIP = "~~~SKIP~~~"
-ACTION_CLASSIFIERS = (
-    ("Enacted, Chapter", "became-law"),
-    ("Approved by Governor", "executive-signature"),
-    ("Vetoed by Governor", "executive-veto"),
-    ("(House|Senate) sustained Governor's veto", "veto-override-failure"),
-    (r"\s*Amendment(s)? .+ agreed", "amendment-passage"),
-    (r"\s*Amendment(s)? .+ withdrawn", "amendment-withdrawal"),
-    (r"\s*Amendment(s)? .+ rejected", "amendment-failure"),
-    ("Subject matter referred", "referral-committee"),
-    ("Rereferred to", "referral-committee"),
-    ("Referred to", "referral-committee"),
-    ("Assigned ", "referral-committee"),
-    ("Reported from", "committee-passage"),
-    ("Read third time and passed", ["passage", "reading-3"]),
-    ("Read third time and agreed", ["passage", "reading-3"]),
-    ("Passed (Senate|House)", "passage"),
-    ("passed (Senate|House)", "passage"),
-    ("Read third time and defeated", "failure"),
-    ("Presented", "introduction"),
-    ("Prefiled and ordered printed", "introduction"),
-    ("Read first time", "reading-1"),
-    ("Read second time", "reading-2"),
-    ("Read third time", "reading-3"),
-    ("Senators: ", SKIP),
-    ("Delegates: ", SKIP),
-    ("Committee substitute printed", "substitution"),
-    ("Bill text as passed", SKIP),
-    ("Acts of Assembly", SKIP),
-)
 
 
 class VaCSVBillScraper(Scraper):
@@ -53,6 +25,8 @@ class VaCSVBillScraper(Scraper):
     _votes = defaultdict(list)
     _bills = defaultdict(list)
     _summaries = defaultdict(list)
+
+    categorizer = Categorizer()
 
     def _init_sftp(self, session_id):
         client = SSHClient()
@@ -377,11 +351,8 @@ class VaCSVBillScraper(Scraper):
                     doc_actions[action_date].append(cleaned_action)
 
                 # categorize actions
-                for pattern, atype in ACTION_CLASSIFIERS:
-                    if re.match(pattern, cleaned_action):
-                        break
-                else:
-                    atype = None
+                attrs = self.categorizer.categorize(cleaned_action)
+                atype = attrs["classification"]
 
                 if atype != SKIP:
                     b.add_action(
