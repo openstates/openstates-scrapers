@@ -12,7 +12,6 @@ from .common import SESSION_SITE_IDS, COMBINED_SESSIONS
 from .actions import Categorizer
 
 tz = pytz.timezone("America/New_York")
-SKIP = "~~~SKIP~~~"
 
 
 class VaCSVBillScraper(Scraper):
@@ -354,10 +353,9 @@ class VaCSVBillScraper(Scraper):
                 attrs = self.categorizer.categorize(cleaned_action)
                 atype = attrs["classification"]
 
-                if atype != SKIP:
-                    b.add_action(
-                        cleaned_action, date, chamber=chamber, classification=atype
-                    )
+                b.add_action(
+                    cleaned_action, date, chamber=chamber, classification=atype
+                )
 
                 if len(vote_id) > 0:
                     total_yes = 0

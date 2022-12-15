@@ -1,6 +1,5 @@
 from utils.actions import Rule, BaseCategorizer
 
-SKIP = "~~~SKIP~~~"
 rules = (
     Rule(r"Enacted, Chapter", "became-law"),
     Rule(r"Approved by Governor", "executive-signature"),
