@@ -3,6 +3,10 @@ from openstates.models import ScrapePerson
 import re
 
 
+class NewDetailFieldEncountered(BaseException):
+    pass
+
+
 class BlueSenDetail(HtmlPage):
     def process_page(self):
         p = self.input
@@ -12,34 +16,29 @@ class BlueSenDetail(HtmlPage):
             title = titles[0].text_content()
             p.extras["title"] = title
 
-        assistant = (
-            CSS("div .fusion-text.fusion-text-2 p").match(self.root)[0].text_content()
-        )
-        assistant = re.search(r"Legislative Assistant:\s(.+)", assistant).groups()[0]
+        info_div = CSS("div .fusion-text.fusion-text-2 p").match(self.root)
+        for field in info_div:
+            content = field.text_content().strip()
+            if ":" in content:
+                label, detail = [x.strip() for x in content.split(":")]
+                if label == "Legislative Assistant":
+                    p.extras[label] = detail
+                elif label == "Phone":
+                    phones = re.findall(r"\d{3}-\d{3}-\d{4}", detail)
+                    if phones:
+                        p.capitol_office.voice = phones[0]
+                    extra_num = 1
+                    for extra_phone in phones[1:]:
+                        p.extras[f"Additional Phone {extra_num}"] = extra_phone
+                elif label == "Email":
+                    p.email = label
+                elif label == "Media Contact":
+                    media_contact = [x.strip() for x in detail.split("|")]
+                    p.extras["Media Contact Name"] = media_contact[0]
+                    p.extras["Media Contact Email"] = media_contact[1]
+                else:
+                    raise NewDetailFieldEncountered
 
-        phones = (
-            CSS("div .fusion-text.fusion-text-2 p").match(self.root)[1].text_content()
-        )
-
-        try:
-            phone1, phone2 = re.search(
-                r"Phone:\s(\d{3}-\d{3}-\d{4})\s\|\s(.+)", phones
-            ).groups()
-        except AttributeError:
-            try:
-                phone1 = re.search(r"(Phone:)\s+(\d{3}-\d{3}-\d{4})", phones).groups()[
-                    1
-                ]
-                phone2 = None
-            except AttributeError:
-                phone1, phone2 = None, None
-
-        media_contact = (
-            CSS("div .fusion-text.fusion-text-2 p").match(self.root)[3].text_content()
-        )
-        media_contact_name, media_contact_email = re.search(
-            r"Media Contact:\s(\w+\s\w+)\s\|\s(.+)", media_contact
-        ).groups()
         addr = (
             XPath("//div/div[3]/div/div[2]/div/div[1]/text()")
             .match(self.root)[0]
@@ -62,15 +61,6 @@ class BlueSenDetail(HtmlPage):
                     social_dict[soc] = handle
 
         p.capitol_office.address = addr
-
-        if phone1:
-            p.capitol_office.voice = phone1
-        if phone2:
-            p.extras["second phone"] = phone2
-
-        p.extras["assistant"] = assistant
-        p.extras["media contact name"] = media_contact_name
-        p.extras["media contact email"] = media_contact_email
 
         if social_dict["facebook"]:
             p.ids.facebook = social_dict["facebook"]
