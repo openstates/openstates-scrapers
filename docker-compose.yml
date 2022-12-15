@@ -18,6 +18,8 @@ services:
     - DC_API_KEY
     - VIRGINIA_FTP_USER
     - VIRGINIA_FTP_PASSWORD
+    - S3_REALTIME_BASE=s3://openstates-realtime-bills
+
     volumes:
       - .:/opt/openstates/openstates/
     entrypoint: ["poetry", "run", "os-update"]
