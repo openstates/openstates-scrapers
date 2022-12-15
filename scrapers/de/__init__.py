@@ -98,7 +98,7 @@ class Delaware(State):
         {
             "_scraped_name": "2022 - 2024 (GA 152)",
             "identifier": "152",
-            "name": "152nd General Assembly (2022-2023)",
+            "name": "152nd General Assembly (2023-2024)",
             "start_date": "2022-01-10",
             "end_date": "2022-06-30",
             "active": True,
