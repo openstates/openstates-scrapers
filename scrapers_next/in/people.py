@@ -1,4 +1,4 @@
-from spatula import HtmlListPage, XPath, CSS, URL, HtmlPage  # , SelectorError
+from spatula import HtmlListPage, XPath, CSS, URL, HtmlPage
 from openstates.models import ScrapePerson
 import re
 
@@ -17,6 +17,7 @@ class BlueSenDetail(HtmlPage):
             p.extras["title"] = title
 
         info_div = CSS("div .fusion-text.fusion-text-2 p").match(self.root)
+        phone_pattern = re.compile(r"\d{3}-\d{3}-\d{4}")
         for field in info_div:
             content = field.text_content().strip()
             if ":" in content:
@@ -24,7 +25,7 @@ class BlueSenDetail(HtmlPage):
                 if label == "Legislative Assistant":
                     p.extras[label] = detail
                 elif label == "Phone":
-                    phones = re.findall(r"\d{3}-\d{3}-\d{4}", detail)
+                    phones = phone_pattern.findall(detail)
                     if phones:
                         p.capitol_office.voice = phones[0]
                     extra_num = 1
@@ -46,30 +47,36 @@ class BlueSenDetail(HtmlPage):
         )
 
         social_dict = {
-            "facebook": None,
-            "instagram": None,
-            "twitter": None,
-            "youtube": None,
+            "facebook": [],
+            "instagram": [],
+            "twitter": [],
+            "youtube": [],
         }
+
+        for soc in social_dict.keys():
+            soc_pattern = re.compile(rf"(.+)({soc}\.com/)(.+)")
+            social_dict[soc].append(soc_pattern)
+
         social_links = CSS("div .fusion-social-links a").match(self.root)
         for link in social_links:
             href = link.get("href").lower()
             for soc in social_dict.keys():
                 if soc in href:
-                    raw_handle = re.search(rf"(.+)({soc}\.com/)(.+)", href).groups()[-1]
+                    pattern = social_dict[soc][0]
+                    raw_handle = pattern.search(href).groups()[-1]
                     handle = re.sub("/", "", raw_handle)
-                    social_dict[soc] = handle
+                    social_dict[soc].append(handle)
 
         p.capitol_office.address = addr
 
-        if social_dict["facebook"]:
-            p.ids.facebook = social_dict["facebook"]
-        if social_dict["instagram"]:
-            p.ids.instagram = social_dict["instagram"]
-        if social_dict["twitter"]:
-            p.ids.twitter = social_dict["twitter"]
-        if social_dict["youtube"]:
-            p.ids.youtube = social_dict["youtube"]
+        if len(social_dict["facebook"]) > 1:
+            p.ids.facebook = social_dict["facebook"][1]
+        if len(social_dict["instagram"]) > 1:
+            p.ids.instagram = social_dict["instagram"][1]
+        if len(social_dict["twitter"]) > 1:
+            p.ids.twitter = social_dict["twitter"][1]
+        if len(social_dict["youtube"]) > 1:
+            p.ids.youtube = social_dict["youtube"][1]
 
         return p
 
