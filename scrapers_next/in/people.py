@@ -46,37 +46,30 @@ class BlueSenDetail(HtmlPage):
             .strip()
         )
 
-        social_dict = {
-            "facebook": [],
-            "instagram": [],
-            "twitter": [],
-            "youtube": [],
-        }
+        p.capitol_office.address = addr
 
-        for soc in social_dict.keys():
-            soc_pattern = re.compile(rf"(.+)({soc}\.com/)(.+)")
-            social_dict[soc].append(soc_pattern)
+        socials = ["facebook", "instagram", "twitter", "youtube"]
+        handles = {x: None for x in socials}
+        patterns = {x: re.compile(rf"(.+)({x}\.com/)(.+)") for x in socials}
 
         social_links = CSS("div .fusion-social-links a").match(self.root)
         for link in social_links:
             href = link.get("href").lower()
-            for soc in social_dict.keys():
+            for soc in socials:
                 if soc in href:
-                    pattern = social_dict[soc][0]
+                    pattern = patterns[soc]
                     raw_handle = pattern.search(href).groups()[-1]
                     handle = re.sub("/", "", raw_handle)
-                    social_dict[soc].append(handle)
+                    handles[soc] = handle
 
-        p.capitol_office.address = addr
-
-        if len(social_dict["facebook"]) > 1:
-            p.ids.facebook = social_dict["facebook"][1]
-        if len(social_dict["instagram"]) > 1:
-            p.ids.instagram = social_dict["instagram"][1]
-        if len(social_dict["twitter"]) > 1:
-            p.ids.twitter = social_dict["twitter"][1]
-        if len(social_dict["youtube"]) > 1:
-            p.ids.youtube = social_dict["youtube"][1]
+        if handles["facebook"]:
+            p.ids.facebook = handles["facebook"]
+        if handles["instagram"]:
+            p.ids.instagram = handles["instagram"]
+        if handles["twitter"]:
+            p.ids.twitter = handles["twitter"]
+        if handles["youtube"]:
+            p.ids.youtube = handles["youtube"]
 
         return p
 
