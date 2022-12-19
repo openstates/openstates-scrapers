@@ -300,7 +300,7 @@ class Utah(State):
             "name": "2022 General Session",
             "start_date": "2022-01-18",
             "end_date": "2022-03-04",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2022 3rd Special Session",
@@ -309,7 +309,7 @@ class Utah(State):
             "name": "2022 3rd Special Session",
             "start_date": "2022-03-25",
             "end_date": "2022-03-25",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023 General Session",
@@ -318,7 +318,7 @@ class Utah(State):
             "name": "2023 General Session",
             "start_date": "2023-01-17",
             "end_date": "2023-03-03",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
