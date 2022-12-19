@@ -268,7 +268,7 @@ class Arizona(State):
             "name": "Fifty-fifth Legislature - Second Regular Session",
             "start_date": "2022-01-10",
             "end_date": "2022-06-25",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023 - Fifty-sixth Legislature - First Regular Session",
@@ -277,7 +277,7 @@ class Arizona(State):
             "name": "56th Legislature - First Regular Session",
             "start_date": "2023-01-09",
             "end_date": "2023-06-30",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
