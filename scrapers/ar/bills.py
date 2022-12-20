@@ -288,7 +288,10 @@ class ARBillScraper(Scraper):
             div = list(row)
             FI_number = div[0].text_content().replace("FI Number:", "").strip()
             for a in div[3]:
+                if isinstance(a, lxml.html.HtmlComment):
+                    continue
                 FI_url = a.attrib["href"].strip()
+
             FI_date = div[2].text_content().replace("Date Issued:", "").strip()
             date = TIMEZONE.localize(datetime.datetime.strptime(FI_date, "%m/%d/%Y"))
             date = "{:%Y-%m-%d}".format(date)

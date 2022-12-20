@@ -14,6 +14,11 @@ central = pytz.timezone("US/Central")
 
 
 session_details = {
+    "103rd": {
+        "speaker": "Welch",
+        "president": "Harmon",
+        "params": {"GA": "103", "SessionId": "112"},
+    },
     "102nd": {
         "speaker": "Welch",
         "president": "Harmon",

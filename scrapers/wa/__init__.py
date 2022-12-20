@@ -60,7 +60,7 @@ class Washington(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-11",
             "end_date": "2022-03-10",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023-24",
@@ -70,7 +70,7 @@ class Washington(State):
             "start_date": "2023-01-09",
             # TODO: update end date
             "end_date": "2023-04-25",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
