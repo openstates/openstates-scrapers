@@ -59,6 +59,10 @@ services:
       - MYSQL_HOST=mysql
       - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
       - PYTHONPATH=./scrapers
+      - STATS_ENABLED
+      - STATS_RETRIES=1
+      - STATS_ENDPOINT
+      - STATS_JWT_TOKEN
     volumes:
       - .:/opt/openstates/openstates/
     entrypoint: ["poetry", "run", "os-update"]
