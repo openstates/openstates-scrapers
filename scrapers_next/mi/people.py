@@ -11,6 +11,10 @@ def split_name(name):
         last, first = name.split(", ")
     else:
         raise ValueError(name)
+
+    if re.search("Dr.", first):
+        first = re.sub("Dr.", "", first)
+
     return {"given_name": first, "family_name": last, "name": f"{first} {last}"}
 
 
@@ -72,13 +76,20 @@ class Representatives(HtmlListPage):
     def process_item(self, item):
         if "Vacant" in item.text_content():
             self.skip("vacant")
-        link = item.xpath(".//a")[0]
-        url = link.get("href")
-        (
-            name,
-            party,
-            district,
-        ) = re.match(r"\s+([^\(]+)\((\w+)\)\s+District-(\d+)", link.text).groups()
+
+        link = ""
+        url = ""
+        try:
+            link = item.xpath("./div[1]/div/a")[0]
+            url = item.xpath("./div[1]/div/a")[0].get("href")
+        except IndexError:
+            link = item.xpath("./div[1]/div/div")[0]
+        finally:
+            (
+                name,
+                party,
+                district,
+            ) = re.match(r"\s+([^\(]+)\((\w+)\)\s+District-(\d+)", link.text).groups()
 
         contact = item.getchildren()[1].getchildren()[0:3]
         office = contact[0].text_content().strip()

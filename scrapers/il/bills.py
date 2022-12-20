@@ -14,6 +14,11 @@ central = pytz.timezone("US/Central")
 
 
 session_details = {
+    "103rd": {
+        "speaker": "Welch",
+        "president": "Harmon",
+        "params": {"GA": "103", "SessionId": "112"},
+    },
     "102nd": {
         "speaker": "Welch",
         "president": "Harmon",
@@ -539,7 +544,7 @@ class IlBillScraper(Scraper):
 
         # now add sponsors
         for spontype, sponsor, chamber, official_type in sponsor_list:
-            if official_type == "primary":
+            if spontype == "primary":
                 primary = True
             else:
                 primary = False
@@ -591,6 +596,28 @@ class IlBillScraper(Scraper):
                     else:
                         url = "{}&print=true".format(url)
                         mimetype = "text/html"
+
+                        version_id = re.search(
+                            r"DocName=(.*?)&", url, flags=re.IGNORECASE
+                        ).group(1)
+                        doctype = re.search(
+                            r"DocTypeId=(.*?)&", url, flags=re.IGNORECASE
+                        ).group(1)
+                        # numeric component of the session id
+                        session_number = int(
+                            "".join(
+                                char
+                                for char in bill.legislative_session
+                                if char.isdigit()
+                            )
+                        )
+
+                        # if it's html, extract the pdf link too while we're here.
+                        pdf_url = f"https://ilga.gov/legislation/{session_number}/{doctype}/PDF/{version_id}.pdf"
+                        bill.add_version_link(
+                            name, pdf_url, media_type="application/pdf"
+                        )
+
                     bill.add_version_link(name, url, media_type=mimetype)
                 elif name in FULLTEXT_DOCUMENT_TYPES:
                     bill.add_document_link(name, url)

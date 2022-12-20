@@ -4,9 +4,10 @@ on:
     branches: [ main ]
     tags:
       - '*'
-jobs: 
+jobs:
   publish:
-    steps: 
+    runs-on: ubuntu-latest
+    steps:
       - uses: actions/checkout@v2
       - name: build docker image
         uses: docker/build-push-action@v1.1.0
@@ -17,4 +18,3 @@ jobs:
           dockerfile: /github/workspace/Dockerfile
           tag_with_ref: true
           tags: latest
-    runs-on: ubuntu-18.04

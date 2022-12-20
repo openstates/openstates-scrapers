@@ -3,6 +3,11 @@ from spatula import JsonPage, HtmlPage, CSS
 from openstates.models import ScrapePerson
 
 
+def fix_phone(phone: str) -> str:
+    phone = phone.replace("(6090 ", "609-").replace("(", "").replace(") ", "-")
+    return phone
+
+
 class LegDetail(JsonPage):
     example_source = (
         "https://www.njleg.state.nj.us/legislative-roster/328/senator-addiego"
@@ -14,7 +19,7 @@ class LegDetail(JsonPage):
         # response is 3 lists: bio data, addresses, then committee memberships
         bio_data = self.data[0][0]
 
-        p.email = bio_data["ccMailName"]
+        p.email = bio_data["ccMailName"] if bio_data["ccMailName"] is not None else ""
         if pos := bio_data["Legislative_Position"]:
             p.extras["position"] = pos
 
@@ -39,7 +44,7 @@ class LegDetail(JsonPage):
                     + address_data["Zipcode"]
                 )
                 office.address = address
-            office.voice = address_data["Phone_Number"]
+            office.voice = fix_phone(address_data["Phone_Number"])
 
         p.add_source(self.source.url)
 

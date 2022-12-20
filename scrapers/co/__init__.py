@@ -1,4 +1,3 @@
-import re
 from utils import url_xpath
 from openstates.scrape import State
 from .bills import COBillScraper
@@ -81,7 +80,7 @@ class Colorado(State):
             "identifier": "2017B",
             "name": "2017 First Extraordinary Session",
             "start_date": "2017-10-02",
-            "end_date": "2017-10-06",
+            "end_date": "2017-10-04",
         },
         {
             "_scraped_name": "2018 Regular Session",
@@ -89,7 +88,7 @@ class Colorado(State):
             "identifier": "2018A",
             "name": "2018 Regular Session",
             "start_date": "2018-01-10",
-            "end_date": "2018-03-11",
+            "end_date": "2018-05-09",
         },
         {
             "_scraped_name": "2019 Regular Session",
@@ -105,7 +104,7 @@ class Colorado(State):
             "identifier": "2020A",
             "name": "2020 Regular Session",
             "start_date": "2020-01-08",
-            "end_date": "2020-05-06",
+            "end_date": "2020-06-15",
         },
         {
             "_scraped_name": "2020 First Extraordinary Session",
@@ -113,8 +112,7 @@ class Colorado(State):
             "identifier": "2020B",
             "name": "2020 First Extraordinary Session",
             "start_date": "2020-11-30",
-            # TODO: Real end date after session ends
-            "end_date": "2020-12-04",
+            "end_date": "2020-12-02",
         },
         {
             "_scraped_name": "2021 Regular Session",
@@ -122,44 +120,29 @@ class Colorado(State):
             "identifier": "2021A",
             "name": "2021 Regular Session",
             "start_date": "2021-01-13",
-            "end_date": "2022-05-06",
+            "end_date": "2022-06-08",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2022 Regular Session",
+            "classification": "primary",
+            "identifier": "2022A",
+            "name": "2022 Regular Session",
+            "start_date": "2022-01-12",
+            "end_date": "2022-05-11",
             "active": True,
         },
     ]
     ignored_scraped_sessions = [
-        "2013 Legislative Session",
-        "2012 First Special Session",
-        "2012 Legislative Session",
-        "2011 Legislative Session",
-        "2010 Legislative Session",
-        "2009 Legislative Session",
-        "2008 Legislative Session",
-        "2007 Legislative Session",
-        "2006 First Special Session",
-        "2006 Legislative Session",
-        "2005 Legislative Session",
-        "2004 Legislative Session",
-        "2003 Legislative Session",
-        "2002 First Special Session",
-        "2002 Legislative Session",
-        "2001 Second Special Session",
-        "2001 First Special Session",
-        "2001 Legislative Session",
-        "2000 Legislative Session",
-        "2010 Regular/Special Session",
+        "2020 Extraordinary Session",
+        "2017 Extraordinary Session",
+        "- All -",
+        "2016 Regular Session",
     ]
 
     def get_session_list(self):
-        sessions = []
-        regex = r"2[0-9][0-9][0-9]\ .*\ Session"
-
         tags = url_xpath(
-            "http://www.leg.state.co.us/clics/cslFrontPages.nsf/PrevSessionInfo?OpenForm",
-            "//font/text()",
+            "https://leg.colorado.gov/bill-search",
+            "//select[@id='edit-field-sessions']/option/text()",
         )
-        for tag in tags:
-            sess = re.findall(regex, tag)
-            for session in sess:
-                sessions.append(session)
-
-        return sessions
+        return tags

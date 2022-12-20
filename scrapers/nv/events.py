@@ -3,6 +3,7 @@ import datetime
 import lxml
 
 from utils import LXMLMixin
+from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
 
 
@@ -41,19 +42,32 @@ class NVEventScraper(Scraper, LXMLMixin):
         all_text = info_td.xpath("descendant-or-self::*/text()")
         notes = (line.strip() for line in all_text if line.strip())
         notes = list(notes)
-        # Skip the first line, which is the title
-        notes = notes[1:]
-        # Split out the address
-        address = notes[0]
-        notes = notes[1:]
-        # The rest just becomes the description
-        notes = "\n".join(notes)
+
+        if len(notes) > 1:
+            # Skip the first line, which is the title
+            notes = notes[1:]
+            # Split out the address
+            address = notes[0]
+            notes = notes[1:]
+            # The rest just becomes the description
+            notes = "\n".join(notes)
+        else:
+            address = "TBD"
+            notes = notes[0]
 
         event = Event(
             start_date=self._TZ.localize(start_date),
             name=title,
             location_name=address,
             description=notes,
+        )
+
+        match_coordinates(
+            event,
+            {
+                "555 e. washington ave": (36.18278967322847, -115.13231621695132),
+                "legislative building": (39.16196376710227, -119.76626916663172),
+            },
         )
 
         event.add_source(self.URL)

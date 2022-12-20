@@ -43,6 +43,7 @@ class NYEventScraper(Scraper):
         end = end.strftime("%Y-%m-%d")
 
         yield from self.scrape_upper(start, end)
+        yield from self.scrape_lower()
 
     def scrape_lower(self):
         url = "https://nyassembly.gov/leg/?sh=agen"
@@ -58,7 +59,7 @@ class NYEventScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        table = page.xpath('//section[@id="leg-agenda-mod"]/div/table')[0]
+        table = page.xpath('//section[@id="inline_file"]/div/table')[0]
         meta = table.xpath("tr[1]/td[1]/text()")
 
         # careful, the committee name in the page #committee_div
@@ -67,7 +68,8 @@ class NYEventScraper(Scraper):
         com_name = re.sub(r"\(.*\)", "", meta[0])
         com_name = f"Assembly {com_name}"
 
-        when = dateutil.parser.parse(meta[1])
+        when = self.clean_date(meta[1])
+        when = dateutil.parser.parse(when)
         when = self._tz.localize(when)
         location = meta[2]
 
@@ -152,3 +154,7 @@ class NYEventScraper(Scraper):
                 agenda.add_bill(bill["billId"]["printNo"])
 
             yield event
+
+    def clean_date(self, date: str) -> str:
+        date = date.replace("OFF THE FLOOR,", "")
+        return date

@@ -47,8 +47,9 @@ class WIBillScraper(Scraper):
     def scrape_subjects(self, year, site_id):
         last_url = None
         next_url = (
-            "http://docs.legis.wisconsin.gov/%s/related/subject_index/index/" % year
+            f"https://docs.legis.wisconsin.gov/{year}/related/subject_index/index"
         )
+
         last_subject = None
 
         # if you visit this page in your browser it is infinite-scrolled
@@ -56,7 +57,7 @@ class WIBillScraper(Scraper):
         # that we use to scrape the data
 
         while last_url != next_url:
-            html = self.get(next_url).text
+            html = self.get(next_url, verify=False).text
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(next_url)
 
@@ -82,7 +83,7 @@ class WIBillScraper(Scraper):
                     preceding_subject = last_subject[0]
                 else:
                     preceding_subject = preceding_subject[-1]
-                preceding_subject = preceding_subject.replace(u"\xe2\x80\x94", "")
+                preceding_subject = preceding_subject.replace("\xe2\x80\x94", "")
                 self.subjects[bill_id].append(preceding_subject)
 
             # last subject on the page, in case we get a bill_id on next page
@@ -108,7 +109,7 @@ class WIBillScraper(Scraper):
         types = ("bill", "joint_resolution", "resolution")
 
         for type in types:
-            url = "http://docs.legis.wisconsin.gov/%s/proposals/%s/%s/%s" % (
+            url = "https://docs.legis.wisconsin.gov/%s/proposals/%s/%s/%s" % (
                 year,
                 site_id,
                 chamber_slug,
@@ -126,7 +127,7 @@ class WIBillScraper(Scraper):
             bill_type = "bill"
 
         try:
-            data = self.get(url).text
+            data = self.get(url, verify=False).text
         except scrapelib.HTTPError:
             self.warning("skipping URL %s" % url)
             return

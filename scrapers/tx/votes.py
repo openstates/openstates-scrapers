@@ -248,7 +248,7 @@ def get_bill(el):
 
 def clean_bill_id(bill_id):
     if bill_id:
-        bill_id = bill_id.replace(u"\xa0", " ")
+        bill_id = bill_id.replace("\xa0", " ")
         bill_id = re.sub(r"CS(SB|HB)", r"\1", bill_id)
         bill_id = bill_id.split(" - ")[0]  # clean off things like " - continued"
     return bill_id
@@ -305,7 +305,7 @@ def clean_vote_name(name):
 
 
 def viva_voce_votes(root, session, chamber):
-    for el in root.xpath(u'//div[starts-with(., "All Members are deemed")]'):
+    for el in root.xpath('//div[starts-with(., "All Members are deemed")]'):
         mv = MaybeViva(el)
         if not mv.is_valid:
             continue

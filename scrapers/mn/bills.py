@@ -1,7 +1,6 @@
 import re
 import datetime
 import urllib.parse
-import scrapelib
 from collections import defaultdict
 import lxml.html
 
@@ -129,7 +128,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                     bill_url = BILL_DETAIL_URL % (
                         self.search_chamber(chamber),
                         b,
-                        "2019",
+                        "2022",
                     )
                     version_url = VERSION_URL % (
                         self.search_session(session)[-4:],
@@ -282,15 +281,7 @@ class MNBillScraper(Scraper, LXMLMixin):
         for subject in self._subject_mapping[bill_id]:
             bill.add_subject(subject)
 
-        # Get companion bill.
-        companion = doc.xpath(
-            '//table[@class="status_info"]//tr[1]/td[2]'
-            '/a[starts-with(@href, "?")]/text()'
-        )
-        companion = self.make_bill_id(companion[0]) if len(companion) > 0 else None
-        companion_chamber = self.chamber_from_bill(companion)
-        if companion is not None:
-            bill.add_companion(companion, chamber=companion_chamber)
+        bill = self.extract_companion(bill, doc, session)
 
         # Grab sponsors
         bill = self.extract_sponsors(bill, doc, chamber)
@@ -298,8 +289,9 @@ class MNBillScraper(Scraper, LXMLMixin):
         # Add Actions performed on the bill.
         bill = self.extract_actions(bill, doc, chamber)
 
-        # Get all versions of the bill.
-        bill = self.extract_versions(bill, doc, chamber, version_list_url)
+        bill = self.extract_versions(bill, doc)
+
+        bill = self.extract_citations(bill, doc)
 
         yield bill
 
@@ -463,6 +455,60 @@ class MNBillScraper(Scraper, LXMLMixin):
 
         return bill
 
+    # MN provides data in two parts,
+    # the session law (or chaptered law), which makes the list of changes legal until a new code is printed
+    # and all the various parts of the code that are getting amended by the given bill.
+    def extract_citations(self, bill, bill_doc):
+        for link in bill_doc.xpath(
+            '//div[contains(string(.), "Session Law Chapter") and a[contains(@href,"/laws")]]/a'
+        ):
+            cite_url = link.xpath("@href")[0]
+            chapter = link.xpath("text()")[0]
+            html = self.get(cite_url).text
+            doc = lxml.html.fromstring(html)
+
+            title = doc.xpath(
+                "string(//div[contains(@class,'col-12 col-md-8')]/h1)"
+            ).strip()
+            bill.add_citation(
+                title,
+                f"Chapter {chapter}",
+                citation_type="chapter",
+                url=cite_url,
+            )
+
+            amends = self.get_nodes(
+                doc,
+                "//h1[contains(@class,'bill_sec_header') and contains(text(),'is amended')]",
+            )
+            for amend in amends:
+                full_cite = amend.xpath("text()")[0]
+                cite_parts = full_cite.split(",")
+                bill.add_citation(
+                    cite_parts[0].strip(),
+                    "".join(cite_parts[1:-1]).strip(),
+                    citation_type="final",
+                    url=cite_url,
+                )
+        return bill
+
+    def extract_companion(self, bill, doc, session):
+        companion = doc.xpath(
+            "//div[contains(text(), 'Companion:') and not(contains(text(), 'None'))]/a[1]"
+        )
+
+        if not companion:
+            return bill
+
+        bill_id = self.make_bill_id(companion[0].xpath("text()")[0])
+        if companion:
+            bill.add_related_bill(
+                identifier=bill_id,
+                legislative_session=session,
+                relation_type="companion",
+            )
+        return bill
+
     def extract_sponsors(self, bill, doc, chamber):
         """
         Extracts sponsors from bill page.
@@ -486,34 +532,31 @@ class MNBillScraper(Scraper, LXMLMixin):
 
         return bill
 
-    def extract_versions(self, bill, doc, chamber, version_list_url):
-        """
-        Versions of a bill are on a separate page, linked to from the column
-        labeled, "Bill Text", on the search results page.
-        """
-        try:
-            version_resp = self.get(version_list_url)
-        except scrapelib.HTTPError:
-            self.warning("Bad version URL detected: {}".format(version_list_url))
-            return bill
-
-        version_html = version_resp.text
-        if "resolution" in version_resp.url:
+    def extract_versions(self, bill, doc):
+        # Get all versions of the bill.
+        for row in doc.xpath("//div[@id='versions']/table/tr[td]"):
+            html_link = row.xpath("td[1]/a")[0]
+            version_title = html_link.text_content().strip().replace("  ", " ")
+            version_day = row.xpath("td[3]/text()")[0].strip()
+            version_day = version_day.replace("Posted on", "").strip()
+            version_day = datetime.datetime.strptime(version_day, "%m/%d/%Y").date()
+            html_url = html_link.xpath("@href")[0]
             bill.add_version_link(
-                "resolution text", version_resp.url, media_type="text/html"
+                version_title,
+                html_url,
+                date=version_day,
+                media_type="text/html",
+                on_duplicate="ignore",
             )
-        else:
-            version_doc = lxml.html.fromstring(version_html)
-            for v in version_doc.xpath('//a[starts-with(@href, "text.php")]'):
-                version_url = urllib.parse.urljoin(VERSION_URL_BASE, v.get("href"))
-                if "pdf" not in version_url:
-                    bill.add_version_link(
-                        v.text.strip(),
-                        version_url,
-                        media_type="text/html",
-                        on_duplicate="ignore",
-                    )
-
+            if row.xpath("td[2]/a[@aria-label='PDF document']"):
+                pdf_url = row.xpath("td[2]/a[@aria-label='PDF document']/@href")[0]
+                bill.add_version_link(
+                    version_title,
+                    pdf_url,
+                    date=version_day,
+                    media_type="applcation/pdf",
+                    on_duplicate="ignore",
+                )
         return bill
 
     # def extract_vote_from_action(self, bill, action, chamber, action_row):

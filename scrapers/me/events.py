@@ -134,7 +134,7 @@ class MEEventScraper(Scraper, LXMLMixin):
                                 )
                             )
 
-                            if test["FileType"] == "pdf":
+                            if test["FileType"].lower() == "pdf":
                                 media_type = "application/pdf"
 
                             event.add_document(

@@ -11,22 +11,51 @@ class PartialSen:
     source: str
 
 
+# @dataclass
+# class PartialRep:
+#     name: str
+#     district: str
+#     source: str
+
+
 @dataclass
 class PartialRep:
     name: str
+    image: str
     district: str
+    email: str
     source: str
 
 
 class SenDetail(HtmlPage):
     input_type = PartialSen
+    sen_re = re.compile("​DISTRITO|\u200b")
 
     def process_page(self):
+        """
+        <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+                <div class="row">
+                        <div class="col-md-3">
+                                <img src="document_vault/senator/12/FourYearPeriods/14/photo/MARIALLY GONZALEZ.jpg" class="senator_image" />
+                                <br /><br />
+                                <div class="section_titles">Senadora por Distrito</div>
+                                <br />
+                                <div class="section_titles">Partido Popular Democrático</div>
+                                <br />
+                                <div class="section_titles"><a href="news.cfm?SenatorFilter=12&filterform=1" style="text-decoration: none;    color: inherit;">Comunicaciones y Prensa</a></div>
+                                <br />
+                                <img src="document_vault/senator_template/phone.jpg" style="width: 50px;margin: 0px auto;display: inherit;" />
+                                <div class="contact_titles">787-724-2030</div>
+                                <br />
+                                <img src="document_vault/senator_template/email.png" style="width: 50px;margin: 0px auto;display: inherit;" />
+                                <div class="contact_titles">magonzalez@senado.pr.gov</div>
+                        </div>
+        No district indications, but we can leave the old code in place as it doesn't _fail_.
+        """
         district = (
-            CSS(
-                "span#DeltaPlaceHolderMain section div.row.profile-container div ul li a"
-            )
-            .match(self.root)[1]
+            CSS("div.row div.col-md-10 div.row div.col-md-3 div.section_titles")
+            .match(self.root)[0]
             .text_content()
             .strip()
         )
@@ -35,7 +64,7 @@ class SenDetail(HtmlPage):
         elif district == "Senadora por Distrito":
             # every Senator except for this link are missing a district number
             # https://senado.pr.gov/Pages/Senators/HON--MIGDALIA-PADILLA-ALVELO.aspx
-            district = ""
+            district = "missing"
             try:
                 district = (
                     CSS("div.module-distrito span.headline")
@@ -43,8 +72,7 @@ class SenDetail(HtmlPage):
                     .text_content()
                     .strip()
                 )
-                district = re.sub("​DISTRITO", "", district)
-                district = re.sub("\u200b", "", district)
+                district = self.sen_re.sub("", district)
                 district = district.strip()
             except SelectorError:
                 pass
@@ -62,27 +90,38 @@ class SenDetail(HtmlPage):
         p.add_link(self.source.url, note="homepage")
 
         try:
-            img = CSS("div.avatar img").match_one(self.root).get("src")
+            img = (
+                CSS("div.row div.col-md-10 div.row div.col-md-3 img")
+                .match(self.root)[0]
+                .get("src")
+            )
             p.image = img
         except SelectorError:
             pass
 
         email = (
-            CSS("a.contact-data.email")
-            .match_one(self.root)
+            CSS("div.row div.col-md-10 div.row div.col-md-3 div.contact_titles")
+            .match(self.root)[1]
             .text_content()
-            .replace("\u200b", "")
             .strip()
         )
         p.email = email
 
+        """
         title = CSS("span.position").match_one(self.root).text_content().strip()
         if title != "":
             p.extras["title"] = title
-
-        phone = CSS("a.contact-data.tel").match_one(self.root).text_content().strip()
+        """
+        phone = (
+            CSS("div.row div.col-md-10 div.row div.col-md-3 div.contact_titles")
+            .match(self.root)[0]
+            .text_content()
+            .strip()
+        )
         p.capitol_office.voice = phone
 
+        """
+        Addresses all seem to be missing, so we'll disable those for now
         addresses = CSS("div.pre-footer div div div div p").match(self.root)
         cap_addr = CSS("br").match(addresses[0])
         capitol_address = ""
@@ -99,20 +138,21 @@ class SenDetail(HtmlPage):
                 mailing_address += line.tail.strip()
                 mailing_address += " "
         p.extras["Mailing address"] = mailing_address.strip()
+        """
 
         return p
 
 
 class Senate(HtmlListPage):
-    source = URL("https://senado.pr.gov/Pages/Senadores.aspx")
-    selector = CSS("ul.senadores-list li", num_items=27)
+    source = URL("https://senado.pr.gov/index.cfm?module=senadores")
+    selector = CSS("div.senator_cont")
 
     def process_item(self, item):
         # Convert names to title case as they are in all-caps
-        name = CSS("span.name").match_one(item).text_content().strip()
+        name = CSS("a span.name").match_one(item).text_content().strip()
         name = re.sub(r"^Hon\.", "", name, flags=re.IGNORECASE).strip().title()
 
-        party = CSS("span.partido").match_one(item).text_content().strip()
+        party = CSS("a span.partido").match_one(item).text_content().strip()
         # Translate to English since being an Independent is a universal construct
         if party == "Independiente":
             party = "Independent"
@@ -123,22 +163,21 @@ class Senate(HtmlListPage):
 
 
 class RepDetail(HtmlPage):
+    # example_source = "https://www.camara.pr.gov/team/rafael-hernandez-montanez/"
+
     input_type = PartialRep
 
     def process_page(self):
         party_map = {
             "PNP": "Partido Nuevo Progresista",
-            "PPD": u"Partido Popular Democr\xe1tico",
-            "PIP": u"Partido Independentista Puertorrique\u00F1o",
+            "PPD": "Partido Popular Democr\xe1tico",
+            "PIP": "Partido Independentista Puertorrique\u00F1o",
+            "PD": "Proyecto Dignidad",
+            "MVC": "Movimiento Victoria Ciudadana",
+            "Independiente": "Independent",
         }
-
-        try:
-            party = CSS("span.partyBio").match_one(self.root).text_content().strip()
-            party = party_map[party]
-        except SelectorError:
-            # HON. LISIE J. BURGOS MUÑIZ, HON. JOSÉ B. MÁRQUEZ REYES, HON. MARIANA NOGALES MOLINELLI
-            # do not have their parties listed
-            party = "Independent"
+        party = CSS(".ova-experience span").match_one(self.root).text_content().strip()
+        party = party_map[party]
 
         p = ScrapePerson(
             name=self.input.name,
@@ -146,81 +185,91 @@ class RepDetail(HtmlPage):
             chamber="lower",
             district=self.input.district,
             party=party,
+            email=self.input.email,
+            image=self.input.image,
         )
+
+        try:
+            phone = CSS(".ova-phone a").match_one(self.root).text_content().strip()
+            p.capitol_office.voice = phone
+        except SelectorError:
+            pass
+
+        try:
+            role = CSS(".job").match_one(self.root).text_content().strip()
+            p.extras["role"] = role
+        except SelectorError:
+            pass
+
+        try:
+            socials = CSS(".ova-social li a").match(self.root)
+            for link in socials:
+                social_link = link.get("href")
+                split_social_link = social_link.split(".com/")[1]
+                if "twitter" in social_link:
+                    p.ids.twitter = split_social_link
+                elif "facebook" in social_link:
+                    p.ids.facebook = split_social_link
+                elif "instagram" in social_link:
+                    p.ids.instagram = split_social_link
+        except SelectorError:
+            pass
+
+        resumen = CSS(".resumen-financiero a").match_one(self.root).get("href")
+        p.add_link(resumen, note="resumen financiero")
+
+        try:
+            committees = (
+                CSS(".ova-excerpt-team")
+                .match_one(self.root)
+                .text_content()
+                .replace("\r\n", "")
+                .strip()
+                .split("Comisiones:-")
+            )
+            p.extras["committees"] = committees[1].strip()
+        except IndexError:
+            pass
 
         p.add_source(self.input.source)
         p.add_source(self.source.url)
         p.add_link(self.source.url, note="homepage")
 
-        img = CSS("div.container-biography img").match(self.root)[0].get("src")
-        p.image = img
-
-        title = CSS("span.name br").match_one(self.root).tail.strip()
-        if title != "":
-            p.extras["title"] = title
-
-        phones = (
-            CSS("h6 span span span")
-            .match(self.root)[0]
-            .text_content()
-            .strip()
-            .split("\n")
-        )
-        phone1 = re.search(r"Tel\.\s(.+)", phones[0]).groups()[0]
-        phone2 = re.search(r"Tel\.\s?(.+)?", phones[1]).groups()[0]
-        # http://www.tucamarapr.org/dnncamara/ComposiciondelaCamara/biografia.aspx?rep=251 has an incomplete phone
-        if phone1.strip() != "" and phone1.strip() != "(787":
-            p.district_office.voice = phone1.strip()
-        if phone2 and phone2.strip() != "":
-            p.extras["phone 2"] = phone2.strip()
-
-        fax = (
-            CSS("h6 span span span")
-            .match(self.root)[1]
-            .text_content()
-            .strip()
-            .split("\n")
-        )
-        fax1 = re.search(r"Fax\.\s(.+)", fax[0]).groups()[0]
-        if fax1.strip() != "":
-            p.district_office.fax = fax1.strip()
-        tty = re.search(r"TTY\.\s?(.+)?", fax[1]).groups()[0]
-        if tty and tty.strip() != "":
-            p.extras["TTY"] = tty
-
-        # these addresses do not look complete but capturing them anyway
-        addr = XPath(
-            "//*[@id='dnn_ctr1108_ViewWebRepresentatives_WebRepresentatives1_pnlRepresentative']/h6/text()[1]"
-        ).match_one(self.root)
-        if addr != "":
-            p.district_office.address = addr.strip()
-
         return p
 
 
 class House(HtmlListPage):
-    source = URL(
-        "http://www.tucamarapr.org/dnncamara/ComposiciondelaCamara/Biografia.aspx"
+    source = URL("https://www.camara.pr.gov/page-team/")
+    selector = XPath(
+        "//div[@class='items elementor-items']//div[@class='content_info']"
     )
-    selector = CSS("ul.list-article li", num_items=49)
 
     def process_item(self, item):
-        bio_info = (
-            CSS("div.biodiv a").match_one(item).text_content().strip().split("\n")
+        name = (
+            XPath(".//a[@class='name second_font']")
+            .match_one(item)
+            .text_content()
+            .strip()
         )
-        name = bio_info[0].strip()
-        name = re.sub(r"^Hon\.", "", name, flags=re.IGNORECASE).strip()
+        district = (
+            CSS(".ova-info-content .ova-expertise span")
+            .match_one(item)
+            .text_content()
+            .strip()
+            .split("-")[0]
+        )
+        email = (
+            CSS(".ova-info-content .ova-email").match_one(item).text_content().strip()
+        )
+        image = CSS(".ova-media a img").match_one(item).get("src")
+        detail_link = CSS(".ova-media a").match_one(item).get("href")
 
-        district = bio_info[2].strip()
-        if district == "Representante por Acumulación":
-            district = "At-Large"
-        else:
-            district = re.search(
-                r"Representante\sdel\sDistrito\s(.+)", district
-            ).groups()[0]
-
-        partial = PartialRep(name=name, district=district, source=self.source.url)
-
-        detail_link = CSS("a").match_one(item).get("href")
+        partial = PartialRep(
+            name=name,
+            image=image,
+            district=district,
+            email=email,
+            source=self.source.url,
+        )
 
         return RepDetail(partial, source=detail_link)

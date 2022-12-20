@@ -1,9 +1,10 @@
 # Pupa and Billy scraped JSON and Scrapelib-cached webpages
 data
 cache
-_cache
-_data
-_scrapes
+_cache/
+_data/
+_scrapes/
+_auto-people/
 spatula-cache.db
 
 # Setting-overrides that should not be shared
@@ -38,6 +39,7 @@ venv
 
 # Binary data files and dumps, from Open States and state websites
 openstates.sqlite3
+openstates-postgres/
 dump/
 tmp.*
 *.mdb

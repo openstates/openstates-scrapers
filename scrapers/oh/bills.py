@@ -48,6 +48,9 @@ class OHBillScraper(Scraper):
     def scrape(self, session=None, chambers=None):
         # Bills endpoint can sometimes take a very long time to load
         self.timeout = 300
+        self.headers[
+            "User-Agent"
+        ] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36"
 
         if int(session) < 128:
             raise AssertionError("No data for period {}".format(session))
@@ -155,8 +158,9 @@ class OHBillScraper(Scraper):
                 chamber = "lower" if "H" in bill_id else "upper"
                 classification = "bill" if "B" in bill_id else "resolution"
 
-                if not title and session == "134" and bill_id == "HR 35":
-                    # Exception for HR 35 which is a real bill
+                no_title_bills = ["HR 35", "SCR 14", "SR 259"]
+                if not title and session == "134" and bill_id in no_title_bills:
+                    # Exception for HR 35, SCR 14, and SR 259 which are real bills
                     title = "No title provided"
                 elif not title:
                     self.warning(f"no title for {bill_id}, skipping")
@@ -250,7 +254,8 @@ class OHBillScraper(Scraper):
 
                 try:
                     action_doc = self.get(
-                        base_url + bill_version["action"][0]["link"], verify=False
+                        base_url + bill_version["action"][0]["link"],
+                        verify=False,
                     )
                 except scrapelib.HTTPError:
                     pass
@@ -476,7 +481,10 @@ class OHBillScraper(Scraper):
         legislators = {}
         for chamber in ["House", "Senate"]:
             url = base_url + "chamber/{chamber}/legislators?per_page=100"
-            doc = self.get(url.format(chamber=chamber), verify=False)
+            doc = self.get(
+                url.format(chamber=chamber),
+                verify=False,
+            )
             leg_json = doc.json()
             for leg in leg_json["items"]:
                 if leg["med_id"]:

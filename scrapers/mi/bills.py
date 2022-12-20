@@ -97,7 +97,7 @@ class MIBillScraper(Scraper):
         # sponsors
         sponsors = doc.xpath('//span[@id="frg_billstatus_SponsorList"]/a')
         for sponsor in sponsors:
-            name = sponsor.text.replace(u"\xa0", " ")
+            name = sponsor.text.replace("\xa0", " ")
             # sometimes district gets added as a link
             if name.isnumeric():
                 continue
@@ -105,7 +105,7 @@ class MIBillScraper(Scraper):
             if len(sponsors) > 1:
                 classification = (
                     "primary"
-                    if sponsor.tail and "primary" in sponsor.tail
+                    if sponsor.tail and "district" in sponsor.tail
                     else "cosponsor"
                 )
             else:
@@ -240,11 +240,15 @@ class MIBillScraper(Scraper):
             parsed = self.parse_doc_row(row)
             if parsed:
                 name, url = parsed
+                # create 2 versions per url of bill version
                 if url.endswith(".pdf"):
-                    mimetype = "application/pdf"
+                    bill.add_version_link(name, url, media_type="application/pdf")
+                    html_url = re.sub("pdf", "htm", url)
+                    bill.add_version_link(name, html_url, media_type="text/html")
                 elif url.endswith(".htm"):
-                    mimetype = "text/html"
-                bill.add_version_link(name, url, media_type=mimetype)
+                    bill.add_version_link(name, url, media_type="text/html")
+                    pdf_url = re.sub("htm", "pdf", url)
+                    bill.add_version_link(name, pdf_url, media_type="application/pdf")
 
         # documents
         for row in doc.xpath('//table[@id="frg_billstatus_HlaTable"]/tr'):
@@ -311,13 +315,13 @@ class MIBillScraper(Scraper):
 
         # split the file into lines using the <p> tags
         pieces = [
-            p.text_content().replace(u"\xa0", " ").replace("\r\n", " ")
+            p.text_content().replace("\xa0", " ").replace("\r\n", " ")
             for p in vote_doc.xpath("//p")
         ]
 
         # go until we find the roll call
         for i, p in enumerate(pieces):
-            if p.startswith(u"Roll Call No. %s" % rc_num):
+            if p.startswith("Roll Call No. %s" % rc_num):
                 break
 
         vtype = None

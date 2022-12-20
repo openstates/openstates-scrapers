@@ -1,4 +1,4 @@
-from spatula import CSS, HtmlListPage, HtmlPage, SelectorError
+from spatula import URL, CSS, HtmlListPage, HtmlPage, SelectorError
 from openstates.models import ScrapePerson
 
 
@@ -26,9 +26,9 @@ class LegDetail(HtmlPage):
         )
 
         if capitol_addr2:
-            capitol_addr = capitol_addr1 + " " + capitol_addr2 + " " + capitol_addr3
+            capitol_addr = f"{capitol_addr1} {capitol_addr2} {capitol_addr3}"
         else:
-            capitol_addr = capitol_addr1 + " " + capitol_addr3
+            capitol_addr = f"{capitol_addr1} {capitol_addr3}"
         p.capitol_office.address = capitol_addr
         # most of them have the same capitol_addr. just a mailing address?
 
@@ -51,7 +51,7 @@ class LegDetail(HtmlPage):
 
 class LegList(HtmlListPage):
     source = "http://leg.colorado.gov/legislators"
-    selector = CSS("tbody tr", num_items=101)
+    selector = CSS("tbody tr", min_items=101)
 
     def process_item(self, item):
         title = CSS("td").match(item)[0].text_content().strip()
@@ -83,4 +83,4 @@ class LegList(HtmlListPage):
         p.add_source(detail_link)
         p.add_link(detail_link, note="homepage")
 
-        return LegDetail(p, source=detail_link)
+        return LegDetail(p, source=URL(detail_link, timeout=30))

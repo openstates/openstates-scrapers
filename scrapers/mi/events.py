@@ -15,6 +15,7 @@ class MIEventScraper(Scraper):
 
     def scrape_event_page(self, url, chamber):
         html = self.get(url).text
+        html = html.replace("</BR>", "<br>").replace("</br>", "<br>")
         page = lxml.html.fromstring(html)
         trs = page.xpath("//table[@id='frg_mcommitteemeeting_MeetingTable']/tr")
         metainf = {}
@@ -86,18 +87,25 @@ class MIEventScraper(Scraper):
             metainf["Committee(s)"]["txt"], type="committee", note="host"
         )
 
-        agenda = metainf["Agenda"]["obj"]
-        agendas = agenda.text_content().split("\r")
+        # The MI pages often contain broken markup for line breaks in the agenda
+        # like </BR>. This gets stripped in text_content and we lose the information
+        # needed to seperate out agenda sections.
+        # So instead, pull out the raw HTML, break it, then parse it.
+        agenda = page.xpath("//td[contains(., 'Agenda')]/following-sibling::td")[0]
+        agenda_html = lxml.etree.tostring(agenda, encoding="unicode")
+        agenda_parts = re.split(r"\<br\/?\>\<br\/?\>", agenda_html, flags=re.IGNORECASE)
+        for part_html in agenda_parts:
+            if part_html == "":
+                continue
+            part = lxml.html.fromstring(part_html)
+            part_text = part.text_content().strip()
+            if part_text == "":
+                continue
+            item = event.add_agenda_item(part_text)
 
-        related_bills = agenda.xpath("//a[contains(@href, 'getObject')]")
-        for bill in related_bills:
-            description = agenda
-            for a in agendas:
-                if bill.text_content() in a:
-                    description = a
-
-            item = event.add_agenda_item(description)
-            item.add_bill(bill.text_content())
+            related_bills = part.xpath("//a[contains(@href, 'getObject')]")
+            for bill in related_bills:
+                item.add_bill(bill.text_content())
 
         yield event
 

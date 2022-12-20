@@ -103,8 +103,8 @@ class Wisconsin(State):
             "classification": "special",
             "name": "January 2017 Special Session",
             "_scraped_name": "January 2017 Special Session",
-            "start_date": "2017-04-04",
-            "end_date": "2017-07-17",
+            "start_date": "2017-01-05",
+            "end_date": "2017-06-14",
         },
         {
             "identifier": "August 2017 Special Session",
@@ -112,7 +112,7 @@ class Wisconsin(State):
             "name": "August 2017 Special Session",
             "_scraped_name": "August 2017 Special Session",
             "start_date": "2017-08-01",
-            "end_date": "2017-09-19",
+            "end_date": "2017-09-14",
         },
         {
             "_scraped_name": "2017 Regular Session",
@@ -120,7 +120,7 @@ class Wisconsin(State):
             "identifier": "2017 Regular Session",
             "name": "2017 Regular Session",
             "start_date": "2017-01-03",
-            "end_date": "2018-05-23",
+            "end_date": "2018-05-09",
         },
         {
             "identifier": "January 2018 Special Session",
@@ -135,7 +135,7 @@ class Wisconsin(State):
             "classification": "special",
             "name": "March 2018 Special Session",
             "_scraped_name": "March 2018 Special Session",
-            "start_date": "2018-03-16",
+            "start_date": "2018-03-15",
             "end_date": "2018-03-29",
         },
         {
@@ -144,7 +144,7 @@ class Wisconsin(State):
             "identifier": "2019",
             "name": "2019 Regular Session",
             "start_date": "2019-01-07",
-            "end_date": "2020-05-23",
+            "end_date": "2020-05-27",
         },
         {
             "_scraped_name": "2021 Regular Session",
@@ -152,8 +152,7 @@ class Wisconsin(State):
             "identifier": "2021",
             "name": "2021 Regular Session",
             "start_date": "2021-01-04",
-            # TODO: set a better end date once session ends
-            "end_date": "2022-05-23",
+            "end_date": "2022-05-27",
             "active": True,
         },
         {
@@ -161,11 +160,9 @@ class Wisconsin(State):
             "classification": "special",
             "identifier": "2021S1",
             "name": "January 2021 Special Session",
-            # Despite being the January session, it started mid-Feb
-            "start_date": "2021-02-17",
-            # TODO: set a better end date once session ends
-            "end_date": "2022-02-26",
-            "active": True,
+            "start_date": "2021-01-19",
+            "end_date": "2021-02-21",
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [
@@ -197,8 +194,12 @@ class Wisconsin(State):
     ]
 
     def get_session_list(self):
+        user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36"
+
         sessions = url_xpath(
-            "http://docs.legis.wisconsin.gov/search",
+            "https://docs.legis.wisconsin.gov/search",
             "//select[@name='sessionNumber']/option/text()",
+            verify=False,
+            user_agent=user_agent,
         )
         return [session.strip(" -") for session in sessions]

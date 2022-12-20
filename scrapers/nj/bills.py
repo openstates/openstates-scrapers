@@ -191,6 +191,7 @@ class NJBillScraper(Scraper, MDBMixin):
         "r/SCS": "Reported out of Senate committee as a substitute",
         "r/Sca": "Reported out of Senate committee with amendments",
         "r/favorably": "Reported favorably out of committee",
+        "Not rep./Aca": "Not reported out of Assembly Committee with Amendments",
     }
 
     _doctypes = {
@@ -235,9 +236,12 @@ class NJBillScraper(Scraper, MDBMixin):
         for prefix, act_pair in self._com_actions.items():
             if act_str.startswith(prefix):
                 last3 = act_str.rsplit(" ", 1)[-1]
-                com_name = self._committees[last3]
                 action, acttype = act_pair
-                return (action + " " + com_name, acttype)
+                if last3 in self._committees:
+                    com_name = self._committees[last3]
+                    return (action + " " + com_name, acttype)
+                else:
+                    return (action, acttype)
 
         # warn about missing action
         self.warning("unknown action: {0} on {1}".format(act_str, bill_id))
@@ -327,8 +331,11 @@ class NJBillScraper(Scraper, MDBMixin):
             document = document.split("\\")
             document = document[-2] + "/" + document[-1]
 
-            htm_url = "http://www.njleg.state.nj.us/{}/Bills/{}".format(
+            htm_url = "https://pub.njleg.state.nj.us/Bills/{}/{}".format(
                 year_abr, document.replace(".DOC", ".HTM")
+            )
+            pdf_url = "https://pub.njleg.state.nj.us/Bills/{}/{}".format(
+                year_abr, document.replace(".DOC", ".PDF")
             )
 
             # name document based _doctype
@@ -339,9 +346,11 @@ class NJBillScraper(Scraper, MDBMixin):
             if rec["Comment"]:
                 doc_name += " " + rec["Comment"]
 
-            # Clean HTMX links.
+            # Clean links.
             if htm_url.endswith("HTMX"):
                 htm_url = re.sub("X$", "", htm_url)
+            if pdf_url.endswith("PDFX"):
+                pdf_url = re.sub("X$", "", pdf_url)
 
             if rec["DocType"] in self._version_types:
                 if htm_url.lower().endswith("htm"):
@@ -350,6 +359,9 @@ class NJBillScraper(Scraper, MDBMixin):
                     mimetype = "application/vnd.wordperfect"
                 try:
                     bill.add_version_link(doc_name, htm_url, media_type=mimetype)
+                    bill.add_version_link(
+                        doc_name, pdf_url, media_type="application/pdf"
+                    )
                 except ValueError:
                     self.warning("Couldn't find a document for bill {}".format(bill_id))
                     pass
@@ -496,6 +508,11 @@ class NJBillScraper(Scraper, MDBMixin):
                 classification=atype,
                 chamber=actor,
             )
+
+            source_url = (
+                f"https://www.njleg.state.nj.us/bill-search/{year_abr}/{bill_id}"
+            )
+            bill.add_source(source_url)
 
         # Subjects
         subject_csv = self.to_csv("BILLSUBJ.TXT")
