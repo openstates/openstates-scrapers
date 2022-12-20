@@ -11,6 +11,15 @@ class Legislators(HtmlListPage):
     leader_regex = re.compile(r"(.+),(.+)\s+\(([A-Z]+)\)\s+(.+)")
     regular_regex = re.compile(r"(.+),(.+)\s+\(([A-Z]+)\)")
 
+    strs_to_remove = [
+        "user",
+        "channel",
+        "playlists",
+        "photos",
+        "/",
+    ]
+    social_regexes = [re.compile(string) for string in strs_to_remove]
+
     def process_item(self, item):
         a_tag = item.xpath("a")[0]
         member_page = a_tag.get("href")
@@ -73,7 +82,18 @@ class Legislators(HtmlListPage):
         email_start = {"House": "rep", "Senate": "sen"}
         email = email_start[chamber] + email_user + "@capitol.hawaii.gov"
 
-        # TODO: Add social media handle ingestion
+        soc_handles = {}
+        soc_links = contact_info.getnext().xpath("a")
+        for link in soc_links:
+            href = link.get("href").lower()
+            dom, han = re.search(r"\.*\/*(\w+)\.com/(.+)", href).groups()
+            for string in self.social_regexes:
+                han = string.sub("", han)
+            soc_handles[dom] = han
+
+        # Website provides bad youtube handle for Sen Mike Gabbard
+        if f"{first_name} {last_name}" == "Mike Gabbard":
+            soc_handles["youtube"] = "senmikegabbard"
 
         p = ScrapePerson(
             name=f"{first_name} {last_name}",
@@ -96,6 +116,17 @@ class Legislators(HtmlListPage):
 
         p.add_source(self.source.url)
         p.add_link(member_page)
+
+        if soc_handles["facebook"]:
+            p.ids.facebook = soc_handles["facebook"]
+        if soc_handles["instagram"]:
+            p.ids.instagram = soc_handles["instagram"]
+        if soc_handles["twitter"]:
+            p.ids.twitter = soc_handles["twitter"]
+        if soc_handles["youtube"]:
+            p.ids.youtube = soc_handles["youtube"]
+        if soc_handles["flickr"]:
+            p.ids.flickr = soc_handles["flickr"]
 
         # TODO: Add Member Detail Page scraper to get any additional data
 
