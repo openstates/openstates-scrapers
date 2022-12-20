@@ -1,102 +1,89 @@
-from spatula import XPath, HtmlListPage
+import lxml.html
+from spatula import CSS, SelectorError, HtmlListPage
 from openstates.models import ScrapePerson
-import re
+
+
+class FormSource:
+    """a WIP generic source for POSTing a form, and getting back results"""
+
+    retries = 3
+
+    def __init__(self, url, form_xpath, button_label):
+        self.url = url
+        self.form_xpath = form_xpath
+        self.button_label = button_label
+
+    def get_response(self, scraper):
+        resp = scraper.get(self.url)
+        root = lxml.html.fromstring(resp.content)
+        form = root.xpath(self.form_xpath)[0]
+        inputs = form.xpath(".//input")
+        # build list of all of the inputs of the form, clicking the button we need to click
+        data = {}
+        for inp in inputs:
+            name = inp.get("name")
+            value = inp.get("value")
+            inptype = inp.get("type")
+            if inptype == "submit":
+                if value == self.button_label:
+                    data[name] = value
+            else:
+                data[name] = value
+
+        # do second request
+        resp = scraper.post(self.url, data)
+        return resp
+
+    def __str__(self):
+        return f"FormSource('{self.url}', '{self.form_xpath}', '{self.button_label}')"
 
 
 class Legislators(HtmlListPage):
-    source = "http://www.capitol.hawaii.gov/members/legislators.aspx"
-    selector = XPath(".//div[@class='contact-box center-version active']")
+    source = FormSource(
+        "https://www.capitol.hawaii.gov/members/legislators.aspx", "//form", "Show All"
+    )
+    selector = CSS("#ctl00_ContentPlaceHolderCol1_GridView1 tr")
 
-    multi_commas_regex = re.compile(r",.+,")
-    leader_regex = re.compile(r"(.+),(.+)\s+\(([A-Z]+)\)\s+(.+)")
-    regular_regex = re.compile(r"(.+),(.+)\s+\(([A-Z]+)\)")
+    LABELS = {
+        "first_name": "LabelFirst",
+        "party": "LabelParty",
+        "room": "LabelRoom2",
+        "voice": "LabelPhone2",
+        "fax": "LabelFAX2",
+        "email": "HyperLinkEmail",
+        "chamber": "LabelDis",
+        "district": "LabelDistrict",
+    }
 
     def process_item(self, item):
-        a_tag = item.xpath("a")[0]
-        member_page = a_tag.get("href")
-        member_photo = a_tag.xpath("img")[0].get("src")
+        try:
+            link = CSS("a").match(item)[1]
+        except SelectorError:
+            self.skip()
+        data = {
+            "last_name": link.text_content(),
+            "url": link.get("href"),
+        }
+        for key, label in self.LABELS.items():
+            data[key] = CSS(f"[id$={label}]").match_one(item).text_content().strip()
 
-        member_text = a_tag.text_content().strip()
-
-        multi_commas = self.multi_commas_regex.search(member_text)
-
-        # Conditional Re-formats member_text in cases with multiple commas
-        #   Ex: Richards\r\n, III, Herbert M. "Tim" (D)
-        if multi_commas:
-            single_line = member_text.replace("\r\n", "")
-            comma_split = [x.strip() for x in single_line.split(",")]
-            member_text = f"{' '.join(comma_split[0:2])}, {comma_split[-1]}"
-
-        leader = self.leader_regex.search(member_text)
-        if leader:
-            name_parts = [x.strip() for x in leader.groups()]
-            # Extract title, only leaders have one listed
-            title = name_parts.pop()
-        else:
-            regular_member = self.regular_regex.search(member_text)
-            name_parts = [x.strip() for x in regular_member.groups()]
-
-        # Extract party abbreviation from list
-        party = name_parts.pop()
-
-        last_name, first_name = name_parts[0], " ".join(name_parts[1:])
-
-        dist_text = item.xpath("div/a")[0].text_content().strip()
-        chamber, district = [x.strip() for x in dist_text.split("District")]
-
-        contact_info = item.xpath("div/address")[0]
-
-        contact_list = []
-        for x in contact_info.text_content().split("\r\n"):
-            if len(x.strip()):
-                contact_list.append(x.strip())
-
-        state_addr_base = "415 S Beretania St, Honolulu, HI 96813"
-        capitol_addr = f"{contact_list[0]}, {state_addr_base}"
-
-        cap_phone = contact_list[1].split(":")[-1].strip()
-        cap_fax = contact_list[2].split(":")[-1].strip()
-
-        # Website does not allow scraping of member emails,
-        #   so a manual check of all member emails confirmed
-        #   accuracy of below solution.
-        chars_to_remove = [
-            " iii",
-            "jr.",
-            " ",
-            "-",
-        ]
-        email_user = last_name.lower()
-        for char in chars_to_remove:
-            if char in email_user:
-                email_user = email_user.replace(char, "")
-        email_start = {"House": "rep", "Senate": "sen"}
-        email = email_start[chamber] + email_user + "@capitol.hawaii.gov"
-
-        # TODO: Add social media handle ingestion
+        party = {"(D)": "Democratic", "(R)": "Republican"}[data["party"]]
+        address = "Hawaii State Capitol, Room " + data["room"]
+        chamber = "upper" if data["chamber"] == "S" else "lower"
 
         p = ScrapePerson(
-            name=f"{first_name} {last_name}",
+            name=data["first_name"] + " " + data["last_name"],
             state="hi",
-            chamber="lower" if chamber[0] == "H" else "upper",
-            district=district,
-            given_name=first_name,
-            family_name=last_name,
-            party="Democratic" if party == "D" else "Republican",
-            image=member_photo,
-            email=email,
+            chamber=chamber,
+            district=data["district"],
+            given_name=data["first_name"],
+            family_name=data["last_name"],
+            party=party,
+            email=data["email"],
         )
-
-        if title:
-            p.extras["title"] = title
-
-        p.capitol_office.address = capitol_addr
-        p.capitol_office.voice = cap_phone
-        p.capitol_office.fax = cap_fax
-
-        p.add_source(self.source.url)
-        p.add_link(member_page)
-
-        # TODO: Add Member Detail Page scraper to get any additional data
-
+        p.capitol_office.address = address
+        p.capitol_office.voice = data["voice"]
+        p.capitol_office.fax = data["fax"]
+        p.add_source(data["url"])
+        p.add_link(data["url"])
         return p
