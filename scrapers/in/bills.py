@@ -11,14 +11,19 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 
 from .apiclient import ApiClient
+from .actions import Categorizer
 
 settings = dict(SCRAPELIB_TIMEOUT=600)
 
 PROXY_BASE_URL = "http://in-proxy.openstates.org"
 SCRAPE_WEB_VERSIONS = "INDIANA_SCRAPE_WEB_VERSIONS" in os.environ
 
+os.environ["INDIANA_API_KEY"] = "Token 3d39839ff9aebd209637301a46323b66914e5a2b"
+
 
 class INBillScraper(Scraper):
+    categorizer = Categorizer()
+
     jurisdiction = "in"
 
     _tz = pytz.timezone("US/Eastern")
@@ -456,27 +461,33 @@ class INBillScraper(Scraper):
                 # TODO: if we update pupa to accept datetimes we can drop this line
                 date = date.split()[0]
 
-                action_type = []
+                # action_type = []
                 d = action_desc.lower()
                 committee = None
 
                 reading = False
+                attrs = self.categorizer.categorize(action_desc)
+                action_type = attrs["classification"]
+
                 if "first reading" in d:
-                    action_type.append("reading-1")
+                    # action_type.append("reading-1")
                     reading = True
 
                 if "second reading" in d or "reread second time" in d:
-                    action_type.append("reading-2")
+                    # action_type.append("reading-2")
                     reading = True
 
                 if "third reading" in d or "reread third time" in d:
-                    action_type.append("reading-3")
+                    # action_type.append("reading-3")
+                    """
                     if "passed" in d:
                         action_type.append("passage")
                     if "failed" in d:
                         action_type.append("failure")
+                    """
                     reading = True
 
+                # keep this?
                 if "adopted" in d and reading:
                     action_type.append("passage")
 
@@ -486,8 +497,11 @@ class INBillScraper(Scraper):
                     or "reassigned" in d
                     and "committee on" in d
                 ):
+                    # keep this
                     committee = d.split("committee on")[-1].strip()
-                    action_type.append("referral-committee")
+                    # action_type.append("referral-committee")
+
+                """
 
                 if "committee report" in d:
                     if "pass" in d:
@@ -515,6 +529,7 @@ class INBillScraper(Scraper):
                         "Could not recognize an action in '{}'".format(action_desc)
                     )
                     action_type = None
+                """
 
                 a = bill.add_action(
                     chamber=action_chamber,
