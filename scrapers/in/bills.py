@@ -18,8 +18,6 @@ settings = dict(SCRAPELIB_TIMEOUT=600)
 PROXY_BASE_URL = "http://in-proxy.openstates.org"
 SCRAPE_WEB_VERSIONS = "INDIANA_SCRAPE_WEB_VERSIONS" in os.environ
 
-os.environ["INDIANA_API_KEY"] = "Token 3d39839ff9aebd209637301a46323b66914e5a2b"
-
 
 class INBillScraper(Scraper):
     categorizer = Categorizer()
@@ -461,7 +459,6 @@ class INBillScraper(Scraper):
                 # TODO: if we update pupa to accept datetimes we can drop this line
                 date = date.split()[0]
 
-                # action_type = []
                 d = action_desc.lower()
                 committee = None
 
@@ -470,24 +467,15 @@ class INBillScraper(Scraper):
                 action_type = attrs["classification"]
 
                 if "first reading" in d:
-                    # action_type.append("reading-1")
                     reading = True
 
                 if "second reading" in d or "reread second time" in d:
-                    # action_type.append("reading-2")
                     reading = True
 
                 if "third reading" in d or "reread third time" in d:
-                    # action_type.append("reading-3")
-                    """
-                    if "passed" in d:
-                        action_type.append("passage")
-                    if "failed" in d:
-                        action_type.append("failure")
-                    """
+                    action_type.append("reading-3")
                     reading = True
 
-                # keep this?
                 if "adopted" in d and reading:
                     action_type.append("passage")
 
@@ -497,39 +485,7 @@ class INBillScraper(Scraper):
                     or "reassigned" in d
                     and "committee on" in d
                 ):
-                    # keep this
                     committee = d.split("committee on")[-1].strip()
-                    # action_type.append("referral-committee")
-
-                """
-
-                if "committee report" in d:
-                    if "pass" in d:
-                        action_type.append("committee-passage")
-                    if "fail" in d:
-                        action_type.append("committee-failure")
-
-                if "amendment" in d and "without amendment" not in d:
-                    if "pass" in d or "prevail" in d or "adopted" in d:
-                        action_type.append("amendment-passage")
-                    if "fail" or "out of order" in d:
-                        action_type.append("amendment-failure")
-                    if "withdraw" in d:
-                        action_type.append("amendment-withdrawal")
-
-                if "signed by the governor" in d:
-                    action_type.append("executive-signature")
-
-                if "vetoed by the governor" in d:
-                    action_type.append("executive-veto")
-
-                if len(action_type) == 0:
-                    # calling it other and moving on with a warning
-                    self.logger.warning(
-                        "Could not recognize an action in '{}'".format(action_desc)
-                    )
-                    action_type = None
-                """
 
                 a = bill.add_action(
                     chamber=action_chamber,
