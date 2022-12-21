@@ -48,11 +48,13 @@ class Legislators(HtmlListPage):
         leader = self.leader_regex.search(member_text)
         if leader:
             name_parts = [x.strip() for x in leader.groups()]
-            # Extracts title: only leaders have one listed
-            title = name_parts.pop()
         else:
             regular_member = self.regular_regex.search(member_text)
             name_parts = [x.strip() for x in regular_member.groups()]
+
+        # Extracts title: only leaders have one listed
+        if leader:
+            title = name_parts.pop()
 
         # Extracts party abbreviation from list
         party = name_parts.pop()
@@ -69,7 +71,7 @@ class Legislators(HtmlListPage):
         state_addr_base = "415 S Beretania St, Honolulu, HI 96813"
         capitol_addr = f"{contact_list[0]}, {state_addr_base}"
 
-        cap_phone, cap_fax = [x.split(":")[-1].strip() for x in contact_list]
+        cap_phone, cap_fax = [x.split(":")[-1].strip() for x in contact_list[1:3]]
 
         # Website does not allow scraping of member emails, so a manual check
         #   of all member emails confirmed accuracy of below solution.
@@ -104,7 +106,7 @@ class Legislators(HtmlListPage):
             email=email,
         )
 
-        if title:
+        if leader:
             p.extras["title"] = title
 
         p.capitol_office.address = capitol_addr
@@ -114,15 +116,24 @@ class Legislators(HtmlListPage):
         p.add_source(self.source.url)
         p.add_link(member_page)
 
-        if soc_handles["facebook"]:
+        if soc_handles.get("facebook"):
             p.ids.facebook = soc_handles["facebook"]
-        if soc_handles["instagram"]:
+        if soc_handles.get("instagram"):
             p.ids.instagram = soc_handles["instagram"]
-        if soc_handles["twitter"]:
+        if soc_handles.get("twitter"):
             p.ids.twitter = soc_handles["twitter"]
-        if soc_handles["youtube"]:
+        if soc_handles.get("youtube"):
             p.ids.youtube = soc_handles["youtube"]
-        if soc_handles["flickr"]:
-            p.ids.flickr = soc_handles["flickr"]
+
+        # TODO: Update "PersonIdBlock" object in OS Core to include any other
+        #  possible social media ids --> then convert below code to use newly
+        #  available p.ids.[platform] method
+        social_ids = {"facebook", "instagram", "twitter", "youtube"}
+        for social in soc_handles.keys():
+            if social not in social_ids:
+                if not p.extras.get("extra_social_ids"):
+                    p.extras["extra_social_ids"] = [social]
+                else:
+                    p.extras["extra_social_ids"].append(social)
 
         return p
