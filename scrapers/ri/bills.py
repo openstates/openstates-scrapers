@@ -3,6 +3,7 @@ import lxml.html
 import re
 
 from openstates.scrape import Scraper, Bill, VoteEvent
+from .actions import Categorizer
 
 from utils import url_xpath
 
@@ -83,6 +84,7 @@ class RIBillScraper(Scraper):
     # so we keep a dict of (chamber, number) -> bill_id from the bill scrape to be used in the
     # vote scrape
     _bill_id_by_type = {}
+    categorizer = Categorizer()
 
     def parse_results_page(self, page):
         blocks = []
@@ -186,11 +188,14 @@ class RIBillScraper(Scraper):
                 actor = "executive"
             date = action.split(" ")[0]
             date = dt.datetime.strptime(date, "%m/%d/%Y")
+            action_attr = self.categorizer.categorize(action)
+            atype = action_attr["classification"]
+
             bill.add_action(
                 action,
                 date.strftime("%Y-%m-%d"),
                 chamber=actor,
-                classification=self.get_type_by_action(action),
+                classification=atype,
             )
 
     def get_type_by_name(self, name):
@@ -206,29 +211,6 @@ class RIBillScraper(Scraper):
 
         self.warning("XXX: Bill type fallthrough. This ain't great.")
         return "bill"
-
-    def get_type_by_action(self, name):
-        types = {
-            "introduced": "introduction",
-            "referred": "referral-committee",
-            "passed": "passage",
-            "recommends passage": "committee-passage-favorable",
-            # XXX: need to find the unfavorable string
-            # XXX: What's "recommended measure be held for further study"?
-            "withdrawn": "withdrawal",
-            "signed by governor": "executive-signature",
-            "transmitted to governor": "executive-receipt",
-            "effective without governor's signature": "became-law",
-        }
-        ret = []
-        name = name.lower()
-        for flag in types:
-            if flag in name:
-                ret.append(types[flag])
-
-        if len(ret) > 0:
-            return ret
-        return None
 
     def scrape_bills(self, chamber, session, subjects):
         idexes = bill_start_numbers(session)[chamber]
