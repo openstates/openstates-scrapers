@@ -69,7 +69,7 @@ class LegDetail(HtmlPage):
                 if len(row) > 1:
                     raw_field_name = row[0].text_content().strip().lower()
                     field_name = re.sub(":", "", raw_field_name)
-                    field_text = row[0].text_content().strip()
+                    field_text = row[1].text_content().strip()
 
                     extra_fields = {
                         "home email",
