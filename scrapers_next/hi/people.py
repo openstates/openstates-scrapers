@@ -1,6 +1,6 @@
+import re
 from spatula import XPath, HtmlListPage
 from openstates.models import ScrapePerson
-import re
 
 
 class Legislators(HtmlListPage):
@@ -11,14 +11,24 @@ class Legislators(HtmlListPage):
     leader_regex = re.compile(r"(.+),(.+)\s+\(([A-Z]+)\)\s+(.+)")
     regular_regex = re.compile(r"(.+),(.+)\s+\(([A-Z]+)\)")
 
-    strs_to_remove = [
+    email_removal = [
+        " iii",
+        "jr.",
+        " ",
+        "-",
+    ]
+    email_remove_regexes = [re.compile(string) for string in email_removal]
+
+    soc_domain_and_handle_regex = re.compile(r"\.*\/*(\w+)\.com/(.+)")
+
+    social_removal = [
         "user",
         "channel",
         "playlists",
         "photos",
         "/",
     ]
-    social_regexes = [re.compile(string) for string in strs_to_remove]
+    social_remove_regexes = [re.compile(string) for string in social_removal]
 
     def process_item(self, item):
         a_tag = item.xpath("a")[0]
@@ -27,10 +37,9 @@ class Legislators(HtmlListPage):
 
         member_text = a_tag.text_content().strip()
 
-        multi_commas = self.multi_commas_regex.search(member_text)
-
-        # Conditional Re-formats member_text in cases with multiple commas
+        # Conditional re-formats member_text in cases with multiple commas
         #   Ex: Richards\r\n, III, Herbert M. "Tim" (D)
+        multi_commas = self.multi_commas_regex.search(member_text)
         if multi_commas:
             single_line = member_text.replace("\r\n", "")
             comma_split = [x.strip() for x in single_line.split(",")]
@@ -39,13 +48,13 @@ class Legislators(HtmlListPage):
         leader = self.leader_regex.search(member_text)
         if leader:
             name_parts = [x.strip() for x in leader.groups()]
-            # Extract title, only leaders have one listed
+            # Extracts title: only leaders have one listed
             title = name_parts.pop()
         else:
             regular_member = self.regular_regex.search(member_text)
             name_parts = [x.strip() for x in regular_member.groups()]
 
-        # Extract party abbreviation from list
+        # Extracts party abbreviation from list
         party = name_parts.pop()
 
         last_name, first_name = name_parts[0], " ".join(name_parts[1:])
@@ -54,31 +63,19 @@ class Legislators(HtmlListPage):
         chamber, district = [x.strip() for x in dist_text.split("District")]
 
         contact_info = item.xpath("div/address")[0]
-
-        contact_list = []
-        for x in contact_info.text_content().split("\r\n"):
-            if len(x.strip()):
-                contact_list.append(x.strip())
+        split_lines = contact_info.text_content().split("\r\n")
+        contact_list = [x.strip() for x in split_lines if len(x.strip())]
 
         state_addr_base = "415 S Beretania St, Honolulu, HI 96813"
         capitol_addr = f"{contact_list[0]}, {state_addr_base}"
 
-        cap_phone = contact_list[1].split(":")[-1].strip()
-        cap_fax = contact_list[2].split(":")[-1].strip()
+        cap_phone, cap_fax = [x.split(":")[-1].strip() for x in contact_list]
 
-        # Website does not allow scraping of member emails,
-        #   so a manual check of all member emails confirmed
-        #   accuracy of below solution.
-        chars_to_remove = [
-            " iii",
-            "jr.",
-            " ",
-            "-",
-        ]
+        # Website does not allow scraping of member emails, so a manual check
+        #   of all member emails confirmed accuracy of below solution.
         email_user = last_name.lower()
-        for char in chars_to_remove:
-            if char in email_user:
-                email_user = email_user.replace(char, "")
+        for string in self.social_remove_regexes:
+            email_user = string.sub("", email_user)
         email_start = {"House": "rep", "Senate": "sen"}
         email = email_start[chamber] + email_user + "@capitol.hawaii.gov"
 
@@ -86,8 +83,8 @@ class Legislators(HtmlListPage):
         soc_links = contact_info.getnext().xpath("a")
         for link in soc_links:
             href = link.get("href").lower()
-            dom, han = re.search(r"\.*\/*(\w+)\.com/(.+)", href).groups()
-            for string in self.social_regexes:
+            dom, han = self.soc_domain_and_handle_regex.search(href).groups()
+            for string in self.social_remove_regexes:
                 han = string.sub("", han)
             soc_handles[dom] = han
 
@@ -127,7 +124,5 @@ class Legislators(HtmlListPage):
             p.ids.youtube = soc_handles["youtube"]
         if soc_handles["flickr"]:
             p.ids.flickr = soc_handles["flickr"]
-
-        # TODO: Add Member Detail Page scraper to get any additional data
 
         return p
