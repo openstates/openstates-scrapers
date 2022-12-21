@@ -209,9 +209,17 @@ class Minnesota(State):
             "start_date": "2021-06-14",
             "end_date": "2021-07-07",
         },
+        {
+            "_scraped_name": "93rd Legislature, 2023-2024",
+            "classification": "primary",
+            "identifier": "2023-2024",
+            "name": "2023-2024 Regular Session",
+            "start_date": "2023-01-03",
+            "end_date": "2023-05-22",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
-        "93rd Legislature, 2023-2024",
         "85th Legislature, 2007-2008",
         "85th Legislature, 2007 1st Special Session",
         "84th Legislature, 2005-2006",
