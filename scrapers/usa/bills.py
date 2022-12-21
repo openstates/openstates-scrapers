@@ -93,7 +93,12 @@ class USBillScraper(Scraper):
         xml = ET.fromstring(xml)
 
         bill_num = self.get_xpath(xml, "bill/billNumber")
+        if not bill_num:
+            bill_num = self.get_xpath(xml, "bill/number")
+
         bill_type = self.get_xpath(xml, "bill/billType")
+        if not bill_type:
+            bill_type = self.get_xpath(xml, "bill/type")
 
         bill_id = "{} {}".format(bill_type, bill_num)
 
