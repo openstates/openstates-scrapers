@@ -1,6 +1,14 @@
 import attr
+import re
 from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError
 from openstates.models import ScrapePerson
+
+
+def get_field(field):
+    if field.endswith(":"):
+        return field[:-1]
+    else:
+        return field
 
 
 @attr.s(auto_attribs=True)
@@ -13,18 +21,16 @@ class PartialMember:
     chamber: str = ""
 
 
+class NewDetailFieldEncountered(BaseException):
+    pass
+
+
 class LegDetail(HtmlPage):
     input_type = PartialMember
 
     example_source = (
         "https://www.legis.iowa.gov/legislators/legislator?ga=89&personID=906"
     )
-
-    def get_field(self, field):
-        if field.endswith(":"):
-            return field[:-1]
-        else:
-            return field
 
     def process_page(self):
 
@@ -53,21 +59,40 @@ class LegDetail(HtmlPage):
         except SelectorError:
             pass
 
-        table = XPath("//div[@class='legisIndent divideVert']//td//text()").match(
+        other_info = XPath("//div[@class='legisIndent divideVert']//table").match(
             self.root
-        )
+        )[0]
 
-        # the fields, like "cell phone", etc. are located at every odd indice
-        # the information for each field, like the phone number, are located at every even indice
-        fields = list(map(self.get_field, table[0::2]))
-        extra = table[1::2]
+        if len(other_info.getchildren()) > 1:
+            info_rows = XPath("//tr").match(other_info)
+            for row in info_rows:
+                if len(row) > 1:
+                    raw_field_name = row[0].text_content().strip().lower()
+                    field_name = re.sub(":", "", raw_field_name)
+                    field_text = row[1].text_content().strip()
 
-        num_of_fields = range(len(fields))
+                    extra_fields = {
+                        "home email",
+                        "home phone",
+                        "business phone",
+                        "occupation",
+                        "service began",
+                        "home address",
+                        "other phone",
+                        "business address",
+                        "cell phone",
+                    }
 
-        for i in num_of_fields:
-            if fields[i] == "Legislative Email":
-                continue
-            p.extras[fields[i].lower()] = extra[i].strip()
+                    if field_name == "legislative email":
+                        p.email = field_text.lower()
+                    elif field_name == "capitol phone":
+                        p.capitol_office.voice = field_text
+                    elif field_name == "office phone":
+                        p.district_office.voice = field_text
+                    elif field_name in extra_fields:
+                        p.extras[field_name] = field_text
+                    else:
+                        raise NewDetailFieldEncountered
 
         return p
 
