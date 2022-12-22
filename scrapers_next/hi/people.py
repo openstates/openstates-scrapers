@@ -116,24 +116,26 @@ class Legislators(HtmlListPage):
         p.add_source(self.source.url)
         p.add_link(member_page)
 
-        if soc_handles.get("facebook"):
-            p.ids.facebook = soc_handles["facebook"]
-        if soc_handles.get("instagram"):
-            p.ids.instagram = soc_handles["instagram"]
-        if soc_handles.get("twitter"):
-            p.ids.twitter = soc_handles["twitter"]
-        if soc_handles.get("youtube"):
-            p.ids.youtube = soc_handles["youtube"]
-
-        # TODO: Update "PersonIdBlock" object in OS Core to include any other
-        #  possible social media ids --> then convert below code to use newly
-        #  available p.ids.[platform] method
         social_ids = {"facebook", "instagram", "twitter", "youtube"}
-        for social in soc_handles.keys():
-            if social not in social_ids:
-                if not p.extras.get("extra_social_ids"):
-                    p.extras["extra_social_ids"] = [social]
+        for handle, value in soc_handles.items():
+            if not value:
+                continue
+            if handle == "facebook":
+                p.ids.facebook = value
+            elif handle == "instagram":
+                p.ids.instagram = value
+            elif handle == "twitter":
+                p.ids.twitter = value
+            elif handle == "youtube":
+                p.ids.youtube = value
+
+            # TODO: Update "PersonIdBlock" object in OS Core to include any other
+            #  possible social media ids --> then convert below code to use newly
+            #  available p.ids.[platform] method
+            if handle not in social_ids:
+                if "extra_social_ids" not in p.extras:
+                    p.extras["extra_social_ids"] = {handle: value}
                 else:
-                    p.extras["extra_social_ids"].append(social)
+                    p.extras["extra_social_ids"][handle] = value
 
         return p
