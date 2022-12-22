@@ -612,7 +612,7 @@ et-xmlfile = "*"
 
 [[package]]
 name = "openstates"
-version = "6.13.1"
+version = "6.13.2"
 description = "core infrastructure for the openstates project"
 category = "main"
 optional = false
@@ -1231,7 +1231,7 @@ california = ["mysqlclient", "SQLAlchemy"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "e904166fbdee452f36ac59ba45a7f5a2571f94c0d00de331f0e13c9f3f5b1d30"
+content-hash = "ab87b439700689c30940eb4d4be937a4ec64bfd2deadfc00079edcf2e2b90b70"
 
 [metadata.files]
 aiobotocore = []
