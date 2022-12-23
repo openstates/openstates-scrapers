@@ -5,6 +5,7 @@ import re
 import requests
 
 from utils import LXMLMixin
+from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
 
 
@@ -40,6 +41,14 @@ class USEventScraper(Scraper, LXMLMixin):
         "First Street Southeast, Washington, DC 20004",
         "SVC": "US Capitol Visitor's Center, Senate Side, "
         "First Street Southeast, Washington, DC 20004",
+    }
+
+    # Senate XML uses non-standard bill prefixes
+    senate_prefix_mapping = {
+        "SN": "S",
+        "SC": "SCONRES",
+        "SE": "SRES",
+        # TODO WHEN WE SEE ONE: SJRes
     }
 
     # date_filter argument can give you just one day;
@@ -92,25 +101,37 @@ class USEventScraper(Scraper, LXMLMixin):
 
             event_date = self._TZ.localize(event_date)
 
-            event = Event(start_date=event_date, name=com, location_name=address)
+            event = Event(
+                start_date=event_date,
+                name=com,
+                location_name=address,
+                classification="committee-meeting",
+            )
 
             agenda_item = event.add_agenda_item(description=agenda)
 
-            # ex: Business meeting to consider S.785, to improve mental...
-            matches = re.findall(r"\s(\w+)\.(\d+),", agenda)
+            for doc in row.xpath("//Documents/AssociatedDocument"):
+                doc_congress = doc.xpath("@congress")[0]
+                doc_title = doc.xpath("@document_description")[0]
+                doc_num = doc.xpath("@document_num")[0]
+                doc_prefix = doc.xpath("@document_prefix")[0]
+                doc_type = "nomination" if doc_prefix == "PN" else "bill"
+                if doc_prefix in self.senate_prefix_mapping:
+                    doc_prefix = self.senate_prefix_mapping[doc_prefix]
+                doc_id = f"{doc_congress}-{doc_prefix}-{doc_num}"
 
-            if matches:
-                match = matches[0]
-                bill_type = match[0]
-                bill_number = match[1]
-                bill_name = "{} {}".format(bill_type, bill_number)
-                agenda_item.add_bill(bill_name)
+                bill_id = f"{doc_prefix} {doc_num}"
+                agenda_item.add_entity(
+                    name=bill_id, entity_type=doc_type, id=doc_id, note=doc_title
+                )
 
             event.add_participant(
                 com,
                 type="committee",
                 note="host",
             )
+
+            self.geocode(event)
 
             event.add_source("https://www.senate.gov/committees/hearings_meetings.htm")
 
@@ -148,7 +169,7 @@ class USEventScraper(Scraper, LXMLMixin):
                 }
 
                 self.info("Fetching {} via POST".format(row.get("href")))
-                xml = self.asp_post(row.get("href"), page, params)
+                xml = self.asp_post(row.get("href"), params)
 
                 try:
                     xml = lxml.etree.fromstring(xml)
@@ -194,7 +215,12 @@ class USEventScraper(Scraper, LXMLMixin):
             )
             address = "{}, Room {}".format(building, room)
 
-        event = Event(start_date=start_dt, name=title, location_name=address)
+        event = Event(
+            start_date=start_dt,
+            name=title,
+            location_name=address,
+            classification="committee-meeting",
+        )
 
         event.add_source(source_url)
 
@@ -216,7 +242,9 @@ class USEventScraper(Scraper, LXMLMixin):
                 media_type = self.media_types[doc_file.get("doc-type")]
                 url = doc_file.get("doc-url")
 
-                if doc.get("type") in ["BR", "AM", "CA"]:
+                # list of types from:
+                # https://github.com/unitedstates/congress/blob/main/congress/tasks/committee_meetings.py#L384
+                if doc.get("type") in ["BR", "AM", "CA", "FA"]:
                     if doc_name == "":
                         doc_name = doc.xpath("string(legis-num)").strip()
                     matches = re.findall(r"([\w|\.]+)\s+(\d+)", doc_name)
@@ -241,9 +269,10 @@ class USEventScraper(Scraper, LXMLMixin):
                     doc_name, url, media_type=media_type, on_duplicate="ignore"
                 )
 
+        self.geocode(event)
         yield event
 
-    def asp_post(self, url, page, params):
+    def asp_post(self, url, params):
         page = self.s.get(url)
         page = lxml.html.fromstring(page.content)
         (viewstate,) = page.xpath('//input[@id="__VIEWSTATE"]/@value')
@@ -263,3 +292,20 @@ class USEventScraper(Scraper, LXMLMixin):
         form = {**form, **params}
         xml = self.s.post(url, form).content
         return xml
+
+    def geocode(self, event: Event) -> None:
+        match_coordinates(
+            event,
+            {
+                "Russell Senate Office Building": (38.89248, -77.00686),
+                "Dirksen Senate Office Building": (38.89298, -77.00515),
+                "Hart Senate Office Building": (38.89230, -77.00444),
+                "Cannon House Office Building": (38.88700, -77.00635),
+                "Longworth House Office Building": (38.88733, -77.00857),
+                "Rayburn House Office Building": (38.88729, -77.010453),
+                "Ford House Office Building": (38.88469, -77.013837),
+                # so capitol doesn't match visitors center
+                "25 Independence Ave SE": (38.889965, -77.00908),
+                "US Capitol Visitor's Center": (38.88989, -77.00862),
+            },
+        )

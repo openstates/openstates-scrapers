@@ -3,6 +3,7 @@ import datetime
 import dateutil.parser
 import pytz
 from utils import LXMLMixin
+from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
 
 
@@ -26,6 +27,17 @@ class UTEventScraper(Scraper, LXMLMixin):
                             title = row["desc"]
                             where = row["location"]
 
+                            if "state capitol" in where.lower():
+                                where = (
+                                    f"{where}, 350 State St, Salt Lake City, UT 84103"
+                                )
+                            elif re.match(
+                                r"(.*) (House|Senate) Building",
+                                where,
+                                flags=re.IGNORECASE,
+                            ):
+                                where = f"{where}, Utah State Capitol, 350 State St, Salt Lake City, UT 84103"
+
                             when = dateutil.parser.parse(
                                 f"{day_row['year']}-{str(int(day_row['month'])+1)}-{day_row['day']} {row['time']}"
                             )
@@ -42,6 +54,8 @@ class UTEventScraper(Scraper, LXMLMixin):
                                 classification="committee-meeting",
                                 status=status,
                             )
+
+                            event.add_committee(title, note="host")
 
                             if "agenda" in row:
                                 event.add_document(
@@ -113,5 +127,14 @@ class UTEventScraper(Scraper, LXMLMixin):
 
                             source_url = f"{self.base_url}{row['itemurl']}"
                             event.add_source(source_url)
+
+                            match_coordinates(
+                                event,
+                                {
+                                    "House Building": (40.77809, -111.88901),
+                                    "Senate Building": (40.77806, -111.88735),
+                                    "State Capitol": (40.77745, -111.88815),
+                                },
+                            )
 
                             yield event

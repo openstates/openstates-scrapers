@@ -72,6 +72,9 @@ class NVEventScraper(Scraper, LXMLMixin):
 
         event.add_source(self.URL)
 
+        if "committee" in title.lower():
+            event.add_committee(title, note="host")
+
         if info_td.xpath('a[contains(font/text(),"agenda")]'):
             agenda_url = info_td.xpath("a/@href")[0]
             event.add_document("Agenda", url=agenda_url)
