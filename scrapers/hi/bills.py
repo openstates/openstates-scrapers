@@ -269,7 +269,7 @@ class HIBillScraper(Scraper):
         qs = dict(urlparse.parse_qsl(urlparse.urlparse(url).query))
         bill_id = "{}{}".format(qs["billtype"], qs["billnumber"])
         versions = bill_page.xpath(
-            "//*[@id='ctl00_MainContent_UpdatePanel2']/div/div/div"
+            "//*[@id='ctl00_MainContent_UpdatePanel2']/div/div/div/div"
         )
 
         metainf_table = bill_page.xpath(
