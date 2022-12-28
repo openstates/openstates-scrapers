@@ -46,8 +46,9 @@ class KSEventScraper(Scraper):
                 ):
                     event_count += 1
                     yield event
+
         if event_count < 1:
-            return EmptyScrape
+            raise EmptyScrape
 
     def scrape_com_page(self, com_id, chamber, com_name, start):
         # http://www.kslegislature.org/li/b2021_22/committees/ctte_h_agriculture_1/
