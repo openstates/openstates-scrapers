@@ -303,6 +303,7 @@ class CAVoteDetail(Base):
             CAVoteSummary.motion_id == motion_id,
         ),
         backref=backref("votes"),
+        overlaps="bill,detail_votes",
     )
 
 
