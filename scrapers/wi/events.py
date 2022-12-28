@@ -4,6 +4,7 @@ import datetime as dt
 import scrapelib
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 calurl = "http://committeeschedule.legis.wisconsin.gov/?filter=Upcoming&committeeID=-1"
@@ -41,6 +42,7 @@ class WIEventScraper(Scraper, LXMLMixin):
     def scrape(self):
         page = self.lxmlize(calurl)
         events = page.xpath("//table[@class='agenda-body']//tr")[1:]
+        event_count = 0
 
         for event in events:
             comit_url = event.xpath(".//a[contains(@title,'Committee Details')]")
@@ -90,5 +92,7 @@ class WIEventScraper(Scraper, LXMLMixin):
 
             for thing in who:
                 event.add_person(thing["name"])
-
+            event_count += 1
             yield event
+        if event_count == 0:
+            raise EmptyScrape
