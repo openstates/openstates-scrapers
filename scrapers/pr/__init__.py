@@ -50,4 +50,5 @@ class PuertoRico(State):
         return url_xpath(
             "https://sutra.oslpr.org/osl/esutra/",
             '//select[@id="ctl00_CPHBody_Tramites_lovCuatrienio"]/option/text()',
+            False,
         )
