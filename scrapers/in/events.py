@@ -8,16 +8,10 @@ from openstates.scrape import Scraper, Event
 
 class INEventScraper(Scraper):
     _tz = pytz.timezone("America/Indianapolis")
-    # avoid cloudflare blocks for no UA
-    cf_headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36"
-    }
     scraper = cloudscraper.create_scraper()
 
     def scrape(self):
-        list_url = "http://iga.in.gov/legislative/{}/committees/standing".format(
-            date.today().year
-        )
+        list_url = f"http://iga.in.gov/legislative/{date.today().year}/committees/standing"
         page = self.scraper.get(list_url).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(list_url)
@@ -26,7 +20,7 @@ class INEventScraper(Scraper):
             yield from self.scrape_committee_page(com_row)
 
     def scrape_committee_page(self, url):
-        page = self.scraper.get(url, headers=self.cf_headers).content
+        page = self.scraper.get(url).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         com = page.xpath('//div[contains(@class, "pull-left span8")]/h1/text()')[
