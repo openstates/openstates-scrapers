@@ -17,10 +17,12 @@ class NJEventScraper(Scraper, MDBMixin):
 
         com_csv = self.to_csv("COMMITTEE.TXT")
 
+        self._committees = {}
+
         # There are some IDs that are missing. I'm going to add them
         # before we load the DBF, in case they include them, we'll just
         # override with their data.
-        self._committees = {
+        overlay = {
             "A": "Assembly on the Whole",
             "S": "Senate on the Whole",
             "J": "Joint Legislature on the Whole",
@@ -45,6 +47,7 @@ class NJEventScraper(Scraper, MDBMixin):
             "JMC": "State Capitol Joint Management Commission",
             "APPC": "Legislative Apportionment Commission",
         }
+        self._committees = overlay
 
         for com in com_csv:
             # map XYZ -> "Assembly/Senate _________ Committee"
@@ -70,10 +73,10 @@ class NJEventScraper(Scraper, MDBMixin):
 
             for bill in re.findall(r"(A|S)(-)?(\d{4})", description):
                 related_bills.append(
-                    {"bill_id": f"{bill[0]} {bill[2]}", "descr": description}
+                    {"bill_id": "%s %s" % (bill[0], bill[2]), "descr": description}
                 )
 
-            date_time = f"{record['Date']} {record['Time']}"
+            date_time = "%s %s" % (record["Date"], record["Time"])
             date_time = dt.datetime.strptime(date_time, "%m/%d/%Y %I:%M %p")
 
             if date_time < dt.datetime.now():
@@ -82,9 +85,9 @@ class NJEventScraper(Scraper, MDBMixin):
             try:
                 hr_name = self._committees[record["CommHouse"]]
             except KeyError:
-                self.warning(f"unknown committee code {record['CommHouse']}, skipping")
+                self.warning("unknown committee code %s, skipping", record["CommHouse"])
 
-            description = f"Meeting of the {hr_name}"
+            description = "Meeting of the {}".format(hr_name)
 
             location = (
                 record["Location"]
