@@ -1,4 +1,4 @@
-from spatula import HtmlListPage, HtmlPage, CSS, XPath, URL
+from spatula import HtmlListPage, HtmlPage, CSS, XPath, URL, SelectorError, SkipItem
 from openstates.models import ScrapeCommittee
 
 
@@ -9,24 +9,37 @@ class HouseCommitteeDetail(HtmlPage):
     example_input = "Public Works and Highways"
 
     def process_page(self):
-        com = self.input
-        Rolez = XPath("//*[@id='form1']/div/div/div/div/div[1]/text()").match(self.root)
-        Chair_mem = (
-            CSS("#form1 div div div div div a")
-            .match(self.root)[0]
-            .text_content()
-            .strip()
-        )
-        Chair_role = Rolez[0].replace(":", "").strip()
-        com.add_member(Chair_mem, Chair_role)
-        VChair_mem = (
-            CSS("#form1 div div div div div a")
-            .match(self.root)[1]
-            .text_content()
-            .strip()
-        )
-        VChair_role = Rolez[1].replace(":", "").strip()
-        com.add_member(VChair_mem, VChair_role)
+        try:
+            com = self.input
+            roles = XPath("//*[@id='form1']/div/div/div/div/div[1]/text()").match(
+                self.root
+            )
+            chair_mem = (
+                CSS("#form1 div div div div div a")
+                .match(self.root)[0]
+                .text_content()
+                .strip()
+            )
+            chair_role = roles[0].replace(":", "").strip()
+            # Some committees do not have a member assigned to Chair, so we do not add them
+            if "n/a" not in chair_role:
+                com.add_member(chair_mem, chair_role)
+
+            VChair_mem = (
+                CSS("#form1 div div div div div a")
+                .match(self.root)[1]
+                .text_content()
+                .strip()
+            )
+            VChair_role = roles[1].replace(":", "").strip()
+            # Some committees do not have a member assigned to Vice Chair, so we do not add them
+            if "n/a" not in VChair_role:
+                com.add_member(VChair_mem, VChair_role)
+
+        # there is an issue with certain committees redirecting back to the general list of standing committees
+        # instead of its appropriate committee page
+        except SelectorError:
+            raise SkipItem("does not redirect to appropriate committee page")
 
         members = CSS("#form1 div div.card-body div a").match(self.root)[7:]
         for mem in members:
@@ -44,23 +57,23 @@ class SenateCommitteeDetail(HtmlPage):
 
     def process_page(self):
         com = self.input
-        Memberz = CSS("#form1 div div.card-body div a").match(self.root)
-        rolez = CSS("#form1 div div div div div a").match(self.root)[0:2]
-        Chair = Memberz[0].text
-        Chair_name = Chair[9:].strip()
-        Chair_rolez = rolez[0].text
-        Chair_role = Chair_rolez[:9].strip()
-        com.add_member(Chair_name, Chair_role)
-        V_Chair = Memberz[1].text
-        V_Chair_name = V_Chair[11:].strip()
-        V_Chair_rolez = rolez[1].text
-        V_Chair_role = V_Chair_rolez[:11].strip()
-        com.add_member(V_Chair_name, V_Chair_role)
-        Mem_mem = Memberz[3:]
-        for mem in Mem_mem:
-            Mem_name = mem.text
+        members = CSS("#form1 div div.card-body div a").match(self.root)
+        roles = CSS("#form1 div div div div div a").match(self.root)[0:2]
+        chair = members[0].text
+        chair_name = chair[9:].strip()
+        chair_roles = roles[0].text
+        chair_role = chair_roles[:9].strip()
+        com.add_member(chair_name, chair_role)
+        v_chair = members[1].text
+        v_chair_name = v_chair[11:].strip()
+        v_chair_roles = roles[1].text
+        v_chair_role = v_chair_roles[:11].strip()
+        com.add_member(v_chair_name, v_chair_role)
+        this_member = members[3:]
+        for mem in this_member:
+            mem_name = mem.text
             role = "Member"
-            com.add_member(Mem_name, role)
+            com.add_member(mem_name, role)
         return com
 
 
