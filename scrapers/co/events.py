@@ -1,6 +1,5 @@
 import datetime as dt
 import pytz
-from pprint import pformat
 
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
