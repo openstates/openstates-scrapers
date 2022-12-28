@@ -97,9 +97,9 @@ class SCEventScraper(Scraper):
 
         if chamber is None:
             self.info("no chamber specified, using Joint Committee Meeting Schedule")
-            events_url = "http://www.scstatehouse.gov/meetings.php"
+            events_url = "https://www.scstatehouse.gov/meetings.php"
         else:
-            events_url = "http://www.scstatehouse.gov/meetings.php?chamber=%s" % (
+            events_url = "https://www.scstatehouse.gov/meetings.php?chamber=%s" % (
                 chambers[chamber]["name"].upper()[0]
             )
 

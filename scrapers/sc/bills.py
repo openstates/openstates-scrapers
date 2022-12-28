@@ -391,20 +391,12 @@ class SCBillScraper(Scraper):
         version_doc = lxml.html.fromstring(version_html)
         version_doc.make_links_absolute(version_url)
         for version in version_doc.xpath('//a[contains(@href, "/prever/")]'):
-            # duplicate versions with same date, use first appearance
-
             bill.add_version_link(
                 note=version.text,  # Description of the version from the state;
                 #  eg, 'As introduced', 'Amended', etc.
                 url=version.get("href"),
                 on_duplicate="ignore",
                 media_type="text/html",  # Still a MIME type
-            )
-            bill.add_version_link(
-                note=version.text,
-                url=version.get("href").replace(".htm", ".docx"),
-                on_duplicate="ignore",
-                media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             )
         # for prefiles, the link just points right to the version, not to a versions page
         if "/bills/" in version_url.lower():
