@@ -7,6 +7,7 @@ import requests
 import lxml.html
 from spatula import HtmlPage
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 def time_is_earlier(new, current):
@@ -172,4 +173,9 @@ class NDEventScraper(Scraper):
     def scrape():
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
         event_list = EventsTable()
-        yield from event_list.do_scrape()
+        event_count = 0
+        for event in event_list.do_scrape():
+            event_count += 1
+            yield event
+        if event_count < 1:
+            raise EmptyScrape
