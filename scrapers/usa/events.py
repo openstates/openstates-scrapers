@@ -7,6 +7,7 @@ import requests
 from utils import LXMLMixin
 from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 class USEventScraper(Scraper, LXMLMixin):
@@ -54,14 +55,24 @@ class USEventScraper(Scraper, LXMLMixin):
     # date_filter argument can give you just one day;
     # format is "2/28/2019" per AK's site
     def scrape(self, chamber=None, session=None, date_filter=None):
-        # todo: yield from
+        event_count = 0
         if chamber is None:
-            yield from self.scrape_house()
-            yield from self.scrape_senate()
+            for event in self.scrape_house():
+                event_count += 1
+                yield event
+            for event in self.scrape_senate():
+                event_count += 1
+                yield event
         elif chamber == "lower":
-            yield from self.scrape_house()
+            for event in self.scrape_house():
+                event_count += 1
+                yield event
         elif chamber == "upper":
-            yield from self.scrape_senate()
+            for event in self.scrape_senate():
+                event_count += 1
+                yield event
+        if event_count < 1:
+            raise EmptyScrape
 
     def scrape_senate(self):
         url = "https://www.senate.gov/general/committee_schedules/hearings.xml"

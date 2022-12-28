@@ -3,10 +3,10 @@ from dateutil.parser import ParserError
 import datetime
 import pytz
 import re
-from openstates.scrape import Scraper
-from openstates.scrape import Event
+from openstates.scrape import Scraper, Event
 from utils import LXMLMixin
 from utils.events import match_coordinates
+from openstates.exceptions import EmptyScrape
 
 
 class NCEventScraper(Scraper, LXMLMixin):
@@ -17,6 +17,7 @@ class NCEventScraper(Scraper, LXMLMixin):
         url = "https://www.ncleg.gov/LegislativeCalendar/"
         page = self.lxmlize(url)
         page.make_links_absolute(url)
+        event_count = 0
         for day_row in page.xpath('//div[@class="row cal-event-day"]'):
 
             date = day_row.xpath(
@@ -123,8 +124,10 @@ class NCEventScraper(Scraper, LXMLMixin):
                             "text/html",
                         )
                 match_coordinates(event, {"16 W Jones": (35.78331, -78.63889)})
-
+                event_count += 1
                 yield event
+        if event_count < 1:
+            raise EmptyScrape
 
     def clean_name(self, name):
         return re.sub(r"[\-\-\s*]+(UPDATED|CANCELLED)", "", name).strip()

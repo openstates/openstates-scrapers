@@ -6,6 +6,7 @@ import re
 from utils import LXMLMixin
 from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 class MOEventScraper(Scraper, LXMLMixin):
@@ -15,11 +16,19 @@ class MOEventScraper(Scraper, LXMLMixin):
     )
 
     def scrape(self, chamber=None):
+        event_count = 0
         if chamber is None:
             for chamber in ["upper", "lower"]:
-                yield from self.scrape_chamber(chamber)
+                for event in self.scrape_chamber(chamber):
+                    event_count += 1
+                    yield event
         else:
-            yield from self.scrape_chamber(chamber)
+            for event in self.scrape_chamber(chamber):
+                event_count += 1
+                yield event
+
+        if event_count < 1:
+            raise EmptyScrape
 
     def scrape_chamber(self, chamber):
         if chamber == "upper":
