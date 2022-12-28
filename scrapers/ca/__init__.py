@@ -411,7 +411,7 @@ class California(State):
             "identifier": "20232024 Special Session 1",
             "name": "2023-2024 Special Sesssion 1",
             "start_date": "2022-12-05",
-            "end_date": "2022-12-15",
+            "end_date": "2023-01-04",
             "active": False,
         },
     ]

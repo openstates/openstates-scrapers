@@ -5,6 +5,7 @@ import dateutil.parser
 import pytz
 import json
 import lxml
+import datetime
 from openstates.scrape import Scraper, Event
 
 
@@ -20,24 +21,16 @@ class NHEventScraper(Scraper, LXMLMixin):
                 yield from self.scrape_chamber(chamber)
 
     def scrape_chamber(self, chamber):
-        if chamber == "upper":
-            yield from self.scrape_upper()
-        elif chamber == "lower":
-            yield from self.scrape_lower()
-
-    def scrape_lower(self):
-        yield {}
-
-    def scrape_upper(self):
+        chamber_names = {"lower": "house", "upper": "senate"}
         # http://gencourt.state.nh.us/dynamicdatafiles/Committees.txt?x=20201216031749
-        url = "http://gencourt.state.nh.us/senate/schedule/CalendarWS.asmx/GetEvents"
+        url = f"http://gencourt.state.nh.us/{chamber_names[chamber]}/schedule/CalendarWS.asmx/GetEvents"
         page = self.get(
             url,
             headers={
                 "Accept": "Accept: application/json, text/javascript, */*; q=0.01",
                 "X-Requested-With": "XMLHttpRequest",
                 "Content-Type": "application/json; charset=utf-8",
-                "Referer": "http://gencourt.state.nh.us/senate/schedule/dailyschedule.aspx",
+                "Referer": f"http://gencourt.state.nh.us/{chamber_names[chamber]}/schedule/dailyschedule.aspx",
                 "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36",
             },
         )
@@ -46,9 +39,13 @@ class NHEventScraper(Scraper, LXMLMixin):
         # real data is double-json encoded string in the 'd' key
         page = json.loads(page["d"])
 
-        event_root = "http://gencourt.state.nh.us/senate/schedule"
+        print(page)
+
+        # event_root = "http://gencourt.state.nh.us/senate/schedule"
+        event_root = f"https://gencourt.state.nh.us/{chamber_names[chamber]}/schedule"
 
         for row in page:
+            status = "tentative"
             event_url = "{}/{}".format(event_root, row["url"])
 
             start = dateutil.parser.parse(row["start"])
@@ -56,21 +53,36 @@ class NHEventScraper(Scraper, LXMLMixin):
             end = dateutil.parser.parse(row["end"])
             end = self._tz.localize(end)
 
-            title = row["title"].strip()
+            if "cancelled" in row["title"] or "canceled" in row["title"]:
+                status = "cancelled"
+
+            if start < self._tz.localize(datetime.datetime.now()):
+                status = "passed"
+
+            title = row["title"].split("\n")[0].strip()
+
+            if "committee" in title.lower():
+                classification = "committee-meeting"
+            else:
+                classification = "other"
+
+            location = row["title"].split(":")[-1].strip()
 
             event = Event(
                 name=title,
                 start_date=start,
                 end_date=end,
-                location_name="See Source",
+                location_name=location,
+                status=status,
+                classification=classification,
             )
 
             event.add_source(event_url)
 
-            self.scrape_upper_details(event, event_url)
+            self.scrape_event_details(event, event_url)
             yield event
 
-    def scrape_upper_details(self, event, url):
+    def scrape_event_details(self, event, url):
         page = self.get(url).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)

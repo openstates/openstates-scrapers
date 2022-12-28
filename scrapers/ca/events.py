@@ -78,7 +78,13 @@ class CAEventScraper(Scraper):
             committee_name = _committee_nr[hearings.pop().committee_nr]
 
             desc = "Committee Meeting: " + committee_name
-            event = Event(name=desc, start_date=date, location_name=committee_name)
+            event = Event(
+                name=desc,
+                start_date=date,
+                location_name=committee_name,
+                type="committee-meeting",
+            )
+            event.add_committee(committee_name, note="host")
             for bill_id in bills:
                 if "B" in bill_id:
                     type_ = "bill"

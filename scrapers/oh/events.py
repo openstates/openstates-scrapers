@@ -1,10 +1,12 @@
 import datetime
 import json
 import lxml
+import re
 
 import pytz
 
 from openstates.scrape import Scraper, Event
+from utils.events import match_coordinates
 
 import datetime as dt
 from dateutil.relativedelta import relativedelta
@@ -38,8 +40,9 @@ class OHEventScraper(Scraper):
 
         for item in data:
             name = item["title"].strip()
+            status = "tentative"
             if "canceled" in name.lower():
-                continue
+                status = "cancelled"
 
             if "house session" in name.lower() or "senate session" in name.lower():
                 continue
@@ -59,13 +62,17 @@ class OHEventScraper(Scraper):
                 '//a[contains(@class,"linkButton") and contains(text(),"Agenda")]/@href'
             )[0]
 
+            if re.match(r"Room \d+", location, flags=re.IGNORECASE):
+                location = f"{location}, 1 Capitol Square, Columbus, OH 43215"
+
             event = Event(
-                name=name,
-                start_date=when,
-                location_name=location,
+                name=name, start_date=when, location_name=location, status=status
             )
 
-            event.add_participant(name, type="committee", note="host")
+            match_coordinates(event, {"1 Capitol Square": (39.96019, -82.99946)})
+
+            com_name = name.replace("CANCELED", "").strip()
+            event.add_participant(com_name, type="committee", note="host")
             event.add_document("Agenda", agenda_url, media_type="application/pdf")
             event.add_source(url)
 
