@@ -43,6 +43,12 @@ class COEventScraper(Scraper, LXMLMixin):
 
             for link in com_links:
                 page = self.lxmlize(link)
+                try:
+                    committee = page.xpath(
+                            '//header/h1[contains(@class,"node__title")]'
+                    )[0].text_content()
+                except Exception:
+                    committee = ""
 
                 hearing_links = page.xpath(
                     '//div[contains(@class,"schedule-item-content")]' "/h4/a/@href"
@@ -97,6 +103,7 @@ class COEventScraper(Scraper, LXMLMixin):
                             start_date=self._tz.localize(date),
                             location_name=location,
                         )
+                        event.add_committee(committee)
                         if agenda.strip():
                             event.add_agenda_item(agenda)
 
