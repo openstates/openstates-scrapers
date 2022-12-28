@@ -1,6 +1,6 @@
 import re
 import attr
-from spatula import HtmlListPage, HtmlPage, CSS, URL
+from spatula import HtmlListPage, HtmlPage, CSS, URL, SelectorError
 from openstates.models import ScrapePerson
 
 background_image_re = re.compile(r"background-image:url\((.*?)\)")
@@ -18,7 +18,7 @@ class LegPartial:
 
 class Senate(HtmlListPage):
     source = URL(
-        "https://www.legislature.ohio.gov/legislators/senate-directory", timeout=30
+        "https://www.legislature.ohio.gov/legislators/senate-directory", timeout=100
     )
     selector = CSS(".mediaGrid a[target='_blank']", num_items=33)
 
@@ -49,7 +49,7 @@ class Senate(HtmlListPage):
 
 class House(HtmlListPage):
     source = URL(
-        "https://www.legislature.ohio.gov/legislators/house-directory", timeout=30
+        "https://www.legislature.ohio.gov/legislators/house-directory", timeout=100
     )
     selector = CSS(".mediaGrid a[target='_blank']", num_items=99)
 
@@ -155,20 +155,25 @@ class LegDetail(HtmlPage):
                 social = CSS(
                     ".quickConnectModule .quickConnectLabelLinks a[target='_blank']"
                 ).match(self.root)
-            except Exception:
+            except SelectorError:
                 social = []
+
             for site in social:
-                url = site.get("href").strip("/")
+                url = site.get("href").strip("/").lower()
                 if "facebook" in url:
                     p.ids.facebook = (
                         url.removeprefix("https://www.facebook.com/")
                         .split("?")[0]
                         .strip("/")
                     )
+
                 elif "twitter" in url:
-                    p.ids.twitter = url.removeprefix("https://twitter.com/").split("?")[
-                        0
-                    ]
+                    if "https" in url:
+                        twit_pref = "https://twitter.com/"
+                    else:
+                        twit_pref = "http://www.twitter.com/"
+                    p.ids.twitter = url.removeprefix(twit_pref).split("?")[0]
+
                 elif "youtube" in url:
                     if "user" in url:
                         p.ids.youtube = url.removeprefix(
@@ -184,8 +189,10 @@ class LegDetail(HtmlPage):
                         .split("?")[0]
                         .strip("/")
                     )
+
                 else:
                     self.logger.info(f"SOCIAL NOT MATCHED: {url}")
+
             phone = (
                 CSS(".generalInfoModule div.phone span")
                 .match_one(self.root)

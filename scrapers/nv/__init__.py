@@ -96,7 +96,7 @@ class Nevada(State):
             "identifier": "80",
             "name": "2019 Regular Session",
             "start_date": "2019-02-04",
-            "end_date": "2019-06-03",
+            "end_date": "2019-06-04",
         },
         {
             "_scraped_name": "31st (2020) Special Session",
@@ -112,8 +112,7 @@ class Nevada(State):
             "identifier": "2020Special32",
             "name": "32nd (2020) Special Session",
             "start_date": "2020-07-31",
-            # TODO: correct end date after special completes
-            "end_date": "2020-08-07",
+            "end_date": "2020-08-06",
         },
         {
             "_scraped_name": "81st (2021) Session",
@@ -122,7 +121,7 @@ class Nevada(State):
             "name": "2021 Regular Session",
             "start_date": "2021-02-01",
             "end_date": "2021-06-01",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "33rd (2021) Special Session",
@@ -133,9 +132,17 @@ class Nevada(State):
             "end_date": "2021-11-16",
             "active": False,
         },
+        {
+            "_scraped_name": "82nd (2023) Session",
+            "classification": "primary",
+            "identifier": "82",
+            "name": "2023 Regular Session",
+            "start_date": "2023-02-01",
+            "end_date": "2023-06-01",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
-        "82nd (2023) Session",
         "25th (2008) Special Session",
         "24th (2008) Special Session",
         "23rd (2007) Special Session",

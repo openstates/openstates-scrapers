@@ -107,7 +107,7 @@ class Oregon(State):
             "identifier": "2018 Regular Session",
             "name": "2018 Regular Session",
             "start_date": "2018-02-05",
-            "end_date": "2018-03-09",
+            "end_date": "2018-03-03",
         },
         {
             "_scraped_name": "2018 1st Special Session",
@@ -120,7 +120,7 @@ class Oregon(State):
             "_scraped_name": "2019 Regular Session",
             "identifier": "2019 Regular Session",
             "name": "2019 Regular Session",
-            "start_date": "2019-01-22",
+            "start_date": "2019-01-14",
             "end_date": "2019-06-30",
         },
         {
@@ -134,7 +134,7 @@ class Oregon(State):
             "_scraped_name": "2020 1st Special Session",
             "identifier": "2020S1",
             "name": "2020 Special Session",
-            "start_date": "2020-06-24",
+            "start_date": "2020-06-26",
             "end_date": "2020-07-03",
         },
         {
@@ -150,13 +150,13 @@ class Oregon(State):
             "identifier": "2020S3",
             "name": "2020 Special Session 3",
             "start_date": "2020-12-21",
-            "end_date": "2020-12-21",
+            "end_date": "2020-12-31",
         },
         {
             "_scraped_name": "2021 Regular Session",
             "identifier": "2021 Regular Session",
             "name": "2021 Regular Session",
-            "start_date": "2021-01-19",
+            "start_date": "2021-01-11",
             "end_date": "2021-06-26",
         },
         {
@@ -172,7 +172,7 @@ class Oregon(State):
             "identifier": "2021S2",
             "name": "2021 Special Session 2",
             "start_date": "2021-12-13",
-            "end_date": "2021-12-25",
+            "end_date": "2021-12-13",
             "active": False,
         },
         {
@@ -180,11 +180,20 @@ class Oregon(State):
             "identifier": "2022R1",
             "name": "2022 Regular Session",
             "start_date": "2022-02-01",
-            "end_date": "2022-03-08",
+            "end_date": "2022-03-04",
             "active": True,
+        },
+        {
+            "_scraped_name": "2023 Regular Session",
+            "identifier": "2023R1",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-09",
+            "end_date": "2023-06-25",
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [
+        "Mock Session 2023",
         "2021-2022 Interim",
         "Mock Session 2020",
         "Today",

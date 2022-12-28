@@ -5,6 +5,7 @@ import functools
 import pytz
 
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 import dateutil.parser
 from dateutil.parser import ParserError
@@ -18,6 +19,9 @@ class KYEventScraper(Scraper):
 
         page = self.get(url).content
         page = lxml.html.fromstring(page)
+
+        if len(page.xpath('//div[contains(@class,"TimeAndLocation")]')) == 0:
+            raise EmptyScrape
 
         for time_row in page.xpath('//div[contains(@class,"TimeAndLocation")]'):
             date = (

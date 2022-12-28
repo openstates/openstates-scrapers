@@ -52,8 +52,8 @@ class NewJersey(State):
             "_scraped_name": "2018-2019 Session",
             "identifier": "218",
             "name": "2018-2019 Regular Session",
-            "start_date": "2018-01-08",
-            "end_date": "2020-01-09",
+            "start_date": "2018-01-09",
+            "end_date": "2020-01-14",
         },
         {
             "_scraped_name": "2020-2021 Session",

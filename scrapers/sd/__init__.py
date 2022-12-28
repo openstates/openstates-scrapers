@@ -111,7 +111,7 @@ class SouthDakota(State):
             "identifier": "2019",
             "name": "2019 Regular Session",
             "start_date": "2019-01-08",
-            "end_date": "2019-03-13",
+            "end_date": "2019-03-29",
         },
         {
             "_scraped_name": "2020",
@@ -125,7 +125,7 @@ class SouthDakota(State):
             "identifier": "2020s",
             "name": "2020 Special Session",
             "start_date": "2020-10-05",
-            "end_date": "2020-10-05",
+            "end_date": "2020-11-05",
             "classification": "special",
         },
         {
@@ -139,8 +139,8 @@ class SouthDakota(State):
             "_scraped_name": "2021r",
             "identifier": "2021r",
             "name": "2021 Special Session",
-            "start_date": "2021-11-08",
-            "end_date": "2021-11-12",
+            "start_date": "2021-11-09",
+            "end_date": "2021-11-09",
             "classification": "special",
         },
         {
@@ -148,7 +148,7 @@ class SouthDakota(State):
             "identifier": "2021i",
             "name": "2021 Second Special Session",
             "start_date": "2021-11-08",
-            "end_date": "2021-11-12",
+            "end_date": "2021-11-11",
             "classification": "special",
         },
         {
@@ -163,9 +163,8 @@ class SouthDakota(State):
             "_scraped_name": "2023",
             "identifier": "2023",
             "name": "2023 Regular Session",
-            # TODO: Start and end dates
-            "start_date": "2023-01-11",
-            "end_date": "2023-03-28",
+            "start_date": "2023-01-10",
+            "end_date": "2023-03-27",
             "active": False,
         },
     ]

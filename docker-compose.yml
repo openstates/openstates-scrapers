@@ -1,28 +1,47 @@
 version: "3.5"
 
+# shared network so other openstates packages (core, etc.) can reach these services
 networks:
   openstates-network:
       name: openstates-network
 
+# shared postgres volume so other openstates packages can read the data more consistently
+volumes:
+  openstates-postgres:
+    name: openstates-postgres
+
 services:
   scrape:
-    build: .
+    build:
+      context: .
+      no_cache: true
+      pull: true
     environment:
-    - AR_FTP_USER
-    - AR_FTP_PASSWORD
-    - MYSQL_HOST=mysql
-    - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
-    - PYTHONPATH=./scrapers
-    - NEW_YORK_API_KEY
-    - INDIANA_API_KEY
-    - DC_API_KEY
-    - VIRGINIA_FTP_USER
-    - VIRGINIA_FTP_PASSWORD
+      - AR_FTP_USER
+      - AR_FTP_PASSWORD
+      - MYSQL_HOST=mysql
+      - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
+      - PYTHONPATH=./scrapers
+      - NEW_YORK_API_KEY
+      - INDIANA_API_KEY
+      - DC_API_KEY
+      - VIRGINIA_FTP_USER
+      - VIRGINIA_FTP_PASSWORD
+      - S3_REALTIME_BASE=s3://openstates-realtime-bills
+      - STATS_ENABLED
+      - STATS_RETRIES=1
+      - STATS_ENDPOINT
+      - STATS_JWT_TOKEN
+      # - STATS_PREFIX
+      # - STATS_BATCH_SIZE
     volumes:
       - .:/opt/openstates/openstates/
     entrypoint: ["poetry", "run", "os-update"]
     networks:
       - openstates-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   mysql:
     image: mariadb:10.3
 #    command: mysqld_safe --max_allowed_packet=512M
@@ -31,6 +50,7 @@ services:
     environment:
       - MYSQL_DATABASE=capublic
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_LOG_CONSOLE=yes
     networks:
       - openstates-network
   ca-scrape:
@@ -41,6 +61,10 @@ services:
       - MYSQL_HOST=mysql
       - DATABASE_URL=postgres://openstates:openstates@db/openstatesorg
       - PYTHONPATH=./scrapers
+      - STATS_ENABLED
+      - STATS_RETRIES=1
+      - STATS_ENDPOINT
+      - STATS_JWT_TOKEN
     volumes:
       - .:/opt/openstates/openstates/
     entrypoint: ["poetry", "run", "os-update"]
@@ -69,9 +93,10 @@ services:
       POSTGRES_USER: openstates
       POSTGRES_DB: openstatesorg
     volumes:
-      - ./openstates-postgres/:/var/lib/postgresql/data
+      - openstates-postgres:/var/lib/postgresql/data
     networks:
       - openstates-network
+    command: ["postgres", "-c", "log_statement=all"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -q -d db -U db"]
       interval: 10s
