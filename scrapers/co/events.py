@@ -47,7 +47,7 @@ class COEventScraper(Scraper, LXMLMixin):
                 page = self.lxmlize(link)
                 try:
                     committee = page.xpath(
-                            '//header/h1[contains(@class,"node__title")]'
+                        '//header/h1[contains(@class,"node__title")]'
                     )[0].text_content()
                 except Exception:
                     committee = "no committee"
