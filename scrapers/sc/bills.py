@@ -400,12 +400,13 @@ class SCBillScraper(Scraper):
                 on_duplicate="ignore",
                 media_type="text/html",  # Still a MIME type
             )
-            bill.add_version_link(
-                note=version.text,
-                url=version.get("href").replace(".htm", ".docx"),
-                on_duplicate="ignore",
-                media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            )
+            # TODO: remove when docx are posted
+            # bill.add_version_link(
+            #     note=version.text,
+            #     url=version.get("href").replace(".htm", ".docx"),
+            #     on_duplicate="ignore",
+            #     media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            # )
         # for prefiles, the link just points right to the version, not to a versions page
         if "/bills/" in version_url.lower():
             bill.add_version_link(

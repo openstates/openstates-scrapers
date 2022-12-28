@@ -4,7 +4,9 @@ import dateutil.parser
 import re
 
 from utils import LXMLMixin
+from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 class MOEventScraper(Scraper, LXMLMixin):
@@ -14,11 +16,19 @@ class MOEventScraper(Scraper, LXMLMixin):
     )
 
     def scrape(self, chamber=None):
+        event_count = 0
         if chamber is None:
             for chamber in ["upper", "lower"]:
-                yield from self.scrape_chamber(chamber)
+                for event in self.scrape_chamber(chamber):
+                    event_count += 1
+                    yield event
         else:
-            yield from self.scrape_chamber(chamber)
+            for event in self.scrape_chamber(chamber):
+                event_count += 1
+                yield event
+
+        if event_count < 1:
+            raise EmptyScrape
 
     def scrape_chamber(self, chamber):
         if chamber == "upper":
@@ -73,11 +83,23 @@ class MOEventScraper(Scraper, LXMLMixin):
 
             start_date = self._TZ.localize(start_date)
 
-            event = Event(start_date=start_date, name=com, location_name=location)
+            event = Event(
+                start_date=start_date,
+                name=com,
+                location_name=location,
+                classification="committee-meeting",
+            )
 
             event.add_source(listing_url)
 
             event.add_participant(com, type="committee", note="host")
+
+            match_coordinates(
+                event,
+                {
+                    "201 W Capitol Ave": (38.57918, -92.17306),
+                },
+            )
 
             for bill_table in page.xpath('//table[@width="85%" and @border="0"]'):
                 bill_link = ""
@@ -142,7 +164,12 @@ class MOEventScraper(Scraper, LXMLMixin):
 
         start_date = self._TZ.localize(start_date)
 
-        event = Event(start_date=start_date, name=com, location_name=location)
+        event = Event(
+            start_date=start_date,
+            name=com,
+            location_name=location,
+            classification="committee-meeting",
+        )
 
         event.add_source("https://house.mo.gov/HearingsTimeOrder.aspx")
 
@@ -152,6 +179,13 @@ class MOEventScraper(Scraper, LXMLMixin):
         house_link_xpath = (
             './/a[contains(@href, "Bill.aspx") '
             'or contains(@href, "bill.aspx")]/b/text()'
+        )
+
+        match_coordinates(
+            event,
+            {
+                "201 W Capitol Ave": (38.57918, -92.17306),
+            },
         )
 
         for bill_title in page.xpath(house_link_xpath):
