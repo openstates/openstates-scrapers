@@ -246,8 +246,8 @@ class CAVoteSummary(Base):
     trans_uid = Column(String(30))
     trans_update = Column(DateTime, primary_key=True)
 
-    motion = relation(CAMotion)
-    location = relation(CALocation)
+    motion = relation(CAMotion, overlaps="bill,detail_votes")
+    location = relation(CALocation, overlaps="bill,detail_votes")
 
     @property
     def threshold(self):
