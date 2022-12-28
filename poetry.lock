@@ -612,7 +612,7 @@ et-xmlfile = "*"
 
 [[package]]
 name = "openstates"
-version = "6.13.2"
+version = "6.13.3"
 description = "core infrastructure for the openstates project"
 category = "main"
 optional = false
