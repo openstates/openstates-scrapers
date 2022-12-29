@@ -62,6 +62,7 @@ class INEventScraper(Scraper):
             if event_name in event_objects:
                 self.warning(f"Duplicate event {event_name} found. Skipping")
                 continue
+            event_objects.add(event_name)
 
             event = Event(
                 name=com,
