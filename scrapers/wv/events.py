@@ -17,21 +17,29 @@ class WVEventScraper(Scraper, LXMLMixin):
 
     def scrape(self):
         com_urls = [
-            "http://www.wvlegislature.gov/committees/senate/main.cfm",
-            "http://www.wvlegislature.gov/committees/House/main.cfm",
-            "http://www.wvlegislature.gov/committees/Interims/interims.cfm",
+            ("Senate", "http://www.wvlegislature.gov/committees/senate/main.cfm"),
+            ("House", "http://www.wvlegislature.gov/committees/House/main.cfm"),
+            ("Interim", "http://www.wvlegislature.gov/committees/Interims/interims.cfm"),
         ]
-        for url in com_urls:
-            yield from self.scrape_committees(url)
+        for chamber, url in com_urls:
+            yield from self.scrape_committees(chamber, url)
 
-    def scrape_committees(self, url):
+    def scrape_committees(self, chamber, url):
+        event_objects = set()
         page = self.lxmlize(url)
         page.make_links_absolute(url)
         # note house uses div#wrapleftcol and sen uses div#wrapleftcolr on some pages
         for link in page.xpath(
             '//div[contains(@id,"wrapleftcol")]/a[contains(@href,"agendas.cfm")]/@href'
         ):
-            yield from self.scrape_committee_page(link)
+            for event in self.scrape_committee_page(link):
+                event_name = f"{chamber}#{event.name}#{event.start_date}#{event.end_date}#{event.location['name']}#{event.description}"[:500]
+                if event_name in event_objects:
+                    self.warning(f"Found duplicate {event_name}. Skipping.")
+                    continue
+                event_objects.add(event_name)
+                event.dedupe_key = event_name
+                yield event
 
     def scrape_committee_page(self, url):
         # grab the first event, then look up the pages for the table entries
@@ -104,6 +112,7 @@ class WVEventScraper(Scraper, LXMLMixin):
             start_date=when,
             location_name=where,
             classification="committee-meeting",
+            # descriptions have a character limit
             description=desc,
         )
 
