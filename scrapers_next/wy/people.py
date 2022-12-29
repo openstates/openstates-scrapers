@@ -96,10 +96,10 @@ class LegList(JsonListPage):
 
 
 class Senate(LegList):
-    source = URL("https://wyoleg.gov/LsoService/api/legislator/2021/S")
+    source = URL("https://wyoleg.gov/LsoService/api/legislator/2023/S")
     chamber = "upper"
 
 
 class House(LegList):
-    source = URL("https://wyoleg.gov/LsoService/api/legislator/2021/H")
+    source = URL("https://wyoleg.gov/LsoService/api/legislator/2023/H")
     chamber = "lower"

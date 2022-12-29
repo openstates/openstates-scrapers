@@ -3,7 +3,7 @@ from openstates.models import ScrapePerson
 
 
 def list_url():
-    general_court_num = "192"
+    general_court_num = "193"
     return f"https://malegislature.gov/api/GeneralCourts/{general_court_num}/LegislativeMembers/"
 
 

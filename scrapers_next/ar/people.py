@@ -11,11 +11,11 @@ class PartialMember:
 
 
 class LegDetail(HtmlPage):
-    example_source = "https://www.arkleg.state.ar.us/Legislators/Detail?member=B.+Ballinger&ddBienniumSession=2021%2F2021S1"
+    #example_source = "https://www.arkleg.state.ar.us/Legislators/Detail?member=B.+Ballinger&ddBienniumSession=2021%2F2021S1"
 
     def process_page(self):
 
-        table_div = CSS(".col-md-7").match(self.root)[0]
+        table_div = CSS(".col-md-7").match(self.root)[0]s
 
         rows = CSS(".row").match(table_div)
 
@@ -92,7 +92,7 @@ class LegDetail(HtmlPage):
 
 
 class LegList(HtmlListPage):
-    source = "https://www.arkleg.state.ar.us/Legislators/List?sort=Type&by=desc&ddBienniumSession=2021%2F2021S1#SearchResults"
+    source = "https://www.arkleg.state.ar.us/Legislators/List?sort=Type&by=desc&ddBienniumSession=2023%2F2023S1#SearchResults"
     selector = XPath(
         "//div[@role='grid']//div[contains(@class, 'row')]//div[@class='col-md-6']"
     )
