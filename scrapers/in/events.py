@@ -11,21 +11,26 @@ class INEventScraper(Scraper):
     scraper = cloudscraper.create_scraper()
 
     def scrape(self):
-        list_url = f"http://iga.in.gov/legislative/{date.today().year}/committees/standing"
+        list_url = (
+            f"http://iga.in.gov/legislative/{date.today().year}/committees/standing"
+        )
         page = self.scraper.get(list_url).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(list_url)
 
-        for com_row in page.xpath('//li[contains(@class,"committee-item")]/a/@href'):
-            yield from self.scrape_committee_page(com_row)
+        for com_row in page.xpath('//li[contains(@class,"committee-item")]/a'):
+            committee = com_row.text_content()
+            url = com_row.xpath("@href")
+            yield from self.scrape_committee_page(url, committee)
 
-    def scrape_committee_page(self, url):
+    def scrape_committee_page(self, url, name):
         page = self.scraper.get(url).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         com = page.xpath('//div[contains(@class, "pull-left span8")]/h1/text()')[
             0
         ].strip()
+        event_objects = set()
 
         for row in page.xpath('//div[contains(@id, "agenda-item")]'):
             meta = row.xpath('div[contains(@class,"accordion-heading-agenda")]/a')[0]
@@ -35,13 +40,6 @@ class INEventScraper(Scraper):
             time_and_loc = meta.xpath("span/text()")[0].strip()
             time_and_loc = time_and_loc.split("\n")
             time = time_and_loc[0]
-            loc = time_and_loc[1]
-
-            if loc == "":
-                loc = "See Agenda"
-
-            com = com.replace("(S)", "Senate").replace("(H)", "House")
-
             # Indiana has a LOT of undefined times, stuff like "15 mins after adj. of elections"
             # so just remove the time component if it won't parse, and the user can go to the agenda
             try:
@@ -53,15 +51,27 @@ class INEventScraper(Scraper):
             if "cancelled" in time.lower():
                 continue
 
+            loc = time_and_loc[1]
+
+            if not loc:
+                loc = "See Agenda"
+
+            com = com.replace("(S)", "Senate").replace("(H)", "House")
+
+            event_name = f"{name}#{com}#{when}"
+            if event_name in event_objects:
+                self.warning(f"Duplicate event {event_name} found. Skipping")
+                continue
+
             event = Event(
                 name=com,
                 start_date=when,
                 location_name=loc,
                 classification="committee-meeting",
             )
-
+            event.dedupe_key = event_name
             event.add_source(url)
-            event.add_participant(com, type="committee", note="host")
+            event.add_committee(name)
 
             if row.xpath('.//a[contains(text(), "View Agenda")]'):
                 agenda_url = row.xpath('.//a[contains(text(), "View Agenda")]/@href')[0]
