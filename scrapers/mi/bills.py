@@ -13,12 +13,13 @@ TIMEZONE = pytz.timezone("US/Eastern")
 
 def jres_id(n):
     """joint res ids go from A-Z, AA-ZZ, etc."""
+    # Offset by 1 to account for zero
+    n = n + 1
     if n <= 26:
         return chr(ord('@') + n)
-    elif n > 26:
-        return chr(ord('@') + n % 26) + chr(ord('@') + n % 26)
     else:
-        return n
+        offset = n % 26 if n % 26 == 0 else 26
+        return chr(ord('@') + offset) + chr(ord('@') + offset)
 
 
 bill_types = {
