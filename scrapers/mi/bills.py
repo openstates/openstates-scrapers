@@ -14,7 +14,12 @@ TIMEZONE = pytz.timezone("US/Eastern")
 
 def jres_id(n):
     """joint res ids go from A-Z, AA-ZZ, etc."""
-    return chr(ord("A") + (n - 1) % 25) * (math.floor(n / 26) + 1)
+    if n <= 26:
+        return chr(ord('@') + n)
+    elif n > 26:
+        return chr(ord('@') + n % 26) + chr(ord('@') + n % 26)
+    else:
+        return n
 
 
 bill_types = {
@@ -66,8 +71,8 @@ class MIBillScraper(Scraper):
         html = self.get(url).text
         # Otherwise, try second year of the session biennium
         if (
-            "Page Not Found" in html
-            or "The bill you are looking for is not available yet" in html
+                "Page Not Found" in html
+                or "The bill you are looking for is not available yet" in html
         ):
             url = "http://legislature.mi.gov/doc.aspx?%s-%s" % (
                 session[-4:],
@@ -75,8 +80,8 @@ class MIBillScraper(Scraper):
             )
             html = self.get(url).text
             if (
-                "Page Not Found" in html
-                or "The bill you are looking for is not available yet" in html
+                    "Page Not Found" in html
+                    or "The bill you are looking for is not available yet" in html
             ):
                 self.warning("Cannot open bill page for {}; skipping".format(bill_id))
                 return
