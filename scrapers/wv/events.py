@@ -19,7 +19,10 @@ class WVEventScraper(Scraper, LXMLMixin):
         com_urls = [
             ("Senate", "http://www.wvlegislature.gov/committees/senate/main.cfm"),
             ("House", "http://www.wvlegislature.gov/committees/House/main.cfm"),
-            ("Interim", "http://www.wvlegislature.gov/committees/Interims/interims.cfm"),
+            (
+                "Interim",
+                "http://www.wvlegislature.gov/committees/Interims/interims.cfm",
+            ),
         ]
         for chamber, url in com_urls:
             yield from self.scrape_committees(chamber, url)
@@ -33,7 +36,9 @@ class WVEventScraper(Scraper, LXMLMixin):
             '//div[contains(@id,"wrapleftcol")]/a[contains(@href,"agendas.cfm")]/@href'
         ):
             for event in self.scrape_committee_page(link):
-                event_name = f"{chamber}#{event.name}#{event.start_date}#{event.end_date}#{event.location['name']}#{event.description}"[:500]
+                event_name = f"{chamber}#{event.name}#{event.start_date}#{event.end_date}#{event.location['name']}#{event.description}"[
+                    :500
+                ]
                 if event_name in event_objects:
                     self.warning(f"Found duplicate {event_name}. Skipping.")
                     continue
