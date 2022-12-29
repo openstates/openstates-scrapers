@@ -83,8 +83,8 @@ class MIBillScraper(Scraper):
         html = self.get(url).text
         # Otherwise, try second year of the session biennium
         if (
-                "Page Not Found" in html
-                or "The bill you are looking for is not available yet" in html
+            "Page Not Found" in html
+            or "The bill you are looking for is not available yet" in html
         ):
             url = "http://legislature.mi.gov/doc.aspx?%s-%s" % (
                 session[-4:],
@@ -92,8 +92,8 @@ class MIBillScraper(Scraper):
             )
             html = self.get(url).text
             if (
-                    "Page Not Found" in html
-                    or "The bill you are looking for is not available yet" in html
+                "Page Not Found" in html
+                or "The bill you are looking for is not available yet" in html
             ):
                 self.warning("Cannot open bill page for {}; skipping".format(bill_id))
                 return
