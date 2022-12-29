@@ -11,11 +11,11 @@ class PartialMember:
 
 
 class LegDetail(HtmlPage):
-    #example_source = "https://www.arkleg.state.ar.us/Legislators/Detail?member=B.+Ballinger&ddBienniumSession=2021%2F2021S1"
+    #example_source = "https://www.arkleg.state.ar.us/Legislators/Detail?member=B.+Ballinger&ddBienniumSession=2023%2F2023S1"
 
     def process_page(self):
 
-        table_div = CSS(".col-md-7").match(self.root)[0]s
+        table_div = CSS(".col-md-7").match(self.root)[0]
 
         rows = CSS(".row").match(table_div)
 
