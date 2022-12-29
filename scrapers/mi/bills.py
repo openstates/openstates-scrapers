@@ -12,15 +12,25 @@ TIMEZONE = pytz.timezone("US/Eastern")
 
 
 def jres_id(n):
-    """joint res ids go from A-Z, AA-ZZ, etc."""
+    """
+    Joint Resolution ids go from A-Z, AA-ZZ
+    Some example IDs would be HJR Z, HJR AA, HJR G, HJR EE
+
+    Example: n = 27, we go to the else clause and 27 mod 26 equals 1 so AA is returned
+    """
     # Offset by 1 to account for zero
     n = n + 1
+    # This if clause accounts for Joint Resolution IDs from HJR A to HJR Z
     if n <= 26:
         return chr(ord('@') + n)
+    # This else clause accounts for Joint Resolution IDs from HJR AA to HJR ZZ
     else:
+        # Using Mod here because we want values over 26 to evaluate to 1-26 to correspond to the letter in alphabet
         offset = n % 26
+        # Because 26 mod 26 equals 0 we are setting the offset to 26 in this case to return ZZ
         if offset == 0:
             offset = 26
+        # The JR IDs increment from AA -> BB -> CC, etc. We are adding the two strings together
         return chr(ord('@') + offset) + chr(ord('@') + offset)
 
 
