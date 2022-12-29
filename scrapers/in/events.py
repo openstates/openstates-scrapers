@@ -12,7 +12,7 @@ class INEventScraper(Scraper):
 
     def scrape(self):
         list_url = (
-            f"http://iga.in.gov/legislative/{date.today().year}/committees/standing"
+            f"https://iga.in.gov/legislative/{date.today().year}/committees/standing"
         )
         page = self.scraper.get(list_url).content
         page = lxml.html.fromstring(page)
