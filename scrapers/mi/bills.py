@@ -18,11 +18,10 @@ def jres_id(n):
 
     Example: n = 27, we go to the else clause and 27 mod 26 equals 1 so AA is returned
     """
-    # Offset by 1 to account for zero
-    n = n + 1
+
     # This if clause accounts for Joint Resolution IDs from HJR A to HJR Z
     if n <= 26:
-        return chr(ord('@') + n)
+        return chr(ord("@") + n)
     # This else clause accounts for Joint Resolution IDs from HJR AA to HJR ZZ
     else:
         # Using Mod here because we want values over 26 to evaluate to 1-26 to correspond to the letter in alphabet
@@ -31,7 +30,7 @@ def jres_id(n):
         if offset == 0:
             offset = 26
         # The JR IDs increment from AA -> BB -> CC, etc. We are adding the two strings together
-        return chr(ord('@') + offset) + chr(ord('@') + offset)
+        return chr(ord("@") + offset) + chr(ord("@") + offset)
 
 
 bill_types = {
