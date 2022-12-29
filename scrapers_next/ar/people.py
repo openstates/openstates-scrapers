@@ -11,7 +11,7 @@ class PartialMember:
 
 
 class LegDetail(HtmlPage):
-    #example_source = "https://www.arkleg.state.ar.us/Legislators/Detail?member=B.+Ballinger&ddBienniumSession=2023%2F2023S1"
+    example_source = "https://www.arkleg.state.ar.us/Legislators/Detail?member=B.+Ballinger&ddBienniumSession=2023%2F2023S1"
 
     def process_page(self):
 
