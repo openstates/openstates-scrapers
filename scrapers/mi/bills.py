@@ -18,7 +18,9 @@ def jres_id(n):
     if n <= 26:
         return chr(ord('@') + n)
     else:
-        offset = n % 26 if n % 26 == 0 else 26
+        offset = n % 26
+        if offset == 0:
+            offset = 26
         return chr(ord('@') + offset) + chr(ord('@') + offset)
 
 
