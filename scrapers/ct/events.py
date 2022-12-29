@@ -30,7 +30,7 @@ class CTEventScraper(Scraper):
 
         DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
         for info in events:
-            if info["title"] is None:
+            if not info["title"]:
                 self.warning("Event found with no title; it will be skipped")
                 continue
             elif info["title"].startswith("CANCELLED:"):
