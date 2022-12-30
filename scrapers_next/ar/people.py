@@ -11,7 +11,7 @@ class PartialMember:
 
 
 class LegDetail(HtmlPage):
-    example_source = "https://www.arkleg.state.ar.us/Legislators/Detail?member=B.+Ballinger&ddBienniumSession=2023%2F2023S1"
+    example_source = "https://www.arkleg.state.ar.us/Legislators/Detail?member=B.+Ballinger&ddBienniumSession=2023%2F2023R"
 
     def process_page(self):
 
@@ -92,7 +92,7 @@ class LegDetail(HtmlPage):
 
 
 class LegList(HtmlListPage):
-    source = "https://www.arkleg.state.ar.us/Legislators/List?sort=Type&by=desc&ddBienniumSession=2023%2F2023S1#SearchResults"
+    source = "https://www.arkleg.state.ar.us/Legislators/List?sort=Type&by=desc&ddBienniumSession=2023%2F2023R#SearchResults"
     selector = XPath(
         "//div[@role='grid']//div[contains(@class, 'row')]//div[@class='col-md-6']"
     )

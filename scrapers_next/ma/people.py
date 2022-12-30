@@ -10,7 +10,7 @@ def list_url():
 class LegDetail(JsonPage):
 
     example_source = (
-        "http://malegislature.gov/api/GeneralCourts/192/LegislativeMembers/R_C1"
+        "http://malegislature.gov/api/GeneralCourts/193/LegislativeMembers/R_C1"
     )
 
     def process_page(self):

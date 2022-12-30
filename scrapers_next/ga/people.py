@@ -56,7 +56,7 @@ class LegDetail(JsonPage):
 
 
 class DirectoryListing(JsonListPage):
-    # e.g. https://www.legis.ga.gov/api/members/list/1029?chamber=1
+    # e.g. https://www.legis.ga.gov/api/members/list/1031?chamber=1
     # these pages are seen as XHR when loading https://www.legis.ga.gov/members/senate
     chamber_types = {1: "lower", 2: "upper"}
     chamber_names = {1: "house", 2: "senate"}
