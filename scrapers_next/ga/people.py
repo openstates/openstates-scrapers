@@ -56,13 +56,13 @@ class LegDetail(JsonPage):
 
 
 class DirectoryListing(JsonListPage):
-    # e.g. https://www.legis.ga.gov/api/members/list/1029?chamber=1
+    # e.g. https://www.legis.ga.gov/api/members/list/1031?chamber=1
     # these pages are seen as XHR when loading https://www.legis.ga.gov/members/senate
     chamber_types = {1: "lower", 2: "upper"}
     chamber_names = {1: "house", 2: "senate"}
     party_ids = {0: "Democratic", 1: "Republican"}
     source = URL(
-        "https://www.legis.ga.gov/api/members/list/1029",
+        "https://www.legis.ga.gov/api/members/list/1031",
         headers={"Authorization": get_token()},
     )
 
@@ -121,7 +121,7 @@ class DirectoryListing(JsonListPage):
         p.add_source(url, note="Initial list page (requires authorization token)")
 
         source = URL(
-            f"https://www.legis.ga.gov/api/members/detail/{item['id']}?session=1029&chamber={chamber_id}",
+            f"https://www.legis.ga.gov/api/members/detail/{item['id']}?session=1031&chamber={chamber_id}",
             headers={"Authorization": get_token()},
             timeout=30,
         )

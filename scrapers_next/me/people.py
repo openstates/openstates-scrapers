@@ -234,7 +234,7 @@ class SenDetail(HtmlPage):
 
 class Senate(ExcelListPage):
     source = URL(
-        "https://legislature.maine.gov/uploads/visual_edit/130th-senate-contact-information-as-of-31221.xlsx"
+        "https://legislature.maine.gov/uploads/visual_edit/131-senator-contact-information-2.xlsx"
     )
 
     def process_item(self, item):
