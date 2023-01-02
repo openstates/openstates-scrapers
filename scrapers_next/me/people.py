@@ -242,11 +242,12 @@ class Senate(ExcelListPage):
         if item[0] == "Dist" or item[0] is None:
             self.skip()
 
-        first_name = item[3].strip()
-        last_name = item[4].strip()
+        first_name = item[2].strip()
+        last_name = item[3].strip()
         name = first_name + " " + last_name
         district = item[0]
-        party = item[2].strip()
+        party = item[1].strip()
+        print(f"name: {name} district: {district} party: {party}")
 
         if not district:
             # non voting members ignored for now
@@ -263,17 +264,17 @@ class Senate(ExcelListPage):
         p.given_name = first_name
         p.family_name = last_name
 
-        detail_link = URL(f"https://legislature.maine.gov/District-{district}")
+        detail_link = URL(f"https://legislature.maine.gov/District{district}")
         p.add_source(self.source.url)
         p.add_source(detail_link.url)
         p.add_link(detail_link.url, note="homepage")
 
-        county = item[1].strip()
-        p.extras["county represented"] = county
+        # county = item[1].strip()
+        # p.extras["county represented"] = county
 
-        mailing_address = item[5].strip()
-        zipcode = item[8].strip()
-        city = item[6].strip()
+        mailing_address = item[4].strip()
+        zipcode = item[7].strip()
+        city = item[5].strip()
         address = f"{mailing_address}, {city}, ME {zipcode}"
         if re.search(r"St(\s|,)", address):
             address = re.sub(r"St\s", "Street ", address)
@@ -286,15 +287,15 @@ class Senate(ExcelListPage):
             address = re.sub(r"N\.", "North", address)
         p.district_office.address = address
 
-        phone = item[9].strip()
-        phone = "(207) " + phone
-        p.district_office.voice = phone
+        # phone = item[9].strip()
+        # phone = "(207) " + phone
+        # p.district_office.voice = phone
 
-        alternate = item[10]
-        if alternate is not None:
-            p.extras["alternate phone"] = alternate.strip()
+        # alternate = item[10]
+        # if alternate is not None:
+        #     p.extras["alternate phone"] = alternate.strip()
 
-        email = item[11].strip()
+        email = item[8].strip()
         p.email = email
 
         return SenDetail(p, source=detail_link)
