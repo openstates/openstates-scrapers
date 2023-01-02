@@ -61,6 +61,14 @@ class Ohio(State):
             "end_date": "2022-12-31",
             "active": True,
         },
+        {
+            "_scraped_name": "135 (2023-2024)",
+            "identifier": "135",
+            "name": "135th Legislature (2023-2024)",
+            "start_date": "2023-01-02",
+            "end_date": "2024-12-31",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = []
 
