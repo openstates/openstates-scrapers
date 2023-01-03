@@ -164,6 +164,15 @@ class Kentucky(State):
             "name": "2022 Special Session",
             "start_date": "2022-08-24",
             "end_date": "2021-08-26",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023 Regular Session",
+            "classification": "primary",
+            "identifier": "2023RS",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-03",
+            "end_date": "2023-03-30",
             "active": True,
         },
     ]
