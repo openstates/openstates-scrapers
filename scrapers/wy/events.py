@@ -1,4 +1,5 @@
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 from dateutil import parser, relativedelta
 import datetime
 import pytz
@@ -13,6 +14,7 @@ class WYEventScraper(Scraper):
         today = datetime.datetime.today()
 
         url = "https://web.wyoleg.gov/LsoService/api/Calendar/Events/{}{}01"
+        event_count = 0
 
         # this month and the next 2 months
         for add in [0, 1, 2]:
@@ -91,7 +93,12 @@ class WYEventScraper(Scraper):
                     )
 
                     event.add_source(web_url)
+
+                    event_count += 1
                     yield event
+
+        if event_count < 1:
+            raise EmptyScrape
 
     def parse_agenda_item(self, event, item):
         agenda = event.add_agenda_item(item["title"])

@@ -4,7 +4,11 @@ from .bills import NDBillScraper
 from .events import NDEventScraper
 
 
-settings = {"SCRAPELIB_RPM": 20}
+settings = {
+    "SCRAPELIB_RPM": 10,
+    "SCRAPELIB_RETRY_ATTEMPTS": 6,
+    "SCRAPELIB_RETRY_WAIT_SECONDS": 30,
+}
 
 
 class NorthDakota(State):

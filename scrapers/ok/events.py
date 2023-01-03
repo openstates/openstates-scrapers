@@ -4,6 +4,7 @@ import pytz
 import lxml.html
 import requests
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 from utils.events import match_coordinates
 
 
@@ -35,6 +36,7 @@ class OKEventScraper(Scraper):
 
         html = self.asp_post(url, page, params)
         page = lxml.html.fromstring(html)
+        event_count = 0
 
         for row in page.xpath('//tr[contains(@id,"_dgrdNotices_")]'):
             status = "tentative"
@@ -76,7 +78,11 @@ class OKEventScraper(Scraper):
 
             match_coordinates(event, {"2300 N Lincoln Blvd": (35.49293, -97.50311)})
 
+            event_count += 1
             yield event
+
+        if event_count < 1:
+            raise EmptyScrape
 
     def asp_post(self, url, page, params):
         page = self.session.get(url)
