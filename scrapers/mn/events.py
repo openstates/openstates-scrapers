@@ -111,7 +111,7 @@ class MNEventScraper(Scraper, LXMLMixin):
                 # they always 404.
                 if doc_url.endswith(".msg"):
                     continue
-                media_type = get_media_type(doc_url)
+                media_type = get_media_type(doc_url, default="docx")
                 event.add_document(
                     doc_name, doc_url, media_type=media_type, on_duplicate="ignore"
                 )
