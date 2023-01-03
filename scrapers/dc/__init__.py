@@ -52,6 +52,14 @@ class DistrictOfColumbia(State):
             "name": "24th Council Period (2021-2022)",
             "start_date": "2021-01-02",
             "end_date": "2022-12-31",
+            "active": False,
+        },
+        {
+            "_scraped_name": "25",
+            "identifier": "25",
+            "name": "25th Council Period (2023-2024)",
+            "start_date": "2023-01-02",
+            "end_date": "2024-12-31",
             "active": True,
         },
     ]
