@@ -22,6 +22,7 @@ class KYEventScraper(Scraper):
 
         if len(page.xpath('//div[contains(@class,"TimeAndLocation")]')) == 0:
             raise EmptyScrape
+        event_count = 0
 
         for time_row in page.xpath('//div[contains(@class,"TimeAndLocation")]'):
             date = (
@@ -109,7 +110,11 @@ class KYEventScraper(Scraper):
 
             event.add_source(url)
 
+            event_count += 1
             yield event
+
+        if event_count < 1:
+            raise EmptyScrape
 
     @functools.lru_cache(maxsize=None)
     def scrape_com_docs(self, url):
