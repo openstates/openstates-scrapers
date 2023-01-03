@@ -200,6 +200,7 @@ class Oregon(State):
         "2019-2020 Interim",
         "2017-2018 Interim",
         "2015-2016 Interim",
+        "2013 2nd Special Session",
         "2013 1st Special Session",
         "2012 1st Special Session",
         "2013 - 2014 Interim",

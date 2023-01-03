@@ -40,15 +40,27 @@ class COEventScraper(Scraper, LXMLMixin):
 
             page = self.lxmlize(url)
             com_links = page.xpath(xpath)
+            event_objects = set()
 
             for link in com_links:
                 page = self.lxmlize(link)
+                try:
+                    committee = page.xpath(
+                        '//header/h1[contains(@class,"node__title")]'
+                    )[0].text_content()
+                except Exception:
+                    committee = "no committee"
 
                 hearing_links = page.xpath(
                     '//div[contains(@class,"schedule-item-content")]' "/h4/a/@href"
                 )
 
                 for link in hearing_links:
+                    event_name = f"{chamber}#{committee}#{link}"
+                    if event_name in event_objects:
+                        self.logger.warning(f"Duplicate event: {event_name}")
+                        continue
+                    event_objects.add(event_name)
                     try:
                         page = self.lxmlize(link)
 
@@ -97,10 +109,13 @@ class COEventScraper(Scraper, LXMLMixin):
                             start_date=self._tz.localize(date),
                             location_name=location,
                         )
+
+                        event.add_committee(committee)
                         if agenda.strip():
                             event.add_agenda_item(agenda)
 
                         event.add_source(link)
+                        event.dedupe_key = event_name
                         bills = page.xpath('//td[@data-label="Hearing Item"]/a')
                         for bill in bills:
                             bill_id = bill.text_content().strip()
@@ -109,7 +124,8 @@ class COEventScraper(Scraper, LXMLMixin):
                             item.add_bill(bill_id)
                         total_events += 1
                         yield event
-                    except Exception:  # TODO: this is awful
+                    except Exception as e:  # TODO: this is awful
+                        self.logger.warning(f"Event scape for {link} failed: {e}")
                         pass
 
         if total_events == 0:

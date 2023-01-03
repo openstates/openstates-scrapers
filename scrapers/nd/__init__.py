@@ -55,7 +55,7 @@ class NorthDakota(State):
             "name": "67th Legislative Assembly (2021-2022)",
             "start_date": "2021-01-05",
             "end_date": "2021-04-29",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "67th (2021) Legislative Assembly Special 2021 Session",
@@ -66,9 +66,16 @@ class NorthDakota(State):
             "classification": "special",
             "active": False,
         },
+        {
+            "_scraped_name": "68th Legislative Assembly (2023-24)",
+            "identifier": "68",
+            "name": "68th Legislative Assembly (2023-24)",
+            "start_date": "2023-01-03",
+            "end_date": "2023-05-10",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
-        "68th Legislative Assembly (2023-24)",
         "61st Legislative Assembly (2009-10)",
         "60th Legislative Assembly (2007-08)",
         "59th Legislative Assembly (2005-06)",

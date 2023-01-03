@@ -7,6 +7,7 @@ import pytz
 
 from openstates.scrape import Scraper, Event
 from utils.events import match_coordinates
+from openstates.exceptions import EmptyScrape
 
 import datetime as dt
 from dateutil.relativedelta import relativedelta
@@ -36,7 +37,10 @@ class OHEventScraper(Scraper):
         end = end.strftime("%Y-%m-%d")
 
         url = f"{self.base_url}calendar-data?start={start}&end={end}"
-        data = json.loads(self.scraper.get(url).content)
+        try:
+            data = json.loads(self.scraper.get(url).content)
+        except Exception:
+            raise EmptyScrape
 
         for item in data:
             name = item["title"].strip()

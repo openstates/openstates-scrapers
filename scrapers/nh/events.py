@@ -39,10 +39,11 @@ class NHEventScraper(Scraper, LXMLMixin):
         # real data is double-json encoded string in the 'd' key
         page = json.loads(page["d"])
 
-        print(page)
+        # print(page)
 
         # event_root = "http://gencourt.state.nh.us/senate/schedule"
         event_root = f"https://gencourt.state.nh.us/{chamber_names[chamber]}/schedule"
+        event_objects = set()
 
         for row in page:
             status = "tentative"
@@ -68,6 +69,12 @@ class NHEventScraper(Scraper, LXMLMixin):
 
             location = row["title"].split(":")[-1].strip()
 
+            event_name = f"{event_url}#{location}#{start}"
+            if event_name in event_objects:
+                self.warning(f"Duplicate event {event_name}. Skipping.")
+                continue
+            event_objects.add(event_name)
+
             event = Event(
                 name=title,
                 start_date=start,
@@ -76,7 +83,7 @@ class NHEventScraper(Scraper, LXMLMixin):
                 status=status,
                 classification=classification,
             )
-
+            event.dedupe_key = event_name
             event.add_source(event_url)
 
             self.scrape_event_details(event, event_url)
