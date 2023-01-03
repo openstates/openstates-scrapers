@@ -120,9 +120,13 @@ class BillDetail(HtmlPage):
                 url = re.sub("/bill-index.+", href[2:], source)
 
                 if not vers_type or vers_type.strip() == "Engrossment":
-                    self.input.add_version_link(note=name, url=url, media_type="pdf")
+                    self.input.add_version_link(
+                        note=name, url=url, media_type="application/pdf"
+                    )
                 else:
-                    self.input.add_document_link(note=name, url=url, media_type="pdf")
+                    self.input.add_document_link(
+                        note=name, url=url, media_type="application/pdf"
+                    )
 
     def process_actions(self):
         categorizer = NDCategorizer()
