@@ -69,6 +69,15 @@ class Massachusetts(State):
             "end_date": "2021-12-31",
             "active": True,
         },
+        {
+            "_scraped_name": "193rd",
+            "classification": "primary",
+            "identifier": "193rd",
+            "name": "193rd Legislature (2023-2024)",
+            "start_date": "2023-01-04",
+            "end_date": "2023-12-31",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = []
 
