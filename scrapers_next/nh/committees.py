@@ -9,37 +9,42 @@ class HouseCommitteeDetail(HtmlPage):
     example_input = "Public Works and Highways"
 
     def process_page(self):
-        try:
-            com = self.input
-            roles = XPath("//*[@id='form1']/div/div/div/div/div[1]/text()").match(
-                self.root
-            )
-            chair_mem = (
-                CSS("#form1 div div div div div a")
-                .match(self.root)[0]
-                .text_content()
-                .strip()
-            )
-            chair_role = roles[0].replace(":", "").strip()
-            # Some committees do not have a member assigned to Chair, so we do not add them
-            if "n/a" not in chair_role:
-                com.add_member(chair_mem, chair_role)
 
-            VChair_mem = (
-                CSS("#form1 div div div div div a")
-                .match(self.root)[1]
-                .text_content()
-                .strip()
-            )
-            VChair_role = roles[1].replace(":", "").strip()
-            # Some committees do not have a member assigned to Vice Chair, so we do not add them
-            if "n/a" not in VChair_role:
-                com.add_member(VChair_mem, VChair_role)
+        com = self.input
 
         # there is an issue with certain committees redirecting back to the general list of standing committees
         # instead of its appropriate committee page
+        try:
+            roles = XPath("//*[@id='form1']/div/div/div/div/div[1]/text()").match(
+                self.root
+            )
+
         except SelectorError:
             raise SkipItem("does not redirect to appropriate committee page")
+
+        chair_mem = (
+            CSS("#form1 div div div div div a")
+            .match(self.root)[0]
+            .text_content()
+            .strip()
+        )
+        chair_role = roles[0].replace(":", "").strip()
+
+        # Some committees do not have a member assigned to Chair, so we do not add them
+        if "n/a" not in chair_role:
+            com.add_member(chair_mem, chair_role)
+
+        VChair_mem = (
+            CSS("#form1 div div div div div a")
+            .match(self.root)[1]
+            .text_content()
+            .strip()
+        )
+        VChair_role = roles[1].replace(":", "").strip()
+
+        # Some committees do not have a member assigned to Vice Chair, so we do not add them
+        if "n/a" not in VChair_role:
+            com.add_member(VChair_mem, VChair_role)
 
         members = CSS("#form1 div div.card-body div a").match(self.root)[7:]
         for mem in members:
