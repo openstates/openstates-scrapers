@@ -20,7 +20,7 @@ def get_committee_names(session):
 
 
 class BillList(HtmlListPage):
-    url_session = "67-2021"
+    url_session = "68-2023"
     session_components = url_session.split("-")
     source = f"http://www.ndlegis.gov/assembly/{url_session}/bill-index.html"
     selector = XPath(".//div[@class='col bill']")
