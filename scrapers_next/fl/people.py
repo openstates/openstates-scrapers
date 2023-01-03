@@ -168,7 +168,7 @@ class Representatives(HtmlListPage):
         name = item.xpath("./a/div[@class='team-txt']/h5/text()")[0].strip()
 
         # skips empty chairs due to pending regular/special election
-        if "pending," in name.lower():
+        if "pending, special" or "pending, election" in name.lower():
             self.skip()
 
         party = item.xpath("./a/div[@class='team-txt']/p[1]/text()")[0].split()[0]
