@@ -51,11 +51,7 @@ class HIEventScraper(Scraper, LXMLMixin):
         if page.xpath("//td[contains(string(.),'No Hearings')]"):
             raise EmptyScrape
 
-        try:
-            table = page.xpath("//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']")[0]
-        except Exception as e:
-            self.warning(f"Bad xpath for events: {e}")
-            raise EmptyScrape
+        table = page.xpath("//table[@id='ctl00_MainContent_GridView1']")[0]
 
         for event in table.xpath(".//tr")[1:]:
             tds = event.xpath("./td")
