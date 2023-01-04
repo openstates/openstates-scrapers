@@ -222,6 +222,15 @@ class Louisiana(State):
             "end_date": "2022-06-18",
             "active": True,
         },
+        {
+            "_scraped_name": "2023 Regular Session",
+            "classification": "primary",
+            "identifier": "2023",
+            "name": "2023 Regular Session",
+            "start_date": "2023-04-10",
+            "end_date": "2023-06-08",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2022 Veto Session",
