@@ -2,47 +2,35 @@ from spatula import URL, CSS, HtmlListPage, HtmlPage, SelectorError, SkipItem
 from openstates.models import ScrapeCommittee
 
 
-class SenDetail(HtmlPage):
+class ChamberDetail(HtmlPage):
     def process_page(self):
         com = self.input
-        # the member page for joint commissions is slightly different
-        if list(com)[1][1] != "upper":
-            try:
-                members = CSS(".content").match(self.root)
-            except SelectorError:
-                raise SkipItem("empty committee")
 
-            members = [
-                i.text.split(",")[0].strip() for i in members
-            ]  # cleaning up member names
-            roles = CSS(".heading").match(self.root)
-            roles = [i.text for i in roles][
-                1:
-            ]  # the first "role" is the name of the committee
+        try:
+            members = CSS(".notranslate").match(self.root)
 
-            for i in range(len(roles)):
-                com.add_member(members[i], roles[i])
+        except SelectorError:
+            raise SkipItem("empty committee")
 
+        roles = CSS(".heading").match(self.root)
+
+        members = [i.text for i in members if i.text != "D"]
+        members = [i for i in members if i != "R"]
+
+        # joint committee roles are formatted slightly differently
+        if "Joint Committee" in list(com)[0][1]:
+            roles = [i.text.split(":")[0].strip() for i in roles][1:]
+            roles = [i for i in roles if i != ""]
         else:
-            try:
-                members = CSS(".notranslate").match(self.root)
-
-            except SelectorError:
-                raise SkipItem("empty committee")
-
-            roles = CSS(".heading").match(self.root)
-
-            members = [i.text for i in members if i.text != "D"]
-            members = [i for i in members if i != "R"]
             roles = [i.text.split()[0].strip().strip(":") for i in roles][1:]
 
-            for i in range(len(roles)):
-                com.add_member(members[i], roles[i])
+        for i in range(len(roles)):
+            com.add_member(members[i], roles[i])
 
         return com
 
 
-class SenList(HtmlListPage):
+class SenateList(HtmlListPage):
     source = URL("https://www.ilga.gov/senate/committees/default.asp")
     selector = CSS(".content")
 
@@ -94,6 +82,11 @@ class SenList(HtmlListPage):
                         classification="committee",
                         chamber=chamber,
                     )
+                detail_link = comm.get("href")
+                com.add_source(self.source.url, note="homepage")
+                com.add_source(detail_link)
+
+                return ChamberDetail(com, source=detail_link)
 
             # joint commissions
             else:
@@ -104,54 +97,37 @@ class SenList(HtmlListPage):
                     chamber=chamber,
                 )
 
-            detail_link = comm.get("href")
-            com.add_source(self.source.url, note="homepage")
-            com.add_source(detail_link)
+                detail_link = comm.get("href")
+                com.add_source(self.source.url, note="homepage")
+                com.add_source(detail_link)
 
-            return SenDetail(com, source=detail_link)
+                return JointCommissionDetail(com, source=detail_link)
 
         else:
             self.skip()
 
 
+"""
 class HouseDetail(HtmlPage):
     def process_page(self):
         com = self.input
-        # the member page for joint commissions is slightly different
-        if list(com)[1][1] != "lower":
-            try:
-                members = CSS(".content").match(self.root)
-            except SelectorError:
-                raise SkipItem("empty committee")
+        try:
+            members = CSS(".notranslate").match(self.root)
 
-            members = [
-                i.text.split(",")[0].strip() for i in members
-            ]  # cleaning up member names
-            roles = CSS(".heading").match(self.root)
-            roles = [i.text for i in roles][
-                1:
-            ]  # the first "role" is the name of the committee
+        except SelectorError:
+            raise SkipItem("empty committee")
 
-            for i in range(len(roles)):
-                com.add_member(members[i], roles[i])
+        roles = CSS(".heading").match(self.root)
 
-        else:
-            try:
-                members = CSS(".notranslate").match(self.root)
+        members = [i.text for i in members if i.text != "D"]
+        members = [i for i in members if i != "R"]
+        roles = [i.text.split()[0].strip().strip(":") for i in roles][1:]
 
-            except SelectorError:
-                raise SkipItem("empty committee")
-
-            roles = CSS(".heading").match(self.root)
-
-            members = [i.text for i in members if i.text != "D"]
-            members = [i for i in members if i != "R"]
-            roles = [i.text.split()[0].strip().strip(":") for i in roles][1:]
-
-            for i in range(len(roles)):
-                com.add_member(members[i], roles[i])
+        for i in range(len(roles)):
+            com.add_member(members[i], roles[i])
 
         return com
+"""
 
 
 class HouseList(HtmlListPage):
@@ -216,6 +192,12 @@ class HouseList(HtmlListPage):
                         chamber=chamber,
                     )
 
+                detail_link = comm.get("href")
+                com.add_source(self.source.url, note="homepage")
+                com.add_source(detail_link)
+
+                return ChamberDetail(com, source=detail_link)
+
             # we don't include task forces
             elif "Task Force" in comm_name:
                 self.skip()
@@ -229,11 +211,54 @@ class HouseList(HtmlListPage):
                     chamber=chamber,
                 )
 
-            detail_link = comm.get("href")
-            com.add_source(self.source.url, note="homepage")
-            com.add_source(detail_link)
+                detail_link = comm.get("href")
+                com.add_source(self.source.url, note="homepage")
+                com.add_source(detail_link)
 
-            return HouseDetail(com, source=detail_link)
+                return JointCommissionDetail(com, source=detail_link)
 
         else:
             self.skip()
+
+
+# this is the logic for chamber joint commission pages (not joint committee)
+class JointCommissionDetail(HtmlPage):
+    def process_page(self):
+        com = self.input
+        try:
+            members = CSS(".content").match(self.root)
+        except SelectorError:
+            raise SkipItem("empty committee")
+
+        members = [
+            i.text.split(",")[0].strip() for i in members
+        ]  # cleaning up member names
+        roles = CSS(".heading").match(self.root)
+        # the first "role" is the name of the committee
+        roles = [i.text for i in roles][1:]
+
+        for i in range(len(roles)):
+            com.add_member(members[i], roles[i])
+        return com
+
+
+class JointCommittee(HtmlListPage):
+    source = URL("https://www.ilga.gov/joint/JointCommittees.asp")
+    selector = CSS("p a")
+
+    def process_item(self, item):
+        comm_name = item.text_content().strip()
+
+        com = ScrapeCommittee(
+            name=comm_name,
+            classification="committee",
+            chamber="legislature",
+        )
+
+        detail_link = item.get("href")
+
+        com.add_source(self.source.url)
+        com.add_source(detail_link)
+        com.add_link(detail_link, note="homepage")
+
+        return ChamberDetail(com, source=detail_link)
