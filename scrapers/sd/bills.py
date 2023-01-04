@@ -77,34 +77,13 @@ class SDBillScraper(Scraper, LXMLMixin):
         bill.add_source(f"https://sdlegislature.gov/Session/Bill/{api_id}")
         bill.add_source(url)
 
+        # sometimes the versions are inline in the doc, sometimes it's on a seperate endpoint
         if "Documents" in page:
             version_rows = page["Documents"]
             for version in version_rows:
-                date = version["DocumentDate"]
-                if date:
-                    match = re.match(r"\d{4}-\d{2}-\d{2}", date)
-                    date = datetime.datetime.strptime(match.group(0), "%Y-%m-%d").date()
-
-                    html_link = f"https://sdlegislature.gov/Session/Bill/{api_id}/{version['DocumentId']}"
-                    pdf_link = f"https://mylrc.sdlegislature.gov/api/Documents/{version['DocumentId']}.pdf"
-
-                    note = version["BillVersion"]
-                    bill.add_version_link(
-                        note,
-                        html_link,
-                        date=date,
-                        media_type="text/html",
-                        on_duplicate="ignore",
-                    )
-                    bill.add_version_link(
-                        note,
-                        pdf_link,
-                        date=date,
-                        media_type="application/pdf",
-                        on_duplicate="ignore",
-                    )
-                else:
-                    self.warning("Version listed but no date or documents")
+                self.add_bill_version(bill, version, api_id)
+        else:
+            self.scrape_version(bill, api_id)
 
         sponsors = page["BillSponsor"]
         if sponsors:
@@ -284,6 +263,41 @@ class SDBillScraper(Scraper, LXMLMixin):
 
             description = " ".join(full_action)
             bill.add_action(description, date, chamber=actor, classification=atypes)
+
+    def add_bill_version(self, bill, version, api_id):
+        date = version["DocumentDate"]
+        if date:
+            match = re.match(r"\d{4}-\d{2}-\d{2}", date)
+            date = datetime.datetime.strptime(match.group(0), "%Y-%m-%d").date()
+
+            html_link = f"https://sdlegislature.gov/Session/Bill/{api_id}/{version['DocumentId']}"
+            pdf_link = f"https://mylrc.sdlegislature.gov/api/Documents/{version['DocumentId']}.pdf"
+
+            note = version["BillVersion"]
+            bill.add_version_link(
+                note,
+                html_link,
+                date=date,
+                media_type="text/html",
+                on_duplicate="ignore",
+            )
+            bill.add_version_link(
+                note,
+                pdf_link,
+                date=date,
+                media_type="application/pdf",
+                on_duplicate="ignore",
+            )
+        else:
+            self.warning("Version listed but no date or documents")
+
+    def scrape_version(self, bill, api_id):
+        url = f"https://sdlegislature.gov/api/Bills/Versions/{api_id}"
+        versions = self.get(url).json()
+        for version in versions:
+            print(version)
+            print(api_id)
+            self.add_bill_version(bill, version, api_id)
 
     def scrape_vote(self, bill, date, url):
         page = self.get(url).json()
