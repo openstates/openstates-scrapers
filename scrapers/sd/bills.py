@@ -77,7 +77,7 @@ class SDBillScraper(Scraper, LXMLMixin):
         bill.add_source(f"https://sdlegislature.gov/Session/Bill/{api_id}")
         bill.add_source(url)
 
-        # sometimes the versions are inline in the doc, sometimes it's on a seperate endpoint
+        # sometimes the versions are inline in the doc, sometimes they're on a separate endpoint
         if "Documents" in page:
             version_rows = page["Documents"]
             for version in version_rows:
@@ -295,8 +295,6 @@ class SDBillScraper(Scraper, LXMLMixin):
         url = f"https://sdlegislature.gov/api/Bills/Versions/{api_id}"
         versions = self.get(url).json()
         for version in versions:
-            print(version)
-            print(api_id)
             self.add_bill_version(bill, version, api_id)
 
     def scrape_vote(self, bill, date, url):
