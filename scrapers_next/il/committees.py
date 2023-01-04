@@ -5,20 +5,39 @@ from openstates.models import ScrapeCommittee
 class SenDetail(HtmlPage):
     def process_page(self):
         com = self.input
-        try:
-            members = CSS(".notranslate").match(self.root)
+        # the member page for joint commissions is slightly different
+        if list(com)[1][1] != "upper":
+            try:
+                members = CSS(".content").match(self.root)
+            except SelectorError:
+                raise SkipItem("empty committee")
 
-        except SelectorError:
-            raise SkipItem("empty committee")
+            members = [
+                i.text.split(",")[0].strip() for i in members
+            ]  # cleaning up member names
+            roles = CSS(".heading").match(self.root)
+            roles = [i.text for i in roles][
+                1:
+            ]  # the first "role" is the name of the committee
 
-        roles = CSS(".heading").match(self.root)
+            for i in range(len(roles)):
+                com.add_member(members[i], roles[i])
 
-        members = [i.text for i in members if i.text != "D"]
-        members = [i for i in members if i != "R"]
-        roles = [i.text.split()[0].strip().strip(":") for i in roles][1:]
+        else:
+            try:
+                members = CSS(".notranslate").match(self.root)
 
-        for i in range(len(roles)):
-            com.add_member(members[i], roles[i])
+            except SelectorError:
+                raise SkipItem("empty committee")
+
+            roles = CSS(".heading").match(self.root)
+
+            members = [i.text for i in members if i.text != "D"]
+            members = [i for i in members if i != "R"]
+            roles = [i.text.split()[0].strip().strip(":") for i in roles][1:]
+
+            for i in range(len(roles)):
+                com.add_member(members[i], roles[i])
 
         return com
 
@@ -50,7 +69,7 @@ class SenList(HtmlListPage):
 
             # random, non-committee link that's on the page
             if comm_name == "Reports":
-                raise SkipItem
+                raise SkipItem("not a committee")
 
             # regular committees
             if comm_code != "Not Scheduled":
@@ -85,77 +104,10 @@ class SenList(HtmlListPage):
                 )
 
             detail_link = comm.get("href")
-            com.add_source(self.source.url)
+            com.add_source(self.source.url, note="homepage")
             com.add_source(detail_link)
 
             return SenDetail(com, source=detail_link)
 
         else:
             self.skip()
-
-
-"""
-    def process_page(self):
-        comm_codes_dict = {"SAPP":"Appropriations", "SCCL": "Criminal Law", "SENE": "Energy and Public Utilities",
-                           "SEXC": "Executive", "SHEA": "Health", "SINS": "Insurance", "SJUD": "Judiciary",
-                           "SLAB": "Labor", "SLIC": "Licensed Activities", "SRED": "Redistricting", "SREV": "Revenue",
-                           "STRN": "Transportation"}
-
-        comm_codes = CSS(".content").match(self.root)
-        comm_codes = ([i.text for i in comm_codes if i.text is not None])
-        comm_codes = [i.strip() for i in comm_codes if i.startswith("S")]
-        print(comm_codes)
-
-
-        comms = CSS(".content a").match(self.root)
-        comm_names = [i.text.strip() for i in comms]
-
-        #print(len(comm_codes), "CODE LEN")
-        #print(len(comm_names), "NAME LEN")
-
-        for i in range(len(comm_names)):
-            committee_name = comm_names[i]
-            #regular committees
-            if i <= 102:
-                chamber = "upper"
-                committee_code = comm_codes[i]
-
-                # random, non-committee link that's on the page
-                if committee_name == "Reports":
-                    continue
-
-                # identifying subcommittees
-                if "-" in committee_code:
-                    comm_code = committee_code.split("-")[0]
-                    parent_committee = comm_codes_dict[comm_code]
-
-                    com = ScrapeCommittee(
-                        name=committee_name,
-                        classification="subcommittee",
-                        chamber=chamber,
-                        parent=parent_committee
-                    )
-
-                else:
-                    com = ScrapeCommittee(
-                        name=committee_name,
-                        classification="committee",
-                        chamber=chamber,
-                    )
-
-
-            # joint commissions
-            else:
-                chamber = "legislature"
-                com = ScrapeCommittee(
-                    name=committee_name,
-                    classification="committee",
-                    chamber=chamber,
-                )
-
-            detail_link = comms[i].get("href")
-            com.add_source(self.source.url)
-            com.add_source(detail_link)
-
-            return SenDetail(com, source=detail_link)
-"""
