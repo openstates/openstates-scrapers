@@ -52,7 +52,7 @@ class UnitedStates(State):
             "name": "117th Congress",
             "start_date": "2021-01-03",
             "end_date": "2023-01-03",
-            "active": True,
+            "active": False,
         },
         {
             "classification": "primary",
@@ -60,7 +60,7 @@ class UnitedStates(State):
             "name": "118th Congress",
             "start_date": "2023-01-03",
             "end_date": "2025-01-03",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = []
