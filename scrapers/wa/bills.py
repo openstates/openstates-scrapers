@@ -447,16 +447,14 @@ class WABillScraper(Scraper, LXMLMixin):
 
             rows = header.xpath("following-sibling::div[1]/div")
             for row in rows:
+                # skip later lines that are just links to files
                 if row.xpath("div[1]")[0].text_content().strip() != "":
                     action_day = row.xpath("div[1]")[0].text_content().strip()
-                # skip later lines that are just links to files
-                action_text = (
-                    row.xpath("div[2]")[0]
-                    .text_content()
-                    .strip()
-                    .split("\r\n")[0]
-                    .strip()
-                )
+
+                raw_action = row.xpath("div[2]")[0].text_content()
+                action_text = " ".join(
+                    [x.strip() for x in raw_action.split("\r\n")]
+                ).strip()
 
                 action_date = self._TZ.localize(
                     datetime.datetime.strptime(
