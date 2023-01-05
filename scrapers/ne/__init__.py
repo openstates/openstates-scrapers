@@ -76,6 +76,15 @@ class Nebraska(State):
             "classification": "special",
             "active": False,
         },
+        {
+            "_scraped_name": "108th Legislature 1st and 2nd Sessions",
+            "identifier": "108",
+            "name": "108th Legislature (2023-2024)",
+            "start_date": "2023-01-04",
+            "end_date": "2024-04-19",
+            "classification": "primary",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "101st Legislature 1st and 2nd Sessions",
