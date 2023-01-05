@@ -21,26 +21,32 @@ class LegDetail(JsonPage):
             p.extras["education"] = self.data["legEducation"]
         if self.data["currentLeadershipPosition"] is not None:
             p.extras["title"] = self.data["currentLeadershipPosition"].strip()
-        if self.data["religion"].strip() != "":
-            p.extras["religion"] = self.data["religion"].strip()
+        religion = self.data["religion"] or ""
+        if religion.strip() != "":
+            p.extras["religion"] = religion.strip()
         if self.data["spouseName"] is not None:
             p.extras["spouse name"] = self.data["spouseName"]
-        if self.data["noChildren"].strip() != "":
-            p.extras["number of children"] = self.data["noChildren"]
-        if self.data["noGChildren"].strip() != "":
-            p.extras["number of grandchildren"] = self.data["noGChildren"]
-        if self.data["birthPlace"].strip() != "":
-            p.extras["birth place"] = self.data["birthPlace"]
+        child_count = self.data["noChildren"] or ""
+        if child_count.strip() != "":
+            p.extras["number of children"] = child_count.strip()
+        gchild_count = self.data["noGChildren"] or ""
+        if gchild_count.strip() != "":
+            p.extras["number of grandchildren"] = gchild_count.strip()
+        birth_place = self.data["birthPlace"] or ""
+        if birth_place.strip() != "":
+            p.extras["birth place"] = birth_place.strip()
         if self.data["occupationDesc"] is not None:
             p.extras["occupation"] = self.data["occupationDesc"]
-        if self.data["legLeadership"] != []:
+        if self.data["legLeadership"]:
             p.extras["leadership"] = self.data["legLeadership"]
-        if self.data["civicOrgs"] != []:
+        if self.data["civicOrgs"]:
             p.extras["organizations"] = self.data["civicOrgs"]
-        if self.data["houseYears"].strip() != "":
-            p.extras["house years"] = self.data["houseYears"]
-        if self.data["senateYears"].strip() != "":
-            p.extras["senate years"] = self.data["senateYears"]
+        h_years = self.data["houseYears"] or ""
+        if h_years.strip() != "":
+            p.extras["house years"] = h_years
+        s_years = self.data["senateYears"] or ""
+        if s_years.strip() != "":
+            p.extras["senate years"] = s_years.strip()
         p.extras["prior service"] = self.data["legPriorService"]
 
         return p
@@ -90,10 +96,10 @@ class LegList(JsonListPage):
 
 
 class Senate(LegList):
-    source = URL("https://wyoleg.gov/LsoService/api/legislator/2021/S")
+    source = URL("https://wyoleg.gov/LsoService/api/legislator/2023/S")
     chamber = "upper"
 
 
 class House(LegList):
-    source = URL("https://wyoleg.gov/LsoService/api/legislator/2021/H")
+    source = URL("https://wyoleg.gov/LsoService/api/legislator/2023/H")
     chamber = "lower"

@@ -277,7 +277,7 @@ class ALBillScraper(Scraper):
             if not title:
                 title = "[No title given by state]"
             bill.title = title
-            session = "2021FS" if self.session == "2021s1" else self.session
+            session = "2022FS" if self.session == "2022s1" else self.session
 
             version_url_base = (
                 "http://alisondb.legislature.state.al.us/ALISON/"
@@ -470,7 +470,10 @@ class ALBillScraper(Scraper):
         capture_vote = False
         name = ""
         for item in voters_and_votes:
-            if capture_vote:
+            item = item.replace("\xa0", " ").strip()
+            if item == "":
+                return
+            elif capture_vote:
                 capture_vote = False
                 if name:
                     voters[item].append(name)

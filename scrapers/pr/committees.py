@@ -97,12 +97,12 @@ class PRCommitteeScraper(Scraper, LXMLMixin):
 
         # Remove "Committee" from committee names
         comm_name = (
-            comm_name.replace(u"Comisión de ", "")
-            .replace(u"Comisión sobre ", "")
-            .replace(u"Comisión para ", "")
-            .replace(u"Comisión Especial para el Estudio de ", "")
-            .replace(u"Comisión Especial para ", "")
-            .replace(u"Comisión ", "")
+            comm_name.replace("Comisión de ", "")
+            .replace("Comisión sobre ", "")
+            .replace("Comisión para ", "")
+            .replace("Comisión Especial para el Estudio de ", "")
+            .replace("Comisión Especial para ", "")
+            .replace("Comisión ", "")
         )
         comm_name = re.sub(r"(?u)^(las?|el|los)\s", "", comm_name)
         comm_name = comm_name[0].upper() + comm_name[1:]

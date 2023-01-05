@@ -74,8 +74,17 @@ class Pennsylvania(State):
             "classification": "primary",
             "identifier": "2021-2022",
             "name": "2021-2022 Regular Session",
-            "start_date": "2021-01-01",
+            "start_date": "2021-01-05",
             "end_date": "2022-11-30",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023-2024 Regular Session",
+            "classification": "primary",
+            "identifier": "2023-2024",
+            "name": "2023-2024 Regular Session",
+            "start_date": "2023-01-03",
+            "end_date": "2024-11-30",
             "active": True,
         },
     ]

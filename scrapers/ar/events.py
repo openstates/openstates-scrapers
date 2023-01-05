@@ -4,6 +4,7 @@ import dateutil.parser
 import lxml
 import pytz
 from openstates.scrape import Scraper, Event
+from utils.events import match_coordinates
 
 
 # usage:
@@ -47,14 +48,32 @@ class AREventScraper(Scraper):
 
             if "call of the chair" in time.lower():
                 time = ""
-            else:
+            elif re.findall(r"\d+:\d+\s*[A|P]M", time):
                 times = re.findall(r"\d+:\d+\s*[A|P]M", time)
                 time = times[0]
+            else:
+                self.warning(f"Unable to determine time for {time}, skipping")
+                continue
 
             when = dateutil.parser.parse(f"{day} {time}")
             when = self._tz.localize(when)
 
             location = row.xpath("div[2]/text()")[1].strip()
+
+            if location == "":
+                self.warning(f"Skipping {title} due to no location")
+                continue
+
+            if re.match(r"(.*)MAC\s*$", location):
+                location = re.sub(
+                    "MAC",
+                    "Arkansas Multi-Agency Complex, 1 Capitol Mall, Little Rock, AR 72201",
+                    location,
+                )
+            elif re.match(r"^Room\s.*$", location, flags=re.IGNORECASE) or re.match(
+                "^(House|Senate) Chamber", location, flags=re.IGNORECASE
+            ):
+                location = f"{location}, Arkansas State Capitol, 500 Woodlane St, Little Rock, AR 72201"
 
             event = Event(
                 name=title,
@@ -77,6 +96,17 @@ class AREventScraper(Scraper):
             if row.xpath(".//a[@aria-label='Referred']"):
                 bill_url = row.xpath(".//a[@aria-label='Referred']/@href")[0]
                 self.scrape_referred_bills(event, bill_url)
+
+            if row.xpath("div[2]/b/a"):
+                event.add_committee(title, note="host")
+
+            match_coordinates(
+                event,
+                {
+                    "1 capitol mall": ("34.74710754332397", "-92.290421823471"),
+                    "500 woodlane": ("34.74640441284063", "-92.2895327976071"),
+                },
+            )
 
             yield event
 

@@ -4,6 +4,8 @@ import pytz
 import lxml.html
 import requests
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
+from utils.events import match_coordinates
 
 
 class OKEventScraper(Scraper):
@@ -34,6 +36,7 @@ class OKEventScraper(Scraper):
 
         html = self.asp_post(url, page, params)
         page = lxml.html.fromstring(html)
+        event_count = 0
 
         for row in page.xpath('//tr[contains(@id,"_dgrdNotices_")]'):
             status = "tentative"
@@ -41,6 +44,11 @@ class OKEventScraper(Scraper):
             title = agenda_link.xpath("text()")[0].strip()
             agenda_url = agenda_link.xpath("@href")[0]
             location = row.xpath("td[3]")[0].text_content().strip()
+
+            if re.match(r"^room [\w\d]+$", location, flags=re.I) or re.match(
+                r"senate room [\w\d]+$", location, flags=re.I
+            ):
+                location = f"{location} 2300 N Lincoln Blvd, Oklahoma City, OK 73105"
 
             # swap in a space for the <br/>
             when = row.xpath("td[4]")[0]
@@ -64,9 +72,17 @@ class OKEventScraper(Scraper):
 
             event.add_source(url)
 
+            event.add_committee(title, note="host")
+
             event.add_document("Agenda", agenda_url, media_type="application/pdf")
 
+            match_coordinates(event, {"2300 N Lincoln Blvd": (35.49293, -97.50311)})
+
+            event_count += 1
             yield event
+
+        if event_count < 1:
+            raise EmptyScrape
 
     def asp_post(self, url, page, params):
         page = self.session.get(url)

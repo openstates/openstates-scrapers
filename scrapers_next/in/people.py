@@ -1,6 +1,10 @@
-from spatula import HtmlListPage, XPath, CSS, URL, HtmlPage  # , SelectorError
+from spatula import HtmlListPage, XPath, CSS, URL, HtmlPage
 from openstates.models import ScrapePerson
 import re
+
+
+class NewDetailFieldEncountered(BaseException):
+    pass
 
 
 class BlueSenDetail(HtmlPage):
@@ -12,48 +16,60 @@ class BlueSenDetail(HtmlPage):
             title = titles[0].text_content()
             p.extras["title"] = title
 
-        assistant = (
-            CSS("div .fusion-text.fusion-text-2 p").match(self.root)[0].text_content()
-        )
-        assistant = re.search(r"Legislative Assistant:\s(.+)", assistant).groups()[0]
+        info_div = CSS("div .fusion-text.fusion-text-2 p").match(self.root)
+        phone_pattern = re.compile(r"\d{3}-\d{3}-\d{4}")
+        for field in info_div:
+            content = field.text_content().strip()
+            if ":" in content:
+                label, detail = [x.strip() for x in content.split(":")]
+                if label == "Legislative Assistant":
+                    p.extras[label] = detail
+                elif label == "Phone":
+                    phones = phone_pattern.findall(detail)
+                    if phones:
+                        p.capitol_office.voice = phones[0]
+                    extra_num = 1
+                    for extra_phone in phones[1:]:
+                        p.extras[f"Additional Phone {extra_num}"] = extra_phone
+                elif label == "Email":
+                    p.email = label
+                elif label == "Media Contact":
+                    media_contact = [x.strip() for x in detail.split("|")]
+                    p.extras["Media Contact Name"] = media_contact[0]
+                    p.extras["Media Contact Email"] = media_contact[1]
+                else:
+                    raise NewDetailFieldEncountered
 
-        phones = (
-            CSS("div .fusion-text.fusion-text-2 p").match(self.root)[1].text_content()
-        )
-        phone1, phone2 = re.search(
-            r"Phone:\s(\d{3}-\d{3}-\d{4})\s\|\s(.+)", phones
-        ).groups()
-
-        media_contact = (
-            CSS("div .fusion-text.fusion-text-2 p").match(self.root)[3].text_content()
-        )
-        media_contact_name, media_contact_email = re.search(
-            r"Media Contact:\s(\w+\s\w+)\s\|\s(.+)", media_contact
-        ).groups()
         addr = (
             XPath("//div/div[3]/div/div[2]/div/div[1]/text()")
             .match(self.root)[0]
             .strip()
         )
 
-        twitter = CSS("div .fusion-social-links a").match(self.root)[0].get("href")
-        twitter_id = re.search(r"https://twitter\.com/(.+)", twitter).groups()[0]
-
-        fb = CSS("div .fusion-social-links a").match(self.root)[1].get("href")
-        fb_id = (
-            re.search(r"https://(www\.)?facebook\.com/(.+)", fb).groups()[1].rstrip("/")
-        )
-
         p.capitol_office.address = addr
-        p.capitol_office.voice = phone1
-        p.extras["second phone"] = phone2
 
-        p.extras["assistant"] = assistant
-        p.extras["media contact name"] = media_contact_name
-        p.extras["media contact email"] = media_contact_email
+        socials = ["facebook", "instagram", "twitter", "youtube"]
+        handles = {x: None for x in socials}
+        patterns = {x: re.compile(rf"(.+)({x}\.com/)(.+)") for x in socials}
 
-        p.ids.twitter = twitter_id
-        p.ids.facebook = fb_id
+        social_links = CSS("div .fusion-social-links a").match(self.root)
+        for link in social_links:
+            href = link.get("href").lower()
+            for soc in socials:
+                if soc in href:
+                    pattern = patterns[soc]
+                    raw_handle = pattern.search(href).groups()[-1]
+                    handle = re.sub("/", "", raw_handle)
+                    handles[soc] = handle
+
+        if handles["facebook"]:
+            p.ids.facebook = handles["facebook"]
+        if handles["instagram"]:
+            p.ids.instagram = handles["instagram"]
+        if handles["twitter"]:
+            p.ids.twitter = handles["twitter"]
+        if handles["youtube"]:
+            p.ids.youtube = handles["youtube"]
 
         return p
 
@@ -164,18 +180,54 @@ class BlueRepDetail(HtmlPage):
 
 
 class BlueSenList(HtmlListPage):
+    """
+    Indiana Dem Sen list page has objects like this (2022-06-23):
+    <div class="fusion-person person fusion-person-center fusion-person-1 fusion-person-icon-top senator-select">
+      <div class="person-shortcode-image-wrapper">
+        <div class="person-image-container hover-type-zoomin person-rounded-overflow" style="-webkit-border-radius:100px;-moz-border-radius:100px;border-radius:100px;border:8px solid #e8e8e8;-webkit-border-radius:100px;-moz-border-radius:100px;border-radius:100px;">
+          <a href="https://www.indianasenatedemocrats.org/senators/s33/" target="_self">
+            <img class="lazyload person-img img-responsive wp-image-24774" width="200" height="300" src="https://www.indianasenatedemocrats.org/wp-content/uploads/2020/12/Senator-Taylor.jpg" data-orig-src="https://www.indianasenatedemocrats.org/wp-content/uploads/2020/12/Senator-Taylor-200x300.jpg" alt="Senator Greg Taylor" srcset="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27600%27%20height%3D%27900%27%20viewBox%3D%270%200%20600%20900%27%3E%3Crect%20width%3D%27600%27%20height%3D%27900%27%20fill-opacity%3D%220%22%2F%3E%3C%2Fsvg%3E" data-srcset="https://www.indianasenatedemocrats.org/wp-content/uploads/2020/12/Senator-Taylor-200x300.jpg 200w, https://www.indianasenatedemocrats.org/wp-content/uploads/2020/12/Senator-Taylor-400x600.jpg 400w, https://www.indianasenatedemocrats.org/wp-content/uploads/2020/12/Senator-Taylor.jpg 600w" data-sizes="auto" data-orig-sizes="(max-width: 992px) 100vw, (max-width: 767px) 100vw, 200px" />
+          </a>
+        </div>
+      </div>
+      <div class="person-desc">
+        <div class="person-author">
+          <div class="person-author-wrapper">
+            <span class="person-name">Senator Greg Taylor</span>
+            <span class="person-title">Minority Caucus Leader | District 33</span>
+          </div>
+        </div>
+        <div class="person-content fusion-clearfix">
+        </div>
+      </div>
+    </div>
+    """
+
     def process_item(self, item):
-        name = CSS("div a").match(item)[1].text_content()
-        district = (
-            CSS("div .esg-content.eg-senators-grid-element-1")
+        name = (
+            CSS(
+                "div.person-desc div.person-author div.person-author-wrapper span.person-name"
+            )
             .match_one(item)
             .text_content()
-            .split("|")[1]
-            .strip()
-            .lower()
+            .removeprefix("Senator ")
         )
-        district = re.search(r"district\s(\d+)", district).groups()[0]
-        img = CSS("div img").match_one(item).get("data-lazysrc")
+        img = (
+            CSS("div.person-shortcode-image-wrapper div a img")
+            .match_one(item)
+            .get("src")
+        )
+        district = (
+            CSS(
+                "div.person-desc div.person-author div.person-author-wrapper span.person-title"
+            )
+            .match_one(item)
+            .text_content()
+        )
+        # special titles applied before the district name
+        if "|" in district:
+            district = district.split("|")[1].strip()
+        district = district.strip().removeprefix("District ")
 
         p = ScrapePerson(
             name=name,
@@ -186,18 +238,13 @@ class BlueSenList(HtmlListPage):
             image=img,
         )
 
-        city = (
-            CSS("div .esg-content.eg-senators-grid-element-27")
-            .match_one(item)
-            .text_content()
+        detail_link = (
+            CSS("div.person-shortcode-image-wrapper div a").match_one(item).get("href")
         )
-        p.extras["city"] = city
-
-        detail_link = CSS("div a").match(item)[1].get("href")
         p.add_link(detail_link, note="homepage")
         p.add_source(self.source.url)
         p.add_source(detail_link)
-        return BlueSenDetail(p, source=detail_link)
+        return BlueSenDetail(p, source=URL(detail_link, timeout=30))
 
 
 class RedSenList(HtmlListPage):
@@ -226,7 +273,7 @@ class RedSenList(HtmlListPage):
         p.add_source(self.source.url)
         p.add_source(detail_link)
         p.add_link(detail_link, note="homepage")
-        return RedSenDetail(p, source=detail_link)
+        return RedSenDetail(p, source=URL(detail_link, timeout=30))
 
 
 class BlueRepList(HtmlListPage):
@@ -255,7 +302,7 @@ class BlueRepList(HtmlListPage):
 
         p.add_source(self.source.url)
 
-        return BlueRepDetail(p, source=detail_link_full)
+        return BlueRepDetail(p, source=URL(detail_link_full, timeout=30))
 
 
 class RedRepDetail(HtmlPage):
@@ -325,12 +372,12 @@ class RedRepList(HtmlListPage):
         p.add_source(detail_link)
         p.add_source(self.source.url.split("?")[0])
 
-        return RedRepDetail(p, source=URL(detail_link, timeout=10))
+        return RedRepDetail(p, source=URL(detail_link, timeout=30))
 
 
 class RepublicanHouse(RedRepList):
     source = URL(
-        "https://www.indianahouserepublicans.com/members/?pos=0,100,100", timeout=10
+        "https://www.indianahouserepublicans.com/members/?pos=0,100,100", timeout=30
     )
     selector = CSS("div.member-list a", min_items=60, max_items=100)
     chamber = "lower"
@@ -338,17 +385,17 @@ class RepublicanHouse(RedRepList):
 
 
 class DemocraticHouse(BlueRepList):
-    source = URL("https://indianahousedemocrats.org/members")
-    selector = CSS("section.member-listing a", num_items=29)
+    source = URL("https://indianahousedemocrats.org/members", timeout=30)
+    selector = CSS("section.member-listing a", min_items=29)
     chamber = "lower"
     party = "Democratic"
 
 
 class DemocraticSenate(BlueSenList):
-    source = URL("https://www.indianasenatedemocrats.org/senators/")
+    source = URL("https://www.indianasenatedemocrats.org/senators/", timeout=30)
     selector = CSS(
-        "article ul li",
-        num_items=11,
+        "div.fusion-person",
+        min_items=9,
     )
     chamber = "upper"
     party = "Democratic"
@@ -356,6 +403,6 @@ class DemocraticSenate(BlueSenList):
 
 class RepublicanSenate(RedSenList):
     source = URL("https://www.indianasenaterepublicans.com/senators")
-    selector = CSS("div.senator-list div.senator-item", num_items=39)
+    selector = CSS("div.senator-list div.senator-item", min_items=39)
     chamber = "upper"
     party = "Republican"

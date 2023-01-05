@@ -15,10 +15,12 @@ class USVoteScraper(Scraper):
         "Nay": "no",
         "Not Voting": "not voting",
         "Present": "other",
+        "Present, Giving Live Pair": "other",
     }
 
     senate_statuses = {
         "Agreed to": "pass",
+        "Amendment Agreed to": "pass",
         "Bill Passed": "pass",
         "Confirmed": "pass",
         "Rejected": "fail",
@@ -27,14 +29,21 @@ class USVoteScraper(Scraper):
         "Cloture Motion Agreed to": "pass",
         "Cloture Motion Rejected": "fail",
         "Cloture on the Motion to Proceed Rejected": "fail",
+        "Cloture on the Motion to Proceed Agreed to": "pass",
         "Amendment Rejected": "fail",
         "Decision of Chair Sustained": "pass",
         "Motion Agreed to": "pass",
+        "Motion to Discharge Agreed to": "pass",
+        "Motion to Discharge Rejected": "fail",
         "Motion to Table Failed": "fail",
         "Motion to Table Agreed to": "pass",
         "Motion to Table Motion to Recommit Agreed to": "pass",
         "Motion to Proceed Agreed to": "pass",
         "Motion to Proceed Rejected": "fail",
+        "Motion Rejected": "fail",
+        "Bill Defeated": "fail",
+        "Joint Resolution Passed": "pass",
+        "Joint Resolution Defeated": "fail",
     }
 
     vote_classifiers = (
@@ -94,6 +103,13 @@ class USVoteScraper(Scraper):
                 continue
 
             vote_url = row.xpath("td[1]/a/@href")[0]
+
+            # There are some votes that are on adjournment or quorum, not a related bill. Skip for validation step.
+            bad_house_rolls = ["1", "62", "142"]
+            roll_id = re.search(r"number=(\d+)", vote_url).group(1)
+            if roll_id in bad_house_rolls:
+                self.info("No related bill for this vote.")
+                continue
 
             # Dates are in the format of 20-Nov, so add the year
             vote_date = row.xpath("td[2]/font/text()")[0]
@@ -231,6 +247,9 @@ class USVoteScraper(Scraper):
             bill_id = page.xpath("//roll_call_vote/document/document_name/text()")[
                 0
             ].replace(".", "")
+
+        if re.match(r"PN\d*", bill_id):
+            return
 
         motion = page.xpath("//roll_call_vote/vote_question_text/text()")[0]
 

@@ -24,13 +24,14 @@ class PartyAugmentation(HtmlPage):
     def process_page(self):
         mapping = {}
         rows = self.find_rows()
-        for row in rows:
+        for row in rows[1:]:
             tds = row.getchildren()
             dist = tds[0].text_content().strip()
-            name = tds[1].text_content().strip()
-            party = tds[2].text_content().strip()
-            if "[" in party:
-                party = party.split("[")[0]
+            name = tds[2].text_content().strip()
+            # party is indicated by just a red or blue cell in the table
+            # get the last 6 characters off the background-color to see which color it is
+            party_style = tds[1].get("style")[-6:]
+            party = "Democrat" if party_style == "3333FF" else "Republican"
             mapping[dist] = (name, party)
         return mapping
 
@@ -156,4 +157,102 @@ class Assembly(HtmlListPage):
         p.capitol_office.address = capitol_addr["address"]
         p.capitol_office.voice = capitol_addr["phone"] or ""
         p.capitol_office.fax = capitol_addr["fax"] or ""
+        return p
+
+
+class Senate(HtmlListPage):
+    """
+    Contact information is harder to collect in a reasonable manner
+    """
+
+    source = URL("https://www.nysenate.gov/senators-committees")
+    district_re = re.compile(r"\d+")
+    selector = CSS("div.c-senator-block", min_items=61)
+
+    def _parties(self, party):
+        if party == "(D)" or party == "(D, IP)":
+            return "Democratic"
+        if party == "(R)":
+            return "Republican"
+        if party == "(R, C, IP, RFM)":
+            return "Republican/Conservative/Independence/Reform"
+        if party == "(D, WF)":
+            return "Democratic/Working Families"
+        if party == "(R, C, IP, LIBT)":
+            return "Republican/Conservative/Independence/Libertarian"
+        if party == "(D, IP, WF)":
+            return "Democratic/Independence/Working Families"
+        if party == "(R, C)":
+            return "Republican/Conservative"
+        if party == "(R, C, IP)":
+            return "Republican/Conservative/Independence"
+        # if party == "(D, IP)":
+        #     return "Democratic/Independence"
+        return party
+
+    def process_item(self, item):
+        """
+                      <div class="u-even">
+              <a href="/senators/fred-akshar">
+                <div class="c-senator-block">
+                        <div class="nys-senator--thumb">
+                                <img src="https://www.nysenate.gov/sites/default/files/styles/160x160/public/01-10-20_100-01_0011_edited_0.jpg?itok=k-SCUDnr" width="160" height="160" alt="" />		</div>
+                        <div class="nys-senator--info">
+                                <h4 class="nys-senator--name">Fred Akshar</h4>
+                                <span class="nys-senator--district">
+                                        <span class="nys-senator--party">
+                                        (R, C, IP, RFM)				</span>
+                                                                                52nd District							</span>
+                        </div>
+                </div>
+        </a>
+
+            </div>
+        """
+        img = CSS("div.nys-senator--thumb img").match_one(item).get("src")
+        name = (
+            CSS("div.nys-senator--info h4.nys-senator--name")
+            .match_one(item)
+            .text_content()
+        )
+        party = (
+            CSS(
+                "div.nys-senator--info span.nys-senator--district span.nys-senator--party"
+            )
+            .match_one(item)
+            .text_content()
+            .strip()
+        )
+        district = self.district_re.match(
+            CSS("div.nys-senator--info span.nys-senator--district")
+            .match_one(item)
+            .text_content()
+            .strip()
+            .removeprefix(party)
+            .strip()
+        )
+        if district:
+            district = district[0]
+        else:
+            self.skip("missing district")
+
+        party = self._parties(party)
+
+        p = ScrapePerson(
+            state="ny",
+            chamber="upper",
+            image=img,
+            party=party,
+            district=district,
+            name=name,
+        )
+        """
+        some additional detail on Senator's detail pages,
+        but the detail link is weirdly outside the div we can successfully use to pull Senators.
+        We could try and guess at the link name:
+        The pattern is /senators/<name>/contact for everything we need.
+        The only issue is some senators have unicode characters in their names, which are converted
+        to non-unicode characters in the link.
+        """
+
         return p

@@ -10,3 +10,13 @@ def get_slug_for_session(session):
         return session
     else:
         return "{}R".format(session)
+
+
+# biennium year (for laws) is the start year
+def get_biennium_year(session_name: str) -> str:
+    year = int(session_name[0:4])
+
+    if year % 2 == 0:
+        return str(year - 1)
+
+    return str(year)

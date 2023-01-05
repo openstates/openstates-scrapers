@@ -1,7 +1,9 @@
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 from dateutil import parser, relativedelta
 import datetime
 import pytz
+from utils.events import set_location_url, match_coordinates
 
 
 class WYEventScraper(Scraper):
@@ -12,6 +14,7 @@ class WYEventScraper(Scraper):
         today = datetime.datetime.today()
 
         url = "https://web.wyoleg.gov/LsoService/api/Calendar/Events/{}{}01"
+        event_count = 0
 
         # this month and the next 2 months
         for add in [0, 1, 2]:
@@ -30,7 +33,9 @@ class WYEventScraper(Scraper):
                     end = parser.parse(row["endTime"])
                     end = self._tz.localize(end)
 
-                    where = row["address1"]
+                    where = (
+                        f"{row['address1']} {row['address2']} {row['address3']}".strip()
+                    )
 
                     if where == "":
                         where = "TBD"
@@ -46,6 +51,8 @@ class WYEventScraper(Scraper):
                         description=desc,
                     )
 
+                    event.add_committee(com, note="host")
+
                     for media in row["meetingMedias"]:
                         # all these i've seen say they're octet stream but are actually youtube links
                         event.add_media_link(
@@ -54,6 +61,11 @@ class WYEventScraper(Scraper):
                             "text/html",
                             on_duplicate="ignore",
                         )
+
+                    if row["participantURL"]:
+                        set_location_url(event, row["participantURL"])
+
+                    match_coordinates(event, {"State Capitol": (41.14105, -104.82015)})
 
                     for doc in row["meetingDocuments"]:
                         event.add_document(
@@ -81,7 +93,12 @@ class WYEventScraper(Scraper):
                     )
 
                     event.add_source(web_url)
+
+                    event_count += 1
                     yield event
+
+        if event_count < 1:
+            raise EmptyScrape
 
     def parse_agenda_item(self, event, item):
         agenda = event.add_agenda_item(item["title"])

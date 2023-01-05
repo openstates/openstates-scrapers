@@ -2,6 +2,7 @@ import re
 import datetime
 
 from openstates.scrape import Scraper, Bill, VoteEvent
+from openstates.exceptions import EmptyScrape
 
 from utils import LXMLMixin
 
@@ -11,6 +12,7 @@ SESSION_IDS = {
     "2021r": "65",
     "2021i": "66",
     "2022": "64",
+    "2023": "68",
 }
 
 
@@ -31,6 +33,10 @@ class SDBillScraper(Scraper, LXMLMixin):
                 bill_abbr = "H"
 
             data = self.get(url).json()
+
+            if len(data) == 0:
+                raise EmptyScrape
+
             for item in data:
                 bill_id = f'{item["BillType"]} {item["BillNumberOnly"]}'
                 title = item["Title"]
@@ -71,34 +77,13 @@ class SDBillScraper(Scraper, LXMLMixin):
         bill.add_source(f"https://sdlegislature.gov/Session/Bill/{api_id}")
         bill.add_source(url)
 
-        version_rows = page["Documents"]
-        assert len(version_rows) > 0
-        for version in version_rows:
-            date = version["DocumentDate"]
-            if date:
-                match = re.match(r"\d{4}-\d{2}-\d{2}", date)
-                date = datetime.datetime.strptime(match.group(0), "%Y-%m-%d").date()
-
-                html_link = f"https://sdlegislature.gov/Session/Bill/{api_id}/{version['DocumentId']}"
-                pdf_link = f"https://mylrc.sdlegislature.gov/api/Documents/{version['DocumentId']}.pdf"
-
-                note = version["BillVersion"]
-                bill.add_version_link(
-                    note,
-                    html_link,
-                    date=date,
-                    media_type="text/html",
-                    on_duplicate="ignore",
-                )
-                bill.add_version_link(
-                    note,
-                    pdf_link,
-                    date=date,
-                    media_type="application/pdf",
-                    on_duplicate="ignore",
-                )
-            else:
-                self.warning("Version listed but no date or documents")
+        # sometimes the versions are inline in the doc, sometimes they're on a separate endpoint
+        if "Documents" in page:
+            version_rows = page["Documents"]
+            for version in version_rows:
+                self.add_bill_version(bill, version, api_id)
+        else:
+            self.scrape_version(bill, api_id)
 
         sponsors = page["BillSponsor"]
         if sponsors:
@@ -125,7 +110,7 @@ class SDBillScraper(Scraper, LXMLMixin):
             )
 
         for keyword in page["Keywords"]:
-            bill.add_subject(keyword["Keyword"]["Keyword"])
+            bill.add_subject(keyword["Keyword"])
 
         actions_url = f"https://sdlegislature.gov/api/Bills/ActionLog/{api_id}"
         yield from self.scrape_action(bill, actions_url, chamber)
@@ -156,7 +141,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                 atypes.append("reading-1")
 
             if action_text == "Do Pass":
-                if re.match(
+                if action["ActionCommittee"] is not None and re.match(
                     r"(Senate|House of Representatives)",
                     action["ActionCommittee"]["Name"],
                 ):
@@ -278,6 +263,39 @@ class SDBillScraper(Scraper, LXMLMixin):
 
             description = " ".join(full_action)
             bill.add_action(description, date, chamber=actor, classification=atypes)
+
+    def add_bill_version(self, bill, version, api_id):
+        date = version["DocumentDate"]
+        if date:
+            match = re.match(r"\d{4}-\d{2}-\d{2}", date)
+            date = datetime.datetime.strptime(match.group(0), "%Y-%m-%d").date()
+
+            html_link = f"https://sdlegislature.gov/Session/Bill/{api_id}/{version['DocumentId']}"
+            pdf_link = f"https://mylrc.sdlegislature.gov/api/Documents/{version['DocumentId']}.pdf"
+
+            note = version["BillVersion"]
+            bill.add_version_link(
+                note,
+                html_link,
+                date=date,
+                media_type="text/html",
+                on_duplicate="ignore",
+            )
+            bill.add_version_link(
+                note,
+                pdf_link,
+                date=date,
+                media_type="application/pdf",
+                on_duplicate="ignore",
+            )
+        else:
+            self.warning("Version listed but no date or documents")
+
+    def scrape_version(self, bill, api_id):
+        url = f"https://sdlegislature.gov/api/Bills/Versions/{api_id}"
+        versions = self.get(url).json()
+        for version in versions:
+            self.add_bill_version(bill, version, api_id)
 
     def scrape_vote(self, bill, date, url):
         page = self.get(url).json()

@@ -261,7 +261,7 @@ def db_create():
 
 def get_contents():
     resp = {}
-    html = requests.get(BASE_URL).text
+    html = requests.get(BASE_URL, verify=False).text
     doc = lxml.html.fromstring(html)
     # doc.make_links_absolute(BASE_URL)
     rows = doc.xpath("//table/tr")

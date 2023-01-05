@@ -5,3 +5,5 @@ _data
 cache
 _cache
 pubinfo_*
+openstates-postgres/
+vm_data/

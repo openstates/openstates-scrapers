@@ -252,14 +252,14 @@ class MDBillScraper(Scraper):
 
         # date in the following format: Mar 23, 2009
         date = doc.xpath('//td[starts-with(text(), "Legislative")]')[0].text
-        date = date.replace(u"\xa0", " ")
+        date = date.replace("\xa0", " ")
         date = datetime.datetime.strptime(date[18:], "%b %d, %Y")
 
         # motion
         motion = "".join(x.text_content() for x in doc.xpath('//td[@colspan="23"]'))
         if motion == "":
             motion = "No motion given"  # XXX: Double check this. See SJ 3.
-        motion = motion.replace(u"\xa0", " ")
+        motion = motion.replace("\xa0", " ")
 
         # totals
         tot_class = doc.xpath('//td[contains(text(), "Yeas")]')[0].get("class")
@@ -287,7 +287,7 @@ class MDBillScraper(Scraper):
         # go through, find Voting Yea/Voting Nay/etc. and next tds are voters
         func = None
         for td in doc.xpath("//td/text()"):
-            td = td.replace(u"\xa0", " ")
+            td = td.replace("\xa0", " ")
             if td.startswith("Voting Yea"):
                 func = vote.yes
             elif td.startswith("Voting Nay"):

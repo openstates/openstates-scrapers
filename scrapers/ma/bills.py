@@ -82,7 +82,7 @@ class MABillScraper(Scraper):
 
         # Pull the search page to get the filters
         search_url = "https://malegislature.gov/Bills/Search?SearchTerms=&Page=1"
-        page = lxml.html.fromstring(self.get(search_url).text)
+        page = lxml.html.fromstring(self.get(search_url, verify=False).text)
         self.session_filters = self.get_refiners(page, "lawsgeneralcourt")
         self.chamber_filters = self.get_refiners(page, "lawsbranchname")
 
@@ -122,7 +122,7 @@ class MABillScraper(Scraper):
                 )
             )
 
-        page = lxml.html.fromstring(self.get(search_url).text)
+        page = lxml.html.fromstring(self.get(search_url, verify=False).text)
         resultRows = page.xpath('//table[@id="searchTable"]/tbody/tr/td[2]/a/text()')
         return resultRows
 
@@ -139,7 +139,7 @@ class MABillScraper(Scraper):
             "Refinements%5Blawsgeneralcourt%5D={}&&"
             "Refinements%5Blawsbranchname%5D={}".format(session_filter, chamber_filter)
         )
-        page = lxml.html.fromstring(self.get(search_url).text)
+        page = lxml.html.fromstring(self.get(search_url, verify=False).text)
 
         if page.xpath('//ul[contains(@class,"pagination-sm")]/li[last()]/a/@onclick'):
             maxPage = page.xpath(
@@ -159,10 +159,10 @@ class MABillScraper(Scraper):
         )
 
         try:
-            response = self.get(bill_url)
+            response = self.get(bill_url, verify=False)
             self.info("GET (with `requests`) - {}".format(bill_url))
         except requests.exceptions.RequestException:
-            self.warning(u"Server Error on {}".format(bill_url))
+            self.warning("Server Error on {}".format(bill_url))
             return False
 
         html = response.text
@@ -170,7 +170,7 @@ class MABillScraper(Scraper):
         page = lxml.html.fromstring(html)
 
         if not page.xpath('//div[contains(@class, "followable")]/h1/text()'):
-            self.warning(u"Server Error on {}".format(bill_url))
+            self.warning("Server Error on {}".format(bill_url))
             return False
 
         # The state website will periodically miss a few bills' titles for a few days
@@ -426,9 +426,7 @@ class MABillScraper(Scraper):
             (path, resp) = self.urlretrieve(vurl)
             pdflines = convert_pdf(path, "text")
             os.remove(path)
-            self.house_pdf_cache[vurl] = pdflines.decode("utf-8").replace(
-                u"\u2019", "'"
-            )
+            self.house_pdf_cache[vurl] = pdflines.decode("utf-8").replace("\u2019", "'")
         return self.house_pdf_cache[vurl]
 
     def scrape_house_vote(self, vote, vurl, supplement):
@@ -496,7 +494,7 @@ class MABillScraper(Scraper):
         # handle individual lines in pdf to id legislator votes
         for line in lines:
             line = line.strip()
-            line = line.decode("utf-8").replace(u"\u2212", "-")
+            line = line.decode("utf-8").replace("\u2212", "-")
             if line == "":
                 continue
             # change mode accordingly

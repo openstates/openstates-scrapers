@@ -5,6 +5,7 @@ import pytz
 
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
+from utils.events import match_coordinates
 
 
 class NEEventScraper(Scraper):
@@ -83,6 +84,8 @@ class NEEventScraper(Scraper):
             )
 
             event.add_committee(com, note="host")
+
+            match_coordinates(event, {"1445 K St": (40.80824, -96.69973)})
 
             for row in meeting.xpath("div/table/tr"):
                 if not row.xpath("td[3]"):

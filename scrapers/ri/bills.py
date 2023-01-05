@@ -3,6 +3,7 @@ import lxml.html
 import re
 
 from openstates.scrape import Scraper, Bill, VoteEvent
+from .actions import Categorizer
 
 from utils import url_xpath
 
@@ -18,9 +19,9 @@ RI_URL_BASE = "https://webserver.rilegislature.gov"
 def bill_start_numbers(session):
     # differs by first/second session in term
     if int(session) % 2 == 0:
-        return {"lower": 7000, "upper": 2000}
+        return {"lower": [6500, 7000], "upper": [2000]}
     else:
-        return {"lower": 5000, "upper": 1}
+        return {"lower": [5000], "upper": [1]}
 
 
 def get_postable_subjects():
@@ -62,6 +63,8 @@ BILL_NAME_TRANSLATIONS = {
     "Senate Bill No.": "SB",
     "Senate Resolution No.": "SR",
     "House Resolution No.": "HR",
+    "Senate Concurrent Resolution No.": "SCR",
+    "House Concurrent Resolution No.": "HCR",
 }
 
 BILL_STRING_FLAGS = {
@@ -81,6 +84,7 @@ class RIBillScraper(Scraper):
     # so we keep a dict of (chamber, number) -> bill_id from the bill scrape to be used in the
     # vote scrape
     _bill_id_by_type = {}
+    categorizer = Categorizer()
 
     def parse_results_page(self, page):
         blocks = []
@@ -109,7 +113,7 @@ class RIBillScraper(Scraper):
             lines = [(n.text_content().strip(), n) for n in node]
             if "No Bills Met this Criteria" in [x[0] for x in lines]:
                 self.info("No results. Skipping block")
-                return []
+                # return []
 
             for line in lines:
                 line, node = line
@@ -134,9 +138,10 @@ class RIBillScraper(Scraper):
             if "bill_id" in nblock:
                 blocks[nblock["bill_id"]] = nblock
             else:
-                self.warning(lines)
-                self.warning("ERROR! Can not find bill_id for current entry!")
-                self.warning("This should never happen!!! Oh noes!!!")
+                # either we got a bad block, or they skipped a span of bill numbers
+                # in 2022 they did 6500-6700, then restarted at 7000
+                self.warning("Current entry doesn't have a matching bill id")
+                self.warning("Did they skip around?")
         return blocks
 
     def get_subject_bill_dict(self, session):
@@ -183,11 +188,14 @@ class RIBillScraper(Scraper):
                 actor = "executive"
             date = action.split(" ")[0]
             date = dt.datetime.strptime(date, "%m/%d/%Y")
+            action_attr = self.categorizer.categorize(action)
+            atype = action_attr["classification"]
+
             bill.add_action(
                 action,
                 date.strftime("%Y-%m-%d"),
                 chamber=actor,
-                classification=self.get_type_by_action(action),
+                classification=atype,
             )
 
     def get_type_by_name(self, name):
@@ -204,100 +212,81 @@ class RIBillScraper(Scraper):
         self.warning("XXX: Bill type fallthrough. This ain't great.")
         return "bill"
 
-    def get_type_by_action(self, name):
-        types = {
-            "introduced": "introduction",
-            "referred": "referral-committee",
-            "passed": "passage",
-            "recommends passage": "committee-passage-favorable",
-            # XXX: need to find the unfavorable string
-            # XXX: What's "recommended measure be held for further study"?
-            "withdrawn": "withdrawal",
-            "signed by governor": "executive-signature",
-            "transmitted to governor": "executive-receipt",
-            "effective without governor's signature": "became-law",
-        }
-        ret = []
-        name = name.lower()
-        for flag in types:
-            if flag in name:
-                ret.append(types[flag])
-
-        if len(ret) > 0:
-            return ret
-        return None
-
     def scrape_bills(self, chamber, session, subjects):
-        idex = bill_start_numbers(session)[chamber]
+        idexes = bill_start_numbers(session)[chamber]
         FROM = "ctl00$rilinContent$txtBillFrom"
         TO = "ctl00$rilinContent$txtBillTo"
         YEAR = "ctl00$rilinContent$cbYear"
-        blocks = "FOO"  # Ugh.
-        while len(blocks) > 0:
-            default_headers = get_default_headers(SEARCH_URL)
-            default_headers[FROM] = idex
-            default_headers[TO] = idex + MAXQUERY
-            default_headers[YEAR] = session
-            idex += MAXQUERY
-            blocks = self.parse_results_page(
-                self.post(SEARCH_URL, data=default_headers).text
-            )
-            blocks = blocks[1:-1]
-            blocks = self.digest_results_page(blocks)
+        for idex in idexes:
+            blocks = "FOO"  # Ugh.
+            while len(blocks) > 0:
+                default_headers = get_default_headers(SEARCH_URL)
+                default_headers[FROM] = idex
+                default_headers[TO] = idex + MAXQUERY
+                default_headers[YEAR] = session
+                idex += MAXQUERY
+                blocks = self.parse_results_page(
+                    self.post(SEARCH_URL, data=default_headers).text
+                )
+                blocks = blocks[1:-1]
+                blocks = self.digest_results_page(blocks)
 
-            for block in blocks:
-                bill = blocks[block]
-                subs = []
-                try:
-                    subs = subjects[bill["bill_id"]]
-                except KeyError:
-                    pass
-
-                title = bill["title"][len("ENTITLED, ") :]
-                billid = bill["bill_id"]
-                try:
-                    subs = subjects[bill["bill_id"]]
-                except KeyError:
+                for block in blocks:
+                    bill = blocks[block]
                     subs = []
+                    try:
+                        subs = subjects[bill["bill_id"]]
+                    except KeyError:
+                        pass
 
-                for b in BILL_NAME_TRANSLATIONS:
-                    if billid[: len(b)] == b:
-                        billid = (
-                            BILL_NAME_TRANSLATIONS[b] + billid[len(b) + 1 :].split()[0]
+                    title = bill["title"][len("ENTITLED, ") :]
+                    billid = bill["bill_id"]
+                    try:
+                        subs = subjects[bill["bill_id"]]
+                    except KeyError:
+                        subs = []
+
+                    for b in BILL_NAME_TRANSLATIONS:
+                        if billid[: len(b)] == b:
+                            billid = (
+                                BILL_NAME_TRANSLATIONS[b]
+                                + billid[len(b) + 1 :].split()[0]
+                            )
+
+                    b = Bill(
+                        billid,
+                        title=title,
+                        chamber=chamber,
+                        legislative_session=session,
+                        classification=self.get_type_by_name(bill["bill_id"]),
+                    )
+                    b.subject = subs
+
+                    # keep bill ID around
+                    self._bill_id_by_type[
+                        (chamber, re.findall(r"\d+", billid)[0])
+                    ] = billid
+
+                    self.process_actions(bill["actions"], b)
+                    sponsors = bill["sponsors"][len("BY") :].strip()
+                    sponsors = sponsors.split(",")
+                    sponsors = [s.strip() for s in sponsors]
+
+                    for href in bill["bill_id_hrefs"]:
+                        b.add_version_link(
+                            href.text, href.attrib["href"], media_type="application/pdf"
                         )
 
-                b = Bill(
-                    billid,
-                    title=title,
-                    chamber=chamber,
-                    legislative_session=session,
-                    classification=self.get_type_by_name(bill["bill_id"]),
-                )
-                b.subject = subs
+                    for sponsor in sponsors:
+                        b.add_sponsorship(
+                            sponsor,
+                            entity_type="person",
+                            classification="primary",
+                            primary=True,
+                        )
 
-                # keep bill ID around
-                self._bill_id_by_type[(chamber, re.findall(r"\d+", billid)[0])] = billid
-
-                self.process_actions(bill["actions"], b)
-                sponsors = bill["sponsors"][len("BY") :].strip()
-                sponsors = sponsors.split(",")
-                sponsors = [s.strip() for s in sponsors]
-
-                for href in bill["bill_id_hrefs"]:
-                    b.add_version_link(
-                        href.text, href.attrib["href"], media_type="application/pdf"
-                    )
-
-                for sponsor in sponsors:
-                    b.add_sponsorship(
-                        sponsor,
-                        entity_type="person",
-                        classification="primary",
-                        primary=True,
-                    )
-
-                b.add_source(SEARCH_URL)
-                yield b
+                    b.add_source(SEARCH_URL)
+                    yield b
 
     def scrape(self, chamber=None, session=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]

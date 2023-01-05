@@ -3,6 +3,7 @@ import datetime as dt
 
 import pytz
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 from utils import LXMLMixin
 
@@ -17,8 +18,8 @@ replace = {
     "Senate Joint Resolution No.": "SJR",
     "Senate Resolution No.": "SR",
     "Senate Bill No.": "SB",
-    u"\xa0": " ",
-    u"\u00a0": " ",
+    "\xa0": " ",
+    "\u00a0": " ",
     "SUB A": "",
     "SUB A as amended": "",
     "PROPOSED SUBSTITUTE": "",
@@ -27,6 +28,7 @@ replace = {
 
 class RIEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Eastern")
+    found_events = False
 
     def scrape_agenda(self, chamber, url):
         page = self.lxmlize(url)
@@ -64,6 +66,11 @@ class RIEventScraper(Scraper, LXMLMixin):
             datetime = "%s %s" % (date, time)
         if "CANCELLED" in datetime.upper() or "CANCELED" in datetime.upper():
             return
+
+        if page.xpath("//span[@id='lblSession']"):
+            event_desc = (
+                page.xpath("//span[@id='lblSession']")[0].text_content().strip()
+            )
 
         transtable = {
             "P.M": "PM",
@@ -110,7 +117,7 @@ class RIEventScraper(Scraper, LXMLMixin):
             if "SCHEDULED FOR" in bill_id:
                 continue
 
-            descr = bill.getparent().getparent().text_content().replace(u"\u00a0", " ")
+            descr = bill.getparent().getparent().text_content().replace("\u00a0", " ")
 
             for thing in replace:
                 bill_id = bill_id.replace(thing, replace[thing])
@@ -143,6 +150,7 @@ class RIEventScraper(Scraper, LXMLMixin):
             committee = page.xpath("//span[@id='lblSession']")[0].text_content()
             event.add_participant(committee, "committee", note="host")
 
+        self.found_events = True
         yield event
 
     def scrape_agenda_dir(self, chamber, url):
@@ -166,3 +174,6 @@ class RIEventScraper(Scraper, LXMLMixin):
             to_scrape = ctty.xpath("./a")
             for page in to_scrape:
                 yield from self.scrape_agenda_dir(chamber, page.attrib["href"])
+
+        if not self.found_events:
+            raise EmptyScrape

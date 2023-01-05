@@ -12,6 +12,7 @@ If you're trying to hit api links through your browser you
 need to install a header-modifying extension to do this, on firefox:
 https://addons.mozilla.org/en-US/firefox/addon/modify-headers/
 """
+settings = dict(SCRAPELIB_TIMEOUT=300)
 
 
 class BadApiResponse(Exception):

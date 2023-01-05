@@ -8,41 +8,7 @@ import xml.etree.cElementTree as etree
 from openstates.scrape import Scraper, Bill
 from openstates.scrape.base import ScrapeError
 from utils import LXMLMixin
-
-
-_action_re = (
-    ("^Amended$", "amendment-passage"),
-    (r"^Amendment\(s\) offered$", "amendment-introduction"),
-    ("^Amendment amended$", "amendment-amendment"),
-    ("^Amendment withdrawn$", "amendment-withdrawal"),
-    ("^Passed$", "passage"),
-    ("^Adopted$", "passage"),
-    ("^Received (by|from) the.*Secretary of the Senate", "filing"),
-    ("^Received (by|from) the", "introduction"),
-    ("^Sent to the Governor", "executive-receipt"),
-    ("^Signed by the Governor", "executive-signature"),
-    ("^Effective on", "became-law"),
-    ("^Vetoed by the Governor$", "executive-veto"),
-    ("^Read first time$", ["introduction", "reading-1"]),
-    ("^Read & adopted$", ["passage", "introduction"]),
-    ("^Passed as amended$", "passage"),
-    ("^Referred to", "referral-committee"),
-    ("^Recommended to be sent to", "referral-committee"),
-    (r"^Reported favorably w/o amendment\(s\)$", "committee-passage"),
-    ("^Filed$", "filing"),
-    ("^Read 3rd time$", "reading-3"),
-    ("^Read 2nd time$", "reading-2"),
-    ("^Reported favorably", "committee-passage-favorable"),
-    ("^Effective immediately$", "became-law"),
-    ("^Filed without the Governor's signature$", "became-law"),
-)
-
-
-def _categorize_action(action):
-    for pattern, types in _action_re:
-        if re.findall(pattern, action):
-            return types
-    return None
+from .actions import Categorizer
 
 
 class TXBillScraper(Scraper, LXMLMixin):
@@ -59,6 +25,8 @@ class TXBillScraper(Scraper, LXMLMixin):
         "https://capitol.texas.gov/BillLookup/Companions.aspx" "?LegSess={}&Bill={}"
     )
 
+    categorizer = Categorizer()
+
     def _get_ftp_files(self, dir_):
         """Recursively traverse an FTP directory, returning all files"""
         for i in range(3):
@@ -66,7 +34,7 @@ class TXBillScraper(Scraper, LXMLMixin):
                 ftp = ftplib.FTP(self._FTP_ROOT)
                 break
             except (EOFError, ftplib.error_temp):
-                time.sleep(2 ** i)
+                time.sleep(2**i)
         else:
             raise Exception
 
@@ -225,7 +193,8 @@ class TXBillScraper(Scraper, LXMLMixin):
                 self.warning("Skipping public hearing action with no date")
                 continue
 
-            atype = _categorize_action(desc)
+            action_attr = self.categorizer.categorize(desc)
+            atype = action_attr["classification"]
 
             act = bill.add_action(
                 action.findtext("description"),

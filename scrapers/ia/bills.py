@@ -43,9 +43,11 @@ class IABillScraper(Scraper):
     # IA does prefiles on a seperate page, with no bill numbers,
     # after introduction they'll link bill numbers to the prefile doc id
     def scrape_prefiles(self, session):
-        url = "https://www.legis.iowa.gov/legislation/billTracking/prefiledBills"
-        page = lxml.html.fromstring(self.get(url).content)
-        page.make_links_absolute(url)
+        prefile_url = (
+            "https://www.legis.iowa.gov/legislation/billTracking/prefiledBills"
+        )
+        page = lxml.html.fromstring(self.get(prefile_url).content)
+        page.make_links_absolute(prefile_url)
 
         for row in page.xpath('//table[contains(@class, "sortable")]/tr[td]'):
             title = row.xpath("td[2]/a/text()")[0].strip()
@@ -75,7 +77,7 @@ class IABillScraper(Scraper):
                 note="Prefiled", url=url, media_type="application/pdf"
             )
 
-            bill.add_source(url)
+            bill.add_source(prefile_url)
 
             yield bill
 
@@ -243,6 +245,23 @@ class IABillScraper(Scraper):
             elif "No history is recorded at this time." in date:
                 return
             if date == "":
+                for anchor in tr.xpath(".//a"):
+                    link_text = anchor.text_content()
+                    link_url = anchor.xpath("@href")[0]
+                    if "signed" in link_text.lower():
+                        bill.add_version_link(
+                            note=link_text, url=link_url, media_type="application/pdf"
+                        )
+                    elif "acts" in link_text.lower():
+                        bill.add_document_link(
+                            note=link_text, url=link_url, media_type="application/pdf"
+                        )
+                        bill.add_citation(
+                            f"IA Acts, {session}",
+                            link_text.replace("Acts", ""),
+                            citation_type="chapter",
+                            url=link_url,
+                        )
                 continue
 
             date = datetime.datetime.strptime(date, "%B %d, %Y").date()
@@ -269,6 +288,31 @@ class IABillScraper(Scraper):
                             version_urls.append(amd_url)
                         else:
                             self.info("Already Added {}, skipping".format(amd_url))
+            else:
+                for anchor in tr.xpath(".//a"):
+                    link_text = anchor.text_content()
+                    link_url = anchor.xpath("@href")[0]
+                    action_date = date.strftime("%m/%d/%Y")
+                    if "fiscal" in link_text.lower() or "summary" in link_text.lower():
+                        # there can be multiple fiscal notes or summaries, so date them
+                        doc_title = f"{link_text} {action_date}"
+                        bill.add_document_link(
+                            note=doc_title, url=link_url, media_type="application/pdf"
+                        )
+                    elif "signed" in link_text.lower():
+                        bill.add_version_link(
+                            note=link_text, url=link_url, media_type="application/pdf"
+                        )
+                    elif "acts" in link_text.lower():
+                        bill.add_document_link(
+                            note=link_text, url=link_url, media_type="application/pdf"
+                        )
+                        bill.add_citation(
+                            f"IA Acts, {session}",
+                            link_text.replace("Acts", ""),
+                            citation_type="chapter",
+                            url=link_url,
+                        )
 
             if "S.J." in action or "SCS" in action:
                 actor = "upper"
@@ -334,6 +378,8 @@ class IABillScraper(Scraper):
         yield bill
 
     def get_session_id(self, session):
+        # https://www.legis.iowa.gov/legislation/BillBook
+        # select[@name="gaList"]
         return {
             "2011-2012": "84",
             "2013-2014": "85",
@@ -341,4 +387,5 @@ class IABillScraper(Scraper):
             "2017-2018": "87",
             "2019-2020": "88",
             "2021-2022": "89",
+            "2023-2024": "90",
         }[session]

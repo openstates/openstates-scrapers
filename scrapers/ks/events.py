@@ -5,6 +5,7 @@ import re
 import dateutil.parser
 
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 import pytz
 
@@ -36,12 +37,18 @@ class KSEventScraper(Scraper):
         com_url = "http://www.kslegislature.org/li/api/v11/rev-1/ctte/"
         coms_page = json.loads(self.get(com_url).content)
 
+        event_count = 0
         for chamber in ["upper", "lower"]:
             chamber_key = f"{self.chamber_names[chamber]}_committees"
             for com in coms_page["content"][chamber_key]:
-                yield from self.scrape_com_page(
+                for event in self.scrape_com_page(
                     com["KPID"], chamber, com["TITLE"], start
-                )
+                ):
+                    event_count += 1
+                    yield event
+
+        if event_count < 1:
+            raise EmptyScrape
 
     def scrape_com_page(self, com_id, chamber, com_name, start):
         # http://www.kslegislature.org/li/b2021_22/committees/ctte_h_agriculture_1/

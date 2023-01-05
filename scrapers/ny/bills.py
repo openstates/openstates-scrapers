@@ -247,6 +247,13 @@ class NYBillScraper(Scraper):
             (prefix, number, active_version),
         ) = details
 
+        if str(bill_data["session"]) != self.term_start_year:
+            self.warning(self.term_start_year)
+            self.warning(
+                f"Bill {bill_id} appears to be from previous session: {bill_data['session']}. Skipping"
+            )
+            return
+
         bill = Bill(
             bill_id,
             legislative_session=session,
@@ -276,12 +283,13 @@ class NYBillScraper(Scraper):
                 )
             elif not bill_data["sponsor"]["budget"]:
                 primary_sponsor = bill_data["sponsor"]["member"]
-                bill.add_sponsorship(
-                    primary_sponsor["shortName"],
-                    entity_type="person",
-                    classification="primary",
-                    primary=True,
-                )
+                if primary_sponsor is not None:
+                    bill.add_sponsorship(
+                        primary_sponsor["shortName"],
+                        entity_type="person",
+                        classification="primary",
+                        primary=True,
+                    )
 
                 if bill_active_version:
                     # There *shouldn't* be cosponsors if there is no sponsor.

@@ -48,6 +48,9 @@ class OHBillScraper(Scraper):
     def scrape(self, session=None, chambers=None):
         # Bills endpoint can sometimes take a very long time to load
         self.timeout = 300
+        self.headers[
+            "User-Agent"
+        ] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36"
 
         if int(session) < 128:
             raise AssertionError("No data for period {}".format(session))
@@ -132,20 +135,19 @@ class OHBillScraper(Scraper):
             all_synopsis = self.get_other_data_source(first_page, base_url, "synopsiss")
             all_analysis = self.get_other_data_source(first_page, base_url, "analysiss")
 
-            for row in self.get_bill_rows(session):
-                (
-                    spacer,
-                    number_link,
-                    _ga,
-                    title,
-                    primary_sponsor,
-                    status,
-                    spacer,
-                ) = row.xpath("td")
+            rows = self.get_bill_rows(session)
+            for row in rows:
+                for td in row.xpath("th|td"):
+                    (
+                        number_link,
+                        title,
+                        _,  # primary sponsor
+                        _,  # status
+                    ) = row.xpath("th|td")
 
                 # S.R.No.1 -> SR1
-                bill_id = number_link.text_content().replace("No.", "")
-                bill_id = bill_id.replace(".", "").replace(" ", "")
+                bill_id = number_link.text_content().replace("No.", "").strip()
+                bill_id = bill_id.replace(".", "").replace(" ", "").strip()
                 # put one space back in between type and number
                 bill_id = re.sub(r"([a-zA-Z]+)(\d+)", r"\1 \2", bill_id)
 
@@ -155,8 +157,9 @@ class OHBillScraper(Scraper):
                 chamber = "lower" if "H" in bill_id else "upper"
                 classification = "bill" if "B" in bill_id else "resolution"
 
-                if not title and session == "134" and bill_id == "HR 35":
-                    # Exception for HR 35 which is a real bill
+                no_title_bills = ["HR 35", "SCR 14", "SR 259"]
+                if not title and session == "134" and bill_id in no_title_bills:
+                    # Exception for HR 35, SCR 14, and SR 259 which are real bills
                     title = "No title provided"
                 elif not title:
                     self.warning(f"no title for {bill_id}, skipping")
@@ -250,7 +253,8 @@ class OHBillScraper(Scraper):
 
                 try:
                     action_doc = self.get(
-                        base_url + bill_version["action"][0]["link"], verify=False
+                        base_url + bill_version["action"][0]["link"],
+                        verify=False,
                     )
                 except scrapelib.HTTPError:
                     pass
@@ -476,7 +480,10 @@ class OHBillScraper(Scraper):
         legislators = {}
         for chamber in ["House", "Senate"]:
             url = base_url + "chamber/{chamber}/legislators?per_page=100"
-            doc = self.get(url.format(chamber=chamber), verify=False)
+            doc = self.get(
+                url.format(chamber=chamber),
+                verify=False,
+            )
             leg_json = doc.json()
             for leg in leg_json["items"]:
                 if leg["med_id"]:

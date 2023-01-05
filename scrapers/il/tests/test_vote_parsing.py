@@ -79,7 +79,7 @@ class TestVoteParsing(object):
         d = find_columns_and_parse(TEST_LINES3)
         eq_("Y", d["Collins, A."])
         eq_("NV", d["Garrett"])
-        eq_("Y", d[u"Muñoz"])
+        eq_("Y", d["Muñoz"])
         eq_("Y", d["Syverson"])
         eq_("NV", d["Link"])
 

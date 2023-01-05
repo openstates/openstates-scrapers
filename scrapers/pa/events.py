@@ -91,9 +91,11 @@ class PAEventScraper(Scraper):
                     for committee in committees:
                         parsed = urllib.parse.urlparse(committee.get("href"))
                         qs = urllib.parse.parse_qs(parsed.query)
+                        com_name = re.sub(r" \([S|H]\)$", "", committee.text)
                         item.add_committee(
-                            re.sub(r" \([S|H]\)$", "", committee.text),
+                            com_name,
                             id=qs.get("Code"),
                         )
+                        event.add_committee(com_name)
 
                 yield event

@@ -1,18 +1,26 @@
-from spatula import HtmlPage, ListPage, NullSource, CSS
+import attr
 from openstates.models import ScrapePerson
+from spatula import HtmlPage, HtmlListPage, CSS, URL
+
+
+@attr.s
+class LegPartial:
+    name = attr.ib()
+    district = attr.ib()
+    url = attr.ib()
 
 
 class LegPage(HtmlPage):
-    name_css = CSS("h1.mt-0")
-    district_css = CSS(".col-9 h2")
-    image_css = CSS("img#sen-image")
-    address_css = CSS("address")
+    input_type = LegPartial
+
+    def get_source_from_input(self):
+        return self.input.url
 
     def process_page(self):
-        name = self.name_css.match_one(self.root).text.replace("Sen. ", "").strip()
-        district = self.district_css.match_one(self.root).text.split()[1]
-        image = self.image_css.match_one(self.root).get("src")
-        addrlines = self.address_css.match_one(self.root).text_content()
+        name = self.input.name
+        district = self.input.district
+        image = CSS("img#sen-image").match_one(self.root).get("src")
+        addrlines = CSS("address").match_one(self.root).text_content()
 
         # example:
         # Room 11th Floor
@@ -52,14 +60,25 @@ class LegPage(HtmlPage):
         return p
 
 
-class LegPageGenerator(ListPage):
-    source = NullSource()
-    """
-    NE is an interesting test case for Spatula, since there are individual senator pages
-    but no real index that's useful at all.  Right now this is using a dummy source page
-    to spawn the 49 subpage scrapers.
-    """
+class Legislature(HtmlListPage):
+    source = URL(
+        "https://nebraskalegislature.gov/senators/senator_list.php", timeout=30
+    )
+    selector = CSS("div.card ul.dist_list li.sen-list-item", min_items=49)
 
-    def process_page(self):
-        for n in range(1, 50):
-            yield LegPage(source=f"http://news.legislature.ne.gov/dist{n:02d}/")
+    def process_item(self, item):
+        name = CSS("a div span").match(item)[0].text
+        if "Speaker of the Legislature" in name:
+            self.skip("not a person")
+        if "Vacant" in name:
+            self.skip("vacant")
+        last, first = name.split(",")
+        name = f"{first} {last}"
+        district = int(CSS("a div span").match(item)[1].text)
+        return LegPage(
+            LegPartial(
+                name=name,
+                district=district,
+                url=f"http://news.legislature.ne.gov/dist{district:02d}/",
+            )
+        )

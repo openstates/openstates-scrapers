@@ -3,6 +3,7 @@ import lxml
 import re
 
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 import pytz
 
@@ -15,7 +16,7 @@ urls = {
 class IlEventScraper(Scraper):
     localize = pytz.timezone("America/Chicago").localize
 
-    def scrape_page(self, url, session, chamber):
+    def scrape_page(self, url):
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
@@ -63,23 +64,29 @@ class IlEventScraper(Scraper):
         return event
 
     def scrape(self):
-        for session in self.jurisdiction.legislative_sessions:
-            session_id = session["identifier"]
-            for chamber in ("upper", "lower"):
+        no_scheduled_ct = 0
 
-                try:
-                    url = urls[chamber]
-                except KeyError:
-                    return  # Not for us.
-                html = self.get(url).text
-                doc = lxml.html.fromstring(html)
-                doc.make_links_absolute(url)
+        for chamber in ("upper", "lower"):
 
-                tables = doc.xpath("//table[@width='550']")
-                for table in tables:
-                    meetings = table.xpath(".//a")
-                    for meeting in meetings:
-                        event = self.scrape_page(
-                            meeting.attrib["href"], session_id, chamber
-                        )
-                        yield event
+            try:
+                url = urls[chamber]
+            except KeyError:
+                return  # Not for us.
+            html = self.get(url).text
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(url)
+
+            if doc.xpath('//div[contains(text(), "No hearings currently scheduled")]'):
+                self.info(f"No hearings in {chamber}")
+                no_scheduled_ct += 1
+                continue
+
+            tables = doc.xpath("//table[@width='550']")
+            for table in tables:
+                meetings = table.xpath(".//a")
+                for meeting in meetings:
+                    event = self.scrape_page(meeting.attrib["href"])
+                    yield event
+
+        if no_scheduled_ct == 2:
+            raise EmptyScrape
