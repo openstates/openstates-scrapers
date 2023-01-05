@@ -26,6 +26,7 @@ SESSION_DATA_ID = {
     "2021A": "66816",
     "2022A": "75371",
 }
+
 BAD_URLS = [
     "https://leg.colorado.gov/content/ssa2017a2017-05-04t104016z-hb17-1312-1-activity-vote-summary"
 ]
