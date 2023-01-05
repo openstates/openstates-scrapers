@@ -156,6 +156,7 @@ class SDEventScraper(Scraper):
                 if other_doc["DocumentDate"] is None:
                     continue
 
+                doc_date = dateutil.parser.parse(other_doc["DocumentDate"])
                 date_key = doc_date.date().strftime("%Y%m%d")
 
                 other_doc_url = f"https://mylrc.sdlegislature.gov/api/Documents/{other_doc['DocumentId']}.pdf"
