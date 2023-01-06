@@ -103,7 +103,9 @@ class SDEventScraper(Scraper):
                     continue
 
                 event = self.create_event(com, row)
-                event_name = f"{com['FullName']}#{com['SessionCommitteeId']}#{event.start_date}"
+                event_name = (
+                    f"{com['FullName']}#{com['SessionCommitteeId']}#{event.start_date}"
+                )
                 event.dedupe_key = event_name
 
                 if row["AudioLink"] is not None and row["AudioLink"]["Url"] is not None:
