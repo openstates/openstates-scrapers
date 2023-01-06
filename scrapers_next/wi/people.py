@@ -148,10 +148,10 @@ class Legislators(HtmlListPage):
 
 
 class Senate(Legislators):
-    source = URL("https://docs.legis.wisconsin.gov/2021/legislators/senate/")
+    source = URL("https://docs.legis.wisconsin.gov/2023/legislators/senate/")
     chamber = "upper"
 
 
 class House(Legislators):
-    source = URL("https://docs.legis.wisconsin.gov/2021/legislators/assembly/")
+    source = URL("https://docs.legis.wisconsin.gov/2023/legislators/assembly/")
     chamber = "lower"
