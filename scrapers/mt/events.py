@@ -39,7 +39,6 @@ class MTEventScraper(Scraper):
             raise EmptyScrape
         page.make_links_absolute(url)
 
-        seen_docs = dict()
         for row in page.xpath("//table[@border]/tr"):
             # skip table headers
             if not row.xpath("td[1]/a"):
@@ -48,7 +47,7 @@ class MTEventScraper(Scraper):
             time = row.xpath("td[3]/text()")[0].strip()
             room = row.xpath("td[4]")[0].text_content().strip()
             if not room:
-                room = "Missing Location"
+                room = "See Agenda"
             bill = row.xpath("td[5]/a[1]/text()")[0].strip()
             bill_title = row.xpath("td[6]/text()")[0].strip()
 
@@ -78,26 +77,17 @@ class MTEventScraper(Scraper):
 
             if row.xpath('.//a[contains(@href,"/billhtml/")]'):
                 bill_url = row.xpath('.//a[contains(@href,"/billhtml/")]/@href')[0]
-                if event.name not in seen_docs:
-                    event.add_document(bill_title, bill_url, media_type="text/html")
-                    seen_docs[event.name] = set()
-                    seen_docs[event.name].add(bill_url)
-                elif bill_url not in seen_docs[event.name]:
-                    event.add_document(bill_title, bill_url, media_type="text/html")
-                    seen_docs[event.name].add(bill_url)
+                event.add_document(
+                    bill_title, bill_url, media_type="text/html", on_duplicate="ignore"
+                )
             if row.xpath('.//a[contains(@href,"/billpdf/")]'):
                 bill_url = row.xpath('.//a[contains(@href,"/billpdf/")]/@href')[0]
-                if event.name not in seen_docs:
-                    event.add_document(
-                        bill_title, bill_url, media_type="application/pdf"
-                    )
-                    seen_docs[event.name] = set()
-                    seen_docs[event.name].add(bill_url)
-                elif bill_url not in seen_docs[event.name]:
-                    event.add_document(
-                        bill_title, bill_url, media_type="application/pdf"
-                    )
-                    seen_docs[event.name].add(bill_url)
+                event.add_document(
+                    bill_title,
+                    bill_url,
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
 
             self.events[com][when_slug] = event
 
