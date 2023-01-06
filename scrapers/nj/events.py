@@ -1,14 +1,16 @@
 import re
 import pytz
 import datetime as dt
-
+from collections import defaultdict
 from openstates.scrape import Scraper, Event
 
 from .utils import MDBMixin
+from utils.events import match_coordinates
 
 
 class NJEventScraper(Scraper, MDBMixin):
     _tz = pytz.timezone("US/Eastern")
+    _event_bills = {}
 
     def initialize_committees(self, year_abr):
         chamber = {"A": "Assembly", "S": "Senate", "": ""}
@@ -42,6 +44,8 @@ class NJEventScraper(Scraper, MDBMixin):
             "CASC": "College Affordability Study Commission",
             "CIR": "State Commission of Investigation",
             "TDWI": "Taskforce on Drinking Water Infrastructure",
+            "JMC": "State Capitol Joint Management Commission",
+            "APPC": "Legislative Apportionment Commission",
         }
         self._committees = overlay
 
@@ -55,10 +59,15 @@ class NJEventScraper(Scraper, MDBMixin):
         year_abr = ((int(session) - 209) * 2) + 2000
         self._init_mdb(year_abr)
         self.initialize_committees(year_abr)
+        self.scrape_bills()
         records = self.to_csv("AGENDAS.TXT")
         for record in records:
-            if record["Status"] != "Scheduled":
-                continue
+            status = "tentative"
+
+            if record["Status"] == "Canceled" or record["Status"] == "Cancelled":
+                status = "cancelled"
+            elif record["Status"] == "Not Meeting":
+                status = "cancelled"
             description = record["Comments"]
             related_bills = []
 
@@ -70,6 +79,9 @@ class NJEventScraper(Scraper, MDBMixin):
             date_time = "%s %s" % (record["Date"], record["Time"])
             date_time = dt.datetime.strptime(date_time, "%m/%d/%Y %I:%M %p")
 
+            if date_time < dt.datetime.now():
+                status = "passed"
+
             try:
                 hr_name = self._committees[record["CommHouse"]]
             except KeyError:
@@ -77,17 +89,89 @@ class NJEventScraper(Scraper, MDBMixin):
 
             description = "Meeting of the {}".format(hr_name)
 
+            location = (
+                record["Location"]
+                or "New Jersey Statehouse, 125 W State St, Trenton, NJ 08608"
+            )
+            location = self.clean_location(location)
+
             event = Event(
                 name=description,
                 start_date=self._tz.localize(date_time),
-                location_name=record["Location"] or "Statehouse",
+                location_name=location,
+                classification="committee-meeting",
+                status=status,
             )
             item = None
             for bill in related_bills:
                 item = item or event.add_agenda_item(description)
                 item.add_bill(bill["bill_id"])
 
+            for bill in self._event_bills[record["CommHouse"][0]][record["CommHouse"]][
+                f"{record['Date']}{record['Time']}"
+            ]:
+                item = item or event.add_agenda_item(description)
+                item.add_bill(bill)
+
             event.add_committee(hr_name, id=record["CommHouse"], note="host")
             event.add_source("http://www.njleg.state.nj.us/downloads.asp")
 
+            url_date = date_time.strftime("%Y-%m-%d-%H:%M:00")
+            event_url = f"https://www.njleg.state.nj.us/live-proceedings/{url_date}/{record['CommHouse']}/{record['Type']}"
+            if status != "cancelled":
+                event.add_source(event_url)
+
+            if status == "passed":
+                year = date_time.strftime("%Y")
+                agenda_type_code = record["Type"][0]
+                media_url = (
+                    f"https://www.njleg.state.nj.us/archived-media/{year}/{record['CommHouse']}-meeting-list"
+                    f"/media-player?committee={record['CommHouse']}&agendaDate={url_date}&agendaType={agenda_type_code}&av=A"
+                )
+                event.add_media_link("Hearing Audio", media_url, "text/html")
+
+            match_coordinates(
+                event,
+                {
+                    "125 W State St": (40.22006, -74.77091),
+                    "State House Annex": (40.22060, -74.77082),
+                    "153 Halsey St.": (40.73734, -74.17325),  # commission offices
+                },
+            )
+
             yield event
+
+    def scrape_bills(self):
+        rows = self.to_csv("BAGENDA.TXT")
+        temp_bills = self.new_default_dict()
+        for row in rows:
+            chamber = row["CommHouse"][0]
+            com = row["CommHouse"]
+            lookupdate = f"{row['Date']}{row['Time']}"
+
+            if not temp_bills[chamber][com][lookupdate]:
+                temp_bills[chamber][com][lookupdate] = []
+
+            temp_bills[chamber][com][lookupdate].append(
+                f"{row['BillType']} {row['BillNumber']}"
+            )
+        self._event_bills = temp_bills
+
+    def clean_location(self, location: str) -> str:
+        location = location.replace(
+            "State House Annex, Trenton, NJ",
+            "State House Annex, 131-137 W State St, Trenton, NJ 08608",
+        )
+        location = location.replace(
+            "Assembly Chambers",
+            "Assembly Chambers, New Jersey Statehouse, 125 W State St, Trenton, NJ 08608",
+        )
+        location = location.replace(
+            "Senate Chambers",
+            "Senate Chambers, New Jersey Statehouse, 125 W State St, Trenton, NJ 08608",
+        )
+        return location
+
+    # easier way to 3 level nested dict without a big if then tree
+    def new_default_dict(self):
+        return defaultdict(self.new_default_dict)

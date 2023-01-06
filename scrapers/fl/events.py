@@ -7,8 +7,10 @@ from openstates.scrape import Scraper, Event
 
 class FlEventScraper(Scraper):
     tz = pytz.timezone("US/Eastern")
-
+    # https://www.myfloridahouse.gov/Sections/Documents/publications.aspx
+    # select#ddlSession
     session_ids = {
+        "2022A": "101",
         "2023": "99",
         "2022D": "96",
         "2022C": "95",

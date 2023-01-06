@@ -17,14 +17,16 @@ class LegDetail(HtmlPage):
             .match_one(self.root)
             .getnext()
         )
-        cap_addr = cap_addr_path.text or ""
-        cap_addr += " "
-        line2 = cap_addr_path.getchildren()[0].tail
-        if " SC " not in line2:
-            zipcode = self.zipcode_re.search(line2).groups()[0]
-            line2 = f"Columbia, SC {zipcode}"
-        cap_addr += line2
-        p.capitol_office.address = cap_addr
+        if len(cap_addr_path):
+            cap_addr = cap_addr_path.text or ""
+            cap_addr += " "
+
+            line2 = cap_addr_path.getchildren()[0].tail
+            if " SC " not in line2:
+                zipcode = self.zipcode_re.search(line2).groups()[0]
+                line2 = f"Columbia, SC {zipcode}"
+            cap_addr += line2
+            p.capitol_office.address = cap_addr
 
         try:
             home_addr_path = (
@@ -38,10 +40,17 @@ class LegDetail(HtmlPage):
             home_addr += " "
             home_line2 = home_addr_path.getchildren()[0].tail
             if " SC " not in home_line2:
-                city, h_zip = self.zip2_re.search(home_line2).groups()
-                home_line2 = f"{city}, SC {h_zip}"
+                # special case: when only zipcode is on home address line 2
+                if len(home_line2.strip()) == 5:
+                    home_line2 = f", SC {home_line2}"
+                else:
+                    city, h_zip = self.zip2_re.search(home_line2).groups()
+                    home_line2 = f"{city}, SC {h_zip}"
+
             home_addr += home_line2
+            home_addr = re.sub(" ,", ",", home_addr)
             p.district_office.address = home_addr
+
         except SelectorError:
             pass
 

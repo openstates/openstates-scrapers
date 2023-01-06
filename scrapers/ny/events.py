@@ -10,6 +10,7 @@ from dateutil.relativedelta import relativedelta
 import dateutil.parser
 
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 from .apiclient import OpenLegislationAPIClient
 
 
@@ -41,9 +42,17 @@ class NYEventScraper(Scraper):
 
         start = start.strftime("%Y-%m-%d")
         end = end.strftime("%Y-%m-%d")
+        event_count = 0
 
-        yield from self.scrape_upper(start, end)
-        yield from self.scrape_lower()
+        for event in self.scrape_upper(start, end):
+            event_count += 1
+            yield event
+        for event in self.scrape_lower():
+            event_count += 1
+            yield event
+
+        if event_count < 1:
+            raise EmptyScrape
 
     def scrape_lower(self):
         url = "https://nyassembly.gov/leg/?sh=agen"

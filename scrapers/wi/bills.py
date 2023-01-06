@@ -8,6 +8,7 @@ import scrapelib
 from openstates.scrape import Scraper, Bill, VoteEvent
 
 from .common import SESSION_TERMS, SESSION_SITE_IDS
+from .actions import Categorizer
 
 motion_classifiers = {
     "(Assembly|Senate)( substitute)? amendment": "amendment",
@@ -18,31 +19,12 @@ motion_classifiers = {
     "Adopted": "passage",
 }
 
-action_classifiers = {
-    "(Senate|Assembly)( substitute)? amendment .* offered": "amendment-introduction",
-    "(Senate|Assembly)( substitute)? amendment .* rejected": "amendment-failure",
-    "(Senate|Assembly)( substitute)? amendment .* adopted": "amendment-passage",
-    "(Senate|Assembly)( substitute)? amendment .* laid on table": "amendment-deferral",
-    "(Senate|Assembly)( substitute)? amendment .* withdrawn": "amendment-withdrawal",
-    "Report (adoption|introduction and adoption) of Senate( Substitute)? Amendment": "amendment-passage",
-    "Report (passage|concurrence).* recommended": "committee-passage-favorable",
-    "Report approved by the Governor with partial veto": "executive-veto-line-item",
-    "Report approved by the Governor on": "executive-signature",
-    "Report vetoed by the Governor": "executive-veto",
-    ".+ (withdrawn|added) as a co(author|sponsor)": None,
-    "R(ead (first time )?and r)?eferred to committee": "referral-committee",
-    "Read a third time and (passed|concurred)": "passage",
-    "Adopted": "passage",
-    "Presented to the Governor": "executive-receipt",
-    "Introduced by": "introduction",
-    "Read a second time": "reading-2",
-}
-
 TIMEZONE = pytz.timezone("US/Central")
 
 
 class WIBillScraper(Scraper):
     subjects = defaultdict(list)
+    categorizer = Categorizer()
 
     def scrape_subjects(self, year, site_id):
         last_url = None
@@ -224,11 +206,8 @@ class WIBillScraper(Scraper):
                 self.parse_sponsors(bill, action, chamber)
 
             # classify actions
-            atype = None
-            for regex, type in action_classifiers.items():
-                if re.match(regex, action, re.IGNORECASE):
-                    atype = type
-                    break
+            attrs = self.categorizer.categorize(action)
+            atype = attrs["classification"]
 
             kwargs = {}
             if "referral-committee" in (atype or ""):

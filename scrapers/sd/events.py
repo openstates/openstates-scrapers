@@ -33,6 +33,7 @@ class SDEventScraper(Scraper):
             meeting_documents_url = (
                 f"https://sdlegislature.gov/api/Documents/Meeting/{row['DocumentId']}"
             )
+            event_name = f"{com_name}#{row['DocumentId']}#{event.start_date}"
             meeting_docs = self.get(meeting_documents_url).json()
 
             for meeting_doc in meeting_docs:
@@ -53,6 +54,7 @@ class SDEventScraper(Scraper):
                     f"https://sdlegislature.gov/Session/Committee/{row['SessionCommitteeId']}/Detail"
                 )
 
+            event.dedupe_key = event_name
             yield event
 
     def scrape(self):
@@ -101,6 +103,10 @@ class SDEventScraper(Scraper):
                     continue
 
                 event = self.create_event(com, row)
+                event_name = (
+                    f"{com['FullName']}#{com['SessionCommitteeId']}#{event.start_date}"
+                )
+                event.dedupe_key = event_name
 
                 if row["AudioLink"] is not None and row["AudioLink"]["Url"] is not None:
                     event.add_media_link(
@@ -156,6 +162,7 @@ class SDEventScraper(Scraper):
                 if other_doc["DocumentDate"] is None:
                     continue
 
+                doc_date = dateutil.parser.parse(other_doc["DocumentDate"])
                 date_key = doc_date.date().strftime("%Y%m%d")
 
                 other_doc_url = f"https://mylrc.sdlegislature.gov/api/Documents/{other_doc['DocumentId']}.pdf"

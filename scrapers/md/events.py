@@ -46,6 +46,7 @@ class MDEventScraper(Scraper, LXMLMixin):
             empty_chamber.format(chamber="House")
         ):
             raise EmptyScrape
+        event_count = 0
 
         for row in page.xpath('//div[@id="divAllHearings"]/hr'):
             banner = row.xpath(
@@ -133,5 +134,8 @@ class MDEventScraper(Scraper, LXMLMixin):
                     agenda = event.add_agenda_item(
                         agenda_row.xpath("div[1]")[0].text_content().strip()
                     )
-
+            event_count += 1
             yield event
+
+        if event_count < 1:
+            raise EmptyScrape

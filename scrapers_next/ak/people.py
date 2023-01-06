@@ -131,7 +131,7 @@ class LegDetail(HtmlPage):
 
 
 class LegList(HtmlListPage):
-    session_num = "32"
+    session_num = "33"
     source = f"https://www.akleg.gov/basis/mbr_info.asp?session={session_num}"
     selector = XPath("//html/body/div[2]/div/div/table//tr[position()>1]/td[1]/nobr/a")
 

@@ -87,7 +87,7 @@ class LegDetail(HtmlPage):
 
 
 class LegList(HtmlListPage):
-    session = "67-2021"
+    session = "68-2023"
     source = f"https://www.ndlegis.gov/assembly/{session}/regular/members"
     selector = XPath("//div[@class='member-wrapper']")
     next_page_selector = XPath(

@@ -52,10 +52,18 @@ class UnitedStates(State):
             "name": "117th Congress",
             "start_date": "2021-01-03",
             "end_date": "2023-01-03",
+            "active": False,
+        },
+        {
+            "classification": "primary",
+            "identifier": "118",
+            "name": "118th Congress",
+            "start_date": "2023-01-03",
+            "end_date": "2025-01-03",
             "active": True,
         },
     ]
     ignored_scraped_sessions = []
 
     def get_session_list(self):
-        return ["115"]
+        return ["112", "113", "114", "115", "116", "117", "118"]

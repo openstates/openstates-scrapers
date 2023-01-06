@@ -1,6 +1,10 @@
-from spatula import HtmlListPage, XPath, CSS, URL, HtmlPage  # , SelectorError
+from spatula import HtmlListPage, XPath, CSS, URL, HtmlPage
 from openstates.models import ScrapePerson
 import re
+
+
+class NewDetailFieldEncountered(BaseException):
+    pass
 
 
 class BlueSenDetail(HtmlPage):
@@ -12,48 +16,60 @@ class BlueSenDetail(HtmlPage):
             title = titles[0].text_content()
             p.extras["title"] = title
 
-        assistant = (
-            CSS("div .fusion-text.fusion-text-2 p").match(self.root)[0].text_content()
-        )
-        assistant = re.search(r"Legislative Assistant:\s(.+)", assistant).groups()[0]
+        info_div = CSS("div .fusion-text.fusion-text-2 p").match(self.root)
+        phone_pattern = re.compile(r"\d{3}-\d{3}-\d{4}")
+        for field in info_div:
+            content = field.text_content().strip()
+            if ":" in content:
+                label, detail = [x.strip() for x in content.split(":")]
+                if label == "Legislative Assistant":
+                    p.extras[label] = detail
+                elif label == "Phone":
+                    phones = phone_pattern.findall(detail)
+                    if phones:
+                        p.capitol_office.voice = phones[0]
+                    extra_num = 1
+                    for extra_phone in phones[1:]:
+                        p.extras[f"Additional Phone {extra_num}"] = extra_phone
+                elif label == "Email":
+                    p.email = label
+                elif label == "Media Contact":
+                    media_contact = [x.strip() for x in detail.split("|")]
+                    p.extras["Media Contact Name"] = media_contact[0]
+                    p.extras["Media Contact Email"] = media_contact[1]
+                else:
+                    raise NewDetailFieldEncountered
 
-        phones = (
-            CSS("div .fusion-text.fusion-text-2 p").match(self.root)[1].text_content()
-        )
-        phone1, phone2 = re.search(
-            r"Phone:\s(\d{3}-\d{3}-\d{4})\s\|\s(.+)", phones
-        ).groups()
-
-        media_contact = (
-            CSS("div .fusion-text.fusion-text-2 p").match(self.root)[3].text_content()
-        )
-        media_contact_name, media_contact_email = re.search(
-            r"Media Contact:\s(\w+\s\w+)\s\|\s(.+)", media_contact
-        ).groups()
         addr = (
             XPath("//div/div[3]/div/div[2]/div/div[1]/text()")
             .match(self.root)[0]
             .strip()
         )
 
-        twitter = CSS("div .fusion-social-links a").match(self.root)[0].get("href")
-        twitter_id = re.search(r"https://twitter\.com/(.+)", twitter).groups()[0]
-
-        fb = CSS("div .fusion-social-links a").match(self.root)[1].get("href")
-        fb_id = (
-            re.search(r"https://(www\.)?facebook\.com/(.+)", fb).groups()[1].rstrip("/")
-        )
-
         p.capitol_office.address = addr
-        p.capitol_office.voice = phone1
-        p.extras["second phone"] = phone2
 
-        p.extras["assistant"] = assistant
-        p.extras["media contact name"] = media_contact_name
-        p.extras["media contact email"] = media_contact_email
+        socials = ["facebook", "instagram", "twitter", "youtube"]
+        handles = {x: None for x in socials}
+        patterns = {x: re.compile(rf"(.+)({x}\.com/)(.+)") for x in socials}
 
-        p.ids.twitter = twitter_id
-        p.ids.facebook = fb_id
+        social_links = CSS("div .fusion-social-links a").match(self.root)
+        for link in social_links:
+            href = link.get("href").lower()
+            for soc in socials:
+                if soc in href:
+                    pattern = patterns[soc]
+                    raw_handle = pattern.search(href).groups()[-1]
+                    handle = re.sub("/", "", raw_handle)
+                    handles[soc] = handle
+
+        if handles["facebook"]:
+            p.ids.facebook = handles["facebook"]
+        if handles["instagram"]:
+            p.ids.instagram = handles["instagram"]
+        if handles["twitter"]:
+            p.ids.twitter = handles["twitter"]
+        if handles["youtube"]:
+            p.ids.youtube = handles["youtube"]
 
         return p
 

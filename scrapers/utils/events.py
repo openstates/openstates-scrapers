@@ -12,6 +12,12 @@ def set_coordinates(event, lat, lon):
     event.__setattr__("location", loc_dict)
 
 
+def set_location_url(event, url: str):
+    loc_dict = event.location
+    loc_dict["url"] = url
+    event.__setattr__("location", loc_dict)
+
+
 # loop through a dict of
 # {"location string", (lat, lon)} entries
 # and update the location lat/lon if any matches are found

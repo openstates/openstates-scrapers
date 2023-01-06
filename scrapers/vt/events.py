@@ -4,6 +4,7 @@ import pytz
 
 from dateutil.parser import ParserError
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 class VTEventScraper(Scraper):
@@ -17,6 +18,7 @@ class VTEventScraper(Scraper):
         )
 
         json_data = self.get(url).text
+        event_count = 0
         events = json.loads(json_data)["data"]
 
         for info in events:
@@ -49,5 +51,8 @@ class VTEventScraper(Scraper):
             )
             event.add_source(url)
             event.add_committee(name=info["LongName"], note="host")
-
+            event_count += 1
             yield event
+
+        if event_count < 1:
+            raise EmptyScrape

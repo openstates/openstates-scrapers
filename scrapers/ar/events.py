@@ -97,6 +97,9 @@ class AREventScraper(Scraper):
                 bill_url = row.xpath(".//a[@aria-label='Referred']/@href")[0]
                 self.scrape_referred_bills(event, bill_url)
 
+            if row.xpath("div[2]/b/a"):
+                event.add_committee(title, note="host")
+
             match_coordinates(
                 event,
                 {
