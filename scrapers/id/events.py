@@ -11,10 +11,16 @@ class IDEventScraper(Scraper):
 
     def scrape(self, chamber=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
-        for chamber in chambers:
-            yield from self.scrape_chamber(chamber)
-
         if self.empty_chambers == ["upper", "lower"]:
+            raise EmptyScrape
+
+        event_count = 0
+        for chamber in chambers:
+            for event in self.scrape_chamber(chamber):
+                event_count += 1
+                yield event
+
+        if event_count < 1:
             raise EmptyScrape
 
     def scrape_chamber(self, chamber):
