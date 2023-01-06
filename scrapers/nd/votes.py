@@ -2,24 +2,22 @@ import logging
 import datetime
 from openstates.scrape import Scraper, VoteEvent as Vote
 from spatula import HtmlPage
+import requests
+import lxml.html
 
 
 # TODO: Develop method for ingesting how each individual lawmaker voted,
 #  could be from scraping the House and Senate Journal PDFs at
 #  https://www.ndlegis.gov/assembly/67-2021/regular/journals/journal-index.html
+
+
 class VotePage(HtmlPage):
-    # url of actual page to scrape
-    source = "http://www.ndlegis.gov/rollcall/rollcall.htm"
-    # TODO: Delete below source reassignment when/before
-    #  new session vote data appears
-    # url of web archived version of page with scrape-able past content
-    #  to be used for testing scraper (until new session starts)
-    source = f"http://web.archive.org/web/20221115164931/{source}"
+    example_source = (
+        "http://www.ndlegis.gov/lcn/assembly/legss/public/"
+        "rollcall.htm?legislativeDate=1%2F3%2F2023"
+    )
 
     def process_page(self):
-        # TODO: Write POST request / select each of the 5 date options
-        #  to get content for the full week of votes.
-        #  (Note: this will not be testable on the archived page)
         date_option = self.root.xpath(".//option[@selected='selected']")
         vote_date = date_option[0].get("value")
         date_obj = datetime.datetime.strptime(vote_date, "%m/%d/%Y")
@@ -39,7 +37,6 @@ class VotePage(HtmlPage):
             tds = vote_item.xpath("td")
             vote_parts = [x.text_content().strip() for x in tds]
             bill_id, time, status, passage = vote_parts[0:4]
-
             yes, no, exc, abst = [int(x) for x in vote_parts[4:8]]
 
             passed = yes > no
@@ -72,5 +69,15 @@ class VotePage(HtmlPage):
 class NDVoteScraper(Scraper):
     def scrape(self, session=None):
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
-        vote_page = VotePage({"session": session})
-        yield from vote_page.do_scrape()
+        initial_vote_source = "http://www.ndlegis.gov/rollcall/rollcall.htm"
+        response = requests.get(initial_vote_source)
+        content = lxml.html.fromstring(response.content)
+        date_range = content.xpath(".//select[@name='legislativeDate']//option")
+        for date in date_range:
+            day, mon, year = date.get("value").split("/")
+            source = (
+                "http://www.ndlegis.gov/lcn/assembly/legss/public/"
+                f"rollcall.htm?legislativeDate={day}%2F{mon}%2F{year}"
+            )
+            vote_page = VotePage({"session": session}, source=source)
+            yield from vote_page.do_scrape()
