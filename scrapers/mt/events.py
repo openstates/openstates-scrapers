@@ -39,7 +39,7 @@ class MTEventScraper(Scraper):
             raise EmptyScrape
         page.make_links_absolute(url)
 
-        seen_links = set()
+        seen_docs = dict()
         for row in page.xpath("//table[@border]/tr"):
             # skip table headers
             if not row.xpath("td[1]/a"):
@@ -78,16 +78,22 @@ class MTEventScraper(Scraper):
 
             if row.xpath('.//a[contains(@href,"/billhtml/")]'):
                 bill_url = row.xpath('.//a[contains(@href,"/billhtml/")]/@href')[0]
-                if bill_url not in seen_links:
+                if event.name not in seen_docs:
                     event.add_document(bill_title, bill_url, media_type="text/html")
-                    seen_links.add(bill_url)
+                    seen_docs[event.name] = set()
+                    seen_docs[event.name].add(bill_url)
+                elif bill_url not in seen_docs[event.name]:
+                    event.add_document(bill_title, bill_url, media_type="text/html")
+                    seen_docs[event.name].add(bill_url)
             if row.xpath('.//a[contains(@href,"/billpdf/")]'):
                 bill_url = row.xpath('.//a[contains(@href,"/billpdf/")]/@href')[0]
-                if bill_url not in seen_links:
-                    event.add_document(
-                        bill_title, bill_url, media_type="application/pdf"
-                    )
-                    seen_links.add(bill_url)
+                if event.name not in seen_docs:
+                    event.add_document(bill_title, bill_url, media_type="application/pdf")
+                    seen_docs[event.name] = set()
+                    seen_docs[event.name].add(bill_url)
+                elif bill_url not in seen_docs[event.name]:
+                    event.add_document(bill_title, bill_url, media_type="application/pdf")
+                    seen_docs[event.name].add(bill_url)
 
             self.events[com][when_slug] = event
 
