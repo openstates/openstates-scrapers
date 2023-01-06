@@ -46,6 +46,8 @@ class MTEventScraper(Scraper):
             day = row.xpath("td[2]/text()")[0].strip()
             time = row.xpath("td[3]/text()")[0].strip()
             room = row.xpath("td[4]")[0].text_content().strip()
+            if not room:
+                room = "Missing Location"
             bill = row.xpath("td[5]/a[1]/text()")[0].strip()
             bill_title = row.xpath("td[6]/text()")[0].strip()
 
