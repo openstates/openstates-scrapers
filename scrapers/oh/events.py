@@ -42,6 +42,7 @@ class OHEventScraper(Scraper):
         except Exception:
             raise EmptyScrape
 
+        event_count = 0
         for item in data:
             name = item["title"].strip()
             status = "tentative"
@@ -79,5 +80,7 @@ class OHEventScraper(Scraper):
             event.add_participant(com_name, type="committee", note="host")
             event.add_document("Agenda", agenda_url, media_type="application/pdf")
             event.add_source(url)
-
+            event_count += 1
             yield event
+        if event_count < 1:
+            raise EmptyScrape
