@@ -20,7 +20,7 @@ def get_committee_names(session):
 
 
 class BillList(HtmlListPage):
-    url_session = "67-2021"
+    url_session = "68-2023"
     session_components = url_session.split("-")
     source = f"http://www.ndlegis.gov/assembly/{url_session}/bill-index.html"
     selector = XPath(".//div[@class='col bill']")
@@ -46,7 +46,7 @@ class BillList(HtmlListPage):
 
         bill = Bill(
             bill_id,
-            self.session_components[1],
+            self.session_components[0],
             title,
             chamber="lower" if bill_id[0] == "H" else "upper",
             classification=bill_type,
@@ -78,7 +78,7 @@ class BillDetail(HtmlPage):
     input_type = Bill
     example_input = Bill(
         "HB 1001",
-        "2021",
+        "67",
         "[title]",
         chamber="lower",
         classification="bill",
@@ -120,9 +120,13 @@ class BillDetail(HtmlPage):
                 url = re.sub("/bill-index.+", href[2:], source)
 
                 if not vers_type or vers_type.strip() == "Engrossment":
-                    self.input.add_version_link(note=name, url=url, media_type="pdf")
+                    self.input.add_version_link(
+                        note=name, url=url, media_type="application/pdf"
+                    )
                 else:
-                    self.input.add_document_link(note=name, url=url, media_type="pdf")
+                    self.input.add_document_link(
+                        note=name, url=url, media_type="application/pdf"
+                    )
 
     def process_actions(self):
         categorizer = NDCategorizer()
@@ -145,7 +149,7 @@ class BillDetail(HtmlPage):
                 actor = "executive"
 
             (date,) = row.xpath("td[1]/b/text()")
-            date += f"/{self.input.legislative_session}"
+            date += "/2021"
             date = dt.datetime.strptime(date, "%m/%d/%Y")
             classifier = categorizer.categorize(action)
 

@@ -41,11 +41,12 @@ class MDEventScraper(Scraper, LXMLMixin):
         page = self.lxmlize(url)
 
         # if both "<house banner> No Hearings Message" and "<senate banner> No Hearings Message"
-        empty_chamber = "//div[contains(., 'No hearings')]/preceding-sibling::div[contains(.,'{chamber}')]"
+        empty_chamber = "//div[div/div[contains(@class,'{chamber}')]]/following-sibling::text()[contains(.,'No hearings')]"
         if page.xpath(empty_chamber.format(chamber="Senate")) and page.xpath(
             empty_chamber.format(chamber="House")
         ):
             raise EmptyScrape
+        event_count = 0
 
         for row in page.xpath('//div[@id="divAllHearings"]/hr'):
             banner = row.xpath(
@@ -112,6 +113,9 @@ class MDEventScraper(Scraper, LXMLMixin):
                 classification="committee-meeting",
             )
 
+            com_name = re.sub(r"[\s\-]*Work Session", "", com_row)
+            event.add_participant(name=com_name, type="committee", note="host")
+
             event.add_source("https://mgaleg.maryland.gov/mgawebsite/Meetings/Week/")
 
             for agenda_row in data.xpath(
@@ -130,5 +134,8 @@ class MDEventScraper(Scraper, LXMLMixin):
                     agenda = event.add_agenda_item(
                         agenda_row.xpath("div[1]")[0].text_content().strip()
                     )
-
+            event_count += 1
             yield event
+
+        if event_count < 1:
+            raise EmptyScrape

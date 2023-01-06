@@ -9,7 +9,7 @@ class DCEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
 
     def scrape(self):
-        url = "https://dccouncil.us/events/list/"
+        url = "https://dccouncil.gov/events/list/"
 
         yield from self.scrape_cal_page(url)
 

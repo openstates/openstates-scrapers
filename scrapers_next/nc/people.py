@@ -25,6 +25,8 @@ class LegDetail(HtmlPage):
             email, legislative_assistant = XPath(
                 "//a[contains(@href, 'mailto')]"
             ).match(self.root)
+            email = email.text_content()
+
         except ValueError:
             try:
                 email = (
@@ -32,6 +34,7 @@ class LegDetail(HtmlPage):
                     .match_one(self.root)
                     .text_content()
                 )
+
             except Exception:
                 email = ""
 

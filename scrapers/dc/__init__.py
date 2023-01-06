@@ -36,7 +36,7 @@ class DistrictOfColumbia(State):
             "_scraped_name": "22",
             "identifier": "22",
             "name": "22nd Council Period (2017-2018)",
-            "start_date": "2017-01-01",
+            "start_date": "2017-01-02",
             "end_date": "2018-12-31",
         },
         {
@@ -52,6 +52,14 @@ class DistrictOfColumbia(State):
             "name": "24th Council Period (2021-2022)",
             "start_date": "2021-01-02",
             "end_date": "2022-12-31",
+            "active": False,
+        },
+        {
+            "_scraped_name": "25",
+            "identifier": "25",
+            "name": "25th Council Period (2023-2024)",
+            "start_date": "2023-01-02",
+            "end_date": "2024-12-31",
             "active": True,
         },
     ]
@@ -77,11 +85,8 @@ class DistrictOfColumbia(State):
             "Accept": "application/json",
             "User-Agent": useragent,
         }
-        # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
-        requests.packages.urllib3.disable_warnings()
-        requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
         resp = requests.get(
-            "http://lims.dccouncil.us/api/v2/PublicData/CouncilPeriods",
+            "http://lims.dccouncil.gov/api/v2/PublicData/CouncilPeriods",
             headers=headers,
             verify=False,
         )

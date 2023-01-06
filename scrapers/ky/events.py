@@ -1,23 +1,29 @@
-import re
-import lxml
-import functools
-
-import pytz
-
-from openstates.scrape import Scraper, Event
-
 import dateutil.parser
 from dateutil.parser import ParserError
+import functools
+import lxml
+import pytz
+import re
+
+from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 class KYEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
 
     def scrape(self):
+        self.headers[
+            "User-Agent"
+        ] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36"
         url = "https://apps.legislature.ky.gov/legislativecalendar"
 
         page = self.get(url).content
         page = lxml.html.fromstring(page)
+
+        if len(page.xpath('//div[contains(@class,"TimeAndLocation")]')) == 0:
+            raise EmptyScrape
+        event_count = 0
 
         for time_row in page.xpath('//div[contains(@class,"TimeAndLocation")]'):
             date = (
@@ -90,7 +96,7 @@ class KYEventScraper(Scraper):
 
             com_page_link = time_row.xpath(
                 'following-sibling::div[contains(@class,"CommitteeName")][1]/a/@href'
-            )[0]
+            )[0].replace(" ", "+")
 
             docs = self.scrape_com_docs(com_page_link)
             lookup_date = when.strftime("%Y-%m-%d")
@@ -105,7 +111,11 @@ class KYEventScraper(Scraper):
 
             event.add_source(url)
 
+            event_count += 1
             yield event
+
+        if event_count < 1:
+            raise EmptyScrape
 
     @functools.lru_cache(maxsize=None)
     def scrape_com_docs(self, url):

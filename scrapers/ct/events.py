@@ -22,15 +22,15 @@ class CTEventScraper(Scraper):
     def scrape_committee_events(self, code, name):
         events_url = (
             "http://www.cga.ct.gov/basin/fullcalendar/commevents.php?"
-            "comm_code={}".format(code)
+            f"comm_code={code}"
         )
+        event_objects = set()
         events_data = self.get(events_url, verify=False).text
         events = json.loads(events_data)
 
         DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
         for info in events:
-
-            if info["title"] is None:
+            if not info["title"]:
                 self.warning("Event found with no title; it will be skipped")
                 continue
             elif info["title"].startswith("CANCELLED:"):
@@ -40,8 +40,12 @@ class CTEventScraper(Scraper):
                     )
                 )
                 continue
-
             when = datetime.datetime.strptime(info["start"], DATETIME_FORMAT)
+            event_name = f"{name}#{info['title']}#{when}"
+            if event_name in event_objects:
+                self.warning(f"Found duplicate event: {event_name}. Skipping")
+                continue
+            event_objects.add(event_name)
             # end = datetime.datetime.strptime(info['end'], DATETIME_FORMAT)
             where = "{0} {1}".format(info["building"].strip(), info["location"].strip())
             # end_time=self._tz.localize(end),
@@ -52,6 +56,8 @@ class CTEventScraper(Scraper):
                 description=info["title"],
             )
             event.add_source(events_url)
+            event.add_committee(name)
+            event.dedupe_key = event_name
 
             yield event
 

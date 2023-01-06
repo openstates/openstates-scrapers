@@ -50,7 +50,7 @@ class NewHampshire(State):
             "identifier": "2017",
             "name": "2017 Regular Session",
             "start_date": "2017-01-04",
-            "end_date": "2017-06-30",
+            "end_date": "2017-06-22",
         },
         {
             "identifier": "2018",
@@ -67,7 +67,7 @@ class NewHampshire(State):
         {
             "identifier": "2020",
             "name": "2020 Regular Session",
-            "start_date": "2020-01-02",
+            "start_date": "2020-01-08",
             "end_date": "2020-06-30",
         },
         {
@@ -75,7 +75,7 @@ class NewHampshire(State):
             "classification": "primary",
             "name": "2021 Regular Session",
             "start_date": "2021-01-06",
-            "end_date": "2021-06-28",
+            "end_date": "2021-06-24",
             "active": False,
         },
         {
@@ -83,7 +83,15 @@ class NewHampshire(State):
             "classification": "primary",
             "name": "2022 Regular Session",
             "start_date": "2022-01-05",
-            "end_date": "2022-06-30",
+            "end_date": "2022-05-26",
+            "active": False,
+        },
+        {
+            "identifier": "2023",
+            "classification": "primary",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-04",
+            "end_date": "2023-06-30",
             "active": True,
         },
     ]

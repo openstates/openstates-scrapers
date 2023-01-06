@@ -4,6 +4,7 @@ import datetime
 import dateutil.parser
 
 from openstates.scrape import Event, Scraper
+from utils.events import match_coordinates
 from . import session_metadata
 
 
@@ -94,6 +95,11 @@ class AZEventScraper(Scraper):
                 description=event_desc,
             )
 
+            match_coordinates(
+                event,
+                {"1700 w. washington": ("33.44862453479972", "-112.09777900739948")},
+            )
+
             if "PDFFile" in web_event:
                 pdf_url = f"https://www.azleg.gov{web_event['PDFFile']}"
                 event.add_document("Agenda", pdf_url, media_type="application/pdf")
@@ -168,6 +174,16 @@ class AZEventScraper(Scraper):
                     location_name=where,
                     start_date=when,
                     description=description,
+                )
+
+                match_coordinates(
+                    event,
+                    {
+                        "1700 w. washington": (
+                            "33.44862453479972",
+                            "-112.09777900739948",
+                        )
+                    },
                 )
 
                 event.add_document("Agenda", row["HttpPath"], media_type="text/html")

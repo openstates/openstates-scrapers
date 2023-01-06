@@ -3,6 +3,7 @@ import datetime as dt
 
 import pytz
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 from utils import LXMLMixin
 
@@ -27,6 +28,7 @@ replace = {
 
 class RIEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Eastern")
+    found_events = False
 
     def scrape_agenda(self, chamber, url):
         page = self.lxmlize(url)
@@ -148,6 +150,7 @@ class RIEventScraper(Scraper, LXMLMixin):
             committee = page.xpath("//span[@id='lblSession']")[0].text_content()
             event.add_participant(committee, "committee", note="host")
 
+        self.found_events = True
         yield event
 
     def scrape_agenda_dir(self, chamber, url):
@@ -171,3 +174,6 @@ class RIEventScraper(Scraper, LXMLMixin):
             to_scrape = ctty.xpath("./a")
             for page in to_scrape:
                 yield from self.scrape_agenda_dir(chamber, page.attrib["href"])
+
+        if not self.found_events:
+            raise EmptyScrape

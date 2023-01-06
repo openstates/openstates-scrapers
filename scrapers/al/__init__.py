@@ -100,7 +100,7 @@ class Alabama(State):
         {
             "_scraped_name": "Regular Session 2017",
             "classification": "primary",
-            "end_date": "2017-05-31",
+            "end_date": "2017-05-19",
             "identifier": "2017rs",
             "name": "2017 Regular Session",
             "start_date": "2017-02-07",
@@ -118,13 +118,13 @@ class Alabama(State):
             "classification": "special",
             "identifier": "2019fs",
             "name": "First Special Session 2019",
-            "start_date": "2019-03-08",
+            "start_date": "2019-03-06",
             "end_date": "2019-03-12",
         },
         {
             "_scraped_name": "Regular Session 2019",
             "classification": "primary",
-            "end_date": "2019-06-17",
+            "end_date": "2019-05-31",
             "identifier": "2019rs",
             "name": "2019 Regular Session",
             "start_date": "2019-03-05",
@@ -143,7 +143,7 @@ class Alabama(State):
             "identifier": "2021rs",
             "name": "2021 Regular Session",
             "start_date": "2021-02-02",
-            "end_date": "2021-05-18",
+            "end_date": "2021-05-17",
         },
         {
             "_scraped_name": "Regular Session 2022",
@@ -152,7 +152,7 @@ class Alabama(State):
             "name": "2022 Regular Session",
             "start_date": "2022-01-11",
             # TODO: Real end date after session
-            "end_date": "2022-05-18",
+            "end_date": "2022-05-07",
             "active": True,
         },
         {
@@ -169,8 +169,8 @@ class Alabama(State):
             "classification": "special",
             "identifier": "2022s1",
             "name": "First Special Session 2022",
-            "start_date": "2022-01-12",
-            "end_date": "2022-01-21",
+            "start_date": "2022-01-19",
+            "end_date": "2022-01-31",
             "active": True,
         },
     ]

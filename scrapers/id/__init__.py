@@ -134,6 +134,15 @@ class Idaho(State):
             "end_date": "2022-09-08",
             "active": True,
         },
+        {
+            "_scraped_name": "2023 Session",
+            "classification": "primary",
+            "identifier": "2023",
+            "name": "67th Legislature, 1st Regular Session (2023)",
+            "start_date": "2023-01-09",
+            "end_date": "2023-03-31",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2021 Session",

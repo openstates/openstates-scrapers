@@ -2,358 +2,236 @@ import re
 
 
 # ----------------------------------------------------------------------------
-# Data for action categorization.
-
-_categories = {
+# Dictionary matching bill action phrases to classifications. Classifications can be found here:
+# https://github.com/openstates/openstates-core/blob/5b16776b1882da925e8e8d5c0a07160a7d649c69/openstates/data/common.py#L87
+# The "type" denotes whether regex or a simple string comparison should be used in categorize_action()
+_actions = {
     # Bill is introduced or prefiled
-    "introduction": {"rgxs": ["^Introduced$"], "funcs": {}},
-    # Bill has passed a chamber
-    "passage": {
-        "rgxs": [
-            "3rd Reading Passed",
-            "^Resolution Adopted",
-            "3rd Reading Concurred",
-            "3rd Reading Passed as Amended by Senate",
-            "3rd Reading Passed as Amended by House",
-        ]
+    "^introduced$": {"type": "regex", "mappings": ["introduction"]},
+    # Bill has passed a chamber, a bill has undergone its third (or final) reading
+    "3rd reading passed": {"type": "compare", "mappings": ["passage", "reading-3"]},
+    "^resolution adopted": {"type": "regex", "mappings": ["passage"]},
+    "3rd reading concurred": {"type": "compare", "mappings": ["passage", "reading-3"]},
+    "3rd reading passed as amended by senate": {
+        "type": "compare",
+        "mappings": ["passage", "reading-3"],
+    },
+    "3rd reading passed as amended by house": {
+        "type": "compare",
+        "mappings": ["passage", "reading-3"],
     },
     # Bill has failed to pass a chamber
-    "failure": {"rgxs": ["3rd Reading Failed", "Died in Process"], "funcs": {}},
-    # Bill has been withdrawn from consideration
-    "withdrawal": {"rgxs": [], "funcs": {}},
-    # ???
+    "3rd reading failed": {"type": "compare", "mappings": ["failure", "reading-3"]},
+    "died in process": {"type": "compare", "mappings": ["failure"]},
     # The chamber attempted a veto override and succeeded
-    "veto-override-passage": {"rgxs": ["Veto Overridden in House"]},
-    # ???
+    "veto overridden in house": {
+        "type": "compare",
+        "mappings": ["veto-override-passage"],
+    },
     # The chamber attempted a veto override and failed
-    "veto-override-failure": {
-        "rgxs": ["Veto Override Motion Failed", "Veto Override Failed"]
+    "veto override motion failed": {
+        "type": "compare",
+        "mappings": ["veto-override-failure"],
     },
+    "veto override failed": {"type": "compare", "mappings": ["veto-override-failure"]},
     # Became law, potentially without governor signature
-    "became-law": {"rgxs": ["Chapter Number Assigned"]},
-    # ???
+    "chapter number assigned": {"type": "compare", "mappings": ["became-law"]},
     # A bill has undergone its first reading
-    "reading-1": {"rgxs": ["First Reading"], "funcs": {}},
-    # A bill has undergone its second reading
-    "reading-2": {
-        "rgxs": [
-            "Taken from Committee; Placed on 2nd Reading",
-            "2nd Reading Passed",
-            "2nd Reading Conference Committee Report Adopted",
-            "2nd Reading Senate Amendments Concurred",
-            "2nd Reading Pass Motion Failed; 3rd Reading Vote Required",
-            "2nd Reading Not Passed as Amended",
-            "2nd Reading House Amendments Concurred",
-            "2nd Reading Concurred",
-            "Reconsidered Previous Action; Placed on 2nd Reading",
-            "2nd Reading Indefinitely Postponed",
-            "Taken from 3rd Reading; Placed on 2nd Reading",
-            "2nd Reading Concur Motion Failed",
-            "2nd Reading Not Concurred; 3rd Reading Vote Required",
-            "Reconsidered Previous Act; Remains in 2nd Reading FCC Process",
-            "2nd Reading Indefinitely Postpone Motion Failed",
-            "2nd Reading Pass Motion Failed",
-            "2nd Reading Not Concurred",
-            "2nd Reading Not Passed",
-        ]
+    "first reading": {"type": "compare", "mappings": ["reading-1"]},
+    # A bill has undergone its second reading, the bill has been amended,
+    # an offered amendment has been amended (seen in Texas)
+    "taken from committee; placed on 2nd reading": {
+        "type": "compare",
+        "mappings": ["reading-2"],
     },
+    "2nd reading passed": {"type": "compare", "mappings": ["reading-2"]},
+    "2nd reading conference committee report adopted": {
+        "type": "compare",
+        "mappings": ["reading-2"],
+    },
+    "2nd reading senate amendments concurred": {
+        "type": "compare",
+        "mappings": [
+            "reading-2",
+            "amendment-passage",
+            "amendment-amendment",
+        ],
+    },
+    "2nd reading pass motion failed; 3rd reading vote required": {
+        "type": "compare",
+        "mappings": ["reading-2"],
+    },
+    "2nd reading not passed as amended": {"type": "compare", "mappings": ["reading-2"]},
+    "2nd reading house amendments concurred": {
+        "type": "compare",
+        "mappings": [
+            "reading-2",
+            "amendment-passage",
+            "amendment-amendment",
+        ],
+    },
+    "2nd reading concurred": {"type": "compare", "mappings": ["reading-2"]},
+    "reconsidered previous action; placed on 2nd reading": {
+        "type": "compare",
+        "mappings": ["reading-2"],
+    },
+    "2nd reading indefinitely postponed": {
+        "type": "compare",
+        "mappings": ["reading-2"],
+    },
+    "taken from 3rd reading; placed on 2nd reading": {
+        "type": "compare",
+        "mappings": ["reading-2"],
+    },
+    "2nd reading concur motion failed": {"type": "compare", "mappings": ["reading-2"]},
+    "2nd reading not concurred; 3rd reading vote required": {
+        "type": "compare",
+        "mappings": ["reading-2"],
+    },
+    "reconsidered previous act; remains in 2nd reading fcc process": {
+        "type": "compare",
+        "mappings": ["reading-2"],
+    },
+    "2nd reading indefinitely postpone motion failed": {
+        "type": "compare",
+        "mappings": ["reading-2"],
+    },
+    "2nd reading pass motion failed": {"type": "compare", "mappings": ["reading-2"]},
+    "2nd reading not concurred": {"type": "compare", "mappings": ["reading-2"]},
+    "2nd reading not passed": {"type": "compare", "mappings": ["reading-2"]},
+    "2nd reading": {"type": "compare", "mappings": ["reading-2"]},
     # A bill has undergone its third (or final) reading
-    "reading-3": {
-        "rgxs": [
-            "3rd Reading Passed as Amended by Senate",
-            "3rd Reading Passed as Amended by House",
-            "3rd Reading Pass Consideration",
-            "3rd Reading Concurred",
-            "3rd Reading Passed",
-            "3rd Reading Not Passed as Amended by Senate",
-            "Reconsidered Previous Action; Remains in 3rd Reading Process",
-            "3rd Reading Conference Committee Report Adopted",
-            "3rd Reading Failed",
-        ]
+    "3rd reading pass consideration": {"type": "compare", "mappings": ["reading-3"]},
+    "3rd reading not passed as amended by senate": {
+        "type": "compare",
+        "mappings": ["reading-3"],
     },
-    # A bill has been filed (for states where this is a separate event from
-    # introduction)
-    "filing": {"rgxs": [], "funcs": {}},
-    # A bill has been replaced with a substituted wholesale (called hoghousing
-    # in some states)
-    "substitution": {"rgxs": [], "funcs": {}},
+    "reconsidered previous action; remains in 3rd reading process": {
+        "type": "compare",
+        "mappings": ["reading-3"],
+    },
+    "3rd reading conference committee report adopted": {
+        "type": "compare",
+        "mappings": ["reading-3"],
+    },
+    "scheduled for 3rd reading": {"type": "compare", "mappings": ["reading-3"]},
     # The bill has been transmitted to the governor for consideration
-    "executive-receipt": {"rgxs": ["Transmitted to Governor"], "funcs": {}},
+    "transmitted to governor": {"type": "compare", "mappings": ["executive-receipt"]},
     # The bill has signed into law by the governor
-    "executive-signature": {"rgxs": ["Signed by Governor"], "funcs": {}},
+    "signed by governor": {"type": "compare", "mappings": ["executive-signature"]},
     # The bill has been vetoed by the governor
-    "executive-veto": {"rgxs": ["Vetoed by Governor"], "funcs": {}},
+    "vetoed by governor": {"type": "compare", "mappings": ["executive-veto"]},
     # The governor has issued a line-item (partial) veto
-    "executive-veto-line-item": {"rgxs": ["Returned with Governor's Line-item Veto"]},
+    "returned with governor's line-item veto": {
+        "type": "compare",
+        "mappings": ["executive-veto-line-item"],
+    },
     # An amendment has been offered on the bill
-    "amendment-introduction": {"rgxs": ["^(?i)amendment.{,200}introduced"]},
-    # The bill has been amended
-    "amendment-passage": {
-        "rgxs": [
-            "3rd Reading Governor's Proposed Amendments Adopted",
-            "2nd Reading Governor's Proposed Amendments Adopted",
-            "2nd Reading House Amendments Concurred",
-            "2nd Reading Senate Amendments Concurred",
-        ]
+    "^(?i)amendment.{,200}introduced": {
+        "type": "regex",
+        "mappings": ["amendment-introduction"],
+    },
+    # The bill has been amended, an offered amendment has been amended (seen in Texas)
+    "3rd reading governor's proposed amendments adopted": {
+        "type": "compare",
+        "mappings": [
+            "amendment-passage",
+            "amendment-amendment",
+        ],
+    },
+    "2nd reading governor's proposed amendments adopted": {
+        "type": "compare",
+        "mappings": [
+            "amendment-passage",
+            "amendment-amendment",
+        ],
     },
     # An offered amendment has failed
-    "amendment-failure": {
-        "rgxs": [
-            "2nd Reading House Amendments Not Concur Motion Failed",
-            "2nd Reading Senate Amendments Concur Motion Failed",
-            "2nd Reading House Amendments Concur Motion Failed",
-            "2nd Reading Governor's Proposed Amendments Not Adopted",
-            "3rd Reading Governor's Proposed Amendments Not Adopted",
-            "2nd Reading Governor's Proposed Amendments Adopt Motion Failed",
-            "2nd Reading Motion to Amend Failed",
-            "2nd Reading House Amendments Not Concurred",
-        ]
+    "2nd reading house amendments not concur motion failed": {
+        "type": "compare",
+        "mappings": ["amendment-failure"],
     },
-    # An offered amendment has been amended (seen in Texas)
-    "amendment-amendment": {
-        "rgxs": [
-            "3rd Reading Governor's Proposed Amendments Adopted",
-            "2nd Reading Governor's Proposed Amendments Adopted",
-            "2nd Reading House Amendments Concurred",
-            "2nd Reading Senate Amendments Concurred",
-        ]
+    "2nd reading senate amendments concur motion failed": {
+        "type": "compare",
+        "mappings": ["amendment-failure"],
     },
-    # ???
-    # An offered amendment has been withdrawn
-    "amendment-withdrawal": {"rgxs": []},
-    # An amendment has been 'laid on the table' (generally
-    # preventing further consideration)
-    # TODO: restore this once py-ocd-django has this classification
-    "amendment-deferral": {"rgxs": ["Tabled in Committee"]},
+    "2nd reading house amendments concur motion failed": {
+        "type": "compare",
+        "mappings": ["amendment-failure"],
+    },
+    "2nd reading governor's proposed amendments not adopted": {
+        "type": "compare",
+        "mappings": ["amendment-failure"],
+    },
+    "3rd reading governor's proposed amendments not adopted": {
+        "type": "compare",
+        "mappings": ["amendment-failure"],
+    },
+    "2nd reading governor's proposed amendments adopt motion failed": {
+        "type": "compare",
+        "mappings": ["amendment-failure"],
+    },
+    "2nd reading motion to amend failed": {
+        "type": "compare",
+        "mappings": ["amendment-failure"],
+    },
+    "2nd reading house amendments not concurred": {
+        "type": "compare",
+        "mappings": ["amendment-failure"],
+    },
+    # An amendment has been 'laid on the table' (generally preventing further consideration)
+    "tabled in committee": {"type": "compare", "mappings": ["amendment-deferral"]},
     # The bill has been referred to a committee
-    "referral-committee": {
-        "rgxs": ["Referred to Committee", "Rereferred to Committee"]
-    },
+    "referred to committee": {"type": "compare", "mappings": ["referral-committee"]},
+    "rereferred to committee": {"type": "compare", "mappings": ["referral-committee"]},
     # The bill has been passed out of a committee
-    "committee-passage": {
-        "rgxs": [
-            r"Committee Executive Action--Bill Passed",
-            r"Committee Report--Bill Passed",
-            r"Committee Executive Action--Resolution Adopted",
-        ]
+    "committee executive action--bill passed": {
+        "type": "compare",
+        "mappings": ["committee-passage"],
     },
-    # ??? Looks like this'd require parsing
-    # The bill has been passed out of a committee with a favorable report
-    "committee-passage-favorable": {"rgxs": []},
-    # ??? Looks like this'd require parsing
-    # The bill has been passed out of a committee with an unfavorable report
-    "committee-passage-unfavorable": {"rgxs": []},
+    "committee report--bill passed": {
+        "type": "compare",
+        "mappings": ["committee-passage"],
+    },
+    "committee executive action--resolution adopted": {
+        "type": "compare",
+        "mappings": ["committee-passage"],
+    },
     # The bill has failed to make it out of committee
-    "committee-failure": {
-        "rgxs": [
-            r"Committee Executive Action--Resolution Not Adopted",
-            r"Committee Executive Action--Bill Not Passed",
-            r"Died in Standing Committee",
-        ]
+    "committee executive action--resolution not adopted": {
+        "type": "compare",
+        "mappings": ["committee-failure"],
     },
-    # All other actions will have a type of "other"
+    "committee executive action--bill not passed": {
+        "type": "compare",
+        "mappings": ["committee-failure"],
+    },
+    "died in standing committee": {
+        "type": "compare",
+        "mappings": ["committee-failure"],
+    },
+    # Misc actions
+    "signed by speaker": {"type": "compare", "mappings": ["became-law"]},
+    "signed by president": {"type": "compare", "mappings": ["became-law"]},
+    "failed": {"type": "compare", "mappings": ["failure"]},
+    "received": {"type": "compare", "mappings": ["receipt"]},
+    "enrolled": {"type": "compare", "mappings": ["enrolled"]},
 }
 
-_funcs = []
-append = _funcs.append
-for category, data in _categories.items():
 
-    for rgx in data["rgxs"]:
-        append((category, re.compile(rgx).search))
+# Takes in a string description of an action and returns the respective OS classification
+def categorize_actions(act_desc):
+    atype = []
+    for action_key, data in _actions.items():
 
-ac = set(
-    [
-        "2nd Reading Concur Motion Failed",
-        "2nd Reading Concur as Amended Motion Failed",
-        "2nd Reading Concurred",
-        "2nd Reading Concurred as Amended",
-        "2nd Reading Conference Committee Report Adopt Motion Failed",
-        "2nd Reading Conference Committee Report Adopted",
-        "2nd Reading Free Conference Committee Report Adopt Motion Failed",
-        "2nd Reading Free Conference Committee Report Adopted",
-        "2nd Reading Free Conference Committee Report Rejected",
-        "2nd Reading Governor's Proposed Amendments Adopt Motion Failed",
-        "2nd Reading Governor's Proposed Amendments Adopted",
-        "2nd Reading Governor's Proposed Amendments Not Adopted",
-        "2nd Reading House Amendments Concur Motion Failed",
-        "2nd Reading House Amendments Concurred",
-        "2nd Reading House Amendments Not Concur Motion Failed",
-        "2nd Reading House Amendments Not Concurred",
-        "2nd Reading Indefinitely Postpone Motion Failed",
-        "2nd Reading Indefinitely Postponed",
-        "2nd Reading Motion to Amend Carried",
-        "2nd Reading Motion to Amend Failed",
-        "2nd Reading Not Concurred",
-        "2nd Reading Not Concurred; 3rd Reading Vote Required",
-        "2nd Reading Not Passed",
-        "2nd Reading Not Passed as Amended",
-        "2nd Reading Pass Consideration",
-        "2nd Reading Pass Motion Failed",
-        "2nd Reading Pass Motion Failed; 3rd Reading Vote Required",
-        "2nd Reading Pass as Amended Motion Failed",
-        "2nd Reading Passed",
-        "2nd Reading Passed Consideration",
-        "2nd Reading Passed as Amended",
-        "2nd Reading Senate Amendments Concur Motion Failed",
-        "2nd Reading Senate Amendments Concurred",
-        "2nd Reading Senate Amendments Not Concurred",
-        "3rd Reading Concurred",
-        "3rd Reading Conference Committee Report Adopted",
-        "3rd Reading Failed",
-        "3rd Reading Free Conference Committee Report Adopted",
-        "3rd Reading Governor's Proposed Amendments Adopted",
-        "3rd Reading Governor's Proposed Amendments Not Adopted",
-        "3rd Reading Not Passed as Amended by Senate",
-        "3rd Reading Pass Consideration",
-        "3rd Reading Passed",
-        "3rd Reading Passed as Amended by House",
-        "3rd Reading Passed as Amended by Senate",
-        "Adverse Committee Report Rejected",
-        "Bill Draft Text Available Electronically",
-        "Bill Not Heard at Sponsor's Request",
-        "Chapter Number Assigned",
-        "Clerical Corrections Made - New Version Available",
-        "Committee Executive Action--Bill Concurred",
-        "Committee Executive Action--Bill Concurred as Amended",
-        "Committee Executive Action--Bill Not Passed as Amended",
-        "Committee Executive Action--Bill Passed",
-        "Committee Executive Action--Bill Passed as Amended",
-        "Committee Executive Action--Resolution Adopted",
-        "Committee Executive Action--Resolution Adopted as Amended",
-        "Committee Executive Action--Resolution Not Adopted",
-        "Committee Report--Bill Concurred",
-        "Committee Report--Bill Concurred as Amended",
-        "Committee Report--Bill Passed",
-        "Committee Report--Bill Passed as Amended",
-        "Committee Report--Resolution Adopted",
-        "Committee Report--Resolution Adopted as Amended",
-        "Committee Report--Resolution Not Adopted",
-        "Committee Vote Failed; Remains in Committee",
-        "Conference Committee Appointed",
-        "Conference Committee Dissolved",
-        "Conference Committee Report Received",
-        "Died in Process",
-        "Died in Standing Committee",
-        "Draft Back for Redo",
-        "Draft Back for Requester Changes",
-        "Draft Back for Technical Correction",
-        "Draft Canceled",
-        "Draft Delivered to Requester",
-        "Draft On Hold",
-        "Draft Ready for Delivery",
-        "Draft Request Received",
-        "Draft Taken Off Hold",
-        "Draft Taken by Drafter",
-        "Draft in Assembly/Executive Director Review",
-        "Draft in Edit",
-        "Draft in Final Drafter Review",
-        "Draft in Input/Proofing",
-        "Draft in Legal Review",
-        "Draft to Drafter - Edit Review [CMD]",
-        "Draft to Drafter - Edit Review [JLN]",
-        "Draft to Drafter - Edit Review [SAB]",
-        "Draft to Requester for Review",
-        "Filed with Secretary of State",
-        "First Reading",
-        "Fiscal Note Printed",
-        "Fiscal Note Probable",
-        "Fiscal Note Received",
-        "Fiscal Note Requested",
-        "Fiscal Note Requested (Local Government Fiscal Impact)",
-        "Fiscal Note Signed",
-        "Free Conference Committee Appointed",
-        "Free Conference Committee Dissolved",
-        "Free Conference Committee Report Received",
-        "Hearing",
-        "Hearing Canceled",
-        "Introduced",
-        "Introduced Bill Text Available Electronically",
-        "Line-item Veto Override Failed",
-        "Missed Deadline for Appropriation Bill Transmittal",
-        "Missed Deadline for General Bill Transmittal",
-        "Missed Deadline for Interim Study Resolution Transmittal",
-        "Missed Deadline for Referendum Proposal Transmittal",
-        "Missed Deadline for Revenue Bill Transmittal",
-        "Motion Carried",
-        "Motion Failed",
-        "On Motion Rules Suspended",
-        "Placed on Consent Calendar",
-        "Pre-Introduction Letter Sent",
-        "Printed - Enrolled Version Available",
-        "Printed - New Version Available",
-        "Reconsidered Previous Act; Remains in 2nd Read Process to Consider (H) Amend",
-        "Reconsidered Previous Act; Remains in 2nd Read Process to Consider (S) Amend",
-        "Reconsidered Previous Act; Remains in 2nd Reading FCC Process",
-        "Reconsidered Previous Act; Remains in 3rd Read Gov Amend Process",
-        "Reconsidered Previous Action; Placed on 2nd Reading",
-        "Reconsidered Previous Action; Remains in 2nd Reading Process",
-        "Reconsidered Previous Action; Remains in 3rd Reading Process",
-        "Referred to Committee",
-        "Rereferred to Committee",
-        "Resolution Adopted",
-        "Resolution Failed",
-        "Returned from Enrolling",
-        "Returned to House",
-        "Returned to House Concurred in Governor's Proposed Amendments",
-        "Returned to House Not Concurred in Governor's Proposed Amendments",
-        "Returned to House with Amendments",
-        "Returned to Senate",
-        "Returned to Senate Concurred in Governor's Proposed Amendments",
-        "Returned to Senate Not Concurred in Governor's Proposed Amendments",
-        "Returned to Senate with Amendments",
-        "Returned with Governor's Line-item Veto",
-        "Returned with Governor's Proposed Amendments",
-        "Revised Fiscal Note Printed",
-        "Revised Fiscal Note Received",
-        "Revised Fiscal Note Requested",
-        "Revised Fiscal Note Signed",
-        "Rules Suspended to Accept Late Return of Amended Bill",
-        "Rules Suspended to Accept Late Transmittal of Bill",
-        "Scheduled for 2nd Reading",
-        "Scheduled for 3rd Reading",
-        "Scheduled for Consideration under Special Orders",
-        "Scheduled for Executive Action",
-        "Segregated from Committee of the Whole Report",
-        "Sent to Enrolling",
-        "Signed by Governor",
-        "Signed by President",
-        "Signed by Speaker",
-        "Special Note",
-        "Sponsor List Modified",
-        "Sponsor Rebuttal to Fiscal Note Printed",
-        "Sponsor Rebuttal to Fiscal Note Received",
-        "Sponsor Rebuttal to Fiscal Note Requested",
-        "Sponsor Rebuttal to Fiscal Note Signed",
-        "Sponsors Engrossed",
-        "Tabled in Committee",
-        "Taken from 2nd Reading; Rereferred to Committee",
-        "Taken from 3rd Reading; Placed on 2nd Reading",
-        "Taken from Committee; Placed on 2nd Reading",
-        "Taken from Table in Committee",
-        "Transmitted to Governor",
-        "Transmitted to House",
-        "Transmitted to House for Consideration of Governor's Proposed Amendments",
-        "Transmitted to Senate",
-        "Transmitted to Senate for Consideration of Governor's Proposed Amendments",
-        "Veto Overridden in House",
-        "Veto Override Failed in Legislature",
-        "Veto Override Motion Failed in House",
-        "Veto Override Motion Failed in Senate",
-        "Veto Override Vote Mail Poll Letter Being Prepared",
-        "Veto Override Vote Mail Poll in Progress",
-        "Vetoed by Governor",
-    ]
-)
+        # If the action requires regex to be correctly classified
+        if data["type"] == "regex":
+            if re.search(action_key, act_desc.lower()):
+                # Add all action classifications in the list, excluding regex marker
+                atype.extend(a for a in data["mappings"])
 
+        else:
+            if action_key in act_desc.lower():
+                atype.extend(a for a in data["mappings"])
 
-def categorize(action, funcs=_funcs):
-    action = action.strip('" ')
-    res = set()
-    for category, f in funcs:
-        if f(action):
-            res.add(category)
-
-    if not res:
-        return None
-
-    return tuple(res)
+    return atype

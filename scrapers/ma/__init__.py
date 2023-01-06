@@ -50,7 +50,7 @@ class Massachusetts(State):
             "identifier": "190th",
             "name": "190th Legislature (2017-2018)",
             "start_date": "2017-01-04",
-            "end_date": "2017-11-15",
+            "end_date": "2018-12-31",
         },
         {
             "_scraped_name": "191st",
@@ -58,7 +58,7 @@ class Massachusetts(State):
             "identifier": "191st",
             "name": "191st Legislature (2019-2020)",
             "start_date": "2019-01-02",
-            "end_date": "2020-12-31",
+            "end_date": "2021-01-06",
         },
         {
             "_scraped_name": "192nd",
@@ -67,6 +67,15 @@ class Massachusetts(State):
             "name": "192nd Legislature (2021-2022)",
             "start_date": "2021-01-06",
             "end_date": "2021-12-31",
+            "active": False,
+        },
+        {
+            "_scraped_name": "193rd",
+            "classification": "primary",
+            "identifier": "193rd",
+            "name": "193rd Legislature (2023-2024)",
+            "start_date": "2023-01-04",
+            "end_date": "2023-12-31",
             "active": True,
         },
     ]

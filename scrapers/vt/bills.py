@@ -4,7 +4,7 @@ import re
 
 import lxml.etree
 from openstates.scrape import Scraper, Bill, VoteEvent
-
+from . import actions
 from utils import LXMLMixin
 
 
@@ -176,16 +176,16 @@ class VTBillScraper(Scraper, LXMLMixin):
 
             # Checks if page actually has json posted
             if "json" in actions_json.headers.get("Content-Type"):
-                actions = json.loads(actions_json.text)["data"]
+                these_actions = json.loads(actions_json.text)["data"]
                 # Checks to see if any data is actually there
-                if actions == "":
+                if these_actions == "":
                     continue
             else:
                 continue
             bill.add_source(actions_url)
 
             chambers_passed = set()
-            for action in actions:
+            for action in these_actions:
                 action = {k: v for k, v in action.items() if v is not None}
 
                 if "Signed by Governor" in action["FullStatus"]:
@@ -198,24 +198,21 @@ class VTBillScraper(Scraper, LXMLMixin):
                     raise AssertionError("Unknown actor for bill action")
 
                 # Categorize action
-                if "Signed by Governor" in action["FullStatus"]:
-                    # assert chambers_passed == set("HS")
-                    action_type = "executive-signature"
-                elif (
-                    "become law without signature of governor"
-                    in action["FullStatus"].lower()
-                ):
-                    action_type = "became-law"
-                    actor = "executive"
-                elif "Vetoed by the Governor" in action["FullStatus"]:
-                    action_type = "executive-veto"
-                elif (
-                    "Read first time" in action["FullStatus"]
-                    or "Read 1st time" in action["FullStatus"]
-                ):
-                    action_type = "introduction"
-                elif "Reported favorably" in action["FullStatus"]:
-                    action_type = "committee-passage-favorable"
+                action_classification = actions.categorize_actions(
+                    action["FullStatus"].lower()
+                )
+
+                # If both an action type and actor were assigned
+                if action_classification:
+                    action_type = action_classification
+
+                    # if len(action_classification) > 1:
+                    # actor = action_classification[1]
+
+                # More action categorization
+                # These classifications are done separately because they require more rules
+                # in order to correctly classify
+
                 elif actor == "lower" and any(
                     x.lower().startswith("aspassed")
                     for x in action["keywords"].split(";")
@@ -229,6 +226,25 @@ class VTBillScraper(Scraper, LXMLMixin):
                 ):
                     action_type = "passage"
                     chambers_passed.add("S")
+
+                elif (
+                    "favorable report" in action["FullStatus"].lower()
+                    and "by committee" in action["FullStatus"].lower()
+                ):
+                    action_type = "committee-passage"
+
+                elif (
+                    "proposal of amendment" in action["FullStatus"].lower()
+                    and "passed" not in action["FullStatus"].lower()
+                ):
+                    action_type = "amendment-introduction"
+
+                elif (
+                    "become law without signature of governor"
+                    in action["FullStatus"].lower()
+                ):
+                    actor = "executive"
+
                 else:
                     action_type = None
 

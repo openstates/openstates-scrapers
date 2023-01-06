@@ -28,14 +28,14 @@ class Alaska(State):
             "_scraped_name": "30th Legislature (2017-2018)",
             "identifier": "30",
             "name": "30th Legislature (2017-2018)",
-            "start_date": "2017-01-17",
+            "start_date": "2017-01-16",
             "end_date": "2018-05-13",
         },
         {
             "_scraped_name": "31st Legislature (2019-2020)",
             "identifier": "31",
             "name": "31st Legislature (2019-2020)",
-            "start_date": "2019-01-15",
+            "start_date": "2019-01-21",
             "end_date": "2020-05-20",
         },
         {

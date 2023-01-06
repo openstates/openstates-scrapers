@@ -1,37 +1,21 @@
 import datetime
 import pytz
-import re
 import os
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 from openstates.scrape import Scraper, Bill, VoteEvent
+from .actions import Bill_Categorizer, Vote_Categorizer
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class DCBillScraper(Scraper):
     _TZ = pytz.timezone("US/Eastern")
+    bill_categorizer = Bill_Categorizer()
+    vote_categorizer = Vote_Categorizer()
 
-    _action_classifiers = (
-        ("Introduced", "introduction"),
-        ("Transmitted to Mayor", "executive-receipt"),
-        ("Signed", "executive-signature"),
-        ("Signed by the Mayor ", "executive-signature"),
-        ("Enacted", "became-law"),
-        ("Law", "became-law"),
-        ("Approved with Resolution Number", "became-law"),
-        ("First Reading", "reading-1"),
-        ("1st Reading", "reading-1"),
-        ("Second Reading", "reading-2"),
-        ("2nd Reading", "reading-2"),
-        ("Final Reading|Third Reading|3rd Reading", "reading-3"),
-        ("Third Reading", "reading-3"),
-        ("3rd Reading", "reading-3"),
-        ("Referred to", "referral-committee"),
-    )
-
-    _API_BASE_URL = "https://lims.dccouncil.us/api/v2/PublicData/"
+    _API_BASE_URL = "https://lims.dccouncil.gov/api/v2/PublicData/"
 
     _headers = {
         "Authorization": os.environ["DC_API_KEY"],
@@ -72,7 +56,7 @@ class DCBillScraper(Scraper):
                 )
                 bill.add_source(leg_listing_url)
                 bill_url = (
-                    f"https://lims.dccouncil.us/Legislation/{leg['legislationNumber']}"
+                    f"https://lims.dccouncil.gov/Legislation/{leg['legislationNumber']}"
                 )
                 bill.add_source(bill_url)
 
@@ -88,7 +72,8 @@ class DCBillScraper(Scraper):
                     hist_action = hist["actionDescription"]
                     if hist_action.split()[0] in ["OtherAmendment", "OtherMotion"]:
                         hist_action = hist_action[5:]
-                    hist_class = self.classify_action(hist_action)
+                    action_attr = self.bill_categorizer.categorize(hist_action)
+                    hist_class = action_attr["classification"]
 
                     if "mayor" in hist_action.lower():
                         actor = "executive"
@@ -102,7 +87,7 @@ class DCBillScraper(Scraper):
                     if hist["downloadURL"] and ("download" in hist["downloadURL"]):
                         download = hist["downloadURL"]
                         if not download.startswith("http"):
-                            download = "https://lims.dccouncil.us/" + download
+                            download = "https://lims.dccouncil.gov/" + download
 
                         mimetype = (
                             "application/pdf" if download.endswith("pdf") else None
@@ -260,7 +245,10 @@ class DCBillScraper(Scraper):
                                 )
                                 if id_text not in vote_ids:
                                     vote_ids.append(id_text)
-                                    action_class = self.classify_action(action_name)
+                                    action_attr = self.vote_categorizer.categorize(
+                                        action_name
+                                    )
+                                    action_class = action_attr["classification"]
                                     v = VoteEvent(
                                         identifier=id_text,
                                         chamber=actor,
@@ -305,9 +293,3 @@ class DCBillScraper(Scraper):
                                     yield v
 
                 yield bill
-
-    def classify_action(self, action):
-        for pattern, types in self._action_classifiers:
-            if re.findall(pattern, action):
-                return types
-        return None

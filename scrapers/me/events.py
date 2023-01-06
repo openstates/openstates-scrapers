@@ -2,7 +2,9 @@ import pytz
 import dateutil.parser
 import datetime
 import json
+import re
 from utils import LXMLMixin
+from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 
@@ -99,13 +101,30 @@ class MEEventScraper(Scraper, LXMLMixin):
                 end_date=end_date,
                 name=name,
                 location_name=address,
+                classification="committee-meeting",
             )
+
+            event.add_participant(name=name, type="committee", note="host")
 
             event.add_source(
                 "http://legislature.maine.gov/committee/#Committees/{}".format(
                     row["CommitteeCode"]
                 )
             )
+
+            if row["AudioEvent"] is True or row["VideoEvent"] is True:
+
+                stream_type = "Video" if row["VideoEvent"] is True else "Audio"
+
+                room = re.search(r"Room (\d+)|$", row["Location"]).group(1)
+                event_id = row["Id"]
+                start = row["FromDateTime"].replace(".000", "")
+
+                if room:
+                    stream_url = f"https://legislature.maine.gov/audio/#{room}?event={event_id}&startDate={start}-05:00"
+                    event.add_media_link(
+                        f"{stream_type} Stream", stream_url, media_type="text/html"
+                    )
 
             if bills_by_event.get(row["Id"]):
                 for bill in bills_by_event[row["Id"]]:
@@ -140,4 +159,12 @@ class MEEventScraper(Scraper, LXMLMixin):
                             event.add_document(
                                 note=title, url=test_url, media_type=media_type
                             )
+
+            match_coordinates(
+                event,
+                {
+                    "State House": (44.30764, -69.782159),
+                    "Cross Office": (44.30771, -69.78289),
+                },
+            )
             yield event

@@ -27,3 +27,5 @@ SESSION_SITE_IDS = {
     "2022S1": "222",
     "2023": "231",
 }
+
+COMBINED_SESSIONS = {"221": ["222", "231"]}

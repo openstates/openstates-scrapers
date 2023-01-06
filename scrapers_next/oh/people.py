@@ -1,9 +1,15 @@
 import re
 import attr
-from spatula import HtmlListPage, HtmlPage, CSS, URL
+from spatula import HtmlListPage, HtmlPage, CSS, URL, SelectorError
 from openstates.models import ScrapePerson
+import requests
+import lxml.html
 
 background_image_re = re.compile(r"background-image:url\((.*?)\)")
+senate_cap_sq_re = re.compile(r"(Sen.+Building)(1.+Square)(.+)(Col.+43215)")
+senate_no_cap_sq_re = re.compile(r"(Sen.+Building)(.+)(Col.+43215)")
+statehouse_cap_sq_re = re.compile(r"(Statehouse)(1.+Square)(.+)(Col.+43215)")
+statehouse_no_cap_sq_re = re.compile(r"(Statehouse)(.+)(Col.+43215)")
 
 
 @attr.s
@@ -14,57 +20,23 @@ class LegPartial:
     url = attr.ib()
     image = attr.ib()
     chamber = attr.ib()
+    list_page_url = attr.ib()
 
 
-class Senate(HtmlListPage):
-    source = URL(
-        "https://www.legislature.ohio.gov/legislators/senate-directory", timeout=30
-    )
-    selector = CSS(".mediaGrid a[target='_blank']", num_items=33)
-
+class LegList(HtmlListPage):
     def process_item(self, item):
-        name = CSS(".mediaCaptionTitle").match_one(item).text
+        name = CSS(".media-overlay-caption-text-line-1").match_one(item).text
 
-        if name == "Vacant":
+        if "vacant" in name.lower():
             self.skip("vacant")
-        subtitle = CSS(".mediaCaptionSubtitle").match_one(item).text
-        image = CSS(".photo").match_one(item).get("style")
-        image = background_image_re.findall(image)[0]
+        subtitle = CSS(".media-overlay-caption-text-line-2").match_one(item)
         # e.g. District 25 | D
-        district, party = subtitle.split(" | ")
+        district, party = subtitle.text_content().split(" | ")
         district = district.split()[1]
-        party = {"D": "Democratic", "R": "Republican"}[party]
+        party = {"D": "Democratic", "R": "Republican", "I": "Independent"}[party]
 
-        return LegDetail(
-            LegPartial(
-                name=name,
-                district=district,
-                party=party,
-                url=item.get("href"),
-                chamber="upper",
-                image=image,
-            )
-        )
-
-
-class House(HtmlListPage):
-    source = URL(
-        "https://www.legislature.ohio.gov/legislators/house-directory", timeout=30
-    )
-    selector = CSS(".mediaGrid a[target='_blank']", num_items=99)
-
-    def process_item(self, item):
-        name = CSS(".mediaCaptionTitle").match_one(item).text
-
-        if name == "Vacant":
-            self.skip("vacant")
-        subtitle = CSS(".mediaCaptionSubtitle").match_one(item).text
-        image = CSS(".photo").match_one(item).get("style")
+        image = CSS(".media-thumbnail-image").match_one(item).get("style")
         image = background_image_re.findall(image)[0]
-        # e.g. District 25 | D
-        district, party = subtitle.split(" | ")
-        district = district.split()[1]
-        party = {"D": "Democratic", "R": "Republican"}[party]
 
         return LegDetail(
             LegPartial(
@@ -73,7 +45,8 @@ class House(HtmlListPage):
                 party=party,
                 url=item.get("href"),
                 image=image,
-                chamber="lower",
+                chamber=self.chamber,
+                list_page_url=self.source.url,
             )
         )
 
@@ -94,8 +67,8 @@ class LegDetail(HtmlPage):
             party=self.input.party,
             image=self.input.image,
         )
-        p.add_source(self.input.url)
-        p.add_link(self.input.url)
+        p.add_source(self.input.url, "member details page")
+        p.add_source(self.input.list_page_url, "member list page")
 
         if self.input.chamber == "lower":
             # House path
@@ -118,57 +91,30 @@ class LegDetail(HtmlPage):
                     p.capitol_office.voice = dtc.split(": ")[1]
                 elif "Fax:" in dtc:
                     p.capitol_office.fax = dtc.split(": ")[1]
+
         elif self.input.chamber == "upper":
-            """
-                2022-07-18:
-                 <div class="generalInfoModule">
-
-                <div class="name">
-                    Senator Rob McColley
-                </div>
-
-                <div class="address">
-                    <span>Senate Building<br />1 Capitol Square<br />2nd Floor</span>
-                    <div>Columbus, OH  43215</div>
-                </div>
-
-                <div class="hometown">
-                    Hometown: Napoleon
-                </div>
-
-                <div class="phone">
-                    <span>(614) 466-8150</span>
-                </div>
-
-                <div class="email">
-                    <a href='../senators/mccolley/contact'>Email Senator McColley</a>
-                </div>
-
-                <div class='quickConnectModule'><div class='quickConnectLabel'>Connect:</div><div class='quickConnectLabelLinks'><a target='_blank' href='https://www.facebook.com/McColley4Ohio/'><img src='../Assets/Global/SocialMedia/Facebook.png' /></a><a target='_blank' href='https://twitter.com/Rob_McColley?lang=en'><img src='../Assets/Global/SocialMedia/Twitter.png' /></a><a target='_blank' href='https://www.youtube.com/user/ohiosenategop/videos'><img src='../Assets/Global/SocialMedia/YouTube.png' /></a></div></div>
-
-            </div>
-            """
-            # Senate path
-
             # Senators *may* have social media stuff...let's try to grab it
             try:
-                social = CSS(
-                    ".quickConnectModule .quickConnectLabelLinks a[target='_blank']"
-                ).match(self.root)
-            except Exception:
+                social = CSS(".communications a[target='_blank']").match(self.root)
+            except SelectorError:
                 social = []
+
             for site in social:
-                url = site.get("href").strip("/")
+                url = site.get("href").strip("/").lower()
                 if "facebook" in url:
                     p.ids.facebook = (
                         url.removeprefix("https://www.facebook.com/")
                         .split("?")[0]
                         .strip("/")
                     )
+
                 elif "twitter" in url:
-                    p.ids.twitter = url.removeprefix("https://twitter.com/").split("?")[
-                        0
-                    ]
+                    if "https" in url:
+                        twit_pref = "https://twitter.com/"
+                    else:
+                        twit_pref = "http://www.twitter.com/"
+                    p.ids.twitter = url.removeprefix(twit_pref).split("?")[0]
+
                 elif "youtube" in url:
                     if "user" in url:
                         p.ids.youtube = url.removeprefix(
@@ -184,34 +130,51 @@ class LegDetail(HtmlPage):
                         .split("?")[0]
                         .strip("/")
                     )
+
                 else:
                     self.logger.info(f"SOCIAL NOT MATCHED: {url}")
-            phone = (
-                CSS(".generalInfoModule div.phone span")
-                .match_one(self.root)
-                .text_content()
-            )
-            p.capitol_office.voice = phone
-            address1 = (
-                CSS(".generalInfoModule div.address span")
-                .match_one(self.root)
-                .text_content()
-            )
-            address2 = (
-                CSS(".generalInfoModule div.address div")
-                .match_one(self.root)
-                .text_content()
-            )
-            # <br /> turns into nothing, so we get some weird spacing...
-            p.capitol_office.address = f"{address1} {address2}"
 
-            hometown = (
-                CSS(".generalInfoModule div.hometown")
-                .match_one(self.root)
-                .text_content()
-                .strip()
-                .removeprefix("Hometown: ")
-            )
-            p.extras["hometown"] = hometown
+            # Senators only have address and phone listed on Contact page
+            contact_url = f"{self.input.url}/contact"
+            response = requests.get(contact_url)
+            content = lxml.html.fromstring(response.content)
+
+            info_bar = content.xpath(".//div[@class='member-info-bar-value']")
+            info_list = [x.text_content().strip() for x in info_bar]
+            address, phone = info_list[:-1]
+
+            p.capitol_office.voice = phone
+
+            # Regex patterns compiled at top of file
+            #  used to fix unusual and tricky spacing in address
+            patterns = [
+                senate_cap_sq_re,
+                senate_no_cap_sq_re,
+                statehouse_cap_sq_re,
+                statehouse_no_cap_sq_re,
+            ]
+            for pattern in patterns:
+                address_match = pattern.search(address)
+                if address_match:
+                    address = ", ".join(address_match.groups())
+                    break
+
+            p.capitol_office.address = address
 
         return p
+
+
+class House(LegList):
+    source = URL(
+        "https://www.legislature.ohio.gov/legislators/house-directory", timeout=100
+    )
+    selector = CSS(".media-container a[target='_blank']", num_items=99)
+    chamber = "lower"
+
+
+class Senate(LegList):
+    source = URL(
+        "https://www.legislature.ohio.gov/legislators/senate-directory", timeout=100
+    )
+    selector = CSS(".media-container a[target='_blank']", num_items=33)
+    chamber = "upper"

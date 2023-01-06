@@ -3,8 +3,13 @@ from openstates.models import ScrapePerson
 import re
 
 
+class NewDetailFieldEncountered(BaseException):
+    pass
+
+
 class Legislators(HtmlListPage):
     selector = CSS("tbody tr.thisRow.listRow")
+    field_names = set()
 
     def process_item(self, item):
         name_title = XPath(".//td/span/a/text()").match(item)
@@ -42,21 +47,32 @@ class Legislators(HtmlListPage):
         district_addr = CSS("td").match(extra_info)[0].text_content().strip()
         p.district_office.address = district_addr
 
-        extra_info_detail = CSS("td div div div span.field").match(extra_info)
+        extra_details = CSS("td div div div span.fieldName").match(extra_info)
 
-        email = extra_info_detail[1].text_content().strip()
-        p.email = email
-
-        leg_bldg_room = extra_info_detail[2].text_content().strip()
-        if self.chamber == "upper":
-            chamb = "Senate"
-        else:
-            chamb = "Assembly"
-        cap_addr = f"Room {leg_bldg_room};c/o Nevada {chamb};401 South Carson Street;Carson City, NV 89701-4747"
-        p.capitol_office.address = cap_addr
-
-        leg_bldg_phone = extra_info_detail[3].text_content().strip()
-        p.capitol_office.voice = leg_bldg_phone
+        for detail_field in extra_details:
+            field_name = detail_field.text_content().strip().lower()
+            field_text = detail_field.getnext().text_content().strip().lower()
+            if "email" in field_name:
+                p.email = field_text
+            elif "leg bldg room" in field_name:
+                chambers = {"upper": "Senate", "lower": "Assembly"}
+                cap_addr = (
+                    f"Room {field_text};"
+                    f"c/o Nevada {chambers[self.chamber]};"
+                    "401 South Carson Street;"
+                    "Carson City, NV 89701-4747"
+                )
+                p.capitol_office.address = cap_addr
+            elif "leg bldg phone" in field_name:
+                p.capitol_office.voice = field_text
+            elif "work phone" in field_name:
+                p.district_office.voice = field_text
+            elif "fax" in field_name:
+                p.district_office.fax = field_text
+            elif "term ends" in field_name:
+                pass
+            else:
+                raise NewDetailFieldEncountered
 
         return p
 

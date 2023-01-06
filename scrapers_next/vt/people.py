@@ -35,7 +35,7 @@ class LegDetail(HtmlPage):
 
 
 class LegList(JsonPage):
-    source = URL("https://legislature.vermont.gov/people/loadAll/2022", timeout=40)
+    source = URL("https://legislature.vermont.gov/people/loadAll/2024", timeout=40)
 
     def process_page(self):
         legislators = self.data["data"]
@@ -163,7 +163,7 @@ class LegList(JsonPage):
             p.capitol_office.voice = "(802) 828-2228"
 
             detail_link = (
-                f"http://legislature.vermont.gov/people/single/2022/{leg['PersonID']}"
+                f"http://legislature.vermont.gov/people/single/2024/{leg['PersonID']}"
             )
             p.add_source(detail_link)
             p.add_link(detail_link, note="homepage")

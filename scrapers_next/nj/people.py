@@ -19,7 +19,7 @@ class LegDetail(JsonPage):
         # response is 3 lists: bio data, addresses, then committee memberships
         bio_data = self.data[0][0]
 
-        p.email = bio_data["ccMailName"]
+        p.email = bio_data["ccMailName"] if bio_data["ccMailName"] is not None else ""
         if pos := bio_data["Legislative_Position"]:
             p.extras["position"] = pos
 

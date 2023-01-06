@@ -238,11 +238,14 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         # some pages are updated and use different structure
         if not version_tags:
-            version_tags = versions_page.xpath('//tr/td/a[contains(@href, ".pdf")]')
+            version_tags = versions_page.xpath("//tr/td/a")
 
         for version_tag in version_tags:
-            description = version_tag.text_content()
+            description = version_tag.text_content().strip()
             pdf_url = version_tag.attrib["href"]
+            if description == "" and "intro" in pdf_url:
+                description = "Introduced"
+
             if pdf_url.endswith("pdf"):
                 mimetype = "application/pdf"
             else:

@@ -104,12 +104,12 @@ class SCBillScraper(Scraper):
 
     urls = {
         "lower": {
-            "daily-bill-index": "https://www.scstatehouse.gov/hintro/hintros.php",
+            "daily-bill-index": "https://www.scstatehouse.gov/sessphp/hintros.php",
             "prefile-index": "https://www.scstatehouse.gov/sessphp/prefil"
             "{last_two_digits_of_session_year}.php",
         },
         "upper": {
-            "daily-bill-index": "https://www.scstatehouse.gov/sintro/sintros.php",
+            "daily-bill-index": "https://www.scstatehouse.gov/sessphp/sintros.php",
             "prefile-index": "https://www.scstatehouse.gov/sessphp/prefil"
             "{last_two_digits_of_session_year}.php",
         },
@@ -391,8 +391,6 @@ class SCBillScraper(Scraper):
         version_doc = lxml.html.fromstring(version_html)
         version_doc.make_links_absolute(version_url)
         for version in version_doc.xpath('//a[contains(@href, "/prever/")]'):
-            # duplicate versions with same date, use first appearance
-
             bill.add_version_link(
                 note=version.text,  # Description of the version from the state;
                 #  eg, 'As introduced', 'Amended', etc.
@@ -400,11 +398,13 @@ class SCBillScraper(Scraper):
                 on_duplicate="ignore",
                 media_type="text/html",  # Still a MIME type
             )
+        # for prefiles, the link just points right to the version, not to a versions page
+        if "/bills/" in version_url.lower():
             bill.add_version_link(
-                note=version.text,
-                url=version.get("href").replace(".htm", ".docx"),
+                note="Filed",
+                url=version_url,
                 on_duplicate="ignore",
-                media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                media_type="text/html",  # Still a MIME type
             )
 
         # actions
