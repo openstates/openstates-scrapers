@@ -88,11 +88,15 @@ class MTEventScraper(Scraper):
             if row.xpath('.//a[contains(@href,"/billpdf/")]'):
                 bill_url = row.xpath('.//a[contains(@href,"/billpdf/")]/@href')[0]
                 if event.name not in seen_docs:
-                    event.add_document(bill_title, bill_url, media_type="application/pdf")
+                    event.add_document(
+                        bill_title, bill_url, media_type="application/pdf"
+                    )
                     seen_docs[event.name] = set()
                     seen_docs[event.name].add(bill_url)
                 elif bill_url not in seen_docs[event.name]:
-                    event.add_document(bill_title, bill_url, media_type="application/pdf")
+                    event.add_document(
+                        bill_title, bill_url, media_type="application/pdf"
+                    )
                     seen_docs[event.name].add(bill_url)
 
             self.events[com][when_slug] = event
