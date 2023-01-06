@@ -39,6 +39,7 @@ class MTEventScraper(Scraper):
             raise EmptyScrape
         page.make_links_absolute(url)
 
+        seen_links = set()
         for row in page.xpath("//table[@border]/tr"):
             # skip table headers
             if not row.xpath("td[1]/a"):
@@ -77,10 +78,14 @@ class MTEventScraper(Scraper):
 
             if row.xpath('.//a[contains(@href,"/billhtml/")]'):
                 bill_url = row.xpath('.//a[contains(@href,"/billhtml/")]/@href')[0]
-                event.add_document(bill_title, bill_url, media_type="text/html")
+                if bill_url not in seen_links:
+                    event.add_document(bill_title, bill_url, media_type="text/html")
+                    seen_links.add(bill_url)
             if row.xpath('.//a[contains(@href,"/billpdf/")]'):
                 bill_url = row.xpath('.//a[contains(@href,"/billpdf/")]/@href')[0]
-                event.add_document(bill_title, bill_url, media_type="application/pdf")
+                if bill_url not in seen_links:
+                    event.add_document(bill_title, bill_url, media_type="application/pdf")
+                    seen_links.add(bill_url)
 
             self.events[com][when_slug] = event
 
