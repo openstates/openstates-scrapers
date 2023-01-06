@@ -29,7 +29,7 @@ class LegDetail(JsonPage):
             district=self.data["District"],
             chamber=chamber,
             image=image,
-            email=self.data["EmailAddress"],
+            email=self.data["EmailAddress"] or "",
         )
 
         room_num = self.data["RoomNumber"]
@@ -76,7 +76,7 @@ class LegDetail(JsonPage):
 
 class LegList(JsonListPage):
 
-    source = URL(list_url(), timeout=30)
+    source = URL(list_url(), timeout=30, verify=False)
     selector = XPath("//LegislativeMemberSummary/Details")
 
     def process_item(self, item):
