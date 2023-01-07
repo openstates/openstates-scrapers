@@ -51,9 +51,9 @@ def add_space(text):
             break
 
     # Slice the string to get the number and text parts
-    number = text[:index]
-    text = text[index:]
+    alpha = text[:index]
+    number = text[index:]
 
-    new_string = f"{number} {text}"
+    new_string = f"{alpha} {number}"
 
     return new_string
