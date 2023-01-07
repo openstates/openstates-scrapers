@@ -86,9 +86,8 @@ class INEventScraper(Scraper):
             event.add_source(url)
             event.add_participant(chamber, type="committee", note="host")
             event.add_media_link("Video of Hearing", video_url, media_type="text/html")
-
+            agenda = event.add_agenda_item("Bills under consideration")
             for bill in extra_details["agenda"]:
-                agenda = event.add_agenda_item("Bills under consideration")
 
                 if bill.get("bill"):
                     bill_id = bill.get("bill").get("billName")
