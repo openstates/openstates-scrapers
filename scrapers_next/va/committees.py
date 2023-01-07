@@ -2,6 +2,9 @@ from spatula import URL, CSS, HtmlListPage, HtmlPage, SelectorError, SkipItem
 from openstates.models import ScrapeCommittee
 import time
 
+# VA lists the full names of committee members on individual separate pages
+# MemberDetail grabs a member's full name from their specific page
+
 
 class MemberDetail(HtmlPage):
     def process_page(self):
@@ -10,7 +13,7 @@ class MemberDetail(HtmlPage):
         try:
             mem_name = CSS("#mainC > h3").match(self.root)
         except SelectorError:
-            return None
+            return com
 
         if "Delegate" in mem_name[0].text:
             cleaned_name = mem_name[0].text.split("Delegate")[1].strip()
@@ -20,11 +23,10 @@ class MemberDetail(HtmlPage):
         if cleaned_name is not None:
             com.add_member(cleaned_name, role)
 
-        # setattr(MemberDetail, "name", cleaned_name)
-
         return com
 
 
+# grabs committee details (other than members' full name)
 class CommitteeDetail(HtmlListPage):
     def process_page(self):
         com = self.input
@@ -37,10 +39,13 @@ class CommitteeDetail(HtmlListPage):
                 or "Committee" in members[i]
                 or "Comments" in members[i]
             ):
-                raise SkipItem("not a member")
+                continue
 
             if "(Chair)" in members[i]:
                 role = "Chair"
+
+            elif "(Co-Chair)" in members[i]:
+                role = "Co-Chair"
 
             elif "(Vice Chair)" in members[i]:
                 role = "Vice Chair"
@@ -49,15 +54,15 @@ class CommitteeDetail(HtmlListPage):
                 role = "Member"
 
             detail_link = member_items[i].get("href")
-            time.sleep(2)
-            yield MemberDetail([com, role], source=URL(detail_link, timeout=120))
-            # print(list(com))
-
-            # print(cleaned_name.name)
-
-            # if cleaned_name is not None:
-            # ADD THIS TO COMMITTEE DETAIL
-            # com.add_member(cleaned_name, role)
+            time.sleep(4)
+            # .do_scrape() allows us to get information from MemberDetail without
+            # returning/writing a com object to disk
+            com = [
+                i
+                for i in MemberDetail(
+                    [com, role], source=URL(detail_link, timeout=120)
+                ).do_scrape()
+            ][0]
 
         return com
 
@@ -87,7 +92,6 @@ class FindSubCommittees(HtmlListPage):
             chamber=chamber,
             parent=parent_comm,
         )
-        print(comm_name, parent_comm, "// Comm and Parent")
 
         detail_link = item.get("href")
         com.add_source(self.source.url, note="homepage")
@@ -137,8 +141,9 @@ class SubCommitteeList(HtmlListPage):
             if comm_name == "Transportation":
                 raise SkipItem("no subcommittees")
             if comm_name == "Rules":
-                return
+                time.sleep(4)
+                raise SkipItem("no subcommittees")
 
         detail_link = item.get("href")
-        time.sleep(2)
+        time.sleep(4)
         return FindSubCommittees(source=URL(detail_link, timeout=120))
