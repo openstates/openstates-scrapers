@@ -59,7 +59,7 @@ class INEventScraper(Scraper):
 
             date = meeting["meetingdate"].replace(" ", "")
             time = meeting["starttime"].replace(" ", "")
-            location = meeting["location"]
+            location = meeting["location"] or extra_details["location"] or "See Agenda"
             chamber = (
                 meeting["committee"]["chamber"]
                 .replace("(S)", "Senate")
