@@ -90,7 +90,7 @@ class Legislators(HtmlListPage):
 
         # which one should be 'homepage'?
         # https://legis.wisconsin.gov/senate/16/agard, website currently adding to extras
-        # https://docs.legis.wisconsin.gov/2021/legislators/senate/2251, detail_link adding as source and scraping
+        # https://docs.legis.wisconsin.gov/2023/legislators/senate/2251, detail_link adding as source and scraping
 
         website = CSS("span.info strong a").match_one(item).get("href")
         p.extras["website"] = website
@@ -148,10 +148,10 @@ class Legislators(HtmlListPage):
 
 
 class Senate(Legislators):
-    source = URL("https://docs.legis.wisconsin.gov/2021/legislators/senate/")
+    source = URL("https://docs.legis.wisconsin.gov/2023/legislators/senate/")
     chamber = "upper"
 
 
 class House(Legislators):
-    source = URL("https://docs.legis.wisconsin.gov/2021/legislators/assembly/")
+    source = URL("https://docs.legis.wisconsin.gov/2023/legislators/assembly/")
     chamber = "lower"

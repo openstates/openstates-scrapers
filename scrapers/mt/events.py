@@ -46,6 +46,8 @@ class MTEventScraper(Scraper):
             day = row.xpath("td[2]/text()")[0].strip()
             time = row.xpath("td[3]/text()")[0].strip()
             room = row.xpath("td[4]")[0].text_content().strip()
+            if not room:
+                room = "See Agenda"
             bill = row.xpath("td[5]/a[1]/text()")[0].strip()
             bill_title = row.xpath("td[6]/text()")[0].strip()
 
@@ -75,10 +77,17 @@ class MTEventScraper(Scraper):
 
             if row.xpath('.//a[contains(@href,"/billhtml/")]'):
                 bill_url = row.xpath('.//a[contains(@href,"/billhtml/")]/@href')[0]
-                event.add_document(bill_title, bill_url, media_type="text/html")
+                event.add_document(
+                    bill_title, bill_url, media_type="text/html", on_duplicate="ignore"
+                )
             if row.xpath('.//a[contains(@href,"/billpdf/")]'):
                 bill_url = row.xpath('.//a[contains(@href,"/billpdf/")]/@href')[0]
-                event.add_document(bill_title, bill_url, media_type="application/pdf")
+                event.add_document(
+                    bill_title,
+                    bill_url,
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
 
             self.events[com][when_slug] = event
 
