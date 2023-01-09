@@ -18,7 +18,7 @@ class PABillScraper(Scraper):
     def scrape(self, chamber=None, session=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
 
-        match = re.search(r"#(\d+)", session)
+        match = re.search(r"[S#](\d+)", session)
         for chamber in chambers:
             if match:
                 yield from self.scrape_session(chamber, session, int(match.group(1)))
