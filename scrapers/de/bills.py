@@ -151,7 +151,7 @@ class DEBillScraper(Scraper, LXMLMixin):
                 sponsor_key = "PersonId"
             else:
                 for k, v in self.potential_sponsor_urls.items():
-                    if k in sponsor_url:
+                    if sponsor_url.startswith(f"https://{k}"):
                         sponsor_id = sponsor_url.replace(v, "")
                         break
             self.add_sponsor_by_legislator_id(bill, sponsor_id, "primary", sponsor_key)
@@ -168,7 +168,7 @@ class DEBillScraper(Scraper, LXMLMixin):
                 sponsor_key = "PersonId"
             else:
                 for k, v in self.potential_sponsor_urls.items():
-                    if k in sponsor_url:
+                    if sponsor_url.startswith(f"https://{k}"):
                         sponsor_id = sponsor_url.replace(v, "")
                         break
             self.add_sponsor_by_legislator_id(bill, sponsor_id, "primary", sponsor_key)
