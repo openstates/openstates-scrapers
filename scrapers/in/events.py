@@ -1,90 +1,97 @@
-import pytz
-import cloudscraper
-import dateutil.parser
+import logging
+import os
 from datetime import date
-import lxml.html
+
+import dateutil.parser
+import pytz
+import requests
 from openstates.scrape import Scraper, Event
+from .utils import add_space
+
+log = logging.getLogger(__name__)
 
 
 class INEventScraper(Scraper):
     _tz = pytz.timezone("America/Indianapolis")
     # avoid cloudflare blocks for no UA
     cf_headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/108.0.0.0 Safari/537.36"  # noqa
     }
-    scraper = cloudscraper.create_scraper()
+    base_url = "https://api.iga.in.gov"
+    session = date.today().year
+
+    def in_request(self, url):
+        """
+        Make request to INDIANA API
+        """
+        apikey = os.environ["INDIANA_API_KEY"]
+        useragent = os.getenv("USER_AGENT", self.cf_headers["User-Agent"])
+        headers = {
+            "Authorization": apikey,
+            "Accept": "application/json",
+            "User-Agent": useragent,
+        }
+        res = requests.get(url, headers=headers)
+
+        if res.status_code != 200:
+            res.raise_for_status()
+        return res
 
     def scrape(self):
-        list_url = "http://iga.in.gov/legislative/{}/committees/standing".format(
-            date.today().year
-        )
-        page = self.scraper.get(list_url).content
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(list_url)
+        res = self.in_request(f"{self.base_url}/{self.session}/standing-committees")
 
-        for com_row in page.xpath('//li[contains(@class,"committee-item")]/a/@href'):
-            yield from self.scrape_committee_page(com_row)
+        for committee in res.json()["items"]:
+            committee_path = committee["link"].replace(
+                "standing-committees", "committees"
+            )
+            url = f"{self.base_url}{committee_path}/meetings"
+            yield from self.extract_committee_events(url)
 
-    def scrape_committee_page(self, url):
-        page = self.scraper.get(url, headers=self.cf_headers).content
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        com = page.xpath('//div[contains(@class, "pull-left span8")]/h1/text()')[
-            0
-        ].strip()
+    def extract_committee_events(self, url):
 
-        for row in page.xpath('//div[contains(@id, "agenda-item")]'):
-            meta = row.xpath('div[contains(@class,"accordion-heading-agenda")]/a')[0]
+        res = self.in_request(url)
+        for meeting in res.json()["items"]:
+            link = meeting["link"]
+            _id = link.split("/")[-1]
 
-            date = meta.xpath("text()")[0].strip()
+            extra_details = self.in_request(f"{self.base_url}{link}").json()
 
-            time_and_loc = meta.xpath("span/text()")[0].strip()
-            time_and_loc = time_and_loc.split("\n")
-            time = time_and_loc[0]
-            loc = time_and_loc[1]
+            date = meeting["meetingdate"].replace(" ", "")
+            time = meeting["starttime"].replace(" ", "")
+            location = meeting["location"] or extra_details["location"] or "See Agenda"
+            chamber = (
+                meeting["committee"]["chamber"]
+                .replace("(S)", "Senate")
+                .replace("(H)", "House")
+            )
+            video_url = f"https://iga.in.gov//legislative/{self.session}/meeting/watchlive/{_id}"
 
-            if loc == "":
-                loc = "See Agenda"
+            if extra_details["cancelled"] != "False":
+                continue
 
-            com = com.replace("(S)", "Senate").replace("(H)", "House")
-
-            # Indiana has a LOT of undefined times, stuff like "15 mins after adj. of elections"
-            # so just remove the time component if it won't parse, and the user can go to the agenda
             try:
                 when = dateutil.parser.parse(f"{date} {time}")
-            except dateutil.parser._parser.ParserError:
+            except dateutil.parser.ParserError:
+                log.info(f"Could not parse date: {date} {time}")
                 when = dateutil.parser.parse(date)
             when = self._tz.localize(when)
 
-            if "cancelled" in time.lower():
-                continue
-
             event = Event(
-                name=com,
+                name=chamber,
                 start_date=when,
-                location_name=loc,
+                location_name=location,
                 classification="committee-meeting",
             )
-
             event.add_source(url)
-            event.add_participant(com, type="committee", note="host")
+            event.add_participant(chamber, type="committee", note="host")
+            event.add_media_link("Video of Hearing", video_url, media_type="text/html")
+            agenda = event.add_agenda_item("Bills under consideration")
+            for bill in extra_details["agenda"]:
 
-            if row.xpath('.//a[contains(text(), "View Agenda")]'):
-                agenda_url = row.xpath('.//a[contains(text(), "View Agenda")]/@href')[0]
-                event.add_document("Agenda", agenda_url, media_type="application/pdf")
-
-            if row.xpath('.//a[contains(text(), "Watch")]'):
-                vid_url = row.xpath('.//a[contains(text(), "Watch")]/@href')[0]
-                event.add_media_link(
-                    "Video of Hearing", vid_url, media_type="text/html"
-                )
-
-            if row.xpath('.//tr[contains(@class,"bill-container")]/td'):
-                agenda = event.add_agenda_item("Bills under consideration")
-                for bill_row in row.xpath('.//tr[contains(@class,"bill-container")]'):
-                    bill_id = bill_row.xpath(
-                        ".//a[contains(@class,'bill-name-link')]/text()"
-                    )[0]
+                if bill.get("bill"):
+                    bill_id = bill.get("bill").get("billName")
+                    bill_id = add_space(bill_id)
                     agenda.add_bill(bill_id)
 
             yield event
