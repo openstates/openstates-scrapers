@@ -1,6 +1,5 @@
 from spatula import URL, CSS, HtmlListPage, HtmlPage, SelectorError, SkipItem
 from openstates.models import ScrapeCommittee
-import time
 
 # VA lists the full names of committee members on individual separate pages
 # MemberDetail grabs a member's full name from their specific page
@@ -8,6 +7,9 @@ import time
 
 class MemberDetail(HtmlPage):
     def process_page(self):
+        if len(self.input) > 2:
+            raise ValueError("please provide only committee object and role")
+
         com = self.input[0]
         role = self.input[1]
         try:
@@ -17,10 +19,12 @@ class MemberDetail(HtmlPage):
 
         if "Delegate" in mem_name[0].text:
             cleaned_name = mem_name[0].text.split("Delegate")[1].strip()
-        else:
+        elif "Senator" in mem_name[0].text:
             cleaned_name = mem_name[0].text.split("Senator")[1].strip()
+        else:
+            cleaned_name = mem_name[0].text.strip()
 
-        if cleaned_name is not None:
+        if not cleaned_name:
             com.add_member(cleaned_name, role)
 
         return com
@@ -54,7 +58,6 @@ class CommitteeDetail(HtmlListPage):
                 role = "Member"
 
             detail_link = member_items[i].get("href")
-            time.sleep(4)
             # .do_scrape() allows us to get information from MemberDetail without
             # returning/writing a com object to disk
             com = [
@@ -74,7 +77,6 @@ class FindSubCommittees(HtmlListPage):
     def process_item(self, item):
         try:
             comm_name = item.text
-
         except SelectorError:
             raise SkipItem("no subcommittees")
 
@@ -106,7 +108,6 @@ class CommitteeList(HtmlListPage):
 
     def process_item(self, item):
         comm_name = item.text
-        print(comm_name)
         # both senate and house committees are listed on one page, so this isolates which is which
         chamber_text = item.getparent().getparent().getparent().getchildren()[0].text
         if "HOUSE" in chamber_text:
@@ -123,7 +124,6 @@ class CommitteeList(HtmlListPage):
         detail_link = item.get("href")
         com.add_source(self.source.url, note="homepage")
         com.add_source(detail_link)
-        time.sleep(3)
 
         return CommitteeDetail(com, source=URL(detail_link, timeout=120))
 
@@ -141,9 +141,7 @@ class SubCommitteeList(HtmlListPage):
             if comm_name == "Transportation":
                 raise SkipItem("no subcommittees")
             if comm_name == "Rules":
-                time.sleep(4)
                 raise SkipItem("no subcommittees")
 
         detail_link = item.get("href")
-        time.sleep(4)
         return FindSubCommittees(source=URL(detail_link, timeout=120))
