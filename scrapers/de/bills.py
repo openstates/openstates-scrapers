@@ -14,6 +14,12 @@ class DEBillScraper(Scraper, LXMLMixin):
     legislators = {}
     legislators_by_short = {}
     legislators_by_district = {}
+    """
+    DE has caucus-specific sites that it now
+    uses to identify bill sponsors...sometimes.
+    This mapping helps us consistently get sponsor IDs
+    from those caucus-specific sites
+    """
     potential_sponsor_urls = {
         "housegop": "https://housegop.delaware.gov/members/house-district-",
         "senategop": "https://senategop.delaware.gov/members/senate-district-",
