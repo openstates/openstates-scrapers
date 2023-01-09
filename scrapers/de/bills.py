@@ -14,6 +14,12 @@ class DEBillScraper(Scraper, LXMLMixin):
     legislators = {}
     legislators_by_short = {}
     legislators_by_district = {}
+    potential_sponsor_urls = {
+        "housegop": "https://housegop.delaware.gov/members/house-district-",
+        "senategop": "https://senategop.delaware.gov/members/senate-district-",
+        "housedems": "https://housedems.delaware.gov/members/house-district-",
+        "senatedems": "https://senatedems.delaware.gov/members/senate-district-",
+    }
 
     def scrape(self, session=None):
         # Cache the legislators, we'll need them for sponsors and votes
@@ -135,6 +141,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             '//label[text()="Additional Sponsor(s):"]' "/following-sibling::div/a/@href"
         )
         sponsor_key = "PersonId"
+
         for sponsor_url in additional_sponsors:
             sponsor_key = "DistrictId"
             if sponsor_url.startswith("https://legis"):
@@ -142,22 +149,11 @@ class DEBillScraper(Scraper, LXMLMixin):
                     "https://legis.delaware.gov/LegislatorDetail?" "personId=", ""
                 )
                 sponsor_key = "PersonId"
-            elif "senategop" in sponsor_url:
-                sponsor_id = sponsor_url.replace(
-                    "https://senategop.delaware.gov/members/senate-district-", ""
-                )
-            elif "housegop" in sponsor_url:
-                sponsor_id = sponsor_url.replace(
-                    "https://housegop.delaware.gov/members/house-district-", ""
-                )
-            elif "senatedems" in sponsor_url:
-                sponsor_id = sponsor_url.replace(
-                    "https://senatedems.delaware.gov/members/senate-district-", ""
-                )
-            elif "housedems" in sponsor_url:
-                sponsor_id = sponsor_url.replace(
-                    "https://housedems.delaware.gov/members/house-district-", ""
-                )
+            else:
+                for k, v in self.potential_sponsor_urls.items():
+                    if k in sponsor_url:
+                        sponsor_id = sponsor_url.replace(v, "")
+                        break
             self.add_sponsor_by_legislator_id(bill, sponsor_id, "primary", sponsor_key)
 
         cosponsors = html.xpath(
@@ -170,25 +166,12 @@ class DEBillScraper(Scraper, LXMLMixin):
                     "https://legis.delaware.gov/LegislatorDetail?" "personId=", ""
                 )
                 sponsor_key = "PersonId"
-            elif "senategop" in sponsor_url:
-                sponsor_id = sponsor_url.replace(
-                    "https://senategop.delaware.gov/members/senate-district-", ""
-                )
-            elif "housegop" in sponsor_url:
-                sponsor_id = sponsor_url.replace(
-                    "https://housegop.delaware.gov/members/house-district-", ""
-                )
-            elif "senatedems" in sponsor_url:
-                sponsor_id = sponsor_url.replace(
-                    "https://senatedems.delaware.gov/members/senate-district-", ""
-                )
-            elif "housedems" in sponsor_url:
-                sponsor_id = sponsor_url.replace(
-                    "https://housedems.delaware.gov/members/house-district-", ""
-                )
-            self.add_sponsor_by_legislator_id(
-                bill, sponsor_id, "cosponsor", sponsor_key
-            )
+            else:
+                for k, v in self.potential_sponsor_urls.items():
+                    if k in sponsor_url:
+                        sponsor_id = sponsor_url.replace(v, "")
+                        break
+            self.add_sponsor_by_legislator_id(bill, sponsor_id, "primary", sponsor_key)
 
         versions = html.xpath(
             '//label[text()="Original Text:"]/following-sibling::div/a/@href'
