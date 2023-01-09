@@ -130,9 +130,8 @@ class Idaho(State):
             "identifier": "2022spcl",
             "name": "66th Legislature, First Extraordinary Session (2022)",
             "start_date": "2022-09-01",
-            # TODO: update end date
             "end_date": "2022-09-08",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023 Session",
@@ -141,7 +140,7 @@ class Idaho(State):
             "name": "67th Legislature, 1st Regular Session (2023)",
             "start_date": "2023-01-09",
             "end_date": "2023-03-31",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
