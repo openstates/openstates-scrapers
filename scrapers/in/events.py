@@ -58,7 +58,9 @@ class INEventScraper(Scraper):
             extra_details = self.in_request(f"{self.base_url}{link}").json()
 
             date = meeting["meetingdate"].replace(" ", "")
-            time = meeting["starttime"].replace(" ", "")
+            time = meeting["starttime"]
+            if time:
+                time = time.replace(" ", "")
             location = meeting["location"] or extra_details["location"] or "See Agenda"
             chamber = (
                 meeting["committee"]["chamber"]

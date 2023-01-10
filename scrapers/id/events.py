@@ -36,7 +36,7 @@ class IDEventScraper(Scraper):
             "//div[@id='allDiv' and contains(text(),'No meetings scheduled')]"
         ):
             self.empty_chambers.append(chamber)
-
+        events = set()
         for row in page.xpath('//div[@id="ai1ec-container"]/div'):
             month = row.xpath(
                 ".//div[contains(@class,'calendarHeader')]/div[contains(@class,'date')]/text()"
@@ -64,6 +64,10 @@ class IDEventScraper(Scraper):
             com = row.xpath(
                 ".//div[contains(@class,'calendarHeader')]/div[contains(@class,'day')]/h2/a/text()"
             )[0].strip()
+            event_name = f"{chamber}#{com}#{start}"
+            if event_name in events:
+                continue
+            events.add(event_name)
 
             event = Event(
                 name=com,
@@ -71,7 +75,7 @@ class IDEventScraper(Scraper):
                 location_name=loc,
                 classification="committee-meeting",
             )
-
+            event.dedupe_key = event_name
             event.add_participant(com, type="committee", note="host")
 
             agenda_url = row.xpath('.//a[contains(text(), "Full Agenda")]/@href')[0]
