@@ -57,7 +57,7 @@ class LegDetail(HtmlPage):
 
 class LegList(JsonPage):
     source = URL(
-        "https://api.oregonlegislature.gov/odata/odataservice.svc/LegislativeSessions('2021R1')/Legislators",
+        "https://api.oregonlegislature.gov/odata/odataservice.svc/LegislativeSessions('2023R1')/Legislators",
         headers={"Accept": "application/json"},
     )
 
