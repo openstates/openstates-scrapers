@@ -104,10 +104,13 @@ class LegList(JsonPage):
             if title not in ["Senator", "Representative"]:
                 p.extras["title"] = title
 
-            email = leg["EmailAddress"].strip()
-            p.email = email
+            email = leg["EmailAddress"]
+            p.email = email.strip() if email else ""
 
             website = leg["WebSiteUrl"]
+            # Fixes bad url in the JSON data for Sen. Elizabeth Steiner
+            website = website.replace("steinerhayward", "steiner")
+
             p.add_link(website, note="homepage")
             p.add_source(website)
 
