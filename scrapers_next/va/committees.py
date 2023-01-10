@@ -1,5 +1,6 @@
 from spatula import URL, CSS, HtmlListPage, HtmlPage, SelectorError, SkipItem
 from openstates.models import ScrapeCommittee
+import time
 
 # VA lists the full names of committee members on individual separate pages
 # MemberDetail grabs a member's full name from their specific page
@@ -34,7 +35,13 @@ class MemberDetail(HtmlPage):
 class CommitteeDetail(HtmlListPage):
     def process_page(self):
         com = self.input
-        member_items = CSS("p a").match(self.root)
+        try:
+            member_items = CSS("p a").match(self.root)
+        except SelectorError:
+            com_name = list(com)[0][1]
+            print_str = "cannot access " + com_name + " committee details"
+            raise SkipItem(print_str)
+
         members = [i.text for i in member_items]
 
         for i in range(len(members)):
@@ -71,8 +78,10 @@ class CommitteeDetail(HtmlListPage):
 
 
 class FindSubCommittees(HtmlListPage):
-
-    selector = CSS("#mainC > ul:nth-child(12) > li a")
+    try:
+        selector = CSS("#mainC > ul:nth-child(12) > li a")
+    except SelectorError:
+        raise SkipItem("cannot access subcommittees")
 
     def process_item(self, item):
         try:
@@ -125,7 +134,9 @@ class CommitteeList(HtmlListPage):
         com.add_source(self.source.url, note="homepage")
         com.add_source(detail_link)
 
-        return CommitteeDetail(com, source=URL(detail_link, timeout=120))
+        time.sleep(10)
+
+        return CommitteeDetail(com, source=URL(detail_link, timeout=120, retries=3))
 
 
 class SubCommitteeList(HtmlListPage):
@@ -144,4 +155,5 @@ class SubCommitteeList(HtmlListPage):
                 raise SkipItem("no subcommittees")
 
         detail_link = item.get("href")
+        time.sleep(15)
         return FindSubCommittees(source=URL(detail_link, timeout=120))
