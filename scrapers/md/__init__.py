@@ -188,7 +188,7 @@ class Maryland(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-12",
             "end_date": "2023-04-11",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023 Regular Session",
@@ -197,7 +197,7 @@ class Maryland(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-11",
             "end_date": "2023-04-10",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
