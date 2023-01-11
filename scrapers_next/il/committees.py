@@ -107,29 +107,6 @@ class SenateList(HtmlListPage):
             self.skip()
 
 
-"""
-class HouseDetail(HtmlPage):
-    def process_page(self):
-        com = self.input
-        try:
-            members = CSS(".notranslate").match(self.root)
-
-        except SelectorError:
-            raise SkipItem("empty committee")
-
-        roles = CSS(".heading").match(self.root)
-
-        members = [i.text for i in members if i.text != "D"]
-        members = [i for i in members if i != "R"]
-        roles = [i.text.split()[0].strip().strip(":") for i in roles][1:]
-
-        for i in range(len(roles)):
-            com.add_member(members[i], roles[i])
-
-        return com
-"""
-
-
 class HouseList(HtmlListPage):
     source = URL("https://www.ilga.gov/house/committees/default.asp")
     selector = CSS(".content")
