@@ -52,6 +52,12 @@ class OHEventScraper(Scraper):
             if "house session" in name.lower() or "senate session" in name.lower():
                 continue
 
+            if "url" not in item:
+                self.warning(
+                    f"No url or data provided for {item['title']} on {item['start']}, skipping."
+                )
+                continue
+
             url = f"{self.base_url}{item['url']}"
 
             when = dateutil.parser.parse(item["start"])
