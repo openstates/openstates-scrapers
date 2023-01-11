@@ -64,14 +64,14 @@ class Tennessee(State):
             "identifier": "110",
             "name": "110th Regular Session (2017-2018)",
             "start_date": "2017-01-10",
-            "end_date": "2018-04-27",
+            "end_date": "2018-04-25",
         },
         {
             "_scraped_name": "111th General Assembly",
             "classification": "primary",
             "identifier": "111",
             "name": "111th Regular Session (2019-2020)",
-            "start_date": "2019-01-09",
+            "start_date": "2019-01-08",
             "end_date": "2020-06-19",
         },
         {
@@ -82,15 +82,15 @@ class Tennessee(State):
             "identifier": "111S1",
             "name": "111th First Extraordinary Session (August 2019)",
             "start_date": "2019-08-23",
-            "end_date": "2019-08-28",
+            "end_date": "2019-08-23",
         },
         {
             "_scraped_name": "Second Extraordinary Session (August 2020)",
             "classification": "special",
             "identifier": "111S2",
             "name": "111th Second Extraordinary Session (August 2020)",
-            "start_date": "2020-08-05",
-            "end_date": "2020-08-27",
+            "start_date": "2020-08-11",
+            "end_date": "2020-08-11",
         },
         {
             "_scraped_name": "112th General Assembly",
@@ -98,7 +98,7 @@ class Tennessee(State):
             "identifier": "112",
             "name": "112th Regular Session (2021-2022)",
             "start_date": "2021-01-12",
-            "end_date": "2021-05-06",
+            "end_date": "2021-05-05",
             "active": False,
         },
         {
@@ -107,7 +107,7 @@ class Tennessee(State):
             "identifier": "112S2",
             "name": "112th Second Extraordinary Session (October 2021)",
             "start_date": "2021-10-18",
-            "end_date": "2021-10-22",
+            "end_date": "2021-11-17",
             "active": False,
         },
         {
@@ -116,7 +116,7 @@ class Tennessee(State):
             "identifier": "112S3",
             "name": "112th Third Extraordinary Session (October 2021)",
             "start_date": "2021-10-27",
-            "end_date": "2021-10-29",
+            "end_date": "2021-10-30",
             "active": False,
         },
         {

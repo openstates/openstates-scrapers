@@ -736,8 +736,11 @@ class PDFCommitteeVote(object):
                 break
 
         line = next(text)
-        _, motion = line.split(" - ")
-        motion = motion.strip()
+        try:
+            _, motion = line.split(" - ")
+            motion = motion.strip()
+        except Exception:
+            motion = line.strip()
         return motion
 
     def _getcounts(self):

@@ -2,6 +2,7 @@ import re
 import datetime
 
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
+from .actions import Categorizer
 from utils import LXMLMixin
 
 import lxml.html
@@ -23,6 +24,8 @@ SPECIAL_SLUGS = {"2021S1H": "2021Y1", "2021S1S": "2021X1"}
 
 
 class UTBillScraper(Scraper, LXMLMixin):
+    categorizer = Categorizer()
+
     def scrape(self, session=None, chamber=None):
         # if you need to test on an individual bill...
         # yield from self.scrape_bill(
@@ -208,41 +211,20 @@ class UTBillScraper(Scraper, LXMLMixin):
 
             if action == "Governor Signed":
                 actor = "executive"
-                typ = "executive-signature"
+
             elif action == "Governor Vetoed":
                 actor = "executive"
-                typ = "executive-veto"
+
             elif action == "Governor Line Item Veto":
                 actor = "executive"
-                typ = "executive-veto-line-item"
-            elif action.startswith("1st reading"):
-                typ = ["introduction", "reading-1"]
-            elif action == "to Governor":
-                typ = "executive-receipt"
-            elif action == "passed 3rd reading":
-                typ = "passage"
-            elif action.startswith("passed 2nd & 3rd readings"):
-                typ = "passage"
+
             elif action == "to standing committee":
                 comm = row.xpath("td[3]/font/text()")[0]
                 action = "to " + comm
-                typ = "referral-committee"
-            elif action.startswith("2nd reading"):
-                typ = "reading-2"
-            elif action.startswith("3rd reading"):
-                typ = "reading-3"
-            elif action == "failed":
-                typ = "failure"
-            elif action.startswith("2nd & 3rd readings"):
-                typ = ["reading-2", "reading-3"]
-            elif action == "passed 2nd reading":
-                typ = "reading-2"
-            elif "Comm - Favorable Recommendation" in action:
-                typ = "committee-passage-favorable"
-            elif action == "committee report favorable":
-                typ = "committee-passage-favorable"
-            else:
-                typ = None
+
+            attrs = self.categorizer.categorize(action)
+            typ = attrs["classification"]
+
             act = bill.add_action(
                 description=action, date=date, chamber=actor, classification=typ
             )

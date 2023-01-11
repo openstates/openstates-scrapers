@@ -4,6 +4,7 @@ import dateutil.parser
 import re
 
 from utils import LXMLMixin
+from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
 
 
@@ -69,8 +70,19 @@ class AKEventScraper(Scraper, LXMLMixin):
         location = row.xpath("string(Location)").strip()
 
         # events with no location all seem to be committee hearings
-        if location == "":
+        if location == "" or re.match(r"^\w+\s\d+$", location):
             location = "Alaska State Capitol, 120 4th St, Juneau, AK 99801"
+        elif re.match(r"^\w+\s\d+$", location) or re.match(
+            r"(HOUSE|SENATE)\s\w+(\s\d+)?", location
+        ):
+            location = f"{location}, Alaska State Capitol, 120 4th St, Juneau, AK 99801"
+        elif "anch lio" in location.lower():
+            location = re.sub(
+                r"anch lio",
+                "Anchorage Legislative Information Office, 1500 W Benson Blvd, Anchorage, AK 99503",
+                location,
+                flags=re.IGNORECASE,
+            )
 
         start_date = dateutil.parser.parse(row.xpath("string(Schedule)"))
         # todo: do i need to self._TZ.localize() ?
@@ -81,6 +93,17 @@ class AKEventScraper(Scraper, LXMLMixin):
 
         if committee_code in self.COMMITTEES[chamber]:
             event.add_participant(committee_name, type="committee", note="host")
+
+        match_coordinates(
+            event,
+            {
+                "state capitol": ("58.302068966269374", "-134.41033234349783"),
+                "anchorage legislative information": (
+                    "61.19311529903147",
+                    "-149.91182077226256",
+                ),
+            },
+        )
 
         for item in row.xpath("Agenda/Item"):
             agenda_desc = item.xpath("string(Text)").strip()
@@ -119,6 +142,6 @@ class AKEventScraper(Scraper, LXMLMixin):
         headers["X-Alaska-Legislature-Basis-Version"] = "1.2"
 
         url = "{}{}".format(self.API_BASE, path)
-        page = self.get(url, params=args, headers=headers)
+        page = self.get(url, params=args, headers=headers, verify=False)
         page = lxml.etree.fromstring(page.content)
         return page

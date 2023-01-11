@@ -93,7 +93,6 @@ class PRBillScraper(Scraper):
             domain="sutra.oslpr.org", name="SUTRASplash", value="NoSplash"
         )
         self.s.cookies.set_cookie(cookie_obj)
-
         xml = self.s.post(url, data=form, headers=headers).text
         return xml
 
@@ -177,12 +176,15 @@ class PRBillScraper(Scraper):
             "ctl00$CPHBody$txt_FechaHasta": end,
             "ctl00$CPHBody$ME_txt_FechaHasta_ClientState": "",
             "ctl00$CPHBody$txt_Titulo": "",
+            "ctl00$CPHBody$Tramites$chk_Autor": "on",
+            "ctl00$CPHBody$Tramites$chk_CoAutor": "on",
             "ctl00$CPHBody$lovEvento": "-1",
             "ctl00$CPHBody$lovComision": "-1",
             "ctl00$CPHBody$txt_EventoFechaDesde": "",
             "ctl00$CPHBody$ME_txt_EventoFechaDesde_ClientState": "",
             "ctl00$CPHBody$txt_EventoFechaHasta": "",
             "ctl00$CPHBody$ME_txt_EventoFechaHasta_ClientState": "",
+            "ctl00$CPHBody$Tramites$btnFilter": "Buscar",
             "__EVENTTARGET": "",
             "__EVENTARGUMENT": "",
         }
@@ -198,9 +200,7 @@ class PRBillScraper(Scraper):
         yield from self.scrape_search_results(chamber, session, params, self.last_page)
 
     def scrape_search_results(self, chamber, session, params, page=None):
-        resp = self.asp_post(
-            "https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx", params, page
-        )
+        resp = self.asp_post("https://sutra.oslpr.org/osl/esutra/", params, page)
         page = lxml.html.fromstring(resp)
         self.last_page = page
 

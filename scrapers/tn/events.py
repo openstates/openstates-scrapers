@@ -2,8 +2,10 @@ import datetime as dt
 
 from openstates.scrape import Event, Scraper
 from utils import LXMLMixin, url_xpath
+from utils.events import match_coordinates
 
 import pytz
+import re
 
 cal_weekly_events = "http://wapp.capitol.tn.gov/apps/schedule/WeeklyView.aspx"
 cal_chamber_text = {"upper": "Senate", "lower": "House", "other": "Joint"}
@@ -58,71 +60,96 @@ class TNEventScraper(Scraper, LXMLMixin):
     def scrape_chamber(self, chamber=None):
         # If chamber is None, don't exclude any events from the results based on chamber
         chmbr = cal_chamber_text.get(chamber)
-        tables = url_xpath(cal_weekly_events, "//table[@class='date-table']")
-        for table in tables:
-            date = table.xpath("../.")[0].getprevious().text_content()
-            trs = table.xpath("./tr")
-            for tr in trs:
-                order = ["time", "chamber", "type", "agenda", "location", "video"]
 
-                tds = tr.xpath("./td")
-                metainf = {}
+        cal_urls = [cal_weekly_events]
+        today = dt.date.today()
+        for i in range(1, 12):
+            date = today + dt.timedelta(days=7 * i)
+            date_str = date.strftime("%m/%d/%Y")
+            cal_url = f"{cal_weekly_events}?date={date_str}"
+            cal_urls.append(cal_url)
 
-                if not tds:
-                    continue
+        for cal_url in cal_urls:
+            self.info(cal_url)
+            tables = url_xpath(cal_url, "//table[@class='date-table']")
+            for table in tables:
+                date = table.xpath("../.")[0].getprevious().text_content()
+                trs = table.xpath("./tr")
+                for tr in trs:
+                    order = ["time", "chamber", "type", "agenda", "location", "video"]
 
-                for el in range(0, len(order)):
-                    metainf[order[el]] = tds[el]
+                    tds = tr.xpath("./td")
+                    metainf = {}
 
-                if chmbr and metainf["chamber"].text_content() != chmbr:
-                    self.info("Skipping event based on chamber.")
-                    continue
-
-                time = metainf["time"].text_content()
-                datetime_string = "%s %s" % (date.strip(" \r\n"), time.strip(" \r\n"))
-                location = metainf["location"].text_content()
-                description = metainf["type"].text_content()
-                dtfmt = "%A, %B %d, %Y %I:%M %p"
-                dtfmt_no_time = "%A, %B %d, %Y"
-                if time == "Cancelled":
-                    self.log("Skipping cancelled event.")
-                    continue
-                else:
-                    if "Immediately follows H-FLOOR" in datetime_string:
-                        continue
-                    if " Immediately follows" in datetime_string:
-                        datetime_string, _ = datetime_string.split(
-                            "Immediately follows"
-                        )
-                    if "canceled" in datetime_string.lower():
-                        continue
-                    if "TBA" in datetime_string:
+                    if not tds:
                         continue
 
-                    datetime_string = datetime_string.strip()
+                    for el in range(0, len(order)):
+                        metainf[order[el]] = tds[el]
 
-                    try:
-                        when = dt.datetime.strptime(datetime_string, dtfmt)
-                    except ValueError:
-                        when = dt.datetime.strptime(datetime_string, dtfmt_no_time)
-                    when = self._utc.localize(when)
+                    if chmbr and metainf["chamber"].text_content() != chmbr:
+                        self.info("Skipping event based on chamber.")
+                        continue
 
-                event = Event(
-                    name=description,
-                    start_date=when,
-                    location_name=location,
-                    description=description,
-                )
-                # The description is a committee name
-                event.add_committee(name=description)
-                event.add_source(cal_weekly_events)
+                    time = metainf["time"].text_content()
+                    datetime_string = "%s %s" % (
+                        date.strip(" \r\n"),
+                        time.strip(" \r\n"),
+                    )
+                    location = metainf["location"].text_content()
 
-                agenda = metainf["agenda"].xpath(".//a")
-                if len(agenda) > 0:
-                    agenda = agenda
-                    for doc in agenda:
-                        if not doc.text_content():
+                    if re.match(
+                        r"^house hearing room", location, flags=re.I
+                    ) or re.match(r"^[house|senate] chamber", location, flags=re.I):
+                        location = f"{location}, 600 Dr. Martin L King, Jr. Blvd, Nashville, TN 37243"
+
+                    description = metainf["type"].text_content()
+                    dtfmt = "%A, %B %d, %Y %I:%M %p"
+                    dtfmt_no_time = "%A, %B %d, %Y"
+                    # skipping cancelled here instead of setting a status, because
+                    # they clear the time on canceled events so we can't look them up
+                    if time == "Cancelled":
+                        self.log("Skipping cancelled event.")
+                        continue
+                    else:
+                        if "Immediately follows H-FLOOR" in datetime_string:
                             continue
-                        agenda_url = doc.attrib["href"]
-                        self.add_agenda(agenda_url, doc.text_content(), event)
-                yield event
+                        if " Immediately follows" in datetime_string:
+                            datetime_string, _ = datetime_string.split(
+                                "Immediately follows"
+                            )
+                        if "canceled" in datetime_string.lower():
+                            continue
+                        if "TBA" in datetime_string:
+                            continue
+
+                        datetime_string = datetime_string.strip()
+
+                        try:
+                            when = dt.datetime.strptime(datetime_string, dtfmt)
+                        except ValueError:
+                            when = dt.datetime.strptime(datetime_string, dtfmt_no_time)
+                        when = self._utc.localize(when)
+
+                    event = Event(
+                        name=description,
+                        start_date=when,
+                        location_name=location,
+                        description=description,
+                    )
+                    # The description is a committee name
+                    event.add_committee(name=description)
+                    event.add_source(cal_url)
+
+                    agenda = metainf["agenda"].xpath(".//a")
+                    if len(agenda) > 0:
+                        agenda = agenda
+                        for doc in agenda:
+                            if not doc.text_content():
+                                continue
+                            agenda_url = doc.attrib["href"]
+                            self.add_agenda(agenda_url, doc.text_content(), event)
+
+                    match_coordinates(event, {"600 Dr. Martin": (36.16633, -86.78418)})
+
+                    yield event

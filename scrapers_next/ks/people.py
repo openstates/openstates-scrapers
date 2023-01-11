@@ -47,7 +47,7 @@ class MembersDetail(JsonPage):
             ]
         )
 
-        leg_url = f"http://www.kslegislature.org/li/b2021_22/members/{content['KPID']}/"
+        leg_url = f"http://www.kslegislature.org/li/b2023_24/members/{content['KPID']}/"
         image_url = (
             f"http://www.kslegislature.org/li/m/images/pics/{content['KPID']}.jpg"
         )

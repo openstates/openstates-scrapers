@@ -3,14 +3,14 @@ from openstates.models import ScrapePerson
 
 
 def list_url():
-    general_court_num = "192"
+    general_court_num = "193"
     return f"https://malegislature.gov/api/GeneralCourts/{general_court_num}/LegislativeMembers/"
 
 
 class LegDetail(JsonPage):
 
     example_source = (
-        "http://malegislature.gov/api/GeneralCourts/192/LegislativeMembers/R_C1"
+        "http://malegislature.gov/api/GeneralCourts/193/LegislativeMembers/R_C1"
     )
 
     def process_page(self):
@@ -29,7 +29,7 @@ class LegDetail(JsonPage):
             district=self.data["District"],
             chamber=chamber,
             image=image,
-            email=self.data["EmailAddress"],
+            email=self.data["EmailAddress"] or "",
         )
 
         room_num = self.data["RoomNumber"]
@@ -76,7 +76,7 @@ class LegDetail(JsonPage):
 
 class LegList(JsonListPage):
 
-    source = URL(list_url(), timeout=30)
+    source = URL(list_url(), timeout=30, verify=False)
     selector = XPath("//LegislativeMemberSummary/Details")
 
     def process_item(self, item):

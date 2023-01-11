@@ -1,4 +1,6 @@
+# from select[@class="selectSession"] on https://www.azleg.gov/
 session_id_meta_data = {
+    "56th-1st-regular": 127,
     "55th-2nd-regular": 125,
     "55th-1st-special": 124,
     "55th-1st-regular": 123,

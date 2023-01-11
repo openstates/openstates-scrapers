@@ -172,7 +172,7 @@ class BillTabDetail(HtmlPage):
         seen = set()
         for link in sponsor_links:
             name = link.text_content().strip()
-            if "Sponsors" in name:
+            if "Sponsors" in name or name == "":
                 continue
             # Removes leg position from name
             # Example: Assemblywoman Alexis Hansen

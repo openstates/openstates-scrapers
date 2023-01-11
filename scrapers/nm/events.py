@@ -3,6 +3,7 @@ import dateutil.parser
 import lxml
 import re
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 class NMEventScraper(Scraper):
@@ -11,12 +12,19 @@ class NMEventScraper(Scraper):
     agenda_urls = {"upper": {}, "lower": {}}
 
     def scrape(self, chamber=None):
+        event_count = 0
         if chamber:
-            yield from self.scrape_chamber(chamber)
+            for event in self.scrape_chamber(chamber):
+                event_count += 1
+                yield event
         else:
             chambers = ["upper", "lower"]
             for chamber in chambers:
-                yield from self.scrape_chamber(chamber)
+                for event in self.scrape_chamber(chamber):
+                    event_count += 1
+                    yield event
+        if event_count < 1:
+            raise EmptyScrape
 
     def scrape_chamber(self, chamber):
         url = "https://www.nmlegis.gov/Calendar/Session"

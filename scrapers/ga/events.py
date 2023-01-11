@@ -24,6 +24,7 @@ class GAEventScraper(Scraper):
         url = f"https://www.legis.ga.gov/api/meetings?startDate={date_slug}"
 
         page = self.get(url, headers={"Authorization": get_token()}).json()
+        event_count = 0
 
         if len(page) == 0:
             raise EmptyScrape
@@ -72,5 +73,8 @@ class GAEventScraper(Scraper):
                 )
 
             event.add_source("https://www.legis.ga.gov/schedule/all")
-
+            event_count += 1
             yield event
+
+        if event_count == 0:
+            raise EmptyScrape

@@ -5,6 +5,8 @@ from collections import defaultdict
 import string
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 from .utils import parse_directory_listing, open_csv
+from .actions import Categorizer
+
 
 import lxml.html
 
@@ -15,6 +17,7 @@ class SkipBill(Exception):
 
 class CTBillScraper(Scraper):
     latest_only = True
+    categorizer = Categorizer()
 
     def scrape(self, chamber=None, session=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
@@ -263,35 +266,14 @@ class CTBillScraper(Scraper):
                         " AND Office of Fiscal Analysis %s" % (match.group(1))
                     )
 
-                if re.match(r"^ADOPTED, (HOUSE|SENATE|SEN\.?)", action) or re.match(
-                    r"^(HOUSE|SENATE|SEN\.?) PASSED", action
-                ):
-                    act_type.append("passage")
-
-                match = re.match(r"^Joint ((Un)?[Ff]avorable)", action)
-                if match:
-                    act_type.append("committee-passage-%s" % match.group(1).lower())
-
-                if re.match(r"SIGNED BY GOVERNOR", action):
-                    act_type.append("executive-signature")
-
-                if re.match(r"^LINE ITEM VETOED", action):
-                    act_type.append("executive-veto-line-item")
-
-                if re.match(r"VETOED BY GOVERNOR", action):
-                    act_type.append("executive-veto")
-
-                if not act_type:
-                    act_type = None
-
-                if re.match(r"(PUBLIC\sACT|SECRETARY\sOF\sTHE\sSTATE)", action):
-                    act_chamber = "executive"
+                action_attr = self.categorizer.categorize(action)
+                classification = action_attr["classification"]
 
                 bill.add_action(
                     description=action,
                     date=date,
                     chamber=act_chamber,
-                    classification=act_type,
+                    classification=classification,
                 )
 
                 # if an action is the terminal step in one chamber,

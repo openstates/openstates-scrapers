@@ -73,7 +73,7 @@ class Indiana(State):
             "_scraped_name": "First Regular Session 120th General Assembly (2017)",
             "identifier": "2017",
             "name": "2017 Regular Session",
-            "start_date": "2017-01-09",
+            "start_date": "2017-01-03",
             "end_date": "2017-04-29",
         },
         {
@@ -81,20 +81,20 @@ class Indiana(State):
             "identifier": "2018",
             "name": "2018 Regular Session",
             "start_date": "2018-01-02",
-            "end_date": "2018-03-16",
+            "end_date": "2018-03-14",
         },
         {
             "_scraped_name": "Special Session 120th General Assembly (2018)",
             "identifier": "2018ss1",
             "name": "2018 Special Session",
             "start_date": "2018-05-14",
-            "end_date": "2018-05-24",
+            "end_date": "2018-05-14",
         },
         {
             "_scraped_name": "First Regular Session 121st General Assembly (2019)",
             "identifier": "2019",
             "name": "2019 Regular Session",
-            "start_date": "2019-01-14",
+            "start_date": "2019-01-03",
             "end_date": "2019-04-24",
         },
         {
@@ -118,7 +118,7 @@ class Indiana(State):
             "identifier": "2022",
             "name": "2022 Regular Session",
             "start_date": "2022-01-04",
-            "end_date": "2022-03-14",
+            "end_date": "2022-03-08",
             "active": False,
         },
         {
@@ -128,18 +128,17 @@ class Indiana(State):
             "name": "2022 Special Session",
             "start_date": "2022-07-25",
             "end_date": "2022-08-14",
+            "active": False,
+        },
+        {
+            "_scraped_name": "First Regular Session 123rd General Assembly (2023)",
+            "classification": "primary",
+            "identifier": "2023",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-10",
+            "end_date": "2023-04-29",
             "active": True,
         },
-        # {
-        #     "_scraped_name": "First Regular Session 123rd General Assembly (2023)",
-        #     "classification": "primary",
-        #     "identifier": "2023",
-        #     "name": "2023 Regular Session",
-        #     # TODO: update dates
-        #     "start_date": "2023-01-11",
-        #     "end_date": "2023-04-29",
-        #     "active": True,
-        # },
     ]
     ignored_scraped_sessions = [
         "First Regular Session 123rd General Assembly (2023)",

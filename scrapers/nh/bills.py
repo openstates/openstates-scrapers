@@ -6,6 +6,7 @@ import pytz
 import lxml.html
 
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
+from .actions import Categorizer
 
 from .legacyBills import NHLegacyBillScraper
 
@@ -21,27 +22,9 @@ bill_type_map = {
     "SSSB": "bill",
     "SSHB": "bill",
 }
-action_classifiers = [
-    ("Minority Committee Report", None),  # avoid calling these passage
-    ("Ought to Pass", ["passage"]),
-    ("Passed by Third Reading", ["reading-3", "passage"]),
-    (".*Ought to Pass", ["committee-passage-favorable"]),
-    (".*Introduced(.*) and (R|r)eferred", ["introduction", "referral-committee"]),
-    ("Proposed(.*) Amendment", "amendment-introduction"),
-    ("Amendment .* Adopted", "amendment-passage"),
-    ("Amendment .* Failed", "amendment-failure"),
-    ("Signed", "executive-signature"),
-    ("Vetoed", "executive-veto"),
-]
+
 VERSION_URL = "http://www.gencourt.state.nh.us/legislation/%s/%s.html"
 AMENDMENT_URL = "http://www.gencourt.state.nh.us/legislation/amendments/%s.html"
-
-
-def classify_action(action):
-    for regex, classification in action_classifiers:
-        if re.match(regex, action):
-            return classification
-    return None
 
 
 def extract_amendment_id(action):
@@ -52,6 +35,7 @@ def extract_amendment_id(action):
 
 class NHBillScraper(Scraper):
     cachebreaker = dt.datetime.now().strftime("%Y%d%d%H%I%s")
+    categorizer = Categorizer()
 
     def scrape(self, chamber=None, session=None):
         est = pytz.timezone("America/New_York")
@@ -289,12 +273,14 @@ class NHBillScraper(Scraper):
                 actor = "lower" if body == "H" else "upper"
                 time = dt.datetime.strptime(timestamp, "%m/%d/%Y %H:%M:%S %p")
                 action = action.strip()
-                atype = classify_action(action)
+                action_attr = self.categorizer.categorize(action)
+                classification = action_attr["classification"]
+
                 self.bills[lsr].add_action(
                     chamber=actor,
                     description=action,
                     date=time.strftime("%Y-%m-%d"),
-                    classification=atype,
+                    classification=classification,
                 )
                 amendment_id = extract_amendment_id(action)
                 if amendment_id:

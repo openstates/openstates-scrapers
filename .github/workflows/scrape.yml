@@ -11,9 +11,9 @@ jobs:
 
     steps:
     # checkouts
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: checkout results repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: openstates/scraper-artifacts
         path: artifacts
@@ -21,11 +21,11 @@ jobs:
 
     # install python environment
     - name: setup Python 3.9
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: 3.9
     - name: install Poetry
-      uses: snok/install-poetry@v1.1.1
+      uses: snok/install-poetry@v1.3.3
     - name: cache Poetry virtualenv
       uses: actions/cache@v2
       id: poetry-cache

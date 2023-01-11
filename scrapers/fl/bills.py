@@ -6,6 +6,7 @@ from collections import defaultdict
 from openstates.scrape import Bill, VoteEvent, Scraper
 from openstates.utils import format_datetime
 from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage, URL
+from .actions import Categorizer
 
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
 import requests
@@ -117,6 +118,8 @@ class BillList(HtmlListPage):
 
 
 class BillDetail(HtmlPage):
+    categorizer = Categorizer()
+
     input_type = Bill
     example_input = Bill(
         "HB 1", "2021", "title", chamber="upper", classification="bill"
@@ -296,35 +299,8 @@ class BillDetail(HtmlPage):
 
                 action = re.sub(r"-(H|S)J\s+(\d+)$", "", action)
 
-                atype = []
-                if action.startswith("Referred to"):
-                    atype.append("referral-committee")
-                elif action.startswith("Favorable by"):
-                    atype.append("committee-passage-favorable")
-                elif action == "Filed":
-                    atype.append("filing")
-                elif action.startswith("Withdrawn"):
-                    atype.append("withdrawal")
-                elif action.startswith("Died"):
-                    atype.append("failure")
-                elif action.startswith("Introduced"):
-                    atype.append("introduction")
-                elif action.startswith("Read 2nd time"):
-                    atype.append("reading-2")
-                elif action.startswith("Read 3rd time"):
-                    atype.append("reading-3")
-                elif action.startswith("Passed;"):
-                    atype.append("passage")
-                elif action.startswith("Passed as amended"):
-                    atype.append("passage")
-                elif action.startswith("Adopted"):
-                    atype.append("passage")
-                elif action.startswith("CS passed"):
-                    atype.append("passage")
-                elif action == "Approved by Governor":
-                    atype.append("executive-signature")
-                elif action == "Vetoed by Governor":
-                    atype.append("executive-veto")
+                action_attr = self.categorizer.categorize(action)
+                atype = action_attr["classification"]
 
                 self.input.add_action(
                     action,
@@ -598,6 +574,7 @@ class HouseSearchPage(HtmlListPage):
         # Keep the digits and all following characters in the bill's ID
         bill_number = re.search(r"^\w+\s(\d+\w*)$", self.input.identifier).group(1)
         session_number = {
+            "2022A": "101",
             "2023": "99",
             "2022D": "96",
             "2022C": "95",
