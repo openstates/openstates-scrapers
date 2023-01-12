@@ -2,6 +2,7 @@ from utils import LXMLMixin
 import re
 import datetime as dt
 import dateutil.parser
+import scrapelib
 
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
@@ -29,7 +30,12 @@ class TXEventScraper(Scraper, LXMLMixin):
             raise EmptyScrape
 
     def scrape_event_page(self, session, chamber, url, datetime):
-        page = self.lxmlize(url)
+        try:
+            page = self.lxmlize(url)
+        except scrapelib.HTTPError:
+            self.warning(f"Unable to load {url}, skipping.")
+            return
+
         info = page.xpath("//p")
         metainfo = {}
         plaintext = ""
@@ -128,7 +134,12 @@ class TXEventScraper(Scraper, LXMLMixin):
             "https://capitol.texas.gov/Committees/Committees.aspx" + "?Chamber=" + chid
         )
 
-        page = self.lxmlize(url)
+        try:
+            page = self.lxmlize(url)
+        except scrapelib.HTTPError:
+            self.warning(f"Unable to load {url}, skipping.")
+            return
+
         refs = page.xpath("//div[@id='content']//a")
         for ref in refs:
             yield from self.scrape_page(session, chamber, ref.attrib["href"])
