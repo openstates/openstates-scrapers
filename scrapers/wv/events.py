@@ -96,6 +96,7 @@ class WVEventScraper(Scraper, LXMLMixin):
 
         when = when.split("-")[0]
         when = self.clean_date(when)
+        when.replace("Thursady", "Thursday")
         when = dateutil.parser.parse(when)
         when = self._tz.localize(when)
 
