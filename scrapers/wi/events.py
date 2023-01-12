@@ -1,98 +1,84 @@
 import pytz
-import datetime as dt
+import dateutil.parser
 
-import scrapelib
+import re
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
-from openstates.exceptions import EmptyScrape
 
+from openstates.exceptions import EmptyScrape
+from utils.events import match_coordinates
 
 calurl = "http://committeeschedule.legis.wisconsin.gov/?filter=Upcoming&committeeID=-1"
 
 
+# TODO: We may be able to scrape additional documents and minutes
+# from the committee page at com_url, but the page structure is a mess.
 class WIEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Central")
 
-    def scrape_participants(self, href):
-        try:
-            page = self.lxmlize(href)
-        except scrapelib.HTTPError:
-            self.warning("Committee page not found for this event")
-            return []
-
-        legs = page.xpath("//a[contains(@href, '/Pages/leg-info.aspx')]/text()")
-        role_map = {
-            "participant": "participant",
-            "Chair": "chair",
-            "Co-Chair": "chair",
-            "Vice-Chair": "participant",
-        }
-        ret = []
-        for leg in legs:
-            name = leg
-            title = "participant"
-            if "(" and ")" in leg:
-                name, title = leg.split("(", 1)
-                title = title.replace(")", " ").strip()
-                name = name.strip()
-            title = role_map[title]
-            ret.append({"name": name, "title": title})
-        return ret
-
     def scrape(self):
-        page = self.lxmlize(calurl)
-        events = page.xpath("//table[@class='agenda-body']//tr")[1:]
-        event_count = 0
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36",
+        }
 
-        for event in events:
-            comit_url = event.xpath(".//a[contains(@title,'Committee Details')]")
-            if len(comit_url) != 1:
-                continue
+        html = self.get(calurl, headers=headers).text
+        # events here are inline in the html as JS variables
+        event_regex = r"({[\n\s]*title(.*?)}),\/\/end event object"
+        event_rows = re.findall(event_regex, html, flags=re.MULTILINE | re.DOTALL)
 
-            comit_url = comit_url[0]
-            who = self.scrape_participants(comit_url.attrib["href"])
+        if len(event_rows) == 0:
+            raise EmptyScrape
 
-            tds = event.xpath("./*")
-            date = tds[0].text_content().strip()
-            cttie = tds[1].text_content().strip()
-            chamber, cttie = [x.strip() for x in cttie.split(" - ", 1)]
-            info = tds[2]
-            name = info.xpath("./a[contains(@href, 'raw')]")[0]
-            notice = name.attrib["href"]
-            name = name.text
-            time, where = info.xpath("./i/text()")
-            what = tds[3].text_content()
-            what = what.replace("Items: ", "")
-            if "(None)" in what:
-                continue
-            what = [x.strip() for x in what.split(";")]
+        for row in event_rows:
+            row = row[0]
+            title = self.extract_field(row, "title")
+            start = self.extract_field(row, "start")
 
-            when = ", ".join([date, str(dt.datetime.now().year), time])
-            when = dt.datetime.strptime(when, "%a %b %d, %Y, %I:%M %p")
+            start = dateutil.parser.parse(start)
+            start = self._tz.localize(start)
 
-            if cttie:
-                cttie = cttie.replace("Committee on", "").strip()
-                cttie = f"{chamber} {cttie}"
-                name = cttie
+            desc = self.extract_field(row, "description")
+            url = self.extract_field(row, "url")
+            location = self.extract_field(row, "location")
+            location = f"{location}, 2 E Main St, Madison, WI 53703"
+
+            com_url = self.extract_field(row, "commLink")
+
+            agenda_url = self.extract_field(row, "mtgNoticeLink")
+            items = self.extract_field(row, "eItems")
 
             event = Event(
-                name=name, location_name=where, start_date=self._tz.localize(when)
+                name=title, location_name=location, start_date=start, description=desc
             )
+            event.add_source(url)
+            event.add_source(com_url)
 
-            event.add_source(calurl)
+            # rename from "Committe Name (Senate)" to "Senate Committee Name"
+            chamber_regex = r"(.*)\((Senate|Assembly|Joint)\)"
+            if re.match(chamber_regex, title):
+                committee = re.sub(chamber_regex, r"\2 \1", title).strip()
+                event.add_committee(committee)
 
-            event.add_committee(cttie, note="host")
+            if agenda_url:
+                event.add_document("Agenda", agenda_url, media_type="application/pdf")
 
-            event.add_document("notice", notice, media_type="application/pdf")
+            if items != "(None)":
+                items = items.split(";")
+                for item in items:
+                    item = item.replace("&amp", "").strip()
+                    agenda_item = event.add_agenda_item(item)
+                    bill_regex = r"[SAJRPB]+\d+"
+                    for bill_match in re.findall(bill_regex, item):
+                        agenda_item.add_bill(bill_match)
 
-            for entry in what:
-                item = event.add_agenda_item(entry)
-                if entry.startswith("AB") or entry.startswith("SB"):
-                    item.add_bill(entry)
+            match_coordinates(event, {"2 E Main St": (43.07499, -89.38415)})
 
-            for thing in who:
-                event.add_person(thing["name"])
-            event_count += 1
             yield event
-        if event_count == 0:
-            raise EmptyScrape
+
+    def extract_field(self, row: str, field: str):
+        try:
+            return re.findall(
+                rf"{field}:\s+'(.*?)'", row, flags=re.MULTILINE | re.DOTALL
+            )[0]
+        except IndexError:
+            return None
