@@ -149,7 +149,7 @@ class BillDetail(HtmlPage):
                 actor = "executive"
 
             (date,) = row.xpath("td[1]/b/text()")
-            date += "/2021"
+            date += "/2023"
             date = dt.datetime.strptime(date, "%m/%d/%Y")
             classifier = categorizer.categorize(action)
 
