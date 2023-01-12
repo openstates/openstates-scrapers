@@ -138,6 +138,7 @@ class Illinois(State):
         # Leave this on until 2023-01-31,
         # IL has a history post-session governor actions
         {
+            "_scraped_name": "102   (2021-2022)",
             "name": "102nd Regular Session",
             "identifier": "102nd",
             "start_date": "2021-01-13",
