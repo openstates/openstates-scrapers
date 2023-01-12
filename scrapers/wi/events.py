@@ -1,11 +1,13 @@
 import pytz
-import datetime as dt
+import dateutil.parser
 
 import scrapelib
+import re
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
-from openstates.exceptions import EmptyScrape
 
+# from openstates.exceptions import EmptyScrape
+from utils.events import match_coordinates
 
 calurl = "http://committeeschedule.legis.wisconsin.gov/?filter=Upcoming&committeeID=-1"
 
@@ -40,59 +42,74 @@ class WIEventScraper(Scraper, LXMLMixin):
         return ret
 
     def scrape(self):
-        page = self.lxmlize(calurl)
-        events = page.xpath("//table[@class='agenda-body']//tr")[1:]
-        event_count = 0
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36",
+        }
 
-        for event in events:
-            comit_url = event.xpath(".//a[contains(@title,'Committee Details')]")
-            if len(comit_url) != 1:
-                continue
+        html = self.get(calurl, headers=headers).text
+        # {[\n\s]*title(.*?)},\/\/end event object
+        print(html)
 
-            comit_url = comit_url[0]
-            who = self.scrape_participants(comit_url.attrib["href"])
+        # print(html)
 
-            tds = event.xpath("./*")
-            date = tds[0].text_content().strip()
-            cttie = tds[1].text_content().strip()
-            chamber, cttie = [x.strip() for x in cttie.split(" - ", 1)]
-            info = tds[2]
-            name = info.xpath("./a[contains(@href, 'raw')]")[0]
-            notice = name.attrib["href"]
-            name = name.text
-            time, where = info.xpath("./i/text()")
-            what = tds[3].text_content()
-            what = what.replace("Items: ", "")
-            if "(None)" in what:
-                continue
-            what = [x.strip() for x in what.split(";")]
+        event_regex = r"({[\n\s]*title(.*?)}),\/\/end event object"
+        event_rows = re.finditer(event_regex, html, flags=re.MULTILINE | re.DOTALL)
 
-            when = ", ".join([date, str(dt.datetime.now().year), time])
-            when = dt.datetime.strptime(when, "%a %b %d, %Y, %I:%M %p")
+        for row in event_rows:
+            row = row.groups(1)[0]
+            title = self.extract_field(row, "title")
+            start = self.extract_field(row, "start")
 
-            if cttie:
-                cttie = cttie.replace("Committee on", "").strip()
-                cttie = f"{chamber} {cttie}"
-                name = cttie
+            start = dateutil.parser.parse(start)
+            start = self._tz.localize(start)
+
+            desc = self.extract_field(row, "description")
+            url = self.extract_field(row, "url")
+            location = self.extract_field(row, "location")
+            location = f"{location}, 2 E Main St, Madison, WI 53703"
+
+            # meeting_type = self.extract_field(row, "type")
+            agenda_url = self.extract_field(row, "mtgNoticeLink")
+            items = self.extract_field(row, "eItems")
+            # chamber_class = self.extract_field(row, "classNames")
 
             event = Event(
-                name=name, location_name=where, start_date=self._tz.localize(when)
+                name=title, location_name=location, start_date=start, description=desc
             )
+            event.add_source(url)
 
-            event.add_source(calurl)
+            # rename from "Committe Name (Senate)" to "Senate Committee Name"
+            chamber_regex = r"(.*)\((Senate|Assembly|Joint)\)"
+            if re.match(chamber_regex, title):
+                committee = re.sub(chamber_regex, r"\2 \1", title).strip()
+                event.add_committee(committee)
 
-            event.add_committee(cttie, note="host")
+            if agenda_url:
+                event.add_document("Agenda", agenda_url, media_type="application/pdf")
 
-            event.add_document("notice", notice, media_type="application/pdf")
+            if items != "(None)":
+                items = items.split(";")
+                print(items)
+                for item in items:
+                    item = item.replace("&amp", "").strip()
+                    print(item)
+                    agenda_item = event.add_agenda_item(item)
+                    bill_regex = r"[SAJRPB]+\d+"
+                    for bill_match in re.findall(bill_regex, item):
+                        agenda_item.add_bill(bill_match)
 
-            for entry in what:
-                item = event.add_agenda_item(entry)
-                if entry.startswith("AB") or entry.startswith("SB"):
-                    item.add_bill(entry)
+            match_coordinates(event, {"2 E Main St": (43.07499, -89.38415)})
 
-            for thing in who:
-                event.add_person(thing["name"])
-            event_count += 1
             yield event
-        if event_count == 0:
-            raise EmptyScrape
+        return
+
+        # if event_count == 0:
+        #     raise EmptyScrape
+
+    def extract_field(self, row: str, field: str):
+        try:
+            return re.findall(
+                rf"{field}:\s+'(.*?)'", row, flags=re.MULTILINE | re.DOTALL
+            )[0]
+        except IndexError:
+            return None
