@@ -4,6 +4,7 @@ import datetime as dt
 import dateutil.parser
 
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 import pytz
 
@@ -12,11 +13,20 @@ class TXEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Central")
 
     def scrape(self, session=None, chamber=None):
+        event_count = 0
         if chamber:
-            yield from self.scrape_committee_upcoming(session, chamber)
+            for obj in self.scrape_committee_upcoming(session, chamber):
+                event_count += 1
+                yield obj
         else:
-            yield from self.scrape_committee_upcoming(session, "upper")
-            yield from self.scrape_committee_upcoming(session, "lower")
+            for obj in self.scrape_committee_upcoming(session, "upper"):
+                event_count += 1
+                yield obj
+            for obj in self.scrape_committee_upcoming(session, "lower"):
+                event_count += 1
+                yield obj
+        if event_count < 1:
+            raise EmptyScrape
 
     def scrape_event_page(self, session, chamber, url, datetime):
         page = self.lxmlize(url)
