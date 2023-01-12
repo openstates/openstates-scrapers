@@ -1,45 +1,20 @@
 import pytz
 import dateutil.parser
 
-import scrapelib
 import re
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
 
-# from openstates.exceptions import EmptyScrape
+from openstates.exceptions import EmptyScrape
 from utils.events import match_coordinates
 
 calurl = "http://committeeschedule.legis.wisconsin.gov/?filter=Upcoming&committeeID=-1"
 
 
+# TODO: We may be able to scrape additional documents and minutes
+# from the committee page at com_url, but the page structure is a mess.
 class WIEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Central")
-
-    def scrape_participants(self, href):
-        try:
-            page = self.lxmlize(href)
-        except scrapelib.HTTPError:
-            self.warning("Committee page not found for this event")
-            return []
-
-        legs = page.xpath("//a[contains(@href, '/Pages/leg-info.aspx')]/text()")
-        role_map = {
-            "participant": "participant",
-            "Chair": "chair",
-            "Co-Chair": "chair",
-            "Vice-Chair": "participant",
-        }
-        ret = []
-        for leg in legs:
-            name = leg
-            title = "participant"
-            if "(" and ")" in leg:
-                name, title = leg.split("(", 1)
-                title = title.replace(")", " ").strip()
-                name = name.strip()
-            title = role_map[title]
-            ret.append({"name": name, "title": title})
-        return ret
 
     def scrape(self):
         headers = {
@@ -47,16 +22,15 @@ class WIEventScraper(Scraper, LXMLMixin):
         }
 
         html = self.get(calurl, headers=headers).text
-        # {[\n\s]*title(.*?)},\/\/end event object
-        print(html)
-
-        # print(html)
-
+        # events here are inline in the html as JS variables
         event_regex = r"({[\n\s]*title(.*?)}),\/\/end event object"
-        event_rows = re.finditer(event_regex, html, flags=re.MULTILINE | re.DOTALL)
+        event_rows = re.findall(event_regex, html, flags=re.MULTILINE | re.DOTALL)
+
+        if len(event_rows) == 0:
+            raise EmptyScrape
 
         for row in event_rows:
-            row = row.groups(1)[0]
+            row = row[0]
             title = self.extract_field(row, "title")
             start = self.extract_field(row, "start")
 
@@ -68,15 +42,16 @@ class WIEventScraper(Scraper, LXMLMixin):
             location = self.extract_field(row, "location")
             location = f"{location}, 2 E Main St, Madison, WI 53703"
 
-            # meeting_type = self.extract_field(row, "type")
+            com_url = self.extract_field(row, "commLink")
+
             agenda_url = self.extract_field(row, "mtgNoticeLink")
             items = self.extract_field(row, "eItems")
-            # chamber_class = self.extract_field(row, "classNames")
 
             event = Event(
                 name=title, location_name=location, start_date=start, description=desc
             )
             event.add_source(url)
+            event.add_source(com_url)
 
             # rename from "Committe Name (Senate)" to "Senate Committee Name"
             chamber_regex = r"(.*)\((Senate|Assembly|Joint)\)"
@@ -89,10 +64,8 @@ class WIEventScraper(Scraper, LXMLMixin):
 
             if items != "(None)":
                 items = items.split(";")
-                print(items)
                 for item in items:
                     item = item.replace("&amp", "").strip()
-                    print(item)
                     agenda_item = event.add_agenda_item(item)
                     bill_regex = r"[SAJRPB]+\d+"
                     for bill_match in re.findall(bill_regex, item):
@@ -101,10 +74,6 @@ class WIEventScraper(Scraper, LXMLMixin):
             match_coordinates(event, {"2 E Main St": (43.07499, -89.38415)})
 
             yield event
-        return
-
-        # if event_count == 0:
-        #     raise EmptyScrape
 
     def extract_field(self, row: str, field: str):
         try:
