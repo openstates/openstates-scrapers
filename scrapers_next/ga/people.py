@@ -7,7 +7,9 @@ from .utils import get_token
 class LegDetail(JsonPage):
     def process_page(self):
         p = self.input
-        p.add_source(self.source.url, note="Detail page (requires authorization token)")
+        p.add_source(
+            self.source.url, note="API member detail (requires authorization token)"
+        )
         if self.data["email"]:
             p.email = self.data["email"]
 
@@ -108,20 +110,28 @@ class DirectoryListing(JsonListPage):
         else:
             raise Exception("unknown photos configuration: " + str(item["photos"]))
 
-        # extras
-
         p.extras["residence"] = item["residence"]
-        p.extras["city"] = item["city"].strip()
+        p.extras["city"] = item["city"].strip() if item["city"] else ""
         p.extras["georgia_id"] = item["id"]
 
         url = (
-            f"https://www.legis.ga.gov/members/{self.chamber_names[chamber_id]}/"
+            f"https://www.legis.ga.gov/members/"
+            f"{self.chamber_names[chamber_id]}/"
             f"{item['id']}?session={item['sessionId']}"
         )
-        p.add_source(url, note="Initial list page (requires authorization token)")
+        p.add_link(url, note="HTML member detail page")
+        p.add_link(
+            "http://www.legis.ga.gov/members/" f"{self.chamber_names[chamber_id]}",
+            note="HTML members list page",
+        )
+
+        p.add_source(
+            self.source.url, note="API members list (requires authorization token)"
+        )
 
         source = URL(
-            f"https://www.legis.ga.gov/api/members/detail/{item['id']}?session=1031&chamber={chamber_id}",
+            "https://www.legis.ga.gov/api/members/detail/"
+            f"{item['id']}?session=1031&chamber={chamber_id}",
             headers={"Authorization": get_token()},
             timeout=30,
         )
