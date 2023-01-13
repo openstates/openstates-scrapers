@@ -19,7 +19,7 @@ def time_is_earlier(new, current):
         return False
 
 
-class EventConsolidator:
+class EventConsolidator(object):
     def __init__(self, items, url):
         self.items = items
         self.events = {}
@@ -60,7 +60,7 @@ class EventConsolidator:
         yield from self.create_events()
 
     def create_events(self):
-
+        event_names = set()
         for event in self.events.keys():
             date, com, loc = re.search(r"(.+)\-(.+)\-(.+)", event).groups()
             date = "".join(c for c in date if c.isdigit() or c in ["-"])
@@ -69,13 +69,18 @@ class EventConsolidator:
             date_time = f"{date} {start_time}"
             date_object = dateutil.parser.parse(date_time)
             date_with_offset = self._tz.localize(date_object)
-
+            event_name = f"{com}#{loc}#{date_time}"
+            if event_name in event_names:
+                logging.warning(f"Skipping duplicate event {event_name}")
+                continue
+            event_names.add(event_name)
             event_obj = Event(
                 name=com,
                 location_name=loc,
                 description="Standing Committee Hearing",
                 start_date=date_with_offset,
             )
+            event_obj.dedupe_key = event_name
 
             for item_key in self.events[event]["item_keys"]:
                 agenda = self.events[event][item_key]
