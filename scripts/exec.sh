@@ -5,8 +5,12 @@ if [[ $# -lt 2 ]]; then
     exit 2
 fi
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 DB_HOST=${DB_HOST:-localhost}
 DB_PORT=${DB_PORT:-5432}
 DATABASE_URL="postgres://openstates:openstates@${DB_HOST}:${DB_PORT}/openstatesorg"
 export DATABASE_URL
-PYTHONPATH=scrapers poetry run os-update $@
+pushd "${SCRIPT_DIR}/../" > /dev/null 2>&1 || exit 1
+PYTHONPATH=scrapers/ poetry run os-update $@
+popd > /dev/null 2>&1 || exit 1
