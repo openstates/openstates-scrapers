@@ -11,12 +11,21 @@ class Legislators(HtmlListPage):
     selector = CSS("tbody tr.thisRow.listRow")
     field_names = set()
 
+    name_w_suffix_re = re.compile(r"\r\n(.+),\s(.+),\s(.+)")
+    name_re = re.compile(r"\r\n(.+),\s(.+)")
+
     def process_item(self, item):
         name_title = XPath(".//td/span/a/text()").match(item)
-        name_dirty = name_title[0].split(", ")
-        if name_dirty[0] == "Vacant":
+        if "Vacant" in name_title[0]:
             raise SkipItem("vacant")
-        name = name_dirty[1] + " " + name_dirty[0]
+        else:
+            last_first_suffix = self.name_w_suffix_re.search(name_title[0])
+            if last_first_suffix:
+                last_name, first_name, suffix = last_first_suffix.groups()
+                name = f"{first_name} {last_name} {suffix}"
+            else:
+                last_name, first_name = self.name_re.search(name_title[0]).groups()
+                name = f"{first_name} {last_name}"
 
         party = CSS("td a").match(item)[2].text_content().strip()
         district = CSS("td a").match(item)[3].text_content().strip()
