@@ -88,7 +88,6 @@ class CAEventScraper(Scraper):
                 name=desc,
                 start_date=date,
                 location_name=committee_name,
-                type="committee-meeting",
             )
             event.add_committee(committee_name, note="host")
             for bill_id in bills:
