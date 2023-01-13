@@ -79,7 +79,7 @@ class INEventScraper(Scraper):
                 log.info(f"Could not parse date: {date} {time}")
                 when = dateutil.parser.parse(date)
             when = self._tz.localize(when)
-            event_name = f"{committee['chamber']}#{committee['name']}#{location}"
+            event_name = f"{committee['chamber']}#{committee['name']}#{location}#{when}"
             if event_name in event_names:
                 self.warning(f"Duplicate event {event_name}")
                 continue
