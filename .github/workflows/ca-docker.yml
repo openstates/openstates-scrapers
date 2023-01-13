@@ -10,6 +10,7 @@ on:
       - "poetry.lock"
       - "Dockerfile.california"
       - "scrapers/ca/*"
+      - ".github/workflows/ca-docker.yml"
 jobs:
   publish:
     runs-on: ubuntu-latest
