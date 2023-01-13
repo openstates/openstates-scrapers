@@ -3,7 +3,7 @@ from openstates.models import ScrapePerson
 
 
 class Legislators(JsonListPage):
-    source = URL("https://sdlegislature.gov/api/SessionMembers/Session/44")
+    source = URL("https://sdlegislature.gov/api/SessionMembers/Session/68")
 
     def process_item(self, item):
 

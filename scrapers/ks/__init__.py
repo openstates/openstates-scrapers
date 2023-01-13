@@ -72,7 +72,7 @@ class Kansas(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-11",
             "end_date": "2022-05-23",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "b2021s",
@@ -82,6 +82,15 @@ class Kansas(State):
             "start_date": "2021-11-22",
             "end_date": "2021-11-21",
             "active": False,
+        },
+        {
+            "_scraped_name": "b2023_24",
+            "classification": "primary",
+            "identifier": "2023-2024",
+            "name": "2023-2024 Regular Session",
+            "start_date": "2023-01-09",
+            "end_date": "2024-05-21",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = []

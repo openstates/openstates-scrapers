@@ -181,7 +181,7 @@ class Oregon(State):
             "name": "2022 Regular Session",
             "start_date": "2022-02-01",
             "end_date": "2022-03-04",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023 Regular Session",
@@ -189,7 +189,7 @@ class Oregon(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-09",
             "end_date": "2023-06-25",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

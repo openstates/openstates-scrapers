@@ -187,7 +187,7 @@ class HIBillScraper(Scraper):
 
     def parse_bill_versions_table(self, bill, versions):
         if not versions:
-            raise Exception("Missing bill versions.")
+            self.logger.warning("No version table for {}".format(bill.identifier))
 
         for version in versions:
             td = version.xpath("./a")[0]
@@ -198,7 +198,10 @@ class HIBillScraper(Scraper):
                 http_href = td.attrib["href"]
                 name = td.text_content().strip()
 
-                http_link = f"{HI_URL_BASE}{http_href}"
+                if not http_href.startswith("http"):
+                    http_link = f"{HI_URL_BASE}{http_href}"
+                else:
+                    http_link = http_href
                 pdf_link = http_link.replace("HTM", "PDF")
 
                 # some bills (and GMs) swap the order or double-link to the same format
@@ -269,7 +272,7 @@ class HIBillScraper(Scraper):
         qs = dict(urlparse.parse_qsl(urlparse.urlparse(url).query))
         bill_id = "{}{}".format(qs["billtype"], qs["billnumber"])
         versions = bill_page.xpath(
-            "//*[@id='ctl00_MainContent_UpdatePanel2']/div/div/div/div"
+            "//*[@id='ctl00_MainContent_UpdatePanel2']/div/div/div"
         )
 
         metainf_table = bill_page.xpath(
@@ -396,7 +399,8 @@ class HIBillScraper(Scraper):
         list_page = lxml.html.fromstring(list_html)
         for bill_url in list_page.xpath("//a[@class='report']"):
             bill_url = bill_url.attrib["href"].replace("www.", "")
-            bill_url = f"{HI_URL_BASE}{bill_url}"
+            if not bill_url.startswith("http"):
+                bill_url = f"{HI_URL_BASE}{bill_url}"
             yield from self.scrape_bill(session, chamber, billtype_map, bill_url)
 
     def scrape(self, chamber=None, session=None):

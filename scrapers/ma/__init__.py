@@ -67,6 +67,15 @@ class Massachusetts(State):
             "name": "192nd Legislature (2021-2022)",
             "start_date": "2021-01-06",
             "end_date": "2021-12-31",
+            "active": False,
+        },
+        {
+            "_scraped_name": "193rd",
+            "classification": "primary",
+            "identifier": "193rd",
+            "name": "193rd Legislature (2023-2024)",
+            "start_date": "2023-01-04",
+            "end_date": "2023-12-31",
             "active": True,
         },
     ]

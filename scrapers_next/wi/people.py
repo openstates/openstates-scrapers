@@ -90,20 +90,17 @@ class Legislators(HtmlListPage):
 
         # which one should be 'homepage'?
         # https://legis.wisconsin.gov/senate/16/agard, website currently adding to extras
-        # https://docs.legis.wisconsin.gov/2021/legislators/senate/2251, detail_link adding as source and scraping
+        # https://docs.legis.wisconsin.gov/2023/legislators/senate/2251, detail_link adding as source and scraping
 
         website = CSS("span.info strong a").match_one(item).get("href")
         p.extras["website"] = website
 
         detail_link = (
-            XPath(".//span[1]/span[3]/a[contains(text(), 'Details')]")
-            .match_one(item)
-            .get("href")
+            XPath(".//a[contains(text(), 'Details')]").match_one(item).get("href")
         )
 
-        p.add_source(self.source.url)
-        p.add_source(detail_link)
-        p.add_link(detail_link, note="homepage")
+        p.add_source(self.source.url, note="members list page")
+        p.add_source(detail_link, note="member detail page")
 
         try:
             title = (
@@ -115,7 +112,12 @@ class Legislators(HtmlListPage):
 
         email = CSS("span.info.email a").match_one(item).text_content().strip()
         p.email = email
-        img = CSS("img").match_one(item).get("src")
+
+        no_photo = len(item.xpath(".//span[@class='picture-placeholder']"))
+        if no_photo:
+            img = ""
+        else:
+            img = CSS("img").match_one(item).get("src")
         p.image = img
 
         phones = (
@@ -148,10 +150,10 @@ class Legislators(HtmlListPage):
 
 
 class Senate(Legislators):
-    source = URL("https://docs.legis.wisconsin.gov/2021/legislators/senate/")
+    source = URL("https://docs.legis.wisconsin.gov/2023/legislators/senate/")
     chamber = "upper"
 
 
 class House(Legislators):
-    source = URL("https://docs.legis.wisconsin.gov/2021/legislators/assembly/")
+    source = URL("https://docs.legis.wisconsin.gov/2023/legislators/assembly/")
     chamber = "lower"

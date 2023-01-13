@@ -2,8 +2,10 @@ from utils import LXMLMixin
 import re
 import datetime as dt
 import dateutil.parser
+import scrapelib
 
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 import pytz
 
@@ -12,14 +14,28 @@ class TXEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Central")
 
     def scrape(self, session=None, chamber=None):
+        event_count = 0
         if chamber:
-            yield from self.scrape_committee_upcoming(session, chamber)
+            for obj in self.scrape_committee_upcoming(session, chamber):
+                event_count += 1
+                yield obj
         else:
-            yield from self.scrape_committee_upcoming(session, "upper")
-            yield from self.scrape_committee_upcoming(session, "lower")
+            for obj in self.scrape_committee_upcoming(session, "upper"):
+                event_count += 1
+                yield obj
+            for obj in self.scrape_committee_upcoming(session, "lower"):
+                event_count += 1
+                yield obj
+        if event_count < 1:
+            raise EmptyScrape
 
     def scrape_event_page(self, session, chamber, url, datetime):
-        page = self.lxmlize(url)
+        try:
+            page = self.lxmlize(url)
+        except scrapelib.HTTPError:
+            self.warning(f"Unable to load {url}, skipping.")
+            return
+
         info = page.xpath("//p")
         metainfo = {}
         plaintext = ""
@@ -118,7 +134,12 @@ class TXEventScraper(Scraper, LXMLMixin):
             "https://capitol.texas.gov/Committees/Committees.aspx" + "?Chamber=" + chid
         )
 
-        page = self.lxmlize(url)
+        try:
+            page = self.lxmlize(url)
+        except scrapelib.HTTPError:
+            self.warning(f"Unable to load {url}, skipping.")
+            return
+
         refs = page.xpath("//div[@id='content']//a")
         for ref in refs:
             yield from self.scrape_page(session, chamber, ref.attrib["href"])

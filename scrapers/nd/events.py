@@ -63,6 +63,7 @@ class EventConsolidator:
 
         for event in self.events.keys():
             date, com, loc = re.search(r"(.+)\-(.+)\-(.+)", event).groups()
+            date = "".join(c for c in date if c.isdigit() or c in ["-"])
 
             start_time = self.events[event]["event_start_time"]
             date_time = f"{date} {start_time}"
@@ -87,7 +88,7 @@ class EventConsolidator:
                     if item["bill_name"]:
                         item_descr.add_bill(item["bill_name"])
                     if item["sub_com"]:
-                        item_descr.extras["sub_committee"] = item["sub_com"]
+                        item_descr["extras"]["sub_committee"] = item["sub_com"]
 
             event_obj.add_source(self.url)
 

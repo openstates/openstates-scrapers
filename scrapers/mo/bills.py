@@ -508,13 +508,19 @@ class MOBillScraper(Scraper, LXMLMixin):
         bill.add_source(url)
 
         bill_sponsor = clean_text(table_rows[0][1].text_content())
-        # try:
-        #     bill_sponsor_link = table_rows[0][1][0].attrib['href']
-        # except IndexError:
-        #     return
-        bill.add_sponsorship(
-            bill_sponsor, entity_type="person", classification="primary", primary=True
-        )
+
+        # HEC is a petition for a recount, which can be sponsorless
+        if bill_sponsor == "" and "HEC" in bill_id:
+            bill.add_sponsorship(
+                "Petition", entity_type="", classification="primary", primary=True
+            )
+        else:
+            bill.add_sponsorship(
+                bill_sponsor,
+                entity_type="person",
+                classification="primary",
+                primary=True,
+            )
 
         # check for cosponsors
         (sponsors_url,) = bill_page.xpath(

@@ -205,7 +205,7 @@ class WestVirginia(State):
             "start_date": "2022-07-25",
             # TODO: update end date
             "end_date": "2022-08-05",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2022",
@@ -215,6 +215,15 @@ class WestVirginia(State):
             "start_date": "2022-09-12",
             # TODO: update end date
             "end_date": "2022-09-16",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023",
+            "classification": "primary",
+            "identifier": "2023",
+            "name": "2023 Regular",
+            "start_date": "2023-01-11",
+            "end_date": "2023-03-11",
             "active": True,
         },
     ]

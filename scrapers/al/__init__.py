@@ -151,8 +151,7 @@ class Alabama(State):
             "identifier": "2022rs",
             "name": "2022 Regular Session",
             "start_date": "2022-01-11",
-            # TODO: Real end date after session
-            "end_date": "2022-05-07",
+            "end_date": "2022-04-07",
             "active": True,
         },
         {
@@ -172,6 +171,15 @@ class Alabama(State):
             "start_date": "2022-01-19",
             "end_date": "2022-01-31",
             "active": True,
+        },
+        {
+            "_scraped_name": "Regular Session 2023",
+            "classification": "primary",
+            "identifier": "2023rs",
+            "name": "2023 Regular Session",
+            "start_date": "2023-03-07",
+            "end_date": "2023-06-08",
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [

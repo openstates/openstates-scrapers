@@ -89,16 +89,15 @@ class Hawaii(State):
             "name": "2022 Regular Session",
             "start_date": "2022-01-19",
             "end_date": "2022-05-05",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023",
             "identifier": "2023 Regular Session",
             "name": "2023 Regular Session",
             "start_date": "2023-01-18",
-            # TODO: update dates
-            "end_date": "2023-04-28",
-            "active": False,
+            "end_date": "2023-05-04",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
