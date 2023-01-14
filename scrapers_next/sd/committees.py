@@ -1,4 +1,4 @@
-from spatula import JsonListPage, CSS, JsonPage, SelectorError, SkipItem, URL
+from spatula import JsonListPage, JsonPage, SkipItem, URL
 from openstates.models import ScrapeCommittee
 
 
