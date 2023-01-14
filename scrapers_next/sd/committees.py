@@ -17,13 +17,14 @@ class CommitteeList(JsonListPage):
             case "J":
                 return "legislature"
             case _:
-                self.skip()
+                self.skip("Committee type not recognized")
 
     def process_item(self, item):
         committee_json = item["Committee"]
 
         # The Full House & Senate are included in the committe json list, tagged with the following property
-        if committee_json["FullBody"]: self.skip()
+        if committee_json["FullBody"]:
+            self.skip(f"Not a committee: {committee_json['Name']}")
 
         com_id = item["SessionCommitteeId"]
         detail_link = f"https://sdlegislature.gov/api/SessionCommittees/Detail/{com_id}"
