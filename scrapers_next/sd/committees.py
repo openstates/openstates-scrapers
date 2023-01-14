@@ -60,4 +60,15 @@ class CommitteeDetail(JsonPage):
 
     def process_page(self):
         com = self.input
+
+        try: 
+            members = self.data["CommitteeMembers"]
+            for member in members:
+                member_obj = member["Member"]
+                name = member_obj["FirstName"] + " " + member_obj["LastName"]
+                role = member["CommitteeMemberType"]
+                com.add_member(name, role)
+        except:
+            raise SkipItem("malformed member list")
+
         return com
