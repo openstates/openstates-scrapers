@@ -4,7 +4,7 @@ from openstates.models import ScrapeCommittee
 
 class CommitteeList(JsonListPage):
 
-    source = URL("https://sdlegislature.gov/Session/Committees/68")
+    source = URL("https://sdlegislature.gov/api/Session/Committees/68")
 
     def standardize_chamber(self, original_chamber_text):
         match original_chamber_text:
