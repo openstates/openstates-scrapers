@@ -48,3 +48,5 @@ class CommitteeList(HtmlListPage):
             name=committee_name,
             chamber=self.standardize_chamber(chamber)
         )
+
+        return com
