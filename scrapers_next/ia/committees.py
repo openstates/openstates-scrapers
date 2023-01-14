@@ -15,6 +15,7 @@ class CommitteeList(HtmlListPage):
         
 class CommitteeDetails(HtmlPage):
     def process_page(self):
+        # Helper method to parse member list item strings
         def _parseMemberString(member:str, com:ScrapeCommittee):
             if member.lower() == "no member data available":
                 return
@@ -38,7 +39,7 @@ class CommitteeDetails(HtmlPage):
                     return
                 com.add_member(name=memberName)
 
-        # header holds name and chamber
+        # page header holds name and chamber
         header = XPath("//*[@id=\"content\"]/div/section/h1").match_one(self.root).text.strip().rsplit(" ", 1)
         name = header[0]
         chamber = None
