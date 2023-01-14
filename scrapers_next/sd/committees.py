@@ -4,7 +4,8 @@ from openstates.models import ScrapeCommittee
 
 class CommitteeList(JsonListPage):
 
-    source = URL("https://sdlegislature.gov/api/SessionCommittees/Session/68")
+    source_string = "https://sdlegislature.gov/api/SessionCommittees/Session/68"
+    source = URL(source_string)
 
     def standardize_chamber(self, original_chamber_text):
         match original_chamber_text:
@@ -48,7 +49,7 @@ class CommitteeList(JsonListPage):
             chamber=self.standardize_chamber(committee_json['Body'])
         )
 
-        com.add_source(self.source)
+        com.add_source(self.source_string)
         com.add_source(detail_link)
         com.add_link(homepage, note="homepage")
 
