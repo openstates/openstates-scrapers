@@ -2,6 +2,13 @@ from spatula import URL, CSS, HtmlListPage, HtmlPage, SelectorError, SkipItem
 from openstates.models import ScrapeCommittee
 import time
 
+"""
+The data that resulted from this scraper is a little weak (some subcommittee information is missing).
+
+The source that was used for this scraper isn't the best, which is why the code has to sleep so much.
+Going forward, we should try and find a more stable source for VA committee data.
+"""
+
 # VA lists the full names of committee members on individual separate pages
 # MemberDetail grabs a member's full name from their specific page
 
@@ -25,7 +32,7 @@ class MemberDetail(HtmlPage):
         else:
             cleaned_name = mem_name[0].text.strip()
 
-        if not cleaned_name:
+        if cleaned_name:
             com.add_member(cleaned_name, role)
 
         return com
@@ -64,6 +71,7 @@ class CommitteeDetail(HtmlListPage):
             else:
                 role = "Member"
 
+            time.sleep(15)
             detail_link = member_items[i].get("href")
             # .do_scrape() allows us to get information from MemberDetail without
             # returning/writing a com object to disk
@@ -107,6 +115,8 @@ class FindSubCommittees(HtmlListPage):
         detail_link = item.get("href")
         com.add_source(self.source.url, note="homepage")
         com.add_source(detail_link)
+
+        time.sleep(20)
 
         return CommitteeDetail(com, source=URL(detail_link, timeout=120))
 
@@ -155,5 +165,5 @@ class SubCommitteeList(HtmlListPage):
                 raise SkipItem("no subcommittees")
 
         detail_link = item.get("href")
-        time.sleep(15)
+        time.sleep(40)
         return FindSubCommittees(source=URL(detail_link, timeout=120))
