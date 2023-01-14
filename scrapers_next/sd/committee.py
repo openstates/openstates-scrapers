@@ -12,7 +12,7 @@ class CommitteeList(HtmlListPage):
     The div itself has the text name of the committee.
     """
     source = "https://sdlegislature.gov/Session/Committees/68"
-    selector = CSS("a.v-list-item--link")
+    selector = CSS("a")
 
     def standardize_chamber(self, original_chamber_text):
         match original_chamber_text:
@@ -28,10 +28,15 @@ class CommitteeList(HtmlListPage):
 
     def process_item(self, item):
         detail_path = item.get("href")
-        title_div = (
-            item.getchildren()[0]
-            .getchildren()[0]
-        )
+        print(detail_path)
+        try:
+            title_div = (
+                item.getchildren()[0]
+                .getchildren()[0]
+            )
+        except:
+            self.skip()
+
         try:
             chamber = title_div.getchildren()[0].text_content()
         except:
