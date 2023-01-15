@@ -8,22 +8,24 @@ class CommitteeList(HtmlListPage):
     )
     # Committee pages selector
     selector = XPath("//*[@id=\"content\"]/section/section/div/section/ul/li[*]")
+
     def process_item(self, item):
         homeUrl = self.source.url
-        com = CommitteeDetails(homeUrl, source = XPath("./a/@href").match_one(item))
+        com = CommitteeDetails(homeUrl, source=XPath("./a/@href").match_one(item))
         return com
-        
+
+
 class CommitteeDetails(HtmlPage):
     def process_page(self):
         # Helper method to parse member list item strings
-        def _parseMemberString(member:str, com:ScrapeCommittee):
+        def _parseMemberString(member: str, com: ScrapeCommittee):
             if member.lower() == "no member data available":
                 return
             # H/S members have (party/district) info
             if "(" in member:
                 memberName = member.split("(", 1)[0].strip()
                 memberRole = member.rsplit(")", 1)[1].strip()
-                if len(memberRole) > 0:
+                if memberRole:
                     memberRole = memberRole.split(",", 1)[1].strip()
                     com.add_member(name=memberName, role=memberRole)
                 else:
@@ -31,11 +33,11 @@ class CommitteeDetails(HtmlPage):
             # Public members have names, role
             elif "," in member:
                 memberName, memberRole = member.split(",", 1)
-                if len(memberRole) > 0:
+                if memberRole:
                     com.add_member(name=memberName.strip(), role=memberRole.strip())
             else:
                 memberName = member.strip()
-                if len(memberName) == 0:
+                if not memberName:
                     return
                 com.add_member(name=memberName)
 
@@ -51,27 +53,27 @@ class CommitteeDetails(HtmlPage):
             chamber = "legislature"
         else:
             raise SkipItem("No chamber")
-        
+
         # determines if subcommittee
-        isSubcommittee=False
+        isSubcommittee = False
         if "subcommittee" in name.lower():
             isSubcommittee = True
-            
+
         # Conditionally create because altering parent/classification
         # gives error
-        com:ScrapeCommittee()
+        com: ScrapeCommittee()
         if isSubcommittee:
             com = ScrapeCommittee(
-            name=name,
-            chamber=chamber,
-            parent = "Appropriations",
-            classification = "subcommittee"
+                name=name,
+                chamber=chamber,
+                parent="Appropriations",
+                classification="subcommittee"
             )
         else:
             com = ScrapeCommittee(
-            name=name,
-            chamber=chamber,
-            classification = "committee"
+                name=name,
+                chamber=chamber,
+                classification="committee"
             )
         com.add_source(self.source.url)
         # TODO Hard-coded
@@ -83,12 +85,12 @@ class CommitteeDetails(HtmlPage):
                 "//section/div/section[contains(@class, 'grid_12 alpha omega') and \
                 (contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'), 'house members') or \
                 contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'), 'senate members'))] //descendant::li"
-                ).match(self.root)
+            ).match(self.root)
         except:
             raise SkipItem("No Members")
-        
+
         # Loop through member lis, parse textContent
         for member in membersList:
             member = member.text_content().strip()
-            _parseMemberString(member, com)            
+            _parseMemberString(member, com)
         return com
