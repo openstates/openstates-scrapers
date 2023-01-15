@@ -76,7 +76,6 @@ class CommitteeDetails(HtmlPage):
                 classification="committee"
             )
         com.add_source(self.source.url)
-        # TODO Hard-coded
         com.add_source("https://www.legis.iowa.gov/committees", "Committee list page")
         # Get list of members contained in nested grid_12
         # Translation hack in case they switch to all-caps
