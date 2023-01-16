@@ -1,4 +1,4 @@
-from spatula import XPath, URL, HtmlListPage, HtmlPage, SkipItem
+from spatula import XPath, URL, HtmlListPage, HtmlPage, SkipItem, SelectorError
 from openstates.models import ScrapeCommittee
 
 
@@ -85,8 +85,10 @@ class CommitteeDetails(HtmlPage):
                 (contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'), 'house members') or \
                 contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'), 'senate members'))] //descendant::li"
             ).match(self.root)
-        except:
-            raise SkipItem("No Members")
+        except SelectorError:
+            raise SkipItem("No members found")
+        except Exception:
+            raise SkipItem("Error while looking for members")
 
         # Loop through member lis, parse textContent
         for member in membersList:
