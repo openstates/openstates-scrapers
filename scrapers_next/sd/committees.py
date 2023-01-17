@@ -9,15 +9,8 @@ class CommitteeList(JsonListPage):
 
     # I don't know if there's a method on the base class for this to be overridden
     def standardize_chamber(self, original_chamber_text):
-        match original_chamber_text:
-            case "H":
-                return "lower"
-            case "S":
-                return "upper"
-            case "J":
-                return "legislature"
-            case _:
-                self.skip("Committee type not recognized")
+        chamber_conversion = { "H":"lower", "S":"upper", "J":"legislature" }
+        return chamber_conversion[original_chamber_text] 
 
     def process_item(self, item):
         committee_json = item["Committee"]
@@ -30,9 +23,12 @@ class CommitteeList(JsonListPage):
         detail_link = f"https://sdlegislature.gov/api/SessionCommittees/Detail/{com_id}"
         homepage = f"https://sdlegislature.gov/Session/Committee/{com_id}/Detail"
 
+        chamber = self.standardize_chamber(committee_json["Body"])
+        if chamber == None : self.skip("Committee type not recognized")
+
         com = ScrapeCommittee(
             name=committee_json["Name"],
-            chamber=self.standardize_chamber(committee_json["Body"])
+            chamber=chamber
         )
 
         com.add_source(self.source_string)
