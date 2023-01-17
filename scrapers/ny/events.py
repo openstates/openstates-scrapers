@@ -80,7 +80,7 @@ class NYEventScraper(Scraper):
         when = self.clean_date(meta[1])
         when = dateutil.parser.parse(when)
         when = self._tz.localize(when)
-        if len(meta) > 3:
+        if len(meta) > 2:
             location = meta[2]
         else:
             location = "See Agenda"
