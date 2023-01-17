@@ -24,7 +24,8 @@ class CommitteeList(JsonListPage):
         homepage = f"https://sdlegislature.gov/Session/Committee/{com_id}/Detail"
 
         chamber = self.standardize_chamber(committee_json["Body"])
-        if chamber == None : self.skip("Committee type not recognized")
+        if chamber is None:
+            self.skip("Committee type not recognized")
 
         com = ScrapeCommittee(
             name=committee_json["Name"],
