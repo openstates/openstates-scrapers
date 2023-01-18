@@ -50,8 +50,6 @@ class HouseCommitteeDetail(HtmlPage):
         com.add_link(self.source.url, note="homepage")
 
         try:
-            # USE THIS CSS SELECTOR FOR THE CHAIR ROLE "#inline_file > header > h2
-
             chairs = CSS(".chair-info").match(self.root)
 
         except SelectorError:
