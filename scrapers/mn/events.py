@@ -24,7 +24,6 @@ def get_bill_ids(text):
     return bills
 
 
-
 class MNEventScraper(Scraper, LXMLMixin):
     # bad SSL as of August 2017
     verify = False
@@ -98,7 +97,9 @@ class MNEventScraper(Scraper, LXMLMixin):
             for bill in get_bill_ids(desc):
                 event.add_bill(bill)
                 bills.add(bill)
-            self.info(f"Associated {len(bills)} bills with {com}#{where}#{when}: {bills}")
+            self.info(
+                f"Associated {len(bills)} bills with {com}#{where}#{when}: {bills}"
+            )
 
             if row.xpath(
                 ".//a[contains(@href,'/bills/bill.php') and contains(@class,'pull-left')]"
