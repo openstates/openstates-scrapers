@@ -23,4 +23,4 @@ jobs:
     - name: flake8 check
       run: flake8 scrapers scrapers_next
     - name: black check
-      run: black --check scrapers scrapers_next
+      run: black --check --diff scrapers scrapers_next
