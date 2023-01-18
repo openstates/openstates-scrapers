@@ -1,4 +1,4 @@
-from spatula import JsonListPage, JsonPage, URL
+from spatula import JsonListPage, JsonPage, URL, SkipItem
 from openstates.models import ScrapeCommittee
 
 
@@ -7,7 +7,6 @@ class CommitteeList(JsonListPage):
     source_string = "https://sdlegislature.gov/api/SessionCommittees/Session/68"
     source = URL(source_string)
 
-    # I don't know if there's a method on the base class for this to be overridden
     def standardize_chamber(self, original_chamber_text):
         chamber_conversion = {"H": "lower", "S": "upper", "J": "legislature"}
         return chamber_conversion[original_chamber_text]
@@ -47,13 +46,13 @@ class CommitteeDetail(JsonPage):
 
         members = self.data["CommitteeMembers"]
 
-        if members & isinstance(members, list):
+        if isinstance(members, list) & (len(members) > 0):
             for member in members:
                 member_obj = member["Member"]
                 name = member_obj["FirstName"] + " " + member_obj["LastName"]
                 role = member["CommitteeMemberType"]
                 com.add_member(name, role)
         else:
-            self.skip("Malformed committee member data")
+            raise SkipItem("Empty or malformed committee member data")
 
         return com
