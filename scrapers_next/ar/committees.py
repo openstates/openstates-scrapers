@@ -156,10 +156,7 @@ class SenList(HtmlListPage):
         comm_name = CSS("a").match(item)[0].text_content().strip()
 
         # we skip the non senate committees from the first time we encounter them, which means senate list is done
-        if (
-            self.committee_text == "Task Forces"
-            or self.committee_text == "Joint Committees"
-        ):
+        if self.committee_text in ["Task Forces", "Joint Committees"]:
             self.skip()
 
         previous_sibs = item.getparent().itersiblings(preceding=True)
