@@ -59,11 +59,10 @@ class HouseCommitteeDetail(HtmlPage):
         for index, chair in enumerate(chairs):
             chair_name = CSS(".comm-chair-name").match_one(chair).text_content().strip()
 
-            # index for the current chair in the list of chairs
-            actual_index = index + 1
+            # index for the current chair in the list of chairs, +1 because xpath index starts from 1
             chair_role = (
                 XPath(
-                    f"//*[@id='inline_file']/section[{actual_index}]//preceding-sibling::header"
+                    f"//*[@id='inline_file']/section[{index + 1}]//preceding-sibling::header"
                 )
                 .match_one(self.root)
                 .text_content()
