@@ -9,8 +9,8 @@ class CommitteeList(JsonListPage):
 
     # I don't know if there's a method on the base class for this to be overridden
     def standardize_chamber(self, original_chamber_text):
-        chamber_conversion = { "H":"lower", "S":"upper", "J":"legislature" }
-        return chamber_conversion[original_chamber_text] 
+        chamber_conversion = {"H": "lower", "S": "upper", "J": "legislature"}
+        return chamber_conversion[original_chamber_text]
 
     def process_item(self, item):
         committee_json = item["Committee"]
