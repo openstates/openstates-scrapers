@@ -40,7 +40,7 @@ class SDEventScraper(Scraper):
                 meeting_doc_url = f"https://mylrc.sdlegislature.gov/api/Documents/{meeting_doc['DocumentId']}.pdf"
 
                 event.add_document(
-                    meeting_doc["Title"],
+                    meeting_doc["Title"][:299],
                     meeting_doc_url,
                     media_type="application/pdf",
                 )
@@ -122,7 +122,7 @@ class SDEventScraper(Scraper):
                     meeting_doc_url = f"https://mylrc.sdlegislature.gov/api/Documents/{meeting_doc['DocumentId']}.pdf"
 
                     event.add_document(
-                        meeting_doc["Title"],
+                        meeting_doc["Title"][:299],
                         meeting_doc_url,
                         media_type="application/pdf",
                     )
@@ -170,7 +170,7 @@ class SDEventScraper(Scraper):
                 # sometimes there are random docs like bill versions, that aren't linked to a specific hearing
                 if date_key in events_by_date:
                     events_by_date[date_key].add_document(
-                        other_doc["Title"],
+                        other_doc["Title"][:299],
                         other_doc_url,
                         media_type="application/pdf",
                         on_duplicate="ignore",
