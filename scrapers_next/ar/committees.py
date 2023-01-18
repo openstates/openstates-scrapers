@@ -164,7 +164,7 @@ class SenList(HtmlListPage):
             # h4 is the tag of the committee type
             if sib.tag == "h4":
                 chamber_type = sib.text_content().strip()
-                if chamber_type == "":
+                if not chamber_type:
                     chamber_type = self.committee_text
                 self.committee_text = chamber_type
                 break
