@@ -1,4 +1,4 @@
-from spatula import JsonListPage, JsonPage, SkipItem, URL
+from spatula import JsonListPage, JsonPage, URL
 from openstates.models import ScrapeCommittee
 
 
@@ -38,20 +38,22 @@ class CommitteeList(JsonListPage):
 
         return CommitteeDetail(com, source=URL(detail_link))
 
+
 class CommitteeDetail(JsonPage):
     sample_source = URL("https://sdlegislature.gov/api/SessionCommittees/Detail/1156")
 
     def process_page(self):
         com = self.input
 
-        try: 
-            members = self.data["CommitteeMembers"]
+        members = self.data["CommitteeMembers"]
+
+        if members & isinstance(members, list):
             for member in members:
                 member_obj = member["Member"]
                 name = member_obj["FirstName"] + " " + member_obj["LastName"]
                 role = member["CommitteeMemberType"]
                 com.add_member(name, role)
-        except:
-            raise SkipItem("malformed member list")
+        else:
+            self.skip("Malformed committee member data")
 
         return com
