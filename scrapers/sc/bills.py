@@ -406,6 +406,12 @@ class SCBillScraper(Scraper):
                 on_duplicate="ignore",
                 media_type="text/html",  # Still a MIME type
             )
+            bill.add_version_link(
+                note="Filed",
+                url=version_url.replace(".htm", ".docx"),
+                on_duplicate="ignore",
+                media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
 
         # actions
         for row in bill_div.xpath("table/tr"):
