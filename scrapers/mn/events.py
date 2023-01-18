@@ -19,7 +19,10 @@ def get_bill_ids(text):
     HF 463
     HF463
     """
-    return re.findall(r"[H|S]\.?F\.?\s?\d+", text)
+    bills = re.findall(r"[H|S]\.?F\.?\s?\d+", text)
+    bills = [b.replace(".", "") for b in bills]
+    return bills
+
 
 
 class MNEventScraper(Scraper, LXMLMixin):
@@ -91,8 +94,11 @@ class MNEventScraper(Scraper, LXMLMixin):
 
             event.add_source(com_link)
 
+            bills = set()
             for bill in get_bill_ids(desc):
                 event.add_bill(bill)
+                bills.add(bill)
+            self.info(f"Associated {len(bills)} bills with {com}#{where}#{when}: {bills}")
 
             if row.xpath(
                 ".//a[contains(@href,'/bills/bill.php') and contains(@class,'pull-left')]"
