@@ -1,4 +1,4 @@
-from spatula import HtmlListPage, XPath, CSS, URL, HtmlPage
+from spatula import HtmlListPage, CSS, URL, HtmlPage
 from openstates.models import ScrapePerson
 import re
 
@@ -38,7 +38,7 @@ class BlueSenDetail(HtmlPage):
 
         #socials = ["facebook", "instagram", "twitter", "youtube"]
         handles = {x: None for x in socials}
-        patterns = {x: re.compile(rf"(.+)({x}\.com/)(.+)") for x in socials}
+        patterns = {x: re.compile(rf"(.+)({x}.com/)(.+)") for x in socials}
 
         social_links = CSS("div .fusion-social-links a").match(self.root)
         for link in social_links:
