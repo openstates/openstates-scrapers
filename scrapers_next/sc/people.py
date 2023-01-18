@@ -129,13 +129,13 @@ class Legislators(HtmlListPage):
     def process_item(self, item):
         name = CSS("a.membername").match_one(item).text_content()
         name = self.title_re.search(name).groups()[1]
-
         party = CSS("a.membername").match_one(item).tail.strip()
         if party == "(D)":
             party = "Democratic"
         elif party == "(R)":
             party = "Republican"
-
+        elif party == "()":
+            party = "Independent"
         district = CSS("div.district a").match_one(item).text_content().strip()
         district = self.district_re.search(district).groups()[0]
 
