@@ -11,44 +11,32 @@ class BlueSenDetail(HtmlPage):
     def process_page(self):
         p = self.input
 
-        titles = CSS("h2").match(self.root)
-        if len(titles) > 9:
-            title = titles[0].text_content()
-            p.extras["title"] = title
-
-        info_div = CSS("div .fusion-text.fusion-text-2 p").match(self.root)
         phone_pattern = re.compile(r"\d{3}-\d{3}-\d{4}")
-        for field in info_div:
-            content = field.text_content().strip()
-            if ":" in content:
-                label, detail = [x.strip() for x in content.split(":")]
-                if label == "Legislative Assistant":
-                    p.extras[label] = detail
-                elif label == "Phone":
-                    phones = phone_pattern.findall(detail)
-                    if phones:
-                        p.capitol_office.voice = phones[0]
-                    extra_num = 1
-                    for extra_phone in phones[1:]:
-                        p.extras[f"Additional Phone {extra_num}"] = extra_phone
-                elif label == "Email":
-                    p.email = label
-                elif label == "Media Contact":
-                    media_contact = [x.strip() for x in detail.split("|")]
-                    p.extras["Media Contact Name"] = media_contact[0]
-                    p.extras["Media Contact Email"] = media_contact[1]
-                else:
-                    raise NewDetailFieldEncountered
+        try:
+            title = CSS("div.fusion-title-3 h4").match_one(self.root).text_content()
+            p.extras["title"] = title
+        except Exception:
+            pass
 
-        addr = (
-            XPath("//div/div[3]/div/div[2]/div/div[1]/text()")
-            .match(self.root)[0]
-            .strip()
-        )
+        details_block = CSS(
+            "div.fusion_builder_column_2_5 div div div.tab-content div"
+        ).match(self.root)
+        info_div = CSS("p").match(details_block[0])
 
-        p.capitol_office.address = addr
+        p.extras["Legislative Assistant"] = info_div[1].text_content().strip()
+        phones = info_div[3].text_content().strip()
+        phones = phone_pattern.findall(info_div[3].text_content().strip())
+        if phones:
+            p.capitol_office.voice = phones[0]
+        extra_num = 1
+        for extra_phone in phones[1:]:
+            p.extras[f"Additional Phone {extra_num}"] = extra_phone
+        p.capitol_office.address = info_div[5].text_content().strip()
+        """
+        press_div = CSS("p").match(details_block[1])
+        p.extras["Media Contact Name"] = press_div[1].text_content().strip()
 
-        socials = ["facebook", "instagram", "twitter", "youtube"]
+        #socials = ["facebook", "instagram", "twitter", "youtube"]
         handles = {x: None for x in socials}
         patterns = {x: re.compile(rf"(.+)({x}\.com/)(.+)") for x in socials}
 
@@ -70,6 +58,7 @@ class BlueSenDetail(HtmlPage):
             p.ids.twitter = handles["twitter"]
         if handles["youtube"]:
             p.ids.youtube = handles["youtube"]
+        """
 
         return p
 
@@ -180,54 +169,17 @@ class BlueRepDetail(HtmlPage):
 
 
 class BlueSenList(HtmlListPage):
-    """
-    Indiana Dem Sen list page has objects like this (2022-06-23):
-    <div class="fusion-person person fusion-person-center fusion-person-1 fusion-person-icon-top senator-select">
-      <div class="person-shortcode-image-wrapper">
-        <div class="person-image-container hover-type-zoomin person-rounded-overflow" style="-webkit-border-radius:100px;-moz-border-radius:100px;border-radius:100px;border:8px solid #e8e8e8;-webkit-border-radius:100px;-moz-border-radius:100px;border-radius:100px;">
-          <a href="https://www.indianasenatedemocrats.org/senators/s33/" target="_self">
-            <img class="lazyload person-img img-responsive wp-image-24774" width="200" height="300" src="https://www.indianasenatedemocrats.org/wp-content/uploads/2020/12/Senator-Taylor.jpg" data-orig-src="https://www.indianasenatedemocrats.org/wp-content/uploads/2020/12/Senator-Taylor-200x300.jpg" alt="Senator Greg Taylor" srcset="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27600%27%20height%3D%27900%27%20viewBox%3D%270%200%20600%20900%27%3E%3Crect%20width%3D%27600%27%20height%3D%27900%27%20fill-opacity%3D%220%22%2F%3E%3C%2Fsvg%3E" data-srcset="https://www.indianasenatedemocrats.org/wp-content/uploads/2020/12/Senator-Taylor-200x300.jpg 200w, https://www.indianasenatedemocrats.org/wp-content/uploads/2020/12/Senator-Taylor-400x600.jpg 400w, https://www.indianasenatedemocrats.org/wp-content/uploads/2020/12/Senator-Taylor.jpg 600w" data-sizes="auto" data-orig-sizes="(max-width: 992px) 100vw, (max-width: 767px) 100vw, 200px" />
-          </a>
-        </div>
-      </div>
-      <div class="person-desc">
-        <div class="person-author">
-          <div class="person-author-wrapper">
-            <span class="person-name">Senator Greg Taylor</span>
-            <span class="person-title">Minority Caucus Leader | District 33</span>
-          </div>
-        </div>
-        <div class="person-content fusion-clearfix">
-        </div>
-      </div>
-    </div>
-    """
-
     def process_item(self, item):
-        name = (
-            CSS(
-                "div.person-desc div.person-author div.person-author-wrapper span.person-name"
-            )
-            .match_one(item)
-            .text_content()
-            .removeprefix("Senator ")
-        )
-        img = (
-            CSS("div.person-shortcode-image-wrapper div a img")
-            .match_one(item)
-            .get("src")
-        )
-        district = (
-            CSS(
-                "div.person-desc div.person-author div.person-author-wrapper span.person-title"
-            )
-            .match_one(item)
-            .text_content()
-        )
+
+        columns = CSS("div.fusion-title").match(item)
+        name = CSS("h2").match_one(columns[1]).text_content()
+        district = CSS("p").match_one(columns[2]).text_content()
+
         # special titles applied before the district name
         if "|" in district:
             district = district.split("|")[1].strip()
         district = district.strip().removeprefix("District ")
+        img = CSS("div.fusion-image-element div span a img").match_one(item).get("src")
 
         p = ScrapePerson(
             name=name,
@@ -239,9 +191,11 @@ class BlueSenList(HtmlListPage):
         )
 
         detail_link = (
-            CSS("div.person-shortcode-image-wrapper div a").match_one(item).get("href")
+            CSS("div.fusion-image-element div span a").match_one(item).get("href")
         )
-        p.add_link(detail_link, note="homepage")
+        # all dem Senator emails are of a similar format, but otherwise protected from scraping
+        p.email = f"s{district}@iga.in.gov"
+        p.add_link(f"https://indianasenatedemocrats.org{detail_link}", note="homepage")
         p.add_source(self.source.url)
         p.add_source(detail_link)
         return BlueSenDetail(p, source=URL(detail_link, timeout=30))
@@ -394,8 +348,8 @@ class DemocraticHouse(BlueRepList):
 class DemocraticSenate(BlueSenList):
     source = URL("https://www.indianasenatedemocrats.org/senators/", timeout=30)
     selector = CSS(
-        "div.fusion-person",
-        min_items=9,
+        "div.post-content div.fusion_builder_column_1_3",
+        min_items=10,
     )
     chamber = "upper"
     party = "Democratic"
