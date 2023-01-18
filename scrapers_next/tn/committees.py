@@ -19,10 +19,13 @@ class SenateCommitteeDetail(HtmlPage):
         try:
             class_normal = self.root.xpath(".//ul[@class='members small-block-grid-4 no-list']")[0].text_content()
             class_normal = [x.strip().replace("  ", " ") for x in class_normal.split("\r\n") if len(x.strip())]
+        except Exception:
+            class_normal = []
+            pass
+        
+        if class_normal:
             for person in class_normal:
                 com.add_member(person, "member")
-        except:
-            pass
 
         return com
 
