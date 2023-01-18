@@ -3,7 +3,6 @@ from openstates.models import ScrapeCommittee
 import re
 
 
-
 class HouseJointDetail(HtmlPage):
     def process_page(self):
         com = self.input
