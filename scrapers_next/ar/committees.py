@@ -1,9 +1,7 @@
 from spatula import URL, CSS, HtmlListPage, HtmlPage, XPath, SelectorError, SkipItem
 from openstates.models import ScrapeCommittee
 import re
-import logging
 
-logger = logging.getLogger("openstates")
 
 
 class HouseJointDetail(HtmlPage):
