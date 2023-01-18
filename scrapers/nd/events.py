@@ -126,10 +126,9 @@ class EventsTable(HtmlPage):
         for row_item in table_rows:
             columns = row_item.xpath("./td")
             columns_content = [x.text_content().strip() for x in columns]
-            if len(columns_content) == 7:
-                columns_content = columns_content[:-1]
-
-            bill, part_date, com, sub_com, loc, descr = columns_content
+            if len(columns_content) > 7:
+                columns_content = columns_content[:7]
+            part_date, bill, agenda_time, com, sub_com, loc, descr = columns_content
             # Example Column:
             #   bill      part_date          com      sub_com  loc       descr
             # HB 1111 | 12/08 2:00 PM | Joint Approps |      | 327E | Funding bill
@@ -144,7 +143,7 @@ class EventsTable(HtmlPage):
                     if match_in_descr:
                         bill_name = match_in_descr.group()
                     else:
-                        bill_link = columns[0].xpath("./a")[0].get("href")
+                        bill_link = columns[1].xpath("./a")[0].get("href")
                         bill_name_scraper = BillNameScraper(bill_link)
                         bill_name = bill_name_scraper.get_bill_name()
                 else:
