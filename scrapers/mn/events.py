@@ -13,7 +13,7 @@ url = "http://www.leg.state.mn.us/calendarday.aspx?jday=all"
 
 
 def get_bill_ids(text):
-    return re.findall(r"[H|S]F \d+", text)
+    return re.findall(r"[H|S]F\s?\d+", text)
 
 
 class MNEventScraper(Scraper, LXMLMixin):
@@ -33,8 +33,6 @@ class MNEventScraper(Scraper, LXMLMixin):
         page = self.lxmlize(url)
 
         for row in page.xpath('//div[contains(@class,"my-2 d-print-block")]'):
-            # print(row.text_content())
-
             # skip floor sessions and unlinked events
             if not row.xpath(
                 'div[contains(@class,"card-header")]/h3/a[contains(@class,"text-white")]/b'
