@@ -13,7 +13,13 @@ url = "http://www.leg.state.mn.us/calendarday.aspx?jday=all"
 
 
 def get_bill_ids(text):
-    return re.findall(r"[H|S]F\s?\d+", text)
+    """
+    Valid formats we've seen:
+    H.F. 463
+    HF 463
+    HF463
+    """
+    return re.findall(r"[H|S]\.?F\.?\s?\d+", text)
 
 
 class MNEventScraper(Scraper, LXMLMixin):
