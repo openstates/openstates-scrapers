@@ -149,19 +149,29 @@ class SenSubComms(HtmlListPage):
 
 class SenList(HtmlListPage):
     source = URL("https://senate.arkansas.gov/senators/committees/")
-    selector = CSS("ins > ul > li", num_items=45)
+    selector = CSS("div > ul > li", num_items=54)
+    committee_text = None
 
     def process_item(self, item):
         comm_name = CSS("a").match(item)[0].text_content().strip()
 
+        # we skip the non senate committees from the first time we encounter them, which means senate list is done
+        if self.committee_text in ["Task Forces", "Joint Committees"]:
+            self.skip()
+
         previous_sibs = item.getparent().itersiblings(preceding=True)
         for sib in previous_sibs:
-            if len(sib.getchildren()) == 0:
+            # h4 is the tag of the committee type
+            if sib.tag == "h4":
                 chamber_type = sib.text_content().strip()
+                if not chamber_type:
+                    chamber_type = self.committee_text
+                self.committee_text = chamber_type
                 break
 
         if chamber_type == "Senate Committees":
             chamber = "upper"
+
         elif chamber_type == "Joint Committees":
             self.skip()
         elif chamber_type == "Task Forces":
