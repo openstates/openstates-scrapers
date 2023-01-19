@@ -26,10 +26,7 @@ class CommitteeList(JsonListPage):
         if chamber is None:
             self.skip("Committee type not recognized")
 
-        com = ScrapeCommittee(
-            name=committee_json["Name"],
-            chamber=chamber
-        )
+        com = ScrapeCommittee(name=committee_json["Name"], chamber=chamber)
 
         com.add_source(self.source_string)
         com.add_source(detail_link)
