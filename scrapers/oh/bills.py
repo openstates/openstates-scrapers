@@ -1,12 +1,6 @@
-import os
 import datetime
-
 from openstates.scrape import Scraper, Bill, VoteEvent
-from openstates.scrape.base import ScrapeError
-
-import xlrd
 import scrapelib
-import lxml.html
 import pytz
 import re
 
@@ -135,35 +129,23 @@ class OHBillScraper(Scraper):
             all_synopsis = self.get_other_data_source(first_page, base_url, "synopsiss")
             all_analysis = self.get_other_data_source(first_page, base_url, "analysiss")
 
-            rows = self.get_bill_rows(session)
-            for row in rows:
-                for td in row.xpath("th|td"):
-                    (
-                        number_link,
-                        title,
-                        _,  # primary sponsor
-                        _,  # status
-                    ) = row.xpath("th|td")
+            bills = self.get_total_bills(session)
+            for bill in bills:
+                bill_name = bill["name"]
+                bill_number = bill["number"]
 
                 # S.R.No.1 -> SR1
-                bill_id = number_link.text_content().replace("No.", "").strip()
+                bill_id = bill_name.replace("No.", "").strip()
                 bill_id = bill_id.replace(".", "").replace(" ", "").strip()
                 # put one space back in between type and number
                 bill_id = re.sub(r"([a-zA-Z]+)(\d+)", r"\1 \2", bill_id)
 
-                title = title.text_content().strip()
-                title = re.sub(r"^Title", "", title)
-
                 chamber = "lower" if "H" in bill_id else "upper"
                 classification = "bill" if "B" in bill_id else "resolution"
 
-                no_title_bills = ["HR 35", "SCR 14", "SR 259"]
-                if not title and session == "134" and bill_id in no_title_bills:
-                    # Exception for HR 35, SCR 14, and SR 259 which are real bills
-                    title = "No title provided"
-                elif not title:
-                    self.warning(f"no title for {bill_id}, skipping")
-                    continue
+                title = (
+                    bill["shorttitle"] if bill["shorttitle"] else "No title provided"
+                )
                 bill = Bill(
                     bill_id,
                     legislative_session=session,
@@ -171,7 +153,9 @@ class OHBillScraper(Scraper):
                     title=title,
                     classification=classification,
                 )
-                bill.add_source(number_link.xpath("a/@href")[0])
+                bill.add_source(
+                    f"https://www.legislature.ohio.gov/legislation/{session}/{bill_number}"
+                )
 
                 if (session, bill_id) in BAD_BILLS:
                     self.logger.warning(
@@ -213,7 +197,7 @@ class OHBillScraper(Scraper):
                         version_name, version_link, media_type="application/pdf"
                     )
 
-                # we'll use latest bill_version for everything else
+                # we'll use the latest bill_version for everything else
                 bill_version = data["items"][0]
                 bill.add_source(bill_api_url)
 
@@ -382,29 +366,19 @@ class OHBillScraper(Scraper):
             page = page.json()
             yield page
 
-    def get_bill_rows(self, session, start=1):
-        # bill API endpoint times out so we're now getting this from the normal search
-        bill_url = (
-            "https://www.legislature.ohio.gov/legislation/search?pageSize=500&start={}&"
-            "sort=LegislationNumber&dir=asc&statusCode&generalAssemblies={}"
-            "&legislationTypes=HR,HB,SR,SB,HCR,SCR,HJR,SJR".format(start, session)
-        )
-        headers = {
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-            "Content-Type": "application/json; charset=utf-8",
-            "Host": "www.legislature.ohio.gov",
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36",
-        }
-        doc = self.get(bill_url, headers=headers)
-        doc = lxml.html.fromstring(doc.text)
-        doc.make_links_absolute(bill_url)
+    def get_total_bills(self, session):
+        bills_url = f"https://search-prod.lis.state.oh.us/solarapi/v1/general_assembly_{session}/bills"
+        bill_data = self.get(bills_url, verify=False).json()
+        if len(bill_data["items"]) == 0:
+            self.logger.warning("No bills")
 
-        rows = doc.xpath("//tr")[1:]
-        yield from rows
-        if len(rows) == 500:
-            yield from self.get_bill_rows(session, start + 500)
-        # if page is full, get next page - could use pagination info in
-        # //div[id="searchResultsInfo"] to improve this
+        res_url = f"https://search-prod.lis.state.oh.us/solarapi/v1/general_assembly_{session}/resolutions"
+        res_data = self.get(res_url, verify=False).json()
+        if len(res_data["items"]) == 0:
+            self.logger.warning("No resolutions")
+
+        total_bills = bill_data["items"] + res_data["items"]
+        return total_bills
 
     def get_other_data_source(self, first_page, base_url, source_name):
         # produces a dictionary from bill_id to a list of
@@ -617,212 +591,5 @@ class OHBillScraper(Scraper):
                             " Double check it?".format(k=key)
                         )
             vote.add_source(url)
-
-            yield vote
-
-    def old_scrape(self, session=None):
-        status_report_url = (
-            "https://www.legislature.ohio.gov/legislation/status-reports"
-        )
-
-        doc = self.get(status_report_url).text
-        doc = lxml.html.fromstring(doc)
-        doc.make_links_absolute(status_report_url)
-        xpath = "//div[contains(text(),'{}')]/following-sibling::table"
-        status_table = doc.xpath(xpath.format(session))[0]
-        status_links = status_table.xpath(".//a[contains(text(),'Excel')]/@href")
-
-        for url in status_links:
-
-            try:
-                fname, resp = self.urlretrieve(url)
-            except scrapelib.HTTPError as report:
-                self.logger.warning("Missing report {}".format(report))
-                continue
-
-            sh = xlrd.open_workbook(fname).sheet_by_index(0)
-
-            # once workbook is open, we can remove tempfile
-            os.remove(fname)
-            for rownum in range(1, sh.nrows):
-                bill_id = sh.cell(rownum, 0).value
-
-                bill_type = "resolution" if "R" in bill_id else "bill"
-                chamber = "lower" if "H" in bill_id else "upper"
-
-                bill_title = str(sh.cell(rownum, 3).value)
-
-                bill = Bill(
-                    bill_id,
-                    legislative_session=session,
-                    chamber=chamber,
-                    title=bill_title,
-                    classification=bill_type,
-                )
-                bill.add_source(url)
-                bill.add_sponsor("primary", str(sh.cell(rownum, 1).value))
-
-                # add cosponsor
-                if sh.cell(rownum, 2).value:
-                    bill.add_sponsor("cosponsor", str(sh.cell(rownum, 2).value))
-
-                actor = ""
-
-                # Actions start column after bill title
-                for colnum in range(4, sh.ncols - 1):
-                    action = str(sh.cell(0, colnum).value)
-                    cell = sh.cell(rownum, colnum)
-                    date = cell.value
-
-                    if len(action) != 0:
-                        if action.split()[0] == "House":
-                            actor = "lower"
-                        elif action.split()[0] == "Senate":
-                            actor = "upper"
-                        elif action.split()[-1] == "Governor":
-                            actor = "executive"
-                        elif action.split()[0] == "Gov.":
-                            actor = "executive"
-                        elif action.split()[-1] == "Gov.":
-                            actor = "executive"
-
-                    if action in ("House Intro. Date", "Senate Intro. Date"):
-                        atype = ["bill:introduced"]
-                        action = action.replace("Intro. Date", "Introduced")
-                    elif action == "3rd Consideration":
-                        atype = ["bill:reading:3", "bill:passed"]
-                    elif action == "Sent to Gov.":
-                        atype = ["governor:received"]
-                    elif action == "Signed By Governor":
-                        atype = ["governor:signed"]
-                    else:
-                        atype = ["other"]
-
-                    if type(date) == float:
-                        date = str(xlrd.xldate_as_tuple(date, 0))
-                        date = datetime.datetime.strptime(
-                            date, "(%Y, %m, %d, %H, %M, %S)"
-                        )
-                        date = self._tz.localize(date)
-                        date = "{:%Y-%m-%d}".format(date)
-                        bill.add_action(actor, action, date, type=atype)
-
-                for idx, char in enumerate(bill_id):
-                    try:
-                        int(char)
-                    except ValueError:
-                        continue
-
-                    underscore_bill = bill_id[:idx] + "_" + bill_id[idx:]
-                    break
-
-                yield from self.scrape_votes_old(bill, underscore_bill, session)
-                self.scrape_versions_old(bill, underscore_bill, session)
-                yield bill
-
-    def scrape_versions_old(self, bill, billname, session):
-        base_url = "http://archives.legislature.state.oh.us/"
-
-        if "R" in billname:
-            piece = "/res.cfm?ID=%s_%s" % (session, billname)
-        else:
-            piece = "/bills.cfm?ID=%s_%s" % (session, billname)
-
-        def _get_html_or_pdf_version_old(url):
-            doc = lxml.html.fromstring(url)
-            name = doc.xpath('//font[@size="2"]/a/text()')[0]
-            html_links = doc.xpath('//a[text()="(.html format)"]')
-            pdf_links = doc.xpath('//a[text()="(.pdf format)"]')
-            if html_links:
-                link = html_links[0].get("href")
-                bill.add_version_link(
-                    name,
-                    base_url + link,
-                    on_duplicate="use_old",
-                    media_type="text/html",
-                )
-            elif pdf_links:
-                link = pdf_links[0].get("href")
-                bill.add_version_link(
-                    name, base_url + link, media_type="application/pdf"
-                )
-
-        html = self.get(base_url + piece).text
-        # pass over missing bills - (unclear why this happens)
-        if "could not be found." in html:
-            self.warning("missing page: %s" % base_url + piece)
-            return
-
-        _get_html_or_pdf_version_old(html)
-        doc = lxml.html.fromstring(html)
-        for a in doc.xpath('//a[starts-with(@href, "/bills.cfm")]/@href'):
-            if a != piece:
-                _get_html_or_pdf_version_old(self.get(base_url + a).text)
-        for a in doc.xpath('//a[starts-with(@href, "/res.cfm")]/@href'):
-            if a != piece:
-                _get_html_or_pdf_version_old(self.get(base_url + a).text)
-
-    def scrape_votes_old(self, bill, billname, session):
-        vote_url = (
-            "http://archives.legislature.state.oh.us/bills.cfm?ID="
-            + session
-            + "_"
-            + billname
-        )
-
-        page = self.get(vote_url).text
-        page = lxml.html.fromstring(page)
-
-        for jlink in page.xpath("//a[contains(@href, 'JournalText')]"):
-            date = self._tz.localize(
-                datetime.datetime.strptime(jlink.text, "%m/%d/%Y")
-            ).date()
-            date = "{:%Y-%m-%d}".format(date)
-            details = jlink.xpath("string(../../../td[2])")
-
-            chamber = details.split(" - ")[0]
-            if chamber == "House":
-                chamber = "lower"
-            elif chamber == "Senate":
-                chamber = "upper"
-            else:
-                raise ScrapeError("Bad chamber: %s" % chamber)
-
-            motion = details.split(" - ")[1].split("\n")[0].strip()
-
-            vote_row = jlink.xpath("../../..")[0].getnext()
-
-            yea_div = vote_row.xpath("td/font/div[contains(@id, 'Yea')]")[0]
-            yeas = []
-            for td in yea_div.xpath("table/tr/td"):
-                name = td.xpath("string()")
-                if name:
-                    yeas.append(name)
-
-            no_div = vote_row.xpath("td/font/div[contains(@id, 'Nay')]")[0]
-            nays = []
-            for td in no_div.xpath("table/tr/td"):
-                name = td.xpath("string()")
-                if name:
-                    nays.append(name)
-
-            yes_count = len(yeas)
-            no_count = len(nays)
-
-            vote = VoteEvent(
-                chamber=chamber,
-                start_date=date,
-                motion_text=motion,
-                result="pass" if yes_count > no_count else "fail",
-                bill=bill,
-                classification="passage",
-            )
-
-            for yes in yeas:
-                vote.yes(yes)
-            for no in nays:
-                vote.no(no)
-
-            vote.add_source(vote_url)
 
             yield vote
