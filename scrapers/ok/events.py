@@ -37,6 +37,7 @@ class OKEventScraper(Scraper):
         html = self.asp_post(url, page, params)
         page = lxml.html.fromstring(html)
         event_count = 0
+        events = set()
 
         for row in page.xpath('//tr[contains(@id,"_dgrdNotices_")]'):
             status = "tentative"
@@ -61,7 +62,11 @@ class OKEventScraper(Scraper):
 
             when = re.sub("CANCELLED", "", when, re.IGNORECASE)
             when = self._tz.localize(dateutil.parser.parse(when))
-
+            event_name = f"{chamber}#{title}#{location}#{when}"
+            if event_name in events:
+                self.warning(f"Duplicate event found: {event_name}")
+                continue
+            events.add(event_name)
             event = Event(
                 name=title,
                 location_name=location,
@@ -69,7 +74,7 @@ class OKEventScraper(Scraper):
                 classification="committee-meeting",
                 status=status,
             )
-
+            event.dedupe_key = event_name
             event.add_source(url)
 
             event.add_committee(title, note="host")
