@@ -135,20 +135,19 @@ class OHBillScraper(Scraper):
             all_synopsis = self.get_other_data_source(first_page, base_url, "synopsiss")
             all_analysis = self.get_other_data_source(first_page, base_url, "analysiss")
 
-            for row in self.get_bill_rows(session):
-                (
-                    spacer,
-                    number_link,
-                    _ga,
-                    title,
-                    primary_sponsor,
-                    status,
-                    spacer,
-                ) = row.xpath("td")
+            rows = self.get_bill_rows(session)
+            for row in rows:
+                for td in row.xpath("th|td"):
+                    (
+                        number_link,
+                        title,
+                        _,  # primary sponsor
+                        _,  # status
+                    ) = row.xpath("th|td")
 
                 # S.R.No.1 -> SR1
-                bill_id = number_link.text_content().replace("No.", "")
-                bill_id = bill_id.replace(".", "").replace(" ", "")
+                bill_id = number_link.text_content().replace("No.", "").strip()
+                bill_id = bill_id.replace(".", "").replace(" ", "").strip()
                 # put one space back in between type and number
                 bill_id = re.sub(r"([a-zA-Z]+)(\d+)", r"\1 \2", bill_id)
 

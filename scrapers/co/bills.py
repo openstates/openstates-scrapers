@@ -25,6 +25,7 @@ SESSION_DATA_ID = {
     "2020B": "66691",
     "2021A": "66816",
     "2022A": "75371",
+    "2023A": "92641",
 }
 
 BAD_URLS = [
@@ -327,15 +328,17 @@ class COBillScraper(Scraper, LXMLMixin):
 
     def scrape_votes(self, session, bill, page):
         votes = page.xpath('//div[@id="bill-documents-tabs4"]//table//tbody//tr')
+
         for vote in votes:
             if vote.xpath(".//a/@href"):
                 vote_url = vote.xpath(".//a/@href")[0]
                 bill.add_source(vote_url)
                 page = self.lxmlize(vote_url)
-                header = page.xpath('//div[@id="page"]//table//tr//font/text()')[0]
+                try:
+                    header = page.xpath('//div[@id="page"]//table//tr//font/text()')[0]
                 # Some vote headers have missing information,
                 # so we cannot save the vote information
-                if not header:
+                except IndexError:
                     self.warning(
                         "No date and committee information available in the vote header."
                     )

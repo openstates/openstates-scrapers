@@ -33,6 +33,27 @@ class WABillScraper(Scraper, LXMLMixin):
 
     _TZ = pytz.timezone("US/Eastern")
 
+    vers_groups_re = re.compile(
+        r"""(?x)
+        ^(\d+)  # Bill number
+        (-S(\d)?)?  # Substitution indicator
+        (\.E(\d)?)?  # Engrossment indicator
+        \s?(?:.*?)  # Document name, only for some types
+        \.htm$"""
+    )
+    doc_groups_re = re.compile(
+        r"""(?x)
+        (?:[[A-Z]+]){0,1} # Occasional doc doesnt start with number
+        (\d+)  # Bill number
+        (-S(\d)?)?  # Substitution indicator
+        (\.E(\d)?)?  # Engrossment indicator
+        \s?(.*?)  # Document name
+        \.htm$"""
+    )
+    norm_bill_id_re = re.compile(r"(?:S|H)(?:B|CR|JM|JR|R) \d+")
+    action_year_re = re.compile(r"\d{4}")
+    subjects_re = re.compile(r"\w\w \d{4}")
+
     ORDINALS = {
         "2": "Second",
         "3": "Third",
@@ -66,12 +87,12 @@ class WABillScraper(Scraper, LXMLMixin):
                 link_text = row.xpath("td[2]/a[contains(@href,'billsummary')]/text()")[
                     0
                 ].strip()
-                match = re.match(r"\w\w \d{4}", link_text)
-                if match:
-                    self._subjects[match.group()].append(subject)
+                subjects_match = self.subjects_re.match(link_text)
+                if subjects_match:
+                    self._subjects[subjects_match.group()].append(subject)
 
     def _load_versions(self, chamber):
-        base_url = "http://lawfilesext.leg.wa.gov/Biennium/{}/Htm/Bills/".format(
+        base_url = "http://lawfilesext.leg.wa.gov/Biennium/" "{}/Htm/Bills/".format(
             self.biennium
         )
         bill_types = {
@@ -98,25 +119,17 @@ class WABillScraper(Scraper, LXMLMixin):
                     substitute_num,
                     is_engrossed,
                     engrossed_num,
-                ) = re.search(
-                    r"""(?x)
-                    ^(\d+)  # Bill number
-                    (-S(\d)?)?  # Substitution indicator
-                    (\.E(\d)?)?  # Engrossment indicator
-                    \s?(?:.*?)  # Document name, only for some types
-                    \.htm$""",
-                    text,
-                ).groups()
+                ) = self.vers_groups_re.search(text).groups()
 
                 bill_id = chamber[0] + bill_types[bill_type] + " " + bill_num
 
                 name = bill_type[:-1]
                 if is_substitute:
-                    name = "Substitute " + name
+                    name = f"Substitute {name}"
                     if substitute_num:
                         name = " ".join([self.ORDINALS[substitute_num], name])
                 if is_engrossed:
-                    name = "Engrossed " + name
+                    name = f"Engrossed {name}"
                     if engrossed_num:
                         name = " ".join([self.ORDINALS[engrossed_num], name])
 
@@ -135,9 +148,11 @@ class WABillScraper(Scraper, LXMLMixin):
         self.documents = {}
 
         document_types = ["Amendments", "Bill Reports", "Digests"]
-        for document_type in document_types:
-            url = "http://lawfilesext.leg.wa.gov/Biennium/{0}" "/Htm/{1}/{2}/".format(
-                self.biennium, document_type, chamber
+        for doctype in document_types:
+            url = (
+                "http://lawfilesext.leg.wa.gov/Biennium/"
+                "{0}"
+                "/Htm/{1}/{2}/".format(self.biennium, doctype, chamber)
             )
 
             try:
@@ -158,21 +173,12 @@ class WABillScraper(Scraper, LXMLMixin):
                     is_engrossed,
                     engrossed_num,
                     document_title,
-                ) = re.search(
-                    r"""(?x)
-                    (?:[[A-Z]+]){0,1} # Occasional doc doesnt start with number
-                    (\d+)  # Bill number
-                    (-S(\d)?)?  # Substitution indicator
-                    (\.E(\d)?)?  # Engrossment indicator
-                    \s?(.*?)  # Document name
-                    \.htm$""",
-                    text,
-                ).groups()
+                ) = self.doc_groups_re.search(text).groups()
 
-                if document_type == "Amendments":
+                if doctype == "Amendments":
                     name = "Amendment {}".format(document_title[4:])
 
-                elif document_type == "Bill Reports":
+                elif doctype == "Bill Reports":
                     name = " ".join(
                         [
                             x
@@ -188,7 +194,7 @@ class WABillScraper(Scraper, LXMLMixin):
                         ]
                     )
 
-                elif document_type == "Digests":
+                elif doctype == "Digests":
                     name = "Digest"
                     if is_substitute:
                         name = "Digest for Substitute"
@@ -204,7 +210,7 @@ class WABillScraper(Scraper, LXMLMixin):
                 )
 
     def get_prefiles(self, chamber, session, year):
-        url = "http://apps.leg.wa.gov/billinfo/prefiled.aspx?year={}".format(year)
+        url = "http://apps.leg.wa.gov/billinfo/prefiled.aspx?" "year={}".format(year)
         page = self.lxmlize(url)
 
         bill_rows = page.xpath('//table[@id="ctl00_ContentPlaceHolder1_gvPrefiled"]/tr')
@@ -240,7 +246,8 @@ class WABillScraper(Scraper, LXMLMixin):
         year = int(session[0:4])
 
         # first go through API response and get bill list
-        max_year = year if int(datetime.date.today().year) < year + 1 else year + 1
+        current = int(datetime.date.today().year)
+        max_year = year if current < year + 1 else year + 1
         for y in (year, max_year):
             self.build_subject_mapping(y)
             url = "%s/GetLegislationByYear?year=%s" % (self._base_url, y)
@@ -264,11 +271,11 @@ class WABillScraper(Scraper, LXMLMixin):
                 if bill_id.startswith("SI") or bill_id.startswith("HI"):
                     continue
 
-                if bill_chamber != chamber:
+                if not bill_chamber == chamber:
                     continue
 
                 # normalize bill_id
-                bill_id_norm = re.findall(r"(?:S|H)(?:B|CR|JM|JR|R) \d+", bill_id)
+                bill_id_norm = self.norm_bill_id_re.findall(bill_id)
                 if not bill_id_norm:
                     self.warning("illegal bill_id %s" % bill_id)
                     continue
@@ -442,21 +449,19 @@ class WABillScraper(Scraper, LXMLMixin):
             # action years are in a header YYYY Regular|Special session
             # for a bill with actions that span years, see
             # see https://apps.leg.wa.gov/billsummary?BillNumber=5315&Initiative=false&Year=2019
-            if re.match(r"\d{4}", header_text):
-                action_year = re.search(r"\d{4}", header_text).group()
+            if self.action_year_re.match(header_text):
+                action_year = self.action_year_re.search(header_text).group()
 
             rows = header.xpath("following-sibling::div[1]/div")
             for row in rows:
-                if row.xpath("div[1]")[0].text_content().strip() != "":
-                    action_day = row.xpath("div[1]")[0].text_content().strip()
                 # skip later lines that are just links to files
-                action_text = (
-                    row.xpath("div[2]")[0]
-                    .text_content()
-                    .strip()
-                    .split("\r\n")[0]
-                    .strip()
-                )
+                if row.xpath("div[1]")[0].text_content().strip():
+                    action_day = row.xpath("div[1]")[0].text_content().strip()
+
+                raw_action = row.xpath("div[2]")[0].text_content()
+                action_text = " ".join(
+                    [x.strip() for x in raw_action.split("\r\n")]
+                ).strip()
 
                 action_date = self._TZ.localize(
                     datetime.datetime.strptime(
@@ -507,7 +512,9 @@ class WABillScraper(Scraper, LXMLMixin):
         api_url = (
             "http://wslwebservices.leg.wa.gov/legislationservice.asmx/"
             f"GetLegislativeStatusChangesByBillNumber?billNumber={bill_num}"
-            f"&biennium={self.biennium}&beginDate={prefile_year}-11-01&endDate={second_year}-12-31"
+            f"&biennium={self.biennium}"
+            f"&beginDate={prefile_year}-11-01"
+            f"&endDate={second_year}-12-31"
         )
 
         # api drops 500 errors if there are no actions,
@@ -552,6 +559,8 @@ class WABillScraper(Scraper, LXMLMixin):
 
             other_count = abs_count + ex_count
 
+            non_yes_count = no_count + other_count
+
             agency = xpath(rc, "string(wa:Agency)")
             chamber = {"House": "lower", "Senate": "upper"}[agency]
 
@@ -559,7 +568,7 @@ class WABillScraper(Scraper, LXMLMixin):
                 chamber=chamber,
                 start_date=date,
                 motion_text="{} (#{})".format(motion, seq_no),
-                result="pass" if yes_count > (no_count + other_count) else "fail",
+                result="pass" if yes_count > non_yes_count else "fail",
                 bill=bill,
                 classification=[],
             )
@@ -607,7 +616,8 @@ class WABillScraper(Scraper, LXMLMixin):
             f"WA {year} Laws",
             f"Chapter {chapter}",
             citation_type="chapter",
-            url=f"https://leg.wa.gov/CodeReviser/Pages/SessionLaw/{year}%20Session%20Laws.aspx",
+            url="https://leg.wa.gov/CodeReviser/Pages/SessionLaw/"
+            f"{year}%20Session%20Laws.aspx",
             effective=effective,
         )
 
@@ -631,7 +641,6 @@ class WABillScraper(Scraper, LXMLMixin):
         page = lxml.etree.fromstring(page.content)
         for row in xpath(page, "//wa:RcwCiteAffected"):
             cite = xpath(row, "string(wa:RcwCite)").strip()
-            # action_date = datetime.datetime.strptime(action_date, "%Y-%m-%dT%H:%M:%S")
 
             if became_law:
                 bill.add_citation(

@@ -1,6 +1,13 @@
 from spatula import HtmlListPage, CSS, XPath, HtmlPage, Page, URL
 from openstates.models import ScrapePerson
 import xlrd
+import re
+
+# Regex patterns to fix specific bad urls provided for new member bio pages
+#  TODO: Check at future point in 2023 session if these urls still bad,
+#   or if regex string substitution fix can be removed from LegList
+alex_finkelman_re = re.compile("finkelman/")
+linda_ujifusa_re = re.compile("ujifusa/")
 
 EXCEL_URL = URL(
     "http://www.rilegislature.gov/SiteAssets/MailingLists/Representatives.xls",
@@ -77,6 +84,10 @@ class LegList(HtmlListPage):
             p.district_office.voice = phone
 
         bio = CSS("td center a").match_one(item).get("href")
+
+        # Fixes bio page bad urls for Rep. Alex Finkelman, Sen. Linda Ujifusa
+        bio = alex_finkelman_re.sub("finkelmana/", bio)
+        bio = linda_ujifusa_re.sub("ujifusal/", bio)
 
         p.email = email
         p.add_link(bio)

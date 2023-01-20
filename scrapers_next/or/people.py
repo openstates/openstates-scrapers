@@ -57,7 +57,7 @@ class LegDetail(HtmlPage):
 
 class LegList(JsonPage):
     source = URL(
-        "https://api.oregonlegislature.gov/odata/odataservice.svc/LegislativeSessions('2021R1')/Legislators",
+        "https://api.oregonlegislature.gov/odata/odataservice.svc/LegislativeSessions('2023R1')/Legislators",
         headers={"Accept": "application/json"},
     )
 
@@ -104,10 +104,13 @@ class LegList(JsonPage):
             if title not in ["Senator", "Representative"]:
                 p.extras["title"] = title
 
-            email = leg["EmailAddress"].strip()
-            p.email = email
+            email = leg["EmailAddress"]
+            p.email = email.strip() if email else ""
 
             website = leg["WebSiteUrl"]
+            # Fixes bad url in the JSON data for Sen. Elizabeth Steiner
+            website = website.replace("steinerhayward", "steiner")
+
             p.add_link(website, note="homepage")
             p.add_source(website)
 

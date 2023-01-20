@@ -6,6 +6,7 @@ import lxml.etree
 
 from openstates.utils import convert_pdf
 from openstates.scrape import Scraper, VoteEvent
+from openstates.exceptions import EmptyScrape
 
 
 SITE_IDS = {
@@ -21,11 +22,23 @@ SITE_IDS = {
 
 class IAVoteScraper(Scraper):
     def scrape(self, chamber=None, session=None):
+        event_count = 0
         if chamber:
-            yield from self.scrape_chamber(chamber, session)
+            for journal in self.scrape_chamber(chamber, session):
+                for event in journal:
+                    event_count += 1
+                    yield event
         else:
-            yield from self.scrape_chamber("upper", session)
-            yield from self.scrape_chamber("lower", session)
+            for journal in self.scrape_chamber("upper", session):
+                for event in journal:
+                    event_count += 1
+                    yield event
+            for journal in self.scrape_chamber("lower", session):
+                for event in journal:
+                    event_count += 1
+                    yield event
+        if event_count < 1:
+            raise EmptyScrape
 
     def scrape_chamber(self, chamber, session):
         # Each PDF index page contains just one year, not a whole session
@@ -120,7 +133,7 @@ class IAVoteScraper(Scraper):
             bill_id = None
 
             while not chamber_motion_re[chamber].match(line, re.IGNORECASE):
-                line += " " + next(lines)
+                line += f" {next(lines)}"
 
             try:
                 bill_id = bill_re.search(line).group(1)

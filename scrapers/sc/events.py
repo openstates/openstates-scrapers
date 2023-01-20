@@ -128,9 +128,7 @@ class SCEventScraper(Scraper):
             elif date_string.count(",") == 1:
                 event_year = meeting_year
             else:
-                raise AssertionError("This is not a valid date: '{}'").format(
-                    date_string
-                )
+                raise AssertionError(f"This is not a valid date: '{date_string}'")
 
             for meeting in date.xpath("li"):
                 time_string = meeting.xpath("span")[0].text_content()
@@ -143,15 +141,21 @@ class SCEventScraper(Scraper):
 
                 time_string = normalize_time(time_string)
                 date_time = datetime.datetime.strptime(
-                    event_year + " " + date_string + " " + time_string,
+                    f"{event_year} {date_string} {time_string}",
                     "%Y %A, %B %d %I:%M %p",
                 )
 
                 date_time = self._tz.localize(date_time)
-                meeting_info = meeting.xpath("br[1]/preceding-sibling::node()")[1]
-                location, description = re.search(
-                    r"-- (.*?) -- (.*)", meeting_info
-                ).groups()
+                try:
+                    meeting_info = meeting.xpath("br[1]/preceding-sibling::node()")[1]
+                    location, description = re.search(
+                        r"-- (.*?) -- (.*)", meeting_info
+                    ).groups()
+                except Exception:
+                    meeting_info = meeting.xpath("br[2]/preceding-sibling::node()")[4]
+                    location, description = re.search(
+                        r"(.*?) -- (.*)", meeting_info
+                    ).groups()
 
                 if re.search(r"committee", description, re.I):
                     classification = "committee-meeting"

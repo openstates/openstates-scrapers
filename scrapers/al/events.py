@@ -4,6 +4,7 @@ import re
 
 from utils import LXMLMixin
 from utils.events import match_coordinates
+from openstates.exceptions import EmptyScrape
 from openstates.scrape import Scraper, Event
 
 
@@ -19,6 +20,7 @@ class ALEventScraper(Scraper, LXMLMixin):
         rows = self.lxmlize(EVENTS_URL).xpath(
             '//table[@id="ContentPlaceHolder1_gvInterimMeeting"]/tr'
         )
+        event_count = 0
         for row in rows[1:]:
             date = row.xpath("td")[0].text_content().strip()
             time = row.xpath("td")[1].text_content().strip()
@@ -62,5 +64,8 @@ class ALEventScraper(Scraper, LXMLMixin):
             )
 
             event.add_source(EVENTS_URL)
-
+            event_count += 1
             yield event
+
+        if event_count < 1:
+            raise EmptyScrape
