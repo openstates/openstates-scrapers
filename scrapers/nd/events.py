@@ -19,7 +19,7 @@ def time_is_earlier(new, current):
         return False
 
 
-class EventConsolidator:
+class EventConsolidator(object):
     def __init__(self, items, url):
         self.items = items
         self.events = {}
@@ -60,7 +60,7 @@ class EventConsolidator:
         yield from self.create_events()
 
     def create_events(self):
-
+        event_names = set()
         for event in self.events.keys():
             date, com, loc = re.search(r"(.+)\-(.+)\-(.+)", event).groups()
             date = "".join(c for c in date if c.isdigit() or c in ["-"])
@@ -69,13 +69,18 @@ class EventConsolidator:
             date_time = f"{date} {start_time}"
             date_object = dateutil.parser.parse(date_time)
             date_with_offset = self._tz.localize(date_object)
-
+            event_name = f"{com}#{loc}#{date_time}"
+            if event_name in event_names:
+                logging.warning(f"Skipping duplicate event {event_name}")
+                continue
+            event_names.add(event_name)
             event_obj = Event(
                 name=com,
                 location_name=loc,
                 description="Standing Committee Hearing",
                 start_date=date_with_offset,
             )
+            event_obj.dedupe_key = event_name
 
             for item_key in self.events[event]["item_keys"]:
                 agenda = self.events[event][item_key]
@@ -121,10 +126,9 @@ class EventsTable(HtmlPage):
         for row_item in table_rows:
             columns = row_item.xpath("./td")
             columns_content = [x.text_content().strip() for x in columns]
-            if len(columns_content) == 7:
-                columns_content = columns_content[:-1]
-
-            bill, part_date, com, sub_com, loc, descr = columns_content
+            if len(columns_content) > 7:
+                columns_content = columns_content[:7]
+            part_date, bill, agenda_time, com, sub_com, loc, descr = columns_content
             # Example Column:
             #   bill      part_date          com      sub_com  loc       descr
             # HB 1111 | 12/08 2:00 PM | Joint Approps |      | 327E | Funding bill
@@ -139,7 +143,7 @@ class EventsTable(HtmlPage):
                     if match_in_descr:
                         bill_name = match_in_descr.group()
                     else:
-                        bill_link = columns[0].xpath("./a")[0].get("href")
+                        bill_link = columns[1].xpath("./a")[0].get("href")
                         bill_name_scraper = BillNameScraper(bill_link)
                         bill_name = bill_name_scraper.get_bill_name()
                 else:

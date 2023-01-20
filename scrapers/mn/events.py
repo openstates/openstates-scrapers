@@ -13,7 +13,15 @@ url = "http://www.leg.state.mn.us/calendarday.aspx?jday=all"
 
 
 def get_bill_ids(text):
-    return re.findall(r"[H|S]F \d+", text)
+    """
+    Valid formats we've seen:
+    H.F. 463
+    HF 463
+    HF463
+    """
+    bills = re.findall(r"[H|S]\.?F\.?\s?\d+", text)
+    bills = [b.replace(".", "") for b in bills]
+    return bills
 
 
 class MNEventScraper(Scraper, LXMLMixin):
@@ -33,8 +41,6 @@ class MNEventScraper(Scraper, LXMLMixin):
         page = self.lxmlize(url)
 
         for row in page.xpath('//div[contains(@class,"my-2 d-print-block")]'):
-            # print(row.text_content())
-
             # skip floor sessions and unlinked events
             if not row.xpath(
                 'div[contains(@class,"card-header")]/h3/a[contains(@class,"text-white")]/b'
@@ -87,8 +93,13 @@ class MNEventScraper(Scraper, LXMLMixin):
 
             event.add_source(com_link)
 
+            bills = set()
             for bill in get_bill_ids(desc):
                 event.add_bill(bill)
+                bills.add(bill)
+            self.info(
+                f"Associated {len(bills)} bills with {com}#{where}#{when}: {bills}"
+            )
 
             if row.xpath(
                 ".//a[contains(@href,'/bills/bill.php') and contains(@class,'pull-left')]"

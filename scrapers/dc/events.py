@@ -59,7 +59,7 @@ class DCEventScraper(Scraper):
 
             if "committee meeting" in title.lower():
                 com_name = title.replace("Committee Meeting", "").strip()
-                event.add_participant(com_name, type="commitee", note="host")
+                event.add_participant(com_name, type="committee", note="host")
 
             event.add_source(url)
 
