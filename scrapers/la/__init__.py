@@ -220,7 +220,7 @@ class Louisiana(State):
             "name": "2022 Second Extraordinary Session",
             "start_date": "2022-06-15",
             "end_date": "2022-06-18",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023 Regular Session",
@@ -229,7 +229,7 @@ class Louisiana(State):
             "name": "2023 Regular Session",
             "start_date": "2023-04-10",
             "end_date": "2023-06-08",
-            "active": False,
+            "active": True,
         },
         {
             "_scraped_name": "2023 First Extraordinary Session",
@@ -291,7 +291,7 @@ class Louisiana(State):
 
     def get_session_list(self):
         return url_xpath(
-            "http://www.legis.la.gov/Legis/SessionInfo/SessionInfo.aspx",
+            "https://www.legis.la.gov/Legis/SessionInfo/SessionInfo.aspx",
             '//table[@id="ctl00_ctl00_PageBody_DataListSessions"]//a[contains'
             '(text(), "Session")]/text()',
         )
