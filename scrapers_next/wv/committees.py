@@ -4,17 +4,37 @@ from openstates.models import ScrapeCommittee
 
 
 class CommitteeMember(HtmlPage):
-    position: str
+    """
+    Scrape a committee member profile, if existing.
 
-    def __init__(self, input_val, source: Source, position: str):
+    Position is scraped from the directory page and passed directly to this class.
+
+    If a member does not have a profile or their name cannot be gleaned using a
+    css selector, use fallback_name.
+
+    :param position: Rank of the member in the committee currently being scraped.
+    e.g. "Chair"
+    :param fallback_name: The name to use if the legislator's full name cannot be
+    determined from their profile. e.g. "Senator Burns"
+    """
+
+    position: str
+    fallback_name: str
+
+    def __init__(self, input_val, source: Source, position: str, fallback_name: str):
         super(CommitteeMember, self).__init__(input_val, source=source)
         self.position = position
+        self.fallback_name = fallback_name
 
     def process_page(self):
-        name = CSS("#wrapleftcolr > h2:nth-child(1)").match_one(self.root).text
-        if name is not None:
-            self.input.add_source(self.source.url, f"{name} url")
-            self.input.add_member(sub(r"\(.*\)", "", name), self.position)
+        # min_items set to zero because not all members have a profile
+        # page instead shows a list of media releases
+        name_match = CSS("#wrapleftcolr > h2:nth-child(1)", min_items=0).match(
+            self.root
+        )
+        name = name_match[0].text if len(name_match) == 1 else self.fallback_name
+        self.input.add_source(self.source.url, f"{name} url")
+        self.input.add_member(sub(r"\(.*\)", "", name), self.position)
         return self.input
 
     def get_source_from_input(self):
@@ -22,6 +42,14 @@ class CommitteeMember(HtmlPage):
 
 
 class CommitteeDetail(HtmlListPage):
+    """
+    Scrape a list of committee members.
+
+    :param selector: CSS matcher for each legislator url, according to chamber.
+    :param url_signifier: Part of each matched element's href that should exist
+    in a valid member profile url.
+    """
+
     selector: CSS
     url_signifier: str
 
@@ -41,7 +69,10 @@ class CommitteeDetail(HtmlListPage):
             next_elem = item.getnext().text
             position = next_elem if isinstance(next_elem, str) else "member"
             return CommitteeMember(
-                self.input, source=URL(item.get("href")), position=position
+                self.input,
+                source=URL(item.get("href")),
+                position=position,
+                fallback_name=item.get("href").split("member=", 1)[1],
             )
         else:
             raise SkipItem("not a committee member url")
@@ -51,6 +82,19 @@ class CommitteeDetail(HtmlListPage):
 
 
 class CommitteeList(HtmlListPage):
+    """
+    Scrape a list of committees.
+
+    :param selector: CSS matcher for each committee url, according to chamber.
+    :param member_selector: CSS matcher for each member within a committee -
+    passed directly to CommitteeDetail.
+    :param cmte_url_signifier: Part of each matched element's href that should exist
+    in a valid committee directory url.
+    :param member_url_signifier: Part of each matched element's href that should exist
+    in a valid member profile url.
+    :param chamber: Chamber of this group of committees. e.g. "upper" "lower" "legislature"
+    """
+
     selector: CSS
     member_selector: CSS
     cmte_url_signifier: str
@@ -62,9 +106,8 @@ class CommitteeList(HtmlListPage):
             cmte = ScrapeCommittee(
                 name=item.text,
                 chamber=self.chamber,
-                classification="subcommittee"
-                if "subcommittee" in item.text.lower()
-                else "committee",
+                # WV subcommittees do not explicitly list parent committees
+                classification="committee",
             )
             cmte.add_source(item.get("href"), f"{item.text} committee url")
             return CommitteeDetail(
@@ -98,8 +141,11 @@ class HouseCommittees(CommitteeList):
     chamber = "lower"
 
 
-# class JointCommittees(CommitteeList):
-#     cmte_selector = CSS("wrapleftcol a")
-#     source = "https://www.wvlegislature.gov/committees/interims/interims.cfm"
-#     cmte_url_signifier = "interims/committee.cfm"
-#     chamber = "legislature"
+class JointCommittees(CommitteeList):
+    source = "https://www.wvlegislature.gov/committees/interims/interims.cfm"
+    selector = CSS("#wrapleftcol a")
+    # min_items set to zero because not all joint committees have appointed members
+    member_selector = CSS(".tabborder a", min_items=0)
+    cmte_url_signifier = "committee.cfm"
+    member_url_signifier = "lawmaker.cfm"
+    chamber = "legislature"
