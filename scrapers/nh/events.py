@@ -1,4 +1,4 @@
-# http://www.gencourt.state.nh.us/statstudcomm/details.aspx?id=61&txtchapternumber=541-A%3a2
+# https://www.gencourt.state.nh.us/statstudcomm/details.aspx?id=61&txtchapternumber=541-A%3a2
 
 from utils import LXMLMixin
 import dateutil.parser
@@ -23,14 +23,14 @@ class NHEventScraper(Scraper, LXMLMixin):
     def scrape_chamber(self, chamber):
         chamber_names = {"lower": "house", "upper": "senate"}
         # http://gencourt.state.nh.us/dynamicdatafiles/Committees.txt?x=20201216031749
-        url = f"http://gencourt.state.nh.us/{chamber_names[chamber]}/schedule/CalendarWS.asmx/GetEvents"
+        url = f"https://gencourt.state.nh.us/{chamber_names[chamber]}/schedule/CalendarWS.asmx/GetEvents"
         page = self.get(
             url,
             headers={
                 "Accept": "Accept: application/json, text/javascript, */*; q=0.01",
                 "X-Requested-With": "XMLHttpRequest",
                 "Content-Type": "application/json; charset=utf-8",
-                "Referer": f"http://gencourt.state.nh.us/{chamber_names[chamber]}/schedule/dailyschedule.aspx",
+                "Referer": f"https://gencourt.state.nh.us/{chamber_names[chamber]}/schedule/dailyschedule.aspx",
                 "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36",
             },
         )
