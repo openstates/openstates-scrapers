@@ -43,6 +43,7 @@ class LABillScraper(Scraper, LXMLMixin):
         "2022s1": "221ES",
         "2022s2": "222ES",
         "2023": "23RS",
+        "2023s1": "231ES",
     }
 
     def pdf_to_lxml(self, filename, type="html"):

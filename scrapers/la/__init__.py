@@ -231,6 +231,15 @@ class Louisiana(State):
             "end_date": "2023-06-08",
             "active": False,
         },
+        {
+            "_scraped_name": "2023 First Extraordinary Session",
+            "classification": "primary",
+            "identifier": "2023s1",
+            "name": "2023 First Extraordinary Session",
+            "start_date": "2023-01-30",
+            "end_date": "2023-02-05",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2022 Veto Session",
