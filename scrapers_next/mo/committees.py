@@ -1,7 +1,6 @@
-from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError, URL
+from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError, URL, SkipItem
 from openstates.models import ScrapeCommittee
 import re
-import logging
 
 
 leader_name_pos = re.compile(r"(Senator\s+|Repr.+tive\s+)(.+),\s+(.+),\s+.+")
@@ -18,8 +17,7 @@ class SenateCommitteeDetail(HtmlPage):
         members = self.root.xpath(".//div[@class='senator-Text']//strong")
 
         if not members:
-            logging.warning(f"No membership data found for: {com.name}")
-            return com
+            raise SkipItem(f"No membership data found for: {com.name}")
 
         for member in members:
             member_text = member.text_content()
@@ -149,7 +147,7 @@ class HouseCommitteeDetail(HtmlPage):
 
                 com.add_member(name, position)
         except SelectorError:
-            pass
+            raise SkipItem(f"No membership data found for: {com.name}")
         return com
 
 
