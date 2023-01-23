@@ -94,7 +94,7 @@ class NEEventScraper(Scraper):
             # add documents
             for row in meeting.xpath("table/tr"):
                 if row.xpath("th"):
-                    self.debug(f"'th' element found (we skip headers)")
+                    # 'th' element found (we skip headers)
                     continue
                 details = row.xpath("td/div[@class='row g-0 pb-1']")[0]
                 document = re_span.sub(
