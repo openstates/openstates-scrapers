@@ -220,7 +220,7 @@ class Louisiana(State):
             "name": "2022 Second Extraordinary Session",
             "start_date": "2022-06-15",
             "end_date": "2022-06-18",
-            "active": False,
+            "active": True,
         },
         {
             "_scraped_name": "2023 Regular Session",
