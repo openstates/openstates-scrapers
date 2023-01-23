@@ -193,7 +193,7 @@ class Florida(State):
             "classification": "special",
             "start_date": "2022-12-12",
             "end_date": "2022-12-16",
-            "active": True,
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [
