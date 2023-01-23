@@ -1,5 +1,10 @@
-from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError, SkipItem, URL
+from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError, URL, SkipItem
 from openstates.models import ScrapeCommittee
+import re
+
+
+leader_name_pos = re.compile(r"(Senator\s+|Repr.+tive\s+)(.+),\s+(.+),\s+.+")
+member_name_pos = re.compile(r"(Senator\s+|Repr.+tive\s+)(.+),\s+.+")
 
 
 class SenateCommitteeDetail(HtmlPage):
@@ -7,47 +12,42 @@ class SenateCommitteeDetail(HtmlPage):
 
     def process_page(self):
         com = self.input
-        com.add_source(self.source.url)
-        com.add_link(self.source.url, note="homepage")
+        com.add_source(self.source.url, note="Committee Details Page")
 
-        members = CSS(".gallery .desc").match(self.root)
+        members = self.root.xpath(".//div[@class='senator-Text']//strong")
 
         if not members:
-            raise SkipItem("empty committee")
+            raise SkipItem(f"No membership data found for: {com.name}")
 
-        positions = ["Chairman", "Vice-Chairman"]
         for member in members:
-            member_position = member.text_content().replace("Senator", "").split(", ")
+            member_text = member.text_content()
 
-            if (
-                member_position[0] == "House Vacancy"
-                or member_position[0] == "Senate Vacancy"
-            ):
+            if "vacancy" in member_text.lower():
                 continue
 
-            member_pos_str = "member"
-            member_name = (
-                member_position[0].replace("Representative ", "").replace("Rep. ", "")
-            )
+            com_leader = leader_name_pos.search(member_text)
+            com_member = member_name_pos.search(member_text)
+            if com_leader:
+                name, role = com_leader.groups()[1:]
+            else:
+                name, role = com_member.groups()[1], "Member"
 
-            for pos in positions:
-                if pos in member_position:
-                    member_pos_str = pos
+            com.add_member(name=name, role=role)
 
-            com.add_member(member_name, member_pos_str)
-
-        if not com.members:
-            raise SkipItem("empty")
         return com
 
 
 class SenateTypeCommitteeList(HtmlListPage):
     example_source = "https://www.senate.mo.gov/standing-committees/"
-    selector = CSS(".entry-content a")
+    selector = XPath(".//div[@id='main']//p//a[1]")
     chamber = "upper"
 
     def process_item(self, item):
         name = item.text_content()
+
+        if "hearing schedule" in name.lower():
+            self.skip()
+
         if "Joint" in name:
             chamber = "legislature"
         else:
@@ -69,7 +69,7 @@ class SenateTypeCommitteeList(HtmlListPage):
                 )
 
                 if "Subcommittee" in name:
-                    name_parent = comm_name.split(" – ")
+                    name_parent = [x.strip() for x in comm_name.split("-")]
                     parent = name_parent[0]
                     comm_name = name_parent[1].replace("Subcommittee", "")
 
@@ -84,6 +84,8 @@ class SenateTypeCommitteeList(HtmlListPage):
             else:
                 com = ScrapeCommittee(name=name, chamber=chamber)
 
+            com.add_source(self.source.url, note="Committees List Page")
+
             return SenateCommitteeDetail(com, source=URL(item.get("href"), timeout=30))
         else:
             self.skip()
@@ -91,29 +93,35 @@ class SenateTypeCommitteeList(HtmlListPage):
 
 class SenateCommitteeList(HtmlListPage):
     source = "https://senate.mo.gov/Committees/"
-    selector = CSS("#post-90 a")
+    selector = XPath(".//div[@id='main']//li//a")
 
     def process_item(self, item):
-        ctype = item.text_content()
-        if ctype == "Standing" or ctype == "Statutory":
-            return SenateTypeCommitteeList(source=URL(item.get("href"), timeout=30))
+        item_type = item.text_content()
+        for com_type in ("standing", "statutory", "interim", "select"):
+            if com_type in item_type.lower():
+                return SenateTypeCommitteeList(source=URL(item.get("href"), timeout=30))
         else:
             self.skip()
 
 
 class HouseCommitteeDetail(HtmlPage):
-    # example_source = "https://www.house.mo.gov/MemberGridCluster.aspx?filter=compage&category=committee&Committees.aspx?category=all&committee=2582&year=2021&code=R"
-    example_source = "https://www.house.mo.gov/MemberGridCluster.aspx?filter=compage&category=committee&Committees.aspx?category=all&committee=2571&year=2021&code=R"
+
+    example_source = (
+        "https://www.house.mo.gov/MemberGridCluster.aspx?"
+        "filter=compage&category=committee&Committees.aspx?"
+        "category=all&committee=2571&year=2023&code=R"
+    )
 
     def process_page(self):
         com = self.input
-        com.add_source(self.source.url)
+        com.add_source(self.source.url, note="Committee Details Page")
         link = self.source.url.replace(
             "MemberGridCluster.aspx?filter=compage&category=committee&", ""
         )
         com.add_link(link, note="homepage")
 
-        # As of now, one committees page is empty. Just in case it is updated soon, the page will still be scraped
+        # As of now, one committee's page is empty.
+        # Just in case it is updated soon, the page will still be scraped
         try:
             members = CSS("#theTable tr").match(self.root)
 
@@ -139,7 +147,7 @@ class HouseCommitteeDetail(HtmlPage):
 
                 com.add_member(name, position)
         except SelectorError:
-            pass
+            raise SkipItem(f"No membership data found for: {com.name}")
         return com
 
 
@@ -193,7 +201,13 @@ class HouseCommitteeList(HtmlListPage):
         else:
             com = ScrapeCommittee(name=committee_name, chamber=self.chamber)
 
-        # We can construct a URL that would make scraping easier, as opposed to the link that is directly given
+        com.add_source(self.source.url, note="Committees List Page")
+
+        # We can construct a URL that would make scraping easier,
+        # as opposed to the link that is directly given
         comm_link = item.get("href").replace("https://www.house.mo.gov/", "")
-        source = f"https://www.house.mo.gov/MemberGridCluster.aspx?filter=compage&category=committee&{comm_link}"
+        source = (
+            "https://www.house.mo.gov/MemberGridCluster.aspx?"
+            f"filter=compage&category=committee&{comm_link}"
+        )
         return HouseCommitteeDetail(com, source=URL(source, timeout=30))
