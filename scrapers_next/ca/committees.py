@@ -168,9 +168,15 @@ class AssemblyCommitteeList(HtmlListPage):
         if comm_name.startswith("Subcommittee"):
             classification = "subcommittee"
             parent_comm = (
-                item.getparent().getparent().getchildren()[0].text_content().strip()
+                item.getparent()
+                .getparent()
+                .getparent()
+                .getchildren()[0]
+                .text_content()
+                .strip()
             )
         else:
+            self.skip()
             classification = "committee"
             parent_comm = None
 
