@@ -1,7 +1,6 @@
-from spatula import HtmlListPage, URL, XPath, CSS, HtmlPage
+from spatula import HtmlListPage, URL, XPath, CSS, HtmlPage, SkipItem
 from openstates.models import ScrapeCommittee
 import re
-import logging
 
 
 member_name_role_re = re.compile(r"(.+)\((.+)\)")
@@ -54,7 +53,7 @@ class CommMembership(HtmlPage):
                 committee.add_member(name=name, role=role)
 
         else:
-            logging.warning("No committee membership data retrieved")
+            raise SkipItem("No membership listed")
 
         return committee
 
@@ -106,7 +105,7 @@ class CommDetails(HtmlPage):
 
         # Case 5: page does not fit known formats, or membership not on site
         else:
-            logging.warning("No committee membership data retrieved")
+            raise SkipItem("No membership listed")
 
         return committee
 
@@ -155,7 +154,7 @@ class SenateCommitteeList(HtmlListPage):
 
 class AssemblyCommitteeList(HtmlListPage):
     source = URL("https://www.assembly.ca.gov/committees")
-    selector = CSS("div .block.block-views ul li")
+    selector = XPath(".//div[@class='views-field views-field-title']")
 
     def process_item(self, item):
         comm_name = CSS("a").match_one(item).text_content()
@@ -164,7 +163,7 @@ class AssemblyCommitteeList(HtmlListPage):
         # Joint Committees are being skipped to avoid duplicates
         #  because they are grabbed during SenateCommitteeList()
         if "joint" in comm_name.lower():
-            self.skip()
+            self.skip("Joint committees retrieved by SenateCommitteeList() object")
 
         if comm_name.startswith("Subcommittee"):
             classification = "subcommittee"
