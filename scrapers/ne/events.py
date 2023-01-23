@@ -107,7 +107,6 @@ class NEEventScraper(Scraper):
                 if document not in ["Appointment"]:
                     bill_id = lxml.html.fromstring(document).text
                     agenda_item.add_bill(bill_id)
-                    self.info(f"Added bill: {bill_id}")
 
             event.add_source("https://nebraskalegislature.gov/calendar/calendar.php")
             yield event
