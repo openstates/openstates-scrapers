@@ -7,7 +7,7 @@ import requests
 from utils import LXMLMixin
 from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
-from openstates.exceptions import EmptyScrape
+from openstates.exceptions import EmptyScrape, ScrapeValueError
 
 
 class USEventScraper(Scraper, LXMLMixin):
@@ -132,9 +132,15 @@ class USEventScraper(Scraper, LXMLMixin):
                 doc_id = f"{doc_congress}-{doc_prefix}-{doc_num}"
 
                 bill_id = f"{doc_prefix} {doc_num}"
-                agenda_item.add_entity(
-                    name=bill_id, entity_type=doc_type, id=doc_id, note=doc_title
-                )
+                try:
+                    agenda_item.add_entity(
+                        name=bill_id, entity_type=doc_type, id=doc_id, note=doc_title
+                    )
+                except ScrapeValueError:
+                    self.log.warning(
+                        f"Skipping agenda item {bill_id} of type {doc_type}"
+                    )
+                    pass
 
             event.add_participant(
                 com,
