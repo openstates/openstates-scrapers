@@ -1,4 +1,4 @@
-from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError, SkipItem, URL, ListPage
+from spatula import HtmlPage, HtmlListPage, XPath, URL
 from openstates.models import ScrapeCommittee
 
 
@@ -31,7 +31,7 @@ class SenateCommitteeDetail(HtmlPage):
 
 
 class SenateTypeAllCommitteeList(HtmlListPage):
-    example_source = "https://wapp.capitol.tn.gov/apps/CommitteeInfo/AllSenate.aspx"
+    source = "https://wapp.capitol.tn.gov/apps/CommitteeInfo/AllSenate.aspx"
     selector = XPath("/html/body/div[1]/div/div/div/div[1]/div[*]/div/div[*]/dl/dt[*]/a")
     chamber = "upper"
 
