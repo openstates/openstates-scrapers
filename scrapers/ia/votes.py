@@ -143,7 +143,7 @@ class IAVoteScraper(Scraper):
 
             # Get the motion text
             motion_re = r"""
-                    ^On\sthe\squestion\s  # Precedes any motion
+                    ^On\sthe\squestion,?\s  # Precedes any motion
                     "+  # Motion is preceded by a quote mark (or two)
                     (Shall\s.+?\??)  # The motion text begins with "Shall"
                     \s*(?:\?"?|"|’)\s+  # Motion is followed by a question mark and/or a quote mark
