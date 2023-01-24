@@ -1,5 +1,6 @@
 from spatula import HtmlPage, HtmlListPage, CSS, SelectorError, URL
 from openstates.models import ScrapeCommittee
+import logging
 
 
 class CommitteeDetails(HtmlPage):
@@ -17,7 +18,9 @@ class CommitteeDetails(HtmlPage):
         else:
             chamber = "legislature"
         com = ScrapeCommittee(name=self.input, chamber=chamber)
-        members = CSS(".member ").match(self.root)
+        members = self.root.xpath(".//div[@class='member']")
+        if not members:
+            logging.warning(f"No membership data for {com.name}")
         for member in members:
             try:
                 member_name = CSS("h4 a").match_one(member).text_content()

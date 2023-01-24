@@ -330,7 +330,7 @@ class HIBillScraper(Scraper):
                 # all caps sponsors are primary, others are secondary
                 primary = sponsor.upper() == sponsor
                 b.add_sponsorship(
-                    sponsor, "primary" if primary else "secondary", "person", primary
+                    sponsor, "primary" if primary else "cosponsor", "person", primary
                 )
 
         if "gm" in bill_id.lower():

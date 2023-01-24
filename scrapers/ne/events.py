@@ -1,11 +1,17 @@
 import datetime
 import lxml
 import pytz
-
+import re
 
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 from utils.events import match_coordinates
+
+"""
+Nasty regex to clean out sub-elements from divs containing
+text we need
+"""
+re_span = re.compile(r"<span.*?</span>|<div.*?>|</div>")
 
 
 class NEEventScraper(Scraper):
@@ -49,7 +55,6 @@ class NEEventScraper(Scraper):
             "//h3[contains(text(),'There are no hearings for the date range')]"
         ):
             raise EmptyScrape
-            return
 
         for meeting in page.xpath('//div[@class="card mb-4"]'):
             com = meeting.xpath('div[contains(@class, "card-header")]/text()')[
@@ -63,14 +68,14 @@ class NEEventScraper(Scraper):
 
             # turn room numbers into the full address
             if location.lower().startswith("room"):
-                location = "1445 K St, Lincoln, NE 68508, {}".format(location)
+                location = f"1445 K St, Lincoln, NE 68508, {location}"
 
             day = meeting.xpath("./preceding-sibling::h2[@class='text-center']/text()")[
                 -1
             ].strip()
 
             # Thursday February 27, 2020 1:30 PM
-            date = "{} {}".format(day, time)
+            date = f"{day} {time}"
             event_date = self._tz.localize(
                 datetime.datetime.strptime(date, "%A %B %d, %Y %I:%M %p")
             )
@@ -84,19 +89,24 @@ class NEEventScraper(Scraper):
             )
 
             event.add_committee(com, note="host")
-
             match_coordinates(event, {"1445 K St": (40.80824, -96.69973)})
 
-            for row in meeting.xpath("div/table/tr"):
-                if not row.xpath("td[3]"):
+            # add documents
+            for row in meeting.xpath("table/tr"):
+                if row.xpath("th"):
+                    # 'th' element found (we skip headers)
                     continue
-                agenda_desc = row.xpath("td[3]/text()")[0].strip()
-                agenda_item = event.add_agenda_item(description=agenda_desc)
-
-                if row.xpath("td[1]/a"):
-                    # bill link
-                    agenda_item.add_bill(row.xpath("td[1]/a/text()")[0].strip())
+                details = row.xpath("td/div[@class='row g-0 pb-1']")[0]
+                document = re_span.sub(
+                    "", lxml.etree.tostring(details.xpath("div")[0]).decode()
+                ).strip()
+                desc = re_span.sub(
+                    "", lxml.etree.tostring(details.xpath("div")[2]).decode()
+                ).strip()
+                agenda_item = event.add_agenda_item(description=desc)
+                if document not in ["Appointment"]:
+                    bill_id = lxml.html.fromstring(document).text
+                    agenda_item.add_bill(bill_id)
 
             event.add_source("https://nebraskalegislature.gov/calendar/calendar.php")
-
             yield event

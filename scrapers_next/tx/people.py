@@ -136,7 +136,7 @@ class SenatorDetail(HtmlPage):
 
 class HouseParties(HtmlListPage):
     source = (
-        "https://lrl.texas.gov/legeLeaders/members/membersearch.cfm?leg=87&chamber=H"
+        "https://lrl.texas.gov/legeLeaders/members/membersearch.cfm?leg=88&chamber=H"
     )
     selector = XPath('//table[@id="tableToSort"]/tbody/', num_items=1)
 

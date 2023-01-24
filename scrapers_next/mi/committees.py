@@ -14,7 +14,7 @@ class SenateCommitteeDetail(HtmlPage):
         com.add_source(self.source.url)
         com.add_link(self.source.url, note="homepage")
 
-        members = CSS("#MainContent_BLMembers li").match(self.root)
+        members = CSS("a[id*='MainContent_RepMembers']").match(self.root)
         for member in members:
 
             member = member.text_content().strip().replace("(D)", "").replace("(R)", "")
