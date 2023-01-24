@@ -137,9 +137,7 @@ class USEventScraper(Scraper, LXMLMixin):
                         name=bill_id, entity_type=doc_type, id=doc_id, note=doc_title
                     )
                 except ScrapeValueError:
-                    self.log.warning(
-                        f"Skipping agenda item {bill_id} of type {doc_type}"
-                    )
+                    self.warning(f"Skipping agenda item {bill_id} of type {doc_type}")
                     pass
 
             event.add_participant(
