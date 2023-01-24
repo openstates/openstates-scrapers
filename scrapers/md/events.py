@@ -113,10 +113,10 @@ class MDEventScraper(Scraper, LXMLMixin):
                 classification="committee-meeting",
             )
 
-            self.info(f"{com_row=}")
             com_name = re.sub(r"[\s\-]*Work Session", "", com_row)
             if not com_name:
-                exit(1)
+                com_name = "See Agenda"
+            event.add_participant(name=com_name, type="committee", note="host")
 
             event.add_source("https://mgaleg.maryland.gov/mgawebsite/Meetings/Week/")
 
