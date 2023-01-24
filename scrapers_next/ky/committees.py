@@ -2,6 +2,11 @@ from spatula import HtmlPage, HtmlListPage, CSS, XPath, SkipItem, URL, SelectorE
 from openstates.models import ScrapeCommittee
 
 
+class ChamberException(Exception):
+    def __init__(self, com_name):
+        super().__init__(f"Unexpected chamber for: {com_name}.")
+
+
 class CommitteeList(HtmlListPage):
     selector = CSS("[data-committeersn]")
 
@@ -50,11 +55,6 @@ def get_parent(root, item):
         ).match(root)[0]
         parent = strip_committee_name(parent.text_content())
     return parent
-
-
-class ChamberException(Exception):
-    def __init__(self, com_name):
-        super().__init__(f"Unexpected chamber for: {com_name}.")
 
 
 class CommitteeDetail(HtmlPage):
