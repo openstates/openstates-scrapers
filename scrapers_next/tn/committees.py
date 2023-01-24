@@ -9,20 +9,20 @@ class SenateCommitteeDetail(HtmlPage):
         com = self.input
         com.add_source(self.source.url)
         com.add_link(self.source.url, note="homepage")
-        
+
         class_officers = self.root.xpath(".//ul[@class='no-list members large small-block-grid-3']//a")
         for officer in class_officers:
             name_and_title = [x.strip() for x in officer.text_content().split("\r\n") if len(x)]
             name, title = name_and_title
             com.add_member(name, title)
-    
+
         try:
             class_normal = self.root.xpath(".//ul[@class='members small-block-grid-4 no-list']")[0].text_content()
             class_normal = [x.strip().replace("  ", " ") for x in class_normal.split("\r\n") if len(x.strip())]
         except Exception:
             class_normal = []
             pass
-        
+
         if class_normal:
             for person in class_normal:
                 com.add_member(person, "member")
@@ -41,4 +41,3 @@ class SenateTypeAllCommitteeList(HtmlListPage):
         com = ScrapeCommittee(name=comm_name.strip(), chamber=self.chamber)
 
         return SenateCommitteeDetail(com, source=URL(item.get("href"), timeout=30))
-
