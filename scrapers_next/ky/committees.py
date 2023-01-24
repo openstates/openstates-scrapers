@@ -2,69 +2,41 @@ from spatula import HtmlPage, HtmlListPage, CSS, XPath, SkipItem, URL, SelectorE
 from openstates.models import ScrapeCommittee
 
 
-class SenateCommitteeList(HtmlListPage):
+class CommitteeList(HtmlListPage):
+    selector = CSS("[data-committeersn]")
+
+    def process_item(self, item):
+        href = item.find("a").get("href")
+        parent = get_parent(self.root, item)
+        return CommitteeDetail(
+            {"parent": parent, "chamber": self.chamber},
+            source=URL(href, timeout=30),
+        )
+
+
+class Senate(CommitteeList):
     source = "https://legislature.ky.gov/Committees/senate-standing-committee"
-    selector = CSS("[data-committeersn]")
-
-    def process_item(self, item):
-        href = item.find("a").get("href")
-        parent = get_parent(self.root, item)
-        return CommitteeDetail(
-            {"parent": parent, "chamber": "upper"},
-            source=URL(href, timeout=30),
-        )
+    chamber = "upper"
 
 
-class HouseCommitteeList(HtmlListPage):
+class House(CommitteeList):
     source = "https://legislature.ky.gov/Committees/house-standing-committee"
-    selector = CSS("[data-committeersn]")
-
-    def process_item(self, item):
-        href = item.find("a").get("href")
-        parent = get_parent(self.root, item)
-        return CommitteeDetail(
-            {"parent": parent, "chamber": "lower"},
-            source=URL(href, timeout=30),
-        )
+    chamber = "lower"
 
 
-class JointCommitteeList(HtmlListPage):
+class Joint(CommitteeList):
     source = "https://legislature.ky.gov/Committees/interim-joint-committee"
-    selector = CSS("[data-committeersn]")
-
-    def process_item(self, item):
-        href = item.find("a").get("href")
-        parent = get_parent(self.root, item)
-        return CommitteeDetail(
-            {"parent": parent, "chamber": "legislature"},
-            source=URL(href, timeout=30),
-        )
+    chamber = "legislature"
 
 
-class StatutoryCommitteeList(HtmlListPage):
+class Statutory(CommitteeList):
     source = "https://legislature.ky.gov/Committees/statutory-committee"
-    selector = CSS("[data-committeersn]")
-
-    def process_item(self, item):
-        href = item.find("a").get("href")
-        parent = get_parent(self.root, item)
-        return CommitteeDetail(
-            {"parent": parent, "chamber": "legislature"},
-            source=URL(href, timeout=30),
-        )
+    chamber = "legislature"
 
 
-class SpecialCommitteeList(HtmlListPage):
+class Special(CommitteeList):
     source = "https://legislature.ky.gov/Committees/special-committee"
-    selector = CSS("[data-committeersn]")
-
-    def process_item(self, item):
-        href = item.find("a").get("href")
-        parent = get_parent(self.root, item)
-        return CommitteeDetail(
-            {"parent": parent, "chamber": "legislature"},
-            source=URL(href, timeout=30),
-        )
+    chamber = "legislature"
 
 
 # Used by CommitteeList classes to get an item's parent committee name
