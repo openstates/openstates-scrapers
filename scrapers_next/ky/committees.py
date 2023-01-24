@@ -1,4 +1,4 @@
-from spatula import HtmlPage, HtmlListPage, CSS, XPath, SkipItem, URL
+from spatula import HtmlPage, HtmlListPage, CSS, XPath, SkipItem, URL, SelectorError
 from openstates.models import ScrapeCommittee
 
 
@@ -92,15 +92,15 @@ class CommitteeDetail(HtmlPage):
         if com.chamber != self.input.get("chamber"):
             raise Exception("Unexpected chamber")
 
-        # Add members, skipping if no members
+        # Add members, skipping the committee if no members are found
+        members = []
         try:
             members = XPath("//ul[@class='member-list']/li/a").match(self.root)
-            for member in members:
-                add_member(com, member.text_content())
-        except Exception:
-            skip_when_no_members = False
-            if skip_when_no_members:
-                raise SkipItem("No committee members")
+        except SelectorError:
+            raise SkipItem(f"No membership data found for: {com.name}")
+        for member in members:
+            add_member(com, member.text_content())
+
         return com
 
 
@@ -110,6 +110,8 @@ def strip_committee_name(committee_name):
     is_house_committee = committee_name.endswith(" (H)")
     is_senate_committee = committee_name.endswith(" (S)")
     if is_house_committee or is_senate_committee:
+        # Remove the " (H)" or " (S)" suffixes
+        # They are are both 4 characters long
         return committee_name[0:-4]
     return committee_name
 
