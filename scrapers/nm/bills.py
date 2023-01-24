@@ -102,8 +102,10 @@ class NMBillScraper(Scraper):
         # but he is still attached to some bills
         # Gonzales switched from being in the House to the Senate
         # but was still showing as a sponsor
+        # SMAEM appears to be a data error, Maestras is the sponsor for those bills.
         sponsor_map["SMCSO"] = "Cisco McSorley"
         sponsor_map["SGONZ"] = "Roberto J. Gonzales"
+        sponsor_map["SMAEM"] = "Maestas, Antonio"
 
         subject_map = {}
         for subject in self.access_to_csv("TblSubjects"):
