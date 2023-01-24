@@ -93,19 +93,21 @@ class NMBillScraper(Scraper):
 
         self._init_mdb(session)
 
-        # read in sponsor & subject mappings
-        sponsor_map = {}
+        """
+        read in sponsor & subject mappings
+        McSorley resigned so they removed him from the API
+        but he is still attached to some bills
+        Gonzales switched from being in the House to the Senate
+        but was still showing as a sponsor
+        SMAEM appears to be a data error, Maestras is the sponsor for those bills.
+        """
+        sponsor_map = {
+            "SMCSO": "Cisco McSorley",
+            "SGONZ": "Roberto J. Gonzales",
+            "SMAEM": "Maestas, Antonio",
+        }
         for sponsor in self.access_to_csv("tblSponsors"):
             sponsor_map[sponsor["SponsorCode"]] = sponsor["FullName"]
-
-        # McSorley resigned so they removed him from the API
-        # but he is still attached to some bills
-        # Gonzales switched from being in the House to the Senate
-        # but was still showing as a sponsor
-        # SMAEM appears to be a data error, Maestras is the sponsor for those bills.
-        sponsor_map["SMCSO"] = "Cisco McSorley"
-        sponsor_map["SGONZ"] = "Roberto J. Gonzales"
-        sponsor_map["SMAEM"] = "Maestas, Antonio"
 
         subject_map = {}
         for subject in self.access_to_csv("TblSubjects"):
