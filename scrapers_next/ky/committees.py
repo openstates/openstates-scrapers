@@ -52,6 +52,11 @@ def get_parent(root, item):
     return parent
 
 
+class ChamberException(Exception):
+    def __init__(self, com_name):
+        super().__init__(f"Unexpected chamber for: {com_name}.")
+
+
 class CommitteeDetail(HtmlPage):
     def process_page(self):
         title = CSS(".committee-title > h2").match(self.root)[0].text_content()
@@ -61,8 +66,9 @@ class CommitteeDetail(HtmlPage):
 
         # Make the scraper more fragile by doing an extra check to
         # make sure expected chamber and detected chamber are the same
-        if com.chamber != self.input.get("chamber"):
-            raise Exception("Unexpected chamber")
+        expected_chamber = self.input.get("chamber")
+        if com.chamber != expected_chamber:
+            raise ChamberException(com.name)
 
         # Add members, skipping the committee if no members are found
         members = []
