@@ -67,7 +67,7 @@ class SpecialCommitteeList(HtmlListPage):
         )
 
 
-# Used by CommitteeList classes to get and item's parent committee name
+# Used by CommitteeList classes to get an item's parent committee name
 # Returns None if the item is not a subcommittee
 def get_parent(root, item):
     parent_committee_id = item.get("data-parentcommitteersn")
