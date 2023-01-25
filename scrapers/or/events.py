@@ -1,5 +1,4 @@
 import datetime
-import logging
 import pytz
 
 from openstates.scrape import Scraper, Event
