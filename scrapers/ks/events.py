@@ -32,6 +32,7 @@ class KSEventScraper(Scraper):
         url_root = f"http://www.kslegislature.org/li/{slug}/committees/hearings/"
 
         event_count = 0
+        events = set()
         for delta in range(self.date_range * 2):
             date = (start + datetime.timedelta(days=delta)).strftime("%m/%d/%Y")
             url = f"{url_root}?selected_date={date}"
@@ -52,11 +53,17 @@ class KSEventScraper(Scraper):
                 time = columns[4].text.strip()
                 when = self.tz.localize(dateutil.parser.parse(f"{date} {time}"))
                 location = columns[5].text.strip()
+                event_name = f"{chamber}#{com_name}#{title}#{when}"
+                if event_name in events:
+                    self.warning(f"Skipping duplicate event {event_name}")
+                    continue
+                events.add(event_name)
                 event = Event(
                     start_date=when,
                     name=f"{chamber} {com_name}",
                     location_name=location,
                 )
+                event.deupe_key = event_name
                 event.add_participant(
                     f"{chamber} {com_name}", type="committee", note="host"
                 )
