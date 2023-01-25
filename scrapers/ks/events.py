@@ -1,29 +1,23 @@
 import datetime
-import lxml
-import json
-import re
 import dateutil.parser
+import lxml
+import pytz
 
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 
-import pytz
-
 
 class KSEventScraper(Scraper):
     tz = pytz.timezone("America/Chicago")
+    date_range = 30
 
-    chamber_names = {"upper": "senate", "lower": "house"}
-
-    slug = ""
-
-    # Unlike most states, KS posts most of their hearing data after the date
-    # start date defaults to 30 days ago, mostly to cut down on page requests
-    # and avoid getting banned by their aggressive anti-scraping code
     def scrape(self, session, start=None):
+        self.headers[
+            "User-Agent"
+        ] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36"
+        now = datetime.datetime.now()
         if start is None:
-            start = datetime.datetime.now()
-            start = start - datetime.timedelta(days=30)
+            start = now - datetime.timedelta(days=self.date_range)
         else:
             start = dateutil.parser.parse(start)
 
@@ -32,126 +26,46 @@ class KSEventScraper(Scraper):
             for each in self.jurisdiction.legislative_sessions
             if each["identifier"] == session
         )
-        self.slug = meta["_scraped_name"]
+        slug = meta["_scraped_name"]
 
-        com_url = "http://www.kslegislature.org/li/api/v11/rev-1/ctte/"
-        coms_page = json.loads(self.get(com_url).content)
+        # ending slash matters...
+        url_root = f"http://www.kslegislature.org/li/{slug}/committees/hearings/"
 
         event_count = 0
-        for chamber in ["upper", "lower"]:
-            chamber_key = f"{self.chamber_names[chamber]}_committees"
-            for com in coms_page["content"][chamber_key]:
-                for event in self.scrape_com_page(
-                    com["KPID"], chamber, com["TITLE"], start
-                ):
-                    event_count += 1
-                    yield event
-
+        for delta in range(self.date_range * 2):
+            date = (start + datetime.timedelta(days=delta)).strftime("%m/%d/%Y")
+            url = f"{url_root}?selected_date={date}"
+            page = self.get(url).content
+            page = lxml.html.fromstring(page)
+            """
+            Headers for each day look like
+            Committee 	Chamber 	Bill 	Short Title 	Time 	Room 	Status
+            """
+            for hearing in page.xpath("//table[@id='hearingsTable']/tbody/tr"):
+                columns = hearing.xpath("td")
+                com_name = columns[0].xpath("a")[0].text.strip()
+                com_link = f"http://www.kslegislature.org/{columns[0].xpath('a')[0].attrib['href']}"
+                chamber = columns[1].xpath("a")[0].text.strip()
+                bill_id = columns[2].xpath("a")[0].text.strip()
+                bill_link = f"http://www.kslegislature.org/{columns[2].xpath('a')[0].attrib['href']}"
+                title = columns[3].text.strip()
+                time = columns[4].text.strip()
+                when = self.tz.localize(dateutil.parser.parse(f"{date} {time}"))
+                location = columns[5].text.strip()
+                event = Event(
+                    start_date=when,
+                    name=f"{chamber} {com_name}",
+                    location_name=location,
+                )
+                event.add_participant(
+                    f"{chamber} {com_name}", type="committee", note="host"
+                )
+                event.add_source(url)
+                event.add_source(com_link)
+                event.add_source(bill_link)
+                agenda = event.add_agenda_item(title)
+                agenda.add_bill(bill_id)
+                event_count += 1
+                yield event
         if event_count < 1:
             raise EmptyScrape
-
-    def scrape_com_page(self, com_id, chamber, com_name, start):
-        # http://www.kslegislature.org/li/b2021_22/committees/ctte_h_agriculture_1/
-        com_page_url = (
-            f"http://www.kslegislature.org/li/{self.slug}/committees/{com_id}/"
-        )
-
-        page = self.get(com_page_url).content
-        page = lxml.html.fromstring(page)
-
-        time_loc = page.xpath('//h3[contains(text(), "Meeting Day")]')[0].text_content()
-
-        time = re.search(r"Time:\s(.*)Location", time_loc).group(1).strip()
-
-        location = re.search(r"Location\:(.*)$", time_loc).group(1).strip()
-
-        if location.strip() == "":
-            location = "See Agenda"
-
-        doc_page_url = f"http://www.kslegislature.org/li/{self.slug}/committees/{com_id}/documents/"
-
-        page = self.get(doc_page_url).content
-        page = lxml.html.fromstring(page)
-
-        for meeting_date in page.xpath('//select[@id="id_date_choice"]/option/@value'):
-            meeting_day = dateutil.parser.parse(meeting_date)
-            if meeting_day < start:
-                continue
-
-            yield from self.scrape_meeting_page(
-                com_id, chamber, com_name, meeting_date, time, location
-            )
-
-    def scrape_meeting_page(
-        self, com_id, chamber, com_name, meeting_date, meeting_time, location
-    ):
-        # http://www.kslegislature.org/li/b2021_22/committees/ctte_s_jud_1/documents/?date_choice=2021-03-19
-        meeting_page_url = (
-            f"http://www.kslegislature.org/li/{self.slug}/"
-            f"committees/{com_id}/documents/?date_choice={meeting_date}"
-        )
-
-        page = self.get(meeting_page_url).content
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(meeting_page_url)
-
-        try:
-            start_date = dateutil.parser.parse(f"{meeting_date} {meeting_time}")
-        except dateutil.parser._parser.ParserError:
-            start_date = dateutil.parser.parse(meeting_date)
-
-        start_date = self.tz.localize(start_date)
-
-        pretty_chamber = self.chamber_names[chamber].title()
-
-        event = Event(
-            start_date=start_date,
-            name=f"{pretty_chamber} {com_name}",
-            location_name=location,
-        )
-
-        event.add_participant(
-            f"{pretty_chamber} {com_name}", type="committee", note="host"
-        )
-
-        # Agendas & Minutes
-        for row in page.xpath(
-            "//table[.//h4[contains(text(), 'Agendas')]]/table[contains(@class,'bottom')]/tbody/tr"
-        ):
-            doc_name = row.xpath("td[1]")[0].text_content()
-            doc_url = row.xpath("td[2]/a/@href")[0]
-            event.add_document(doc_name, doc_url, media_type="application/pdf")
-
-        # Witness testimony
-        for row in page.xpath("//tr[td[ul[@id='testimony-docs']]]"):
-
-            doc_type = row.xpath("td[1]")[0].text_content()
-            meta = row.xpath("td[2]/ul[@id='testimony-docs']")[0]
-
-            witness = meta.xpath("li[strong[contains(text(),'Presenter')]]/text()")[
-                0
-            ].strip()
-
-            org = ""
-            if meta.xpath("li[strong[contains(text(),'Organization')]]/text()"):
-                org = meta.xpath("li[strong[contains(text(),'Organization')]]/text()")[
-                    0
-                ].strip()
-
-            topic = meta.xpath("li[strong[contains(text(),'Topic')]]/text()")[0].strip()
-
-            if org:
-                doc_name = f"{doc_type} - {witness} ({org}) - {topic}"
-            else:
-                doc_name = f"{doc_type} - {witness} - {topic}"
-
-            agenda = event.add_agenda_item(doc_name)
-            if meta.xpath("li[strong[contains(text(),'Measure')]]/text()"):
-                bill_id = meta.xpath("li[strong[contains(text(),'Measure')]]/text()")[
-                    0
-                ].strip()
-                agenda.add_bill(bill_id)
-
-        event.add_source(meeting_page_url)
-
-        yield event
