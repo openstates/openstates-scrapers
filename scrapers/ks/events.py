@@ -2,7 +2,6 @@ import datetime
 import dateutil.parser
 import lxml
 import pytz
-import re
 
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
@@ -66,4 +65,7 @@ class KSEventScraper(Scraper):
                 event.add_source(bill_link)
                 agenda = event.add_agenda_item(title)
                 agenda.add_bill(bill_id)
+                event_count += 1
                 yield event
+        if event_count < 1:
+            raise EmptyScrape
