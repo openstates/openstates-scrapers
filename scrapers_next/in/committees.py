@@ -22,29 +22,29 @@ class CommitteeDetail(HtmlListPage):
 
 class CommitteeList(HtmlListPage):
     source = URL(
-        "https://tlhgp53g3c.execute-api.us-east-2.amazonaws.com/beta/api/getCommittees?session_lpid=session_2021"
-        , headers={
-            'authority': 'beta.iga.in.gov',
-            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-            'accept-language': 'en-US,en;q=0.9',
-            'cache-control': 'no-cache',
-            'pragma': 'no-cache',
-            'sec-ch-ua': '"Chromium";v="108", "Opera";v="94", "Not)A;Brand";v="99"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-            'sec-fetch-dest': 'document',
-            'sec-fetch-mode': 'navigate',
-            'sec-fetch-site': 'none',
-            'sec-fetch-user': '?1',
-            'upgrade-insecure-requests': '1',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 OPR/94.0.0.0',
-        }
+        "https://tlhgp53g3c.execute-api.us-east-2.amazonaws.com/beta/api/getCommittees?session_lpid=session_2021",
+        headers={
+            "authority": "beta.iga.in.gov",
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+            "accept-language": "en-US,en;q=0.9",
+            "cache-control": "no-cache",
+            "pragma": "no-cache",
+            "sec-ch-ua": '"Chromium";v="108", "Opera";v="94", "Not)A;Brand";v="99"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-fetch-dest": "document",
+            "sec-fetch-mode": "navigate",
+            "sec-fetch-site": "none",
+            "sec-fetch-user": "?1",
+            "upgrade-insecure-requests": "1",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 OPR/94.0.0.0",
+        },
     )
 
     def process_page(self):
         for committee in self.response.json()["committees"]:
-            name = committee["name"]
 
+            name = committee["name"]
             chamber = committee["chamber_lpid"]
             if chamber == "senate":
                 chamber = "upper"
@@ -76,4 +76,6 @@ class CommitteeList(HtmlListPage):
                     note="API from https://beta.iga.in.gov/2022/committees/",
                 )
                 com.extras = {"committees": committee}
-                yield CommitteeDetail(com, source=URL(mem_source, timeout=30, headers=self.source.headers))
+                yield CommitteeDetail(
+                    com, source=URL(mem_source, timeout=30, headers=self.source.headers)
+                )
