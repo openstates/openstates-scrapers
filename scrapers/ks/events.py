@@ -63,7 +63,7 @@ class KSEventScraper(Scraper):
                     name=f"{chamber} {com_name}",
                     location_name=location,
                 )
-                event.deupe_key = event_name
+                event.dedupe_key = event_name
                 event.add_participant(
                     f"{chamber} {com_name}", type="committee", note="host"
                 )
