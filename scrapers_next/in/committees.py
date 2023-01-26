@@ -12,7 +12,7 @@ class CommitteeDetail(HtmlPage):
                 name = each_member["first_name"] + " " + each_member["last_name"]
                 com.add_member(name, role)
 
-            com.add_source(self.source.url)
+            com.add_source(self.source.url, note="Committee Details API")
         return com
 
 
@@ -74,7 +74,7 @@ class CommitteeList(HtmlListPage):
 
                 com.add_source(
                     self.source.url,
-                    note="API from https://beta.iga.in.gov/2022/committees/",
+                    note="Committee List API from current beta version of Indiana gov site",
                 )
 
                 yield CommitteeDetail(
