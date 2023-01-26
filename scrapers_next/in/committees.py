@@ -8,18 +8,17 @@ class CommitteeDetail(HtmlPage):
         if com:
             for each_member in self.response.json()["members"]:
                 role = str(each_member["position"])
-                if role.lower().startswith("type"):
-                    role = role.replace("type_", "").replace("_", " ").title()
-                    if role.endswith("member") or role.endswith("chair"):
-                        role = role.replace(
-                            "chair", " Chair"
-                        )
-                role = role.lower().replace("majority ", "").replace("minority ", "").title()
+                role = (
+                    role.lower()
+                    .replace("majority ", "")
+                    .replace("minority ", "")
+                    .title()
+                )
                 name = each_member["first_name"] + " " + each_member["last_name"]
                 com.add_member(name, role)
 
             com.add_source(self.source.url)
-            return com
+        return com
 
 
 class CommitteeList(HtmlListPage):
