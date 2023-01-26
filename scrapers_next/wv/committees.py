@@ -37,9 +37,6 @@ class CommitteeMember(HtmlPage):
         self.input.add_member(sub(r"\(.*\)", "", name), self.position)
         return self.input
 
-    def get_source_from_input(self):
-        pass
-
 
 class CommitteeDetail(HtmlListPage):
     """
@@ -76,9 +73,6 @@ class CommitteeDetail(HtmlListPage):
             )
         else:
             raise SkipItem("not a committee member url")
-
-    def get_source_from_input(self):
-        pass
 
 
 class CommitteeList(HtmlListPage):
@@ -118,9 +112,6 @@ class CommitteeList(HtmlListPage):
             )
         else:
             raise SkipItem("not a committee url")
-
-    def get_source_from_input(self):
-        pass
 
 
 class SenateCommittees(CommitteeList):
