@@ -1,4 +1,4 @@
-from re import sub
+from re import sub, search
 from spatula import HtmlPage, HtmlListPage, CSS, URL, Source, SkipItem
 from openstates.models import ScrapeCommittee
 
@@ -49,27 +49,41 @@ class CommitteeDetail(HtmlListPage):
 
     selector: CSS
     url_signifier: str
+    chamber: str
 
     def __init__(
         self,
         input_val: ScrapeCommittee,
         source: Source,
         selector: CSS,
+        chamber: str,
         url_signifier: str,
     ):
         super(CommitteeDetail, self).__init__(input_val, source=source)
         self.selector = selector
         self.url_signifier = url_signifier
+        self.chamber = chamber
 
     def process_item(self, item):
         if self.url_signifier in item.get("href"):
-            next_elem = item.getnext().text
-            position = next_elem if isinstance(next_elem, str) else "member"
+            fallback_name = item.get("href").split("member=", 1)[1]
+            if self.chamber == "legislature":
+                match = search(
+                    rf"({fallback_name})\s+-\s+(.+)", item.getparent().text_content()
+                )
+                position = (
+                    match.groups()[1]
+                    if match is not None and len(match.groups()) == 2
+                    else "Member"
+                )
+            else:
+                next_elem = item.getnext().text
+                position = next_elem if isinstance(next_elem, str) else "Member"
             return CommitteeMember(
                 self.input,
                 source=URL(item.get("href")),
                 position=position,
-                fallback_name=item.get("href").split("member=", 1)[1],
+                fallback_name=fallback_name,
             )
         else:
             raise SkipItem("not a committee member url")
@@ -108,6 +122,7 @@ class CommitteeList(HtmlListPage):
                 input_val=cmte,
                 source=URL(item.get("href")),
                 selector=self.member_selector,
+                chamber=self.chamber,
                 url_signifier=self.member_url_signifier,
             )
         else:
