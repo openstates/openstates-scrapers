@@ -98,18 +98,17 @@ class SenateCommitteeList(HtmlPage):
         # At this point, title format should either be "name" or "name , role"
         title_parts = title.split(",")
         title_length = len(title_parts)
-        match title_length:
-            # title format is just "name", so a default role of "Member" is given
-            case 1:
-                return title_parts[0].strip(), "Member"
 
-            # title format is "name , role"
-            case 2:
-                return title_parts[0].strip(), title_parts[1].strip()
+        # title format is just "name", so a default role of "Member" is given
+        if title_length == 1:
+            return title_parts[0].strip(), "Member"
 
-            # title has more than one comma for an unknown reason
-            case _:
-                raise SenatorTitleHasMoreThanOneComma(title)
+        # title format is "name , role"
+        elif title_length == 2:
+            return title_parts[0].strip(), title_parts[1].strip()
+
+        else:
+            raise SenatorTitleHasMoreThanOneComma(title)
 
 
 class HouseOrJointCommitteeMemberList(HtmlPage):
@@ -222,21 +221,21 @@ class HouseOrJointCommitteeMemberList(HtmlPage):
         # If it contains a role, then it is in this format: [role,name,_,_]
         role = "Member"
         name = None
-        match len(data_blocks):
+        num_data_blocks = len(data_blocks)
 
-            # Role not included, supply a default
-            case 3:
-                name = data_blocks[0].strip()
-                role = "Member"
+        # Role not included, supply a default
+        if num_data_blocks == 3:
+            name = data_blocks[0].strip()
+            role = "Member"
 
-            # Role and name are included in the data
-            case 4:
-                name = data_blocks[1].strip()
-                role = data_blocks[0].strip()[1:-1]  # Role is surrouned with ()
+        # Role and name are included in the data
+        elif num_data_blocks == 4:
+            name = data_blocks[1].strip()
+            role = data_blocks[0].strip()[1:-1]  # Role is surrouned with ()
 
-            # We have invalid data if there are any other number of elements
-            case _:
-                raise InvalidMemberData()
+        # We have invalid data if there are any other number of elements
+        else:
+            raise InvalidMemberData()
 
         return name, role
 
