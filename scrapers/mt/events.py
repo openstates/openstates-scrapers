@@ -43,18 +43,23 @@ class MTEventScraper(Scraper):
             # skip table headers
             if not row.xpath("td[1]/a"):
                 continue
+            com = row.xpath("td[1]/a[1]/text()")[0].strip()
+            com = com.replace("(H)", "House").replace("(S)", "Senate")
             day = row.xpath("td[2]/text()")[0].strip()
-            time = row.xpath("td[3]/text()")[0].strip()
+            try:
+                time = row.xpath("td[3]/text()")[0].strip()
+            except Exception:
+                time = None
             room = row.xpath("td[4]")[0].text_content().strip()
             if not room:
                 room = "See Agenda"
             bill = row.xpath("td[5]/a[1]/text()")[0].strip()
             bill_title = row.xpath("td[6]/text()")[0].strip()
 
-            com = row.xpath("td[1]/a[1]/text()")[0].strip()
-            com = com.replace("(H)", "House").replace("(S)", "Senate")
-
-            when = parser.parse(f"{day} {time}")
+            if time:
+                when = parser.parse(f"{day} {time}")
+            else:
+                when = parser.parse(day)
             when = self._tz.localize(when)
 
             when_slug = when.strftime("%Y%m%d%H%I")

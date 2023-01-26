@@ -88,16 +88,14 @@ class USEventScraper(Scraper, LXMLMixin):
             if com == "":
                 continue
 
-            com = "Senate {}".format(com)
+            com = f"Senate {com}"
 
             address = row.xpath("string(room)")
             parts = address.split("-")
             building_code = parts[0]
 
             if self.buildings.get(building_code):
-                address = "{}, Room {}".format(
-                    self.buildings.get(building_code), parts[1]
-                )
+                address = f"{building_code}, Room {parts[1]}"
 
             agenda = row.xpath("string(matter)")
 
@@ -183,7 +181,7 @@ class USEventScraper(Scraper, LXMLMixin):
                     "__EVENTARGUMENT": "",
                 }
 
-                self.info("Fetching {} via POST".format(row.get("href")))
+                self.info(f"Fetching {row.get('href')} via POST")
                 xml = self.asp_post(row.get("href"), params)
 
                 try:
@@ -203,7 +201,7 @@ class USEventScraper(Scraper, LXMLMixin):
         end_time = xml.xpath("string(//meeting-date/end-time)")
 
         start_dt = datetime.datetime.strptime(
-            "{} {}".format(meeting_date, start_time), "%Y-%m-%d %H:%M:%S"
+            f"{meeting_date} {start_time}", "%Y-%m-%d %H:%M:%S"
         )
 
         start_dt = self._TZ.localize(start_dt)
@@ -212,7 +210,7 @@ class USEventScraper(Scraper, LXMLMixin):
 
         if end_time != "":
             end_dt = datetime.datetime.strptime(
-                "{} {}".format(meeting_date, end_time), "%Y-%m-%d %H:%M:%S"
+                f"{meeting_date} {end_time}", "%Y-%m-%d %H:%M:%S"
             )
             end_dt = self._TZ.localize(end_dt)
 
@@ -228,7 +226,7 @@ class USEventScraper(Scraper, LXMLMixin):
             room = xml.xpath(
                 "string(//meeting-details/meeting-location/capitol-complex/room)"
             )
-            address = "{}, Room {}".format(building, room)
+            address = f"{building}, Room {room}"
 
         event = Event(
             start_date=start_dt,
@@ -242,7 +240,7 @@ class USEventScraper(Scraper, LXMLMixin):
         coms = xml.xpath("//committees/committee-name | //subcommittees/committee-name")
         for com in coms:
             com_name = com.xpath("string(.)")
-            com_name = "House {}".format(com_name)
+            com_name = f"House {com_name}"
             event.add_participant(
                 com_name,
                 type="committee",
@@ -268,7 +266,7 @@ class USEventScraper(Scraper, LXMLMixin):
                         match = matches[0]
                         bill_type = match[0].replace(".", "")
                         bill_number = match[1]
-                        bill_name = "{} {}".format(bill_type, bill_number)
+                        bill_name = f"{bill_type} {bill_number}"
                         agenda = event.add_agenda_item(description=bill_name)
                         agenda.add_bill(bill_name)
 
@@ -276,9 +274,7 @@ class USEventScraper(Scraper, LXMLMixin):
                     try:
                         doc_name = self.hearing_document_types[doc.get("type")]
                     except KeyError:
-                        self.warning(
-                            "Unable to find document type: {}".format(doc.get("type"))
-                        )
+                        self.warning(f"Unable to find document type: {doc.get('type')}")
 
                 event.add_document(
                     doc_name, url, media_type=media_type, on_duplicate="ignore"

@@ -4,7 +4,7 @@ from openstates.models import ScrapeCommittee
 
 class CommitteeList(JsonListPage):
 
-    session_id = "123"
+    session_id = "127"
     source = URL(
         "https://apps.azleg.gov/api/Committee/"
         f"?sessionId={session_id}&includeMembers=true"
