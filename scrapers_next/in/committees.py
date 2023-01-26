@@ -3,11 +3,6 @@ from openstates.models import ScrapeCommittee
 
 
 class CommitteeDetail(HtmlPage):
-    example_source = URL(
-        "https://tlhgp53g3c.execute-api.us-east-2.amazonaws.com/beta/api/getMembers?committee_id=840b8a47-2a40-4e28-9e2a-68e6c66c9e45&session_lpid=session_2023"
-    )
-    name = None
-
     def process_page(self):
         com = self.input
         if com:
@@ -16,9 +11,11 @@ class CommitteeDetail(HtmlPage):
                 if role.lower().startswith("type"):
                     role = role.replace("type_", "").replace("_", " ").title()
                     if role.endswith("member") or role.endswith("chair"):
-                        role = role.replace("member", " Member").replace(
+                        role = role.replace(
                             "chair", " Chair"
                         )
+                if "member" in role.lower():
+                    role = "Member"
                 name = each_member["first_name"] + " " + each_member["last_name"]
                 com.add_member(name, role)
 
