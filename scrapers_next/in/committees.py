@@ -12,7 +12,7 @@ class CommitteeDetail(HtmlPage):
                 name = each_member["first_name"] + " " + each_member["last_name"]
                 com.add_member(name, role)
 
-            com.add_source(self.source.url, note="Committee Details API")
+            com.add_source(self.source.url, note="Committee Details API",)
         return com
 
 
