@@ -97,7 +97,8 @@ class SenateCommitteeList(HtmlPage):
 
         # At this point, title format should either be "name" or "name , role"
         title_parts = title.split(",")
-        match len(title_parts):
+        title_length = len(title_parts)
+        match title_length:
             # title format is just "name", so a default role of "Member" is given
             case 1:
                 return title_parts[0].strip(), "Member"
