@@ -8,11 +8,19 @@ class CommitteeDetail(HtmlPage):
         if com:
             for each_member in self.response.json()["members"]:
                 role = str(each_member["position"])
-                role = role.lower().replace("majority ", "").replace("minority ", "").title()
+                role = (
+                    role.lower()
+                    .replace("majority ", "")
+                    .replace("minority ", "")
+                    .title()
+                )
                 name = each_member["first_name"] + " " + each_member["last_name"]
                 com.add_member(name, role)
 
-            com.add_source(self.source.url, note="Committee Details API",)
+            com.add_source(
+                self.source.url,
+                note="Committee Details API",
+            )
         return com
 
 
