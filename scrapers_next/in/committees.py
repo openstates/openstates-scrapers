@@ -1,28 +1,35 @@
-from spatula import URL, HtmlListPage, SkipItem
+from spatula import URL, HtmlListPage, SkipItem, HtmlPage
 from openstates.models import ScrapeCommittee
 
 
-class CommitteeDetail(HtmlListPage):
-    source = URL(
-        "https://tlhgp53g3c.execute-api.us-east-2.amazonaws.com/beta/api/getMembers?committee_id=840b8a47-2a40-4e28-9e2a-68e6c66c9e45&session_lpid=session_2021"
+class CommitteeDetail(HtmlPage):
+    example_source = URL(
+        "https://tlhgp53g3c.execute-api.us-east-2.amazonaws.com/beta/api/getMembers?committee_id=840b8a47-2a40-4e28-9e2a-68e6c66c9e45&session_lpid=session_2023"
     )
+    name = None
 
     def process_page(self):
         com = self.input
         if com:
             for each_member in self.response.json()["members"]:
-                role = each_member["position_lpid"]
+                role = str(each_member["position"])
+                if role.lower().startswith("type"):
+                    role = role.replace("type_", "").replace("_", " ").title()
+                    if role.endswith("member") or role.endswith("chair"):
+                        role = role.replace("member", " Member").replace(
+                            "chair", " Chair"
+                        )
                 name = each_member["first_name"] + " " + each_member["last_name"]
                 com.add_member(name, role)
 
             com.add_source(self.source.url)
-            com.extras["members"] = self.response.json()["members"]
             return com
 
 
 class CommitteeList(HtmlListPage):
+    session_year = 2023
     source = URL(
-        "https://tlhgp53g3c.execute-api.us-east-2.amazonaws.com/beta/api/getCommittees?session_lpid=session_2021",
+        f"https://tlhgp53g3c.execute-api.us-east-2.amazonaws.com/beta/api/getCommittees?session_lpid=session_{session_year}",
         headers={
             "authority": "beta.iga.in.gov",
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
@@ -41,9 +48,9 @@ class CommitteeList(HtmlListPage):
         },
     )
 
-    def process_page(self):
-        for committee in self.response.json()["committees"]:
-
+    def process_page(self, only_name=False):
+        all_committees = self.response.json()["committees"]
+        for committee in all_committees:
             name = committee["name"]
             chamber = committee["chamber_lpid"]
             if chamber == "senate":
@@ -55,14 +62,18 @@ class CommitteeList(HtmlListPage):
 
             if "subcommittee" in name.lower():
                 classification = "subcommittee"
-                parent = name
+                # getting parent committee name from committees
+                for cm in all_committees:
+                    if cm["id"] == committee["parent_committee_id"]:
+                        parent = cm["name"]
             else:
                 parent = None
                 classification = "committee"
+
             try:
-                mem_source = f"https://tlhgp53g3c.execute-api.us-east-2.amazonaws.com/beta/api/getMembers?committee_id={committee['id']}&session_lpid=session_2021"
+                mem_source = f"https://tlhgp53g3c.execute-api.us-east-2.amazonaws.com/beta/api/getMembers?committee_id={committee['id']}&session_lpid=session_{self.session_year}"
             except KeyError:
-                raise SkipItem(committee)
+                raise SkipItem(f"Name: {name} skipped due to invalid key committee id")
             if committee:
                 com = ScrapeCommittee(
                     name=name,
@@ -75,7 +86,7 @@ class CommitteeList(HtmlListPage):
                     self.source.url,
                     note="API from https://beta.iga.in.gov/2022/committees/",
                 )
-                com.extras = {"committees": committee}
+
                 yield CommitteeDetail(
                     com, source=URL(mem_source, timeout=30, headers=self.source.headers)
                 )
