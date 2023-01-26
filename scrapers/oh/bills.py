@@ -47,7 +47,7 @@ class OHBillScraper(Scraper):
         ] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36"
 
         if int(session) < 128:
-            raise AssertionError("No data for period {}".format(session))
+            raise AssertionError(f"No data for period {session}")
 
         elif int(session) < 131:
             # they changed their data format starting in 131st and added
