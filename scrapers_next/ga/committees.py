@@ -21,25 +21,28 @@ class CommitteeDetail(JsonPage):
         link = f"https://www.legis.ga.gov/committees/{link_chamber}/{item_id}"
         com.add_link(link, note="homepage")
 
-        com_address = self.data["address"]["address1"].strip() + " "
-        com_address += self.data["address"]["address2"].strip() + " "
-        com_address += self.data["address"]["city"].strip()
-        com_address += ", "
-        com_address += self.data["address"]["state"].strip() + " "
-        com_address += self.data["address"]["zip"].strip()
+        if self.data["address"]:
+            com_address = self.data["address"]["address1"].strip() + " "
+            com_address += self.data["address"]["address2"].strip() + " "
+            com_address += self.data["address"]["city"].strip()
+            com_address += ", "
+            com_address += self.data["address"]["state"].strip() + " "
+            com_address += self.data["address"]["zip"].strip()
 
-        com_phone = self.data["address"]["phone"].strip()
-        com_fax = self.data["address"]["fax"].strip()
-        com_email = self.data["address"]["email"]
+            com_phone = self.data["address"]["phone"].strip()
+            com_fax = self.data["address"]["fax"].strip()
+            com_email = self.data["address"]["email"]
 
-        if com_address:
-            com.extras["address"] = com_address
-        if com_phone:
-            com.extras["phone"] = com_phone
-        if com_fax:
-            com.extras["fax"] = com_fax
-        if com_email:
-            com.extras["email"] = com_email
+            if com_address:
+                com.extras["address"] = com_address
+            if com_phone:
+                com.extras["phone"] = com_phone
+            if com_fax:
+                com.extras["fax"] = com_fax
+            if com_email:
+                com.extras["email"] = com_email
+        else:
+            self.logger.warning(f"No address for {com.name}")
 
         for memb in self.data["members"]:
             member = memb["name"]
@@ -52,7 +55,7 @@ class CommitteeDetail(JsonPage):
 class CommitteeList(JsonListPage):
 
     source = URL(
-        "https://www.legis.ga.gov/api/committees/List/1029",
+        "https://www.legis.ga.gov/api/committees/List/1031",
         headers={"Authorization": get_token()},
     )
 
@@ -63,7 +66,7 @@ class CommitteeList(JsonListPage):
             chamber = "lower"
 
         source = URL(
-            f"https://www.legis.ga.gov/api/committees/details/{item['id']}/1029",
+            f"https://www.legis.ga.gov/api/committees/details/{item['id']}/1031",
             headers={"Authorization": get_token()},
         )
 

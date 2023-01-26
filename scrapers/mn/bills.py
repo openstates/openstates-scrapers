@@ -555,7 +555,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                     version_title,
                     pdf_url,
                     date=version_day,
-                    media_type="applcation/pdf",
+                    media_type="application/pdf",
                     on_duplicate="ignore",
                 )
         return bill
