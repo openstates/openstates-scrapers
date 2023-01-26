@@ -1,4 +1,4 @@
-from spatula import URL, HtmlListPage, SkipItem, HtmlPage, CSS, XPath, selectors
+from spatula import URL, HtmlListPage, HtmlPage, CSS, XPath, selectors
 from openstates.models import ScrapeCommittee
 import requests
 
