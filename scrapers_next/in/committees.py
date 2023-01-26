@@ -14,8 +14,7 @@ class CommitteeDetail(HtmlPage):
                         role = role.replace(
                             "chair", " Chair"
                         )
-                if "member" in role.lower():
-                    role = "Member"
+                role = role.lower().replace("majority ", "").replace("minority ", "").title()
                 name = each_member["first_name"] + " " + each_member["last_name"]
                 com.add_member(name, role)
 
