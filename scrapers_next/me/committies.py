@@ -1,4 +1,4 @@
-from spatula import HtmlPage, HtmlListPage, CSS, XPath, SkipItem, URL, SelectorError
+from spatula import HtmlPage, CSS, XPath, URL, SelectorError
 from openstates.models import ScrapeCommittee
 
 
@@ -19,9 +19,7 @@ class UnexpectedCommitteeName(Exception):
 
 class MemberDataRowInUnexpectedLocation(Exception):
     def __init__(self):
-        super().__init__(
-            f"Table contains a member detail row in an unexpected location"
-        )
+        super().__init__("Table contains a member detail row in an unexpected location")
 
 
 class SenatorTitleHasMoreThanOneComma(Exception):
@@ -124,7 +122,7 @@ class HouseOrJointCommitteeMemberList(HtmlPage):
         # All the data we need is stored in a single table, so we extract the rows
         table_rows = []
         try:
-            table_rows = XPath(f"//table[@class='short-table']//tr/td").match(self.root)
+            table_rows = XPath("//table[@class='short-table']//tr/td").match(self.root)
         except SelectorError:
             pass
 
