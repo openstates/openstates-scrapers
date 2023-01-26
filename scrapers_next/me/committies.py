@@ -213,8 +213,7 @@ class HouseOrJointCommitteeMemberList(HtmlPage):
         data_blocks = text.split("  ")
 
         # Then remove all empty strings from the list
-        while "" in data_blocks:
-            data_blocks.remove("")
+        data_blocks = [b for b in data_blocks if b]
 
         # data_blocks is now a nice list containing the 3 or 4 pieces of data
         # If it does not contain a role, then it is in this format: [name,_,_]
