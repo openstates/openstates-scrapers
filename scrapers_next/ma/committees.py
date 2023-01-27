@@ -7,7 +7,9 @@ requests.packages.urllib3.disable_warnings()
 
 class SubcommitteeFound(BaseException):
     def __init__(self, com_name):
-        super().__init__(f"Scraper has no process for ingesting subcommittee classification: {com_name}")
+        super().__init__(
+            f"Scraper has no process for ingesting subcommittee classification: {com_name}"
+        )
 
 
 class CommitteeDetail(HtmlPage):
@@ -56,7 +58,7 @@ class CommitteeList(HtmlListPage):
 
     def process_page(self):
         for committees in XPath('//*[contains(@class, "committeeList")]').match(
-                self.root
+            self.root
         ):
             for each_committee in committees:
                 name = str(each_committee.text_content())
