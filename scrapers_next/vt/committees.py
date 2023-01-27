@@ -11,6 +11,7 @@ class CommitteeList(JsonListPage):
         headers={
             "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0",
         },
+        timeout=10,
     )
 
     def process_page(self):
