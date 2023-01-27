@@ -70,7 +70,7 @@ class MABillScraper(Scraper):
             else:
                 single_bill_chamber = "upper"
 
-            for bill_meta in self.bill_list:
+            for bill_meta in self.bill_list[single_bill_chamber]:
                 if (
                     bill_no == bill_meta["DocketNumber"]
                     or bill_no == bill_meta["BillNumber"]
