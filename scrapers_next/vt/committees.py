@@ -62,7 +62,7 @@ class CommitteeList(JsonListPage):
                 except ValueError:
                     name = member
                     role = "Member"
-                com.add_member(name.strip(), role=role.strip())
+                com.add_member(name.strip().title(), role=role.strip().title())
 
             # additional check if no member found
             if not com.members:
