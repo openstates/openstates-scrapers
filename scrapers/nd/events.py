@@ -107,9 +107,12 @@ class BillNameScraper(HtmlPage):
     def get_bill_name(self):
         response = requests.get(self.source)
         content = lxml.html.fromstring(response.content)
-        bill_name_tag = content.xpath(".//div[@id='content']//h3")[0]
-        bill_name = bill_name_tag.text_content().strip()
-        return bill_name
+        try:
+            bill_name_tag = content.xpath(".//div[@id='content']//h3")[0]
+            bill_name = bill_name_tag.text_content().strip()
+            return bill_name
+        except Exception:
+            return ""
 
 
 class EventsTable(HtmlPage):
