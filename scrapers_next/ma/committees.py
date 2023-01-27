@@ -1,8 +1,13 @@
-from spatula import URL, HtmlListPage, HtmlPage, CSS, XPath, selectors
+from spatula import URL, HtmlListPage, HtmlPage, CSS, XPath, SelectorError, SkipItem
 from openstates.models import ScrapeCommittee
 import requests
 
 requests.packages.urllib3.disable_warnings()
+
+
+class SubcommitteeFound(BaseException):
+    def __init__(self, com_name):
+        super().__init__(f"Scraper has no process for ingesting subcommittee classification: {com_name}")
 
 
 class CommitteeDetail(HtmlPage):
@@ -16,12 +21,12 @@ class CommitteeDetail(HtmlPage):
             member_blocks = XPath('//*[contains(@class, "committeeMemberList")]').match(
                 self.root
             )[0]
-        except selectors.SelectorError:
-            return com
+        except SelectorError:
+            raise SkipItem(f"No membership data found for: {com.name}")
         for data in member_blocks:
             # break if no members is in the list
             if "There are no members" in data.text:
-                break
+                raise SkipItem(f"No membership data found for: {com.name}")
             # continue to extract members if available
             name = None
             role = "Member"
@@ -51,39 +56,42 @@ class CommitteeList(HtmlListPage):
 
     def process_page(self):
         for committees in XPath('//*[contains(@class, "committeeList")]').match(
-            self.root
+                self.root
         ):
             for each_committee in committees:
                 name = str(each_committee.text_content())
-                if any(name.startswith(s) for s in ["House", "Senate", "Joint"]):
-                    cm_url = CSS("a").match_one(each_committee).get("href")
-                    if "house committee" in name.lower():
-                        chamber = "lower"
-                    elif "senate committee" in name.lower():
-                        chamber = "upper"
-                    else:
-                        chamber = "legislature"
-                    classification = "committee"
-                    parent = None
 
-                    com = ScrapeCommittee(
-                        name=name,
-                        chamber=chamber,
-                        parent=parent,
-                        classification=classification,
-                    )
+                if "subcommittee" in name.lower():
+                    raise SubcommitteeFound(name)
 
-                    com.add_source(
+                cm_url = CSS("a").match_one(each_committee).get("href")
+                if "house committee" in name.lower():
+                    chamber = "lower"
+                elif "senate committee" in name.lower():
+                    chamber = "upper"
+                else:
+                    chamber = "legislature"
+                classification = "committee"
+                parent = None
+
+                com = ScrapeCommittee(
+                    name=name,
+                    chamber=chamber,
+                    parent=parent,
+                    classification=classification,
+                )
+
+                com.add_source(
+                    cm_url,
+                    note="Committee List page of malegislature gov site",
+                )
+
+                yield CommitteeDetail(
+                    com,
+                    source=URL(
                         cm_url,
-                        note="Committee List page of malegislature gov site",
-                    )
-
-                    yield CommitteeDetail(
-                        com,
-                        source=URL(
-                            cm_url,
-                            timeout=30,
-                            headers=self.source.headers,
-                            verify=False,
-                        ),
-                    )
+                        timeout=30,
+                        headers=self.source.headers,
+                        verify=False,
+                    ),
+                )
