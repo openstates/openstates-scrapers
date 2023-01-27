@@ -8,9 +8,6 @@ from openstates.models import ScrapeCommittee
 class CommitteeList(JsonListPage):
     source = URL(
         "https://legislature.vermont.gov/committee/loadList/2024/",
-        headers={
-            "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0",
-        },
         timeout=10,
     )
 
