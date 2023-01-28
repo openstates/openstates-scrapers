@@ -28,7 +28,7 @@ class JointCommittee(HtmlPage):
         com.add_source(self.source.url, note="Committee member listing page")
 
         for (name, role) in self.get_members():
-            com.add_member(name=name, role=role)
+            com.add_member(name=remove_title_prefix(name), role=role)
 
         if len(com.members) == 0:
             raise SkipItem(f"No membership data found for: {com.name}")
@@ -42,7 +42,6 @@ class JointCommittee(HtmlPage):
     # and can be scraped in the same way.
     def get_members_shared(self):
         members = XPath("//div[@class='media-overlay-caption']").match(self.root)
-        # members = XPath("//div[@data-name='Commission Members']//ul").match(self.root)
         for m in members:
             name, role = m.text_content().strip().split("\n")
             role = role.strip()  # Role has some \t characters that need stripped
@@ -81,6 +80,24 @@ class CongressionalRedistricting(JointCommittee):
         return []
 
 
+# Take in a name that may or may not have a title prefix, and return only the base name
+# If given a name without a title, it will return the name as it was given
+def remove_title_prefix(title):
+    prefixes_to_remove = [
+        "President ",
+        "Speaker ",
+        "Minority Leader ",
+        "Senator ",
+        "Representative ",
+    ]
+
+    # Remove the matching prefix
+    for prefix in prefixes_to_remove:
+        if title.startswith(prefix):
+            return title[len(prefix) :]
+    return title
+
+
 class Ethics(JointCommittee):
     source = "http://www.jlec-olig.state.oh.us/?page_id=1254"
 
@@ -93,25 +110,15 @@ class Ethics(JointCommittee):
         # Roles (and the comma before them) may be omitted
         for title in member_titles:
 
+            unprefixed_title = remove_title_prefix(title)
             # Every name is prefixed with a title
-            prefixes_to_remove = [
-                "President ",
-                "Speaker ",
-                "Minority Leader ",
-                "Senator ",
-                "Representative ",
-            ]
-
-            # Remove the matching prefix, raise an error if no match is found
-            unprefixed_title = None
-            for prefix in prefixes_to_remove:
-                if title.startswith(prefix):
-                    unprefixed_title = title[len(prefix) :]
-            if not unprefixed_title:
+            # If nothing changed after trying to remove the prefix then
+            # the data is invalid
+            if title == unprefixed_title:
                 raise UnexpectedMemberTitle(title)
 
             # If the member has a role, it will be comma separated
-            title_parts = unprefixed_title.split(", ")
+            title_parts = unprefixed_title.rsplit(", ", 1)
             name, role = None, None
 
             # No role, usedefault role of "Member"
@@ -123,10 +130,6 @@ class Ethics(JointCommittee):
             elif len(title_parts) == 2:
                 name = title_parts[0]
                 role = title_parts[1]
-
-            # If there's more than one comma, this could be invalid data
-            else:
-                raise UnexpectedMemberTitle(title)
 
             yield name, role
 
@@ -168,7 +171,7 @@ class ServiceCommission(JointCommittee):
             title = title.text_content().strip()
 
             # title is now either "<name>" or "<name>, <role>"
-            title_parts = title.split(", ")
+            title_parts = title.rsplit(", ", 1)
             name = None
             role = None
 
@@ -181,10 +184,6 @@ class ServiceCommission(JointCommittee):
             elif len(title_parts) == 2:
                 name = title_parts[0]
                 role = title_parts[1]
-
-            # There was more than one comma in the title, unexpected data
-            else:
-                raise UnexpectedMemberTitle(title)
 
             yield name, role
 
@@ -217,7 +216,7 @@ class StateControllingBoard(JointCommittee):
                 continue
 
             # No prefix, so this must be a member with a role
-            title_parts = title.split(", ")
+            title_parts = title.rsplit(", ", 1)
 
             # Double check to make sure there is a single comma
             # If there isn't, then we're working with unexpected data
@@ -381,6 +380,6 @@ def build_house_or_senate_membership(com, root):
         except SelectorError:
             pass
 
-        com.add_member(name=name, role=role)
+        com.add_member(name=remove_title_prefix(name), role=role)
 
     return com
