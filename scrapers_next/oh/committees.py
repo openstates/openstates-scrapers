@@ -17,6 +17,11 @@ class UnexpectedMemberTitle(Exception):
         super().__init__(f"Member title does not follow expected format: {title}")
 
 
+class JointCommitteeMustImplementGetMembers(Exception):
+    def __init__(self, name):
+        super().__init__(f"Joint committee didn't implement get_members(): {name}")
+
+
 class JointCommittee(HtmlPage):
     def process_page(self):
         com = ScrapeCommittee(
@@ -35,8 +40,9 @@ class JointCommittee(HtmlPage):
 
         return com
 
+    # get_members must be overriden by for each class that extends JointCommittee
     def get_members(self):
-        return []
+        raise JointCommitteeMustImplementGetMembers(self.input.get("name"))
 
     # Two of the joint committee webpages have a very similar layout
     # and can be scraped in the same way.
