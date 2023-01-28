@@ -3,11 +3,9 @@ from openstates.models import ScrapeCommittee
 
 
 class CommitteeList(HtmlListPage):
-    source = URL(
-        "https://www.legis.iowa.gov/committees"
-    )
+    source = URL("https://www.legis.iowa.gov/committees")
     # Committee pages selector
-    selector = XPath("//*[@id=\"content\"]/section/section/div/section/ul/li[*]")
+    selector = XPath('//*[@id="content"]/section/section/div/section/ul/li[*]')
 
     def process_item(self, item):
         homeUrl = self.source.url
@@ -42,7 +40,12 @@ class CommitteeDetails(HtmlPage):
                 com.add_member(name=memberName)
 
         # page header holds name and chamber
-        header = XPath("//*[@id=\"content\"]/div/section/h1").match_one(self.root).text.strip().rsplit(" ", 1)
+        header = (
+            XPath('//*[@id="content"]/div/section/h1')
+            .match_one(self.root)
+            .text.strip()
+            .rsplit(" ", 1)
+        )
         name = header[0]
         chamber = None
         if "s" in header[1].lower():
@@ -67,13 +70,11 @@ class CommitteeDetails(HtmlPage):
                 name=name,
                 chamber=chamber,
                 parent="Appropriations",
-                classification="subcommittee"
+                classification="subcommittee",
             )
         else:
             com = ScrapeCommittee(
-                name=name,
-                chamber=chamber,
-                classification="committee"
+                name=name, chamber=chamber, classification="committee"
             )
         com.add_source(self.source.url)
         com.add_source("https://www.legis.iowa.gov/committees", "Committee list page")
