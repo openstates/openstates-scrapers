@@ -43,7 +43,9 @@ class CommitteeList(JsonListPage):
             cleaner = Cleaner(allow_tags=[""], remove_unknown_tags=False)
             members_list = cleaner.clean_html(doc).text_content()
 
-            name = name.lower().replace("house", "").replace("senate", "").strip().title()
+            name = (
+                name.lower().replace("house", "").replace("senate", "").strip().title()
+            )
             com = ScrapeCommittee(
                 name=name,
                 chamber=chamber,
@@ -59,7 +61,7 @@ class CommitteeList(JsonListPage):
                     member = member.lower().replace("rep.", "").replace("sen.", "")
                     splits = member.split(",")
                     member_name = splits[0]
-                    role = ' '.join(splits[1:len(splits)]).strip()
+                    role = " ".join(splits[1 : len(splits)]).strip()
                 except IndexError:
                     member_name = member
                     role = "Member"
@@ -76,7 +78,9 @@ class CommitteeList(JsonListPage):
             if each_committee.get("WebSiteURL"):
                 com.add_link(each_committee["WebSiteURL"], note="Committee web page")
             if each_committee.get("StreamingURL"):
-                com.add_link(each_committee["WebSiteURL"], note="Committee streaming page")
+                com.add_link(
+                    each_committee["WebSiteURL"], note="Committee streaming page"
+                )
 
             com.add_source(
                 self.source.url,
