@@ -40,7 +40,7 @@ class JointCommittee(HtmlPage):
 
         return com
 
-    # get_members must be overridden by for each class that extends JointCommittee
+    # get_members must be overridden by each class that extends JointCommittee
     def get_members(self):
         raise JointCommitteeMustImplementGetMembers(self.input.get("name"))
 
