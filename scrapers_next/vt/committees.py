@@ -1,7 +1,8 @@
 from lxml.html import fromstring
 from lxml.html.clean import Cleaner
 from lxml.etree import ParserError
-from spatula import JsonListPage, URL, SkipItem
+from spatula import JsonListPage, URL
+import logging
 from openstates.models import ScrapeCommittee
 
 
@@ -15,7 +16,6 @@ class CommitteeList(JsonListPage):
         for each_committee in self.response.json()["data"]:
             # name
             name = each_committee["LongName"]
-
             # chamber
             if "house" in name.lower():
                 chamber = "lower"
@@ -37,12 +37,13 @@ class CommitteeList(JsonListPage):
             try:
                 doc = fromstring(members_html)
             except ParserError:
-                SkipItem(f"No membership data found for: {name}")
+                logging.warning(f"No membership data found for: {name}")
                 continue
 
             cleaner = Cleaner(allow_tags=[""], remove_unknown_tags=False)
             members_list = cleaner.clean_html(doc).text_content()
 
+            name = name.lower().replace("house", "").replace("senate", "").strip().title()
             com = ScrapeCommittee(
                 name=name,
                 chamber=chamber,
@@ -52,22 +53,33 @@ class CommitteeList(JsonListPage):
 
             for member in members_list.splitlines():
                 if not member.strip():
-                    SkipItem(f"No membership data found for: {name}")
+                    logging.warning(f"No membership data found for: {name}")
                     continue
                 try:
-                    name, role = member.split(",")
-                except ValueError:
-                    name = member
+                    member = member.lower().replace("rep.", "").replace("sen.", "")
+                    splits = member.split(",")
+                    member_name = splits[0]
+                    role = ' '.join(splits[1:len(splits)]).strip()
+                except IndexError:
+                    member_name = member
                     role = "Member"
-                com.add_member(name.strip().title(), role=role.strip().title())
+
+                if (not role) or ("member" in role.lower()):
+                    role = "Member"
+                member_name = member_name.replace(".", "")
+                com.add_member(member_name.strip().title(), role=role.strip().title())
 
             # additional check if no member found
             if not com.members:
-                SkipItem(f"No membership data found for: {name}")
+                logging.warning(f"No membership data found for: {name}")
                 continue
+            if each_committee.get("WebSiteURL"):
+                com.add_link(each_committee["WebSiteURL"], note="Committee web page")
+            if each_committee.get("StreamingURL"):
+                com.add_link(each_committee["WebSiteURL"], note="Committee streaming page")
 
             com.add_source(
                 self.source.url,
-                note="Committee json  of legislature.vermont.gov site",
+                note="Committee JSON from legislature.vermont.gov site",
             )
             yield com
