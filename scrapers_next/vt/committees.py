@@ -75,12 +75,17 @@ class CommitteeList(JsonListPage):
             if not com.members:
                 logging.warning(f"No membership data found for: {name}")
                 continue
-            if each_committee.get("WebSiteURL"):
-                com.add_link(each_committee["WebSiteURL"], note="Committee web page")
-            if each_committee.get("StreamingURL"):
-                com.add_link(
-                    each_committee["WebSiteURL"], note="Committee streaming page"
-                )
+            url_dict = {
+                "WebSiteURL": "web",
+                "StreamingURL": "streaming",
+                "ExpensesURL": "expenses",
+            }
+            for url_type, note_term in url_dict.items():
+                if each_committee.get(url_type):
+                    if len(each_committee[url_type]):
+                        com.add_link(
+                            each_committee[url_type], note=f"Committee {note_term} page"
+                        )
 
             com.add_source(
                 self.source.url,
