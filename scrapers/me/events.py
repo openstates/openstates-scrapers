@@ -73,7 +73,7 @@ class MEEventScraper(Scraper, LXMLMixin):
 
         if len(page) == 0:
             raise EmptyScrape
-
+        events = set()
         for row in page:
             if row["Cancelled"] is True or row["Postponed"] is True:
                 continue
@@ -95,7 +95,11 @@ class MEEventScraper(Scraper, LXMLMixin):
             address = address.replace(
                 "State House", "Maine State House, 210 State St, Augusta, ME 04330"
             )
-
+            event_name = f"{name}#{address}#{start_date}#{end_date}"
+            if event_name in events:
+                self.warning(f"Duplicate event: {event_name}")
+                continue
+            events.add(event_name)
             event = Event(
                 start_date=start_date,
                 end_date=end_date,
@@ -103,7 +107,7 @@ class MEEventScraper(Scraper, LXMLMixin):
                 location_name=address,
                 classification="committee-meeting",
             )
-
+            event.dedupe_key = event_name
             event.add_participant(name=name, type="committee", note="host")
 
             event.add_source(

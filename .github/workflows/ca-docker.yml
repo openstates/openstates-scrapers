@@ -10,6 +10,8 @@ on:
       - "poetry.lock"
       - "Dockerfile.california"
       - "scrapers/ca/*"
+      - "scrapers_next/ca/*"
+      - ".github/workflows/ca-docker.yml"
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -24,5 +26,6 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          dockerfile: Dockerfile.california
+          file: Dockerfile.california
           tags: "openstates/scrapers-california:latest,openstates/scrapers-california:${{ github.sha }}"
+          push: true

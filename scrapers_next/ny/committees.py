@@ -25,7 +25,8 @@ class SenateCommitteeDetail(HtmlPage):
             pass
         try:
             for p in XPath(
-                "//div[contains(@class, 'c-senators-container')]//div[@class='view-content']/div[contains(@class, 'odd') or contains(@class, 'even')]"
+                "//div[contains(@class, 'c-senators-container')]//div[@class='view-content']/div[contains(@class, "
+                "'odd') or contains(@class, 'even')]"
             ).match(self.root):
                 name = CSS(".nys-senator--name").match_one(p).text_content()
 
@@ -50,21 +51,25 @@ class HouseCommitteeDetail(HtmlPage):
 
         try:
             chairs = CSS(".chair-info").match(self.root)
+
         except SelectorError:
             raise SkipItem("skipping committee without full information")
 
         # in case there are co-chairs
-        num_chairs = len(chairs)
-
-        for chair in chairs:
+        for index, chair in enumerate(chairs):
             chair_name = CSS(".comm-chair-name").match_one(chair).text_content().strip()
+
+            # index for the current chair in the list of chairs, +1 because xpath index starts from 1
             chair_role = (
-                XPath(f"..//preceding-sibling::header[{num_chairs}]")
-                .match_one(chair)
+                XPath(
+                    f"//*[@id='inline_file']/section[{index + 1}]//preceding-sibling::header"
+                )
+                .match_one(self.root)
                 .text_content()
                 .strip()
                 .lower()
             )
+
             com.add_member(chair_name, chair_role)
 
         # some committees only have chairs and no members list

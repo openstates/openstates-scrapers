@@ -1,13 +1,10 @@
 import datetime
-import logging
 import pytz
 
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 from .apiclient import OregonLegislatorODataClient
 from .utils import SESSION_KEYS
-
-logger = logging.getLogger("openstates")
 
 
 class OREventScraper(Scraper):
@@ -64,11 +61,16 @@ class OREventScraper(Scraper):
             event.add_participant(com_name, type="committee", note="host")
 
             for row in meeting["CommitteeAgendaItems"]:
-                if row["Comments"] is not None:
+                if row["Comments"] and "href" not in row["Comments"]:
                     agenda = event.add_agenda_item(row["Comments"])
+                else:
+                    self.debug(
+                        f"Skipping agenda item: {row} because it doesn't have useful info"
+                    )
+                    continue
 
                 if row["MeasureNumber"] is not None:
-                    bill_id = "{} {}".format(row["MeasurePrefix"], row["MeasureNumber"])
+                    bill_id = f"{row['MeasurePrefix']} {row['MeasureNumber']}"
                     agenda.add_bill(bill_id)
 
             for row in meeting["CommitteeMeetingDocuments"]:

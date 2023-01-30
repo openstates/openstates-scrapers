@@ -13,6 +13,15 @@ from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 from .apiclient import OpenLegislationAPIClient
 
+"""
+Senate bill suffix regex.
+Occasionally, NY appends a suffix to a bill
+to indicate a new version. Because OS doesn't
+see S123A === S123, this breaks some matching
+for events
+"""
+bill_id_re = re.compile(r"^(S\d+)([A-Z]+)$")
+
 
 class NYEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
@@ -21,14 +30,12 @@ class NYEventScraper(Scraper):
 
     def scrape(self, session=None, start=None, end=None):
 
-        # yield from self.scrape_lower()
-
         self.api_key = os.environ["NEW_YORK_API_KEY"]
         self.api_client = OpenLegislationAPIClient(self)
 
         if session is None:
             session = self.latest_session()
-            self.info("no session specified, using %s", session)
+            self.info(f"no session specified, using {session}")
 
         if start is None:
             start = dt.datetime.today()
@@ -80,7 +87,10 @@ class NYEventScraper(Scraper):
         when = self.clean_date(meta[1])
         when = dateutil.parser.parse(when)
         when = self._tz.localize(when)
-        location = meta[2]
+        if len(meta) > 2:
+            location = meta[2]
+        else:
+            location = "See Agenda"
 
         event = Event(
             name=com_name,
@@ -160,7 +170,11 @@ class NYEventScraper(Scraper):
                 agenda = event.add_agenda_item("Bills under consideration")
 
             for bill in bills:
-                agenda.add_bill(bill["billId"]["printNo"])
+                bill_id = bill["billId"]["printNo"]
+                match = bill_id_re.search(bill_id)
+                if match:
+                    bill_id = match.groups()[0]
+                agenda.add_bill(bill_id)
 
             yield event
 

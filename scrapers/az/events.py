@@ -198,8 +198,10 @@ class AZEventScraper(Scraper):
                 for item in row["Items"]:
                     agenda_item = event.add_agenda_item(item["Description"])
                     bill_id = re.findall(r"^(.*?)\s", item["Description"])
-                    bill_id = bill_id[0]
-                    agenda_item.add_bill(bill_id)
+
+                    if len(bill_id):
+                        bill_id = bill_id[0]
+                        agenda_item.add_bill(bill_id)
 
                     for speaker in item["RequestsToSpeak"]:
                         speaker_title = speaker["Name"]

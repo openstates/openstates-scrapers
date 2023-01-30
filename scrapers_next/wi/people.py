@@ -96,14 +96,11 @@ class Legislators(HtmlListPage):
         p.extras["website"] = website
 
         detail_link = (
-            XPath(".//span[1]/span[3]/a[contains(text(), 'Details')]")
-            .match_one(item)
-            .get("href")
+            XPath(".//a[contains(text(), 'Details')]").match_one(item).get("href")
         )
 
-        p.add_source(self.source.url)
-        p.add_source(detail_link)
-        p.add_link(detail_link, note="homepage")
+        p.add_source(self.source.url, note="members list page")
+        p.add_source(detail_link, note="member detail page")
 
         try:
             title = (
@@ -115,7 +112,12 @@ class Legislators(HtmlListPage):
 
         email = CSS("span.info.email a").match_one(item).text_content().strip()
         p.email = email
-        img = CSS("img").match_one(item).get("src")
+
+        no_photo = len(item.xpath(".//span[@class='picture-placeholder']"))
+        if no_photo:
+            img = ""
+        else:
+            img = CSS("img").match_one(item).get("src")
         p.image = img
 
         phones = (
