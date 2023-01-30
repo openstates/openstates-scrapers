@@ -98,7 +98,7 @@ class MSBillScraper(Scraper):
 
             if title == "":
                 self.warning(f"No title yet for {bill_id}, skipping")
-                return
+                continue
 
             bill = Bill(
                 bill_id,
