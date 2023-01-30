@@ -153,14 +153,8 @@ class NCBillScraper(Scraper):
             pass
 
         # actions
-        action_tr_xpath = (
-            '//h6[contains(text(), "History")]'
-            '/ancestor::div[contains(@class, "gray-card")]'
-            '//div[contains(@class, "card-body")]'
-            '/div[@class="row"]'
-        )
+        action_tr_xpath = "/html/body/div[1]/div/main/div[3]/div[3]/div/div[2]/div"
 
-        # skip two header rows
         for row in doc.xpath(action_tr_xpath):
             cols = row.xpath("div")
             act_date = cols[1].text
