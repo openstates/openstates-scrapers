@@ -35,9 +35,7 @@ class WYEventScraper(Scraper):
                 end = parser.parse(row["endTime"])
                 end = self._tz.localize(end)
 
-                where = (
-                    f"{row['address1']} {row['address2']} {row['address3']}".strip()
-                )
+                where = f"{row['address1']} {row['address2']} {row['address3']}".strip()
 
                 if where == "":
                     where = "TBD"
