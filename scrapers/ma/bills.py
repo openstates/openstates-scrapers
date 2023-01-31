@@ -71,11 +71,9 @@ class MABillScraper(Scraper):
                 single_bill_chamber = "upper"
 
             for bill_meta in self.bill_list[single_bill_chamber]:
-                if (
-                    bill_no == bill_meta["DocketNumber"]
-                    or bill_no == bill_meta["BillNumber"]
-                ):
+                if bill_no in [bill_meta["DocketNumber"], bill_meta["BillNumber"]]:
                     yield from self.scrape_bill(session, bill_meta, single_bill_chamber)
+                    self.info("Finished bill scrape, exiting.")
                     return
 
         if not chamber:
