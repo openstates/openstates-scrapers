@@ -38,15 +38,11 @@ class CommitteeDetail(HtmlPage):
         return com
 
 class CommitteeList(HtmlListPage):
-    # committee list doesn't actually come in with initial
+    # committee list doesn't actually come in with initial page; have to get committee list from subpage call:
     source = "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/HomeCommittee/LoadCommitteeListTab?selectedTab=List"
     selector = XPath('//div[@class="list-group-item"]//a')
-    #hardcode for now
+    #TODO: figure out how to get house from H2 element above the link
     chamber = "lower"
-
-    # def postprocess_response(self) -> None:
-    #     time.sleep(5)
-    #     pass
 
     def process_item(self, item):
 
@@ -59,16 +55,14 @@ class CommitteeList(HtmlListPage):
         com = ScrapeCommittee(name=committee_name, chamber=self.chamber)
 
         committee_id = item.get("href").split("/")[8] # committee number is after the 6th slash in the href
-        print(committee_id)
+
+        # committee member list also comes from a sub-page request
         detail_source = (
             "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Committee/"
             f"FillSelectedCommitteeTab?selectedTab=Overview&committeeOrSubCommitteeKey={committee_id}"
         )
         
-        # detail_source = item.get("href")
-        # print(detail_source)
-
         com.add_source(self.source.url, note="Committees List Page")
-        com.add_source(detail_source, note="Committees Detail Page")
+        com.add_source(detail_source, note="Committees Overview Page")
 
         return CommitteeDetail(com, source=detail_source)
