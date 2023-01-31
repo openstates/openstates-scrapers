@@ -152,7 +152,7 @@ class Alabama(State):
             "name": "2022 Regular Session",
             "start_date": "2022-01-11",
             "end_date": "2022-04-07",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "First Special Session 2021",
@@ -170,7 +170,7 @@ class Alabama(State):
             "name": "First Special Session 2022",
             "start_date": "2022-01-19",
             "end_date": "2022-01-31",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "Regular Session 2023",
@@ -179,7 +179,7 @@ class Alabama(State):
             "name": "2023 Regular Session",
             "start_date": "2023-03-07",
             "end_date": "2023-06-08",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
