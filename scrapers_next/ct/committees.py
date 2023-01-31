@@ -23,14 +23,13 @@ class CommitteeList(HtmlListPage):
         href = item.get("href")
         committee_name = item.text_content().strip()
 
-        # "\xc2\xa0" is sometimes used instead of normal space in committee names
-        # There may be a better way than this to replace them with regular spaces.
+        # "\xc2\xa0" is sometimes used instead of a normal space in committee names
+        # There may be a better way than this to replace them with regular spaces
         committee_name = (
             committee_name.encode("ascii", "replace").decode("utf-8").replace("?", " ")
         )
 
-        # As of 2023-01-30, only one committee in this list has a
-        # prefix that needs to be removed
+        # As of 2023-01-30, only one committee has a prefix that needs to be removed
         prefix = "Joint Committee on "
         if committee_name.startswith(prefix):
             committee_name = committee_name[len(prefix) :]
@@ -44,14 +43,15 @@ class CommitteeList(HtmlListPage):
 
         # One of the committee pages is formatted differently from the rest
         if committee_name == "Reapportionment Commission":
-            # This is the start of a chain of redirects
-            # Javascript redirect page -> Committee details page -> Member PDF
+            # This is the start of a chain of 3 pages that must be traversed
+            # to get to the member pdf.
+            # Javascript redirect page -> Committee details page -> Membership PDF
             return ReapportionmentCommissionRedirect(
                 dict(com=com),
                 source=URL(href, timeout=30, verify=False),
             )
         else:
-            # This handles every other committee page
+            # Every other committee page is in the same format
             return CommitteeMemberPage(
                 dict(com=com),
                 source=URL(href, timeout=30, verify=False),
@@ -59,8 +59,6 @@ class CommitteeList(HtmlListPage):
 
 
 class CommitteeMemberPage(HtmlPage):
-    members = []
-
     def process_page(self):
         com = self.input.get("com")
         com.add_source(self.source.url, note="Committee details page")
