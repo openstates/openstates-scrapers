@@ -17,85 +17,89 @@ class WYEventScraper(Scraper):
         event_count = 0
 
         # this month and the next 2 months
+        events = set()
         for add in [0, 1, 2]:
             test_date = today + relativedelta.relativedelta(months=+add)
             month_url = url.format(str(test_date.year), str(test_date.month).zfill(2))
             page = self.get(month_url).json()
             for row in page:
-                if row["meetingKind"] == 2:
-                    com = f"{row['meetingType']} {row['committee']['fullName']}"
-                    # skip state holidays or other non-committee hearings
-                    if com.strip() == "":
-                        continue
+                if row["meetingKind"] != 2:
+                    continue
+                com = f"{row['meetingType']} {row['committee']['fullName']}"
+                # skip state holidays or other non-committee hearings
+                if com.strip() == "":
+                    continue
 
-                    start = parser.parse(row["startDate"])
-                    start = self._tz.localize(start)
-                    end = parser.parse(row["endTime"])
-                    end = self._tz.localize(end)
+                start = parser.parse(row["startDate"])
+                start = self._tz.localize(start)
+                end = parser.parse(row["endTime"])
+                end = self._tz.localize(end)
 
-                    where = (
-                        f"{row['address1']} {row['address2']} {row['address3']}".strip()
+                where = f"{row['address1']} {row['address2']} {row['address3']}".strip()
+
+                if where == "":
+                    where = "TBD"
+
+                desc = row["purpose"]
+                event_name = f"{com}#{where}#{start}#{end}"
+                if event_name in events:
+                    self.warning(f"Skipping duplicate event: {event_name}")
+                    continue
+                events.add(event_name)
+                event = Event(
+                    name=com,
+                    location_name=where,
+                    start_date=start,
+                    end_date=end,
+                    classification="committee-meeting",
+                    description=desc,
+                )
+                event.dedupe_key = event_name
+                event.add_committee(com, note="host")
+
+                for media in row["meetingMedias"]:
+                    # all these i've seen say they're octet stream but are actually youtube links
+                    event.add_media_link(
+                        media["documentType"],
+                        media["filePath"],
+                        "text/html",
+                        on_duplicate="ignore",
                     )
 
-                    if where == "":
-                        where = "TBD"
+                if row["participantURL"]:
+                    set_location_url(event, row["participantURL"])
 
-                    desc = row["purpose"]
+                match_coordinates(event, {"State Capitol": (41.14105, -104.82015)})
 
-                    event = Event(
-                        name=com,
-                        location_name=where,
-                        start_date=start,
-                        end_date=end,
-                        classification="committee-meeting",
-                        description=desc,
+                for doc in row["meetingDocuments"]:
+                    event.add_document(
+                        doc["title"],
+                        f"{self.base_url}{doc['documentUrl']}",
+                        on_duplicate="ignore",
                     )
 
-                    event.add_committee(com, note="host")
+                for item in row["meetingAgendas"]:
+                    self.parse_agenda_item(event, item)
 
-                    for media in row["meetingMedias"]:
-                        # all these i've seen say they're octet stream but are actually youtube links
-                        event.add_media_link(
-                            media["documentType"],
-                            media["filePath"],
-                            "text/html",
-                            on_duplicate="ignore",
+                bills_agenda_item = None
+                for bill in row["sessionMeetingBills"]:
+                    if bills_agenda_item is None:
+                        bills_agenda_item = event.add_agenda_item(
+                            "Bills under Consideration"
                         )
+                    bills_agenda_item.add_bill(bill["billNumber"])
 
-                    if row["participantURL"]:
-                        set_location_url(event, row["participantURL"])
+                web_url = "https://www.wyoleg.gov/Calendar/{year}{month}01/Meeting?type=committee&id={meeting_id}"
+                web_url = web_url.format(
+                    year=str(test_date.year),
+                    month=str(test_date.month).zfill(2),
+                    meeting_id=row["id"],
+                )
 
-                    match_coordinates(event, {"State Capitol": (41.14105, -104.82015)})
+                event.add_source(web_url)
 
-                    for doc in row["meetingDocuments"]:
-                        event.add_document(
-                            doc["title"],
-                            f"{self.base_url}{doc['documentUrl']}",
-                            on_duplicate="ignore",
-                        )
-
-                    for item in row["meetingAgendas"]:
-                        self.parse_agenda_item(event, item)
-
-                    bills_agenda_item = None
-                    for bill in row["sessionMeetingBills"]:
-                        if bills_agenda_item is None:
-                            bills_agenda_item = event.add_agenda_item(
-                                "Bills under Consideration"
-                            )
-                        bills_agenda_item.add_bill(bill["billNumber"])
-
-                    web_url = "https://www.wyoleg.gov/Calendar/{year}{month}01/Meeting?type=committee&id={meeting_id}"
-                    web_url = web_url.format(
-                        year=str(test_date.year),
-                        month=str(test_date.month).zfill(2),
-                        meeting_id=row["id"],
-                    )
-
-                    event.add_source(web_url)
-
-                    event_count += 1
-                    yield event
+                event_count += 1
+                yield event
 
         if event_count < 1:
             raise EmptyScrape

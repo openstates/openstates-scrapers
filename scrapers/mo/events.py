@@ -63,9 +63,7 @@ class MOEventScraper(Scraper, LXMLMixin):
 
             location = self.row_content(page, "Room:")
 
-            location = "{}, {}".format(
-                location, "201 W Capitol Ave, Jefferson City, MO 65101"
-            )
+            location = f"{location}, 201 W Capitol Ave, Jefferson City, MO 65101"
 
             if not page.xpath(
                 '//td[descendant::b[contains(text(),"Committee")]]/a/text()'
@@ -128,6 +126,7 @@ class MOEventScraper(Scraper, LXMLMixin):
         # The HTML here isn't wrapped in a container per-event
         # which makes xpath a pain. So string split by <hr>
         # then parse each event's fragment for cleaner results
+        events = set()
         for fragment in html.split("<hr />")[1:]:
             page = lxml.html.fromstring(fragment)
 
@@ -135,7 +134,12 @@ class MOEventScraper(Scraper, LXMLMixin):
             if page.xpath('//div[@id="DateGroup"]'):
                 continue
             else:
-                yield from self.scrape_lower_item(page)
+                for item in self.scrape_lower_item(page):
+                    if item.dedupe_key in events:
+                        self.warning(f"Skipping duplicate event: {item.dedupe_key}")
+                        continue
+                    events.add(item.dedupe_key)
+                    yield item
 
     def scrape_lower_item(self, page):
         # print(lxml.etree.tostring(page, pretty_print=True))

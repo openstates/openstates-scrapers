@@ -273,7 +273,8 @@ class NEBillScraper(Scraper, LXMLMixin):
             'string(//ul[contains(@class,"list-unstyled")]/li[contains(text(),"{}")])'
         )
         count_text = page.xpath(count_xpath.format(row_string))
-        return int("".join(x for x in count_text if x.isdigit()))
+        value = "".join(x for x in count_text if x and x.isdigit())
+        return int(value) if value else 0
 
     def action_types(self, action):
         if "Date of introduction" in action:
