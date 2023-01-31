@@ -18,7 +18,7 @@ class MABillScraper(Scraper):
     chamber_filters = {}
     house_pdf_cache = {}
 
-    bill_list = {"lower": [], "upper": []}
+    bill_list = []
 
     chamber_map = {"lower": "House", "upper": "Senate"}
     chamber_map_reverse = {
@@ -53,27 +53,18 @@ class MABillScraper(Scraper):
             refiner_list[label] = refiner
         return refiner_list
 
-    # sort can be set to "latest" to sort by date modified descending
-    # os-update ma bills --scrape sort=latest
     # bill_no can be set to a specific bill (no spaces) to scrape only one
     # os-update ma bills --scrape bill_no=H2
-    # page_limit can be set to stop scraping after a certain number of pages (for each chamber)
-    def scrape(
-        self, chamber=None, session=None, bill_no=None, sort=None, page_limit=None
-    ):
+    def scrape(self, chamber=None, session=None, bill_no=None):
         self.scrape_bill_list(session)
 
+        # optionally scrape a single bill then exit
         if bill_no:
-            single_bill_chamber = False
-            if "H" in bill_no:
-                single_bill_chamber = "lower"
-            else:
-                single_bill_chamber = "upper"
-
-            for bill_meta in self.bill_list[single_bill_chamber]:
+            single_bill_chamber = "lower" if "H" in bill_no else "upper"
+            for bill_meta in self.bill_list:
                 if bill_no in [bill_meta["DocketNumber"], bill_meta["BillNumber"]]:
                     yield from self.scrape_bill(session, bill_meta, single_bill_chamber)
-                    self.info("Finished bill scrape, exiting.")
+                    self.info("Finished individual bill scrape, exiting.")
                     return
 
         if not chamber:
@@ -91,31 +82,31 @@ class MABillScraper(Scraper):
 
         list_data = self.get(api_url, verify=False).content
         for row in json.loads(list_data):
-            if "H" in str(row["BillNumber"]) or "H" in str(row["DocketNumber"]):
-                chamber = "lower"
-            elif "S" in str(row["BillNumber"]) or "S" in str(row["DocketNumber"]):
-                chamber = "upper"
-            else:
+            chambers = ["H", "S"]
+
+            # bill never flips from house to senate from docket -> intro so we're safe here
+            # BillNumber can be set, but mapped to None, so use or here
+            bill_id = row["BillNumber"] or row["DocketNumber"]
+            # make sure the bill has an H or an S in the code
+            if not any([chamber in bill_id for chamber in chambers]):
                 self.error(
                     f"Unknown bill type - bill {row['BillNumber']} - docket {row['DocketNumber']}"
                 )
 
-            self.bill_list[chamber].append(
+            self.bill_list.append(
                 {"BillNumber": row["BillNumber"], "DocketNumber": row["DocketNumber"]}
             )
 
-    def scrape_chamber(self, chamber, session, sort=None, page_limit=None):
-
-        for bill in self.bill_list[chamber]:
-            yield from self.scrape_bill(session, bill, chamber)
+    def scrape_chamber(self, chamber, session):
+        chamber_code = "H" if chamber == "lower" else "S"
+        for bill_meta in self.bill_list:
+            bill_id = bill_meta["BillNumber"] or bill_meta["DocketNumber"]
+            if chamber_code in bill_id:
+                yield from self.scrape_bill(session, bill_meta, chamber)
 
     def scrape_bill(self, session, bill_meta, chamber):
         # https://malegislature.gov/Bills/189/SD2739
-
-        if bill_meta["BillNumber"]:
-            bill_id = bill_meta["BillNumber"]
-        else:
-            bill_id = bill_meta["DocketNumber"]
+        bill_id = bill_meta["BillNumber"] or bill_meta["DocketNumber"]
 
         session_for_url = self.replace_non_digits(session)
         bill_url = "https://malegislature.gov/Bills/{}/{}".format(
