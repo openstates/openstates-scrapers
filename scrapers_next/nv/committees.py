@@ -10,13 +10,11 @@ member_name_pos = re.compile(r"(Senator\s+|Repr.+tive\s+)(.+),\s+.+")
 class CommitteeDetail(HtmlPage):
     example_source = "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Committee/398/Overview"
 
-    # def postprocess_response(self):
-    #     time.sleep(5)
-
     def process_page(self):
         com = self.input
 
         try:
+            # one committee (probably Senate committee of the whole) doesn't have members listed
            members = CSS("a.bio").match(self.root)
         except SelectorError:
             raise SkipItem('No members found')
@@ -26,21 +24,14 @@ class CommitteeDetail(HtmlPage):
 
         for member in members:
             name = member.text_content()
-            print(f"member name: {name}")
-            print(f"tail to member:{member.tail}")
+            # Chair and Vice-Chair immediately follow anchor tag:
             role_text = member.tail.strip()
 
             if role_text:
+                # remove leading hyphen/space from role
                 role = role_text.replace("- ", "")
             else:
                 role = "Member"
-
-            # com_leader = leader_name_pos.search(member_text)
-            # com_member = member_name_pos.search(member_text)
-            # if com_leader:
-            #     name, role = com_leader.groups()[1:]
-            # else:
-            #     name, role = com_member.groups()[1], "Member"
 
             com.add_member(name=name, role=role)
 
