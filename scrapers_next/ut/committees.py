@@ -46,7 +46,6 @@ class CommitteeList(JsonListPage):
                 # if other parent committees are discovered in future scrape
                 else:
                     raise UnknownParentError(name)
-
             name = (
                 name.lower().replace("house", "").replace("senate", "").strip().title()
             )
@@ -56,7 +55,6 @@ class CommitteeList(JsonListPage):
                 parent=parent,
                 classification=classification,
             )
-
             # extracting members
             members_list = each_committee["members"]
             for each_member in members_list:
