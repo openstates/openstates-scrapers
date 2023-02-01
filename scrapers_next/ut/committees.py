@@ -1,6 +1,12 @@
 from spatula import JsonListPage, URL
 import logging
 from openstates.models import ScrapeCommittee
+import requests
+
+
+class UnknownParentError(BaseException):
+    def __init__(self, com_name):
+        super().__init__(f"Parent unknown for subcommittee {com_name}")
 
 
 class CommitteeList(JsonListPage):
@@ -8,11 +14,24 @@ class CommitteeList(JsonListPage):
         "https://le.utah.gov/data/committees.json",
         timeout=10,
     )
+    legislators_url = "https://le.utah.gov/data/legislators.json"
+
+    def get_membership_dict(self, url):
+        membership = {}
+        response = requests.get(url)
+        for each_legislator in response.json()["legislators"]:
+            member_id = each_legislator["id"]
+            name = each_legislator["formatName"]
+            membership[member_id] = name
+        return membership
 
     def process_page(self):
+        member_names = self.get_membership_dict(self.legislators_url)
+
         for each_committee in self.response.json()["committees"]:
             # name
             name = each_committee["description"]
+
             # chamber
             if "house" in name.lower():
                 chamber = "lower"
@@ -26,8 +45,12 @@ class CommitteeList(JsonListPage):
             parent = None
             if "subcommittee" in name.lower():
                 classification = "subcommittee"
-                parent = name.lower().split(" ")[-2:]
-                parent = " ".join(parent)
+                # currently the only committee with subcommittees listed
+                if "appropriations" in name.lower():
+                    parent = "Executive Appropriations Committee"
+                # if other parent committees are discovered in future scrape
+                else:
+                    raise UnknownParentError(name)
 
             name = (
                 name.lower().replace("house", "").replace("senate", "").strip().title()
@@ -38,15 +61,14 @@ class CommitteeList(JsonListPage):
                 parent=parent,
                 classification=classification,
             )
+
             # extracting members
             members_list = each_committee["members"]
-            for each_memeber in members_list:
-                member_name_split = each_memeber["name"].split(",")
-                member_name_split.reverse()
-                member_name = " ".join(member_name_split).replace(".", "").strip()
-
-                role = each_memeber["position"]
-                com.add_member(name=member_name, role=role)
+            for each_member in members_list:
+                member_id = each_member["id"]
+                name = member_names[member_id]
+                role = each_member["position"]
+                com.add_member(name=name, role=role.title())
 
             if not com.members:
                 logging.warning(f"No membership data found for: {name}")
