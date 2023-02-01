@@ -14,7 +14,6 @@ class CommitteeList(JsonListPage):
         "https://le.utah.gov/data/committees.json",
         timeout=10,
     )
-    legislators_url = "https://le.utah.gov/data/legislators.json"
 
     def get_membership_dict(self, url):
         membership = {}
@@ -26,7 +25,8 @@ class CommitteeList(JsonListPage):
         return membership
 
     def process_page(self):
-        member_names = self.get_membership_dict(self.legislators_url)
+        legislators_url = "https://le.utah.gov/data/legislators.json"
+        member_names = self.get_membership_dict(legislators_url)
 
         for each_committee in self.response.json()["committees"]:
             # name
