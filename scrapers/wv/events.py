@@ -93,6 +93,7 @@ class WVEventScraper(Scraper, LXMLMixin):
             when = re.sub("TBA", "", when, flags=re.IGNORECASE)
 
         when = re.sub(r"or\s+conclusion\s+(.*)", "", when, flags=re.IGNORECASE)
+        when = re.sub(r", After Session Ends", ", 5:00 PM", when, flags=re.IGNORECASE)
 
         when = when.split("-")[0]
         when = self.clean_date(when)

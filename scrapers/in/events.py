@@ -46,11 +46,12 @@ class INEventScraper(Scraper):
                 "standing-committees", "committees"
             )
             url = f"{self.base_url}{committee_path}/meetings"
-            yield from self.extract_committee_events(url)
+            yield from self.extract_committee_events(url, committee)
 
-    def extract_committee_events(self, url):
+    def extract_committee_events(self, url, committee):
 
         res = self.in_request(url)
+        event_names = set()
         for meeting in res.json()["items"]:
             link = meeting["link"]
             _id = link.split("/")[-1]
@@ -78,13 +79,18 @@ class INEventScraper(Scraper):
                 log.info(f"Could not parse date: {date} {time}")
                 when = dateutil.parser.parse(date)
             when = self._tz.localize(when)
-
+            event_name = f"{committee['chamber']}#{committee['name']}#{location}#{when}"
+            if event_name in event_names:
+                self.warning(f"Duplicate event {event_name}")
+                continue
+            event_names.add(event_name)
             event = Event(
                 name=chamber,
                 start_date=when,
                 location_name=location,
                 classification="committee-meeting",
             )
+            event.dedupe_key = event_name
             event.add_source(url)
             event.add_participant(chamber, type="committee", note="host")
             event.add_media_link("Video of Hearing", video_url, media_type="text/html")

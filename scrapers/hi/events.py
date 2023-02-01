@@ -63,17 +63,11 @@ class HIEventScraper(Scraper, LXMLMixin):
                 com_names = []
                 for com in coms:
                     com_names.append(
-                        "{} {}".format(
-                            self.chambers[self.short_ids[com]["chamber"]],
-                            self.short_ids[com]["name"],
-                        )
+                        f"{self.chambers[self.short_ids[com]['chamber']]} {self.short_ids[com]['name']}"
                     )
                 descr = ", ".join(com_names)
             elif self.short_ids.get(committee):
-                descr = "{} {}".format(
-                    self.chambers[self.short_ids[committee]["chamber"]],
-                    self.short_ids[committee]["name"],
-                )
+                descr = f"{self.chambers[self.short_ids[committee]['chamber']]} {self.short_ids[committee]['name']}"
             else:
                 descr = [x.text_content() for x in tds[1].xpath(".//span")]
                 if len(descr) != 1:
@@ -86,9 +80,12 @@ class HIEventScraper(Scraper, LXMLMixin):
             notice_href = notice.attrib["href"]
             notice_name = notice.text
 
-            # the listing page shows the same hearing in multiple rows.
-            # combine these -- get_related_bills() will take care of adding the bills
-            # and descriptions
+            """
+            the listing page shows the same hearing in multiple rows.
+            combine these -- get_related_bills() will take care of adding the bills
+            and descriptions
+            Otherwise, skip this line
+            """
             if notice_href in self.seen_hearings:
                 continue
             else:
@@ -111,10 +108,7 @@ class HIEventScraper(Scraper, LXMLMixin):
 
             for committee in committees:
                 if "INFO" not in committee and committee in self.short_ids:
-                    committee = "{} {}".format(
-                        self.chambers[self.short_ids[committee]["chamber"]],
-                        self.short_ids[committee]["name"],
-                    )
+                    committee = f"{self.chambers[self.short_ids[committee]['chamber']]} {self.short_ids[committee]['name']}"
                 event.add_committee(committee, note="host")
 
             event.add_source(URL)

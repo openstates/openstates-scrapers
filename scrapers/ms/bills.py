@@ -94,11 +94,8 @@ class MSBillScraper(Scraper):
 
             details_root = lxml.etree.fromstring(page)
             title = details_root.xpath("string(//SHORTTITLE)")
+            title = "[No title given by state]" if title == "" else title
             longtitle = details_root.xpath("string(//LONGTITLE)")
-
-            if title == "":
-                self.warning(f"No title yet for {bill_id}, skipping")
-                return
 
             bill = Bill(
                 bill_id,

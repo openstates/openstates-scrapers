@@ -143,7 +143,6 @@ class MOBillScraper(Scraper, LXMLMixin):
             bill_ids = subject.getnext().xpath("./b/a/text()[normalize-space()]")
 
             for bill_id in bill_ids:
-                self.info("Found {}.".format(bill_id))
                 self._subjects[bill_id].append(subject_text)
 
     def _parse_senate_billpage(self, bill_url, year):
@@ -166,12 +165,9 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         if bid in self._subjects:
             subs = self._subjects[bid]
-            self.info("With subjects for this bill")
-
-        self.info(bid)
 
         if bid == "XXXXXX":
-            self.info("Skipping Junk Bill")
+            self.warning(f"Skipping Junk Bill {bid}")
             return
 
         bill = Bill(
@@ -219,6 +215,8 @@ class MOBillScraper(Scraper, LXMLMixin):
         amendment_links = bill_page.xpath('//a[contains(@href,"ShowAmendment.asp")]')
         for link in amendment_links:
             link_text = link.xpath("string(.)").strip()
+            if not link_text:
+                link_text = "Missing description"
             if "adopted" in link_text.lower():
                 link_url = link.xpath("@href")[0]
                 bill.add_version_link(
@@ -245,6 +243,8 @@ class MOBillScraper(Scraper, LXMLMixin):
             pdf_url = version_tag.attrib["href"]
             if description == "" and "intro" in pdf_url:
                 description = "Introduced"
+            elif not description:
+                description = "Missing description"
 
             if pdf_url.endswith("pdf"):
                 mimetype = "application/pdf"
@@ -327,7 +327,7 @@ class MOBillScraper(Scraper, LXMLMixin):
             subject_text = re.sub(
                 r"\([0-9]+\).*", "", subject.text, re.IGNORECASE
             ).strip()
-            self.info("Searching for bills in {}.".format(subject_text))
+            self.info(f"Searching for bills in {subject_text}.")
 
             subject_page = self.lxmlize(subject.attrib["href"])
 
@@ -432,7 +432,7 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         bill_id = bill_page.xpath('//*[@class="entry-title"]/div')
         if len(bill_id) == 0:
-            self.info("WARNING: bill summary page is blank! (%s)" % url)
+            self.info(f"WARNING: bill summary page is blank! ({url})")
             self._bad_urls.append(url)
             return
         bill_id = bill_id[0].text_content()
@@ -480,8 +480,6 @@ class MOBillScraper(Scraper, LXMLMixin):
         if bid in self._subjects:
             subs = self._subjects[bid]
             self.info("With subjects for this bill")
-
-        self.info(bid)
 
         if bill_desc == "":
             if bill_number <= 20:
@@ -548,6 +546,8 @@ class MOBillScraper(Scraper, LXMLMixin):
         version_tags = bill_page.xpath('//div[@class="BillDocuments"][2]/span')
         for version_tag in reversed(version_tags):
             version = clean_text(version_tag.text_content())
+            if not version:
+                version = "Missing description"
             for vurl in version_tag.xpath(".//a"):
                 if vurl.text == "PDF":
                     mimetype = "application/pdf"
@@ -573,6 +573,8 @@ class MOBillScraper(Scraper, LXMLMixin):
                 version = row.xpath('.//div[contains(@class,"textType")]/a/text()')[
                     0
                 ].strip()
+                if not version:
+                    version = "Missing description"
                 path = row.xpath('.//div[contains(@class,"textType")]/a/@href')[
                     0
                 ].strip()
@@ -630,19 +632,19 @@ class MOBillScraper(Scraper, LXMLMixin):
             path = row.xpath('.//div[contains(@class,"DocInfoCell")]/a[1]/@href')[
                 0
             ].strip()
-            summary_name = "Amendment {}".format(version)
+            summary_name = f"Amendment {version}"
 
             defeated_icon = row.xpath('.//img[contains(@title,"Defeated")]')
             if defeated_icon:
-                summary_name = "{} (Defeated)".format(summary_name)
+                summary_name = f"{summary_name} (Defeated)"
 
             adopted_icon = row.xpath('.//img[contains(@title,"Adopted")]')
             if adopted_icon:
-                summary_name = "{} (Adopted)".format(summary_name)
+                summary_name = f"{summary_name} (Adopted)"
 
             distributed_icon = row.xpath('.//img[contains(@title,"Distributed")]')
             if distributed_icon:
-                summary_name = "{} (Distributed)".format(summary_name)
+                summary_name = f"{summary_name} (Distributed)"
 
             if ".pdf" in path:
                 mimetype = "application/pdf"
@@ -660,10 +662,8 @@ class MOBillScraper(Scraper, LXMLMixin):
         year2 = "%02d" % (int(session[:4]) % 100)
 
         # Save the root URL, since we'll use it later.
-        bill_root = "http://www.senate.mo.gov/{}info/BTS_Web/".format(year2)
-        index_url = (
-            bill_root + "BillList.aspx?SessionType=" + self.session_type(session)
-        )
+        bill_root = f"http://www.senate.mo.gov/{year2}info/BTS_Web/"
+        index_url = f"{bill_root}BillList.aspx?SessionType={self.session_type(session)}"
 
         index_page = self.get(index_url).text
         index_page = lxml.html.fromstring(index_page)
