@@ -9,6 +9,16 @@ class UnknownParentError(BaseException):
         super().__init__(f"Parent unknown for subcommittee {com_name}")
 
 
+def get_membership_dict(url):
+    membership = {}
+    response = requests.get(url)
+    for each_legislator in response.json()["legislators"]:
+        member_id = each_legislator["id"]
+        name = each_legislator["formatName"]
+        membership[member_id] = name
+    return membership
+
+
 class CommitteeList(JsonListPage):
     source = URL(
         "https://le.utah.gov/data/committees.json",
@@ -17,12 +27,8 @@ class CommitteeList(JsonListPage):
 
     def process_page(self):
         legislators_url = "https://le.utah.gov/data/legislators.json"
-        membership = {}
-        response = requests.get(legislators_url)
-        for each_legislator in response.json()["legislators"]:
-            mem_id = each_legislator["id"]
-            mem_name = each_legislator["formatName"]
-            membership[mem_id] = mem_name
+        # uses helper function defined above this class
+        membership = get_membership_dict(legislators_url)
 
         for each_committee in self.response.json()["committees"]:
             # name
