@@ -72,8 +72,11 @@ class CommitteeList(JsonListPage):
             if not com.members:
                 logging.warning(f"No membership data found for: {name}")
                 continue
+
             if len(each_committee.get("link")):
-                com.add_link(each_committee["link"], note="Committee web page")
+                com.add_link(each_committee["link"], note="homepage")
+            else:
+                com.add_link("", note="homepage")
 
             com.add_source(
                 self.source.url,
