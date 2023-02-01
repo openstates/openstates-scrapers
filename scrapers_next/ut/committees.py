@@ -26,7 +26,6 @@ class CommitteeList(JsonListPage):
         for each_committee in self.response.json()["committees"]:
             # name
             name = each_committee["description"]
-
             # chamber
             if "house" in name.lower():
                 chamber = "lower"
@@ -63,13 +62,15 @@ class CommitteeList(JsonListPage):
                 member_id = each_member["id"]
                 name = membership[member_id]
                 role = each_member["position"]
-                com.add_member(name, role.title())
+                com.add_member(name, role=role.title())
 
             if not com.members:
                 logging.warning(f"No membership data found for: {name}")
                 continue
             if each_committee.get("link"):
-                com.add_link(each_committee["link"], note="Committee web page")
+                com.add_link(
+                    each_committee["link"], note="Committee web page"
+                )
 
             com.add_source(
                 self.source.url,
