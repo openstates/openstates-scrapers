@@ -9,24 +9,25 @@ class UnknownParentError(BaseException):
         super().__init__(f"Parent unknown for subcommittee {com_name}")
 
 
+def get_membership_dict(url):
+    membership = {}
+    response = requests.get(url)
+    for each_legislator in response.json()["legislators"]:
+        member_id = each_legislator["id"]
+        name = each_legislator["formatName"]
+        membership[member_id] = name
+    return membership
+
+
 class CommitteeList(JsonListPage):
     source = URL(
         "https://le.utah.gov/data/committees.json",
         timeout=10,
     )
-
-    def get_membership_dict(self, url):
-        membership = {}
-        response = requests.get(url)
-        for each_legislator in response.json()["legislators"]:
-            member_id = each_legislator["id"]
-            name = each_legislator["formatName"]
-            membership[member_id] = name
-        return membership
+    legislators_url = "https://le.utah.gov/data/legislators.json"
+    member_names = get_membership_dict(legislators_url)
 
     def process_page(self):
-        legislators_url = "https://le.utah.gov/data/legislators.json"
-        member_names = self.get_membership_dict(legislators_url)
 
         for each_committee in self.response.json()["committees"]:
             # name
@@ -66,7 +67,7 @@ class CommitteeList(JsonListPage):
             members_list = each_committee["members"]
             for each_member in members_list:
                 member_id = each_member["id"]
-                name = member_names[member_id]
+                name = self.member_names[member_id]
                 role = each_member["position"]
                 com.add_member(name=name, role=role.title())
 
