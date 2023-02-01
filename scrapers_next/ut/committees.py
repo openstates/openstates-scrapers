@@ -18,7 +18,6 @@ class CommitteeList(JsonListPage):
     member_names = get_membership_dict(legislators_url)
 
     def process_page(self):
-
         for each_committee in self.response.json()["committees"]:
             # name
             name = each_committee["description"]
