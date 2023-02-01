@@ -1,7 +1,7 @@
-import requests
 from spatula import JsonListPage, URL
 import logging
 from openstates.models import ScrapeCommittee
+import requests
 
 
 class UnknownParentError(BaseException):
@@ -20,9 +20,10 @@ class CommitteeList(JsonListPage):
         membership = {}
         response = requests.get(legislators_url)
         for each_legislator in response.json()["legislators"]:
-            member_id = each_legislator["id"]
+            mem_id = each_legislator["id"]
             mem_name = each_legislator["formatName"]
-            membership[member_id] = mem_name
+            membership[mem_id] = mem_name
+
         for each_committee in self.response.json()["committees"]:
             # name
             name = each_committee["description"]
@@ -67,10 +68,8 @@ class CommitteeList(JsonListPage):
             if not com.members:
                 logging.warning(f"No membership data found for: {name}")
                 continue
-            if each_committee.get("link"):
-                com.add_link(
-                    each_committee["link"], note="Committee web page"
-                )
+            if len(each_committee.get("link")):
+                com.add_link(each_committee["link"], note="Committee web page")
 
             com.add_source(
                 self.source.url,
