@@ -1,52 +1,88 @@
-from spatula import JsonPage, URL
+from spatula import JsonPage
 from openstates.models import ScrapeCommittee
 import json
 import re
+import logging
+
+
+class SubcommitteeDetectedError(BaseException):
+    def __init__(self, name):
+        super().__init__(f"Scraper has no way to detect parent of subcommittee: {name}")
+
 
 class CommitteeList(JsonPage):
     def process_page(self):
-        com_membership = json.loads(self.data[1][0]['CommitteeMembership'])
-        new_com_list = []
-        for com in self.data[0]:
-            name = com['Code_Description']
-            if com['Code_House'] == 'S':
-                chamber = 'upper'
-            elif com['Code_House'] == 'A':
-                chamber = 'lower'
-            else:
-                chamber = 'legislature'
+        membership = json.loads(self.data[1][0]["CommitteeMembership"])
 
-            #TODO: Check classification and parent
-            new_com = ScrapeCommittee(name = name, chamber=chamber)
+        for committee in self.data[0]:
+            name = committee["Code_Description"]
+            if committee["Code_House"] == "S":
+                chamber = "upper"
+            elif committee["Code_House"] == "A":
+                chamber = "lower"
+            else:
+                chamber = "legislature"
+
+            if "subcommittee" in name.lower():
+                raise SubcommitteeDetectedError(name)
 
             try:
-                members = com_membership['Committees'][com['Comm_Status']]
+                members = membership["Committees"][committee["Comm_Status"]]
             except KeyError:
-                members = []
-            for member in members:
-                name = member['FullName']
-                name_regex = re.compile("(.*?), +(.*)")
-                name_match = name_regex.match(name)
-                new_name = " ".join([name_match.group(2), name_match.group(1)])
-                role = member['Position']
-                if role != "":
-                    new_com.add_member(name = new_name, role = role)
-                else:
-                    new_com.add_member(name = new_name)
-            
-            new_com.add_source(str(self.source))
-            new_com_list.append(new_com)
+                logging.warning(f"No membership data found for: {name}")
+                continue
 
-        return new_com_list
+            comm = ScrapeCommittee(
+                name=name,
+                chamber=chamber,
+                classification="committee",
+            )
+
+            for member in members:
+                member_name = member["FullName"]
+                name_regex = re.compile("(.*?), +(.*)")
+                name_match = name_regex.match(member_name)
+                new_name = " ".join([name_match.group(2), name_match.group(1)])
+
+                role = member["Position"]
+                comment = member["Comment"]
+                # Covers cases of members with extraordinary
+                #  reasons for placement on committee
+                #  (i.e. comment = "Treasury Member" for Asst. Treasury Sec.)
+                if comment and not role:
+                    role = comment
+
+                comm.add_member(
+                    name=new_name,
+                    role=role if role else "Member",
+                )
+
+            comm.add_link(
+                "https://www.njleg.state.nj.us/"
+                f"committees/{self.link_keyword}-committees",
+                note="homepage",
+            )
+            comm.add_source(
+                self.source.url, note="JSON data page from NJ Legislative API"
+            )
+            yield comm
+
 
 class JointCommitteeList(CommitteeList):
     source = "https://www.njleg.state.nj.us/api/legislatorData/committeeInfo/joint-committees"
+    link_keyword = "joint"
+
 
 class SenateCommitteeList(CommitteeList):
     source = "https://www.njleg.state.nj.us/api/legislatorData/committeeInfo/senate-committees"
+    link_keyword = "senate"
+
 
 class AssemblyCommitteeList(CommitteeList):
     source = "https://www.njleg.state.nj.us/api/legislatorData/committeeInfo/assembly-committees"
+    link_keyword = "assembly"
+
 
 class OtherCommitteeList(CommitteeList):
     source = "https://www.njleg.state.nj.us/api/legislatorData/committeeInfo/other-committees"
+    link_keyword = "other"
