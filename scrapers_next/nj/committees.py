@@ -26,6 +26,8 @@ class CommitteeList(JsonPage):
             if "subcommittee" in name.lower():
                 raise SubcommitteeDetectedError(name)
 
+            name = name.removeprefix("Assembly ").removeprefix("Senate ").strip()
+
             try:
                 members = membership["Committees"][committee["Comm_Status"]]
             except KeyError:
