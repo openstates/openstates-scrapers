@@ -9,7 +9,6 @@ from spatula import HtmlPage
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 
-
 def time_is_earlier(new, current):
     new_magnitude = int(new[0:2] + new[3:5])
     current_magnitude = int(current[0:2] + current[3:5])

@@ -8,12 +8,13 @@ repos:
       - id: debug-statements
 
 -   repo: https://github.com/pycqa/flake8
-    rev: 3.9.0
+    rev: 5.0.4
     hooks:
       - id: flake8
-        args: ['--max-line-length=120', '--ignore=E203,W503,E501']
+        args: ["--show-source", "--statistics"]
         exclude: scrapers/il/tests/
--   repo: https://github.com/ambv/black
-    rev: "22.3.0"
+-   repo: https://github.com/psf/black
+    rev: "22.10.0"
     hooks:
       - id: black
+        args: ["--check", "--diff"]
