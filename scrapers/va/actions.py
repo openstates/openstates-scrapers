@@ -47,6 +47,9 @@ rules = (
     Rule(r"[Ee]nrolled", "enrolled"),
     Rule(r"VOTE.*Passage", "passage"),
     Rule(r".*pass.*[Aa]mendment", "amendment-passage"),
+    # stop parsing for more rules so we don't match committee-passage-favorable
+    Rule(r"^Passed by indefinitely", "deferral", True),
+    Rule(r"^Passed by with letter", "deferral", True),
     Rule(r"^Passed.*in.*-Y", "committee-passage-favorable"),
     Rule(r"Failed to report", "committee-failure"),
     Rule(r"failed to recommend reporting", "committee-failure"),
