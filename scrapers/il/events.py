@@ -26,7 +26,7 @@ class IlEventScraper(Scraper):
         tables = doc.xpath("//table[@cellpadding='3']")
         if not tables:
             self.warning(f"Empty hearing data for {url}")
-            return
+            return False, False
         info = tables[0]
         rows = info.xpath(".//tr")
         metainf = {}
@@ -91,9 +91,8 @@ class IlEventScraper(Scraper):
             for table in tables:
                 meetings = table.xpath(".//a")
                 for meeting in meetings:
-                    res = self.scrape_page(meeting.attrib["href"])
-                    if res:
-                        event, name = res
+                    event, name = self.scrape_page(meeting.attrib["href"])
+                    if event and name:
                         if name in events:
                             self.warning(f"Duplicate event {name}")
                             continue
