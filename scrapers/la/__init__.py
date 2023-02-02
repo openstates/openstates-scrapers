@@ -238,7 +238,7 @@ class Louisiana(State):
             "name": "2023 First Extraordinary Session",
             "start_date": "2023-01-30",
             "end_date": "2023-02-05",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
