@@ -53,6 +53,7 @@ class HIEventScraper(Scraper, LXMLMixin):
 
         table = page.xpath("//table[@id='ctl00_MainContent_GridView1']")[0]
 
+        events = set()
         for event in table.xpath(".//tr")[1:]:
             tds = event.xpath("./td")
             committee = tds[0].text_content().strip()
@@ -93,6 +94,11 @@ class HIEventScraper(Scraper, LXMLMixin):
 
             when = dt.datetime.strptime(when, "%m/%d/%Y %I:%M %p")
             when = TIMEZONE.localize(when)
+            event_name = f"{descr}#{where}#{when}"
+            if event_name in events:
+                self.warning(f"Duplicate event {event}")
+                continue
+            events.add(event_name)
             event = Event(
                 name=descr,
                 start_date=when,
@@ -100,7 +106,7 @@ class HIEventScraper(Scraper, LXMLMixin):
                 description=descr,
                 location_name=where,
             )
-
+            event.dedupe_key = event_name
             if "/" in committee:
                 committees = committee.split("/")
             else:
