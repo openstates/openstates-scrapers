@@ -301,26 +301,39 @@ class HIBillScraper(Scraper):
         if url:
             b.add_source(url)
 
-        prior_session = "{} Regular Session".format(str(int(session[:4]) - 1))
+        # check for companion bills
         companion = meta["Companion"].strip()
         if companion:
+            companion_url = bill_page.xpath(
+                "//span[@id='ctl00_MainContent_ListView1_ctrl0_companionLabel']/a/@href"
+            )[0]
+            # a companion's session year is the last 4 chars of the link
+            # this will match the _scraped_name of a session in __init__.py
+            companion_year = companion_url[-4:]
+            companion_session = self.session_from_scraped_name(companion_year)
             b.add_related_bill(
                 identifier=companion.replace("\xa0", " "),
-                legislative_session=prior_session,
+                legislative_session=companion_session,
                 relation_type="companion",
             )
+
+        # check for prior session bills
         if bill_page.xpath(
             "//table[@id='ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()"
         ):
             prior = bill_page.xpath(
                 "//table[@id='ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()"
             )[-1]
+            # "2023 Regular Session" -> "2022" -> "2022 Regular Session"
+            prior_year = str(int(session[:4]) - 1)
+            prior_session = f"{prior_year} Regular Session"
             if "carried over" in prior.lower():
                 b.add_related_bill(
                     identifier=bill_id.replace("\xa0", " "),
                     legislative_session=prior_session,
-                    relation_type="companion",
+                    relation_type="prior-session",
                 )
+
         for sponsor in meta["Introducer(s)"]:
             if "(Introduced by request of another party)" in sponsor:
                 sponsor = sponsor.replace(
@@ -413,3 +426,12 @@ class HIBillScraper(Scraper):
                 bill_types.append("gm")
             for typ in bill_types:
                 yield from self.scrape_type(chamber, session, typ)
+
+    def session_from_scraped_name(self, scraped_name):
+        # find the session from __init__.py matching scraped_name
+        details = next(
+            each
+            for each in self.jurisdiction.legislative_sessions
+            if each["_scraped_name"] == scraped_name
+        )
+        return details["name"]
