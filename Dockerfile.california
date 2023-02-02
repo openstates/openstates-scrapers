@@ -43,6 +43,7 @@ RUN pip --no-cache-dir --disable-pip-version-check install wheel \
 
 ADD poetry.lock /opt/openstates/openstates/
 ADD pyproject.toml /opt/openstates/openstates/
+ADD scrapers/ca/entrypoint.sh /entrypoint.sh
 WORKDIR /opt/openstates/openstates/
 ENV PYTHONPATH=./scrapers
 
@@ -62,4 +63,4 @@ RUN poetry install --extras "california" \
 
 ENV OPENSSL_CONF=/opt/openstates/openstates/openssl.cnf
 
-ENTRYPOINT ["poetry", "run", "os-update"]
+ENTRYPOINT ["/entrypoint.sh"]
