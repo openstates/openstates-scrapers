@@ -34,6 +34,10 @@ RUN apt-get update -qq \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list \
     && apt-get update -qq \
     && apt-get install -y -qq --no-install-recommends gh
+# add mysql configs once so we don't have to do them at every instantiation
+RUN sed -i "s/user                    = mysql/user                    = root/" /etc/mysql/mariadb.conf.d/50-server.cnf \
+    &&  mysql_install_db --user=root \
+    && mkdir /run/mysqld
 RUN pip --no-cache-dir --disable-pip-version-check install wheel \
     && pip --no-cache-dir --disable-pip-version-check install crcmod poetry
 
