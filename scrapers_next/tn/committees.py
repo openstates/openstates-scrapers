@@ -35,9 +35,9 @@ class CommitteeDetail(HtmlPage):
         )
         for officer in officers:
             name_and_title = [
-                x.strip() for x in officer.text_content().split(
-                    "\r\n"
-                ) if len(x.strip())
+                x.strip()
+                for x in officer.text_content().split("\r\n")
+                if len(x.strip())
             ]
             name, title = name_and_title
             com.add_member(name, title)
@@ -87,22 +87,34 @@ class CommitteeList(HtmlListPage):
 
 
 class Senate(CommitteeList):
-    source = URL("https://wapp.capitol.tn.gov/apps/CommitteeInfo/AllSenate.aspx", timeout=30)
+    source = URL(
+        "https://wapp.capitol.tn.gov/apps/CommitteeInfo/AllSenate.aspx",
+        timeout=30,
+    )
     chamber = "upper"
 
 
 class House(CommitteeList):
-    source = URL("https://wapp.capitol.tn.gov/apps/CommitteeInfo/AllHouse.aspx", timeout=30)
+    source = URL(
+        "https://wapp.capitol.tn.gov/apps/CommitteeInfo/AllHouse.aspx",
+        timeout=30,
+    )
     chamber = "lower"
 
 
 class Joint(CommitteeList):
-    source = URL("https://wapp.capitol.tn.gov/apps/CommitteeInfo/AllJoint.aspx", timeout=30)
+    source = URL(
+        "https://wapp.capitol.tn.gov/apps/CommitteeInfo/AllJoint.aspx",
+        timeout=30,
+    )
     chamber = "legislature"
 
 
 class HouseSubComs(CommitteeList):
-    source = URL("https://wapp.capitol.tn.gov/apps/CommitteeInfo/AllHouse.aspx", timeout=30)
+    source = URL(
+        "https://wapp.capitol.tn.gov/apps/CommitteeInfo/AllHouse.aspx",
+        timeout=30,
+    )
     selector = XPath(".//a[@class='icon-angle-right']")
     chamber = "lower"
     classification = "subcommittee"
