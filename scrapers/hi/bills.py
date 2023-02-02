@@ -301,12 +301,16 @@ class HIBillScraper(Scraper):
         if url:
             b.add_source(url)
 
-        prior_session = "{} Regular Session".format(str(int(session[:4]) - 1))
         companion = meta["Companion"].strip()
         if companion:
+            companion_url = bill_page.xpath(
+                "//span[@id='ctl00_MainContent_ListView1_ctrl0_companionLabel']/a/@href"
+            )[0]
+            companion_year = companion_url[-4:]
+            companion_session = self.session_from_scraped_name(companion_year)
             b.add_related_bill(
                 identifier=companion.replace("\xa0", " "),
-                legislative_session=prior_session,
+                legislative_session=companion_session,
                 relation_type="companion",
             )
         if bill_page.xpath(
@@ -315,6 +319,7 @@ class HIBillScraper(Scraper):
             prior = bill_page.xpath(
                 "//table[@id='ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()"
             )[-1]
+            prior_session = "{} Regular Session".format(str(int(session[:4]) - 1))
             if "carried over" in prior.lower():
                 b.add_related_bill(
                     identifier=bill_id.replace("\xa0", " "),
@@ -413,3 +418,12 @@ class HIBillScraper(Scraper):
                 bill_types.append("gm")
             for typ in bill_types:
                 yield from self.scrape_type(chamber, session, typ)
+
+    # backtrack from the URL session for companion bills
+    def session_from_scraped_name(self, scraped_name):
+        details = next(
+            each
+            for each in self.jurisdiction.legislative_sessions
+            if each["_scraped_name"] == scraped_name
+        )
+        return details["name"]
