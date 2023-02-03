@@ -123,7 +123,7 @@ class CommitteeMembersPage(HtmlPage):
 # Sometimes requests to this site do not return the expected html
 class AdministrativeCommitteeList(HtmlListPage):
     source = "https://leg.mt.gov/committees/admincom/"
-    selector = XPath("//*[@id='cont']/section/div/div[1]/div/div/div[1]/ul[1]/li/a")
+    selector = XPath("//*[@id='cont']/section/div/div[1]/div/div/div[1]/ul[1]/li/a[1]")
 
     def process_item(self, link):
         return CommitteeDetailsPage(source=URL(link.get("href"), timeout=30))
@@ -136,7 +136,11 @@ class CommitteeDetailsPage(HtmlPage):
         members = XPath("//p[@class='memberName']").match(self.root)
 
         # Grabbing the title from the breadcrumbs
-        title = XPath("//li[@class='breadcrumb-item active']").match_one(self.root)
+        title = (
+            XPath("//li[@class='breadcrumb-item active']")
+            .match_one(self.root)
+            .text_content()
+        )
 
         # Remove extra words from the title
         title = title.replace("Legislative", "").replace("Committee", "").strip()
@@ -168,6 +172,10 @@ class CommitteeDetailsPage(HtmlPage):
 
             # The remaining elements in the list compose the name
             name = " ".join(title)
+
+            # Name is in all caps, so make it title case
+            name = name.title()
+
             com.add_member(name=name, role=role)
 
         # Skip if no members found
