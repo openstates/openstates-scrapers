@@ -13,6 +13,7 @@ class SubcommitteeFound(BaseException):
 class CommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
+        staff = {"staff": []}
         members = XPath('//div[@class="member-wrapper"]').match(self.root)
         for each_member in members:
             member_detail = each_member.text_content().strip()
@@ -28,14 +29,20 @@ class CommitteeDetail(HtmlPage):
             ]
 
             if len(name) == 1:
-                name = re.sub("\s+", " ", name[0]).strip()
+                name = re.sub("\\s+", " ", name[0]).strip()
+                staff["staff"].append({"name": name, "role": "staff"})
+                continue
             elif len(name) == 3:
                 name = f"{name[0]}{name[1]}"
-                name = re.sub("\s+", " ", name).strip()
+                name = re.sub("\\s+", " ", name).strip()
+                staff["staff"].append(
+                    {"name": name, "role": "Committee Citizen Members"}
+                )
+                continue
             else:
                 name = member_detail[1]
             com.add_member(name, role)
-
+        com.extras = staff
         com.add_source(
             self.source.url,
             note="Committee Details page",
@@ -52,8 +59,11 @@ class CommitteeList(HtmlListPage):
             all_comm_elements += XPath(
                 f"//a[contains(@href, '/committees/{comm_type}/')]"
             ).match(self.root)
+
         for elem in all_comm_elements:
             comm_url = elem.get("href")
+            if comm_url.endswith("/committees"):
+                continue
             name = elem.text
 
             if "subcommittee" in name.lower():
