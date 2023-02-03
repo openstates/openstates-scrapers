@@ -34,6 +34,7 @@ class AKEventScraper(Scraper, LXMLMixin):
 
         events_xml = page.xpath("//Meeting")
 
+        events = set()
         for row in events_xml:
             # Their spelling, not a typo
             if row.get("Canceled") == "true":
@@ -43,25 +44,23 @@ class AKEventScraper(Scraper, LXMLMixin):
             if chamber and self.CHAMBERS[row_chamber] != chamber:
                 continue
 
-            yield from self.parse_event(row, self.CHAMBERS[row_chamber])
+            for event, name in self.parse_event(row, self.CHAMBERS[row_chamber]):
+                if name in events:
+                    self.warning(f"Duplicate event: {name}")
+                    continue
+                events.add(name)
+                yield event
 
     def parse_event(self, row, chamber):
         # sample event available at http://www.akleg.gov/apptester.html
         committee_code = row.xpath("string(Sponsor)").strip()
 
         if committee_code in self.COMMITTEES[chamber]:
-            committee_name = "{} {}".format(
-                self.COMMITTEES_PRETTY[chamber],
-                self.COMMITTEES[chamber][committee_code]["name"],
-            )
+            committee_name = f"{self.COMMITTEES_PRETTY[chamber]} {self.COMMITTEES[chamber][committee_code]['name']}"
         else:
-            committee_name = "{} {}".format(
-                self.COMMITTEES_PRETTY[chamber], "MISCELLANEOUS"
-            )
+            committee_name = f"{self.COMMITTEES_PRETTY[chamber]} MISCELLANEOUS"
 
-        name = "{} {}".format(
-            self.COMMITTEES_PRETTY[chamber], row.xpath("string(Title)").strip()
-        )
+        name = f"{self.COMMITTEES_PRETTY[chamber]} {row.xpath('string(Title)').strip()}"
 
         # If name is missing, make it "<CHAMBER> <COMMITTEE NAME>"
         if name == "":
@@ -86,8 +85,9 @@ class AKEventScraper(Scraper, LXMLMixin):
 
         start_date = dateutil.parser.parse(row.xpath("string(Schedule)"))
         # todo: do i need to self._TZ.localize() ?
-
+        event_name = f"{name}#{location}#{start_date}"
         event = Event(start_date=start_date, name=name, location_name=location)
+        event.dedupe_key = event_name
 
         event.add_source("http://w3.akleg.gov/index.php#tab4")
 
@@ -115,7 +115,7 @@ class AKEventScraper(Scraper, LXMLMixin):
                     bill_id = re.sub(r"\s+", " ", bill_id)
                     agenda_item.add_bill(bill_id)
 
-        yield event
+        yield event, event_name
 
     def scrape_committees(self, session):
         listing_url = "/committees"
