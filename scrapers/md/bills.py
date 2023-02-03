@@ -430,6 +430,31 @@ class MDBillScraper(Scraper):
             # this can contain multiple dates, eg "July 1, 2020, July 1, 2022"
             bill.extras["date_effective"] = eff_date
 
+        # companion bills
+        companion_link = page.xpath("//div[contains(.,'Cross-filed')]/a")
+        if companion_link:
+            # get the bill from the text of the link
+            bill.add_related_bill(
+                companion_link[0].xpath("text()")[0],
+                legislative_session=session,
+                relation_type="companion",
+            )
+
+        # previous session version of the bill
+        prev_div = page.xpath("//div[contains(text(),'Introduced in a prior session')]")
+        if prev_div:
+            # Get the session from the text following "Session:"
+            prev_div = prev_div[0]
+            prev_div_text = prev_div.xpath("text()")[1]
+            prev_session = re.search(r"Session\:\s(.*)", prev_div_text).group(1)
+            # Get the bill from the text of the link
+            prev_bill = prev_div.xpath("a/text()")[0]
+            bill.add_related_bill(
+                prev_bill,
+                legislative_session=prev_session,
+                relation_type="prior-session",
+            )
+
         # yield from self.parse_bill_votes_new(doc, bill)
         yield bill
 
