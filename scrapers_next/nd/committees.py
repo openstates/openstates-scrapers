@@ -58,7 +58,6 @@ class CommitteeList(HtmlListPage):
 
             if "subcommittee" in name.lower():
                 raise SubcommitteeFound(name)
-
             # chamber
             if "/house/" in comm_url.lower():
                 chamber = "lower"
