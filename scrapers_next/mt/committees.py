@@ -121,7 +121,7 @@ class CommitteeMembersPage(HtmlPage):
 # This page contains information on the Administrative committees only
 # This site is a little buggy or perhaps there's a rate limiter involved
 # Sometimes requests to this site do not return the expected html
-class AdministrativeCommittees(HtmlListPage):
+class AdministrativeCommitteeList(HtmlListPage):
     source = "https://leg.mt.gov/committees/admincom/"
     selector = XPath("//*[@id='cont']/section/div/div[1]/div/div/div[1]/ul[1]/li/a")
 
