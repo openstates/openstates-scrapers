@@ -24,6 +24,9 @@ class IlEventScraper(Scraper):
         ctty_name = doc.xpath("//span[@class='heading']")[0].text_content()
 
         tables = doc.xpath("//table[@cellpadding='3']")
+        if not tables:
+            self.warning(f"Empty hearing data for {url}")
+            return False, False
         info = tables[0]
         rows = info.xpath(".//tr")
         metainf = {}
@@ -44,7 +47,9 @@ class IlEventScraper(Scraper):
             datetime = datetime.replace(r, repl[r])
         datetime = self.localize(dt.datetime.strptime(datetime, "%b %d, %Y %I:%M %p"))
 
+        event_name = f"{description}#{where}#{datetime}"
         event = Event(description, start_date=datetime, location_name=where)
+        event.dedupe_key = event_name
         event.add_source(url)
 
         if ctty_name.startswith("Hearing Notice For"):
@@ -61,7 +66,7 @@ class IlEventScraper(Scraper):
             agenda_item = event.add_agenda_item(bill_id)
             agenda_item.add_bill(bill_id)
 
-        return event
+        return event, event_name
 
     def scrape(self):
         no_scheduled_ct = 0
@@ -82,11 +87,17 @@ class IlEventScraper(Scraper):
                 continue
 
             tables = doc.xpath("//table[@width='550']")
+            events = set()
             for table in tables:
                 meetings = table.xpath(".//a")
                 for meeting in meetings:
-                    event = self.scrape_page(meeting.attrib["href"])
-                    yield event
+                    event, name = self.scrape_page(meeting.attrib["href"])
+                    if event and name:
+                        if name in events:
+                            self.warning(f"Duplicate event {name}")
+                            continue
+                        events.add(name)
+                        yield event
 
         if no_scheduled_ct == 2:
             raise EmptyScrape
