@@ -65,7 +65,7 @@ class HouseSenateAndJointCommitteeList(HtmlListPage):
 
         committee_suffix = " Committee"
         if committee_title.endswith(committee_suffix):
-            committee_title = committee_title[0 : len(committee_suffix)]
+            committee_title = committee_title[: -len(committee_suffix)]
 
         # 4) Check if a subcommittee
         subcommittee_info = committee_title.split(" Subcommittee on ")
