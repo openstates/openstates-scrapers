@@ -7,7 +7,7 @@ ENV PYTHONIOENCODING='utf-8'
 ENV LANG='C.UTF-8'
 
 RUN apt-get update -qq \
-    && apt-get install -y -qq --no-install-recommends \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
       ca-certificates \
       curl \
       wget \
@@ -32,7 +32,7 @@ RUN apt-get update -qq \
     && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list \
     && apt-get update -qq \
-    && apt-get install -y -qq --no-install-recommends gh
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends gh
 RUN pip --no-cache-dir --disable-pip-version-check install wheel \
     && pip --no-cache-dir --disable-pip-version-check install crcmod poetry
 
