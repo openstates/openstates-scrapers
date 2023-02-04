@@ -23,7 +23,7 @@ class CommitteeDetail(HtmlPage):
                 '//div[@class="wpb_column vc_column_container col-xs-mobile-fullwidth col-sm-8 text-left sm-text-left xs-text-center padding-three"]//p/strong/text()'
             ).match(self.root)
         except SelectorError:
-            raise SkipItem(f"Unable to parse committee")
+            raise SkipItem("Unable to parse committee")
 
         for name, role in zip(name_list, role_list):
             name = name.text
@@ -56,7 +56,7 @@ class CommitteeList(HtmlListPage):
     def extract_committees(self, url, comm_type):
         document = requests.get(url).content
         if comm_type in ["house", "senate"]:
-            comm = XPath(f"//a[contains(@href, '/standingcommittees/')]").match(
+            comm = XPath("//a[contains(@href, '/standingcommittees/')]").match(
                 fromstring(document)
             )
             if comm_type == "house":
