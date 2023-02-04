@@ -1,4 +1,5 @@
-from spatula import URL, HtmlListPage, HtmlPage, XPath
+import spatula
+from spatula import URL, HtmlListPage, HtmlPage, XPath, SkipItem
 from openstates.models import ScrapeCommittee
 import re
 
@@ -13,39 +14,49 @@ class SubcommitteeFound(BaseException):
 class CommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
-        staff = {"staff": []}
-        members = XPath('//div[@class="member-wrapper"]').match(self.root)
-        for each_member in members:
-            member_detail = each_member.text_content().strip()
-            member_detail = [x.strip() for x in member_detail.splitlines() if x.strip()]
+        staff = []
+        members_list = XPath('//div[@class="member-wrapper"]').match(self.root)
+        for data in members_list:
+            data_text = data.text_content()
+            data_lines = data_text.splitlines()
+            if len(data_lines) == 22:
+                print("citizen")
+                name = " ".join(x.strip() for x in data_lines[12:16] if x.strip())
+                role = data_lines[-3].strip()
+                print(name, role)
 
-            if len(member_detail) == 5:
-                role = member_detail[-1]
-            else:
-                role = "Member"
-            name = [
-                x.text_content()
-                for x in each_member.findall("div", {"class": "strong member-name"})
-            ]
+            elif len(data_lines) == 13:
+                role = data_lines[-1].strip()
+                if not role:
+                    role = "Member"
+                name = data_lines[9].strip()
+                print(data_lines)
+                print(role)
+                print(name)
 
-            if len(name) == 1:
-                name = re.sub("\\s+", " ", name[0]).strip()
-                staff["staff"].append({"name": name, "role": "staff"})
+            elif len(data_lines) == 11:
+                print("staff")
+                name = " ".join([x.strip() for x in data_lines if x.strip()])
+                staff.append({"role": "staff", "name": name})
+                print(name)
                 continue
-            elif len(name) == 3:
-                name = f"{name[0]}{name[1]}"
-                name = re.sub("\\s+", " ", name).strip()
-                staff["staff"].append(
-                    {"name": name, "role": "Committee Citizen Members"}
-                )
-                continue
-            else:
-                name = member_detail[1]
+
+            elif len(data_lines) == 12:
+                print("---Vice")
+                role = data_lines[-1].split("     ")[-1].strip()
+                if not role:
+                    role = "Member"
+                name = data_lines[9].strip()
+                print(data_lines)
+                print(role)
+                print(name)
+
             com.add_member(name, role)
-        com.extras = staff
+        if staff:
+            com.extras["staff"] = staff
         com.add_source(
             self.source.url,
-            note="Committee Details page",
+            note="homepage",
         )
         return com
 
