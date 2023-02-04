@@ -53,7 +53,7 @@ class CommitteeDetail(HtmlPage):
 class CommitteeList(HtmlListPage):
     source = URL("https://www.ndlegis.gov/assembly/68-2023/committees", timeout=10)
 
-    def process_page(self, only_name=False):
+    def process_page(self):
         all_comm_elements = []
         for comm_type in ["senate", "house", "interim"]:
             all_comm_elements += XPath(
