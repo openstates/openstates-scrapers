@@ -25,7 +25,7 @@ class CommitteeDetail(HtmlPage):
                 'xs-text-center padding-three"]//p/strong/text()'
             ).match(self.root)
         except SelectorError:
-            raise SkipItem(f"empty committee")
+            raise SkipItem(f"Unable to parse committee")
 
         for name, role in zip(name_list, role_list):
             name = name.text
