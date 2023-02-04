@@ -13,7 +13,7 @@ import urllib.parse  # Need to urlencode a string
 
 # This page contains information on every committee, except for administrative
 # committees, which are handled by AdministrativeCommitteeList
-class HouseSenateAndJointCommitteeList(HtmlListPage):
+class HouseSenateJointCommList(HtmlListPage):
     source = "http://laws.leg.mt.gov/legprd/law0240w$cmte.startup"
 
     # not(text()=" ") skips the blank option
