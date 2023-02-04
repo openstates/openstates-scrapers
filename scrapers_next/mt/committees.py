@@ -7,7 +7,8 @@ from spatula import (
     SkipItem,
 )
 from openstates.models import ScrapeCommittee
-
+import logging
+import re
 import urllib.parse  # Need to urlencode a string
 
 
@@ -124,34 +125,66 @@ class HouseSenateJointCommDetail(HtmlPage):
         return com
 
 
-# This page contains information on the Administrative committees only
-# This site is a little buggy or perhaps there's a rate limiter involved
-# Sometimes requests to this site do not return the expected html
-class AdministrativeCommitteeList(HtmlListPage):
-    source = "https://leg.mt.gov/committees/admincom/"
+class OtherCommList(HtmlListPage):
+    # https://leg.mt.gov appears to rate-limit requests sometimes, and may serve a
+    # page without the expected html. If there is a SelectorError it may be temporary.
     selector = XPath("//*[@id='cont']/section/div/div[1]/div/div/div[1]/ul[1]/li/a[1]")
 
     def process_item(self, link):
-        return CommitteeDetailsPage(
+        if self.source.url.index("interim"):
+            logging.warning(
+                "Interim Committee data may not be updated yet for this current session: a manual check should be conducted"
+            )
+        return OtherCommDetail(
             self.source.url, source=URL(link.get("href"), timeout=30)
         )
 
 
-class CommitteeDetailsPage(HtmlPage):
+# This page contains a list of Administrative Committees
+class Administrative(OtherCommList):
+    source = "https://leg.mt.gov/committees/admincom/"
+
+
+# This page contains a list of Interim Committees
+class Interim(OtherCommList):
+    source = "https://leg.mt.gov/committees/interim/"
+
+
+class OtherCommDetail(HtmlPage):
     # Committee pages on leg.mt.gov show member info
     def process_page(self):
 
         members = XPath("//p[@class='memberName']").match(self.root)
 
-        # Grabbing the title from the breadcrumbs
-        title = (
+        # Helper function for stripping dates and possible "Committee" suffix
+        # from the title. Expects a format like "yyyy-yyyy <name> Committee"
+        def clean_title(title_str):
+            return re.findall(r"^(\d\d\d\d-\d\d\d\d )?(.*?)( Committee)?$", title_str)[
+                0
+            ][1]
+
+        # The page title, may have session year info that needs to be removed
+        title = clean_title(
+            XPath("//div[@class='container white']/h2")
+            .match_one(self.root)
+            .text_content()
+        )
+        # Grab the title from the breadcrumbs, it may be an abbreviated form of the title
+        breadcrumb = clean_title(
             XPath("//li[@class='breadcrumb-item active']")
             .match_one(self.root)
             .text_content()
         )
 
-        # Some titles contain extra an extra word that isn't part of the title
-        title = title.replace("Committee", "").strip()
+        # If the breadcrumb is shorter than the title, it's an abbreviation
+        if len(breadcrumb) < len(title):
+            # Add the abbreviation after the full name
+            title = f"{title} ({breadcrumb})"
+
+        # The Committee suffix should already be stripped away, but it may also
+        # be present in the middle of the title, this removes it while keeping
+        # consistent spacing between the remaining words.
+        title = title.replace("Committee ", "").strip()
 
         com = ScrapeCommittee(
             name=title,
