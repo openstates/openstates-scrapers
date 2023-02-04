@@ -17,10 +17,10 @@ class CommitteeDetail(HtmlPage):
 
         try:
             name_list = XPath(
-                f'//div[@class="wpb_column vc_column_container col-xs-mobile-fullwidth col-sm-8 text-left sm-text-left xs-text-center padding-three"]//p/strong/a'
+                '//div[@class="wpb_column vc_column_container col-xs-mobile-fullwidth col-sm-8 text-left sm-text-left xs-text-center padding-three"]//p/strong/a'
             ).match(self.root)
             role_list = XPath(
-                f'//div[@class="wpb_column vc_column_container col-xs-mobile-fullwidth col-sm-8 text-left sm-text-left xs-text-center padding-three"]//p/strong/text()'
+                '//div[@class="wpb_column vc_column_container col-xs-mobile-fullwidth col-sm-8 text-left sm-text-left xs-text-center padding-three"]//p/strong/text()'
             ).match(self.root)
         except SelectorError:
             raise SkipItem(f"Unable to parse committee")
