@@ -1,7 +1,7 @@
-import spatula
-from spatula import URL, HtmlListPage, HtmlPage, XPath, SkipItem
+import requests
+from lxml import html
+from spatula import URL, HtmlListPage, HtmlPage, XPath, SkipItem, SelectorError
 from openstates.models import ScrapeCommittee
-import re
 
 
 class SubcommitteeFound(BaseException):
@@ -16,44 +16,50 @@ class CommitteeDetail(HtmlPage):
         com = self.input
         staff = []
         members_list = XPath('//div[@class="member-wrapper"]').match(self.root)
+        try:
+            citizens = XPath("//div[@class='item-list']//li").match(self.root)
+            for member in citizens:
+                name, role = (None, None)
+                data = member.text_content().split(",")
+                if len(data) == 1:
+                    name = data[0]
+                    role = "Citizen Member"
+                elif len(data) == 2:
+                    name, role = data
+                if name and role:
+                    com.add_member(name, role)
+        except SelectorError:
+            pass
         for data in members_list:
             data_text = data.text_content()
             data_lines = data_text.splitlines()
+            name, role = (None, None)
             if len(data_lines) == 22:
-                print("citizen")
                 name = " ".join(x.strip() for x in data_lines[12:16] if x.strip())
                 role = data_lines[-3].strip()
-                print(name, role)
 
-            elif len(data_lines) == 13:
+            elif len(data_lines) in [13, 14]:
                 role = data_lines[-1].strip()
                 if not role:
                     role = "Member"
                 name = data_lines[9].strip()
-                print(data_lines)
-                print(role)
-                print(name)
 
             elif len(data_lines) == 11:
-                print("staff")
                 name = " ".join([x.strip() for x in data_lines if x.strip()])
                 staff.append({"role": "staff", "name": name})
-                print(name)
                 continue
 
             elif len(data_lines) == 12:
-                print("---Vice")
                 role = data_lines[-1].split("     ")[-1].strip()
                 if not role:
                     role = "Member"
                 name = data_lines[9].strip()
-                print(data_lines)
-                print(role)
-                print(name)
-
-            com.add_member(name, role)
+            if name and role:
+                com.add_member(name, role)
         if staff:
             com.extras["staff"] = staff
+        if not com.members:
+            raise SkipItem("empty committee")
         com.add_source(
             self.source.url,
             note="homepage",
@@ -66,6 +72,17 @@ class CommitteeList(HtmlListPage):
 
     def process_page(self):
         all_comm_elements = []
+
+        stat_list_url = (
+            XPath("//a[contains(text(), 'Statutory')]").match(self.root)[0].get("href")
+        )
+        stat_response = requests.get(stat_list_url)
+        stat_page = html.fromstring(stat_response.content)
+        stat_comm_elements = XPath("//div[@class='grouping-wrapper']//span/a").match(
+            stat_page
+        )
+        all_comm_elements += stat_comm_elements
+
         for comm_type in ["senate", "house", "interim"]:
             all_comm_elements += XPath(
                 f"//a[contains(@href, '/committees/{comm_type}/')]"
@@ -73,12 +90,19 @@ class CommitteeList(HtmlListPage):
 
         for elem in all_comm_elements:
             comm_url = elem.get("href")
+
+            # if url ends with /committees that's url to committees list not for individual committee
             if comm_url.endswith("/committees"):
                 continue
-            name = elem.text
 
+            # joint committees
+            if comm_url[0] == "/":
+                comm_url = "https://www.ndlegis.gov" + comm_url
+
+            name = elem.text
             if "subcommittee" in name.lower():
                 raise SubcommitteeFound(name)
+
             # chamber
             if "/house/" in comm_url.lower():
                 chamber = "lower"
