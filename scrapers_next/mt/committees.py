@@ -131,7 +131,8 @@ class OtherCommList(HtmlListPage):
     selector = XPath("//*[@id='cont']/section/div/div[1]/div/div/div[1]/ul[1]/li/a[1]")
 
     def process_item(self, link):
-        if self.source.url.index("interim"):
+        if "interim" in self.source.url:
+            # Interim committees are not yet updated as of 2023-02-04
             logging.warning(
                 "Interim Committee data may not be updated yet for this current session: a manual check should be conducted"
             )
@@ -165,7 +166,7 @@ class OtherCommDetail(HtmlPage):
 
         # The page title, may have session year info that needs to be removed
         title = clean_title(
-            XPath("//div[@class='container white']/h2")
+            XPath("//div[contains(@class,'container')]/h2")
             .match_one(self.root)
             .text_content()
         )
