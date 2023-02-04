@@ -84,12 +84,12 @@ class HouseSenateJointCommList(HtmlListPage):
         com.add_source(member_info_href, note="Committee membership page")
         com.add_link(member_info_href, note="homepage")
 
-        return CommitteeMembersPage(
+        return HouseSenateJointCommDetail(
             {"com": com}, source=URL(member_info_href, timeout=30)
         )
 
 
-class CommitteeMembersPage(HtmlPage):
+class HouseSenateJointCommDetail(HtmlPage):
     def process_page(self):
         com = self.input.get("com")
         # The member table is the last table
