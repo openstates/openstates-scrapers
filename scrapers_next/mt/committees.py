@@ -74,6 +74,12 @@ class HouseSenateJointCommList(HtmlListPage):
             classification = "subcommittee"
             parent = subcommittee_info[0]
 
+        # 5) The "Judicial Branch, Law Enforcement, and Justice" subcommittee
+        #    is often called Public Safety, so append that to its name for
+        #    added clarity
+        if committee_title == "Judicial Branch, Law Enforcement, and Justice":
+            committee_title += " (Public Safety)"
+
         # Build the committee object with calculated metadata
         com = ScrapeCommittee(
             name=committee_title,
@@ -126,7 +132,9 @@ class AdministrativeCommitteeList(HtmlListPage):
     selector = XPath("//*[@id='cont']/section/div/div[1]/div/div/div[1]/ul[1]/li/a[1]")
 
     def process_item(self, link):
-        return CommitteeDetailsPage(source=URL(link.get("href"), timeout=30))
+        return CommitteeDetailsPage(
+            self.source.url, source=URL(link.get("href"), timeout=30)
+        )
 
 
 class CommitteeDetailsPage(HtmlPage):
@@ -142,8 +150,8 @@ class CommitteeDetailsPage(HtmlPage):
             .text_content()
         )
 
-        # Remove extra words from the title
-        title = title.replace("Legislative", "").replace("Committee", "").strip()
+        # Some titles contain extra an extra word that isn't part of the title
+        title = title.replace("Committee", "").strip()
 
         com = ScrapeCommittee(
             name=title,
@@ -151,6 +159,7 @@ class CommitteeDetailsPage(HtmlPage):
             classification="committee",  # No subcommittees here
         )
         com.add_source(self.source.url, note="Committee membership page")
+        com.add_source(self.input, note="Committee list page")
         com.add_link(self.source.url, note="homepage")
 
         for member in members:
