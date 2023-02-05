@@ -13,7 +13,9 @@ class SubcommitteeFound(BaseException):
 
 class CommitteeList(JsonListPage):
     year = 2023
-    source = URL(f"https://web.wyoleg.gov/LsoService/api/committeeList/{year}/J", timeout=15)
+    source = URL(
+        f"https://web.wyoleg.gov/LsoService/api/committeeList/{year}/J", timeout=15
+    )
 
     def process_page(self):
         # the request was for only J type committees in the issue, but I added all
