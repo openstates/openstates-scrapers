@@ -59,7 +59,6 @@ class HouseSenateJointCommList(HtmlListPage):
         joint_prefix = "Joint "
         if committee_title.startswith(joint_prefix):
             chamber = "legislature"
-            committee_title = committee_title[len(joint_prefix) :]
 
         # 3) Select committee text isn't part of the name
         committee_title = committee_title.replace("Select Committee on ", "")
