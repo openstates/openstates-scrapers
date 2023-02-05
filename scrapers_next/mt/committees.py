@@ -55,7 +55,7 @@ class HouseSenateJointCommList(HtmlListPage):
             chamber = "upper"
             committee_title = committee_title[len(senate_prefix) :]
 
-        # 2) A joint prefix may exist
+        # 2) If the name starts with "Joint", the chamber is legislature
         joint_prefix = "Joint "
         if committee_title.startswith(joint_prefix):
             chamber = "legislature"
