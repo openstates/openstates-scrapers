@@ -2,6 +2,7 @@ import collections
 import logging
 
 import requests
+from lxml import html
 from openstates.scrape import Scraper, Organization
 from spatula import HtmlListPage
 from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError, URL, SkipItem
@@ -26,32 +27,31 @@ def clean_committee_name(name_to_clean):
 
 
 class CommitteeList(HtmlListPage):
+    home = "http://www.nmlegis.gov/Committee/"
     source = URL(
-        "http://www.nmlegis.gov/Committee/",
+        f"{home}Senate_Standing",
         timeout=10,
     )
+    chamber = "upper"
 
     def process_page(self):
-        # Xpath query string format for legislative chamber committee urls
-        base_xpath = (
-            '//table[@id="MainContent_gridView{0}Committees"]//a'
-            '[contains(@id, "MainContent_gridView{1}Committees_link'
-            '{2}Committee")]/@href'
-        )
+        href_xpath = ''
 
+        all_committees = XPath(href_xpath).match(self.root)
         coms_url = {
-            "upper": {
-                "url": f"{self.source}Senate_Standing",
-            },
             "lower": {
-                "url": f"{self.source}House_Standing",
+                "url": f"{self.home}House_Standing",
             },
             "legislature": {
-                "url": f"{self.source}interim",
+                "url": f"{self.home}interim",
             }
         }
         for chamber, u in coms_url:
-            resp = requests.get(u["url"]).content
+            self.root = html.fromstring(requests.get(u["url"]).content)
+            all_committees += XPath(href_xpath).match(self.root)
+
+        for comm in all_committees:
+            print(comm.get("href"))
 
 
 class NMCommitteeScraper(Scraper, LXMLMixin):
@@ -181,3 +181,9 @@ class NMCommitteeScraper(Scraper, LXMLMixin):
                     logging.warning(
                         "No legislative committee found at " "{}".format(committee_url)
                     )
+
+
+if __name__ == '__main__':
+    s = CommitteeList()
+    for i in s.do_scrape():
+        print(i)
