@@ -1,107 +1,102 @@
-from spatula import URL, HtmlListPage, HtmlPage, XPath, SelectorError, SkipItem
+from spatula import HtmlListPage, CSS, URL, HtmlPage, SkipItem
 from openstates.models import ScrapeCommittee
-from lxml.html import fromstring
-import requests
+import re
 
 
-class SubcommitteeFound(BaseException):
-    def __init__(self, com_name):
-        super().__init__(
-            f"Scraper has no process for ingesting subcommittee classification: {com_name}"
-        )
-
-
-class CommitteeDetail(HtmlPage):
+class DetailCommitteePage(HtmlPage):
     def process_page(self):
         com = self.input
 
-        try:
-            name_list = XPath(
-                '//div[@class="wpb_column vc_column_container col-xs-mobile-fullwidth col-sm-8 text-left sm-text-left xs-text-center padding-three"]//p/strong/a'
-            ).match(self.root)
-            role_list = XPath(
-                '//div[@class="wpb_column vc_column_container col-xs-mobile-fullwidth col-sm-8 text-left sm-text-left xs-text-center padding-three"]//p/strong/text()'
-            ).match(self.root)
-        except SelectorError:
-            raise SkipItem("Unable to parse committee")
+        members = CSS(
+            "div .wpb_column.vc_column_container.col-xs-mobile-fullwidth.col-sm-6 div .row-equal-height.hcode-inner-row"
+        ).match(self.root)
 
-        for name, role in zip(name_list, role_list):
-            name = name.text
-            for rep in ["Rep.", "Sen."]:
-                name = name.replace(rep, "")
-            name = name.strip()
-            role = role.replace(",", "").strip()
-
-            if not role:
-                role = "Member"
-
-            com.add_member(name, role)
-        if not com.members:
+        if not members:
             raise SkipItem("empty committee")
-        com.add_source(
-            self.source.url,
-            note="Committee Details page",
-        )
+
+        for member in members:
+            name = CSS("strong").match_one(member).text_content().strip()
+            name = re.search(r"(Sen\.|Rep\.)\s(.+)", name).groups()[1]
+
+            if re.search(r"Ad\sHoc", name):
+                name, _, role = re.search(r"(.+)(\s–\s|\()(Ad\sHoc)\)?", name).groups()
+
+            if re.search(r",\s", name):
+                name, role = re.search(r"(.+),\s(.+)", name).groups()
+
+            com.add_member(name, role if role else "member")
+
         return com
 
 
+class JointCommitteeList(HtmlListPage):
+    selector = CSS("div .vc-column-innner-wrapper ul li", num_items=5)
+
+    def process_item(self, item):
+        com_link = CSS("a").match_one(item)
+        name = com_link.text_content()
+
+        com = ScrapeCommittee(
+            name=name,
+            chamber=self.chamber,
+        )
+
+        detail_link = com_link.get("href")
+
+        com.add_source(self.source.url)
+        com.add_source(detail_link)
+        com.add_link(detail_link, note="homepage")
+
+        # this link has broken html (not able to grab member info)
+        # just returning name, chamber, and link
+        if detail_link == "https://legislature.idaho.gov/sessioninfo/2021/joint/cec/":
+            return com
+
+        return DetailCommitteePage(com, source=detail_link)
+
+
 class CommitteeList(HtmlListPage):
-    source = URL("https://legislature.idaho.gov/committees/", timeout=15)
-    main_website = "https://legislature.idaho.gov"
+    selector = CSS("div .padding-one-top.hcode-inner-row")
 
-    leg_council = "https://legislature.idaho.gov/legcouncil/"
-    leg_council_name = "Legislative Council"
-    leg_council_type = "legislature"
+    def process_item(self, item):
+        name = CSS("strong").match(item)[0].text_content()
 
-    def extract_committees(self, url, comm_type):
-        document = requests.get(url).content
-        if comm_type in ["house", "senate"]:
-            comm = XPath("//a[contains(@href, '/standingcommittees/')]").match(
-                fromstring(document)
-            )
-            if comm_type == "house":
-                chamber = "lower"
-            else:
-                chamber = "upper"
-        else:
-            chamber = "legislature"
-            comm = XPath(f"//a[contains(@href, '/{comm_type}/')]").match(
-                fromstring(document)
-            )
+        # skip header row
+        if name == "Committees":
+            self.skip()
 
-        for url in comm:
-            yield url.text, self.main_website + url.get("href"), chamber
+        com = ScrapeCommittee(
+            name=name,
+            chamber=self.chamber,
+        )
 
-    def process_page(self):
-        committees = ["senate", "house", "joint", "interim"]
-        comm = {}
-        for comm_type in committees:
-            committees_url = XPath(
-                f"//a[contains(@href, '/committees/{comm_type}committees/')]"
-            ).match(self.root)
-            for url in committees_url:
-                if url.text and not comm.get(url.get("href")):
-                    comm[url.get("href")] = (url.text, comm_type)
+        all_text = CSS("p").match(item)[0].text_content().strip()
+        secretary, email, phone = re.search(
+            r"\n?Secretary:(.+)\n?Email:(.+)\n?Phone:(.+)", all_text
+        ).groups()
+        com.extras["secretary"] = secretary.strip()
+        com.extras["email"] = email.strip()
+        com.extras["phone"] = phone.strip()
 
-        all_committees = [
-            (self.leg_council_name, self.leg_council, self.leg_council_type)
-        ]
-        for url, data in comm.items():
-            all_committees += self.extract_committees(url, data[1])
+        detail_link = CSS("a").match(item)[0].get("href")
 
-        for data in all_committees:
-            if "subcommittee" in data[0]:
-                raise SubcommitteeFound(data[0])
+        com.add_source(self.source.url)
+        com.add_source(detail_link)
+        com.add_link(detail_link, note="homepage")
 
-            com = ScrapeCommittee(
-                name=data[0],
-                chamber=data[2],
-                parent=None,
-                classification="committee",
-            )
-            com.add_source(
-                self.source.url,
-                note="homepage",
-            )
-            members_source = f"{data[1]}#hcode-tab-style2members"
-            yield CommitteeDetail(com, source=URL(members_source, timeout=15))
+        return DetailCommitteePage(com, source=detail_link)
+
+
+class Senate(CommitteeList):
+    source = URL("https://legislature.idaho.gov/committees/senatecommittees/")
+    chamber = "upper"
+
+
+class House(CommitteeList):
+    source = URL("https://legislature.idaho.gov/committees/housecommittees/")
+    chamber = "lower"
+
+
+class Joint(JointCommitteeList):
+    source = URL("https://legislature.idaho.gov/committees/jointcommittees/")
+    chamber = "legislature"
