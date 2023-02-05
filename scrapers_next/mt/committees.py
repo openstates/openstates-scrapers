@@ -89,6 +89,7 @@ class HouseSenateJointCommList(HtmlListPage):
             parent=parent,
         )
         com.add_source(member_info_href, note="Committee membership page")
+        com.add_source(self.source.url, note="Committee list page")
         com.add_link(member_info_href, note="homepage")
 
         return HouseSenateJointCommDetail(
