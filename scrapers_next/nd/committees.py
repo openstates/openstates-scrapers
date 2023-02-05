@@ -62,6 +62,10 @@ class CommitteeDetail(HtmlPage):
             raise SkipItem("empty committee")
         com.add_source(
             self.source.url,
+            note="Committee Details page",
+        )
+        com.add_link(
+            self.source.url,
             note="homepage",
         )
         return com
@@ -90,10 +94,6 @@ class CommitteeList(HtmlListPage):
 
         for elem in all_comm_elements:
             comm_url = elem.get("href")
-
-            # if url ends with /committees that's url to committees list not for individual committee
-            if comm_url.endswith("/committees"):
-                continue
 
             # joint committees
             if comm_url[0] == "/":
