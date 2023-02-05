@@ -102,5 +102,8 @@ class CommitteeList(HtmlListPage):
                         com_url = f"{self.home.replace('Committee/', '')}{com_url}"
                     else:
                         com_url = f"{self.home}{com_url}"
-                com.add_source(self.home, note="")
+                com.add_source(
+                    self.home,
+                    note="Committee Page from nmlegis.gov site",
+                )
                 yield CommitteeDetail(com, source=URL(com_url, timeout=30))
