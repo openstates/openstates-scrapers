@@ -1,4 +1,3 @@
-from lxml import html
 from spatula import URL, HtmlListPage, HtmlPage, XPath, SelectorError, SkipItem
 from openstates.models import ScrapeCommittee
 from lxml.html import fromstring
@@ -15,29 +14,17 @@ class SubcommitteeFound(BaseException):
 class CommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
-        name_path = '//div[@class="wpb_column vc_column_container col-xs-mobile-fullwidth col-sm-8 text-left sm-text-left xs-text-center padding-three"]//p/strong/a'
-        role_path = '//div[@class="wpb_column vc_column_container col-xs-mobile-fullwidth col-sm-8 text-left sm-text-left xs-text-center padding-three"]//p/strong/text()'
+
         try:
-            name_list = XPath(name_path).match(self.root)
-            role_list = XPath(role_path).match(self.root)
+            name_list = XPath(
+                '//div[@class="wpb_column vc_column_container col-xs-mobile-fullwidth col-sm-8 text-left sm-text-left xs-text-center padding-three"]//p/strong/a'
+            ).match(self.root)
+            role_list = XPath(
+                '//div[@class="wpb_column vc_column_container col-xs-mobile-fullwidth col-sm-8 text-left sm-text-left xs-text-center padding-three"]//p/strong/text()'
+            ).match(self.root)
         except SelectorError:
-            try:
+            raise SkipItem("Unable to parse committee")
 
-                name_list = XPath(role_path.replace("/text()", "")).match(self.root)
-                role_list = ["Member" for x in name_list]
-            except SelectorError:
-
-                root = html.fromstring(self.root.text_content())
-                try:
-                    name_list = XPath(name_path).match(root)
-                    role_list = XPath(role_path).match(root)
-                except SelectorError:
-                    raise SkipItem("empty committee")
-        for i in range(len(name_list)):
-            try:
-                role_list[i]
-            except IndexError:
-                role_list.append("Member")
         for name, role in zip(name_list, role_list):
             name = name.text
             for rep in ["Rep.", "Sen."]:
@@ -45,16 +32,15 @@ class CommitteeDetail(HtmlPage):
             name = name.strip()
             role = role.replace(",", "").strip()
 
+            if not role:
+                role = "Member"
+
             com.add_member(name, role)
         if not com.members:
             raise SkipItem("empty committee")
         com.add_source(
             self.source.url,
             note="Committee Details page",
-        )
-        com.add_link(
-            self.source.url,
-            note="homepage",
         )
         return com
 
@@ -87,7 +73,7 @@ class CommitteeList(HtmlListPage):
             yield url.text, self.main_website + url.get("href"), chamber
 
     def process_page(self):
-        committees = ["house", "senate", "joint", "interim"]
+        committees = ["senate", "house", "joint", "interim"]
         comm = {}
         for comm_type in committees:
             committees_url = XPath(
