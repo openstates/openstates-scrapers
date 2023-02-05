@@ -34,7 +34,7 @@ class CommitteeDetail(HtmlPage):
 
         com.add_source(
             self.source.url,
-            note="Committee Details API",
+            note="Committee Details Page",
         )
         com.add_link(
             self.source.url,
@@ -102,5 +102,5 @@ class CommitteeList(HtmlListPage):
                         com_url = f"{self.home.replace('Committee/', '')}{com_url}"
                     else:
                         com_url = f"{self.home}{com_url}"
-
+                com.add_source(self.home, note="")
                 yield CommitteeDetail(com, source=URL(com_url, timeout=30))
