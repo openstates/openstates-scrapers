@@ -13,9 +13,7 @@ class SubcommitteeFound(BaseException):
 
 class CommitteeList(JsonListPage):
     year = 2023
-    source = URL(
-        f"https://www.wyoleg.gov/Committees/List/2023/{year}/J", timeout=15
-    )
+    source = URL(f"https://web.wyoleg.gov/LsoService/api/committeeList/{year}/J", timeout=15)
 
     def process_page(self):
         # the request was for only J type committees in the issue, but I added all
@@ -67,10 +65,9 @@ class CommitteeList(JsonListPage):
                     logging.warning(f"No membership data found for: {name}")
                     continue
 
-                com.add_link(committee_url, note="homepage")
+                com.add_link(committee_url, note="homepage api")
                 com.add_source(
                     self.source.url,
                     note="Committee JSON from wyoleg.gov site",
                 )
-
                 yield com
