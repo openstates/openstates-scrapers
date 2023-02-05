@@ -15,15 +15,23 @@ base_url = "http://www.nmlegis.gov/Committee/"
 Member = collections.namedtuple("Member", "name role chamber")
 
 
-def clean_committee_name(name_to_clean):
-    head, _sep, tail = (
-        name_to_clean.replace("House ", "")
-        .replace("Senate ", "")
-        .replace("Subcommittee", "Committee")
-        .rpartition(" Committee")
-    )
+class CommitteeDetail(HtmlPage):
+    def process_page(self):
+        com = self.input
+        members_xpath = '//table[@id="MainContent_formViewCommitteeInformation_gridViewCommitteeMembers"]/tbody/tr'
+        member_nodes = XPath(members_xpath).match(self.root)
 
-    return head + tail
+        print([x for x in member_nodes])
+
+        com.add_source(
+            self.source.url,
+            note="Committee Details API",
+        )
+        com.add_link(
+            self.source.url,
+            note="homepage",
+        )
+        return com
 
 
 class CommitteeList(HtmlListPage):
@@ -34,24 +42,50 @@ class CommitteeList(HtmlListPage):
     )
     chamber = "upper"
 
+    def clean_committee_name(self, name_to_clean):
+        head, _sep, tail = (
+            name_to_clean.replace("House ", "")
+            .replace("Senate ", "")
+            .replace("Subcommittee", "Committee")
+            .rpartition(" Committee")
+        )
+
+        return head + tail
+
     def process_page(self):
-        href_xpath = ''
+        senate_href_xpath = '//a[contains(@id, "MainContent_gridViewSenateCommittees_linkSenateCommittee")]'
+        house_href_xpath = '//a[contains(@id, "MainContent_gridViewHouseCommittees_linkHouseCommittee")]'
+        interim_href_xpath = '//a[contains(@id, "MainContent_gridViewCommittees_linkCommittee")]'
+        all_committees = {self.chamber: XPath(senate_href_xpath).match(self.root)}
+        other_coms_info = {"lower": {house_href_xpath: f"{self.home}House_Standing"},
+                           "legislature": {interim_href_xpath: f"{self.home}interim"}}
 
-        all_committees = XPath(href_xpath).match(self.root)
-        coms_url = {
-            "lower": {
-                "url": f"{self.home}House_Standing",
-            },
-            "legislature": {
-                "url": f"{self.home}interim",
-            }
-        }
-        for chamber, u in coms_url:
-            self.root = html.fromstring(requests.get(u["url"]).content)
-            all_committees += XPath(href_xpath).match(self.root)
+        for chamber, item in other_coms_info.items():
+            for xpath, url in item.items():
+                self.root = html.fromstring(requests.get(url).content)
+                all_committees[chamber] = XPath(xpath).match(self.root)
 
-        for comm in all_committees:
-            print(comm.get("href"))
+        for chamber, elems in all_committees.items():
+            for item in elems:
+                name, com_url = item.text, item.get("href")
+
+                if "subcommittee" in name.lower():
+                    classification = "subcommittee"
+                    parent = name.lower().replace("subcommittee", "").title()
+                else:
+                    parent = None
+                    classification = "committee"
+
+                com = ScrapeCommittee(
+                    name=self.clean_committee_name(name).title(),
+                    chamber=chamber,
+                    parent=parent,
+                    classification=classification,
+                )
+                print(com_url)
+                yield CommitteeDetail(
+                    com, source=URL(com_url, timeout=30)
+                )
 
 
 class NMCommitteeScraper(Scraper, LXMLMixin):
