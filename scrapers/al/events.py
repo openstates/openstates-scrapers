@@ -27,8 +27,15 @@ class ALEventScraper(Scraper, LXMLMixin):
 
         # start from the first of the current month
         from_date = datetime.datetime.today().replace(day=1).strftime("%Y-%m-%d")
+        query = (
+            '{hearingsMeetings(eventType:"meeting", body:"", keyword:"", toDate:"3000-02-06", '
+            f'fromDate:"{from_date}", sortTime:"", direction:"ASC", orderBy:"SortTime", )'
+            "{ EventDt,EventTm,Location,EventTitle,EventDesc,Body,DeadlineDt,PublicHearing,"
+            "Committee,AgendaUrl,SortTime,OidMeeting }}"
+        )
+
         json_data = {
-            "query": f'{{hearingsMeetings(eventType:"meeting", body:"", keyword:"", toDate:"3000-02-06", fromDate:"{from_date}", sortTime:"", direction:"ASC", orderBy:"SortTime", ){{ EventDt,EventTm,Location,EventTitle,EventDesc,Body,DeadlineDt,PublicHearing,Committee,AgendaUrl,SortTime,OidMeeting }}}}',
+            "query": query,
             "operationName": "",
             "variables": [],
         }
