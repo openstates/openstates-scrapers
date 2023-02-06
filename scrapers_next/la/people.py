@@ -156,7 +156,6 @@ class HouseLegislators(HtmlListPage):
 
     def process_item(self, item):
         name_dirty = CSS("a").match(item)[0].text_content().strip()
-        print(name_dirty)
         if "Vacant" in name_dirty:
             self.skip("vacant")
         name_dirty = name_dirty.split(", ")
@@ -204,7 +203,6 @@ class HouseLegislators(HtmlListPage):
         )
 
         detail_link = CSS("a").match(item)[0].get("href")
-        print(detail_link)
 
         p.add_source(self.source.url)
         p.add_source(detail_link)
