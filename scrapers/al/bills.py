@@ -45,7 +45,7 @@ def _categorize_action(action):
 
 class ALBillScraper(Scraper):
     chamber_map = {"Senate": "upper", "House": "lower"}
-    bill_types = {"B": "bill", "R": "resoluation"}
+    bill_types = {"B": "bill", "R": "resolution"}
     tz = pytz.timezone("US/Eastern")
 
     def scrape(self, session):
