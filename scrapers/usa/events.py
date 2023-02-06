@@ -1,6 +1,7 @@
 import pytz
 import lxml
 import datetime
+import dateutil
 import re
 import requests
 
@@ -21,6 +22,7 @@ class USEventScraper(Scraper, LXMLMixin):
 
     hearing_document_types = {
         "HW": "Witness List",
+        "HM": "Meeting Roster",
         "HC": "Hearing Notice",
         "SD": "Instructions for Submitting a Request to Testify",
         "BR": "Bill Text",
@@ -99,14 +101,7 @@ class USEventScraper(Scraper, LXMLMixin):
 
             agenda = row.xpath("string(matter)")
 
-            try:
-                event_date = datetime.datetime.strptime(
-                    row.xpath("string(date)"), "%d-%b-%Y %H:%M %p"
-                )
-            except ValueError:
-                event_date = datetime.datetime.strptime(
-                    row.xpath("string(date)"), "%d-%b-%Y"
-                )
+            event_date = dateutil.parser.parse(row.xpath("string(date)"))
 
             event_date = self._TZ.localize(event_date)
 
@@ -200,18 +195,14 @@ class USEventScraper(Scraper, LXMLMixin):
         start_time = xml.xpath("string(//meeting-date/start-time)")
         end_time = xml.xpath("string(//meeting-date/end-time)")
 
-        start_dt = datetime.datetime.strptime(
-            f"{meeting_date} {start_time}", "%Y-%m-%d %H:%M:%S"
-        )
+        start_dt = dateutil.parser.parse(f"{meeting_date} {start_time}")
 
         start_dt = self._TZ.localize(start_dt)
 
         end_dt = None
 
         if end_time != "":
-            end_dt = datetime.datetime.strptime(
-                f"{meeting_date} {end_time}", "%Y-%m-%d %H:%M:%S"
-            )
+            end_dt = dateutil.parser.parse(f"{meeting_date} {end_time}")
             end_dt = self._TZ.localize(end_dt)
 
         building = xml.xpath(
