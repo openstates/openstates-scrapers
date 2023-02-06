@@ -105,9 +105,9 @@ class ALBillScraper(Scraper):
                 action_date = self.tz.localize(action_date)
                 bill.add_action(
                     chamber=chamber,
-                    description="Introduced",
+                    description="Filed",
                     date=action_date,
-                    classification="introduction",
+                    classification="filing",
                 )
 
             if row["FirstRead"] and row["FirstRead"] != "01/01/0001":
