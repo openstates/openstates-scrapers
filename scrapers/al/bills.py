@@ -1,10 +1,10 @@
 import re
 import pytz
 import json
+import datetime
 from openstates.scrape import Scraper, Bill
 
-TIMEZONE = pytz.timezone("US/Eastern")
-
+# NOTE: leaving this for now, once action data loads this week we'll probably reuse it
 _action_re = (
     ("Introduced", "introduction"),
     ("(Forwarded|Delivered) to Governor", "executive-receipt"),
@@ -46,6 +46,7 @@ def _categorize_action(action):
 class ALBillScraper(Scraper):
     chamber_map = {"Senate": "upper", "House": "lower"}
     bill_types = {"B": "bill", "R": "resoluation"}
+    tz = pytz.timezone("US/Eastern")
 
     def scrape(self, session):
         gql_url = "https://gql.api.alison.legislature.state.al.us/graphql"
@@ -59,8 +60,9 @@ class ALBillScraper(Scraper):
             "Referer": "https://alison.legislature.state.al.us/",
         }
 
+        # WARNING: 2023 session id is currently hardcoded
         json_data = {
-            "query": '{allInstrumentOverviews(instrumentType:"B", instrumentNbr:"", body:"", sessionYear:"2023", sessionType:"2023 Regular Session", assignedCommittee:"", status:"", currentStatus:"", subject:"", instrumentSponsor:"", companionInstrumentNbr:"", effectiveDateCertain:"", effectiveDateOther:"", firstReadSecondBody:"", secondReadSecondBody:"", direction:"ASC"orderBy:"InstrumentNbr"limit:"15"offset:"0"  search:"" customFilters: {}companionReport:"", ){ ID,SessionYear,InstrumentNbr,InstrumentSponsor,SessionType,Body,Subject,ShortTitle,AssignedCommittee,PrefiledDate,FirstRead,CurrentStatus,LastAction,ActSummary,ViewEnacted,CompanionInstrumentNbr,EffectiveDateCertain,EffectiveDateOther,InstrumentType }}',
+            "query": '{allInstrumentOverviews(instrumentType:"B", instrumentNbr:"", body:"", sessionYear:"2023", sessionType:"2023 Regular Session", assignedCommittee:"", status:"", currentStatus:"", subject:"", instrumentSponsor:"", companionInstrumentNbr:"", effectiveDateCertain:"", effectiveDateOther:"", firstReadSecondBody:"", secondReadSecondBody:"", direction:"ASC"orderBy:"InstrumentNbr"limit:"15"offset:"0"  search:"" customFilters: {}companionReport:"", ){ ID,SessionYear,InstrumentNbr,InstrumentSponsor,SessionType,Body,Subject,ShortTitle,AssignedCommittee,PrefiledDate,FirstRead,CurrentStatus,LastAction,ActSummary,ViewEnacted,CompanionInstrumentNbr,EffectiveDateCertain,EffectiveDateOther,InstrumentType,IntroducedUrl }}',
             "operationName": "",
             "variables": [],
         }
@@ -69,7 +71,6 @@ class ALBillScraper(Scraper):
         page = json.loads(page.content)
 
         for row in page["data"]["allInstrumentOverviews"]:
-            print(row)
             chamber = self.chamber_map[row["Body"]]
             title = row["ShortTitle"]
 
@@ -89,6 +90,39 @@ class ALBillScraper(Scraper):
             )
 
             bill.add_source("https://alison.legislature.state.al.us/bill-search")
+
+            if row["IntroducedUrl"]:
+                bill.add_version_link(
+                    "Introduced", url=row["IntroducedUrl"], media_type="application/pdf"
+                )
+
+            # TODO: can this be removed in favor of pulling the
+            # action list via graphql?
+            if row["PrefiledDate"]:
+                action_date = datetime.datetime.strptime(
+                    row["PrefiledDate"], "%m/%d/%Y"
+                )
+                action_date = self.tz.localize(action_date)
+                bill.add_action(
+                    chamber=chamber,
+                    description="Introduced",
+                    date=action_date,
+                    classification="introduction",
+                )
+
+            if row["FirstRead"] and row["FirstRead"] != "01/01/0001":
+                action_date = datetime.datetime.strptime(row["FirstRead"], "%m/%d/%Y")
+                action_date = self.tz.localize(action_date)
+                bill.add_action(
+                    chamber=chamber,
+                    description="First Reading",
+                    date=action_date,
+                    classification="reading-1",
+                )
+
+            # TODO: EffectiveDateCertain, EffectiveDateOther
+
+            # TODO: Fiscal notes, BUDGET ISOLATION RESOLUTION
 
             bill.extras["AL_BILL_ID"] = row["ID"]
 
