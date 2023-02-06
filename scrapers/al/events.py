@@ -63,6 +63,9 @@ class ALEventScraper(Scraper, LXMLMixin):
                 description=event_desc,
             )
 
+            event_name = f"{event_title}#{event_location}#{event_date}"
+            event.dedupe_key = event_name
+
             # TODO: When they add committees, agendas, and video streams
 
             match_coordinates(
