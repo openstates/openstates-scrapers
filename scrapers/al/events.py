@@ -45,10 +45,9 @@ class ALEventScraper(Scraper, LXMLMixin):
             event_location = row["Location"]
             if event_location.startswith("Room"):
                 event_location = (
-                    f"11 S Union St, Montgomery, AL 36130. {event_location}"
+                    f"11 South Union St, Montgomery, AL 36130. {event_location}"
                 )
             event_desc = row["EventDesc"]
-            print(row)
 
             event = Event(
                 start_date=event_date,
@@ -57,9 +56,13 @@ class ALEventScraper(Scraper, LXMLMixin):
                 description=event_desc,
             )
 
+            # TODO: When they add committees, agendas, and video streams
+
             match_coordinates(
                 event, {"11 south union": (32.37707594063977, -86.29919861850152)}
             )
 
+            # TODO, looks like we can generate a source link from the room and OID,
+            # does this stick after the event has ended?
             event.add_source("https://alison.legislature.state.al.us/todays-schedule")
             yield event
