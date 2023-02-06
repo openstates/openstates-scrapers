@@ -10,7 +10,7 @@ class SenateCommitteeDetail(HtmlPage):
 
     def process_page(self):
         com = self.input
-        com.add_source(self.source.url, "Commitee Detail Page")
+        com.add_source(self.source.url, "Committee Detail Page")
 
         members = CSS("div.panel-body div.senator_cont a").match(self.root)
 
@@ -30,7 +30,7 @@ class HouseCommitteeDetail(HtmlPage):
 
     def process_page(self):
         com = self.input
-        com.add_source(self.source.url, note="Comitee Detail Page")
+        com.add_source(self.source.url, note="Committee Detail Page")
 
         # Some House committes have different formats
         try:
