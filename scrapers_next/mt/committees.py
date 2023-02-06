@@ -73,6 +73,12 @@ class HouseSenateJointCommList(HtmlListPage):
             committee_title = subcommittee_info[1]
             classification = "subcommittee"
             parent = subcommittee_info[0]
+            # Full name of the joint committee parent of these subcommittees:
+            #  "Joint Appropriations and Finance and Claims"
+            #  because it is a combined committee of
+            #  House Appropriations and Senate Finance and Claims
+            if "Joint Appropriations" in parent:
+                parent += " and Finance and Claims"
 
         # 5) The "Judicial Branch, Law Enforcement, and Justice" subcommittee
         #    is often called Public Safety, so append that to its name for
@@ -87,6 +93,18 @@ class HouseSenateJointCommList(HtmlListPage):
             classification=classification,
             parent=parent,
         )
+
+        #  The "Joint Appropriations and Finance and Claims" committee
+        #   is a combined committee of House Appropriations and
+        #   Senate Finance and Claims committees
+        if "Appropriations" in com.name:
+            if chamber == "legislature" and classification == "committee":
+                house_and_senate_names = [
+                    "House Appropriations",
+                    "Senate Finance and Claims",
+                ]
+                com.other_names.append(house_and_senate_names)
+
         com.add_source(member_info_href, note="Committee membership page")
         com.add_source(self.source.url, note="Committee list page")
         com.add_link(member_info_href, note="homepage")
