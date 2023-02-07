@@ -66,7 +66,7 @@ class AZEventScraper(Scraper):
 
     def scrape_web_json(self, url):
         web_events = self.get(url).json()
-
+        events = set()
         for web_event in web_events:
             event_start = dateutil.parser.parse(web_event["start"])
             event_start = self._tz.localize(event_start)
@@ -86,7 +86,11 @@ class AZEventScraper(Scraper):
 
             if not event_loc:
                 event_loc = "See Agenda"
-
+            event_name = f"{event_title}#{event_desc}#{event_loc}#{event_start}"
+            if event_name in events:
+                self.warning(f"Duplicate event: {event_name}")
+                continue
+            events.add(event_name)
             event = Event(
                 name=event_title,
                 location_name=event_loc,
@@ -94,6 +98,7 @@ class AZEventScraper(Scraper):
                 end_date=event_end,
                 description=event_desc,
             )
+            event.dedupe_key = event_name
 
             match_coordinates(
                 event,
@@ -121,7 +126,7 @@ class AZEventScraper(Scraper):
         com_url = com_url.format(chamber_abbr, session_id)
 
         coms = self.get(com_url).json()
-
+        events = set()
         for com in coms:
             # joint committees get returned by both endpoints, so skip one
             if com["LegislativeBody"] != chamber_abbr:
@@ -143,9 +148,7 @@ class AZEventScraper(Scraper):
                 ):
                     continue
 
-                title = "{} {}".format(
-                    self.code_chambers[chamber_abbr], row["CommitteeName"]
-                )
+                title = f"{self.code_chambers[chamber_abbr]} {row['CommitteeName']}"
 
                 # fix for dateutil parser confusion
                 row["Time"] = row["Time"].replace("A.M.", "AM").replace("P.M.", "PM")
@@ -165,17 +168,22 @@ class AZEventScraper(Scraper):
                 when = dateutil.parser.parse(f"{row['Date']} {time}")
                 when = self._tz.localize(when)
 
-                where = "{}, Room {}".format(self.address, row["Room"])
+                where = f"{self.address}, Room {row['Room']}"
 
                 description = ""
 
+                event_name = f"{title}##{where}#{when}"
+                if event_name in events:
+                    self.warning(f"Duplicate event: {event_name}")
+                    continue
+                events.add(event_name)
                 event = Event(
                     name=title,
                     location_name=where,
                     start_date=when,
                     description=description,
                 )
-
+                event.dedupe_key = event_name
                 match_coordinates(
                     event,
                     {
