@@ -32,7 +32,7 @@ class CommitteeMembers(HtmlPage):
 
         # Add sources and links for current page
         com.add_source(self.source.url, note="Member list page")
-        com.add_link(self.source.url, note="Homepage")
+        com.add_link(self.source.url, note="homepage")
 
         # Members are organized by role
         # If any of these selectors fail, assume that there are no members of
