@@ -10,7 +10,7 @@ class SenateCommitteeDetail(HtmlPage):
 
     def process_page(self):
         com = self.input
-        com.add_source(self.source.url, "Committee Detail Page")
+        com.add_source(self.source.url, note="Committee Detail Page")
 
         members = CSS("div.panel-body div.senator_cont a").match(self.root)
 
@@ -32,33 +32,32 @@ class HouseCommitteeDetail(HtmlPage):
         com = self.input
         com.add_source(self.source.url, note="Committee Detail Page")
 
-        # Some House committes have different formats
+        # Some House committes have different site formats
         try:
             members = CSS("div.mc-title-container").match(self.root)
+        except SelectorError:
+            members = []
+
+        if members:
             for member in members:
                 full_title = member.getchildren()
                 name = full_title[0].text_content()
                 role = full_title[1].text_content()
-                if role == "":
+                if not role:
                     role = "member"
 
                 com.add_member(name, role)
-        except SelectorError:
-            pass
-
-        try:
+        else:
             members = CSS("div.elementor-widget-container ul li.p1").match(self.root)
             for member in members:
                 role = "member"
                 title = re.findall(
-                    "Presidente|Secretari[ao]|Vice-presidente", member.text_content()
+                    "Presidente|Secretari[ao]|Vice.*", member.text_content()
                 )
                 name = re.sub("Hon. |,.*", "", member.text_content())
                 if title != []:
                     role = title[0]
                 com.add_member(name, role)
-        except SelectorError:
-            pass
 
         return com
 
