@@ -1,4 +1,4 @@
-from spatula import HtmlPage, HtmlListPage, XPath, URL
+from spatula import HtmlPage, HtmlListPage, XPath, URL, SkipItem
 from openstates.models import ScrapeCommittee
 import requests
 import lxml.html
@@ -52,6 +52,9 @@ class CommitteeDetail(HtmlPage):
         if regular_members:
             for member in regular_members:
                 com.add_member(member, "Member")
+
+        if not officers and not regular_members:
+            raise SkipItem("empty committee")
 
         com.add_source(self.source.url, note="Committee Detail Page")
         com.add_link(self.source.url, note="homepage")
