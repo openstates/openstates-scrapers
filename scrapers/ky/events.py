@@ -24,6 +24,7 @@ class KYEventScraper(Scraper):
         if len(page.xpath('//div[contains(@class,"TimeAndLocation")]')) == 0:
             raise EmptyScrape
         event_count = 0
+        events = set()
 
         for time_row in page.xpath('//div[contains(@class,"TimeAndLocation")]'):
             date = (
@@ -72,7 +73,11 @@ class KYEventScraper(Scraper):
                 .text_content()
                 .strip()
             )
-
+            event_name = f"{com_name}#{location}#{when}"
+            if event_name in events:
+                self.warning(f"Duplicate event: {event_name}")
+                continue
+            events.add(event_name)
             event = Event(
                 name=com_name,
                 start_date=when,
@@ -80,7 +85,7 @@ class KYEventScraper(Scraper):
                 location_name=location,
                 status=status,
             )
-
+            event.dedupe_key = event_name
             if time_row.xpath('following-sibling::div[contains(@class,"Agenda")][1]'):
                 agenda_row = time_row.xpath(
                     'following-sibling::div[contains(@class,"Agenda")][1]'

@@ -67,10 +67,10 @@ class OHEventScraper(Scraper):
             page = lxml.html.fromstring(page)
 
             location = page.xpath(
-                '//div[contains(@class,"eventModule") and h3[contains(text(), "Location")]]/text()'
+                '//div[h2[contains(text(), "Location")]]/p[3]/text()'
             )[0].strip()
             agenda_url = page.xpath(
-                '//a[contains(@class,"linkButton") and contains(text(),"Agenda")]/@href'
+                '//a[contains(@class,"link-button") and contains(text(),"Agenda")]/@href'
             )[0]
 
             if re.match(r"Room \d+", location, flags=re.IGNORECASE):
@@ -82,7 +82,7 @@ class OHEventScraper(Scraper):
 
             match_coordinates(event, {"1 Capitol Square": (39.96019, -82.99946)})
 
-            com_name = name.replace("CANCELED", "").strip()
+            com_name = name.replace("Meeting", "").replace("CANCELED", "").strip()
             event.add_participant(com_name, type="committee", note="host")
             event.add_document("Agenda", agenda_url, media_type="application/pdf")
             event.add_source(url)
