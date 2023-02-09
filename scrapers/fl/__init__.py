@@ -177,14 +177,6 @@ class Florida(State):
             "end_date": "2022-05-27",
             "active": False,
         },
-        {
-            "name": "2023 Regular Session",
-            "identifier": "2023",
-            "classification": "primary",
-            "start_date": "2023-03-07",
-            "end_date": "2023-05-05",
-            "active": True,
-        },
         # Yes, 2022 Special Session A
         # occurred after B,C, and D
         {
@@ -194,6 +186,23 @@ class Florida(State):
             "start_date": "2022-12-12",
             "end_date": "2022-12-16",
             "active": False,
+        },
+        {
+            "name": "2023 Regular Session",
+            "identifier": "2023",
+            "classification": "primary",
+            "start_date": "2023-03-07",
+            "end_date": "2023-05-05",
+            "active": True,
+        },
+        {
+            "name": "2023 Special Session B",
+            "identifier": "2023B",
+            "classification": "special",
+            "start_date": "2023-02-06",
+            # TODO: update end date
+            "end_date": "2023-02-17",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
