@@ -32,7 +32,18 @@ class CommitteeDetail(HtmlPage):
                     name_list = XPath(name_path).match(root)
                     role_list = XPath(role_path).match(root)
                 except SelectorError:
-                    raise SkipItem("empty committee")
+                    try:
+                        name_list = XPath(".//p/strong/a").match(root)
+                        role_list = []
+                        for name in name_list:
+                            full_strong = name.getparent().text_content().strip()
+                            raw_role = full_strong.removeprefix(
+                                name.text.strip()
+                            ).strip()
+                            role = raw_role or "Member"
+                            role_list.append(role)
+                    except SelectorError:
+                        SkipItem("empty committee")
         for i in range(len(name_list)):
             try:
                 role_list[i]
@@ -46,8 +57,9 @@ class CommitteeDetail(HtmlPage):
             role = role.replace(",", "").strip()
 
             com.add_member(name, role)
+
         if not com.members:
-            raise SkipItem("empty committee")
+            raise SkipItem(f"empty committee: {com.name}")
         com.add_source(
             self.source.url,
             note="Committee Details page",
@@ -56,6 +68,7 @@ class CommitteeDetail(HtmlPage):
             self.source.url,
             note="homepage",
         )
+
         return com
 
 
@@ -106,13 +119,15 @@ class CommitteeList(HtmlListPage):
         for data in all_committees:
             if "subcommittee" in data[0]:
                 raise SubcommitteeFound(data[0])
-
+            if "Joint Millennium" not in data[0]:
+                continue
             com = ScrapeCommittee(
                 name=data[0],
                 chamber=data[2],
                 parent=None,
                 classification="committee",
             )
+
             com.add_source(
                 self.source.url,
                 note="homepage",
