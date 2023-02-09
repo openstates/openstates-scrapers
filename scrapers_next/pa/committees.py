@@ -390,7 +390,7 @@ class StateGovernmentComm(HtmlPage):
 
     def process_page(self):
         com = ScrapeCommittee(
-            name="State Government",
+            name="State Government Commission",
             classification="committee",
             chamber="legislature",
         )
