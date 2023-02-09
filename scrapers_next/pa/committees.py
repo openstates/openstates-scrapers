@@ -1,3 +1,7 @@
+from spatula import HtmlPage, SelectorError, XPath, URL, SkipItem
+from openstates.models import ScrapeCommittee
+
+
 """
 The classes that should be run to ensure every committee is scraped include:
 - House
@@ -11,9 +15,6 @@ The classes that should be run to ensure every committee is scraped include:
 - CommissionOnSentencing
 - CapitolPreservationComm
 """
-
-from spatula import HtmlPage, SelectorError, XPath, URL, SkipItem
-from openstates.models import ScrapeCommittee
 
 
 class UnhandledJointCommittee(Exception):
