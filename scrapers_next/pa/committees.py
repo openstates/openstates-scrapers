@@ -68,7 +68,7 @@ class CommitteeDetail(HtmlPage):
         # Add sources and links
         com.add_source(self.input.get("listpage"), note="Committee list page")
         com.add_source(self.source.url, note="Committee homepage")
-        com.add_link(self.source.url, note="Homepage")
+        com.add_link(self.source.url, note="homepage")
 
         # Chair people are listed apart from the rest of the member list
         chair_members = XPath("//div[@class='ChairNameText']").match(self.root)
@@ -114,7 +114,7 @@ class CommitteeDetail(HtmlPage):
                         self.input.get("listpage"), note="Committee list page"
                     )
                     subcom.add_source(self.source.url, note="Parent committee homepage")
-                    subcom.add_link(self.source.url, note="Homepage")
+                    subcom.add_link(self.source.url, note="homepage")
                     subcoms[name] = subcom
 
                 # Only the chair member is known for subcommittees
@@ -166,7 +166,7 @@ class CapitolPreservationComm(HtmlPage):
             classification="committee",
             chamber="legislature",
         )
-        com.add_link("http://cpc.state.pa.us/", note="Homepage")
+        com.add_link("http://cpc.state.pa.us/", note="homepage")
         com.add_source(
             self.source.url,
             note="Member list page",
@@ -236,7 +236,7 @@ class CommissionOnSentencing(HtmlPage):
             classification="committee",
             chamber="legislature",
         )
-        com.add_link("https://pcs.la.psu.edu/", note="Homepage")
+        com.add_link("https://pcs.la.psu.edu/", note="homepage")
         com.add_source(
             self.source.url,
             note="Member list page",
@@ -297,7 +297,7 @@ class CommissionOnSentencingSubcommList(HtmlPage):
                 chamber="legislature",
                 parent=self.input.get("com").name,
             )
-            com.add_link("https://pcs.la.psu.edu/", note="Homepage")
+            com.add_link("https://pcs.la.psu.edu/", note="homepage")
             com.add_source(
                 self.source.url,
                 note="Member list page",
@@ -381,7 +381,7 @@ class StateGovernmentComm(HtmlPage):
             chamber="legislature",
         )
         com.add_source(self.source.url, note="Committee member list")
-        com.add_link("http://jsg.legis.state.pa.us/", note="Homepage")
+        com.add_link("http://jsg.legis.state.pa.us/", note="homepage")
 
         # Member list can be extracted from a single table
         # Titles are listed for each member, but these titles are not roles
@@ -402,7 +402,7 @@ class LegAuditAdvisoryComm(HtmlPage):
             chamber="legislature",
         )
         com.add_source(self.source.url, note="Committee member list")
-        com.add_link(self.source.url, note="Homepage")
+        com.add_link(self.source.url, note="homepage")
 
         # Membership data for officers, house, senate, and public members
         # are stored in 4 separate lists.
@@ -446,7 +446,7 @@ class LegBudgetFinanceComm(HtmlPage):
             chamber="legislature",
         )
         com.add_source(self.source.url, note="Committee member list")
-        com.add_link("http://lbfc.legis.state.pa.us/ ", note="Homepage")
+        com.add_link("http://lbfc.legis.state.pa.us/ ", note="homepage")
 
         # All members info can be extracted from one table.
         members = XPath(
@@ -489,7 +489,7 @@ class LocalGovernmentComm(HtmlPage):
             chamber="legislature",
         )
         com.add_source(self.source.url, note="Committee member list")
-        com.add_link(self.source.url, note="Homepage")
+        com.add_link(self.source.url, note="homepage")
 
         # All members can be extracted from a table at the bottom of the page
         # They have prefixes that must be removed, and possible role info
@@ -531,7 +531,7 @@ class LegReapportionmentComm(HtmlPage):
             chamber="legislature",
         )
         com.add_source(self.source.url, note="Committee member list")
-        com.add_link("https://www.redistricting.state.pa.us/", note="Homepage")
+        com.add_link("https://www.redistricting.state.pa.us/", note="homepage")
 
         # Members have profile cards with name and role info
         members = XPath("//span[@class='thumb-info-title']").match(self.root)
