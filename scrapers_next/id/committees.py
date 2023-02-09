@@ -68,6 +68,17 @@ class CommitteeDetail(HtmlPage):
             self.source.url,
             note="homepage",
         )
+
+        if not com.members:
+            raise SkipItem(f"empty committee: {com.name}")
+        com.add_source(
+            self.source.url,
+            note="Committee Details page",
+        )
+        com.add_link(
+            self.source.url,
+            note="homepage",
+        )
         for member in com.members:
             print(member.name, member.role)
         return com
