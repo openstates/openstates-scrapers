@@ -206,35 +206,25 @@ class CapitolPreservationComm(HtmlPage):
             if name.endswith(","):
                 name = name[:-1]
 
+            # Join the title together, ignoring senator/representative job title
+            title = [
+                x for x in title if x not in "Senator" and x not in "Representative"
+            ]
             title = " ".join(title[1:])
-            # Split title by comma, remove blank elements
-            title = [x.strip() for x in title.split(",") if x.strip()]
 
-            # Search the text for these titles and
-            # set their role to the corresponding value
-            role = "Member"
-            roles = {
-                "Representative": "Member",
-                "Senator": "Member",
-                "Emeritus Member": "Emeritus Member",
-                "Governor's Appointee": "Governor's Appointee",
-                "Supreme Court Appointee": "Supreme Court Appointee",
-                "Executive Director": "Executive Director",
-            }
-            for k, v in roles.items():
-                if k in title:
-                    role = v
-
-            # Sometimes the role is listed in bold. If that's the case, it is
-            # assumed to be their cannonical role.
+            role = None
             try:
+                # Sometimes the role is listed in bold.
                 role = XPath("./p/strong/text()").match_one(member)
-            except SelectorError:
-                pass
 
-            # If no roles matched, assume they are a public member
-            if role is None:
-                role = "Public Member"
+                # If member also has a title, append it to their role
+                if title != "":
+                    role += f", {title}"
+
+            except SelectorError:
+                # If a member has no bold role, fall back on just using their
+                # title. If there also isn't a title, set role to Member
+                role = title if title else "Member"
 
             com.add_member(name=name, role=role)
 
