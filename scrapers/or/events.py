@@ -42,17 +42,21 @@ class OREventScraper(Scraper):
 
         if len(meetings_response) == 0:
             raise EmptyScrape
-
+        events = set()
         for meeting in meetings_response:
             event_date = self._TZ.localize(
                 datetime.datetime.strptime(meeting["MeetingDate"], self._DATE_FORMAT)
             )
             com_name = committees_by_code[meeting["CommitteeCode"]]
-
+            event_name = f"{com_name}#{meeting['Location']}#{event_date}"
+            if event_name in events:
+                self.warning(f"Duplicate event: {event_name}")
+                continue
+            events.add(event_name)
             event = Event(
                 start_date=event_date, name=com_name, location_name=meeting["Location"]
             )
-
+            event.dedupe_key = event_name
             event.add_source(meeting["AgendaUrl"])
 
             event.extras["meeting_guid"] = meeting["MeetingGuid"]
@@ -61,8 +65,13 @@ class OREventScraper(Scraper):
             event.add_participant(com_name, type="committee", note="host")
 
             for row in meeting["CommitteeAgendaItems"]:
-                if row["Comments"] and "href" not in row["Comments"]:
-                    agenda = event.add_agenda_item(row["Comments"])
+                comments = row["Comments"]
+                if comments:
+                    comments = comments.replace("\n", "")
+
+                if comments and "href" not in comments:
+                    self.info(f"Adding {comments} to {event_name}")
+                    agenda = event.add_agenda_item(comments)
                 else:
                     self.debug(
                         f"Skipping agenda item: {row} because it doesn't have useful info"
@@ -74,6 +83,9 @@ class OREventScraper(Scraper):
                     agenda.add_bill(bill_id)
 
             for row in meeting["CommitteeMeetingDocuments"]:
+                if not row["ExhibitTitle"]:
+                    self.warning("Empty exhibit information")
+                    continue
                 event.add_document(
                     note=row["ExhibitTitle"],
                     url=row["DocumentUrl"],

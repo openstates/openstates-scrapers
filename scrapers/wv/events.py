@@ -94,6 +94,9 @@ class WVEventScraper(Scraper, LXMLMixin):
 
         when = re.sub(r"or\s+conclusion\s+(.*)", "", when, flags=re.IGNORECASE)
         when = re.sub(r", After Session Ends", ", 5:00 PM", when, flags=re.IGNORECASE)
+        when = re.sub(
+            r", 30 Minutes Following House Floor Session", "", when, flags=re.IGNORECASE
+        )
 
         when = when.split("-")[0]
         when = self.clean_date(when)
@@ -113,7 +116,6 @@ class WVEventScraper(Scraper, LXMLMixin):
             .text_content()
             .strip()
         )
-
         event = Event(
             name=com,
             start_date=when,
