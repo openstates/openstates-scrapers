@@ -47,12 +47,9 @@ class CommitteeDetails(HtmlPage):
         self.com.add_link(self.source.url, note="homepage")
 
         if self.chamber == "legislature":
-            # Joint committees have no subcommittees and display members
+            # Joint committees have no subcommittees, and display members
             # in a different table than house/senate committees
             self.joint_members()
-            subcommittees = list(self.get_subcommittees())
-            if len(subcommittees) > 0:
-                raise Exception("TODO: Found subcommittee for joint committee")
         else:
             member_list = []
             try:
@@ -137,8 +134,22 @@ class CommitteeDetails(HtmlPage):
 
     # Attempt to parse a member's name and role and add them to a committee
     def attempt_add_member(self, com, name, role, default_role):
-        name, name_err = transform_name(name)
-        role, role_err = transform_role(role, default_role)
+
+        # Special case
+        if name == "To be announced":
+            return
+
+        name = transform_name(name)
+        role = transform_role(role, default_role)
+
+        # If a name contains ex officio marker, append that to their role
+        ex_officio = "(ex officio)"
+        if ex_officio in name:
+            # Replace with and without space before, ensures that extra spacing
+            # isn't added to the name.
+            name = name.replace(f" {ex_officio}", "").replace(ex_officio, "")
+            role += ex_officio
+
         com.add_member(name=name, role=role)
 
     def skip(self, com):
@@ -155,7 +166,27 @@ def transform_name(name):
     if len(name) > 1:
         name[0], name[1] = name[1], name[0]
     name = " ".join(name)
-    return name, None
+
+    # Make sure none of these have been moved to the start of the name in the
+    # previous step.
+    titles = [
+        "Sr. ",
+        "Jr. ",
+        "II ",
+        "III ",
+        "VI ",
+        "V ",
+        "VI ",
+        "VII ",
+        "VIII ",
+        "IX ",
+        "X ",
+    ]
+    for title in titles:
+        if name.startswith(title):
+            name = name[len(title) :] + " " + title.strip()
+
+    return name
 
 
 # Detect the longest role present in the text, and return a matching role.
@@ -184,7 +215,7 @@ def transform_role(role, default_role):
                 best_match = value
 
     if best_match:
-        return best_match, None
+        return best_match
     else:
         raise UnknownRole(role)
 
