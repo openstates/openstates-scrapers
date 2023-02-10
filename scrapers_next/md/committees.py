@@ -31,6 +31,12 @@ class CommitteeDetails(HtmlPage):
         if name.endswith(comm_suffix):
             name = name[: -len(comm_suffix)]
 
+        # Remove prefix from joint committies
+        joint_prefixes = ["Joint Committee on ", "Joint Subcommittee on ", "Joint "]
+        for prefix in joint_prefixes:
+            if name.startswith(prefix):
+                name = name.replace(prefix, "")
+
         self.com = ScrapeCommittee(
             name=name,
             classification="committee",
