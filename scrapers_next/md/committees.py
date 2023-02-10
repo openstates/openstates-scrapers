@@ -40,7 +40,7 @@ class CommitteeDetails(HtmlPage):
         self.com.add_source(self.source.url, note="committee details page")
         self.com.add_link(self.source.url, note="homepage")
 
-        if self.chamber == "joint":
+        if self.chamber == "legislature":
             # Joint committees have no subcommittees and display members
             # in a different table than house/senate committees
             self.joint_members()
@@ -52,13 +52,14 @@ class CommitteeDetails(HtmlPage):
             try:
                 member_list = XPath("//div[@id='divMembership']").match_one(self.root)
             except SelectorError:
-                # If the element wasnt found, no member data is available
+                # If the element wasn't found, no member data is available
                 self.skip(self.com)
                 return
             self.house_senate_members(self.com, member_list)
             yield from self.get_subcommittees()
 
-        yield self.com
+        if len(self.com.members) > 0:
+            yield self.com
 
     def get_subcommittees(self):
         divs = []
@@ -89,7 +90,8 @@ class CommitteeDetails(HtmlPage):
             self.house_senate_members(subcom, divs[i + 1])
             self.house_senate_members(subcom, divs[i + 2])
 
-            yield subcom
+            if len(subcom.members) > 0:
+                yield subcom
 
     # House and senate pages have profile cards for members
     def house_senate_members(self, com, profile_element):
