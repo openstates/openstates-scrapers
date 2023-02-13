@@ -22,7 +22,6 @@ class CommitteeList(HtmlPage):
         return CommitteeDetails(
             {"name": name, "list_url": self.source.url}, source=URL(href, timeout=30)
         )
-        print(name, href)
 
 
 # All committee types have the same format
