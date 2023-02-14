@@ -2,7 +2,7 @@ from spatula import HtmlPage, XPath, URL, SelectorError
 from openstates.models import ScrapeCommittee
 
 
-# All committiees are listed on the same page
+# All committees are listed on the same page
 class CommitteeList(HtmlPage):
     source = "https://www.capitol.hawaii.gov/comminfolist.aspx"
 
@@ -29,13 +29,12 @@ class CommitteeDetails(HtmlPage):
     def process_page(self):
 
         # Detect which chamber this committee is for.
-        chamber = None
         chamber_header = (
             XPath("//*[@id='ctl00_MainContent_LabelChamberHeader']")
             .match_one(self.root)
             .text_content()
         )
-
+        
         # Detect chamber type
         if chamber_header == "Senate Committee on":
             chamber = "upper"
