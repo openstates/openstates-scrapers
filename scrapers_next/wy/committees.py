@@ -71,7 +71,9 @@ class CommitteeList(JsonListPage):
                 logging.warning(f"No membership data found for: {name}")
                 continue
 
-            comm_html = f"https://www.wyoleg.gov/Committees/{self.year}/{each_comm['ownerID']}"
+            comm_html = (
+                f"https://www.wyoleg.gov/Committees/{self.year}/{each_comm['ownerID']}"
+            )
             com.add_link(comm_html, note="homepage")
             com.add_source(
                 committee_url,
