@@ -34,7 +34,7 @@ class CommitteeDetails(HtmlPage):
             .match_one(self.root)
             .text_content()
         )
-        
+
         # Detect chamber type
         if chamber_header == "Senate Committee on":
             chamber = "upper"
