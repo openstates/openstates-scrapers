@@ -4,6 +4,11 @@ from lxml import html
 from openstates.models import ScrapeCommittee
 
 
+class UnknownSubCommFound(BaseException):
+    def __init__(self, com_name):
+        super().__init__(f"unknown for subcommittee found: {com_name}")
+
+
 class CommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
@@ -83,13 +88,16 @@ class CommitteeList(HtmlListPage):
                 name, com_url = item.text, item.get("href")
                 if not com_url:
                     continue
-
+                classification = "committee"
+                parent = None
                 if "subcommittee" in name.lower():
-                    classification = "subcommittee"
-                    parent = name.lower().replace("subcommittee", "").title()
-                else:
-                    parent = None
-                    classification = "committee"
+                    if name.lower() in [
+                        "transportation infrastructure revenue subcommittee",
+                        "capitol security subcommittee",
+                    ]:
+                        pass
+                    else:
+                        raise UnknownSubCommFound(name)
 
                 com = ScrapeCommittee(
                     name=self.clean_committee_name(name).title(),
