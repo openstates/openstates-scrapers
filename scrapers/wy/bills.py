@@ -4,6 +4,7 @@ import datetime
 import json
 
 from openstates.scrape import Scraper, Bill, VoteEvent
+from .actions import Categorizer
 import scrapelib
 
 from utils import LXMLMixin
@@ -36,6 +37,7 @@ def categorize_action(action):
 
 
 class WYBillScraper(Scraper, LXMLMixin):
+    categorizer = Categorizer()
     chamber_abbrev_map = {"H": "lower", "S": "upper"}
     is_special = False
 
@@ -127,11 +129,14 @@ class WYBillScraper(Scraper, LXMLMixin):
             if action_json["location"] and action_json["location"] in chamber_map:
                 actor = chamber_map[action_json["location"]]
 
+            attrs = self.categorizer.categorize(action_json["statusMessage"].lower())
+            action_type = attrs["classification"]
+
             action = bill.add_action(
                 chamber=actor,
                 description=action_json["statusMessage"],
                 date=utc_action_date,
-                classification=categorize_action(action_json["statusMessage"]),
+                classification=action_type,
             )
 
             action.extras = {"billInformationID": action_json["billInformationID"]}
