@@ -244,6 +244,7 @@ class Mississippi(State):
         },
     ]
     ignored_scraped_sessions = [
+        "2022 Extraordinary Session",
         "2008 First Extraordinary Session",
         "2007 Regular Session",
         "2007 First Extraordinary Session",
