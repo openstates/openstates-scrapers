@@ -28,7 +28,7 @@ class CommitteeList(HtmlPage):
 class CommitteeDetails(HtmlPage):
     def process_page(self):
 
-        # Detect which chamber this committe is for.
+        # Detect which chamber this committee is for.
         chamber = None
         chamber_header = (
             XPath("//*[@id='ctl00_MainContent_LabelChamberHeader']")
@@ -54,7 +54,8 @@ class CommitteeDetails(HtmlPage):
         com.add_source(self.source.url, note="Committee member list")
         com.add_link(self.source.url, note="homepage")
 
-        # Chairs and Vice-Chairs are listed apart from other member
+        # Chairs and Vice-Chairs are important members and are listed
+        # apart from other members
         important_members = []
         try:
             important_members = XPath(
@@ -86,7 +87,7 @@ class CommitteeDetails(HtmlPage):
             name = other_member.strip().replace("\n", "")
             com.add_member(name=name, role="Member")
 
-        # Check to make sure there is at least one member
+        # Check to make sure there is at least one member before returning
         if len(com.members) > 0:
             return com
         else:
