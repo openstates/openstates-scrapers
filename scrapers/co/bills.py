@@ -42,8 +42,6 @@ class COBillScraper(Scraper, LXMLMixin):
         Entry point when invoking this (or really whatever else)
         """
 
-        yield from self.scrape_bill("2023A", "lower", "/bills/hb23-1105")
-
         chambers = [chamber] if chamber else ["upper", "lower"]
 
         for chamber in chambers:
