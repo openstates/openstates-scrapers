@@ -3,9 +3,12 @@ import datetime
 import lxml.html
 import requests
 from openstates.scrape import Scraper, Bill
+from .actions import Categorizer
 
 
 class IABillScraper(Scraper):
+    categorizer = Categorizer()
+
     def scrape(self, session=None, chamber=None, prefiles=None):
         # openstates/issues#252 - IA continues to prefile after session starts
         # so we'll continue scraping both
@@ -323,44 +326,8 @@ class IABillScraper(Scraper):
 
             action = re.sub(r"(H|S)\.J\.\s+\d+\.$", "", action).strip()
 
-            if action.startswith("Introduced"):
-                atype = ["introduction"]
-                if ", referred to" in action:
-                    atype.append("referral-committee")
-            elif action.startswith("Read first time"):
-                atype = "reading-1"
-            elif action.startswith("Referred to"):
-                atype = "referral-committee"
-            elif action.startswith("Sent to Governor"):
-                atype = "executive-receipt"
-            elif action.startswith("Reported Signed by Governor"):
-                atype = "executive-signature"
-            elif action.startswith("Signed by Governor"):
-                atype = "executive-signature"
-            elif action.startswith("Vetoed by Governor"):
-                atype = "executive-veto"
-            elif action.startswith("Item veto"):
-                atype = "executive-veto-line-item"
-            elif re.match(r"Passed (House|Senate)", action):
-                atype = "passage"
-            elif re.match(r"Amendment (S|H)-\d+ filed", action):
-                atype = ["amendment-introduction"]
-                if ", adopted" in action:
-                    atype.append("amendment-passage")
-            elif re.match(r"Amendment (S|H)-\d+( as amended,)? adopted", action):
-                atype = "amendment-passage"
-            elif re.match(r"Amendment (S|N)-\d+ lost", action):
-                atype = "amendment-failure"
-            elif action.startswith("Resolution filed"):
-                atype = "introduction"
-            elif action.startswith("Resolution adopted"):
-                atype = "passage"
-            elif action.startswith("Committee report") and action.endswith("passage."):
-                atype = "committee-passage"
-            elif action.startswith("Withdrawn"):
-                atype = "withdrawal"
-            else:
-                atype = None
+            action_attr = self.categorizer.categorize(action.lower())
+            atype = action_attr["classification"]
 
             if action.strip() == "":
                 continue
