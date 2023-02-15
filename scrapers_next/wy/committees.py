@@ -48,7 +48,7 @@ class CommitteeList(JsonListPage):
             parent = None
             if "subcommittee" in name.lower():
                 if "capitol interpretive exhibits" in name.lower():
-                    pass
+                    name = name.replace("Subcommittee", "").strip()
                 else:
                     raise UnknownSubCommFound(name)
 
