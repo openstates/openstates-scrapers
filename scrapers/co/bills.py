@@ -41,6 +41,9 @@ class COBillScraper(Scraper, LXMLMixin):
         """
         Entry point when invoking this (or really whatever else)
         """
+
+        yield from self.scrape_bill("2023A", "lower", "/bills/hb23-1105")
+
         chambers = [chamber] if chamber else ["upper", "lower"]
 
         for chamber in chambers:
@@ -237,6 +240,10 @@ class COBillScraper(Scraper, LXMLMixin):
         notes = page.xpath('//div[@id="bill-documents-tabs2"]//table//tbody//tr')
 
         for version in notes:
+            if not version.xpath("td[2]/text()"):
+                self.warning("Skipping fiscal note with no name or date")
+                return
+
             version_date = version.xpath("td[1]/text()")[0].strip()
             version_type = version.xpath("td[2]/text()")[0]
             version_url = version.xpath("td[3]/span/a/@href")[0]
