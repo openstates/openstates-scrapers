@@ -109,7 +109,7 @@ class CommitteeList(HtmlListPage):
                         raise UnknownSubCommFound(name)
 
                 com = ScrapeCommittee(
-                    name=self.clean_committee_name(name).title(),
+                    name=clean_committee_name(name).title(),
                     chamber=chamber,
                     parent=parent,
                     classification=classification,
