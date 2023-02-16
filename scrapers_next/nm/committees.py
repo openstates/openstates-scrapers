@@ -48,6 +48,22 @@ class CommitteeDetail(HtmlPage):
         return com
 
 
+def clean_committee_name(name_to_clean):
+    """
+    Helper function to remove unwanted substrings and
+    symbols from committee name, return cleaned name.
+    """
+    head, _sep, tail = (
+        name_to_clean.lower().title()
+        .replace("'", "")
+        .replace("House ", "")
+        .replace("Senate ", "")
+        .replace("Subcommittee", "")
+        .rpartition(" Committee")
+    )
+    return head + tail
+
+
 class CommitteeList(HtmlListPage):
     home = "http://www.nmlegis.gov/Committee/"
     source = URL(
@@ -55,16 +71,6 @@ class CommitteeList(HtmlListPage):
         timeout=10,
     )
     chamber = "upper"
-
-    def clean_committee_name(self, name_to_clean):
-        head, _sep, tail = (
-            name_to_clean.replace("House ", "")
-            .replace("Senate ", "")
-            .replace("Subcommittee", "Committee")
-            .rpartition(" Committee")
-        )
-
-        return head + tail
 
     def process_page(self):
         senate_href_xpath = '//a[contains(@id, "MainContent_gridViewSenateCommittees_linkSenateCommittee")]'
@@ -91,6 +97,9 @@ class CommitteeList(HtmlListPage):
                 classification = "committee"
                 parent = None
                 if "subcommittee" in name.lower():
+                    # Subcommittees that do not have clear parent committee
+                    #  after investigation on NM legislature site will be
+                    #  stored with classification as "committee"
                     if name.lower() in [
                         "transportation infrastructure revenue subcommittee",
                         "capitol security subcommittee",
