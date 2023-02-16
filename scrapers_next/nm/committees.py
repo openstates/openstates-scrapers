@@ -54,7 +54,8 @@ def clean_committee_name(name_to_clean):
     symbols from committee name, return cleaned name.
     """
     head, _sep, tail = (
-        name_to_clean.lower().title()
+        name_to_clean.lower()
+        .title()
         .replace("'", "")
         .replace("House ", "")
         .replace("Senate ", "")
