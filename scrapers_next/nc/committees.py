@@ -46,14 +46,15 @@ class CommitteeDetail(HtmlPage):
     )
 
     def process_page(self):
-        url_name_dict, com = self.input
+        url_name_dict, list_page_url, com = self.input
 
         # Reassign with more accurate committee name
         if com.chamber == "legislature":
             name = get_joint_comm_name(self.root)
             com.name = name
 
-        com.add_source(self.source.url)
+        com.add_source(list_page_url, note="committees list page")
+        com.add_source(self.source.url, note="committee details page")
         com.add_link(self.source.url, note="homepage")
 
         try:
@@ -135,6 +136,7 @@ class CommitteeList(HtmlListPage):
         return CommitteeDetail(
             [
                 self.member_urls_and_names,
+                self.source.url,
                 ScrapeCommittee(
                     name=item.text_content(),
                     chamber=chamber,
