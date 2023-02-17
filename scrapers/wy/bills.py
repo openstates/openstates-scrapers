@@ -1,4 +1,3 @@
-import re
 import pytz
 import datetime
 import json
@@ -11,29 +10,6 @@ from utils import LXMLMixin
 
 
 TIMEZONE = pytz.timezone("US/Mountain")
-
-
-def categorize_action(action):
-    categorizers = (
-        ("Introduced and Referred", ("introduction", "referral-committee")),
-        ("Rerefer to", "referral-committee"),
-        ("Do Pass Failed", "committee-failure"),
-        ("2nd Reading:Passed", "reading-2"),
-        ("3rd Reading:Passed", ("reading-3", "passage")),
-        ("Failed 3rd Reading", ("reading-3", "failure")),
-        ("Did Not Adopt", "amendment-failure"),
-        ("Withdrawn by Sponsor", "withdrawal"),
-        ("Line Item Veto", "executive-veto-line-item"),
-        ("Governor Signed", "executive-signature"),
-        ("Recommend (Amend and )?Do Pass", "committee-passage-favorable"),
-        ("Recommend (Amend and )?Do Not Pass", "committee-passage-unfavorable"),
-        ("Received for Introduction", "filing"),
-    )
-
-    for pattern, types in categorizers:
-        if re.findall(pattern, action):
-            return types
-    return None
 
 
 class WYBillScraper(Scraper, LXMLMixin):
