@@ -45,7 +45,7 @@ class CommitteeDetails(HtmlPage):
         com.add_source(self.source.url, note="Committee details page")
         com.add_link(self.source.url, note="homepage")
 
-        # Extract member info from the contentsection div There may be an h4
+        # Extract member info from the 'contentsection' div. There may be an h4
         # within this div that denotes all following members as ex-officio. Some
         # members may also be named with their title instead of their name, so
         # the link to their profile must be followed to read the member's actual
@@ -72,13 +72,14 @@ class CommitteeDetails(HtmlPage):
                 if ex_officio:
                     role = f"{role} (Ex-Officio)"
                 com.add_member(name=name, role=role)
+
         return com
 
 
 class CommitteeList(HtmlPage):
     def process_page(self):
         self.logger.warning(
-            "Committee list page may have information on subcommittees, but this info is in docx format and cannot be scraped."
+            "Committee list page may have information on subcommittees in docx format that cannot be scraped with Spatula."
         )
         committee_links = XPath("//div[@id='contentsection']/h4/a/@href").match(
             self.root
@@ -120,7 +121,7 @@ class MemberProfile(HtmlPage):
         return header
 
 
-# Finds a role suffix from a name, removed it and returns name, role
+# Finds a role suffix from a name, removed it and returns (name, role)
 def extract_role(name):
     # More roles can be added here if needed
     # SC abbreviates most roles
@@ -381,17 +382,14 @@ class Joint(PdfPage):
             com.add_source(self.source.url, note="Joint Committee information PDF")
             com.add_link(self.source.url, note="homepage")
 
-            # Add members to committee
+            # Replace special characters in member names and add them to the committee
             for m in members:
-
-                # Replace special characters in the member name
                 name = (
                     m.get("name")
                     .replace("\u201c", '"')
                     .replace("\u201d", '"')
                     .replace("\u2019", "'")
                 )
-
                 com.add_member(
                     name=name,
                     role=m.get("role"),
