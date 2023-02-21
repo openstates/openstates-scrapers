@@ -7,8 +7,9 @@ from openstates.models import ScrapeCommittee
 
 
 class CommitteeList(JsonListPage):
+    session_year = "2024"
     source = URL(
-        "https://legislature.vermont.gov/committee/loadList/2024/",
+        f"https://legislature.vermont.gov/committee/loadList/{session_year}/",
         timeout=10,
     )
 
@@ -91,4 +92,14 @@ class CommitteeList(JsonListPage):
                 self.source.url,
                 note="Committee JSON from legislature.vermont.gov site",
             )
+
+            # TODO: determine more consistent way to add each committee's HTML
+            #   page link, given not present for many committees in JSON data.
+            #   Below link is to HTML committee list page (not ideal).
+            coms_link = (
+                f"https://legislature.vermont.gov/committee/list/"
+                f"{self.session_year}/"
+            )
+            com.add_link(coms_link, note="homepage")
+
             yield com
