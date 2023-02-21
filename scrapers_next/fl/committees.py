@@ -62,7 +62,8 @@ class HouseComDetail(HtmlPage):
             name = self.clean_name(cm.text_content())
             self.input.add_member(name)
 
-        self.input.add_source(self.source.url)
+        self.input.add_source(self.source.url, note="Committee Details Page")
+        self.input.add_link(self.source.url, note="homepage")
 
         yield self.input
 
@@ -111,6 +112,7 @@ class SenComDetail(HtmlPage):
             member = self.clean_name(ul.text_content())
             comm.add_member(member)
 
-        comm.add_source(self.source.url)
+        comm.add_source(self.source.url, note="Committee Details Page")
+        comm.add_link(self.source.url, note="homepage")
 
         return comm
