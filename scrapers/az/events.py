@@ -165,6 +165,8 @@ class AZEventScraper(Scraper):
                 else:
                     time = ""
 
+                row["Date"] = row["Date"].replace("(Recessed)", "")
+
                 when = dateutil.parser.parse(f"{row['Date']} {time}")
                 when = self._tz.localize(when)
 

@@ -156,6 +156,7 @@ class WVEventScraper(Scraper, LXMLMixin):
             when,
             flags=re.IGNORECASE,
         )
+        when = re.sub(r"Changed to", "", when, flags=re.IGNORECASE)
         when = re.sub(r"To Be Announced", "", when, flags=re.IGNORECASE)
         when = re.sub(r"TB(.*)", "", when, flags=re.IGNORECASE)
         when = re.sub(r"\*", "", when, flags=re.IGNORECASE)
