@@ -12,7 +12,10 @@ def normalize_time(time_string):
     :param time_string:
     :return:
     """
+
     time_string = time_string.lower().strip()
+    # replace "to XX:XX am|pm"
+    time_string = re.sub(r"to \d{2}:\d{2} \w{2}", "", time_string).strip()
     if re.search(r"adjourn", time_string):
         time_string = "12:00 am"
     if re.search(r" noon", time_string):
