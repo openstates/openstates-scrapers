@@ -85,6 +85,12 @@ class CommitteeList(HtmlListPage):
                     note="Committee List API from current beta version of Indiana gov site",
                 )
 
+                # TODO: update with better HTML link once Indiana has launched
+                #   their new legislative site. Currently, the "homepage" link
+                #   for each comm will point to list of all standing committees
+                coms_link = "https://iga.in.gov/legislative/2023/committees/"
+                com.add_link(coms_link, note="homepage")
+
                 yield CommitteeDetail(
                     com, source=URL(mem_source, timeout=30, headers=self.source.headers)
                 )
