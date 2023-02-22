@@ -1,95 +1,152 @@
-from spatula import HtmlPage, HtmlListPage, CSS, XPath, SelectorError, SkipItem
+from re import sub, search
+from spatula import HtmlPage, HtmlListPage, CSS, URL, Source, SkipItem
 from openstates.models import ScrapeCommittee
 
 
-class CommitteeDetail(HtmlPage):
-    example_source = (
-        "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Committee/398/Overview"
-    )
+class CommitteeMember(HtmlPage):
+    """
+    Scrape a committee member profile, if existing.
+    Position is scraped from the directory page and passed directly to this class.
+    If a member does not have a profile or their name cannot be gleaned using a
+    css selector, use fallback_name.
+    :param position: Rank of the member in the committee currently being scraped.
+    e.g. "Chair"
+    :param fallback_name: The name to use if the legislator's full name cannot be
+    determined from their profile. e.g. "Senator Burns"
+    """
+
+    position: str
+    fallback_name: str
+
+    def __init__(self, input_val, source: Source, position: str, fallback_name: str):
+        super(CommitteeMember, self).__init__(input_val, source=source)
+        self.position = position
+        self.fallback_name = fallback_name
 
     def process_page(self):
-        com = self.input
+        # min_items set to zero because not all members have a profile
+        # page instead shows a list of media releases
+        name_match = CSS("#wrapleftcolr > h2:nth-child(1)", min_items=0).match(
+            self.root
+        )
+        name = name_match[0].text if len(name_match) == 1 else self.fallback_name
+        self.input.add_source(self.source.url, f"{name} url")
+        self.input.add_member(sub(r"\(.*\)", "", name), self.position)
+        return self.input
 
-        try:
-            # one committee (probably Senate committee of the whole) doesn't have members listed
-            members = CSS("a.bio").match(self.root)
-        except SelectorError:
-            raise SkipItem("No members found")
 
-        if not members:
-            raise SkipItem(f"No membership data found for: {com.name}")
+class CommitteeDetail(HtmlListPage):
+    """
+    Scrape a list of committee members.
+    :param selector: CSS matcher for each legislator url, according to chamber.
+    :param url_signifier: Part of each matched element's href that should exist
+    in a valid member profile url.
+    """
 
-        for member in members:
-            name = member.text_content()
-            # Chair and Vice-Chair immediately follow anchor tag:
-            role_text = member.tail.strip()
+    selector: CSS
+    url_signifier: str
+    chamber: str
 
-            if role_text:
-                # remove leading hyphen/space from role
-                role = role_text.replace("- ", "")
+    def __init__(
+        self,
+        input_val: ScrapeCommittee,
+        source: Source,
+        selector: CSS,
+        chamber: str,
+        url_signifier: str,
+    ):
+        super(CommitteeDetail, self).__init__(input_val, source=source)
+        self.selector = selector
+        self.url_signifier = url_signifier
+        self.chamber = chamber
+
+    def process_item(self, item):
+        if self.url_signifier in item.get("href"):
+            fallback_name = item.get("href").split("member=", 1)[1]
+            if self.chamber == "legislature":
+                match = search(
+                    rf"({fallback_name})\s+-\s+(.+)", item.getparent().text_content()
+                )
+                position = (
+                    match.groups()[1]
+                    if match is not None and len(match.groups()) == 2
+                    else "Member"
+                )
             else:
-                role = "Member"
-
-            com.add_member(name=name, role=role)
-
-        return com
+                next_elem = item.getnext().text
+                position = next_elem if isinstance(next_elem, str) else "Member"
+            return CommitteeMember(
+                self.input,
+                source=URL(item.get("href")),
+                position=position,
+                fallback_name=fallback_name,
+            )
+        else:
+            raise SkipItem("not a committee member url")
 
 
 class CommitteeList(HtmlListPage):
-    # committee list doesn't actually come in with initial page; have to get committee list from subpage call:
-    source = "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/HomeCommittee/LoadCommitteeListTab?selectedTab=List"
-    parent_candidate = None
+    """
+    Scrape a list of committees.
+    :param selector: CSS matcher for each committee url, according to chamber.
+    :param member_selector: CSS matcher for each member within a committee -
+    passed directly to CommitteeDetail.
+    :param cmte_url_signifier: Part of each matched element's href that should exist
+    in a valid committee directory url.
+    :param member_url_signifier: Part of each matched element's href that should exist
+    in a valid member profile url.
+    :param chamber: Chamber of this group of committees. e.g. "upper" "lower" "legislature"
+    """
+
+    selector: CSS
+    member_selector: CSS
+    cmte_url_signifier: str
+    member_url_signifier: str
+    chamber: str
 
     def process_item(self, item):
-
-        name = item.text_content().strip()
-
-        # Only committees have parens abbreviation: "Commerce and Labor (CL)"
-        #   while subcommittees are just listed as: "Audit" or "Human Services"
-        if "(" in name:
-            name = " ".join(name.split("(")[:-1]).strip()
-            classification = "committee"
-            parent = None
-            self.parent_candidate = name
+        if self.cmte_url_signifier in item.get("href"):
+            cmte = ScrapeCommittee(
+                name=item.text,
+                chamber=self.chamber,
+                # WV subcommittees do not explicitly list parent committees
+                classification="committee",
+            )
+            cmte.add_source(item.get("href"), f"{item.text} committee url")
+            return CommitteeDetail(
+                input_val=cmte,
+                source=URL(item.get("href")),
+                selector=self.member_selector,
+                chamber=self.chamber,
+                url_signifier=self.member_url_signifier,
+            )
         else:
-            classification = "subcommittee"
-            parent = self.parent_candidate
-
-        com = ScrapeCommittee(
-            name=name,
-            chamber=self.chamber,
-            classification=classification,
-            parent=parent,
-        )
-
-        committee_id = item.get("href").split("/")[
-            8
-        ]  # committee number is after the 6th slash in the href
-
-        # committee member list also comes from a sub-page request
-        detail_source = (
-            "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Committee/"
-            f"FillSelectedCommitteeTab?selectedTab=Overview&committeeOrSubCommitteeKey={committee_id}"
-        )
-
-        com.add_source(self.source.url, note="Committees list page")
-        com.add_source(detail_source, note="Committee detail page")
-        com.add_link(detail_source, note="homepage")
-
-        return CommitteeDetail(com, source=detail_source)
+            raise SkipItem("not a committee url")
 
 
-class Assembly(CommitteeList):
-    selector = XPath(
-        ".//h2[contains(text(), 'Assembly')]/parent::div//div"
-        "[@class='list-group-item']//a[not(contains(text(), 'View Meetings'))]"
-    )
+class SenateCommittees(CommitteeList):
+    source = "https://www.wvlegislature.gov/committees/senate/main.cfm"
+    selector = CSS("#wrapleftcolr a")
+    member_selector = CSS("#wrapleftcol a")
+    cmte_url_signifier = "SenateCommittee.cfm"
+    member_url_signifier = "Senate1/lawmaker.cfm"
+    chamber = "upper"
+
+
+class HouseCommittees(CommitteeList):
+    source = "https://www.wvlegislature.gov/committees/house/main.cfm"
+    selector = CSS("#wrapleftcol a")
+    member_selector = CSS("#wrapleftcol a")
+    cmte_url_signifier = "HouseCommittee.cfm"
+    member_url_signifier = "House/lawmaker.cfm"
     chamber = "lower"
 
 
-class Senate(CommitteeList):
-    selector = XPath(
-        ".//h2[contains(text(), 'Senate')]/parent::div//div"
-        "[@class='list-group-item']//a[not(contains(text(), 'View Meetings'))]"
-    )
-    chamber = "upper"
+class JointCommittees(CommitteeList):
+    source = "https://www.wvlegislature.gov/committees/interims/interims.cfm"
+    selector = CSS("#wrapleftcol a")
+    # min_items set to zero because not all joint committees have appointed members
+    member_selector = CSS(".tabborder a", min_items=0)
+    cmte_url_signifier = "committee.cfm"
+    member_url_signifier = "lawmaker.cfm"
+    chamber = "legislature"
