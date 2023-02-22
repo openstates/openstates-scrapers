@@ -13,10 +13,15 @@ class SubcommitteeFound(BaseException):
 
 
 class CommitteeDetail(HtmlPage):
+    def process_error_response(self, exception):
+        self.logger.warning(exception)
+
     def process_page(self):
         com = self.input
         name_path = '//div[@class="wpb_column vc_column_container col-xs-mobile-fullwidth col-sm-8 text-left sm-text-left xs-text-center padding-three"]//p/strong/a'
         role_path = '//div[@class="wpb_column vc_column_container col-xs-mobile-fullwidth col-sm-8 text-left sm-text-left xs-text-center padding-three"]//p/strong/text()'
+        name_list = []
+        role_list = []
         try:
             name_list = XPath(name_path).match(self.root)
             role_list = XPath(role_path).match(self.root)
@@ -79,8 +84,6 @@ class CommitteeDetail(HtmlPage):
             self.source.url,
             note="homepage",
         )
-        for member in com.members:
-            print(member.name, member.role)
         return com
 
 
@@ -131,8 +134,6 @@ class CommitteeList(HtmlListPage):
         for data in all_committees:
             if "subcommittee" in data[0]:
                 raise SubcommitteeFound(data[0])
-            if "Joint Millennium" not in data[0]:
-                continue
             com = ScrapeCommittee(
                 name=data[0],
                 chamber=data[2],
