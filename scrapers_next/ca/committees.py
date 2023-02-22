@@ -148,6 +148,7 @@ class SenateCommitteeList(HtmlListPage):
 
         com.add_source(self.source.url, note="Committee List Page")
         com.add_source(comm_url, note="Committee Detail Page")
+        com.add_link(comm_url, note="homepage")
 
         return CommDetails(com, source=URL(comm_url))
 
@@ -189,5 +190,6 @@ class AssemblyCommitteeList(HtmlListPage):
 
         com.add_source(self.source.url, note="Committee List Page")
         com.add_source(comm_url, note="Committee Detail Page")
+        com.add_link(comm_url, note="homepage")
 
         return CommDetails(com, source=URL(comm_url))

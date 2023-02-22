@@ -40,8 +40,8 @@ class CommitteeList(HtmlListPage):
             chamber=self.chamber,
         )
         detail_link = item.get("href")
-        com.add_source(detail_link)
-        com.add_link(detail_link, "homepage")
+        com.add_source(detail_link, note="Committee details page")
+        com.add_link(detail_link, note="homepage")
         return CommitteeDetails(com, source=detail_link)
 
 
