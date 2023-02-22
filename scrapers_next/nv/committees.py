@@ -38,19 +38,29 @@ class CommitteeDetail(HtmlPage):
 class CommitteeList(HtmlListPage):
     # committee list doesn't actually come in with initial page; have to get committee list from subpage call:
     source = "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/HomeCommittee/LoadCommitteeListTab?selectedTab=List"
-    selector = XPath('//div[@class="list-group-item"]//a')
-    # TODO: Add logic to properly set chamber - It appears in a H2 element with class 'card-header h3' above all the committees in that chamber
-    # TODO: Add logic to correctly categorize subcommittees (Parents: Assembly Ways & Means, Senate Finance, probably more to be added.)
-    chamber = "lower"
+    parent_candidate = None
 
     def process_item(self, item):
 
-        committee_name = item.text_content().strip()
+        name = item.text_content().strip()
 
-        if committee_name == "View Meetings":
-            self.skip()
+        # Only committees have parens abbreviation: "Commerce and Labor (CL)"
+        #   while subcommittees are just listed as: "Audit" or "Human Services"
+        if "(" in name:
+            name = " ".join(name.split("(")[:-1]).strip()
+            classification = "committee"
+            parent = None
+            self.parent_candidate = name
+        else:
+            classification = "subcommittee"
+            parent = self.parent_candidate
 
-        com = ScrapeCommittee(name=committee_name, chamber=self.chamber)
+        com = ScrapeCommittee(
+            name=name,
+            chamber=self.chamber,
+            classification=classification,
+            parent=parent,
+        )
 
         committee_id = item.get("href").split("/")[
             8
@@ -62,7 +72,24 @@ class CommitteeList(HtmlListPage):
             f"FillSelectedCommitteeTab?selectedTab=Overview&committeeOrSubCommitteeKey={committee_id}"
         )
 
-        com.add_source(self.source.url, note="Committees List Page")
-        com.add_source(detail_source, note="Committees Overview Page")
+        com.add_source(self.source.url, note="Committees list page")
+        com.add_source(detail_source, note="Committee detail page")
+        com.add_link(detail_source, note="homepage")
 
         return CommitteeDetail(com, source=detail_source)
+
+
+class Assembly(CommitteeList):
+    selector = XPath(
+        ".//h2[contains(text(), 'Assembly')]/parent::div//div"
+        "[@class='list-group-item']//a[not(contains(text(), 'View Meetings'))]"
+    )
+    chamber = "lower"
+
+
+class Senate(CommitteeList):
+    selector = XPath(
+        ".//h2[contains(text(), 'Senate')]/parent::div//div"
+        "[@class='list-group-item']//a[not(contains(text(), 'View Meetings'))]"
+    )
+    chamber = "upper"
