@@ -27,12 +27,16 @@ class MemberList(JsonPage):
                 self.logger.warning(f"{name} has no listed district, skipping.")
                 continue
 
+            # Remove extra text from district
+            district = member.get("District").split(" ")[-1]
+            print(district)
+
             p = ScrapePerson(
                 name=member.get("FullName"),
                 state="al",
                 chamber=self.chamber,
                 party=member.get("Affiliation"),
-                district=member.get("District"),
+                district=district,
                 email=member.get("Email"),
                 image=member.get("NewImgUrl"),
                 given_name=member.get("FirstName"),
