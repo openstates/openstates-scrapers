@@ -29,7 +29,6 @@ class MemberList(JsonPage):
 
             # Remove extra text from district
             district = member.get("District").split(" ")[-1]
-            print(district)
 
             p = ScrapePerson(
                 name=member.get("FullName"),
@@ -47,10 +46,25 @@ class MemberList(JsonPage):
                 self.source.url, note="graphql endpoint for member information"
             )
 
+            # Member profiles can't be access by url alone, so add homepage links
+            # for house/senate list page instead
+            if self.chamber == "upper":
+                # Senate member list
+                p.add_link(
+                    "https://alison.legislature.state.al.us/senate-leaders-members",
+                    note="homepage",
+                )
+            elif self.chamber == "lower":
+                # House member list
+                p.add_link(
+                    "https://alison.legislature.state.al.us/house-leaders-members",
+                    note="homepage",
+                )
+
             # Missing data may sometimes be set to a string like "None Listed"
             capitol_address = member.get("FullAddress")
             if not capitol_address.startswith("No Address Listed"):
-                p.capitol_office.address = capitol_address
+                p.capitol_office.address = capitol_address.strip().replace("\n", ",")
 
             capitol_phone = member.get("Phone")
             if capitol_phone and not capitol_phone == "None Listed":
@@ -58,7 +72,7 @@ class MemberList(JsonPage):
 
             district_address = member.get("FullDistrictAddress")
             if not district_address.startswith("No District Address Listed"):
-                p.district_office.address = district_address
+                p.district_office.address = district_address.strip().replace("\n", ",")
 
             district_phone = member.get("DistrictPhone")
             if district_phone and not district_phone == "None Listed":
