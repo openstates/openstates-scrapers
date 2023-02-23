@@ -1,89 +1,117 @@
-from spatula import URL, CSS, HtmlListPage, HtmlPage, SkipItem
+from spatula import JsonPage, URL
 from openstates.models import ScrapeCommittee
-import re
+import json
 
 
-class CommDetail(HtmlPage):
+class MemberList(JsonPage):
     def process_page(self):
-        com = self.input
+        data = self.response.json().get("data").get("membersByCommittee")
+        for member in data:
+            yield (member.get("MemberName"), member.get("MemberPosition"))
 
-        members = list(CSS("table.Grid a").match(self.root))
 
-        if not members:
-            raise SkipItem("empty committee")
+class CommitteeList(JsonPage):
+    def process_page(self):
+        data = self.response.json().get("data").get("committees")
+        for committee in data:
+            name = committee.get("Committee")
 
-        for member in members:
-            name = member.text_content().strip()
-            if re.search(r"\(", name):
-                name_split = re.search(r"(.+),\s(.+)\s\((.+)\)", name).groups()
-                first_name = name_split[1]
-                last_name = name_split[0]
-                role = name_split[2]
+            # Removes extra text from committee name
+            if name.startswith("Joint "):
+                name = name[len("Joint ") :]
+            if name.endswith(" Committee"):
+                name = name[: -len(" Committee")]
+
+            com = ScrapeCommittee(
+                name=name,
+                chamber=self.chamber,
+                classification="committee",
+            )
+
+            # Individual pages can't be accessed with  url, so add the
+            # committee list page as the homepage link
+            if self.chamber == "upper":
+                com.add_link(
+                    "https://alison.legislature.state.al.us/committees-senate-standing-current-year",
+                    note="homepage",
+                )
+            elif self.chamber == "lower":
+                com.add_link(
+                    "https://alison.legislature.state.al.us/committees-house-standing-current",
+                    note="homepage",
+                )
+            elif self.chamber == "joint":
+                com.add_link(
+                    "https://alison.legislature.state.al.us/joint-interim-committees",
+                    note="homepage",
+                )
+
+            # Add sources
+            member_source = get_committee_members_source(committee.get("CommitteeId"))
+            com.add_source(member_source.url, note="Membership information api call")
+            com.add_source(self.source.url, note="Committee list api call")
+
+            # Add members
+            members = MemberList(source=member_source).do_scrape()
+            for name, role in members:
+                com.add_member(name=name, role=role)
+
+            # Check if there are any members. Only yield if there are members,
+            # otherwise log a warning.
+            if len(com.members) == 0:
+                self.logger.warning(f"No membership information for: {com.name}")
             else:
-                name_split = re.search(r"(.+),\s(.+)", name).groups()
-                first_name = name_split[1]
-                last_name = name_split[0]
-                role = "member"
-            first_name = re.sub("&quot", '"', first_name)
-            name = f"{first_name} {last_name}"
-
-            com.add_member(name, role)
-
-        extra_info = CSS("div table#ContentPlaceHolder1_gvClerk tr").match(self.root)
-        for info in extra_info:
-            if ":" in info.text_content().strip():
-                idx, val = info.text_content().strip().split(":")
-                com.extras[idx.strip()] = val.strip()
-            else:
-                com.extras["Room"] = info.text_content().strip()
-
-        return com
+                yield com
 
 
-class CommList(HtmlListPage):
-    def process_item(self, item):
-        comm_name = item.text_content().strip()
-
-        com = ScrapeCommittee(
-            name=comm_name,
-            classification="committee",
-            chamber=self.chamber,
-        )
-
-        detail_link = item.get("href")
-
-        com.add_source(self.source.url)
-
-        # detail links for Joint Committees are hidden
-        # "javascript:__doPostBack('ctl00$ContentPlaceHolder1$gvJICommittees','cmdCommittee$0')"
-        if self.chamber != "legislature":
-            com.add_source(detail_link)
-            com.add_link(detail_link, note="homepage")
-
-            return CommDetail(com, source=detail_link)
-        else:
-            raise SkipItem("joint committee")
-
-
-class Senate(CommList):
-    source = URL(
-        "http://www.legislature.state.al.us/aliswww/ISD/senate/SenateCommittees.aspx"
+def graphql_query(data):
+    return URL(
+        "https://gql.api.alison.legislature.state.al.us/graphql",
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            # Referer required or graphql will respond with http error 403
+            "Referer": "https://alison.legislature.state.al.us/",
+        },
+        data=json.dumps(data),
     )
-    chamber = "upper"
-    selector = CSS("li.interim_listpad a")
 
 
-class House(CommList):
-    source = URL(
-        "http://www.legislature.state.al.us/aliswww/ISD/House/HouseCommittees.aspx"
+def get_committee_members_source(committeeId):
+    return graphql_query(
+        {
+            "query": '{membersByCommittee(committeeId:"'
+            + committeeId
+            + '") {Committee,MemberName,MemberPosition}}',
+            "operationName": "",
+            "variables": [],
+        },
     )
-    chamber = "lower"
-    selector = CSS("li.interim_listpad a")
 
 
-class Joint(CommList):
-    source = URL(
-        "http://www.legislature.state.al.us/aliswww/ISD/House/JointInterimCommittees.aspx"
+# Chamber should be "House", "Senate", or "Joint"
+def get_committees_source(chamber):
+    return graphql_query(
+        {
+            "query": '{committees(body:"'
+            + chamber
+            + '", direction:"asc"orderBy:"committee"limit:"99999"offset:"0" customFilters: {}){ CommitteeId,Committee }}',
+            "operationName": "",
+            "variables": [],
+        },
     )
+
+
+class Joint(CommitteeList):
     chamber = "legislature"
-    selector = CSS("tr td a")
+    source = get_committees_source(chamber="Joint")
+
+
+class House(CommitteeList):
+    chamber = "lower"
+    source = get_committees_source(chamber="House")
+
+
+class Senate(CommitteeList):
+    chamber = "upper"
+    source = get_committees_source(chamber="Senate")
