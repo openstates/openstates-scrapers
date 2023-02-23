@@ -14,7 +14,10 @@ def get_member_full_name(url, fallback_name):
     response = requests.get(url)
     content = lxml.html.fromstring(response.content)
     name_match = CSS("#wrapleftcolr > h2:nth-child(1)", min_items=0).match(content)
+    fallback_name = " ".join(fallback_name.split()[1:])
     name = name_match[0].text if len(name_match) == 1 else fallback_name
+    if "(" in name:
+        name = name.split("(")[0].strip()
     return name
 
 
