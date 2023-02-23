@@ -202,7 +202,6 @@ class GOPHouseMemberPhotos(HtmlPage):
 
     def process_page(self):
         p = self.input
-        """
         try:
             image_elem = self.root.xpath(f".//img[@class='{self.gop_class}']")[0]
         except IndexError:
@@ -211,7 +210,6 @@ class GOPHouseMemberPhotos(HtmlPage):
             ]
         img = image_elem.get("src")
         p.image = img
-        """
         return p
 
 
