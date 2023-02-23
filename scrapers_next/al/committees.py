@@ -3,6 +3,7 @@ from openstates.models import ScrapeCommittee
 import json
 
 
+# Receives data about members in a single committee
 class MemberList(JsonPage):
     def process_page(self):
         data = self.response.json().get("data").get("membersByCommittee")
@@ -10,6 +11,7 @@ class MemberList(JsonPage):
             yield (member.get("MemberName"), member.get("MemberPosition"))
 
 
+# Receives a list of committees
 class CommitteeList(JsonPage):
     def process_page(self):
         data = self.response.json().get("data").get("committees")
