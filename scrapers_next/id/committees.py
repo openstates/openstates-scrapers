@@ -59,8 +59,9 @@ class CommitteeDetail(HtmlPage):
             for rep in ["Rep.", "Sen."]:
                 name = name.replace(rep, "")
             name = name.strip()
-            role = role.replace(",", "").strip()
-
+            role = role.replace(",", "").replace("– ", "").strip()
+            if not role or not len(role.strip()):
+                role = "Member"
             com.add_member(name, role)
 
         if not com.members:
