@@ -96,9 +96,10 @@ class SenateCommittee(HtmlListPage):
         com = ScrapeCommittee(
             name=name, classification="committee", chamber=self.chamber
         )
+        com.add_source(self.source.url, note="Committees list page")
         detail_link = com_link.get("href")
-        com.add_source(detail_link)
-        com.add_link(detail_link, "homepage")
+        com.add_source(detail_link, note="Committee details page")
+        com.add_link(detail_link, note="homepage")
         return SenateCommitteeDetail(com, source=URL(detail_link, timeout=30))
 
 
@@ -113,9 +114,10 @@ class HouseCommittee(HtmlListPage):
         com = ScrapeCommittee(
             name=name, classification="committee", chamber=self.chamber
         )
+        com.add_source(self.source.url, note="Committees list page")
         detail_link = com_link.get("href")
-        com.add_source(detail_link)
-        com.add_link(detail_link, "homepage")
+        com.add_source(detail_link, note="Committee details page")
+        com.add_link(detail_link, note="homepage")
         return HouseCommitteeDetail(com, source=URL(detail_link, timeout=30))
 
 
