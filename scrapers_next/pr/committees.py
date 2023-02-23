@@ -11,13 +11,14 @@ class SenateCommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
         com.add_source(self.source.url, note="Committee Detail Page")
+        com.add_link(self.source.url, note="homepage")
 
         members = CSS("div.panel-body div.senator_cont a").match(self.root)
 
         for member in members:
             name = CSS("span.name").match_one(member).text_content()
             role = CSS("span.position").match_one(member).text_content()
-            if role == "":
+            if not role:
                 role = "member"
 
             com.add_member(re.sub("Hon. ", "", name), role)
@@ -26,13 +27,17 @@ class SenateCommitteeDetail(HtmlPage):
 
 
 class HouseCommitteeDetail(HtmlPage):
-    example_source = "https://www.camara.pr.gov/ova_dep/comision-conjunta-para-la-revision-y-reforma-del-codigo-civil-de-puerto-rico/"
+    example_source = (
+        "https://www.camara.pr.gov/ova_dep/comision-conjunta-pa"
+        "ra-la-revision-y-reforma-del-codigo-civil-de-puerto-rico/"
+    )
 
     def process_page(self):
         com = self.input
         com.add_source(self.source.url, note="Committee Detail Page")
+        com.add_link(self.source.url, note="homepage")
 
-        # Some House committes have different site formats
+        # Some House committees have different site formats
         try:
             members = CSS("div.mc-title-container").match(self.root)
         except SelectorError:
@@ -55,7 +60,7 @@ class HouseCommitteeDetail(HtmlPage):
                     "Presidente|Secretari[ao]|Vice.*", member.text_content()
                 )
                 name = re.sub("Hon. |,.*", "", member.text_content())
-                if title != []:
+                if title:
                     role = title[0]
                 com.add_member(name, role)
 
@@ -70,7 +75,7 @@ class SenateCommitteeList(HtmlListPage):
     def process_item(self, item):
         name = item.text_content()
         com = ScrapeCommittee(name=name, chamber=self.chamber)
-        com.add_source(self.source.url, note="Commitee List Page")
+        com.add_source(self.source.url, note="Committee List Page")
         return SenateCommitteeDetail(com, source=URL(item.get("href")))
 
 
@@ -83,12 +88,12 @@ class HouseCommitteeList(HtmlListPage):
     def process_item(self, item):
         chamber = "lower"
 
-        title, type = item.getchildren()
+        title, item_type = item.getchildren()
         name = title.text_content()
 
-        if type.text_content().strip() == "Conjuntas":
+        if item_type.text_content().strip() == "Conjuntas":
             chamber = "legislature"
 
         com = ScrapeCommittee(name=name, chamber=chamber)
-        com.add_source(self.source.url, note="Commitee List Page")
+        com.add_source(self.source.url, note="Committee List Page")
         return HouseCommitteeDetail(com, source=URL(title.getchildren()[0].get("href")))
