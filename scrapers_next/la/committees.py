@@ -1,4 +1,4 @@
-from spatula import HtmlPage, HtmlListPage, XPath, CSS, URL, SkipItem
+from spatula import HtmlPage, HtmlListPage, XPath, URL, SkipItem
 from openstates.models import ScrapeCommittee
 
 
@@ -29,8 +29,6 @@ class CommitteeList(HtmlListPage):
         if "Joint" in comm_name or "Legislative" in comm_name:
             self.chamber = "legislature"
 
-        #TODO - skip if empty committee
-
         com = ScrapeCommittee(
             name=comm_name.strip(),
             chamber=self.chamber,
@@ -46,12 +44,10 @@ class CommitteeDetail(HtmlPage):
     def process_page(self):
         com = self.input
 
-        officers = self.root.xpath("//div[@class='card-R22']/a[@class='memlink22']")
-        for officer in officers:
+        members = self.root.xpath("//div[@class='card-R22']/a[@class='memlink22']")
+        for member in members:
             name_and_title = [
-                x.strip()
-                for x in officer.text_content().split("\r\n")
-                if len(x.strip())
+                x.strip() for x in member.text_content().split("\r\n") if len(x.strip())
             ]
             last_name, first_name, role = extract_info(name_and_title)
             com.add_member(first_name + " " + last_name, role)
@@ -59,7 +55,11 @@ class CommitteeDetail(HtmlPage):
         com.add_source(self.source.url, note="Committee Detail Page")
         com.add_link(self.source.url, note="homepage")
 
+        if not com.members:
+            raise SkipItem("empty committee")
+
         return com
+
 
 class Senate(CommitteeList):
     source = URL(
@@ -74,7 +74,7 @@ class House(CommitteeList):
     chamber = "lower"
 
 
-#TODO - complete Miscellaneous class 
+# TODO - complete Miscellaneous class
 # class Miscellaneous(CommitteeList):
 #     source = URL(
 #         "https://www.legis.la.gov/legis/Committees.aspx?c=M",
