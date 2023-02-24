@@ -161,7 +161,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         when = re.sub(r"TB(.*)", "", when, flags=re.IGNORECASE)
         when = re.sub(r"\*", "", when, flags=re.IGNORECASE)
         when = re.sub(
-            r"\d+ minutes following the evening floor session(.*)",
+            r"\d+ minutes following (the evening floor)*\s*session(.*)",
             "",
             when,
             flags=re.IGNORECASE,
