@@ -19,6 +19,7 @@ class CommitteeDetail(HtmlPage):
             self.source.url,
             note="Committee Details Page",
         )
+        com.add_link(self.source.url, note="homepage")
         try:
             member_blocks = XPath('//*[contains(@class, "committeeMemberList")]').match(
                 self.root

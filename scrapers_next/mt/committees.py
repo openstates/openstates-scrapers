@@ -100,8 +100,8 @@ class HouseSenateJointCommList(HtmlListPage):
         if "Appropriations" in com.name:
             if chamber == "legislature" and classification == "committee":
                 house_and_senate_names = [
-                    "House Appropriations",
-                    "Senate Finance and Claims",
+                    {"name": "House Appropriations"},
+                    {"name": "Senate Finance and Claims"},
                 ]
                 com.other_names.append(house_and_senate_names)
 

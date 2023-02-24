@@ -245,15 +245,6 @@ class House(HtmlListPage):
         phone = contact[1].text_content().strip()
         email = contact[2].text_content().strip()
 
-        # Editing the office strings so that they match with what's on legislators' page
-        office_prefix = office.split(" ")[0]
-        office_suffix = office.split("-")[-1]
-        if office_prefix == "SHOB" or office_prefix == "NHOB":
-            office_prefix = office_prefix[0]
-            office = office_prefix + "-" + office_suffix + " House Office Building"
-        else:
-            office = office_prefix + "-" + office_suffix
-
         p = ScrapePerson(
             **split_name(name),
             state="mi",

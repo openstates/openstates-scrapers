@@ -1,6 +1,7 @@
 import re
 import requests
 import os
+import json
 from datetime import datetime
 import lxml.html
 from openstates.scrape import Scraper, Bill, VoteEvent
@@ -16,6 +17,8 @@ class MABillScraper(Scraper):
     session_filters = {}
     chamber_filters = {}
     house_pdf_cache = {}
+
+    bill_list = []
 
     chamber_map = {"lower": "House", "upper": "Senate"}
     chamber_map_reverse = {
@@ -50,109 +53,61 @@ class MABillScraper(Scraper):
             refiner_list[label] = refiner
         return refiner_list
 
-    # sort can be set to "latest" to sort by date modified descending
-    # os-update ma bills --scrape sort=latest
     # bill_no can be set to a specific bill (no spaces) to scrape only one
     # os-update ma bills --scrape bill_no=H2
-    # page_limit can be set to stop scraping after a certain number of pages (for each chamber)
-    def scrape(
-        self, chamber=None, session=None, bill_no=None, sort=None, page_limit=None
-    ):
-        if page_limit:
-            page_limit = int(page_limit)
+    def scrape(self, chamber=None, session=None, bill_no=None):
+        self.scrape_bill_list(session)
 
+        # optionally scrape a single bill then exit
         if bill_no:
-            single_bill_chamber = False
-            if "H" in bill_no:
-                single_bill_chamber = "lower"
-            else:
-                single_bill_chamber = "upper"
-
-            yield from self.scrape_bill(session, bill_no, single_bill_chamber)
-            return
+            single_bill_chamber = "lower" if "H" in bill_no else "upper"
+            for bill_meta in self.bill_list:
+                if bill_no in [bill_meta["DocketNumber"], bill_meta["BillNumber"]]:
+                    yield from self.scrape_bill(session, bill_meta, single_bill_chamber)
+                    self.info("Finished individual bill scrape, exiting.")
+                    return
 
         if not chamber:
-            yield from self.scrape_chamber("lower", session, sort, page_limit)
-            yield from self.scrape_chamber("upper", session, sort, page_limit)
+            yield from self.scrape_chamber("lower", session)
+            yield from self.scrape_chamber("upper", session)
         else:
-            yield from self.scrape_chamber(chamber, session, sort, page_limit)
+            yield from self.scrape_chamber(chamber, session)
 
-    def scrape_chamber(self, chamber, session, sort=None, page_limit=None):
-        # for the chamber of the action
-
-        # Pull the search page to get the filters
-        search_url = "https://malegislature.gov/Bills/Search?SearchTerms=&Page=1"
-        page = lxml.html.fromstring(self.get(search_url, verify=False).text)
-        self.session_filters = self.get_refiners(page, "lawsgeneralcourt")
-        self.chamber_filters = self.get_refiners(page, "lawsbranchname")
-
-        if page_limit:
-            last_page = page_limit
-        else:
-            last_page = self.get_max_pages(session, chamber)
-
-        for pageNumber in range(1, last_page + 1):
-            bills = self.list_bills(session, chamber, pageNumber, sort)
-            for bill in bills:
-                bill = self.format_bill_number(bill).replace(" ", "")
-                yield from self.scrape_bill(session, bill, chamber)
-
-    def list_bills(self, session, chamber, pageNumber, sort=None):
-        session_filter = self.session_filters[session]
-        chamber_filter = self.chamber_filters[self.chamber_map[chamber]]
-
-        if sort is None:
-            search_url = (
-                "https://malegislature.gov/Bills/Search?"
-                "SearchTerms="
-                "&Page={}"
-                "&SortManagedProperty=lawsbillnumber"
-                "&Direction=asc"
-                "&Refinements%5Blawsgeneralcourt%5D={}"
-                "&Refinements%5Blawsbranchname%5D={}".format(
-                    pageNumber, session_filter, chamber_filter
-                )
-            )
-        elif sort == "latest":
-            search_url = (
-                "https://malegislature.gov/Bills/Search?"
-                "SearchTerms=&Page={}&Refinements%5Blawsgeneralcourt%5D={}"
-                "&Refinements%5Blawsbranchname%5D={}".format(
-                    pageNumber, session_filter, chamber_filter
-                )
-            )
-
-        page = lxml.html.fromstring(self.get(search_url, verify=False).text)
-        resultRows = page.xpath('//table[@id="searchTable"]/tbody/tr/td[2]/a/text()')
-        return resultRows
-
-    def get_max_pages(self, session, chamber):
-        session_filter = self.session_filters[session]
-        try:
-            chamber_filter = self.chamber_filters[self.chamber_map[chamber]]
-        except KeyError:
-            self.warning("No bills found for %s" % chamber)
-            return 0
-
-        search_url = (
-            "https://malegislature.gov/Bills/Search?SearchTerms=&Page=1&"
-            "Refinements%5Blawsgeneralcourt%5D={}&&"
-            "Refinements%5Blawsbranchname%5D={}".format(session_filter, chamber_filter)
+    def scrape_bill_list(self, session):
+        session_numeric = re.sub(r"[^0-9]", "", session)
+        # note -- this returns XML to a browser, but json to curl/python
+        api_url = (
+            f"https://malegislature.gov/api/GeneralCourts/{session_numeric}/Documents"
         )
-        page = lxml.html.fromstring(self.get(search_url, verify=False).text)
 
-        if page.xpath('//ul[contains(@class,"pagination-sm")]/li[last()]/a/@onclick'):
-            maxPage = page.xpath(
-                '//ul[contains(@class,"pagination-sm")]/li[last()]/a/@onclick'
-            )[0]
-            maxPage = re.sub(r"[^\d]", "", maxPage).strip()
-        else:
-            maxPage = 1
+        list_data = self.get(api_url, verify=False).content
+        for row in json.loads(list_data):
+            chambers = ["H", "S"]
 
-        return int(maxPage)
+            # bill never flips from house to senate from docket -> intro so we're safe here
+            # BillNumber can be set, but mapped to None, so use or here
+            bill_id = row["BillNumber"] or row["DocketNumber"]
+            # make sure the bill has an H or an S in the code
+            if not any([chamber in bill_id for chamber in chambers]):
+                self.error(
+                    f"Unknown bill type - bill {row['BillNumber']} - docket {row['DocketNumber']}"
+                )
 
-    def scrape_bill(self, session, bill_id, chamber):
+            self.bill_list.append(
+                {"BillNumber": row["BillNumber"], "DocketNumber": row["DocketNumber"]}
+            )
+
+    def scrape_chamber(self, chamber, session):
+        chamber_code = "H" if chamber == "lower" else "S"
+        for bill_meta in self.bill_list:
+            bill_id = bill_meta["BillNumber"] or bill_meta["DocketNumber"]
+            if chamber_code in bill_id:
+                yield from self.scrape_bill(session, bill_meta, chamber)
+
+    def scrape_bill(self, session, bill_meta, chamber):
         # https://malegislature.gov/Bills/189/SD2739
+        bill_id = bill_meta["BillNumber"] or bill_meta["DocketNumber"]
+
         session_for_url = self.replace_non_digits(session)
         bill_url = "https://malegislature.gov/Bills/{}/{}".format(
             session_for_url, bill_id
@@ -215,6 +170,13 @@ class MABillScraper(Scraper):
             bill_summary = page.xpath('//p[@id="pinslip"]/text()')[0]
         if bill_summary:
             bill.add_abstract(bill_summary, "summary")
+
+        if bill_meta["BillNumber"] and bill_meta["DocketNumber"]:
+            bill.add_related_bill(
+                bill_meta["DocketNumber"],
+                legislative_session=session,
+                relation_type="replaces",
+            )
 
         bill.add_source(bill_url)
 

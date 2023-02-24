@@ -63,6 +63,7 @@ class CommitteeDetail(HtmlPage):
         parent_committee = self.input.get("parent")
         com = get_committee_info(title, parent_committee)
         com.add_source(self.source.url, note="committee details page")
+        com.add_link(self.source.url, note="homepage")
 
         # Make the scraper more fragile by doing an extra check to
         # make sure expected chamber and detected chamber are the same

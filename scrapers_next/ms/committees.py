@@ -33,6 +33,7 @@ class Committees(HtmlPage):
                 comm.add_member(member, "Member")
 
             comm.add_source(self.source.url, note="Committees List Page")
+            comm.add_link(self.source.url, note="homepage")
 
             yield comm
 

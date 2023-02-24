@@ -61,9 +61,12 @@ class SenateCommitteeList(HtmlPage):
                         classification="committee",  # No senate subcommittees as of 2023-01-25
                     )
                 )
-                committees[-1].add_source(
-                    self.source.url, note="Senate committee and member listing"
+                appended_comm = committees[-1]
+                appended_comm.add_source(
+                    self.source.url,
+                    note="Committee details page",
                 )
+                appended_comm.add_link(self.source.url, note="homepage")
             except SelectorError:
                 # This <p> only contains text and is a committee member name
                 member_title = p.text_content()
@@ -162,6 +165,8 @@ class HouseOrJointCommitteeMemberList(HtmlPage):
                         break
                 if matched_committee:
                     com = matched_committee
+                    com.add_source(self.source.url, note="Committee details page")
+                    com.add_link(self.source.url, note="homepage")
                 else:
                     raise UnexpectedCommitteeName(com.name)
 
