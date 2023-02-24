@@ -42,7 +42,7 @@ class CommiteeDetail(HtmlPage):
 
 class CommitteeList(HtmlListPage):
     source = URL("https://www.akleg.gov/basis/Committee/List/33")
-    selector = CSS("div.area-frame ul.list li", num_items=110)
+    selector = CSS("div.area-frame ul.list li", num_items=89)
 
     def process_item(self, item):
         comm_name = (
