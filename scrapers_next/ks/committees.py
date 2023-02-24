@@ -1,4 +1,4 @@
-from spatula import CSS, HtmlPage, HtmlListPage
+from spatula import CSS, HtmlPage, HtmlListPage, SkipItem, SelectorError
 from openstates.models import ScrapeCommittee
 
 
@@ -8,7 +8,10 @@ class CommitteeDetail(HtmlPage):
 
     def process_page(self):
         com = self.input
-        members = CSS("#sidebar ul li a").match(self.root)
+        try:
+            members = CSS("#sidebar ul li a").match(self.root)
+        except SelectorError:
+            pass
         rolez = CSS("#sidebar h3").match(self.root)
         if len(rolez) == 4:
             member_Chair = rolez[0].text
@@ -98,7 +101,7 @@ class CommitteeDetail(HtmlPage):
                     member.replace("Rep.", "").replace("Sen.", "").strip(), role_m
                 )
         else:
-            raise ValueError("no members scraped!")
+            raise SkipItem("empty committee")
         return com
 
 
