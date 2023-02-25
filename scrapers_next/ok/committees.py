@@ -1,5 +1,55 @@
-from spatula import HtmlPage, CSS, HtmlListPage, SelectorError
+from spatula import HtmlPage, CSS, HtmlListPage, SelectorError, XPath, URL, SkipItem
 from openstates.models import ScrapeCommittee
+import re
+
+
+"""
+The scrapers to be run are:
+- SenateCommitteeList
+- House
+- Joint
+- Conference
+- Special
+"""
+
+
+class HouseMemberDetailsError(BaseException):
+    def __init__(self, com_name):
+        super().__init__("Unexpected quantity of member details found on card")
+
+
+class HouseCommitteeDetail(HtmlPage):
+    def process_page(self):
+        com = self.input
+        try:
+            member_cards = XPath(
+                ".//div[@class='flex-1 ig--member-info p-6 md:p-4']"
+            ).match(self.root)
+            for card in member_cards:
+                p_tags = XPath(".//p").match(card)
+                raw_detail_list = [p.text_content() for p in p_tags]
+                detail_list = [
+                    detail
+                    for detail in raw_detail_list
+                    if "District" not in detail and len(detail) > 1
+                ]
+                if len(detail_list) == 2:
+                    role, name = detail_list
+                elif len(detail_list) == 1:
+                    role, name = "Member", detail_list[0]
+                else:
+                    raise HouseMemberDetailsError
+                com.add_member(name=name, role=role)
+        except SelectorError:
+            raise SkipItem("empty committee")
+
+        if not com.members:
+            raise SkipItem("empty committee")
+
+        com.add_source(self.source.url, note="Committee details page")
+        com.add_link(self.source.url, note="homepage")
+
+        return com
 
 
 class SenateCommitteeDetail(HtmlPage):
@@ -58,116 +108,26 @@ class SenateCommitteeDetail(HtmlPage):
             role = "member"
             if name:
                 com.add_member(name, role)
+
+        if not com.members:
+            raise SkipItem("empty committee")
+
         com.add_source(self.source.url)
         com.add_link(self.source.url, note="homepage")
         return com
 
 
-class HouseCommitteeDetail(HtmlPage):
-    example_source = "https://www.okhouse.gov/Committees/CommitteeMembers.aspx?CommID=417&SubCommID=0"
-    example_input = "Administrative Rules"
-
-    def process_page(self):
-        com = self.input
-        try:
-            Chair_member = (
-                CSS("#ctl00_ContentPlaceHolder1_lnkChair")
-                .match_one(self.root)
-                .getchildren()[0]
-                .tail.strip()
-                .replace("Rep.", "")
-            )
-            VC_member = (
-                CSS("#ctl00_ContentPlaceHolder1_lnkViceChair")
-                .match_one(self.root)
-                .getchildren()[0]
-                .tail.replace("Rep.", "")
-            )
-            role_C = (
-                CSS("#ctl00_ContentPlaceHolder1_lnkChair")
-                .match_one(self.root)
-                .text_content()[:5]
-                .strip()
-                .replace("Rep.", "")
-            )
-            role_VC = (
-                CSS("#ctl00_ContentPlaceHolder1_lnkViceChair")
-                .match_one(self.root)
-                .text_content()[:10]
-                .strip()
-                .replace("Rep.", "")
-            )
-            com.add_member(Chair_member, role_C)
-            com.add_member(VC_member, role_VC)
-        except SelectorError:
-            CoChair_member = (
-                CSS("#ctl00_ContentPlaceHolder1_lnkChair")
-                .match_one(self.root)
-                .getchildren()[0]
-                .tail.strip()
-                .replace("Rep.", "")
-            )
-            role_CoC = (
-                CSS("#ctl00_ContentPlaceHolder1_lnkChair")
-                .match_one(self.root)
-                .text_content()[:10]
-                .strip()
-                .replace("Rep.", "")
-            )
-            com.add_member(CoChair_member, role_CoC)
-        try:
-            members = CSS("#ctl00_ContentPlaceHolder1_dlstMembers td").match(self.root)
-            for member in members:
-                name = member.text_content().replace("Rep.", "")
-                role = "member"
-                if name:
-                    com.add_member(name, role)
-        except SelectorError:
-            members = CSS("#ctl00_ContentPlaceHolder1_dlstHMembers td").match(self.root)
-            for member in members:
-                name = member.text_content().replace("Rep.", "")
-                role = "member"
-                if name:
-                    com.add_member(name, role)
-        return com
-
-
 class CommitteeList(HtmlListPage):
+    selector = XPath(".//div[@class='grid grid-cols-1 md:grid-cols-2 gap-6']//a")
+
     def process_item(self, item):
-        com_link = CSS("a").match(item)[0]
-        name = com_link.text_content()
+        name = XPath("./div/h3").match(item)[0].text_content()
         com = ScrapeCommittee(
             name=name, classification="committee", chamber=self.chamber
         )
-        detail_link = com_link.get("href")
-        com.add_source(detail_link)
-        com.add_link(detail_link, note="homepage")
-        # return com
-        return HouseCommitteeDetail(com, source=detail_link)
-
-
-class HouseCommitteeList(CommitteeList):
-    selector = CSS("#ctl00_ContentPlaceHolder1_dgrdCommittee_GridData td")
-    source = "https://www.okhouse.gov/Committees/Default.aspx"
-    chamber = "lower"
-
-
-class JointCommitteeList(CommitteeList):
-    selector = CSS("#ctl00_ContentPlaceHolder1_rgdJoint_GridData td")
-    source = "https://www.okhouse.gov/Committees/Default.aspx"
-    chamber = "legislature"
-
-
-class ConfrenceCommitteeList(CommitteeList):
-    selector = CSS("#ctl00_ContentPlaceHolder1_rgdConference_GridData td")
-    source = "https://www.okhouse.gov/Committees/Default.aspx"
-    chamber = "legislature"
-
-
-class SpecialCommitteeList(CommitteeList):
-    selector = CSS("#ctl00_ContentPlaceHolder1_rgdSpecial_GridData td")
-    source = "https://www.okhouse.gov/Committees/Default.aspx"
-    chamber = "legislature"
+        com.add_source(self.source.url, note="House committees list page")
+        detail_link = item.get("href")
+        return HouseCommitteeDetail(com, source=URL(detail_link, timeout=20))
 
 
 class SenateCommitteeList(HtmlListPage):
@@ -183,11 +143,47 @@ class SenateCommitteeList(HtmlListPage):
         com = ScrapeCommittee(
             name=name, classification="committee", chamber=self.chamber
         )
+        com.add_source(self.source.url, note="Senate committees list page")
         detail_link = item.get("href")
         return SenateCommitteeDetail(com, source=detail_link)
 
 
-if __name__ == "__main__":
-    from spatula.cli import scrape
+class HouseAppropriationsSubComs(HtmlListPage):
+    source = URL("https://www.okhouse.gov/committees/house/approp", timeout=20)
+    selector = XPath(".//a[@class='cursor-pointer text-primary underline']")
+    chamber = "lower"
+    classification = "subcommittee"
+    sub_com_name_re = re.compile(r"A&B (.+) (Subcommittee)")
 
-    scrape(["committees"])
+    def process_item(self, item):
+        raw_name = item.text_content()
+        name = self.sub_com_name_re.search(raw_name).groups()[0]
+        com = ScrapeCommittee(
+            name=name,
+            classification=self.classification,
+            chamber=self.chamber,
+            parent="Appropriations and Budget",
+        )
+        com.add_source(self.source.url, note="House committees list page")
+        detail_link = item.get("href")
+        return HouseCommitteeDetail(com, source=URL(detail_link, timeout=20))
+
+
+class House(CommitteeList):
+    source = URL("https://www.okhouse.gov/committees/house", timeout=20)
+    chamber = "lower"
+
+
+class Joint(CommitteeList):
+    source = URL("https://www.okhouse.gov/committees/joint", timeout=20)
+    chamber = "legislature"
+
+
+class Conference(CommitteeList):
+    source = URL("https://www.okhouse.gov/committees/conference", timeout=20)
+    chamber = "legislature"
+
+
+class Special(CommitteeList):
+    source = URL("https://www.okhouse.gov/committees/special", timeout=20)
+    chamber = "legislature"
