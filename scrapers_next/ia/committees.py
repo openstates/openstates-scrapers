@@ -106,6 +106,8 @@ class CommitteeDetails(HtmlPage):
         )
         com.add_source(self.source.url)
         com.add_source("https://www.legis.iowa.gov/committees", "Committee list page")
+        com.add_link(self.source.url, note="homepage")
+
         # Get list of members contained in nested grid_12
         # Translation hack in case they switch to all-caps
         try:
