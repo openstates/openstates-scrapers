@@ -21,6 +21,11 @@ def get_parent_name(url):
     )
     parent_content = lxml.html.fromstring(parent_response.content)
     parent_name = parent_content.xpath(".//h1//text()")[-1].replace("\r\n", "").strip()
+
+    # To match how parent name is formatted on committee list page
+    if parent_name == "Agriculture and Natural Resources":
+        parent_name = parent_name.replace("and", "&")
+
     return parent_name
 
 
@@ -72,6 +77,9 @@ class CommitteeList(HtmlListPage):
 
     def process_item(self, item):
         comm_name = item.text_content()
+        comm_name = (
+            comm_name.replace("Committee", "").replace("Subcommittee", "").strip()
+        )
 
         comm_url = item.get("href")
 
