@@ -107,7 +107,7 @@ class USEventScraper(Scraper, LXMLMixin):
 
             event = Event(
                 start_date=event_date,
-                name=com,
+                name=com[:1000],
                 location_name=address,
                 classification="committee-meeting",
             )
@@ -221,7 +221,7 @@ class USEventScraper(Scraper, LXMLMixin):
 
         event = Event(
             start_date=start_dt,
-            name=title,
+            name=title[:1000],
             location_name=address,
             classification="committee-meeting",
         )
