@@ -50,7 +50,11 @@ class CommitteeDetail(HtmlPage):
                 x.strip() for x in member.text_content().split("\r\n") if len(x.strip())
             ]
             last_name, first_name, role = extract_info(name_and_title)
-            com.add_member(first_name + " " + last_name, role)
+            name = first_name + " " + last_name
+            if ", " in name:
+                name_parts = name.split(", ")
+                name = ", ".join([name_parts[1], name_parts[0]])
+            com.add_member(name, role)
 
         com.add_source(self.source.url, note="Committee Detail Page")
         com.add_link(self.source.url, note="homepage")
