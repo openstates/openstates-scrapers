@@ -165,18 +165,18 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "boto3"
-version = "1.26.78"
+version = "1.26.79"
 description = "The AWS SDK for Python"
 category = "main"
 optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "boto3-1.26.78-py3-none-any.whl", hash = "sha256:0c593017fa49dbc34dcdbd5659208f2daf293a499d5f4d7e61978cd6b5d72a97"},
-    {file = "boto3-1.26.78.tar.gz", hash = "sha256:488bf63d65864ab7fcdf9337c5aa4d825d444e253738a60f80789916bacc47dc"},
+    {file = "boto3-1.26.79-py3-none-any.whl", hash = "sha256:049de631cc03726a14b8eb24ac9ec2a48b0624197796f36166da809fdc9b9a7f"},
+    {file = "boto3-1.26.79.tar.gz", hash = "sha256:73d7bd1f16118ef0dfe936e0420cd76b02d1aedb75330ebda51168458ab752ac"},
 ]
 
 [package.dependencies]
-botocore = ">=1.29.78,<1.30.0"
+botocore = ">=1.29.79,<1.30.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.6.0,<0.7.0"
 
@@ -185,14 +185,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.29.78"
+version = "1.29.79"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "botocore-1.29.78-py3-none-any.whl", hash = "sha256:656ac8822a1b6c887a8efe1172bcefa9c9c450face26dc39998a249e8c340a23"},
-    {file = "botocore-1.29.78.tar.gz", hash = "sha256:2bee6ed037590ef1e4884d944486232871513915f12a8590c63e3bb6046479bf"},
+    {file = "botocore-1.29.79-py3-none-any.whl", hash = "sha256:5f254f019e8641f8b2ba6dddc1f7541e8c6d25d976802392710b2fc4bac925b1"},
+    {file = "botocore-1.29.79.tar.gz", hash = "sha256:c7ded44062bed3b928944cfb09e1578ed3fed0e4c98de4f233f3c2056a8d491e"},
 ]
 
 [package.dependencies]
@@ -419,14 +419,14 @@ colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
 name = "cloudscraper"
-version = "1.2.68"
+version = "1.2.69"
 description = "A Python module to bypass Cloudflare's anti-bot page."
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "cloudscraper-1.2.68-py2.py3-none-any.whl", hash = "sha256:401409859697edae9384a7623b450cc97ab14dd0b2c8cdcac62edc2d50b31741"},
-    {file = "cloudscraper-1.2.68.tar.gz", hash = "sha256:4d02aceffa90abd4dabc75b79bafa31636309baa7c0f2ee665e2d345aadb8863"},
+    {file = "cloudscraper-1.2.69-py2.py3-none-any.whl", hash = "sha256:ad1e70be61fa071bc9a1409c2f419687b49a1780405ad8a226df59b52fb135db"},
+    {file = "cloudscraper-1.2.69.tar.gz", hash = "sha256:1ff4befeeae63a67076c0264515162935981dd5d51552f052dc266bf64997345"},
 ]
 
 [package.dependencies]
@@ -1159,6 +1159,20 @@ category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
+    {file = "Pillow-9.4.0-1-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:1b4b4e9dda4f4e4c4e6896f93e84a8f0bcca3b059de9ddf67dac3c334b1195e1"},
+    {file = "Pillow-9.4.0-1-cp311-cp311-macosx_10_10_x86_64.whl", hash = "sha256:fb5c1ad6bad98c57482236a21bf985ab0ef42bd51f7ad4e4538e89a997624e12"},
+    {file = "Pillow-9.4.0-1-cp37-cp37m-macosx_10_10_x86_64.whl", hash = "sha256:f0caf4a5dcf610d96c3bd32932bfac8aee61c96e60481c2a0ea58da435e25acd"},
+    {file = "Pillow-9.4.0-1-cp38-cp38-macosx_10_10_x86_64.whl", hash = "sha256:3f4cc516e0b264c8d4ccd6b6cbc69a07c6d582d8337df79be1e15a5056b258c9"},
+    {file = "Pillow-9.4.0-1-cp39-cp39-macosx_10_10_x86_64.whl", hash = "sha256:b8c2f6eb0df979ee99433d8b3f6d193d9590f735cf12274c108bd954e30ca858"},
+    {file = "Pillow-9.4.0-1-pp38-pypy38_pp73-macosx_10_10_x86_64.whl", hash = "sha256:b70756ec9417c34e097f987b4d8c510975216ad26ba6e57ccb53bc758f490dab"},
+    {file = "Pillow-9.4.0-1-pp39-pypy39_pp73-macosx_10_10_x86_64.whl", hash = "sha256:43521ce2c4b865d385e78579a082b6ad1166ebed2b1a2293c3be1d68dd7ca3b9"},
+    {file = "Pillow-9.4.0-2-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:9d9a62576b68cd90f7075876f4e8444487db5eeea0e4df3ba298ee38a8d067b0"},
+    {file = "Pillow-9.4.0-2-cp311-cp311-macosx_10_10_x86_64.whl", hash = "sha256:87708d78a14d56a990fbf4f9cb350b7d89ee8988705e58e39bdf4d82c149210f"},
+    {file = "Pillow-9.4.0-2-cp37-cp37m-macosx_10_10_x86_64.whl", hash = "sha256:8a2b5874d17e72dfb80d917213abd55d7e1ed2479f38f001f264f7ce7bae757c"},
+    {file = "Pillow-9.4.0-2-cp38-cp38-macosx_10_10_x86_64.whl", hash = "sha256:83125753a60cfc8c412de5896d10a0a405e0bd88d0470ad82e0869ddf0cb3848"},
+    {file = "Pillow-9.4.0-2-cp39-cp39-macosx_10_10_x86_64.whl", hash = "sha256:9e5f94742033898bfe84c93c831a6f552bb629448d4072dd312306bab3bd96f1"},
+    {file = "Pillow-9.4.0-2-pp38-pypy38_pp73-macosx_10_10_x86_64.whl", hash = "sha256:013016af6b3a12a2f40b704677f8b51f72cb007dac785a9933d5c86a72a7fe33"},
+    {file = "Pillow-9.4.0-2-pp39-pypy39_pp73-macosx_10_10_x86_64.whl", hash = "sha256:99d92d148dd03fd19d16175b6d355cc1b01faf80dae93c6c3eb4163709edc0a9"},
     {file = "Pillow-9.4.0-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:2968c58feca624bb6c8502f9564dd187d0e1389964898f5e9e1fbc8533169157"},
     {file = "Pillow-9.4.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:c5c1362c14aee73f50143d74389b2c158707b4abce2cb055b7ad37ce60738d47"},
     {file = "Pillow-9.4.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:bd752c5ff1b4a870b7661234694f24b1d2b9076b8bf337321a814c612665f343"},
