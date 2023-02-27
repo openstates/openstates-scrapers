@@ -53,7 +53,7 @@ class KSEventScraper(Scraper):
                 time = columns[4].text.strip()
                 when = self.tz.localize(dateutil.parser.parse(f"{date} {time}"))
                 location = columns[5].text.strip()
-                event_name = f"{chamber}#{com_name}#{title}#{when}"
+                event_name = f"{chamber}#{com_name}#{title}#{when}"[:500]
                 if event_name in events:
                     self.warning(f"Skipping duplicate event {event_name}")
                     continue
