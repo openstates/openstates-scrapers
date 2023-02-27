@@ -79,16 +79,20 @@ class LegDetail(HtmlPage):
                         "service began",
                         "home address",
                         "other phone",
-                        "business address",
                         "cell phone",
                     }
 
                     if field_name == "legislative email":
                         p.email = field_text.lower()
-                    elif field_name == "capitol phone":
+                    elif (
+                        field_name == "capitol phone"
+                        or field_name == "capitol office phone"
+                    ):
                         p.capitol_office.voice = field_text
                     elif field_name == "office phone":
                         p.district_office.voice = field_text
+                    elif field_name == "business address":
+                        p.capitol_office.address = field_text
                     elif field_name in extra_fields:
                         p.extras[field_name] = field_text
                     else:
