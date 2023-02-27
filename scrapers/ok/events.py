@@ -3,13 +3,13 @@ import json
 import dateutil.parser
 import pytz
 
-# import lxml.html
+import lxml.html
 import requests
 import datetime
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 
-# from utils.events import match_coordinates
+from utils.events import match_coordinates
 
 
 class OKEventScraper(Scraper):
@@ -40,12 +40,11 @@ class OKEventScraper(Scraper):
         ).content
         page = json.loads(page)
 
-        print(page)
-
         if len(page["events"]["data"]) == 0:
             raise EmptyScrape
 
         for row in page["events"]["data"]:
+            print(row)
             meta = row["attributes"]
 
             status = "tentative"
@@ -60,7 +59,6 @@ class OKEventScraper(Scraper):
                 location = f"{location} 2300 N Lincoln Blvd, Oklahoma City, OK 73105"
 
             when = dateutil.parser.parse(meta["startDatetime"])
-            # when = self._tz.localize(when)
 
             event = Event(
                 name=meta["title"],
@@ -70,34 +68,29 @@ class OKEventScraper(Scraper):
                 status=status,
             )
             event.dedupe_key = f"ok-{meta['slug']}"
-            event.add_source("https://ok.gov")
+            event.add_source(f"https://www.okhouse.gov/events/{meta['slug']}")
+            match_coordinates(event, {"2300 N Lincoln Blvd": (35.49293, -97.50311)})
+
+            if meta["committee"]:
+                event.add_committee(
+                    meta["committee"]["data"]["attributes"]["name"], note="host"
+                )
+
+            for link in meta["links"]:
+                event.add_document(
+                    link["label"], link["route"], media_type="application/pdf"
+                )
+
+            for agenda in meta["agenda"]:
+                agenda_text = lxml.html.fromstring(agenda["info"])
+                agenda_text = " ".join(agenda_text.xpath("//text()"))
+                item = event.add_agenda_item(agenda_text)
+
+                if agenda["measure"]["data"]:
+                    item.add_bill(agenda["measure"]["data"])
+                    self.info(agenda["measure"])
+                    self.error(
+                        "Finally found an agenda with linked measure. Modify the code to handle it."
+                    )
+
             yield event
-
-        # for row in page.xpath('//tr[contains(@id,"_dgrdNotices_")]'):
-
-        #     if re.match(r"^room [\w\d]+$", location, flags=re.I) or re.match(
-        #         r"senate room [\w\d]+$", location, flags=re.I
-        #     ):
-        #         location = f"{location} 2300 N Lincoln Blvd, Oklahoma City, OK 73105"
-
-        #     event = Event(
-        #         name=title,
-        #         location_name=location,
-        #         start_date=when,
-        #         classification="committee-meeting",
-        #         status=status,
-        #     )
-        #     event.dedupe_key = event_name
-        #     event.add_source(url)
-
-        #     event.add_committee(title, note="host")
-
-        #     event.add_document("Agenda", agenda_url, media_type="application/pdf")
-
-        #     match_coordinates(event, {"2300 N Lincoln Blvd": (35.49293, -97.50311)})
-
-        #     event_count += 1
-        #     yield event
-
-        # if event_count < 1:
-        #     raise EmptyScrape
