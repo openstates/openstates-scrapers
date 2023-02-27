@@ -59,6 +59,7 @@ class StandingCommList(HtmlListPage):
         comm.add_source(self.source.url, note="Standing Committees List Page")
         comm_url = item.get("href")
         comm.add_source(comm_url, note="Committee Details Page")
+        comm.add_link(comm_url, note="homepage")
 
         return StandingCommMembership(comm, source=comm_url)
 
@@ -86,5 +87,8 @@ class SelectCommList(HtmlPage):
             for member in members:
                 name, role = get_name_role(member)
                 comm.add_member(name, role)
+
+            comm.add_source(self.source.url, note="Committees list page")
+            comm.add_link(self.source.url, note="homepage")
 
             yield comm

@@ -2,6 +2,7 @@ import datetime as dt
 import lxml.html
 import re
 from openstates.scrape import Scraper, Bill, VoteEvent
+from .actions import Categorizer, find_committee
 from .utils import get_short_codes
 from urllib import parse as urlparse
 
@@ -28,43 +29,6 @@ def create_bill_report_url(chamber, year, bill_type):
     )
 
 
-def categorize_action(action):
-    classifiers = (
-        ("Pass(ed)? First Reading", "reading-1"),
-        ("Introduced and Pass(ed)? First Reading", ["introduction", "reading-1"]),
-        ("Introduced", "introduction"),
-        ("Re(-re)?ferred to ", "referral-committee"),
-        (
-            "Passed Second Reading .* referred to the committee",
-            ["reading-2", "referral-committee"],
-        ),
-        (".* that the measure be PASSED", "committee-passage-favorable"),
-        ("Received from (House|Senate)", "introduction"),
-        ("Floor amendment .* offered", "amendment-introduction"),
-        ("Floor amendment adopted", "amendment-passage"),
-        ("Floor amendment failed", "amendment-failure"),
-        (".*Passed Third Reading", "passage"),
-        ("Report and Resolution Adopted", "passage"),
-        ("Enrolled to Governor", "executive-receipt"),
-        (" Act ", "became-law"),
-        # Note, occasionally the gov sends intent to veto then doesn't. So use Vetoed not Veto
-        ("Vetoed .* line-item", "executive-veto-line-item"),
-        ("Vetoed", "executive-veto"),
-        ("Veto overridden", "veto-override-passage"),
-        # these are for resolutions
-        ("Offered", "introduction"),
-        ("Adopted", "passage"),
-    )
-    ctty = None
-    for pattern, types in classifiers:
-        if re.match(pattern, action):
-            if "referral-committee" in types:
-                ctty = re.findall(r"\w+", re.sub(pattern, "", action))
-            return (types, ctty)
-    # return other by default
-    return (None, ctty)
-
-
 def split_specific_votes(voters):
     if voters is None or voters.startswith("none"):
         return []
@@ -77,6 +41,8 @@ def split_specific_votes(voters):
 
 
 class HIBillScraper(Scraper):
+    categorizer = Categorizer()
+
     def parse_bill_metainf_table(self, metainf_table):
         def _sponsor_interceptor(line):
             return [guy.strip() for guy in line.split(",")]
@@ -116,7 +82,10 @@ class HIBillScraper(Scraper):
             actor_code = action[1].text_content().upper()
             string = action[2].text_content()
             actor = self._vote_type_map[actor_code]
-            act_type, committees = categorize_action(string)
+            committees = find_committee(string)
+
+            action_attr = self.categorizer.categorize(string)
+            atype = action_attr["classification"]
             # XXX: Translate short-code to full committee name for the
             #      matcher.
 
@@ -136,7 +105,7 @@ class HIBillScraper(Scraper):
                 and any(description in string for description in repeated_action)
             ):
                 continue
-            act = bill.add_action(string, date, chamber=actor, classification=act_type)
+            act = bill.add_action(string, date, chamber=actor, classification=atype)
 
             for committee in real_committees:
                 act.add_related_entity(name=committee, entity_type="organization")

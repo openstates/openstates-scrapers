@@ -141,6 +141,8 @@ class USEventScraper(Scraper, LXMLMixin):
 
             self.geocode(event)
 
+            event.extras["US_SENATE_EVENT_ID"] = row.xpath("string(identifier)")
+
             event.add_source("https://www.senate.gov/committees/hearings_meetings.htm")
 
             yield event
@@ -272,6 +274,8 @@ class USEventScraper(Scraper, LXMLMixin):
                 )
 
         self.geocode(event)
+        event.extras["US_HOUSE_EVENT_ID"] = xml.xpath("//committee-meeting/@meeting-id")
+
         yield event
 
     def asp_post(self, url, params):

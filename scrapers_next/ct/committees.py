@@ -62,6 +62,7 @@ class CommitteeMemberPage(HtmlPage):
     def process_page(self):
         com = self.input.get("com")
         com.add_source(self.source.url, note="Committee details page")
+        com.add_link(self.source.url, note="homepage")
 
         # Member names and rows are stored within a table
         row_selector = XPath("//table[@summary='Committee member list']/tbody/tr")
