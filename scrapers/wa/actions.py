@@ -81,7 +81,7 @@ _categorizer_rules = (
     ),
     Rule(
         r"(?i)(?P<committees>\w+) \- [Mm]ajority; do pass .* \(Majority Report\)",
-        "passage",
+        "committee-passage-favorable",
     ),
     Rule(r"(?i)Conference committee appointed.", ""),
     Rule(r"(?i)Conference committee report;", ""),
