@@ -20,8 +20,8 @@ class MSEventScraper(Scraper):
         event_url = f"http://billstatus.ls.state.ms.us/htms/{chamber_abbr}_sched.htm"
         text = self.get(event_url).text
         event = None
-
         when, time, room, com, desc = None, None, None, None, None
+        events = set()
 
         for line in text.splitlines():
             # new date
@@ -36,20 +36,26 @@ class MSEventScraper(Scraper):
                 # if there's an event from the previous lines, yield it
                 if when and room and com:
                     room = f"400 High St, Jackson, MS 39201, Room {room}"
-                    event = Event(
-                        name=com,
-                        start_date=when,
-                        location_name=room,
-                        classification="committee-meeting",
-                        description=desc,
-                    )
-                    event.add_source(event_url)
-                    if self.is_com(com):
-                        event.add_committee(
-                            name=f"{self.chamber_names[chamber]} {com}", note="host"
+                    event_name = f"{com}#{when}#{room}"
+                    if event_name in events:
+                        self.warning(f"Duplicate event: {event_name}")
+                    else:
+                        events.add(event_name)
+                        event = Event(
+                            name=com,
+                            start_date=when,
+                            location_name=room,
+                            classification="committee-meeting",
+                            description=desc,
                         )
-                    match_coordinates(event, {"400 High St": (32.30404, -90.18141)})
-                    yield event
+                        event.dedupe_key = event_name
+                        event.add_source(event_url)
+                        if self.is_com(com):
+                            event.add_committee(
+                                name=f"{self.chamber_names[chamber]} {com}", note="host"
+                            )
+                        match_coordinates(event, {"400 High St": (32.30404, -90.18141)})
+                        yield event
 
                 (time, room, com) = re.split(r"\s+", line, maxsplit=2)
 
@@ -72,20 +78,26 @@ class MSEventScraper(Scraper):
         # don't forget about the last event, which won't get triggered by a new date
         if when and room and com:
             room = f"400 High St, Jackson, MS 39201, Room {room}"
-            event = Event(
-                name=com,
-                start_date=when,
-                location_name=room,
-                classification="committee-meeting",
-                description=desc,
-            )
-            if self.is_com(com):
-                event.add_committee(
-                    name=f"{self.chamber_names[chamber]} {com}", note="host"
+            event_name = f"{com}#{when}#{room}"
+            if event_name in events:
+                self.warning(f"Duplicate event: {event_name}")
+            else:
+                events.add(event_name)
+                event = Event(
+                    name=com,
+                    start_date=when,
+                    location_name=room,
+                    classification="committee-meeting",
+                    description=desc,
                 )
-            match_coordinates(event, {"400 High St": (32.30404, -90.18141)})
-            event.add_source(event_url)
-            yield event
+                event.dedupe_key = event_name
+                if self.is_com(com):
+                    event.add_committee(
+                        name=f"{self.chamber_names[chamber]} {com}", note="host"
+                    )
+                match_coordinates(event, {"400 High St": (32.30404, -90.18141)})
+                event.add_source(event_url)
+                yield event
 
     def is_com(self, event_name):
         if "reserved" not in event_name.lower() and "dept of" not in event_name.lower():
