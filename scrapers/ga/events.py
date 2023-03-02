@@ -6,6 +6,8 @@ from .util import get_token
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 
+from spatula import URL, PdfPage
+
 
 class GAEventScraper(Scraper):
     # usage:
@@ -66,6 +68,9 @@ class GAEventScraper(Scraper):
                 event.add_document(
                     "Agenda", row["agendaUri"], media_type="application/pdf"
                 )
+                # Scrape bill ids from agenda pdf
+                for bill_id in Agenda(source=URL(row["agendaUri"])).do_scrape():
+                    event.add_bill(bill_id)
 
             if row["livestreamUrl"] is not None:
                 event.add_media_link(
@@ -78,3 +83,13 @@ class GAEventScraper(Scraper):
 
         if event_count == 0:
             raise EmptyScrape
+
+
+class Agenda(PdfPage):
+    def process_page(self):
+        matches = re.findall(
+            r"((SB|HB)\s\d+)",
+            self.text,
+        )
+        for m, _ in matches:
+            yield m
