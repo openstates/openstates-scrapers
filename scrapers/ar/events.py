@@ -126,4 +126,4 @@ class Agenda(PdfPage):
         # Yield results, ignoring an a duplicate part of the regex
         for m, _ in matches:
             # Add in space between letters and numbers
-            yield m[:2] + " " + m[2:]
+            yield f"{m[:2]} {m[2:]}"
