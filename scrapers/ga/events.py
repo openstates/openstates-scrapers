@@ -88,7 +88,7 @@ class GAEventScraper(Scraper):
 class Agenda(PdfPage):
     def process_page(self):
         matches = re.findall(
-            r"((SB|HB)\s\d+)",
+            r"((SB|HB|SR|HR)\s\d+)",
             self.text,
         )
         for m, _ in matches:
