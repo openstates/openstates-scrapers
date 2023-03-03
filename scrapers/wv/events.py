@@ -145,9 +145,9 @@ class WVEventScraper(Scraper, LXMLMixin):
                 senate_bill_re = re.compile(r"senate bill", flags=re.IGNORECASE)
 
                 for bill in bills:
-                    bill_id = re.sub(period_and_whitespace_re, "", bill[0])
-                    bill_id = re.sub(house_bill_re, "HB", bill_id)
-                    bill_id = re.sub(senate_bill_re, "SB", bill_id)
+                    bill_id = period_and_whitespace_re.sub("", bill[0])
+                    bill_id = house_bill_re.sub("HB", bill_id)
+                    bill_id = senate_bill_re.sub("SB", bill_id)
 
                     # Final step to set correct number of spaces in the id
                     components = component_re.search(bill_id)
