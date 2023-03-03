@@ -154,7 +154,7 @@ class WVEventScraper(Scraper, LXMLMixin):
                     components = re.search(
                         r"([A-Z]+)\s*(\d+)", bill_id, flags=re.IGNORECASE
                     )
-                    bill_id = f"{components.group(1)} {components.group(2)}"
+                    bill_id = f"{components.group(1)} {int(components.group(2))}"
 
                     agenda.add_bill(bill_id)
 
