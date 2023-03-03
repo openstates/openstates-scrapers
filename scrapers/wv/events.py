@@ -10,10 +10,6 @@ from utils import LXMLMixin
 class WVEventScraper(Scraper, LXMLMixin):
     verify = False
     _tz = pytz.timezone("US/Eastern")
-    # "house bill 123" "senate bill 123" "H.B. 4043" "HB 23" "SCR 29" "S. C. R 23"
-    bill_regex = (
-        r"((House Bill|Senate Bill|[HS]\.\s*[BCR]\.\s*([R]\.)*|H\.?\s*B\.?)\s*\d+)"
-    )
 
     def scrape(self):
         com_urls = [
@@ -132,10 +128,31 @@ class WVEventScraper(Scraper, LXMLMixin):
                 agenda = event.add_agenda_item(
                     row.text_content().strip().replace("\u25a1", "")
                 )
-                for bill in re.findall(self.bill_regex, row.text_content()):
-                    bill_id = re.sub(r"\.\s*", "", bill[0], flags=re.IGNORECASE)
-                    bill_id = re.sub(r"house bill", "HB", bill_id, flags=re.IGNORECASE)
-                    bill_id = re.sub(r"senate bill", "SB", bill_id, flags=re.IGNORECASE)
+
+                # Matches (SJR, HCR, HB, HR, SCR, SB, HJR, SR) + id
+                # Allows for house, senate, joint, or bill to be fully spelled out
+                # Allows for "." after H, S, J, C, and B
+                # Allows for up to two spaces before the id
+                bills = re.findall(
+                    r"((S\.?|Senate|H\.?|House)\s?((J|C|Joint)\.?\s?)?(B\.?|Bill|R\.?)\s?\s?(\d+))",
+                    row.text_content(),
+                    flags=re.IGNORECASE,
+                )
+
+                component_re = re.compile(r"([A-Z]+)\s*(\d+)", flags=re.IGNORECASE)
+                period_and_whitespace_re = re.compile(r"\.\s*", flags=re.IGNORECASE)
+                house_bill_re = re.compile(r"house bill", flags=re.IGNORECASE)
+                senate_bill_re = re.compile(r"senate bill", flags=re.IGNORECASE)
+
+                for bill in bills:
+                    bill_id = period_and_whitespace_re.sub("", bill[0])
+                    bill_id = house_bill_re.sub("HB", bill_id)
+                    bill_id = senate_bill_re.sub("SB", bill_id)
+
+                    # Final step to set correct number of spaces in the id
+                    components = component_re.search(bill_id)
+                    bill_id = f"{components.group(1)} {int(components.group(2))}"
+
                     agenda.add_bill(bill_id)
 
         event.add_source(url)
@@ -143,6 +160,11 @@ class WVEventScraper(Scraper, LXMLMixin):
         yield event
 
     def clean_date(self, when):
+        # Remove all text after the third comma to make sure no extra text
+        # is included in the date. Required to correctly parse texxt like this:
+        # "Friday, March 3, 2023, Following wrap up of morning agenda"
+        when = ",".join(when.split(",")[:2])
+
         # Feb is a tough one, isn't it?
         # After feburary, februarary, febuary, just give up and regex it
         when = re.sub(r"feb(.*?)y", "February", when, flags=re.IGNORECASE)
