@@ -97,12 +97,6 @@ class WVEventScraper(Scraper, LXMLMixin):
         when = when.split("-")[0]
         when = self.clean_date(when)
         when.replace("Thursady", "Thursday")
-
-        # Remove all text after the third comma to make sure no extra text
-        # is included in the date. Required to correctly parse texxt like this:
-        # "Friday, March 3, 2023, Following wrap up of morning agenda"
-        when = ",".join(when.split(",")[:2])
-
         when = dateutil.parser.parse(when)
         when = self._tz.localize(when)
 
@@ -163,6 +157,11 @@ class WVEventScraper(Scraper, LXMLMixin):
         yield event
 
     def clean_date(self, when):
+        # Remove all text after the third comma to make sure no extra text
+        # is included in the date. Required to correctly parse texxt like this:
+        # "Friday, March 3, 2023, Following wrap up of morning agenda"
+        when = ",".join(when.split(",")[:2])
+
         # Feb is a tough one, isn't it?
         # After feburary, februarary, febuary, just give up and regex it
         when = re.sub(r"feb(.*?)y", "February", when, flags=re.IGNORECASE)
