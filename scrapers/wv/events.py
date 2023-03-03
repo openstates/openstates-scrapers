@@ -135,12 +135,21 @@ class WVEventScraper(Scraper, LXMLMixin):
                     row.text_content().strip().replace("\u25a1", "")
                 )
 
+                # Temp check to make sure some things are not present
+                # check = re.findall(
+                #     r"(SJR|HCR|HR|SCR|HRJ|SR)\s\d", row.text_content(), re.IGNORECASE
+                # )
+                # if len(check) > 0:
+                #     print(row.text_content())
+                #     print(check)
+                #     raise Exception("error")
+
                 # Matches (SJR, HCR, HB, HR, SCR, SB, HJR, SR) + id
                 # Allows for house, senate, joint, or bill to be fully spelled out
                 # Allows for "." after H, S, J, C, and B
                 # Allows for up to two spaces before the id
                 bills = re.findall(
-                    r"((S\.?|Senate|H\.?|House)\s?((J|C|Joint)\.?\s?)?(B\.?|Bill)\s?\s?(\d+))",
+                    r"((S\.?|Senate|H\.?|House)\s?((J|C|Joint)\.?\s?)?(B\.?|Bill|R\.?|Resolution)\s?\s?(\d+))",
                     row.text_content(),
                     flags=re.IGNORECASE,
                 )
