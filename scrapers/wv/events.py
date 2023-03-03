@@ -10,10 +10,6 @@ from utils import LXMLMixin
 class WVEventScraper(Scraper, LXMLMixin):
     verify = False
     _tz = pytz.timezone("US/Eastern")
-    # "house bill 123" "senate bill 123" "H.B. 4043" "HB 23" "SCR 29" "S. C. R 23"
-    bill_regex = (
-        r"((House Bill|Senate Bill|[HS]\.\s*[BCR]\.\s*([R]\.)*|H\.?\s*B\.?)\s*\d+)"
-    )
 
     def scrape(self):
         com_urls = [
@@ -138,10 +134,28 @@ class WVEventScraper(Scraper, LXMLMixin):
                 agenda = event.add_agenda_item(
                     row.text_content().strip().replace("\u25a1", "")
                 )
-                for bill in re.findall(self.bill_regex, row.text_content()):
+
+                # Matches (SJR, HCR, HB, HR, SCR, SB, HJR, SR) + id
+                # Allows for house, senate, joint, or bill to be fully spelled out
+                # Allows for "." after H, S, J, C, and B
+                # Allows for up to two spaces before the id
+                bills = re.findall(
+                    r"((S\.?|Senate|H\.?|House)\s?((J|C|Joint)\.?\s?)?(B\.?|Bill)\s?\s?(\d+))",
+                    row.text_content(),
+                    flags=re.IGNORECASE,
+                )
+
+                for bill in bills:
                     bill_id = re.sub(r"\.\s*", "", bill[0], flags=re.IGNORECASE)
                     bill_id = re.sub(r"house bill", "HB", bill_id, flags=re.IGNORECASE)
                     bill_id = re.sub(r"senate bill", "SB", bill_id, flags=re.IGNORECASE)
+
+                    # Final step to set correct number of spaces in the id
+                    components = re.search(
+                        r"([A-Z]+)\s*(\d+)", bill_id, flags=re.IGNORECASE
+                    )
+                    bill_id = f"{components.group(1)} {components.group(2)}"
+
                     agenda.add_bill(bill_id)
 
         event.add_source(url)
