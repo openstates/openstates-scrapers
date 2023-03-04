@@ -32,6 +32,8 @@ class EventConsolidator(object):
             local_date = dateutil.parser.parse(date_time)
 
             item_date, item_time = str(local_date).split()
+            bill_name = item["bill_name"]
+            item_id = f"{item_time}+{bill_name}"
 
             committee = item["committee"]
             location = item["location"]
@@ -47,15 +49,15 @@ class EventConsolidator(object):
                 if time_is_earlier(item_time, current_start):
                     self.events[event_key]["event_start_time"] = item_time
 
-            self.events[event_key]["item_keys"].add(item_time)
+            self.events[event_key]["item_keys"].add(item_id)
 
             agenda_item_details = {
                 "description": item["description"],
                 "bill_name": item["bill_name"],
                 "sub_com": item["sub_com"],
             }
-            self.events[event_key][item_time] = []
-            self.events[event_key][item_time].append(agenda_item_details)
+            self.events[event_key][item_id] = []
+            self.events[event_key][item_id].append(agenda_item_details)
 
         yield from self.create_events()
 
@@ -85,9 +87,10 @@ class EventConsolidator(object):
             for item_key in self.events[event]["item_keys"]:
                 agenda = self.events[event][item_key]
                 for item in agenda:
-                    time = datetime.datetime.strptime(item_key, "%H:%M:%S").strftime(
-                        "%I:%M %p"
-                    )
+                    print(item)
+                    time = datetime.datetime.strptime(
+                        item_key.split("+")[0], "%H:%M:%S"
+                    ).strftime("%I:%M %p")
                     descr_with_time = f"[{time}]: {item['description']}"
                     item_descr = event_obj.add_agenda_item(descr_with_time)
                     if item["bill_name"]:
