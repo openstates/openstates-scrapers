@@ -2,7 +2,6 @@ import re
 import pytz
 import logging
 import dateutil.parser
-import datetime
 import requests
 import lxml.html
 from spatula import HtmlPage
@@ -32,6 +31,7 @@ class EventConsolidator(object):
             local_date = dateutil.parser.parse(date_time)
 
             item_date, item_time = str(local_date).split()
+            agenda_time = item["agenda_time"]
             bill_name = item["bill_name"]
             item_id = f"{item_time}+{bill_name}"
 
@@ -54,6 +54,7 @@ class EventConsolidator(object):
             agenda_item_details = {
                 "description": item["description"],
                 "bill_name": item["bill_name"],
+                "agenda_time": agenda_time,
                 "sub_com": item["sub_com"],
             }
             self.events[event_key][item_id] = []
@@ -88,10 +89,8 @@ class EventConsolidator(object):
                 agenda = self.events[event][item_key]
                 for item in agenda:
                     print(item)
-                    time = datetime.datetime.strptime(
-                        item_key.split("+")[0], "%H:%M:%S"
-                    ).strftime("%I:%M %p")
-                    descr_with_time = f"[{time}]: {item['description']}"
+                    agenda_time = item["agenda_time"]
+                    descr_with_time = f"[{agenda_time}]: {item['description']}"
                     item_descr = event_obj.add_agenda_item(descr_with_time)
                     if item["bill_name"]:
                         item_descr.add_bill(item["bill_name"])
@@ -167,6 +166,7 @@ class EventsTable(HtmlPage):
             agenda_item = {
                 "bill_name": bill_name,
                 "date_time": date_time,
+                "agenda_time": agenda_time,
                 "committee": com,
                 "sub_com": sub_com,
                 "location": loc,
