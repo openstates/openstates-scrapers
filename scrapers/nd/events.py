@@ -57,8 +57,7 @@ class EventConsolidator(object):
                 "agenda_time": agenda_time,
                 "sub_com": item["sub_com"],
             }
-            self.events[event_key][item_id] = []
-            self.events[event_key][item_id].append(agenda_item_details)
+            self.events[event_key][item_id] = agenda_item_details
 
         yield from self.create_events()
 
@@ -86,16 +85,14 @@ class EventConsolidator(object):
             event_obj.dedupe_key = event_name
 
             for item_key in self.events[event]["item_keys"]:
-                agenda = self.events[event][item_key]
-                for item in agenda:
-                    print(item)
-                    agenda_time = item["agenda_time"]
-                    descr_with_time = f"[{agenda_time}]: {item['description']}"
-                    item_descr = event_obj.add_agenda_item(descr_with_time)
-                    if item["bill_name"]:
-                        item_descr.add_bill(item["bill_name"])
-                    if item["sub_com"]:
-                        item_descr["extras"]["sub_committee"] = item["sub_com"]
+                item = self.events[event][item_key]
+                agenda_time = item["agenda_time"]
+                descr_with_time = f"[{agenda_time}]: {item['description']}"
+                item_descr = event_obj.add_agenda_item(descr_with_time)
+                if item["bill_name"]:
+                    item_descr.add_bill(item["bill_name"])
+                if item["sub_com"]:
+                    item_descr["extras"]["sub_committee"] = item["sub_com"]
 
             event_obj.add_source(self.url)
 
