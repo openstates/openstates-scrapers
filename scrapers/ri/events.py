@@ -12,12 +12,12 @@ agenda_url = "http://status.rilin.state.ri.us/agendas.aspx"
 column_order = {"upper": 1, "other": 2, "lower": 0}
 
 replace = {
-    "House Joint Resolution No.": "HJR",
-    "House Resolution No.": "HR",
-    "House Bill No.": "HB",
-    "Senate Joint Resolution No.": "SJR",
-    "Senate Resolution No.": "SR",
-    "Senate Bill No.": "SB",
+    "House Joint Resolution No.": "HJR ",
+    "House Resolution No.": "HR ",
+    "House Bill No.": "HB ",
+    "Senate Joint Resolution No.": "SJR ",
+    "Senate Resolution No.": "SR ",
+    "Senate Bill No.": "SB ",
     "\xa0": " ",
     "\u00a0": " ",
     "SUB A": "",
