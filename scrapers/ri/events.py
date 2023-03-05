@@ -141,11 +141,13 @@ class RIEventScraper(Scraper, LXMLMixin):
         bill_links = page.xpath('//a[contains(@href,"/BillText/")]/@href')
         linked_bills = set()
 
-        bill_id_re = re.compile(r"\/(\w+\d+)\.pdf", flags=re.IGNORECASE)
+        bill_id_re = re.compile(r"\/([a-z]+)(\d+)\.pdf", flags=re.IGNORECASE)
         for bill_link in bill_links:
             bill_nums = bill_id_re.findall(bill_link)
-            for bill_num in bill_nums:
-                linked_bills.add(bill_num)
+            for chamber, bill_num in bill_nums:
+                # Bill PDFs don't include the "B" in "HB" or "SB", so it must be added
+                bill = f"{chamber}B {int(bill_num)}"
+                linked_bills.add(bill)
 
         # sometimes (H 1234) ends up in the title or somewhere else unlinked
         text_bills = re.findall(
