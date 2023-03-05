@@ -110,8 +110,22 @@ class RIEventScraper(Scraper, LXMLMixin):
                 media_type="application/pdf",
                 on_duplicate="ignore",
             )
-            root = bill.xpath("../../*")
-            root = [x.text_content() for x in root]
+
+            root_elements = bill.xpath("../../*")
+            root = []
+            for e in root_elements:
+                # The first bill listed is in the same <td> as the page header,
+                # which inclides the "SCHEDULED FOR" text. This would cause the
+                # first bill to be skipped unless we omit it here.
+                if (
+                    e.tag == "b"
+                    and len(e.getchildren()) == 1
+                    and e.getchildren()[0].tag == "u"
+                ):
+                    continue
+                # Add the rest of the text normally
+                root.append(e.text_content())
+
             bill_id = "".join(root).replace("\u00a0", "")
 
             if "SCHEDULED FOR" in bill_id:
