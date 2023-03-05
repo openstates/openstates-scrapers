@@ -131,19 +131,19 @@ class RIEventScraper(Scraper, LXMLMixin):
             if "SCHEDULED FOR" in bill_id:
                 continue
 
-            descr = bill.getparent().getparent().text_content().replace("\u00a0", " ")
-
             for thing in replace:
                 bill_id = bill_id.replace(thing, replace[thing])
 
-            item = event.add_agenda_item(descr)
+            item = event.add_agenda_item(bill_id)
             item.add_bill(bill_id)
 
         # sometimes bill references are just plain links or plain text.
         bill_links = page.xpath('//a[contains(@href,"/BillText/")]/@href')
         linked_bills = set()
+
+        bill_id_re = re.compile(r"\/(\w+\d+)\.pdf", flags=re.IGNORECASE)
         for bill_link in bill_links:
-            bill_nums = re.findall(r"\/(\w+\d+)\.pdf", bill_link, flags=re.IGNORECASE)
+            bill_nums = bill_id_re.findall(bill_link)
             for bill_num in bill_nums:
                 linked_bills.add(bill_num)
 
