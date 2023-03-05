@@ -115,7 +115,7 @@ class RIEventScraper(Scraper, LXMLMixin):
             root = []
             for e in root_elements:
                 # The first bill listed is in the same <td> as the page header,
-                # which inclides the "SCHEDULED FOR" text. This would cause the
+                # which includes the "SCHEDULED FOR" text. This would cause the
                 # first bill to be skipped unless we omit it here.
                 if (
                     e.tag == "b"
