@@ -5,7 +5,8 @@ from openstates.models import ScrapePerson
 
 class AssemblyList(HtmlListPage):
     source = "https://www.assembly.ca.gov/assemblymembers"
-    selector = CSS("table tbody tr", num_items=80)
+    # selector = CSS("table tbody tr", num_items=80)
+    selector = CSS("div.rt__row > div", num_items=80)
 
     cap_off_suite_regex = re.compile(r"Capitol Office, (.+)(Suite \d{4})")
     cap_off_room_regex = re.compile(r"Capitol Office, (.+)(Room \d{3})")
@@ -17,11 +18,17 @@ class AssemblyList(HtmlListPage):
         name = CSS("a").match(item)[2].text_content()
         name = re.sub(r"Contact Assembly Member", "", name).strip()
 
-        party = CSS("td").match(item)[2].text_content().strip()
+        party = CSS("div.rt-row__party > div").match(item)[0].text_content().strip()
         if party == "Democrat":
             party = "Democratic"
 
-        district = CSS("td").match(item)[1].text_content().strip().lstrip("0")
+        district = (
+            CSS("div.rt-row__district > div")
+            .match(item)[0]
+            .text_content()
+            .strip()
+            .lstrip("0")
+        )
 
         # vacant districts show up with an interesting name
         if name == "edit":
@@ -40,7 +47,7 @@ class AssemblyList(HtmlListPage):
             image=photo_url or "",
         )
 
-        headers = CSS("h3").match(item)
+        headers = CSS("div.rt-row__info > div").match(item)
         cap_off_addr_part = "1021 O Street"
 
         for header in headers:
@@ -56,17 +63,19 @@ class AssemblyList(HtmlListPage):
 
             p.capitol_office.address = f"{cap_off_addr_part}" ", Sacramento, CA 95814"
 
-            po_box_and_phone = XPath("./td[4]/text()").match(item)[1].strip()
+            po_box_and_phone = header[5].text_content().strip()
             po_box, cap_phone = self.po_box_regex.search(po_box_and_phone).groups()
 
             p.capitol_office.voice = cap_phone
             p.extras["P.O. Box"] = po_box
 
             if "District Office" in h3_text:
-                dist_offs = header.getnext().text_content().strip()
                 dist_list = []
-                if len(dist_offs):
-                    dist_list = [x for x in dist_offs.split(" edit") if len(x)]
+                i = 6
+                while i < len(header):
+                    dist_list.append(header[i].text_content().strip())
+                    i = i + 1
+
                 dist_addr_match = self.dist_addr_only_regex.search(dist_list[0])
                 if dist_addr_match:
                     (p.district_office.address,) = dist_addr_match.groups()
