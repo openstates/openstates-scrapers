@@ -148,12 +148,12 @@ class RIEventScraper(Scraper, LXMLMixin):
                 linked_bills.add(bill_num)
 
         # sometimes (H 1234) ends up in the title or somewhere else unlinked
-        text_bill_nums = re.findall(
-            r"\((\w{1,3}\s?\d+)\)", page.text_content(), flags=re.IGNORECASE
+        text_bills = re.findall(
+            r"\(([a-z]{1,3})\s?(\d+)\)", page.text_content(), flags=re.IGNORECASE
         )
-        for bill_num in text_bill_nums:
-            bill_num = bill_num.replace(" ", "")
-            linked_bills.add(bill_num)
+        for bill_str, bill_num in text_bills:
+            bill = f"{bill_str} {bill_num}"
+            linked_bills.add(bill)
 
         if len(linked_bills) != 0:
             item = event.add_agenda_item("Bills under consideration")
