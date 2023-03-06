@@ -5,7 +5,7 @@ from openstates.models import ScrapePerson
 
 class AssemblyList(HtmlListPage):
     source = "https://www.assembly.ca.gov/assemblymembers"
-    selector = CSS("div.rt__row > div", num_items=80)
+    selector = CSS("div.rt__row", num_items=80)
 
     cap_off_suite_regex = re.compile(r"Capitol Office, (.+)(Suite \d{4})")
     cap_off_room_regex = re.compile(r"Capitol Office, (.+)(Room \d{3})")
