@@ -3,6 +3,7 @@ import datetime as dt
 from openstates.scrape import Event, Scraper
 from utils import LXMLMixin, url_xpath
 from utils.events import match_coordinates
+from spatula import HtmlPage, URL, XPath, SelectorError, PdfPage
 
 import pytz
 import re
@@ -10,46 +11,44 @@ import re
 cal_weekly_events = "http://wapp.capitol.tn.gov/apps/schedule/WeeklyView.aspx"
 cal_chamber_text = {"upper": "Senate", "lower": "House", "other": "Joint"}
 
+bill_id_re = re.compile(r"(SJR|HB|HR|SB|HJR|SR)\s{0,3}0*(\d+)")
+
+
+def scrape_bills(text):
+    bills = set()
+    for alpha, num in bill_id_re.findall(text):
+        bills.add(f"{alpha} {num}")
+    return list(bills)
+
+
+# Yields bill ids
+class AgendaHtml(HtmlPage):
+    example_source = "https://wapp.capitol.tn.gov/apps/videocalendars/VideoCalendarOrders.aspx?CalendarID=30415&GA=113"
+
+    def process_page(self):
+        try:
+            # The page contains a table of links to other pages that contain bills
+            pages = XPath("*[@id='generatedcontent']/table/tr/td/a/@href").match(
+                self.root
+            )
+            for page in pages:
+                yield AgendaHtml(source=URL(page))
+
+        except SelectorError:
+            # The page contains a list of bills and has
+            # invalid html e.g. "<li ID='HB1197' <p><b>"
+            # so regex is used to find the bill ids
+            yield from scrape_bills(self.root.text_content())
+
+
+class AgendaPdf(PdfPage):
+    def process_page(self):
+        yield from scrape_bills(self.text)
+
 
 class TNEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Central")
     _utc = pytz.timezone("UTC")
-
-    def _add_agenda_main(self, url, event):
-        page = self.lxmlize(url)
-        # OK. We get two kinds of links. Either a list to a bunch of agendas
-        # or actually a list of agendas. We can check for a <h2> at the top
-        # of the generated content
-        generated_content = page.xpath("//label[@id='generatedcontent']")[0]
-        h2s = generated_content.xpath(".//h2")
-        if len(h2s) > 0:
-            return self._add_agenda_real(url, event)
-        return self._add_agenda_list(url, event)
-
-    def _add_agenda_real(self, url, event):
-        trs = url_xpath(url, "//tr")
-        for tr in trs:
-            tds = tr.xpath("./*")
-            billinf = tds[0].attrib["id"]  # TN uses bill_ids as the id
-            descr = tr.xpath("./td//p")[-1].text_content()
-            agenda_item = event.add_agenda_item(descr)
-            agenda_item.add_bill(billinf, id=billinf)
-        event.add_source(url)
-        event.add_document("Agenda", url)
-        return event
-
-    def _add_agenda_list(self, url, event):
-        trs = url_xpath(url, "//tr")
-        for tr in trs:
-            things = tr.xpath("./td/a")
-            for thing in things:
-                event = self._add_agenda_real(thing.attrib["href"], event)
-        return event
-
-    def add_agenda(self, url, name, event):
-        if "CalendarMain" in url:
-            return self._add_agenda_main(url, event)
-        return event.add_document(name, url)
 
     def scrape(self, chamber=None):
         if chamber:
@@ -142,13 +141,14 @@ class TNEventScraper(Scraper, LXMLMixin):
                     event.add_source(cal_url)
 
                     agenda = metainf["agenda"].xpath(".//a")
-                    if len(agenda) > 0:
-                        agenda = agenda
-                        for doc in agenda:
-                            if not doc.text_content():
-                                continue
-                            agenda_url = doc.attrib["href"]
-                            self.add_agenda(agenda_url, doc.text_content(), event)
+                    for doc in agenda:
+                        agenda_url = doc.attrib["href"]
+                        if agenda_url.endswith(".pdf"):
+                            for bill in AgendaPdf(source=agenda_url).do_scrape():
+                                event.add_bill(bill)
+                        else:
+                            for bill in AgendaHtml(source=agenda_url).do_scrape():
+                                event.add_bill(bill)
 
                     match_coordinates(event, {"600 Dr. Martin": (36.16633, -86.78418)})
 
