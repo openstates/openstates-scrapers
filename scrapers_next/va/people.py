@@ -110,29 +110,31 @@ class MemberDetail(HtmlPage):
         return p
 
     def get_offices(self, person):
-        for ul in self.root.xpath('//ul[@class="linkNon" and normalize-space()]'):
-            address = []
-            phone = None
-            email = None
-            for li in ul.getchildren():
-                text = li.text_content()
-                if re.match(r"\(\d{3}\)", text):
-                    phone = text.strip()
-                elif text.startswith("email:"):
-                    email = text.strip("email: ").strip()
-                else:
-                    address.append(text.strip())
+        for i in range(1, 3):
+            for ul in self.root.xpath(f"/html/body/div/div[2]/div[2]/div[{i}]/ul"):
+                address = []
+                phone = None
+                email = None
+                for li in ul.getchildren():
+                    text = li.text_content()
+                    if re.match(r"\(\d{3}\)", text):
+                        phone = text.strip()
+                    elif text.startswith("email:"):
+                        email = text.strip("email: ").strip()
+                    else:
+                        address.append(text.strip())
 
-                if "Capitol Square" in address:
-                    office_obj = person.capitol_office
-                else:
-                    office_obj = person.district_office
+                    if i == 1:
+                        office_obj = person.capitol_office
 
-            office_obj.address = "; ".join(address)
-            if phone:
-                office_obj.voice = phone
-            if email:
-                person.email = email
+                    else:
+                        office_obj = person.district_office
+
+                office_obj.address = "; ".join(address)
+                if phone:
+                    office_obj.voice = phone
+                if email:
+                    person.email = email
 
 
 class SenateDetail(MemberDetail):
