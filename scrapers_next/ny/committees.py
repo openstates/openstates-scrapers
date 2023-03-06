@@ -56,20 +56,13 @@ class HouseCommitteeDetail(HtmlPage):
             raise SkipItem("skipping committee without full information")
 
         # in case there are co-chairs
-        for index, chair in enumerate(chairs):
+        if len(chairs) > 1:
+            chair_role = "Co-Chair"
+        else:
+            chair_role = "Chair"
+
+        for chair in chairs:
             chair_name = CSS(".comm-chair-name").match_one(chair).text_content().strip()
-
-            # index for the current chair in the list of chairs, +1 because xpath index starts from 1
-            chair_role = (
-                XPath(
-                    f"//*[@id='inline_file']/section[{index + 1}]//preceding-sibling::header"
-                )
-                .match_one(self.root)
-                .text_content()
-                .strip()
-                .lower()
-            )
-
             com.add_member(chair_name, chair_role)
 
         # some committees only have chairs and no members list
@@ -82,16 +75,16 @@ class HouseCommitteeDetail(HtmlPage):
             pass
 
         # some committees have temporary addresses, others have permanent ones
-        try:
-            temp, room, zip = XPath(
-                "//section[@id='comm-addr']/div[@class='mod-inner']//text()"
-            ).match(self.root)
-            com.extras["address"] = f"{temp}: {room}; {zip}"
-        except ValueError:
-            room, zip = XPath(
-                "//section[@id='comm-addr']/div[@class='mod-inner']//text()"
-            ).match(self.root)
-            com.extras["address"] = f"{room}; {zip}"
+        address_parts = self.root.xpath(
+            "//section[@id='comm-addr']/div[@class='mod-inner']//text()"
+        )
+        if address_parts:
+            try:
+                temp, room, zip_code = address_parts
+                com.extras["address"] = f"{temp}: {room}; {zip_code}"
+            except ValueError:
+                room, zip_code = address_parts
+                com.extras["address"] = f"{room}; {zip_code}"
 
         # some committees have press releases
         try:
