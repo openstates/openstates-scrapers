@@ -5,7 +5,6 @@ from openstates.models import ScrapePerson
 
 class AssemblyList(HtmlListPage):
     source = "https://www.assembly.ca.gov/assemblymembers"
-    # selector = CSS("table tbody tr", num_items=80)
     selector = CSS("div.rt__row > div", num_items=80)
 
     cap_off_suite_regex = re.compile(r"Capitol Office, (.+)(Suite \d{4})")
@@ -15,7 +14,7 @@ class AssemblyList(HtmlListPage):
     dist_phone_only_regex = re.compile(r"(\(\d{3}\)\s+\d{3}-\d{4})")
 
     def process_item(self, item):
-        name = CSS("a").match(item)[2].text_content()
+        name = CSS("a").match(item)[3].text_content()
         name = re.sub(r"Contact Assembly Member", "", name).strip()
 
         party = CSS("div.rt-row__party > div").match(item)[0].text_content().strip()
@@ -71,7 +70,7 @@ class AssemblyList(HtmlListPage):
 
             if "District Office" in h3_text:
                 dist_list = []
-                i = 6
+                i = 8
                 while i < len(header):
                     dist_list.append(header[i].text_content().strip())
                     i = i + 1
