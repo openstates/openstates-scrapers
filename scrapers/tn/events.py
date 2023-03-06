@@ -8,6 +8,7 @@ from spatula import HtmlPage, URL, XPath, SelectorError, PdfPage
 import pytz
 import re
 
+
 cal_weekly_events = "http://wapp.capitol.tn.gov/apps/schedule/WeeklyView.aspx"
 cal_chamber_text = {"upper": "Senate", "lower": "House", "other": "Joint"}
 
@@ -21,18 +22,20 @@ def scrape_bills(text):
     return list(bills)
 
 
-# Yields bill ids
+# Yields all bill ids found on an html page. If the page contains a table with
+# links to other pages, recursively calls itself and yields all bill ids on those
+# pages.
 class AgendaHtml(HtmlPage):
     example_source = "https://wapp.capitol.tn.gov/apps/videocalendars/VideoCalendarOrders.aspx?CalendarID=30415&GA=113"
 
     def process_page(self):
         try:
             # The page contains a table of links to other pages that contain bills
-            pages = XPath("*[@id='generatedcontent']/table/tr/td/a/@href").match(
+            pages = XPath("//*[@id='generatedcontent']/table/tr/td/a/@href").match(
                 self.root
             )
             for page in pages:
-                yield AgendaHtml(source=URL(page))
+                yield from AgendaHtml(source=URL(page)).do_scrape()
 
         except SelectorError:
             # The page contains a list of bills and has
@@ -41,6 +44,7 @@ class AgendaHtml(HtmlPage):
             yield from scrape_bills(self.root.text_content())
 
 
+# Yields all bill ids found in a PDF
 class AgendaPdf(PdfPage):
     def process_page(self):
         yield from scrape_bills(self.text)
