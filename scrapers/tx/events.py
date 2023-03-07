@@ -57,7 +57,7 @@ class TXEventScraper(Scraper, LXMLMixin):
             chair = metainfo["CHAIR"]
 
         plaintext = re.sub(r"\s+", " ", plaintext).strip()
-        regexp = r"(S|J|H)(B|M|R) (\d+)"
+        regexp = r"(SJR|HCR|HB|HR|SCR|SB|HJR|SR) (\d+)"
         bills = re.findall(regexp, plaintext)
 
         event = Event(
@@ -73,9 +73,8 @@ class TXEventScraper(Scraper, LXMLMixin):
         # add a single agenda item, attach all bills
         agenda = event.add_agenda_item(plaintext)
 
-        for bill in bills:
-            chamber, type, number = bill
-            bill_id = "%s%s %s" % (chamber, type, number)
+        for alpha, num in bills:
+            bill_id = f"{alpha} {num}"
             agenda.add_bill(bill_id)
 
         yield event
@@ -113,7 +112,6 @@ class TXEventScraper(Scraper, LXMLMixin):
 
             events = row.xpath(".//a[contains(@href, 'schedules/html')]")
             for event in events:
-
                 # Ignore text after the datetime proper (ie, after "AM" or "PM")
                 datetime = "{} {}".format(date, time)
                 datetime = re.search(r"(?i)(.+?[ap]m).+", datetime)
