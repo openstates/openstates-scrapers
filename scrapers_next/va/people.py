@@ -110,6 +110,7 @@ class MemberDetail(HtmlPage):
         return p
 
     def get_offices(self, person):
+        # div[1] and div[2] is where contacted info is located
         for i in range(1, 3):
             for ul in self.root.xpath(f"/html/body/div/div[2]/div[2]/div[{i}]/ul"):
                 address = []
@@ -124,6 +125,7 @@ class MemberDetail(HtmlPage):
                     else:
                         address.append(text.strip())
 
+                    # the first contact block is capital
                     if i == 1:
                         office_obj = person.capitol_office
 
@@ -132,7 +134,12 @@ class MemberDetail(HtmlPage):
 
                 office_obj.address = "; ".join(address)
                 if phone:
-                    office_obj.voice = phone
+                    # making sure we don't add the same phone number for district and capitol offices
+                    if i != 1:
+                        office_obj.voice = phone
+                    else:
+                        if phone == person.capitol_office.voice:
+                            office_obj.voice = ""
                 if email:
                     person.email = email
 
