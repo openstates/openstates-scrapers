@@ -71,7 +71,6 @@ class GAEventScraper(Scraper):
                 # Scrape bill ids from agenda pdf
                 for bill_id in Agenda(source=URL(row["agendaUri"])).do_scrape():
                     event.add_bill(bill_id)
-                    print(bill_id)
 
             if row["livestreamUrl"] is not None:
                 event.add_media_link(
