@@ -14,12 +14,8 @@ class IABillScraper(Scraper):
         # so we'll continue scraping both
         yield from self.scrape_prefiles(session)
 
-        base_url = (
-            "https://www.legis.iowa.gov/legislation/findLegislation/allbills?ga=%s"
-        )
-
         session_id = self.get_session_id(session)
-        url = base_url % session_id
+        url = f"https://www.legis.iowa.gov/legislation/findLegislation/allbills?ga={session_id}"
         page = lxml.html.fromstring(self.get(url).text)
 
         for option in page.xpath("//*[@id='sortableTable']/tbody/tr"):
@@ -28,7 +24,7 @@ class IABillScraper(Scraper):
             chamber = "lower" if bill_id[0] == "H" else "upper"
             sponsors = option.xpath("td[6]/text()")[0]
 
-            bill_url = f"https://www.legis.iowa.gov/legislation/BillBook?ga={session}&ba={bill_id}"
+            bill_url = f"https://www.legis.iowa.gov/legislation/BillBook?ga={session_id}&ba={bill_id}"
 
             yield self.scrape_bill(
                 chamber, session, session_id, bill_id, bill_url, title, sponsors
