@@ -9,6 +9,8 @@ from openstates.exceptions import EmptyScrape
 
 import pytz
 
+bill_re = re.compile(r"(SJR|HCR|HB|HR|SCR|SB|HJR|SR) (\d+)")
+
 
 class TXEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Central")
@@ -76,8 +78,7 @@ class TXEventScraper(Scraper, LXMLMixin):
             chair = metainfo["CHAIR"]
 
         plaintext = re.sub(r"\s+", " ", plaintext).strip()
-        regexp = r"(SJR|HCR|HB|HR|SCR|SB|HJR|SR) (\d+)"
-        bills = re.findall(regexp, plaintext)
+        bills = bill_re.findall(plaintext)
 
         event = Event(
             name=committee, start_date=self._tz.localize(datetime), location_name=where
