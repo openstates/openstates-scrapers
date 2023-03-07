@@ -9,23 +9,44 @@ from openstates.exceptions import EmptyScrape
 
 import pytz
 
+bill_re = re.compile(r"(SJR|HCR|HB|HR|SCR|SB|HJR|SR) (\d+)")
+
 
 class TXEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Central")
+
+    events_seen = set()
+
+    # Checks if an event is a duplicate.
+    # Events are considered duplicate if they have the same
+    # name, date, start time, and end time
+    def is_duplicate(self, event):
+        # Convert event to string, keys are in the format:
+        # "2023-03-08 10:30:00-06:00 General Investigating"
+        event = str(event)
+
+        if event in self.events_seen:
+            return False
+        else:
+            self.events_seen.add(event)
+            return True
 
     def scrape(self, session=None, chamber=None):
         event_count = 0
         if chamber:
             for obj in self.scrape_committee_upcoming(session, chamber):
-                event_count += 1
-                yield obj
+                if not self.is_duplicate(obj):
+                    event_count += 1
+                    yield obj
         else:
             for obj in self.scrape_committee_upcoming(session, "upper"):
-                event_count += 1
-                yield obj
+                if not self.is_duplicate(obj):
+                    event_count += 1
+                    yield obj
             for obj in self.scrape_committee_upcoming(session, "lower"):
-                event_count += 1
-                yield obj
+                if not self.is_duplicate(obj):
+                    event_count += 1
+                    yield obj
         if event_count < 1:
             raise EmptyScrape
 
@@ -57,8 +78,7 @@ class TXEventScraper(Scraper, LXMLMixin):
             chair = metainfo["CHAIR"]
 
         plaintext = re.sub(r"\s+", " ", plaintext).strip()
-        regexp = r"(S|J|H)(B|M|R) (\d+)"
-        bills = re.findall(regexp, plaintext)
+        bills = bill_re.findall(plaintext)
 
         event = Event(
             name=committee, start_date=self._tz.localize(datetime), location_name=where
@@ -73,9 +93,8 @@ class TXEventScraper(Scraper, LXMLMixin):
         # add a single agenda item, attach all bills
         agenda = event.add_agenda_item(plaintext)
 
-        for bill in bills:
-            chamber, type, number = bill
-            bill_id = "%s%s %s" % (chamber, type, number)
+        for alpha, num in bills:
+            bill_id = f"{alpha} {num}"
             agenda.add_bill(bill_id)
 
         yield event
@@ -113,7 +132,6 @@ class TXEventScraper(Scraper, LXMLMixin):
 
             events = row.xpath(".//a[contains(@href, 'schedules/html')]")
             for event in events:
-
                 # Ignore text after the datetime proper (ie, after "AM" or "PM")
                 datetime = "{} {}".format(date, time)
                 datetime = re.search(r"(?i)(.+?[ap]m).+", datetime)
