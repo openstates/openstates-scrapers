@@ -3,8 +3,8 @@ from openstates.models import ScrapeCommittee
 
 
 class CommitteeDetails(HtmlPage):
-    source = "https://docs.legis.wisconsin.gov/2021/committees/assembly/2349"
-    input = "2021 Assembly Committee for Review of Administrative Rules"
+    example_source = "https://docs.legis.wisconsin.gov/2023/committees/assembly/2349"
+    example_input = "2023 Assembly Committee for Review of Administrative Rules"
 
     def process_page(self):
         com = self.input
@@ -45,18 +45,18 @@ class CommitteeList(HtmlListPage):
         return CommitteeDetails(com, source=detail_link)
 
 
-class SenateCommitteeList(CommitteeList):
-    source = URL("https://docs.legis.wisconsin.gov/2021/committees/senate")
+class Senate(CommitteeList):
+    source = URL("https://docs.legis.wisconsin.gov/2023/committees/senate")
     chamber = "upper"
 
 
-class HouseCommitteeList(CommitteeList):
-    source = URL("https://docs.legis.wisconsin.gov/2021/committees/assembly")
+class House(CommitteeList):
+    source = URL("https://docs.legis.wisconsin.gov/2023/committees/assembly")
     chamber = "lower"
 
 
-class JointCommitteeList(CommitteeList):
-    source = URL("https://docs.legis.wisconsin.gov/2021/committees/joint")
+class Joint(CommitteeList):
+    source = URL("https://docs.legis.wisconsin.gov/2023/committees/joint")
     chamber = "legislature"
 
 

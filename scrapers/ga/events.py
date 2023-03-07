@@ -86,10 +86,21 @@ class GAEventScraper(Scraper):
 
 
 class Agenda(PdfPage):
+    non_formatted_re = re.compile(r"(H|S).+(B|R).+\s+(\d+)")
+
     def process_page(self):
         matches = re.findall(
-            r"((SB|HB|SR|HR)\s\d+)",
+            r"((SB|HB|SR|HR|House Bill|Senate Bill|House Resolution"
+            r"|Senate Resolution|H\.B\.|S\.B\.|H\.R\.|S\.R\.)\s+\d+)",
             self.text,
         )
         for m, _ in matches:
-            yield m
+            yield self.format_match(m)
+
+    def format_match(self, match):
+        needs_formatting = self.non_formatted_re.search(match)
+        if not needs_formatting:
+            return match
+        else:
+            chamber, bill_type, num = needs_formatting.groups()
+            return f"{chamber}{bill_type} {num}"
