@@ -31,11 +31,12 @@ class AgendaHtml(HtmlPage):
     def process_page(self):
         try:
             # The page contains a table of links to other pages that contain bills
-            pages = XPath("//*[@id='generatedcontent']/table/tr/td/a/@href").match(
-                self.root
-            )
+            pages = XPath("//*[@id='generatedcontent']/table/tr/td/a").match(self.root)
             for page in pages:
-                yield from AgendaHtml(source=URL(page)).do_scrape()
+                # Skip floor session
+                if "floor" in page.text_content().lower():
+                    continue
+                yield from AgendaHtml(source=URL(page.get("href"))).do_scrape()
 
         except SelectorError:
             # The page contains a list of bills and has
@@ -92,6 +93,10 @@ class TNEventScraper(Scraper, LXMLMixin):
 
                     if chmbr and metainf["chamber"].text_content() != chmbr:
                         self.info("Skipping event based on chamber.")
+                        continue
+
+                    # Skip floor session
+                    if "floor" in metainf["type"].text_content().lower():
                         continue
 
                     time = metainf["time"].text_content()
