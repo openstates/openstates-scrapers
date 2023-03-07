@@ -13,19 +13,38 @@ import pytz
 class TXEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Central")
 
+    events_seen = set()
+
+    # Checks if an event is a duplicate.
+    # Events are considered duplicate if they have the same
+    # name, date, start time, and end time
+    def is_duplicate(self, event):
+        # Convert event to string, keys are in the format:
+        # "2023-03-08 10:30:00-06:00 General Investigating"
+        event = str(event)
+
+        if event in self.events_seen:
+            return False
+        else:
+            self.events_seen.add(event)
+            return True
+
     def scrape(self, session=None, chamber=None):
         event_count = 0
         if chamber:
             for obj in self.scrape_committee_upcoming(session, chamber):
-                event_count += 1
-                yield obj
+                if not self.is_duplicate(obj):
+                    event_count += 1
+                    yield obj
         else:
             for obj in self.scrape_committee_upcoming(session, "upper"):
-                event_count += 1
-                yield obj
+                if not self.is_duplicate(obj):
+                    event_count += 1
+                    yield obj
             for obj in self.scrape_committee_upcoming(session, "lower"):
-                event_count += 1
-                yield obj
+                if not self.is_duplicate(obj):
+                    event_count += 1
+                    yield obj
         if event_count < 1:
             raise EmptyScrape
 
