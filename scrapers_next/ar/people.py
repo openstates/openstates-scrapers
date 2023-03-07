@@ -1,4 +1,5 @@
 import attr
+import re
 from spatula import HtmlListPage, HtmlPage, XPath, CSS, SelectorError
 from openstates.models import ScrapePerson
 
@@ -131,3 +132,137 @@ class LegList(HtmlListPage):
         p = PartialMember(name=name, chamber=chamber, url=self.source.url)
 
         return LegDetail(p, source=source)
+
+
+class SenDetail(HtmlPage):
+    example_source = (
+        "https://senate.arkansas.gov/senators/missy-irvin/"
+    )
+
+    def process_page(self):
+
+      #  table_div = CSS(".col-md-8").match(self.root)[0]
+
+        heading = CSS(".heading").match(self.root)[0]
+        name = re.sub(r"Senator ", "", heading.text_content()).strip()
+
+        rows = XPath("//div[contains(@class,col-md-8)]/ul/li").match(self.root[0]) # CSS(".row").match(table_div)
+
+        
+        image_container = CSS(".col-md-4").match(self.root)[0]
+        image = XPath("//img[contains(@alt, '" + name + "')]").match(image_container)[0].get('src')
+        image = image.split("?")[0]
+
+        biocontainer = CSS(".panel-body").match(self.root)[0]
+        bio = XPath("//a/@href").match(biocontainer)[0]
+        committees = XPath("//div[contains(@class,base-text)]/ul/li").match(self.root)
+        
+        
+
+        table = {
+            "Party": "",
+            "Phone": "",
+            "Email": "",
+            "District": "",
+            "Seniority": "",
+            "Occupation": "",
+            "Party": "",
+            "District Address": "",
+            "Church Affiliation:": "",
+            "Veteran": "",
+            "Public Service": "",
+            "Legislative Service": "",
+            "Biography": "",
+        }
+
+        for row in rows:
+            try: 
+                text = row.text_content()
+                text = text.split(": ")
+                if (len(text) < 2):
+                    continue
+                name = text[0]
+                value = text[1]
+                table[name] = value
+                if name == "Legislative Service":
+                    if (value[0] != 'H'):
+                      value.replace("House", "; House")
+                    table[name] = value
+                    break
+
+            except SelectorError:
+                pass
+
+        table["Biography"] = bio
+
+        p = ScrapePerson(
+            name=name,
+            state="ar",
+            chamber=self.input.chamber,
+            party=table["Party"],
+            image=image,
+            district=table["District"],
+            email=table["Email"],
+        )
+
+        committees_string = ""
+        first_committee = True;
+        for c in committees:
+            found = False
+            for k in table.keys():
+                if c.text_content().find(k) >= 0:
+                   found = True
+            if not found:
+                if not first_committee:
+                    committees_string += ", "
+                committees_string += c.text_content().lower()
+                first_committee = False;
+        p.extras["Committees"] = committees_string
+
+        if table["Phone"] != "":
+            p.district_office.voice = table["Phone"]
+        if table["Biography"] != "":
+            p.add_link(table["Biography"], "Biography")
+
+        for key in table:
+            if (
+                key == "Phone"
+                or key == "Email"
+                or key == "District"
+                or key == "Biography"
+            ):
+                continue
+            elif table[key] != "":
+                # remove the colon at the end
+                p.extras[key.lower()] = table[key]
+        try:
+            address = CSS(".col-md-12 p b").match_one(self.root).text_content()
+            full_address = address[:-5] + "AR " + address[-5:]
+            p.district_office.address = full_address
+        except SelectorError:
+            pass
+
+        p.add_source(self.source.url)
+        p.add_source(self.input.url)
+
+        return p
+
+
+class SenList(HtmlListPage):
+    source = (
+        "https://senate.arkansas.gov/senators/senators-sorted-by-congressional-district-and-seniority/"
+    )
+    selector = XPath(
+        "//div[contains(@class,'col-sm-6')]"
+        "//a/@href"
+    )
+    chamber = "upper"
+
+    def process_item(self, item):
+        print("item = " + item)
+
+        p = PartialMember(name="", chamber="upper", url=self.source.url)
+
+        return SenDetail(p, source=item)
+
+
