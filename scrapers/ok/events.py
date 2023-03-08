@@ -12,15 +12,13 @@ from openstates.exceptions import EmptyScrape
 from utils.events import match_coordinates
 from spatula import PdfPage, URL
 
-# bills_re = re.compile(r"([a-z]{1,2})\s{0,5}0*(\d+)", flags=re.IGNORECASE)
-# bills_re = re.compile(r"(HB|SB|HJB|HR|HJR|SR)\s{0,5}0*(\d+)", flags=re.IGNORECASE)
-bills_re = re.compile(r"(HB|SB|HJR)\s{0,5}0*(\d+)", flags=re.IGNORECASE)
+bills_re = re.compile(
+    r"(SJR|HCR|HB|HR|SCR|SB|HJR|SR)\s{0,5}0*(\d+)", flags=re.IGNORECASE
+)
 
 
 class Agenda(PdfPage):
     def process_page(self):
-        print(self.text)
-
         # Find all bill ids
         bills = bills_re.findall(self.text)
 
@@ -29,7 +27,6 @@ class Agenda(PdfPage):
         for alpha, num in bills:
             formatted_bills.add(f"{alpha.upper()} {num}")
 
-        print(formatted_bills)
         yield from formatted_bills
 
 
