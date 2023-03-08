@@ -21,7 +21,6 @@ class IABillScraper(Scraper):
         session_id = self.get_session_id(session)
         url = f"https://www.legis.iowa.gov/legislation/findLegislation/allbills?ga={session_id}"
         page = lxml.html.fromstring(req_session.get(url).text)
-        # cookie = req_session.cookies
 
         for option in page.xpath("//*[@id='sortableTable']/tbody/tr"):
             bill_id = option.xpath("td[2]/a/text()")[0]
@@ -29,7 +28,7 @@ class IABillScraper(Scraper):
             chamber = "lower" if bill_id[0] == "H" else "upper"
             sponsors = option.xpath("td[6]/text()")[0]
 
-            bill_url = f"https://www.legis.iowa.gov/legislation/BillBook?ga={session_id}&ba={bill_id}"
+            bill_url = f"https://www.legis.iowa.gov/legislation/BillBook?ga={session_id}&ba={bill_id.replace(' ', '')}"
 
             yield self.scrape_bill(
                 chamber, session, session_id, bill_id, bill_url, title, sponsors
@@ -114,7 +113,6 @@ class IABillScraper(Scraper):
             f"https://www.legis.iowa.gov/legislation/billTracking/"
             f"billHistory?billName={bill_id}&ga={session_id}"
         )
-
         req = req_session.get(hist_url)
         if req.status_code == 500:
             self.warning("500 error on {}, skipping".format(hist_url))
