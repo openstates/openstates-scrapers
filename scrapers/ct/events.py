@@ -8,15 +8,37 @@ import pytz
 from .utils import open_csv
 
 
-class CTEventScraper(Scraper):
+from spatula import PdfPage, URL
+import re
 
+bill_re = re.compile(r"(SJ|HJ|HB|HR|SB|SR)\s{0,10}0*(\d+)")
+
+
+class Agenda(PdfPage):
+    def process_page(self):
+        # Bills are in the format "S.B. No. 123", this preprocessing step
+        # removes a lot of the complexity so the regex can be simpler. After the
+        # preprocessing step, the bills should be in the format "SB   123"
+        self.text = self.text.upper().replace(".", "").replace("NO", "")
+
+        bills = bill_re.findall(self.text)
+
+        # Format bills with correct spacing and remove duplicates
+        formatted_bills = set()
+        for alpha, num in bills:
+            formatted_bills.add(f"{alpha} {num}")
+
+        yield from formatted_bills
+
+
+class CTEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
 
     def __init__(self, *args, **kwargs):
         super(CTEventScraper, self).__init__(*args, **kwargs)
 
     def scrape(self):
-        for (code, name) in self.get_comm_codes():
+        for code, name in self.get_comm_codes():
             yield from self.scrape_committee_events(code, name)
 
     def scrape_committee_events(self, code, name):
@@ -58,6 +80,13 @@ class CTEventScraper(Scraper):
             event.add_source(events_url)
             event.add_committee(name)
             event.dedupe_key = event_name
+
+            # Check for agenda pdf, if it exists then scrape all bill ids from it
+            agenda_url = info["url"]
+            if agenda_url:
+                full_url = f"https://www.cga.ct.gov{agenda_url}"
+                for bill in Agenda(source=URL(full_url)).do_scrape():
+                    event.add_bill(bill)
 
             yield event
 
