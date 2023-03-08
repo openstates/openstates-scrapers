@@ -11,6 +11,10 @@ from .utils import open_csv
 from spatula import PdfPage, URL
 import re
 
+# Events before the session year will be skipped
+SESSION_YEAR = 2023
+
+
 bill_re = re.compile(r"(SJ|HJ|HB|HR|SB|SR)\s{0,10}0*(\d+)")
 
 
@@ -63,6 +67,11 @@ class CTEventScraper(Scraper):
                 )
                 continue
             when = datetime.datetime.strptime(info["start"], DATETIME_FORMAT)
+
+            # Check to make sure event is for current session
+            if when.year < SESSION_YEAR:
+                continue
+
             event_name = f"{name}#{info['title']}#{when}"
             if event_name in event_objects:
                 self.warning(f"Found duplicate event: {event_name}. Skipping")
