@@ -10,13 +10,17 @@ class IABillScraper(Scraper):
     categorizer = Categorizer()
 
     def scrape(self, session=None, chamber=None, prefiles=None):
+        self.retry_attempts = 3
+        self.retry_wait_seconds = 6
+        req_session = requests.Session()
+        req_session.headers.update({"X-Requested-With": "XMLHttpRequest"})
         # openstates/issues#252 - IA continues to prefile after session starts
         # so we'll continue scraping both
         yield from self.scrape_prefiles(session)
 
         session_id = self.get_session_id(session)
         url = f"https://www.legis.iowa.gov/legislation/findLegislation/allbills?ga={session_id}"
-        page = lxml.html.fromstring(self.get(url).text)
+        page = lxml.html.fromstring(req_session.get(url).text)
 
         for option in page.xpath("//*[@id='sortableTable']/tbody/tr"):
             bill_id = option.xpath("td[2]/a/text()")[0]
@@ -24,7 +28,7 @@ class IABillScraper(Scraper):
             chamber = "lower" if bill_id[0] == "H" else "upper"
             sponsors = option.xpath("td[6]/text()")[0]
 
-            bill_url = f"https://www.legis.iowa.gov/legislation/BillBook?ga={session_id}&ba={bill_id}"
+            bill_url = f"https://www.legis.iowa.gov/legislation/BillBook?ga={session_id}&ba={bill_id.replace(' ', '')}"
 
             yield self.scrape_bill(
                 chamber, session, session_id, bill_id, bill_url, title, sponsors
@@ -96,15 +100,20 @@ class IABillScraper(Scraper):
             bill.add_subject(subject.strip())
 
     def scrape_bill(self, chamber, session, session_id, bill_id, url, title, sponsors):
-        sidebar = lxml.html.fromstring(self.get(url).text)
-        sidebar.make_links_absolute("https://www.legis.iowa.gov")
+        req_session = requests.Session()
+        req_session.headers.update({"X-Requested-With": "XMLHttpRequest"})
+        try:
+            sidebar = lxml.html.fromstring(self.get(url, cookies=self.cookies).text)
+            sidebar.make_links_absolute("https://www.legis.iowa.gov")
+        except requests.exceptions.ConnectionError:
+            self.warning("Connection closed without response, skipping")
+            return
 
         hist_url = (
             f"https://www.legis.iowa.gov/legislation/billTracking/"
             f"billHistory?billName={bill_id}&ga={session_id}"
         )
-        req_session = requests.Session()
-        req = requests.get(hist_url)
+        req = req_session.get(hist_url)
         if req.status_code == 500:
             self.warning("500 error on {}, skipping".format(hist_url))
             return
