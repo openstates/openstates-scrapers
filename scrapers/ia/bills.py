@@ -101,22 +101,23 @@ class IABillScraper(Scraper):
             bill.add_subject(subject.strip())
 
     def scrape_bill(self, chamber, session, session_id, bill_id, url, title, sponsors):
-        sidebar = lxml.html.fromstring(self.get(url).text)
-        sidebar.make_links_absolute("https://www.legis.iowa.gov")
+        req_session = requests.Session()
+        req_session.headers.update({"X-Requested-With": "XMLHttpRequest"})
+        try:
+            sidebar = lxml.html.fromstring(self.get(url, cookies=self.cookies).text)
+            sidebar.make_links_absolute("https://www.legis.iowa.gov")
+        except requests.exceptions.ConnectionError:
+            self.warning("Connection closed without response, skipping")
+            return
 
         hist_url = (
             f"https://www.legis.iowa.gov/legislation/billTracking/"
             f"billHistory?billName={bill_id}&ga={session_id}"
         )
-        req_session = requests.Session()
-        req_session.headers.update({"X-Requested-With": "XMLHttpRequest"})
-        try:
-            req = req_session.get(hist_url, cookies=self.cookies)
-            # if req.status_code == 500:
-            #     self.warning("500 error on {}, skipping".format(hist_url))
-            #     return
-        except requests.exceptions.ConnectionError:
-            self.warning("Connection closed without response, skipping")
+
+        req = req_session.get(hist_url)
+        if req.status_code == 500:
+            self.warning("500 error on {}, skipping".format(hist_url))
             return
 
         page = lxml.html.fromstring(req.text)
