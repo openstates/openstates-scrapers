@@ -140,13 +140,10 @@ class SenDetail(HtmlPage):
     )
 
     def process_page(self):
-
-      #  table_div = CSS(".col-md-8").match(self.root)[0]
-
         heading = CSS(".heading").match(self.root)[0]
         name = re.sub(r"Senator ", "", heading.text_content()).strip()
 
-        rows = XPath("//div[contains(@class,col-md-8)]/ul/li").match(self.root[0]) # CSS(".row").match(table_div)
+        rows = XPath("//div[contains(@class,col-md-8)]/ul/li").match(self.root[0])
 
         
         image_container = CSS(".col-md-4").match(self.root)[0]
@@ -156,8 +153,6 @@ class SenDetail(HtmlPage):
         biocontainer = CSS(".panel-body").match(self.root)[0]
         bio = XPath("//a/@href").match(biocontainer)[0]
         committees = XPath("//div[contains(@class,base-text)]/ul/li").match(self.root)
-        
-        
 
         table = {
             "Party": "",
@@ -166,7 +161,6 @@ class SenDetail(HtmlPage):
             "District": "",
             "Seniority": "",
             "Occupation": "",
-            "Party": "",
             "District Address": "",
             "Church Affiliation:": "",
             "Veteran": "",
@@ -179,15 +173,15 @@ class SenDetail(HtmlPage):
             try: 
                 text = row.text_content()
                 text = text.split(": ")
-                if (len(text) < 2):
+                if len(text) < 2:
                     continue
-                name = text[0]
+                item_name = text[0]
                 value = text[1]
-                table[name] = value
-                if name == "Legislative Service":
-                    if (value[0] != 'H'):
-                      value.replace("House", "; House")
-                    table[name] = value
+                table[item_name] = value
+                if item_name == "Legislative Service":
+                    if value[0] != "H":
+                      value = value.replace('House', '; House')
+                    table[item_name] = value
                     break
 
             except SelectorError:
@@ -219,6 +213,10 @@ class SenDetail(HtmlPage):
                 first_committee = False;
         p.extras["Committees"] = committees_string
 
+        if table["District Address"] != "":
+            address =  table["District Address"]
+            full_address = address[:-5] + "AR " + address[-5:]
+            p.district_office.address = full_address
         if table["Phone"] != "":
             p.district_office.voice = table["Phone"]
         if table["Biography"] != "":
@@ -259,10 +257,111 @@ class SenList(HtmlListPage):
     chamber = "upper"
 
     def process_item(self, item):
-        print("item = " + item)
-
         p = PartialMember(name="", chamber="upper", url=self.source.url)
-
         return SenDetail(p, source=item)
 
+
+class AssemblyDetail(HtmlPage):
+    example_source = (
+        "https://www.arkansashouse.org/district/1"
+    )
+
+    def process_page(self):
+        heading = CSS(".py-sm-6").match(self.root)[0]
+        name = heading[1].text_content()
+        line2 = heading[2].text_content().split(" ")
+        party=line2[0]
+        districtName = line2[2]
+        districtNumber = ""
+        for c in districtName:
+          if c.isdigit():
+            districtNumber += c
+
+        
+        leftInfobox = CSS(".col-lg-3").match(self.root)[0]
+
+        table = {
+            "Seniority": "",
+            "Occupation": "",
+            "Religion": "",
+            "Past Service": "",
+        }
+
+        for k in table.keys():
+            value = XPath("//dt[. = '" + k + "']//following-sibling::dd").match(leftInfobox)[0]
+            valueString = value.text_content()
+            if len(valueString) > 0:
+                table[k] = valueString
+
+        table["Name"] = name
+        table["District"] = districtNumber
+        table["Title"] = "Representative"
+        table["Party"] = party
+
+        image = XPath("//div[contains(@class,'col-lg-3')]"
+                         "//a/@href").match(self.root)[0]
+
+        emailContainer = XPath("//p[contains(@class,'mb-0')]/a").match(self.root)[0]
+        table["Email"] = emailContainer.text_content()
+
+        officeContainer =  XPath("//p[contains(@class,'mb-0')]").match(self.root)[1]
+        table["Phone"] = officeContainer[2].text_content()
+        addressArray = XPath("//p[contains(@class,'mb-0')]/text()").match(self.root)
+
+        address = ""
+        started = False
+        for c in addressArray[3]:
+            if c.isalnum():
+                started = True
+            if started:
+                address += c
+        address += " "
+        address += addressArray[4]
+        table["District Address"] = address
+
+        p = ScrapePerson(
+            name=name,
+            state="ar",
+            chamber=self.input.chamber,
+            party=table["Party"],
+            image=image,
+            district=table["District"],
+            email=table["Email"],
+        )
+        p.add_source(self.source.url)
+        p.add_source(self.input.url)
+
+        for key in table:
+            if (
+                key == "Phone"
+                or key == "Email"
+                or key == "District"
+                or key == "Biography"
+                or key == "District Address"
+            ):
+                continue
+            elif table[key] != "":
+                # remove the colon at the end
+                p.extras[key.lower()] = table[key]
+
+        if table["District Address"] != "":
+            p.district_office.address =  table["District Address"]
+        if table["Phone"] != "":
+            p.district_office.voice = table["Phone"]
+        return p
+
+
+class AssemblyList(HtmlListPage):
+    source = (
+        "https://www.arkansashouse.org/representatives/members"
+    )
+    selector = XPath(
+        "//div[contains(@class,'col-sm-6')]"
+        "//a/@href"
+    )
+    chamber = "lower"
+
+    def process_item(self, item):
+        p = PartialMember(name="", chamber="lower", url=self.source.url)
+        return AssemblyDetail(p, source=item)
 
