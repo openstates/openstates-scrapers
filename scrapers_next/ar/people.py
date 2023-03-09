@@ -244,7 +244,6 @@ class SenList(HtmlListPage):
     )
     selector = XPath(
         "//div[contains(@class,'col-sm-6')]"
-        #"//a/@href"
     )
     chamber = "upper"
 
@@ -264,7 +263,7 @@ class AssemblyDetail(HtmlPage):
 
     def process_page(self):
         heading = CSS(".py-sm-6").match(self.root)[0]
-        name = heading[1].text_content()
+        name = self.input.name
         line2 = heading[2].text_content().split(" ")
         party=line2[0]
         districtName = line2[2]
@@ -330,10 +329,12 @@ class AssemblyDetail(HtmlPage):
         for key in table:
             if (
                 key == "Phone"
+                or key == "Name"
                 or key == "Email"
                 or key == "District"
                 or key == "Biography"
                 or key == "District Address"
+                or key == "Phone"
             ):
                 continue
             elif table[key] != "":
@@ -353,11 +354,14 @@ class AssemblyList(HtmlListPage):
     )
     selector = XPath(
         "//div[contains(@class,'col-sm-6')]"
-        "//a/@href"
     )
     chamber = "lower"
 
     def process_item(self, item):
-        p = PartialMember(name="", chamber="lower", url=self.source.url)
-        return AssemblyDetail(p, source=item)
+        description = item.text_content()
+        nameFromDescription = description.split("\n")[6].strip()
+        link = list(item.iterlinks())
+        (element, attr, url,position) = link[0]
+        p = PartialMember(name=nameFromDescription, chamber="lower", url=self.source.url)
+        return AssemblyDetail(p, source=url)
 
