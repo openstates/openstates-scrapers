@@ -24,10 +24,9 @@ class AgendaStartTime(PdfPage):
         start = start_time_re.search(self.text)
         if not start:
             # Default to 12am if no start time is found
-            yield "12:00 am"
-            return
+            return "12:00 am"
         time, ampm = start.groups(1)
-        yield f"{time}:00 {ampm}"
+        return f"{time}:00 {ampm}"
 
 
 class Agenda(PdfPage):
