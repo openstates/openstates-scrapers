@@ -1,13 +1,8 @@
 import pytz
 import datetime
 
-# import lxml
-
 from utils import LXMLMixin
-
-# from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
-
 from spatula import HtmlPage, PdfPage, URL, XPath
 import re
 
