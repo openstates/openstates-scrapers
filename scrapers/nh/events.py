@@ -7,6 +7,19 @@ import json
 import lxml
 import datetime
 from openstates.scrape import Scraper, Event
+import re
+
+bill_re = re.compile(
+    r"([a-z]+)0*(\d+)",
+    flags=re.IGNORECASE,
+)
+
+
+# Adds a space and removes any leading zeros from a bill id
+# example input: "HB01234", example output: "HB 123"
+def format_bill(bill):
+    component = bill_re.match(bill)
+    return f"{component.group(1)} {component.group(2)}"
 
 
 class NHEventScraper(Scraper, LXMLMixin):
@@ -94,11 +107,12 @@ class NHEventScraper(Scraper, LXMLMixin):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for row in page.xpath('//table[@id="gvDetails"]/tr'):
+        for row in page.xpath('//table[@id="pageBody_gvDetails"]/tr'):
             when = row.xpath("td[1]")[0].text_content().strip()
             item = row.xpath("td[3]")[0].text_content().strip()
-            bill_id = row.xpath(
-                './/a[contains(@href, "bill_Status/bill_docket")]/text()'
-            )[0]
+            bill_id = row.xpath('.//a[contains(@href, "bill_Status/billinfo")]/text()')[
+                0
+            ]
+            bill_id = format_bill(bill_id)
             agenda = event.add_agenda_item(f"{when} {item}")
             agenda.add_bill(bill_id)
