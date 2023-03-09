@@ -33,7 +33,13 @@ class LegList(JsonPage):
             p.email = leg["email"].strip()
 
             if leg["address"].strip() != ", , ,":
-                p.district_office.address = leg["address"].strip()
+                if (
+                    "state st" in leg["address"].strip().lower()
+                    and "salt lake city" in leg["address"].strip().lower()
+                ):
+                    p.capitol_office.address = leg["address"].strip()
+                else:
+                    p.district_office.address = leg["address"].strip()
 
             # Note about phones from old code
             # Work phone seems to be the person's non-legislative
@@ -43,7 +49,19 @@ class LegList(JsonPage):
             # them in order of how likely we think they are
             # to actually get us to the person we care about.
             if leg.get("workPhone", None):
-                p.district_office.voice = leg["workPhone"]
+                p.capitol_office.voice = leg["workPhone"]
+            elif "cell" in leg:
+                if leg["cell"][:3] == "801" or leg["cell"][:3] == "385":
+                    p.capitol_office.voice = leg["cell"]
+                else:
+                    p.district_office.voice = leg["cell"]
+            # this seems like it wouldn't be right, but there are reps that have this number listed as
+            # their official number
+            elif "homePhone" in leg:
+                if leg["homePhone"][:3] == "801" or leg["homePhone"][:3] == "385":
+                    p.capitol_office.voice = leg["homePhone"]
+                else:
+                    p.district_office.voice = leg["homePhone"]
 
             p.add_link(leg["legislation"], note="legislation")
 

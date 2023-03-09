@@ -10,6 +10,24 @@ from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 
 from utils.events import match_coordinates
+from spatula import PdfPage, URL
+
+bills_re = re.compile(
+    r"(SJR|HCR|HB|HR|SCR|SB|HJR|SR)\s{0,5}0*(\d+)", flags=re.IGNORECASE
+)
+
+
+class Agenda(PdfPage):
+    def process_page(self):
+        # Find all bill ids
+        bills = bills_re.findall(self.text)
+
+        # Format bills before yielding
+        formatted_bills = set()
+        for alpha, num in bills:
+            formatted_bills.add(f"{alpha.upper()} {num}")
+
+        yield from formatted_bills
 
 
 class OKEventScraper(Scraper):
@@ -20,7 +38,6 @@ class OKEventScraper(Scraper):
     # poetry run os-update ne \
     # events --scrape start=2022-02-01 end=2022-03-02
     def scrape(self, start=None, end=None):
-
         if start is None:
             delta = datetime.timedelta(days=90)
             start = datetime.date.today() - delta
@@ -95,21 +112,19 @@ class OKEventScraper(Scraper):
                     link["label"], link["route"], media_type="application/pdf"
                 )
 
+                for bill in Agenda(source=URL(link["route"])).do_scrape():
+                    event.add_bill(bill)
+
             for agenda in meta["agenda"]:
                 agenda_text = lxml.html.fromstring(agenda["info"])
                 agenda_text = " ".join(agenda_text.xpath("//text()"))
-                item = event.add_agenda_item(agenda_text)
+                event.add_agenda_item(agenda_text)
 
                 if agenda["measure"]["data"]:
-                    item.add_bill(agenda["measure"]["data"])
                     self.info(agenda["measure"])
                     self.error(
                         "Finally found an agenda with linked measure. Modify the code to handle it."
                     )
-
-                # sometimes they put the bill number here instead
-                if agenda["customId"]:
-                    item.add_bill(agenda["customId"])
 
             yield event
 

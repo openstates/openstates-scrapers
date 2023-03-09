@@ -10,40 +10,31 @@ class IABillScraper(Scraper):
     categorizer = Categorizer()
 
     def scrape(self, session=None, chamber=None, prefiles=None):
+        self.retry_attempts = 3
+        self.retry_wait_seconds = 6
+        req_session = requests.Session()
+        req_session.headers.update({"X-Requested-With": "XMLHttpRequest"})
         # openstates/issues#252 - IA continues to prefile after session starts
         # so we'll continue scraping both
         yield from self.scrape_prefiles(session)
 
-        chambers = [chamber] if chamber else ["upper", "lower"]
-        for chamber in chambers:
-            yield from self.scrape_chamber(chamber, session)
-
-    def scrape_chamber(self, chamber, session):
-        # We need a good bill page to scrape from. Check for "HF " + bill_offset
-        bill_offset = "HR1"
-
-        base_url = "https://www.legis.iowa.gov/legislation/BillBook?ga=%s&ba=%s"
-
         session_id = self.get_session_id(session)
-        url = base_url % (session_id, bill_offset)
-        page = lxml.html.fromstring(self.get(url).text)
+        url = f"https://www.legis.iowa.gov/legislation/findLegislation/allbills?ga={session_id}"
+        page = lxml.html.fromstring(req_session.get(url).text)
 
-        if chamber == "upper":
-            bname = "senateBills"
-        else:
-            bname = "houseBills"
+        for option in page.xpath("//*[@id='sortableTable']/tbody/tr"):
+            bill_id = option.xpath("td[2]/a/text()")[0]
+            title = option.xpath("td[3]/text()")[0].split("(")[0]
+            chamber = "lower" if bill_id[0] == "H" else "upper"
+            sponsors = option.xpath("td[6]/text()")[0]
 
-        for option in page.xpath("//select[@name = '%s']/option" % bname):
-            bill_id = option.text.strip()
+            bill_url = f"https://www.legis.iowa.gov/legislation/BillBook?ga={session_id}&ba={bill_id.replace(' ', '')}"
 
-            if bill_id.lower() == "pick one":
-                continue
+            yield self.scrape_bill(
+                chamber, session, session_id, bill_id, bill_url, title, sponsors
+            )
 
-            bill_url = base_url % (session_id, bill_id)
-
-            yield self.scrape_bill(chamber, session, session_id, bill_id, bill_url)
-
-    # IA does prefiles on a seperate page, with no bill numbers,
+    # IA does prefiles on a separate page, with no bill numbers,
     # after introduction they'll link bill numbers to the prefile doc id
     def scrape_prefiles(self, session):
         prefile_url = (
@@ -108,39 +99,27 @@ class IABillScraper(Scraper):
         for subject in subjects:
             bill.add_subject(subject.strip())
 
-    def scrape_bill(self, chamber, session, session_id, bill_id, url):
-        sidebar = lxml.html.fromstring(self.get(url).text)
-        sidebar.make_links_absolute("https://www.legis.iowa.gov")
+    def scrape_bill(self, chamber, session, session_id, bill_id, url, title, sponsors):
+        req_session = requests.Session()
+        req_session.headers.update({"X-Requested-With": "XMLHttpRequest"})
+        try:
+            sidebar = lxml.html.fromstring(self.get(url, cookies=self.cookies).text)
+            sidebar.make_links_absolute("https://www.legis.iowa.gov")
+        except requests.exceptions.ConnectionError:
+            self.warning("Connection closed without response, skipping")
+            return
 
         hist_url = (
             f"https://www.legis.iowa.gov/legislation/billTracking/"
             f"billHistory?billName={bill_id}&ga={session_id}"
         )
-        req_session = requests.Session()
-        req = requests.get(hist_url)
+        req = req_session.get(hist_url)
         if req.status_code == 500:
             self.warning("500 error on {}, skipping".format(hist_url))
             return
 
         page = lxml.html.fromstring(req.text)
         page.make_links_absolute("https://www.legis.iowa.gov")
-
-        title = page.xpath(
-            'string(//div[@id="content"]/div[@class=' '"divideVert"]/div/div[4]/div[2])'
-        ).strip()
-
-        if title == "":
-            # Sometimes the title is moved, see
-            # https://www.legis.iowa.gov/legislation/billTracking/billHistory?billName=SF%20139&ga=88
-            title = page.xpath(
-                'string(//div[@id="content"]/div[@class=' '"divideVert"]/div[4]/div[2])'
-            ).strip()
-            if title == "":
-                self.warning("URL: %s gives us an *EMPTY* bill. Aborting." % url)
-                return
-
-        if title.lower().startswith("in"):
-            title = page.xpath("string(//table[2]/tr[3])").strip()
 
         if "HR" in bill_id or "SR" in bill_id:
             bill_type = ["resolution"]
@@ -200,42 +179,13 @@ class IABillScraper(Scraper):
                     note=version_name, url=version_pdf_url, media_type="application/pdf"
                 )
 
-        sponsors_str = page.xpath(
-            'string(//div[@id="content"]/div[@class=' '"divideVert"]/div/div[4]/div[1])'
-        ).strip()
+        sponsor_array = sponsors.replace("and", ",").split(",")
 
-        if re.search("^By ", sponsors_str):
-            sponsors = re.split(",| and ", sponsors_str.split("By ")[1])
-        # for some bills sponsors listed in different format
-        else:
-            sponsors = re.findall(
-                r"[\w-]+(?:, [A-Z]\.)?(?:,|(?: and)|\.$)", sponsors_str
-            )
-
-        for sponsor in sponsors:
-            sponsor = sponsor.replace(" and", "").strip(" .,")
-
-            # a few sponsors get mangled by our regex
-            sponsor = {
-                "Means": "Ways & Means",
-                "Iowa": "Economic Growth/Rebuild Iowa",
-                "Safety": "Public Safety",
-                "Resources": "Human Resources",
-                "Affairs": "Veterans Affairs",
-                "Protection": "Environmental Protection",
-                "Government": "State Government",
-                "Boef": "De Boef",
-            }.get(sponsor, sponsor)
-
-            if sponsor[0].islower():
-                # SSBs catch cruft in it ('charges', 'overpayments')
-                # https://sunlight.atlassian.net/browse/DATA-286
-                continue
-
+        for sponsor in sponsor_array:
             bill.add_sponsorship(
-                name=sponsor,
+                name=sponsor.strip(),
                 classification="primary",
-                entity_type="person",
+                entity_type="organization" if "COMMITTEE ON" in sponsor else "person",
                 primary=True,
             )
 
