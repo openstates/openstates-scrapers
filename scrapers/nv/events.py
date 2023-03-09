@@ -146,7 +146,7 @@ class CurrentMeetings(HtmlPage):
             event = Event(
                 start_date=self._TZ.localize(date),
                 name=title,
-                location_name=locations[0],
+                location_name=locations[0].replace("\u00a0", " "),
             )
             event.add_source(self.source.url)
             event.add_document("Agenda", url=agenda, media_type="pdf")
