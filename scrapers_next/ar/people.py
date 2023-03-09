@@ -141,13 +141,11 @@ class SenDetail(HtmlPage):
 
     def process_page(self):
         heading = CSS(".heading").match(self.root)[0]
-        name = re.sub(r"Senator ", "", heading.text_content()).strip()
 
         rows = XPath("//div[contains(@class,col-md-8)]/ul/li").match(self.root[0])
 
-        
         image_container = CSS(".col-md-4").match(self.root)[0]
-        image = XPath("//img[contains(@alt, '" + name + "')]").match(image_container)[0].get('src')
+        image = XPath("//img[contains(@alt, '" + self.input.name + "')]").match(image_container)[0].get('src')
         image = image.split("?")[0]
 
         biocontainer = CSS(".panel-body").match(self.root)[0]
@@ -190,7 +188,7 @@ class SenDetail(HtmlPage):
         table["Biography"] = bio
 
         p = ScrapePerson(
-            name=name,
+            name=self.input.name,
             state="ar",
             chamber=self.input.chamber,
             party=table["Party"],
@@ -233,13 +231,7 @@ class SenDetail(HtmlPage):
             elif table[key] != "":
                 # remove the colon at the end
                 p.extras[key.lower()] = table[key]
-        try:
-            address = CSS(".col-md-12 p b").match_one(self.root).text_content()
-            full_address = address[:-5] + "AR " + address[-5:]
-            p.district_office.address = full_address
-        except SelectorError:
-            pass
-
+        p.district_office.address = table["District Address"]
         p.add_source(self.source.url)
         p.add_source(self.input.url)
 
@@ -252,13 +244,17 @@ class SenList(HtmlListPage):
     )
     selector = XPath(
         "//div[contains(@class,'col-sm-6')]"
-        "//a/@href"
+        #"//a/@href"
     )
     chamber = "upper"
 
     def process_item(self, item):
-        p = PartialMember(name="", chamber="upper", url=self.source.url)
-        return SenDetail(p, source=item)
+        description = item.text_content()
+        nameFromDescription = description.split("\r\n")[2]
+        link = list(item.iterlinks())
+        (element, attr, url,position) = link[1]
+        p = PartialMember(name=nameFromDescription, chamber="upper", url=self.source.url)
+        return SenDetail(p, source=url)
 
 
 class AssemblyDetail(HtmlPage):
