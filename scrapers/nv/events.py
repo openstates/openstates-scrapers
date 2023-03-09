@@ -9,13 +9,19 @@ from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
 
 from spatula import HtmlPage, PdfPage, URL, XPath
-import json
 import re
 
 
 bills_re = re.compile(
     r"(SJR|AR|AJR|IP|SCR|SB|ACR|SR|AB)\s{0,5}0*(\d+)", flags=re.IGNORECASE
 )
+
+date_re = re.compile(
+    r"([a-z]+ \d{1,2}, .* (am|pm))",
+    flags=re.IGNORECASE,
+)
+
+start_time_re = re.compile(r"(\d+) (AM|PM)")
 
 
 class Agenda(PdfPage):
@@ -46,18 +52,22 @@ class Meetings(HtmlPage):
         )
 
         session_link = URL(
-            url=f"https://www.leg.state.nv.us/App/NELIS/REL/{session_id}/Meetings?Meetings=System.Collections.Generic.List%601%5BNvLeg.Models.Nelis.SessionManager.Views.MeetingComposite%5D&MeetingsFilters=System.DateTime%5B%5D&ShowFloorMeetings=False&ShowCommitteeMeetings=True&ShowConferenceCommittees=False",
-            data=json.dumps(
-                {
-                    "MeetingsFilters": "3/9/2023",
-                    # "MeetingsFilters": "1/1/9999",
-                    "ShowCommitteeMeetings": "true",
-                    # "ShowCommitteeMeetings": "false",
-                    "ShowFloorMeetings": "false",
-                    "ShowConferenceCommittees": "false"
-                    # X-Requested-With: XMLHttpRequest
-                }
-            ),
+            url=f"https://www.leg.state.nv.us/App/NELIS/REL/{session_id}/Meetings?Meetings=System.Collections.Generic.List%601%5BNvLeg.Models.Nelis.SessionManager.Views.MeetingComposite%5D&MeetingsFilters=System.DateTime%5B%5D&ShowFloorMeetings=True&ShowCommitteeMeetings=True&ShowConferenceCommittees=True",
+            # data="MeetingsFilters=3%2F9%2F2023&MeetingsFilters=4%2F9%2F2023&ShowCommitteeMeetings=true&ShowCommitteeMeetings=false&ShowFloorMeetings=false&ShowConferenceCommittees=false&X-Requested-With=XMLHttpRequest",
+            method="POST",
+            data={
+                "MeetingsFilters": [
+                    "1/1/2000",
+                    "1/1/2999",
+                ],
+                "ShowCommitteeMeetings": [
+                    "true",
+                    "false",
+                ],
+                "ShowFloorMeetings": "false",
+                "ShowConferenceCommittees": "false",
+                "X-Requested-With": "XMLHttpRequest",
+            },
         )
         yield CurrentMeetings(source=session_link)
 
@@ -67,7 +77,7 @@ class CurrentMeetings(HtmlPage):
     example_source = "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Meetings"
 
     def process_page(self):
-        container = XPath('//div[@id="meetings-list"]').match_one(self.root)
+        # container = XPath('//div[@id="meetings-list"]').match_one(self.root)
 
         meetings = []
         cur_row = []
@@ -75,7 +85,7 @@ class CurrentMeetings(HtmlPage):
         # info spread across up to 3 divs, with a <hr> after each section - The
         # following code finds all of these sections with 3 divs and places them
         # into the meetings variable
-        for i in container.getchildren():
+        for i in self.root.getchildren():
             if i.tag == "div":
                 cur_row.append(i)
             elif i.tag == "hr":
@@ -88,12 +98,38 @@ class CurrentMeetings(HtmlPage):
         for i in meetings:
             # First element contains: the title and date
             title = XPath(".//h3/a[1]/text()").match_one(i[0])
-            # Clean up title by removing trailing "-"
+
+            # Extract all committees involced in meeting from the title
+            # Some joint meetings don't start with the joint prefix so extra logic
+            # is needed to get the names of all involved committees
+            add_joint_prefix = False
+            joint_prefix = "Joint Meeting of the "
+            separator = "%$%$%"
+            if title.startswith(joint_prefix):
+                title = title[len(joint_prefix) :]
+                add_joint_prefix = True
+            title = title.replace(
+                " and Senate Committee", f"{separator}Senate Committee"
+            )
+            title = title.replace(
+                " and Assembly Committee", f"{separator}Assembly Committee"
+            )
+            committees = title.split(separator)
+            title = " and ".join(committees)
+            if add_joint_prefix:
+                title = f"{joint_prefix}{title}"
+
             date = XPath(".//h3/a[2]/text()").match_one(i[0])
-            # Remove day of the week from date text
-            date = date.split(", ", 1)[1]
-            # Create date object from date string
-            date = datetime.datetime.strptime(date, "%B %d, %Y %I:%M %p")
+
+            # Ensure date is valid and contains a start time
+            date_match = date_re.search(date)
+            if date_match:
+                date = date_match.group(1)
+                date = datetime.datetime.strptime(date, "%B %d, %Y %I:%M %p")
+            else:
+                # Invalid date or time, skip this event
+                self.logger.warning(f"Invalid date or time: {date}, skipping")
+                continue
 
             # Second element contains: a link the the agenda pdf
             agenda = XPath(
@@ -102,16 +138,17 @@ class CurrentMeetings(HtmlPage):
 
             # Third element contains: a list of locations
             locations = XPath(".//li/text()").match(i[2])
-            # print(chamber, title, date, agenda, locations)
+
+            # Build event, scrape bill ids from agenda, and yield it
             event = Event(
                 start_date=self._TZ.localize(date),
                 name=title,
                 location_name=locations[0],
-                # description="asdf",
             )
             event.add_source(self.source.url)
-            event.add_committee(title, note="host")
-            event.add_document("Agenda", url=agenda)
+            event.add_document("Agenda", url=agenda, media_type="pdf")
+            for committee in committees:
+                event.add_committee(committee)
             for bill in Agenda(source=agenda).do_scrape():
                 event.add_bill(bill)
             yield event
