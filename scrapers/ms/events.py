@@ -13,6 +13,8 @@ start_time_re = re.compile(
     r"^(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY)", flags=re.IGNORECASE
 )
 page_number_re = re.compile(r"^page \d+$", flags=re.IGNORECASE)
+
+# Bills have a ". " after each letter in their acronym, so regex is a little long
 bill_re = re.compile(
     r"(S\.? ?C\.? ?|S\.? ?N\.? ?|H\.? ?B\.? ?|H\.? ?R\.? ?|S\.? ?B\.? ?|J\.? ?R\.? ?|H\.? ?C\.? ?|S\.? ?R\.? ?).{0,6}?(\d+)"
 )
@@ -149,11 +151,13 @@ class MSEventScraper(Scraper):
                         event.add_source(event_url)
                         if self.is_com(com):
                             event.add_committee(name=f"House {com}", note="host")
+
                         for bill in bills_seen:
                             event.add_bill(bill)
                         # Reset bills_seen so subsequent events don't get bills
                         # from previous events
                         bills_seen = set()
+
                         match_coordinates(event, {"400 High St": (32.30404, -90.18141)})
                         yield event
 
@@ -195,11 +199,13 @@ class MSEventScraper(Scraper):
                     event.add_committee(name=f"House {com}", note="host")
                 match_coordinates(event, {"400 High St": (32.30404, -90.18141)})
                 event.add_source(event_url)
+
                 for bill in bills_seen:
                     event.add_bill(bill)
                 # Reset bills_seen so subsequent events don't get bills
                 # from previous events
                 bills_seen = set()
+
                 yield event
 
     def is_com(self, event_name):
