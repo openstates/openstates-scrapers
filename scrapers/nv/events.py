@@ -93,7 +93,7 @@ class CurrentMeetings(HtmlPage):
                 # indicate that this section is cancelled or floor meeting
                 if len(cur_row) == 3:
                     meetings.append(cur_row)
-                # Reset cur_row so leftover elements don't get mixed in with set of divs
+                # Reset cur_row so leftover elements don't get mixed in with next set of divs
                 cur_row = []
 
         for i in meetings:
