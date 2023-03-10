@@ -37,7 +37,7 @@ class SenateAgendaPdf(PdfPage):
         event = None
 
         # Strip all lines and remove empty lines
-        lines = [line.strip() for line in self.text.splitlines() if line.strip() != ""]
+        lines = [line.strip() for line in self.text.splitlines() if line.strip()]
 
         i = 0
         event = None
