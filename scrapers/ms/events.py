@@ -90,13 +90,6 @@ class SenateAgendaPdf(PdfPage):
             yield event
 
 
-date_re = re.compile(
-    r"^(monday|tuesday|wednesday|thursday|friday|saturday|sunday), (.*?)   ",
-    flags=re.IGNORECASE,
-)
-time_re = re.compile(r".*   convene at (.*(a|p))", flags=re.IGNORECASE)
-
-
 class MSEventScraper(Scraper):
     def scrape(self):
         yield from self.scrape_house()
