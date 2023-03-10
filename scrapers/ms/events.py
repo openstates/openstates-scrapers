@@ -4,6 +4,93 @@ import re
 from utils.events import match_coordinates
 from openstates.scrape import Scraper
 from openstates.scrape import Event
+from spatula import PdfPage, HtmlPage, URL, XPath
+import datetime
+
+# bill_re = re.ccompile
+# def scrape_bill_ids(text):
+#     bill_re.findall(text)
+
+TZ = pytz.timezone("US/Central")
+
+
+# Finds the required agenda pdf
+class SenateAgenda(HtmlPage):
+    source = (
+        "http://www.legislature.ms.gov/calendars-and-schedules/senate-committee-agenda/"
+    )
+
+    def process_page(self):
+        pdf_link = XPath("//h3/a/@href").match_one(self.root)
+        yield from SenateAgendaPdf(source=URL(pdf_link)).do_scrape()
+
+
+start_time_re = re.compile(
+    r"^(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY)", flags=re.IGNORECASE
+)
+page_number_re = re.compile(r"^page \d+$", flags=re.IGNORECASE)
+bill_re = re.compile(
+    r"(S\.? ?C\.? ?|S\.? ?N\.? ?|H\.? ?B\.? ?|H\.? ?R\.? ?|S\.? ?B\.? ?|J\.? ?R\.? ?|H\.? ?C\.? ?|S\.? ?R\.? ?).{0,6}?(\d+)"
+)
+
+
+# Parses events from a pdf
+class SenateAgendaPdf(PdfPage):
+    _tz = pytz.timezone("US/Central")
+
+    def process_page(self):
+        event = None
+
+        # Strip all lines and remove empty lines
+        lines = [line.strip() for line in self.text.splitlines() if line.strip() != ""]
+
+        i = 0
+        event = None
+        while i < len(lines):
+            if start_time_re.match(lines[i]):
+                # Start date found, next few lines have known data
+
+                # Yield previous event if it exists
+                if event:
+                    yield event
+
+                date = lines[i]
+                time = lines[i + 1]
+                committee = lines[i + 2]
+                room = lines[i + 3]
+
+                date = date.split(", ", 1)[1]
+                time = time.replace(".", "")
+                start_time = f"{date} {time}"
+
+                start_time = datetime.datetime.strptime(
+                    start_time, "%B %d, %Y %I:%M %p"
+                )
+                event = Event(
+                    name=committee,
+                    start_date=TZ.localize(start_time),
+                    location_name=room,
+                )
+                event.add_source(self.source.url)
+                event.add_document("Agenda", url=self.source.url, media_type="pdf")
+                event.add_committee(committee)
+                i += 4
+            elif bill_re.match(lines[i]):
+                # Bill id found
+                alpha, num = bill_re.match(lines[i]).groups(1)
+                # Remove "." and " " from "S. B."
+                alpha = alpha.replace(" ", "").replace(".", "")
+                # Recombine both parts of the bill id so it's in the format "SB 123"
+                bill = f"{alpha} {num}"
+                event.add_bill(bill)
+                i += 1
+            else:
+                # Irrelevant data encountered, can ignore and continue to next line
+                i += 1
+
+        # Yield final event if needed
+        if event:
+            yield event
 
 
 class MSEventScraper(Scraper):
@@ -12,12 +99,14 @@ class MSEventScraper(Scraper):
     chamber_names = {"upper": "Senate", "lower": "House"}
 
     def scrape(self):
-        for chamber in ["upper", "lower"]:
-            yield from self.scrape_chamber(chamber)
+        yield from self.scrape_senate()
+        yield from self.scrape_house()
 
-    def scrape_chamber(self, chamber):
-        chamber_abbr = self.chamber_abbrs[chamber]
-        event_url = f"http://billstatus.ls.state.ms.us/htms/{chamber_abbr}_sched.htm"
+    def scrape_senate(self):
+        return SenateAgenda().do_scrape()
+
+    def scrape_house(self):
+        event_url = "http://billstatus.ls.state.ms.us/htms/h_sched.htm"
         text = self.get(event_url).text
         event = None
         when, time, room, com, desc = None, None, None, None, None
@@ -51,9 +140,7 @@ class MSEventScraper(Scraper):
                         event.dedupe_key = event_name
                         event.add_source(event_url)
                         if self.is_com(com):
-                            event.add_committee(
-                                name=f"{self.chamber_names[chamber]} {com}", note="host"
-                            )
+                            event.add_committee(name=f"House {com}", note="host")
                         match_coordinates(event, {"400 High St": (32.30404, -90.18141)})
                         yield event
 
@@ -92,9 +179,7 @@ class MSEventScraper(Scraper):
                 )
                 event.dedupe_key = event_name
                 if self.is_com(com):
-                    event.add_committee(
-                        name=f"{self.chamber_names[chamber]} {com}", note="host"
-                    )
+                    event.add_committee(name=f"House {com}", note="host")
                 match_coordinates(event, {"400 High St": (32.30404, -90.18141)})
                 event.add_source(event_url)
                 yield event
