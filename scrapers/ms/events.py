@@ -7,23 +7,7 @@ from openstates.scrape import Event
 from spatula import PdfPage, HtmlPage, URL, XPath
 import datetime
 
-# bill_re = re.ccompile
-# def scrape_bill_ids(text):
-#     bill_re.findall(text)
-
 TZ = pytz.timezone("US/Central")
-
-
-# Finds the required agenda pdf
-class SenateAgenda(HtmlPage):
-    source = (
-        "http://www.legislature.ms.gov/calendars-and-schedules/senate-committee-agenda/"
-    )
-
-    def process_page(self):
-        pdf_link = XPath("//h3/a/@href").match_one(self.root)
-        yield from SenateAgendaPdf(source=URL(pdf_link)).do_scrape()
-
 
 start_time_re = re.compile(
     r"^(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY)", flags=re.IGNORECASE
@@ -34,10 +18,19 @@ bill_re = re.compile(
 )
 
 
+# Finds the required agenda pdf, the url changes yearly
+class SenateAgenda(HtmlPage):
+    source = (
+        "http://www.legislature.ms.gov/calendars-and-schedules/senate-committee-agenda/"
+    )
+
+    def process_page(self):
+        pdf_link = XPath("//h3/a/@href").match_one(self.root)
+        yield from SenateAgendaPdf(source=URL(pdf_link)).do_scrape()
+
+
 # Parses events from a pdf
 class SenateAgendaPdf(PdfPage):
-    _tz = pytz.timezone("US/Central")
-
     def process_page(self):
         event = None
 
@@ -66,14 +59,16 @@ class SenateAgendaPdf(PdfPage):
                 start_time = datetime.datetime.strptime(
                     start_time, "%B %d, %Y %I:%M %p"
                 )
+                location = f"400 High St, Jackson, MS 39201, {room}"
                 event = Event(
                     name=committee,
                     start_date=TZ.localize(start_time),
-                    location_name=room,
+                    location_name=location,
                 )
                 event.add_source(self.source.url)
                 event.add_document("Agenda", url=self.source.url, media_type="pdf")
                 event.add_committee(committee)
+                match_coordinates(event, {"400 High St": (32.30404, -90.18141)})
                 i += 4
             elif bill_re.match(lines[i]):
                 # Bill id found
@@ -93,14 +88,17 @@ class SenateAgendaPdf(PdfPage):
             yield event
 
 
-class MSEventScraper(Scraper):
-    _tz = pytz.timezone("US/Central")
-    chamber_abbrs = {"upper": "s", "lower": "h"}
-    chamber_names = {"upper": "Senate", "lower": "House"}
+date_re = re.compile(
+    r"^(monday|tuesday|wednesday|thursday|friday|saturday|sunday), (.*?)   ",
+    flags=re.IGNORECASE,
+)
+time_re = re.compile(r".*   convene at (.*(a|p))", flags=re.IGNORECASE)
 
+
+class MSEventScraper(Scraper):
     def scrape(self):
-        yield from self.scrape_senate()
         yield from self.scrape_house()
+        yield from self.scrape_senate()
 
     def scrape_senate(self):
         return SenateAgenda().do_scrape()
@@ -111,9 +109,19 @@ class MSEventScraper(Scraper):
         event = None
         when, time, room, com, desc = None, None, None, None, None
         events = set()
+        bills_seen = set()
 
         for line in text.splitlines():
             # new date
+            for alpha, num in bill_re.findall(line):
+                # Find all bills on this line and format them properly
+                # Add them to bills_seen set and hold onto them until an event
+                # is about to be added - When an event is added, add all seen
+                # bills to it and reset bills_seen back to an empty set
+                alpha = alpha.replace(" ", "").replace(".", "")
+                bill = f"{alpha} {num}"
+                bills_seen.add(bill)
+
             if re.match(
                 r"^(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY)",
                 line,
@@ -141,6 +149,11 @@ class MSEventScraper(Scraper):
                         event.add_source(event_url)
                         if self.is_com(com):
                             event.add_committee(name=f"House {com}", note="host")
+                        for bill in bills_seen:
+                            event.add_bill(bill)
+                        # Reset bills_seen so subsequent events don't get bills
+                        # from previous events
+                        bills_seen = set()
                         match_coordinates(event, {"400 High St": (32.30404, -90.18141)})
                         yield event
 
@@ -153,7 +166,7 @@ class MSEventScraper(Scraper):
 
                 com = com.strip()
                 when = dateutil.parser.parse(f"{day} {time}")
-                when = self._tz.localize(when)
+                when = TZ.localize(when)
 
                 # reset the description so we can populate it w/
                 # upcoming lines (if any)
@@ -182,6 +195,11 @@ class MSEventScraper(Scraper):
                     event.add_committee(name=f"House {com}", note="host")
                 match_coordinates(event, {"400 High St": (32.30404, -90.18141)})
                 event.add_source(event_url)
+                for bill in bills_seen:
+                    event.add_bill(bill)
+                # Reset bills_seen so subsequent events don't get bills
+                # from previous events
+                bills_seen = set()
                 yield event
 
     def is_com(self, event_name):
