@@ -16,7 +16,7 @@ class IABillScraper(Scraper):
         req_session.headers.update({"X-Requested-With": "XMLHttpRequest"})
         # openstates/issues#252 - IA continues to prefile after session starts
         # so we'll continue scraping both
-        yield from self.scrape_prefiles(session)
+        # yield from self.scrape_prefiles(session)
 
         session_id = self.get_session_id(session)
         url = f"https://www.legis.iowa.gov/legislation/findLegislation/allbills?ga={session_id}"
@@ -290,7 +290,7 @@ class IABillScraper(Scraper):
                     description=action, date=date, chamber=actor, classification=atype
                 )
 
-        self.scrape_subjects(bill, bill_id, session, req_session)
+        # self.scrape_subjects(bill, bill_id, session, req_session)
 
         yield bill
 
