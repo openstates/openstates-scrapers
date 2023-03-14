@@ -55,12 +55,17 @@ class SenateAgendaPdf(PdfPage):
                 room = lines[i + 3]
 
                 date = date.split(", ", 1)[1]
-                time = time.replace(".", "")
+                time = time.replace(".", "").replace("am", "AM").replace("pm", "PM")
                 start_time = f"{date} {time}"
 
-                start_time = datetime.datetime.strptime(
-                    start_time, "%B %d, %Y %I:%M %p"
-                )
+                try:
+                    start_time = datetime.datetime.strptime(
+                        start_time, "%B %d, %Y %I:%M %p"
+                    )
+                except Exception:
+                    start_time = datetime.datetime.strptime(
+                        start_time, "%B %d, %Y %I %p"
+                    )
                 location = f"400 High St, Jackson, MS 39201, {room}"
                 event = Event(
                     name=committee,
