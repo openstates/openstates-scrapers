@@ -47,8 +47,14 @@ class KSEventScraper(Scraper):
                 com_name = columns[0].xpath("a")[0].text.strip()
                 com_link = f"http://www.kslegislature.org/{columns[0].xpath('a')[0].attrib['href']}"
                 chamber = columns[1].xpath("a")[0].text.strip()
-                bill_id = columns[2].xpath("a")[0].text.strip()
-                bill_link = f"http://www.kslegislature.org/{columns[2].xpath('a')[0].attrib['href']}"
+                try:
+                    bill_id = columns[2].xpath("a")[0].text.strip()
+                    bill_link = f"http://www.kslegislature.org/{columns[2].xpath('a')[0].attrib['href']}"
+                except Exception:
+                    bill_link = None
+                    bill_id = None
+                    self.warning(f"{hearing} missing bill details")
+                    pass
                 title = columns[3].text.strip()
                 time = columns[4].text.strip()
                 when = self.tz.localize(dateutil.parser.parse(f"{date} {time}"))
@@ -69,9 +75,13 @@ class KSEventScraper(Scraper):
                 )
                 event.add_source(url)
                 event.add_source(com_link)
-                event.add_source(bill_link)
-                agenda = event.add_agenda_item(title)
-                agenda.add_bill(bill_id)
+                agenda = None
+                if title:
+                    agenda = event.add_agenda_item(title)
+                if bill_link:
+                    event.add_source(bill_link)
+                if bill_id and agenda:
+                    agenda.add_bill(bill_id)
                 event_count += 1
                 yield event
         if event_count < 1:
