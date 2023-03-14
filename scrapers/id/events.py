@@ -88,6 +88,8 @@ class IDEventScraper(Scraper):
             for agenda_row in agenda_rows:
                 subject = agenda_row.xpath("string(td[1])").strip()
                 description = agenda_row.xpath("string(td[2])").strip()
+                if not description:
+                    description = "See Agenda for Description"
                 presenter = agenda_row.xpath("string(td[3])").strip()
                 if presenter != "":
                     agenda_text = (

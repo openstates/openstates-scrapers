@@ -8,7 +8,8 @@ from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 from utils.events import match_coordinates
 
-calurl = "http://committeeschedule.legis.wisconsin.gov/?filter=Upcoming&committeeID=-1"
+# calurl = "http://committeeschedule.legis.wisconsin.gov/?filter=Upcoming&committeeID=-1"
+calurl = "https://committeeschedule.legis.wisconsin.gov/?StartDate=2023-03-14&CommitteeID=-1&CommItemVisibleName=-1&TopicID=-1&ViewType=listDay"
 
 
 # TODO: We may be able to scrape additional documents and minutes
@@ -29,6 +30,7 @@ class WIEventScraper(Scraper, LXMLMixin):
         if len(event_rows) == 0:
             raise EmptyScrape
 
+        events = set()
         for row in event_rows:
             row = row[0]
             title = self.extract_field(row, "title")
@@ -46,10 +48,15 @@ class WIEventScraper(Scraper, LXMLMixin):
 
             agenda_url = self.extract_field(row, "mtgNoticeLink")
             items = self.extract_field(row, "eItems")
-
+            event_name = f"{title}#{location}#{start}"
+            if event_name in events:
+                self.warning(f"Duplicate event {event_name}")
+                continue
+            events.add(event_name)
             event = Event(
                 name=title, location_name=location, start_date=start, description=desc
             )
+            event.dedupe_key = event_name
             event.add_source(url)
             event.add_source(com_url)
 
@@ -66,6 +73,9 @@ class WIEventScraper(Scraper, LXMLMixin):
                 items = items.split(";")
                 for item in items:
                     item = item.replace("&amp", "").strip()
+                    if not item:
+                        self.warning(f"Empty agenda item ({item}) for {event}")
+                        continue
                     agenda_item = event.add_agenda_item(item)
                     bill_regex = r"[SAJRPB]+\d+"
                     for bill_match in re.findall(bill_regex, item):
