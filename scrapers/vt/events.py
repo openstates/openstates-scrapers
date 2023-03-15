@@ -33,7 +33,7 @@ def scrape_bills(year_slug, committee_id, session_id):
         "loadReferredBills",
     ]
 
-    # Add bills to a set to remove duplicates bills
+    # Add bills to a set to remove duplicate bills
     bills = set()
     for bill_type in bill_types:
         source = f"https://legislature.vermont.gov/committee/{bill_type}/{year_slug}?committeeId={committee_id}&sessionId={session_id}"
