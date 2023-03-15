@@ -20,9 +20,10 @@ class IABillScraper(Scraper):
         # yield from self.scrape_prefiles(session)
 
         session_id = self.get_session_id(session)
+        '''
         url = f"https://www.legis.iowa.gov/legislation/findLegislation/allbills?ga={session_id}"
         page = lxml.html.fromstring(req_session.get(url).text)
-        '''
+
         for option in page.xpath("//*[@id='sortableTable']/tbody/tr"):
             bill_id = option.xpath("td[2]/a/text()")[0]
             title = option.xpath("td[3]/text()")[0].split("(")[0]
