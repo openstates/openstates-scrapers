@@ -442,11 +442,12 @@ class NYBillScraper(Scraper):
 
                 for vote_pair in votes:
                     name, vote_val = vote_pair
-                    vote.vote(vote_dictionary[vote_val], name)
-                    if vote_val == "AB":
-                        absent_count += 1
-                    elif vote_val == "ER":
-                        excused_count += 1
+                    if "participated via videoconferencing" not in name:
+                        vote.vote(vote_dictionary[vote_val], name)
+                        if vote_val == "AB":
+                            absent_count += 1
+                        elif vote_val == "ER":
+                            excused_count += 1
 
                 vote.set_count("absent", absent_count)
                 vote.set_count("excused", excused_count)
