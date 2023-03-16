@@ -64,15 +64,21 @@ class GAEventScraper(Scraper):
                 status=status,
             )
 
-            if row["agendaUri"] != "":
+            if row["agendaUri"]:
+                # fix a typo
+                row["agendaUri"] = row["agendaUri"].replace("https/", "https://")
                 event.add_document(
                     "Agenda", row["agendaUri"], media_type="application/pdf"
                 )
                 # Scrape bill ids from agenda pdf
-                for bill_id in Agenda(source=URL(row["agendaUri"])).do_scrape():
-                    event.add_bill(bill_id)
+                try:
+                    for bill_id in Agenda(source=URL(row["agendaUri"])).do_scrape():
+                        event.add_bill(bill_id)
+                except Exception as e:
+                    self.warning(f"{row['agendaUri']} failed to scrape: {e}")
+                    pass
 
-            if row["livestreamUrl"] is not None:
+            if row["livestreamUrl"]:
                 event.add_media_link(
                     "Video", row["livestreamUrl"], media_type="text/html"
                 )
