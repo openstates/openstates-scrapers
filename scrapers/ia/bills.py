@@ -333,7 +333,7 @@ class IABillScraper(Scraper):
                     description=action, date=date, chamber=actor, classification=atype
                 )
 
-        # self.scrape_subjects(bill, bill_id, session, req_session)
+        self.scrape_subjects(bill, bill_id, session, req_session)
 
         yield bill
 
