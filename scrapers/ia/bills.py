@@ -20,7 +20,6 @@ class IABillScraper(Scraper):
         # yield from self.scrape_prefiles(session)
 
         session_id = self.get_session_id(session)
-        """
         url = f"https://www.legis.iowa.gov/legislation/findLegislation/allbills?ga={session_id}"
         page = lxml.html.fromstring(req_session.get(url).text)
 
@@ -35,7 +34,7 @@ class IABillScraper(Scraper):
             yield self.scrape_bill(
                 chamber, session, session_id, bill_id, bill_url, title, sponsors
             )
-        """
+
         # scrapes dropdown options on 'Bill Book' page
         #  to get bill types not found on 'All Bills' page
         bill_book_url = (
