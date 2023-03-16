@@ -44,12 +44,13 @@ class IABillScraper(Scraper):
         bill_book_page = lxml.html.fromstring(self.get(bill_book_url).text)
 
         other_bill_ids = []
-        other_bill_prefixes = {"senate": ["SSB"], "house": ["HSB"]}
+        other_bill_prefixes = {"upper": ["SSB"], "lower": ["HSB"]}
 
         for chamber, bill_prefixes in other_bill_prefixes.items():
             for prefix in bill_prefixes:
+                select = "house" if chamber == "lower" else "senate"
                 options = bill_book_page.xpath(
-                    f".//select[@id='{chamber}Select']//option"
+                    f".//select[@id='{select}Select']//option"
                 )
                 values = [x.get("value") for x in options if prefix in x.get("value")]
                 other_bill_ids += values
@@ -59,6 +60,7 @@ class IABillScraper(Scraper):
                 "https://www.legis.iowa.gov/"
                 f"legislation/BillBook?ga={session_id}&ba={bill_id}"
             )
+            chamber = "lower" if bill_id[0] == "H" else "upper"
 
             # title and sponsors for these will be found during detail page scraping
             yield self.scrape_bill(chamber, session, session_id, bill_id, bill_url)
@@ -170,6 +172,8 @@ class IABillScraper(Scraper):
             bill_type = ["joint resolution"]
         elif "HCR" in bill_id or "SCR" in bill_id:
             bill_type = ["concurrent resolution"]
+        elif "HSB" in bill_id or "SSB" in bill_id:
+            bill_type = ["proposed bill"]
         else:
             bill_type = ["bill"]
 
