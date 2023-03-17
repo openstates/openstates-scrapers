@@ -58,10 +58,15 @@ class Agenda(PdfPage):
     bill_re = re.compile(r"(\W|^)(H|S)\W{0,3}0*(\d+)")
 
     def process_page(self):
+        # Use a set to remove duplicate bill ids
+        bill_ids = set()
+
         for _, alpha, num in self.bill_re.findall(self.text):
-            # Format bill id
+            # Format bill id and add it to the set
             bill_id = f"{alpha} {num}"
-            yield bill_id
+            bill_ids.add(bill_id)
+
+        yield from bill_ids
 
 
 class SCEventScraper(Scraper):
