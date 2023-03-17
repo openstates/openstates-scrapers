@@ -14,9 +14,13 @@ def normalize_time(time_string):
     """
 
     time_string = time_string.lower().strip()
+
+    # Fix inconsistent formatting of pm/am
+    time_string = time_string.replace("p.m.", "pm").replace("a.m.", "am")
+
     # replace "to XX:XX am|pm"
     time_string = re.sub(r"to \d{2}:\d{2} \w{2}", "", time_string).strip()
-    if re.search(r"adjourn", time_string):
+    if re.search(r"(upon|adjourn)", time_string):
         time_string = "12:00 am"
     if re.search(r" noon", time_string):
         time_string = time_string.replace(" noon", " pm")
