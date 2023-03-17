@@ -60,70 +60,82 @@ class ALBillScraper(Scraper):
             "Referer": "https://alison.legislature.state.al.us/",
         }
 
-        # WARNING: 2023 session id is currently hardcoded
-        json_data = {
-            "query": '{allInstrumentOverviews(instrumentType:"B", instrumentNbr:"", body:"", sessionYear:"2023", sessionType:"2023 Regular Session", assignedCommittee:"", status:"", currentStatus:"", subject:"", instrumentSponsor:"", companionInstrumentNbr:"", effectiveDateCertain:"", effectiveDateOther:"", firstReadSecondBody:"", secondReadSecondBody:"", direction:"ASC"orderBy:"InstrumentNbr"limit:"15"offset:"0"  search:"" customFilters: {}companionReport:"", ){ ID,SessionYear,InstrumentNbr,InstrumentSponsor,SessionType,Body,Subject,ShortTitle,AssignedCommittee,PrefiledDate,FirstRead,CurrentStatus,LastAction,ActSummary,ViewEnacted,CompanionInstrumentNbr,EffectiveDateCertain,EffectiveDateOther,InstrumentType,IntroducedUrl }}',
-            "operationName": "",
-            "variables": [],
-        }
+        offset = 0
+        limit = 15
+        while True:
+            # WARNING: 2023 session id is currently hardcoded
+            json_data = {
+                "query": f'{{allInstrumentOverviews(instrumentType:"B", instrumentNbr:"", body:"", sessionYear:"2023", sessionType:"2023 Regular Session", assignedCommittee:"", status:"", currentStatus:"", subject:"", instrumentSponsor:"", companionInstrumentNbr:"", effectiveDateCertain:"", effectiveDateOther:"", firstReadSecondBody:"", secondReadSecondBody:"", direction:"ASC"orderBy:"InstrumentNbr"limit:"{limit}"offset:"{offset}"  search:"" customFilters: {{}}companionReport:"", ){{ ID,SessionYear,InstrumentNbr,InstrumentSponsor,SessionType,Body,Subject,ShortTitle,AssignedCommittee,PrefiledDate,FirstRead,CurrentStatus,LastAction,ActSummary,ViewEnacted,CompanionInstrumentNbr,EffectiveDateCertain,EffectiveDateOther,InstrumentType,IntroducedUrl }}}}',
+                "operationName": "",
+                "variables": [],
+            }
 
-        page = self.post(gql_url, headers=headers, json=json_data)
-        page = json.loads(page.content)
+            page = self.post(gql_url, headers=headers, json=json_data)
+            page = json.loads(page.content)
 
-        for row in page["data"]["allInstrumentOverviews"]:
-            chamber = self.chamber_map[row["Body"]]
-            title = row["ShortTitle"]
+            if len(page["data"]["allInstrumentOverviews"]) < 1:
+                return
 
-            bill = Bill(
-                identifier=row["InstrumentNbr"],
-                legislative_session=session,
-                title=title,
-                chamber=chamber,
-                classification=self.bill_types[row["InstrumentType"]],
-            )
+            for row in page["data"]["allInstrumentOverviews"]:
+                chamber = self.chamber_map[row["Body"]]
+                title = row["ShortTitle"]
 
-            bill.add_sponsorship(
-                name=row["InstrumentSponsor"],
-                entity_type="person",
-                classification="primary",
-                primary=True,
-            )
-
-            bill.add_source("https://alison.legislature.state.al.us/bill-search")
-
-            if row["IntroducedUrl"]:
-                bill.add_version_link(
-                    "Introduced", url=row["IntroducedUrl"], media_type="application/pdf"
-                )
-
-            # TODO: can this be removed in favor of pulling the
-            # action list via graphql?
-            if row["PrefiledDate"]:
-                action_date = datetime.datetime.strptime(
-                    row["PrefiledDate"], "%m/%d/%Y"
-                )
-                action_date = self.tz.localize(action_date)
-                bill.add_action(
+                bill = Bill(
+                    identifier=row["InstrumentNbr"],
+                    legislative_session=session,
+                    title=title,
                     chamber=chamber,
-                    description="Filed",
-                    date=action_date,
-                    classification="filing",
+                    classification=self.bill_types[row["InstrumentType"]],
                 )
 
-            if row["FirstRead"] and row["FirstRead"] != "01/01/0001":
-                action_date = datetime.datetime.strptime(row["FirstRead"], "%m/%d/%Y")
-                action_date = self.tz.localize(action_date)
-                bill.add_action(
-                    chamber=chamber,
-                    description="First Reading",
-                    date=action_date,
-                    classification="reading-1",
+                bill.add_sponsorship(
+                    name=row["InstrumentSponsor"],
+                    entity_type="person",
+                    classification="primary",
+                    primary=True,
                 )
 
-            # TODO: EffectiveDateCertain, EffectiveDateOther
+                bill.add_source("https://alison.legislature.state.al.us/bill-search")
 
-            # TODO: Fiscal notes, BUDGET ISOLATION RESOLUTION
+                if row["IntroducedUrl"]:
+                    bill.add_version_link(
+                        "Introduced",
+                        url=row["IntroducedUrl"],
+                        media_type="application/pdf",
+                    )
 
-            bill.extras["AL_BILL_ID"] = row["ID"]
+                # TODO: can this be removed in favor of pulling the
+                # action list via graphql?
+                if row["PrefiledDate"]:
+                    action_date = datetime.datetime.strptime(
+                        row["PrefiledDate"], "%m/%d/%Y"
+                    )
+                    action_date = self.tz.localize(action_date)
+                    bill.add_action(
+                        chamber=chamber,
+                        description="Filed",
+                        date=action_date,
+                        classification="filing",
+                    )
 
-            yield bill
+                if row["FirstRead"] and row["FirstRead"] != "01/01/0001":
+                    action_date = datetime.datetime.strptime(
+                        row["FirstRead"], "%m/%d/%Y"
+                    )
+                    action_date = self.tz.localize(action_date)
+                    bill.add_action(
+                        chamber=chamber,
+                        description="First Reading",
+                        date=action_date,
+                        classification="reading-1",
+                    )
+
+                # TODO: EffectiveDateCertain, EffectiveDateOther
+
+                # TODO: Fiscal notes, BUDGET ISOLATION RESOLUTION
+
+                bill.extras["AL_BILL_ID"] = row["ID"]
+
+                yield bill
+
+            offset += limit
