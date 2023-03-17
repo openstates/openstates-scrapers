@@ -2,6 +2,7 @@ import re
 import datetime
 import lxml.html
 import requests
+import time
 from openstates.scrape import Scraper, Bill
 from .actions import Categorizer
 
@@ -17,13 +18,18 @@ class IABillScraper(Scraper):
         req_session.headers.update({"X-Requested-With": "XMLHttpRequest"})
         # openstates/issues#252 - IA continues to prefile after session starts
         # so we'll continue scraping both
-        # yield from self.scrape_prefiles(session)
+        yield from self.scrape_prefiles(session)
 
         session_id = self.get_session_id(session)
         url = f"https://www.legis.iowa.gov/legislation/findLegislation/allbills?ga={session_id}"
         page = lxml.html.fromstring(req_session.get(url).text)
-
+        start_time = time.time()
         for option in page.xpath("//*[@id='sortableTable']/tbody/tr"):
+            # Adding in timer here to track how long we are scraping, IA cuts us off at 15-17 mins
+            # If we scrape for 10 mins and then sleep 7 minutes we can scrape the whole site.
+            if (time.time() - start_time) >= 600:
+                time.sleep(420)
+                start_time = time.time()
             bill_id = option.xpath("td[2]/a/text()")[0]
             title = option.xpath("td[3]/text()")[0].split("(")[0]
             chamber = "lower" if bill_id[0] == "H" else "upper"
@@ -55,6 +61,9 @@ class IABillScraper(Scraper):
                 other_bill_ids += values
 
         for bill_id in other_bill_ids:
+            if (time.time() - start_time) >= 600:
+                time.sleep(420)
+                start_time = time.time()
             bill_url = (
                 "https://www.legis.iowa.gov/"
                 f"legislation/BillBook?ga={session_id}&ba={bill_id}"
@@ -336,7 +345,7 @@ class IABillScraper(Scraper):
                     description=action, date=date, chamber=actor, classification=atype
                 )
 
-        # self.scrape_subjects(bill, bill_id, session, req_session)
+        self.scrape_subjects(bill, bill_id, session, req_session)
 
         yield bill
 
