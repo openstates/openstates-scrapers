@@ -108,9 +108,9 @@ class SCEventScraper(Scraper):
         if chamber:
             yield self.scrape(chamber, session)
         else:
-            yield self.scrape_single_chamber("legislature")
-            yield self.scrape_single_chamber("upper")
-            yield self.scrape_single_chamber("lower")
+            yield self.scrape_single_chamber("legislature", session)
+            yield self.scrape_single_chamber("upper", session)
+            yield self.scrape_single_chamber("lower", session)
 
     def scrape_single_chamber(self, chamber=None, session=None):
         """
