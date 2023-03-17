@@ -61,7 +61,7 @@ class ALBillScraper(Scraper):
         }
 
         offset = 0
-        limit = 15
+        limit = 10000
         while True:
             # WARNING: 2023 session id is currently hardcoded
             json_data = {
