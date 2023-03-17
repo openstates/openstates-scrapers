@@ -83,6 +83,14 @@ class SCEventScraper(Scraper):
         return re.findall(r"live_stream\((\d+)|$", onclick)[0]
 
     def scrape(self, chamber=None, session=None):
+        if chamber:
+            yield self.scrape(chamber, session)
+        else:
+            yield self.scrape_single_chamber("legislature")
+            yield self.scrape_single_chamber("upper")
+            yield self.scrape_single_chamber("lower")
+
+    def scrape_single_chamber(self, chamber=None, session=None):
         """
         Scrape the events data from all dates from the sc meetings page,
         then create and yield the events objects from the data.
@@ -92,8 +100,9 @@ class SCEventScraper(Scraper):
         """
 
         chambers = {
-            "upper": {"name": "Senate", "title": "Senator"},
-            "lower": {"name": "House", "title": "Representative"},
+            "upper": "Senate",
+            "lower": "House",
+            "legislature": "Joint",
         }
         if chamber == "other":
             return
@@ -103,9 +112,8 @@ class SCEventScraper(Scraper):
             events_url = "https://www.scstatehouse.gov/meetings.php"
         else:
             events_url = "https://www.scstatehouse.gov/meetings.php?chamber=%s" % (
-                chambers[chamber]["name"].upper()[0]
+                chambers[chamber].upper()[0]
             )
-
         page = self.get_page_from_url(events_url)
 
         meeting_year = page.xpath('//h2[@class="barheader"]/span')[0].text_content()
@@ -189,7 +197,7 @@ class SCEventScraper(Scraper):
 
                     if ".pdf" not in agenda_url:
                         agenda_page = self.get_page_from_url(agenda_url)
-
+                        # TODO: scrape bills from agenda
                         for bill in agenda_page.xpath(
                             ".//a[contains(@href,'billsearch.php')]"
                         ):
