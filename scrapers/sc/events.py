@@ -4,6 +4,7 @@ import datetime
 import lxml.html
 
 from openstates.scrape import Scraper, Event
+from spatula import PdfPage, URL
 
 
 def normalize_time(time_string):
@@ -49,6 +50,18 @@ def normalize_time(time_string):
             else:
                 time_string = start_time + " " + end_meridiem
     return time_string
+
+
+class Agenda(PdfPage):
+    # Allow up to 3 non-alpha-numeric characters between letter and number poriton of bill id
+    # Will correctly scrape bill ids like "H.123", "S(123)", "H - 0244", "S  43", "H. 55"
+    bill_re = re.compile(r"(\W|^)(H|S)\W{0,3}0*(\d+)")
+
+    def process_page(self):
+        for _, alpha, num in self.bill_re.findall(self.text):
+            # Format bill id
+            bill_id = f"{alpha} {num}"
+            yield bill_id
 
 
 class SCEventScraper(Scraper):
@@ -199,9 +212,11 @@ class SCEventScraper(Scraper):
                         note="Agenda", url=agenda_url, media_type="application/pdf"
                     )
 
-                    if ".pdf" not in agenda_url:
+                    if ".pdf" in agenda_url:
+                        for bill_id in Agenda(source=URL(agenda_url)).do_scrape():
+                            event.add_bill(bill_id)
+                    else:
                         agenda_page = self.get_page_from_url(agenda_url)
-                        # TODO: scrape bills from agenda
                         for bill in agenda_page.xpath(
                             ".//a[contains(@href,'billsearch.php')]"
                         ):
