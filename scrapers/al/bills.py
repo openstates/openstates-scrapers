@@ -27,7 +27,8 @@ class ALBillScraper(Scraper):
 
         offset = 0
         limit = 10000
-        while True:
+        # max of 10 pages in case something goes way wrong
+        while offset < 100000:
             # WARNING: 2023 session id is currently hardcoded
             json_data = {
                 "query": f'{{allInstrumentOverviews(instrumentType:"B", instrumentNbr:"", body:"", sessionYear:"2023", sessionType:"2023 Regular Session", assignedCommittee:"", status:"", currentStatus:"", subject:"", instrumentSponsor:"", companionInstrumentNbr:"", effectiveDateCertain:"", effectiveDateOther:"", firstReadSecondBody:"", secondReadSecondBody:"", direction:"ASC"orderBy:"InstrumentNbr"limit:"{limit}"offset:"{offset}"  search:"" customFilters: {{}}companionReport:"", ){{ ID,SessionYear,InstrumentNbr,InstrumentUrl, InstrumentSponsor,SessionType,Body,Subject,ShortTitle,AssignedCommittee,PrefiledDate,FirstRead,CurrentStatus,LastAction,ActSummary,ViewEnacted,CompanionInstrumentNbr,EffectiveDateCertain,EffectiveDateOther,InstrumentType,IntroducedUrl,EngrossedUrl,EnrolledUrl }}}}',
