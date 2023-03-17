@@ -130,6 +130,11 @@ class ALBillScraper(Scraper):
                         classification="reading-1",
                     )
 
+                if row["Subject"] != "":
+                    bill.add_subject(row["Subject"].strip())
+
+                # TODO: All actions
+
                 # TODO: EffectiveDateCertain, EffectiveDateOther
 
                 # TODO: Fiscal notes, BUDGET ISOLATION RESOLUTION
