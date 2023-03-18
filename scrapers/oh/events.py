@@ -18,12 +18,11 @@ from spatula import PdfPage, URL
 
 
 class Agenda(PdfPage):
-    # Bills are in the format "S. B. No. 123", "H.B. 33", "HB 234"
-    # Preprocessing step changes that format to "SB123", "HB33", or "HB234"
     bill_re = re.compile(r"(\W|^)(SJR|HCR|HB|HR|SCR|SB|HJR|SR)\s{0,8}0*(\d+)")
 
     def process_page(self):
-        # Remove spaces, periods, and "No." from text for simpler regex
+        # A few bill id formats are used in the PDFs: "S. B. No. 123", "H.B. 33" or "HB 234"
+        # After this step, all bill ids should be in the format "SB123", "HB33", or "HB234"
         self.text = (
             self.text.upper().replace("NO", "").replace(" ", "").replace(".", "")
         )
@@ -31,12 +30,12 @@ class Agenda(PdfPage):
         bills = self.bill_re.findall(self.text)
 
         # Store bill ids in a set to remove duplicates
-        formatted_bills = set()
+        formatted_bill_ids = set()
         for _, alpha, num in bills:
             # Format with space between letter and number portions
-            formatted_bills.add(f"{alpha} {num}")
+            formatted_bill_ids.add(f"{alpha} {num}")
 
-        yield from formatted_bills
+        yield from formatted_bill_ids
 
 
 class OHEventScraper(Scraper):
