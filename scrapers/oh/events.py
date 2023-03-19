@@ -19,9 +19,17 @@ from spatula import PdfPage, URL
 
 class Agenda(PdfPage):
     bill_re = re.compile(r"(\W|^)(SJR|HCR|HB|HR|SCR|SB|HJR|SR)\s{0,8}0*(\d+)")
+    am_sub_re = re.compile(r"Am(\.| ) ? Sub(\.| ) ?", flags=re.IGNORECASE)
+    enact_buget_re = re.compile(r"enact .*? budget", flags=re.IGNORECASE)
 
     def process_page(self):
-        # A few bill id formats are used in the PDFs: "S. B. No. 123", "H.B. 33" or "HB 234"
+        # Some bills have "Am. Sub. " before bill letter portion, remove it
+        self.text = self.am_sub_re.sub("", self.text)
+
+        # Some bills have "Enact .* budget" between "HB" and "123" portion, remove it
+        self.text = self.enact_buget_re.sub("", self.text)
+
+        # Multiple bill id formats are used: "S. B. No. 123", "H.B. 33", or "HB 234"
         # After this step, all bill ids should be in the format "SB123", "HB33", or "HB234"
         self.text = (
             self.text.upper().replace("NO", "").replace(" ", "").replace(".", "")
