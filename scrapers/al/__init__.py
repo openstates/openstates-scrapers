@@ -23,3 +23,9 @@ class Alabama(State):
 
     def get_session_list(self):
         return ["Regular Session 2023"]
+
+    def get_scraper_ids(self, session):
+        ids = {
+            "2023rs": {"session_year": "2023", "session_type": "2023 Regular Session"}
+        }
+        return ids[session]
