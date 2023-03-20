@@ -299,6 +299,61 @@ class BillTabText(HtmlPage):
             bill.add_version_link(
                 title, link, media_type="application/pdf", on_duplicate="ignore"
             )
+        ex_url = self.source.url.replace("Text", "Exhibits")
+        return ExhibitTabText(bill, source=ex_url)
+
+
+class ExhibitTabText(HtmlPage):
+    example_source = (
+        "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Bill/"
+        "FillSelectedBillTab?selectedTab=Exhibits&billKey=9581"
+    )
+
+    def process_page(self):
+        bill = self.input
+        for row in CSS("li.my-4 a").match(self.root, min_items=0):
+            title = row.text_content()
+            link = row.get("href")
+            bill.add_document_link(
+                title, link, media_type="application/pdf", on_duplicate="ignore"
+            )
+        am_url = self.source.url.replace("Text", "Amendments")
+        return AmendmentTabText(bill, source=am_url)
+
+
+class AmendmentTabText(HtmlPage):
+    example_source = (
+        "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Bill/"
+        "FillSelectedBillTab?selectedTab=Amendments&billKey=10039"
+    )
+
+    def process_page(self):
+        bill = self.input
+        for row in CSS("col-11 col-md").match(self.root, min_items=0):
+            title = row.text_content()
+            link = row.get("href")
+            bill.add_version_link(
+                title, link, media_type="application/pdf", on_duplicate="ignore"
+            )
+        fn_url = self.source.url.replace("Text", "FiscalNotes")
+        return FiscalTabText(bill, source=fn_url)
+
+
+class FiscalTabText(HtmlPage):
+    example_source = (
+        "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Bill/"
+        "FillSelectedBillTab?selectedTab=FiscalNotes&billKey=9528"
+    )
+
+    def process_page(self):
+        bill = self.input
+        for row in CSS("ul.list-unstyled li a").match(self.root, min_items=0):
+            title = row.text_content()
+            title = f"Fiscal Note: {title}"
+            link = row.get("href")
+            bill.add_document_link(
+                title, link, media_type="application/pdf", on_duplicate="ignore"
+            )
         return bill
 
 
