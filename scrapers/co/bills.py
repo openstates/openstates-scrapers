@@ -41,14 +41,14 @@ class COBillScraper(Scraper, LXMLMixin):
         """
         Entry point when invoking this (or really whatever else)
         """
-        page = self.scrape_bill_list(session, chamber, 0)
+        page = self.scrape_bill_list(session, 0)
         bill_list = page.xpath(
             '//header[contains(@class,"search-result-single-item")]'
             '/h4[contains(@class,"node-title")]/a/@href'
         )
 
         for bill_url in bill_list:
-            yield from self.scrape_bill(session, chamber, bill_url)
+            yield from self.scrape_bill(session, bill_url)
 
         try:
             pagination_str = page.xpath(
@@ -100,8 +100,7 @@ class COBillScraper(Scraper, LXMLMixin):
         # so we can pull the max page # from it on page 1
         return page
 
-    def scrape_bill(self, session, chamber, bill_url):
-
+    def scrape_bill(self, session, bill_url):
         try:
             page = self.lxmlize("{}{}".format(CO_URL_BASE, bill_url))
         except scrapelib.HTTPError as e:
@@ -122,6 +121,7 @@ class COBillScraper(Scraper, LXMLMixin):
             'string(//div[contains(@class,"field-name-field-bill-summary")])'
         )
         bill_summary = bill_summary.replace("Read More", "").strip()
+        chamber = "lower" if "H" in bill_number else "upper"
         bill = Bill(
             bill_number, legislative_session=session, chamber=chamber, title=bill_title
         )
