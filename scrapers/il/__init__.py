@@ -144,7 +144,7 @@ class Illinois(State):
             "start_date": "2021-01-13",
             "end_date": "2021-06-01",
             "classification": "primary",
-            "active": True,
+            "active": False,
         },
         # TODO: check dates,
         # check senate prez in session_details in bills.py
