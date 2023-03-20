@@ -13,17 +13,27 @@ class ALBillScraper(Scraper):
     tz = pytz.timezone("US/Eastern")
     chamber_map_short = {"S": "upper", "H": "lower"}
     gql_url = "https://gql.api.alison.legislature.state.al.us/graphql"
+    session_year = ""
+    session_type = ""
+
+    gql_headers = {
+        "Accept": "*/*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Authorization": "Bearer undefined",
+        "Content-Type": "application/json",
+        "Origin": "https://alison.legislature.state.al.us",
+        "Referer": "https://alison.legislature.state.al.us/",
+    }
 
     def scrape(self, session):
+        scraper_ids = self.jurisdiction.get_scraper_ids(session="2023rs")
+        self.session_year = scraper_ids["session_year"]
+        self.session_type = scraper_ids["session_type"]
 
-        headers = {
-            "Accept": "*/*",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Authorization": "Bearer undefined",
-            "Content-Type": "application/json",
-            "Origin": "https://alison.legislature.state.al.us",
-            "Referer": "https://alison.legislature.state.al.us/",
-        }
+        for bill_type in ["B", "R"]:
+            yield from self.scrape_bill_type(session, bill_type)
+
+    def scrape_bill_type(self, session, bill_type):
 
         offset = 0
         limit = 10000
@@ -31,12 +41,12 @@ class ALBillScraper(Scraper):
         while offset < 100000:
             # WARNING: 2023 session id is currently hardcoded
             json_data = {
-                "query": f'{{allInstrumentOverviews(instrumentType:"B", instrumentNbr:"", body:"", sessionYear:"2023", sessionType:"2023 Regular Session", assignedCommittee:"", status:"", currentStatus:"", subject:"", instrumentSponsor:"", companionInstrumentNbr:"", effectiveDateCertain:"", effectiveDateOther:"", firstReadSecondBody:"", secondReadSecondBody:"", direction:"ASC"orderBy:"InstrumentNbr"limit:"{limit}"offset:"{offset}"  search:"" customFilters: {{}}companionReport:"", ){{ ID,SessionYear,InstrumentNbr,InstrumentUrl, InstrumentSponsor,SessionType,Body,Subject,ShortTitle,AssignedCommittee,PrefiledDate,FirstRead,CurrentStatus,LastAction,ActSummary,ViewEnacted,CompanionInstrumentNbr,EffectiveDateCertain,EffectiveDateOther,InstrumentType,IntroducedUrl,EngrossedUrl,EnrolledUrl }}}}',
+                "query": f'{{allInstrumentOverviews(instrumentType:"{bill_type}", instrumentNbr:"", body:"", sessionYear:"{self.session_year}", sessionType:"{self.session_type}", assignedCommittee:"", status:"", currentStatus:"", subject:"", instrumentSponsor:"", companionInstrumentNbr:"", effectiveDateCertain:"", effectiveDateOther:"", firstReadSecondBody:"", secondReadSecondBody:"", direction:"ASC"orderBy:"InstrumentNbr"limit:"{limit}"offset:"{offset}"  search:"" customFilters: {{}}companionReport:"", ){{ ID,SessionYear,InstrumentNbr,InstrumentUrl, InstrumentSponsor,SessionType,Body,Subject,ShortTitle,AssignedCommittee,PrefiledDate,FirstRead,CurrentStatus,LastAction,ActSummary,ViewEnacted,CompanionInstrumentNbr,EffectiveDateCertain,EffectiveDateOther,InstrumentType,IntroducedUrl,EngrossedUrl,EnrolledUrl }}}}',
                 "operationName": "",
                 "variables": [],
             }
 
-            page = self.post(self.gql_url, headers=headers, json=json_data)
+            page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
             page = json.loads(page.content)
             if len(page["data"]["allInstrumentOverviews"]) < 1 and offset == 0:
                 raise EmptyScrape
@@ -44,6 +54,10 @@ class ALBillScraper(Scraper):
             for row in page["data"]["allInstrumentOverviews"]:
                 chamber = self.chamber_map[row["Body"]]
                 title = row["ShortTitle"]
+
+                # some recently filed bills have no title, but a good subject which is close
+                if title == "":
+                    title = row["Subject"]
 
                 bill = Bill(
                     identifier=row["InstrumentNbr"],
@@ -118,24 +132,15 @@ class ALBillScraper(Scraper):
                 classification="filing",
             )
 
-        headers = {
-            "Accept": "*/*",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Authorization": "Bearer undefined",
-            "Content-Type": "application/json",
-            "Origin": "https://alison.legislature.state.al.us",
-            "Referer": "https://alison.legislature.state.al.us/",
-        }
-
         # Can this be ANDED together with the other graphql query?
         # WARNING: 2023 session id is currently hardcoded
         json_data = {
-            "query": f'{{instrumentHistoryBySessionYearInstNbr(sessionType:"2023 Regular Session", sessionYear:"2023", instrumentNbr:"{row["InstrumentNbr"]}", ){{ InstrumentNbr,SessionYear,SessionType,CalendarDate,Body,AmdSubUrl,Matter,Committee,Nay,Yea,Vote,VoteNbr }}}}',
+            "query": f'{{instrumentHistoryBySessionYearInstNbr(sessionType:"{self.session_type}", sessionYear:"{self.session_year}", instrumentNbr:"{row["InstrumentNbr"]}", ){{ InstrumentNbr,SessionYear,SessionType,CalendarDate,Body,AmdSubUrl,Matter,Committee,Nay,Yea,Vote,VoteNbr }}}}',
             "operationName": "",
             "variables": [],
         }
 
-        page = self.post(self.gql_url, headers=headers, json=json_data)
+        page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
         page = json.loads(page.content)
 
         for row in page["data"]["instrumentHistoryBySessionYearInstNbr"]:
