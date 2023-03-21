@@ -65,14 +65,10 @@ class MOEventScraper(Scraper, LXMLMixin):
 
             location = f"{location}, 201 W Capitol Ave, Jefferson City, MO 65101"
 
-            if not page.xpath(
-                '//td[descendant::b[contains(text(),"Committee")]]/a/text()'
-            ):
+            if not page.xpath('//td//b[contains(text(),"Committee")]/a/text()'):
                 continue
 
-            com = page.xpath(
-                '//td[descendant::b[contains(text(),"Committee")]]/a/text()'
-            )[0]
+            com = page.xpath('//td//b[contains(text(),"Committee")]/a/text()')[0]
             com = com.split(", Senator")[0].strip()
 
             try:
