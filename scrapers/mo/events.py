@@ -9,6 +9,30 @@ from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 
 
+# Adds bills from text that may contain one or multiple bills
+# e.g. "SB 123" or "SBs 123 & 341"
+def add_bill_to_agenda(agenda_item, bill_text):
+    # Start by assuming that there is only one bill
+    parts = [bill_text]
+
+    # Multiple bills detected
+    if "&" in bill_text:
+        # Split into parts for each bill
+        parts = [x.strip() for x in bill_text.split("&")]
+        # Remove plural
+        parts[0] = parts[0].replace("s", "")
+        # Extract letters from first bill
+        alpha, num = parts[0].split(" ")
+        parts[0] = num
+        # At this point, parts is a list of numbers
+        # Prepend letter portion to each bill number
+        parts = [f"{alpha} {num}" for num in parts]
+
+    # Add all bills
+    for bill in parts:
+        agenda_item.add_bill(bill)
+
+
 class MOEventScraper(Scraper, LXMLMixin):
     _TZ = pytz.timezone("America/Chicago")
     bill_link_xpath = (
@@ -65,14 +89,10 @@ class MOEventScraper(Scraper, LXMLMixin):
 
             location = f"{location}, 201 W Capitol Ave, Jefferson City, MO 65101"
 
-            if not page.xpath(
-                '//td[descendant::b[contains(text(),"Committee")]]/a/text()'
-            ):
+            if not page.xpath('//td//b[contains(text(),"Committee")]/a/text()'):
                 continue
 
-            com = page.xpath(
-                '//td[descendant::b[contains(text(),"Committee")]]/a/text()'
-            )[0]
+            com = page.xpath('//td//b[contains(text(),"Committee")]/a/text()')[0]
             com = com.split(", Senator")[0].strip()
 
             try:
@@ -111,7 +131,7 @@ class MOEventScraper(Scraper, LXMLMixin):
                     agenda_item = event.add_agenda_item(description=agenda_line)
 
                     bill_link = bill_table.xpath(self.bill_link_xpath)[0].strip()
-                    agenda_item.add_bill(bill_link)
+                    add_bill_to_agenda(agenda_item, bill_link)
                 else:
                     agenda_line = bill_table.xpath("string(tr[1])").strip()
                     agenda_item = event.add_agenda_item(description=agenda_line)
@@ -201,8 +221,7 @@ class MOEventScraper(Scraper, LXMLMixin):
             bill_no = bill_no.replace("HCS", "").strip()
 
             agenda_item = event.add_agenda_item(description=bill_title)
-            agenda_item.add_bill(bill_no)
-
+            add_bill_to_agenda(agenda_item, bill_no)
         yield event
 
     # Given <td><b>header</b> other text</td>,
