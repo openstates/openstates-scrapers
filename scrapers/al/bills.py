@@ -1,5 +1,6 @@
 import pytz
 import json
+import re
 import datetime
 from openstates.scrape import Scraper, Bill
 from openstates.exceptions import EmptyScrape
@@ -81,8 +82,14 @@ class ALBillScraper(Scraper):
                 if row["InstrumentUrl"]:
                     bill.add_source(row["InstrumentUrl"])
 
+                # some subjects are super long & more like abstracts, but it looks like whatever is before a comma or
+                # semicolon is a clear enough subject. Adds the full given Subject as an Abstract & splits to add that
+                # first real subject as one
                 if row["Subject"]:
-                    bill.add_subject(row["Subject"].strip())
+                    full_subject = row["Subject"].strip()
+                    bill.add_abstract(full_subject, note="full subject")
+                    first_sub = re.split(",|;", full_subject)
+                    bill.add_subject(first_sub[0])
 
                 if row["CompanionInstrumentNbr"] != "":
                     self.warning("AL Companion found. Code it up.")
