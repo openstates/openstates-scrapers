@@ -7,7 +7,7 @@ ENV PYTHONIOENCODING='utf-8'
 ENV LANG='C.UTF-8'
 
 RUN apt-get update -qq \
-    && apt-get install -y -qq --no-install-recommends \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
       curl \
       wget \
       unzip \
@@ -33,12 +33,17 @@ RUN apt-get update -qq \
     && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list \
     && apt-get update -qq \
-    && apt-get install -y -qq --no-install-recommends gh
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends gh
+# add mysql configs once so we don't have to do them at every instantiation
+RUN sed -i "s/user                    = mysql/user                    = root/" /etc/mysql/mariadb.conf.d/50-server.cnf \
+    &&  mysql_install_db --user=root \
+    && mkdir /run/mysqld
 RUN pip --no-cache-dir --disable-pip-version-check install wheel \
     && pip --no-cache-dir --disable-pip-version-check install crcmod poetry
 
 ADD poetry.lock /opt/openstates/openstates/
 ADD pyproject.toml /opt/openstates/openstates/
+ADD scrapers/ca/ca-entrypoint.sh /ca-entrypoint.sh
 WORKDIR /opt/openstates/openstates/
 ENV PYTHONPATH=./scrapers
 
@@ -58,4 +63,4 @@ RUN poetry install --extras "california" \
 
 ENV OPENSSL_CONF=/opt/openstates/openstates/openssl.cnf
 
-ENTRYPOINT ["poetry", "run", "os-update"]
+ENTRYPOINT ["/entrypoint.sh"]

@@ -64,6 +64,13 @@ class CommitteeList(JsonListPage):
         com.extras["Committee Short Name"] = item["CommitteeShortName"]
         com.extras["Committee Type"] = item["TypeName"]
 
-        com.add_source(self.source.url)
+        com.add_source(self.source.url, "API with all committee details")
+
+        # User-friendly HTML page to access data on each committee
+        coms_link = (
+            f"https://apps.azleg.gov/BillStatus/"
+            f"CommitteeOverView?SessionID={self.session_id}"
+        )
+        com.add_link(coms_link, note="homepage")
 
         return com

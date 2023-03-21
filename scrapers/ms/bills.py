@@ -427,7 +427,7 @@ class MSBillScraper(Scraper):
                     cur_array = None
 
                 match = re.match(r"(.+?)\. Total--.*", name)
-                if match:
+                if match and cur_array is not None:
                     cur_array.append(match.groups()[0])
                     cur_array = None
 

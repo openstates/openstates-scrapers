@@ -6,6 +6,8 @@ from .util import get_token
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 
+from spatula import URL, PdfPage
+
 
 class GAEventScraper(Scraper):
     # usage:
@@ -62,12 +64,21 @@ class GAEventScraper(Scraper):
                 status=status,
             )
 
-            if row["agendaUri"] != "":
+            if row["agendaUri"]:
+                # fix a typo
+                row["agendaUri"] = row["agendaUri"].replace("https/", "https://")
                 event.add_document(
                     "Agenda", row["agendaUri"], media_type="application/pdf"
                 )
+                # Scrape bill ids from agenda pdf
+                try:
+                    for bill_id in Agenda(source=URL(row["agendaUri"])).do_scrape():
+                        event.add_bill(bill_id)
+                except Exception as e:
+                    self.warning(f"{row['agendaUri']} failed to scrape: {e}")
+                    pass
 
-            if row["livestreamUrl"] is not None:
+            if row["livestreamUrl"]:
                 event.add_media_link(
                     "Video", row["livestreamUrl"], media_type="text/html"
                 )
@@ -78,3 +89,24 @@ class GAEventScraper(Scraper):
 
         if event_count == 0:
             raise EmptyScrape
+
+
+class Agenda(PdfPage):
+    non_formatted_re = re.compile(r"(H|S).+(B|R).+\s+(\d+)")
+
+    def process_page(self):
+        matches = re.findall(
+            r"((SB|HB|SR|HR|House Bill|Senate Bill|House Resolution"
+            r"|Senate Resolution|H\.B\.|S\.B\.|H\.R\.|S\.R\.)\s+\d+)",
+            self.text,
+        )
+        for m, _ in matches:
+            yield self.format_match(m)
+
+    def format_match(self, match):
+        needs_formatting = self.non_formatted_re.search(match)
+        if not needs_formatting:
+            return match
+        else:
+            chamber, bill_type, num = needs_formatting.groups()
+            return f"{chamber}{bill_type} {num}"

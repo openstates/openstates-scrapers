@@ -140,6 +140,16 @@ class NEBillScraper(Scraper, LXMLMixin):
             # we grab all the text within.
             action = self.get_node(action_node, "./td[2]").text_content()
 
+            # NE legislature site does not list cosponsors, so we grab it from action statements
+            if "name added" in action:
+                cosponsor_name = action.split("name added")[0].strip()
+                bill.add_sponsorship(
+                    cosponsor_name,
+                    entity_type="person",
+                    classification="cosponsor",
+                    primary=False,
+                )
+
             if "Governor" in action:
                 actor = "executive"
             elif "Speaker" in action:

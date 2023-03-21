@@ -98,7 +98,7 @@ services:
       - openstates-network
     command: ["postgres", "-c", "log_statement=all"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -q -d db -U db"]
+      test: ["CMD-SHELL", "pg_isready -q -d openstatesorg -U openstates"]
       interval: 10s
       timeout: 5s
       retries: 15

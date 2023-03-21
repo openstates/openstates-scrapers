@@ -102,7 +102,7 @@ class LegislatorDetail(HtmlPage):
         return p
 
 
-class Legislators(HtmlListPage):
+class SenateLegislators(HtmlListPage):
     selector = CSS("fieldset div.media")
 
     def process_item(self, item):
@@ -151,11 +151,71 @@ class Legislators(HtmlListPage):
         return LegislatorDetail(p, source=URL(detail_link, timeout=30))
 
 
-class Senate(Legislators):
+class HouseLegislators(HtmlListPage):
+    selector = CSS("fieldset div.card-body")
+
+    def process_item(self, item):
+        name_dirty = CSS("a").match(item)[0].text_content().strip()
+        if "Vacant" in name_dirty:
+            self.skip("vacant")
+        name_dirty = name_dirty.split(", ")
+        split_length = len(name_dirty)
+        # 3 means something like 'Beaullieu, IV, Gerald "Beau"'
+        # also, we can't have more than one comma in a name (per Person model)
+        if split_length == 3:
+            last_name = f"{name_dirty[0]} {name_dirty[1]}"
+            first_name = name_dirty[2]
+        # 2 means something like 'Bagley, Larry'
+        elif split_length == 2:
+            last_name = name_dirty[0]
+            first_name = name_dirty[1]
+        if any(j in first_name for j in ["Jr", "Jr."]):
+            first_name = first_name.split(" ")[0]
+            last_name += " Jr."
+        name = f"{first_name} {last_name}"
+
+        district = (
+            CSS("p i.fa-solid.fa-map").match_one(item).getnext().text_content().strip()
+        )
+        party = (
+            CSS("p i.fa-solid.fa-user").match_one(item).getnext().text_content().strip()
+        )
+        if party == "Democrat":
+            party = "Democratic"
+        email = CSS("a").match(item)[1].text_content().strip()
+        img = (
+            item.getprevious()
+            .getprevious()
+            .getchildren()[0]
+            .getchildren()[0]
+            .getchildren()[0]
+            .get("src")
+        )
+
+        p = ScrapePerson(
+            name=name,
+            state="la",
+            party=party,
+            district=district,
+            chamber=self.chamber,
+            email=email,
+            image=img,
+        )
+
+        detail_link = CSS("a").match(item)[0].get("href")
+
+        p.add_source(self.source.url)
+        p.add_source(detail_link)
+        p.add_link(detail_link, note="homepage")
+
+        return LegislatorDetail(p, source=URL(detail_link, timeout=30))
+
+
+class Senate(SenateLegislators):
     source = URL("https://senate.la.gov/Senators_FullInfo", timeout=30)
     chamber = "upper"
 
 
-class House(Legislators):
+class House(HouseLegislators):
     source = URL("https://house.louisiana.gov/H_Reps/H_Reps_FullInfo", timeout=30)
     chamber = "lower"

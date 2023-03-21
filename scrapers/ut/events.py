@@ -94,10 +94,15 @@ class UTEventScraper(Scraper, LXMLMixin):
                                         on_duplicate="ignore",
                                     )
 
-                                    for bill_row in re.findall(
-                                        r"(\w{2,3}\d{4})", mat["description"]
+                                    # Search for bill ids in the description
+                                    for bill_str, bill_num in re.findall(
+                                        r"(SJR|HCR|HB|HR|SCR|SB|HJR|SR)(\d+)",
+                                        mat["description"],
                                     ):
-                                        agenda.add_bill(bill_row)
+                                        # Parse bill number as int to remove leading zeros
+                                        bill_num = int(bill_num)
+                                        bill_id = f"{bill_str} {bill_num}"
+                                        agenda.add_bill(bill_id)
 
                             # NOTE: The following data appears to be duped on the meetingMaterials endpoint
                             # but leaving this in place commented out, in case that ever changes.

@@ -2,6 +2,7 @@ import datetime as dt
 import lxml.html
 import re
 from openstates.scrape import Scraper, Bill, VoteEvent
+from .actions import Categorizer, find_committee
 from .utils import get_short_codes
 from urllib import parse as urlparse
 
@@ -28,43 +29,6 @@ def create_bill_report_url(chamber, year, bill_type):
     )
 
 
-def categorize_action(action):
-    classifiers = (
-        ("Pass(ed)? First Reading", "reading-1"),
-        ("Introduced and Pass(ed)? First Reading", ["introduction", "reading-1"]),
-        ("Introduced", "introduction"),
-        ("Re(-re)?ferred to ", "referral-committee"),
-        (
-            "Passed Second Reading .* referred to the committee",
-            ["reading-2", "referral-committee"],
-        ),
-        (".* that the measure be PASSED", "committee-passage-favorable"),
-        ("Received from (House|Senate)", "introduction"),
-        ("Floor amendment .* offered", "amendment-introduction"),
-        ("Floor amendment adopted", "amendment-passage"),
-        ("Floor amendment failed", "amendment-failure"),
-        (".*Passed Third Reading", "passage"),
-        ("Report and Resolution Adopted", "passage"),
-        ("Enrolled to Governor", "executive-receipt"),
-        (" Act ", "became-law"),
-        # Note, occasionally the gov sends intent to veto then doesn't. So use Vetoed not Veto
-        ("Vetoed .* line-item", "executive-veto-line-item"),
-        ("Vetoed", "executive-veto"),
-        ("Veto overridden", "veto-override-passage"),
-        # these are for resolutions
-        ("Offered", "introduction"),
-        ("Adopted", "passage"),
-    )
-    ctty = None
-    for pattern, types in classifiers:
-        if re.match(pattern, action):
-            if "referral-committee" in types:
-                ctty = re.findall(r"\w+", re.sub(pattern, "", action))
-            return (types, ctty)
-    # return other by default
-    return (None, ctty)
-
-
 def split_specific_votes(voters):
     if voters is None or voters.startswith("none"):
         return []
@@ -77,6 +41,8 @@ def split_specific_votes(voters):
 
 
 class HIBillScraper(Scraper):
+    categorizer = Categorizer()
+
     def parse_bill_metainf_table(self, metainf_table):
         def _sponsor_interceptor(line):
             return [guy.strip() for guy in line.split(",")]
@@ -116,7 +82,10 @@ class HIBillScraper(Scraper):
             actor_code = action[1].text_content().upper()
             string = action[2].text_content()
             actor = self._vote_type_map[actor_code]
-            act_type, committees = categorize_action(string)
+            committees = find_committee(string)
+
+            action_attr = self.categorizer.categorize(string)
+            atype = action_attr["classification"]
             # XXX: Translate short-code to full committee name for the
             #      matcher.
 
@@ -136,7 +105,7 @@ class HIBillScraper(Scraper):
                 and any(description in string for description in repeated_action)
             ):
                 continue
-            act = bill.add_action(string, date, chamber=actor, classification=act_type)
+            act = bill.add_action(string, date, chamber=actor, classification=atype)
 
             for committee in real_committees:
                 act.add_related_entity(name=committee, entity_type="organization")
@@ -301,26 +270,39 @@ class HIBillScraper(Scraper):
         if url:
             b.add_source(url)
 
-        prior_session = "{} Regular Session".format(str(int(session[:4]) - 1))
+        # check for companion bills
         companion = meta["Companion"].strip()
         if companion:
+            companion_url = bill_page.xpath(
+                "//span[@id='ctl00_MainContent_ListView1_ctrl0_companionLabel']/a/@href"
+            )[0]
+            # a companion's session year is the last 4 chars of the link
+            # this will match the _scraped_name of a session in __init__.py
+            companion_year = companion_url[-4:]
+            companion_session = self.session_from_scraped_name(companion_year)
             b.add_related_bill(
                 identifier=companion.replace("\xa0", " "),
-                legislative_session=prior_session,
+                legislative_session=companion_session,
                 relation_type="companion",
             )
+
+        # check for prior session bills
         if bill_page.xpath(
             "//table[@id='ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()"
         ):
             prior = bill_page.xpath(
                 "//table[@id='ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()"
             )[-1]
+            # "2023 Regular Session" -> "2022" -> "2022 Regular Session"
+            prior_year = str(int(session[:4]) - 1)
+            prior_session = f"{prior_year} Regular Session"
             if "carried over" in prior.lower():
                 b.add_related_bill(
                     identifier=bill_id.replace("\xa0", " "),
                     legislative_session=prior_session,
-                    relation_type="companion",
+                    relation_type="prior-session",
                 )
+
         for sponsor in meta["Introducer(s)"]:
             if "(Introduced by request of another party)" in sponsor:
                 sponsor = sponsor.replace(
@@ -413,3 +395,12 @@ class HIBillScraper(Scraper):
                 bill_types.append("gm")
             for typ in bill_types:
                 yield from self.scrape_type(chamber, session, typ)
+
+    def session_from_scraped_name(self, scraped_name):
+        # find the session from __init__.py matching scraped_name
+        details = next(
+            each
+            for each in self.jurisdiction.legislative_sessions
+            if each["_scraped_name"] == scraped_name
+        )
+        return details["name"]

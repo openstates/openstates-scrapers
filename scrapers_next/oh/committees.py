@@ -30,7 +30,8 @@ class JointCommittee(HtmlPage):
             classification="committee",
         )
 
-        com.add_source(self.source.url, note="Committee member listing page")
+        com.add_source(self.source.url, note="Committee details page")
+        com.add_link(self.source.url, note="homepage")
 
         for (name, role) in self.get_members():
             com.add_member(name=remove_title_prefix(name), role=role)
@@ -345,7 +346,8 @@ class SenateCommitteeDetail(HtmlPage):
             chamber="upper",
             classification="committee",  # No subcommittes as of 2023-01-27
         )
-        com.add_source(self.source.url, note="Committee member listing page")
+        com.add_source(self.source.url, note="Committee details page")
+        com.add_link(self.source.url, note="homepage")
         build_house_or_senate_membership(com, self.root)
         return com
 
@@ -360,7 +362,8 @@ class HouseCommitteeDetail(HtmlPage):
             chamber="lower",
             classification="committee",  # No subcommittes as of 2023-01-27
         )
-        com.add_source(self.source.url, note="Committee member listing page")
+        com.add_source(self.source.url, note="Committee details page")
+        com.add_link(self.source.url, note="homepage")
         build_house_or_senate_membership(com, self.root)
         return com
 

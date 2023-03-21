@@ -1,6 +1,7 @@
 import logging
 import datetime
 from openstates.scrape import Scraper, VoteEvent as Vote
+from openstates.utils import format_datetime
 from spatula import HtmlPage
 import requests
 import lxml.html
@@ -38,12 +39,17 @@ class VotePage(HtmlPage):
             vote_parts = [x.text_content().strip() for x in tds]
             bill_id, time, status, passage = vote_parts[0:4]
             yes, no, exc, abst = [int(x) for x in vote_parts[4:8]]
+            full_date = f'{date_obj.strftime("%Y-%m-%d")} {time}'
+            date = format_datetime(
+                datetime.datetime.strptime(full_date, "%Y-%m-%d %H:%M %p"), "US/Central"
+            )
+            status = status.replace("\r\n", "").replace("\t", "").strip()
 
             passed = yes > no
 
             vote = Vote(
                 chamber=chamber_id,
-                start_date=date_obj.strftime("%Y-%m-%d"),
+                start_date=date,
                 motion_text=f"Motion for {status} on {bill_id}.",
                 result="pass" if passed else "fail",
                 legislative_session=self.input["session"],

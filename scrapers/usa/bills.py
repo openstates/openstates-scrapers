@@ -79,13 +79,10 @@ class USBillScraper(Scraper):
             )
 
             if date > start:
-                self.info(
-                    "{} > {}, scraping".format(
-                        datetime.datetime.strftime(date, "%c"),
-                        datetime.datetime.strftime(start, "%c"),
-                    )
-                )
                 bill_url = self.get_xpath(row, "us:loc")
+                self.debug(
+                    f"{datetime.datetime.strftime(date, '%c')} > {datetime.datetime.strftime(start, '%c')}, scraping {bill_url}"
+                )
                 yield from self.parse_bill(bill_url)
 
     def parse_bill(self, url):
@@ -100,7 +97,7 @@ class USBillScraper(Scraper):
         if not bill_type:
             bill_type = self.get_xpath(xml, "bill/type")
 
-        bill_id = "{} {}".format(bill_type, bill_num)
+        bill_id = f"{bill_type} {bill_num}"
 
         chamber_name = self.get_xpath(xml, "bill/originChamber")
         chamber = self.chambers[chamber_name]
@@ -132,21 +129,11 @@ class USBillScraper(Scraper):
         self.scrape_titles(bill, xml)
         self.scrape_versions(bill, xml)
 
-        xml_url = "https://www.govinfo.gov/bulkdata/BILLSTATUS/{congress}/{type}/BILLSTATUS-{congress}{type}{num}.xml"
-        bill.add_source(
-            xml_url.format(congress=session, type=bill_type.lower(), num=bill_num)
-        )
+        xml_url = f"https://www.govinfo.gov/bulkdata/BILLSTATUS/{session}/{bill_type.lower()}/BILLSTATUS-{session}{bill_type.lower()}{bill_num}.xml"
+        bill.add_source(xml_url)
         # need to get Congress.gov URL for source & additional versions
         # https://www.congress.gov/bill/116th-congress/house-bill/1
-        cg_url = (
-            "https://congress.gov/bill/{congress}th-congress/{chamber}-{type}/{num}"
-        )
-        cg_url = cg_url.format(
-            congress=session,
-            chamber=chamber_name.lower(),
-            type=classification.lower(),
-            num=bill_num,
-        )
+        cg_url = f"https://congress.gov/bill/{session}th-congress/{chamber_name.lower()}-{classification.lower()}/{bill_num}"
         bill.add_source(cg_url)
 
         # use cg_url to get additional version for public law
@@ -269,10 +256,7 @@ class USBillScraper(Scraper):
 
                 # house actions give a time, senate just a date
                 if row.findall("actionTime"):
-                    action_date = "{} {}".format(
-                        self.get_xpath(row, "actionDate"),
-                        self.get_xpath(row, "actionTime"),
-                    )
+                    action_date = f"{self.get_xpath(row, 'actionDate')} {self.get_xpath(row, 'actionTime')}"
                     action_date = datetime.datetime.strptime(
                         action_date, "%Y-%m-%d %H:%M:%S"
                     )
@@ -303,10 +287,6 @@ class USBillScraper(Scraper):
             "HAMDT": "house-amendment",
             "SAMDT": "senate-amendment",
         }
-        amdt_url = (
-            "https://www.congress.gov/amendment/{session}th-congress/{slug}/{num}"
-        )
-        amdt_name = "{type} {num}"
 
         for row in xml.findall("bill/amendments/amendment"):
             session = self.get_xpath(row, "congress")
@@ -318,20 +298,15 @@ class USBillScraper(Scraper):
                 self.warning("Check amendment url ordinals")
 
             bill.add_document_link(
-                note=amdt_name.format(
-                    type=self.get_xpath(row, "type"),
-                    num=num,
-                ),
-                url=amdt_url.format(
-                    session=session, slug=slugs[self.get_xpath(row, "type")], num=num
-                ),
+                note=f"{self.get_xpath(row, 'type')} {num}",
+                url=f"https://www.congress.gov/amendment/{session}th-congress/{slugs[self.get_xpath(row, 'type')]}/{num}",
                 media_type="text/html",
             )
 
         # ex: https://rules.house.gov/bill/116/hr-3884
         if chamber == "lower":
-            rules_url = "https://rules.house.gov/bill/{}/{}".format(
-                session, bill_id.replace(" ", "-")
+            rules_url = (
+                f"https://rules.house.gov/bill/{session}/{bill_id.replace(' ', '-')}"
             )
             try:
                 page = lxml.html.fromstring(self.get(rules_url).content)
@@ -342,9 +317,7 @@ class USBillScraper(Scraper):
                     if row.xpath("td[3]/a"):
                         amdt_num = row.xpath("td[1]/text()")[0].strip()
                         amdt_sponsor = row.xpath("td[3]/a/text()")[0].strip()
-                        amdt_name = "House Rules Committee Amendment {} - {}".format(
-                            amdt_num, amdt_sponsor
-                        )
+                        amdt_name = f"House Rules Committee Amendment {amdt_num} - {amdt_sponsor}"
                         self.info(amdt_name)
                         amdt_url = row.xpath("td[3]/a/@href")[0].strip()
                         if not amdt_url.startswith("http"):
@@ -362,25 +335,20 @@ class USBillScraper(Scraper):
     def scrape_cbo(self, bill, xml):
         for row in xml.findall("bill/cboCostEstimates/item"):
             bill.add_document_link(
-                note="CBO: {}".format(self.get_xpath(row, "title")),
+                note=f"CBO: {self.get_xpath(row, 'title')}",
                 url=self.get_xpath(row, "url"),
                 media_type="text/html",
             )
 
     # ex: https://www.govinfo.gov/bulkdata/BILLSTATUS/116/hr/BILLSTATUS-116hr1218.xml
     def scrape_committee_reports(self, bill, xml):
-        crpt_url = "https://www.congress.gov/{session}/crpt/{chamber}rpt{num}/CRPT-{session}{chamber}rpt{num}.pdf"
         regex = r"(?P<chamber>[H|S|J])\.\s+Rept\.\s+(?P<session>\d+)-(?P<num>\d+)"
 
         for row in xml.findall("bill/committeeReports/committeeReport"):
             report = self.get_xpath(row, "citation")
             match = re.search(regex, report)
 
-            url = crpt_url.format(
-                session=match.group("session"),
-                chamber=match.group("chamber").lower(),
-                num=match.group("num"),
-            )
+            url = f"https://www.congress.gov/{match.group('session')}/crpt/{match.group('chamber').lower()}rpt{match.group('num')}/CRPT-{match.group('session')}{match.group('chamber').lower()}rpt{match.group('num')}.pdf"
 
             bill.add_document_link(note=report, url=url, media_type="application/pdf")
 
@@ -407,12 +375,8 @@ class USBillScraper(Scraper):
 
             url_slug = "pvtl" if law_type == "Private Law" else "publ"
 
-            law_url_pattern = "https://www.congress.gov/{congress}/plaws/{url_slug}{num}/PLAW-{congress}{url_slug}{num}.pdf"
-
             congress, plaw = law_ref.split("-")
-            law_url = law_url_pattern.format(
-                congress=congress, num=plaw, url_slug=url_slug
-            )
+            law_url = f"https://www.congress.gov/{congress}/plaws/{url_slug}{plaw}/PLAW-{congress}{url_slug}{plaw}.pdf"
 
             bill.add_citation(
                 f"US {law_type}", law_ref, citation_type="final", url=law_url
@@ -420,8 +384,8 @@ class USBillScraper(Scraper):
 
     def scrape_related_bills(self, bill, xml):
         for row in xml.findall("bill/relatedBills/item"):
-            identifier = "{type} {num}".format(
-                type=self.get_xpath(row, "type"), num=self.get_xpath(row, "number")
+            identifier = (
+                f"{self.get_xpath(row, 'type')} {self.get_xpath(row, 'number')}"
             )
 
             bill.add_related_bill(

@@ -12,12 +12,12 @@ agenda_url = "http://status.rilin.state.ri.us/agendas.aspx"
 column_order = {"upper": 1, "other": 2, "lower": 0}
 
 replace = {
-    "House Joint Resolution No.": "HJR",
-    "House Resolution No.": "HR",
-    "House Bill No.": "HB",
-    "Senate Joint Resolution No.": "SJR",
-    "Senate Resolution No.": "SR",
-    "Senate Bill No.": "SB",
+    "House Joint Resolution No.": "HJR ",
+    "House Resolution No.": "HR ",
+    "House Bill No.": "HB ",
+    "Senate Joint Resolution No.": "SJR ",
+    "Senate Resolution No.": "SR ",
+    "Senate Bill No.": "SB ",
     "\xa0": " ",
     "\u00a0": " ",
     "SUB A": "",
@@ -110,36 +110,52 @@ class RIEventScraper(Scraper, LXMLMixin):
                 media_type="application/pdf",
                 on_duplicate="ignore",
             )
-            root = bill.xpath("../../*")
-            root = [x.text_content() for x in root]
+
+            root_elements = bill.xpath("../../*")
+            root = []
+            for e in root_elements:
+                # The first bill listed is in the same <td> as the page header,
+                # which includes the "SCHEDULED FOR" text. This would cause the
+                # first bill to be skipped unless we omit it here.
+                if (
+                    e.tag == "b"
+                    and len(e.getchildren()) == 1
+                    and e.getchildren()[0].tag == "u"
+                ):
+                    continue
+                # Add the rest of the text normally
+                root.append(e.text_content())
+
             bill_id = "".join(root).replace("\u00a0", "")
 
             if "SCHEDULED FOR" in bill_id:
                 continue
 
-            descr = bill.getparent().getparent().text_content().replace("\u00a0", " ")
-
             for thing in replace:
                 bill_id = bill_id.replace(thing, replace[thing])
 
-            item = event.add_agenda_item(descr)
+            item = event.add_agenda_item(bill_id)
             item.add_bill(bill_id)
 
         # sometimes bill references are just plain links or plain text.
         bill_links = page.xpath('//a[contains(@href,"/BillText/")]/@href')
         linked_bills = set()
+
+        bill_id_re = re.compile(r"\/([a-z]+)(\d+)\.pdf", flags=re.IGNORECASE)
         for bill_link in bill_links:
-            bill_nums = re.findall(r"\/(\w+\d+)\.pdf", bill_link, flags=re.IGNORECASE)
-            for bill_num in bill_nums:
-                linked_bills.add(bill_num)
+            bill_nums = bill_id_re.findall(bill_link)
+            for chamber, bill_num in bill_nums:
+                # Bill PDFs don't include the "B" in "HB" or "SB", so it must be added
+                bill = f"{chamber}B {int(bill_num)}"
+                linked_bills.add(bill)
 
         # sometimes (H 1234) ends up in the title or somewhere else unlinked
-        text_bill_nums = re.findall(
-            r"\((\w{1,3}\s?\d+)\)", page.text_content(), flags=re.IGNORECASE
+        text_bills = re.findall(
+            r"\(([a-z]{1,3})\s?(\d+)\)", page.text_content(), flags=re.IGNORECASE
         )
-        for bill_num in text_bill_nums:
-            bill_num = bill_num.replace(" ", "")
-            linked_bills.add(bill_num)
+        for bill_str, bill_num in text_bills:
+            bill = f"{bill_str} {bill_num}"
+            linked_bills.add(bill)
 
         if len(linked_bills) != 0:
             item = event.add_agenda_item("Bills under consideration")

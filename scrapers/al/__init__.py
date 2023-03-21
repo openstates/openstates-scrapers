@@ -182,51 +182,13 @@ class Alabama(State):
             "active": True,
         },
     ]
-    ignored_scraped_sessions = [
-        # TODO: add to scraped when prefiles up
-        "Second Special Session 2021",
-        "Regular Session 1998",
-        "Organizational Session 1999",
-        "Regular Session 1999",
-        "First Special Session 1999",
-        "Organizational Session 2011",
-        "Second Special Session 1999",
-        "Regular Session 2000",
-        "Regular Session 2001",
-        "First Special Session 2001",
-        "Second Special Session 2001",
-        "Third Special Session 2001",
-        "Fourth Special Session 2001",
-        "Regular Session 2002",
-        "Organizational Session 2003",
-        "Regular Session 2003",
-        "First Special Session 2003",
-        "Second Special Session 2003",
-        "Regular Session 2004",
-        "First Special Session 2004",
-        "Regular Session 2005",
-        "First Special Session 2005",
-        "Regular Session 2006",
-        "Organizational Session 2007",
-        "Regular Session 2007",
-        "First Special Session 2007",
-        "Regular Session 2008",
-        "First Special Session 2008",
-        "Regular Session 2009",
-        "Regular Session 2010",
-        "First Special Session 2009",
-        "First Special Session 2010",
-        "Regular Session 2016",
-        "Organizational Session 2019",
-    ]
+    ignored_scraped_sessions = []
 
     def get_session_list(self):
-        import lxml.html
-        import requests
+        return ["Regular Session 2023"]
 
-        s = requests.Session()
-        r = s.get("http://alisondb.legislature.state.al.us/alison/SelectSession.aspx")
-        doc = lxml.html.fromstring(r.text)
-        return doc.xpath(
-            '//*[@id="ContentPlaceHolder1_gvSessions"]/tr/td/font/a/font/text()'
-        )
+    def get_scraper_ids(self, session):
+        ids = {
+            "2023rs": {"session_year": "2023", "session_type": "2023 Regular Session"}
+        }
+        return ids[session]
