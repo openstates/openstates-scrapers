@@ -6,6 +6,7 @@ from openstates.scrape import Scraper
 from openstates.scrape import Event
 from spatula import PdfPage, HtmlPage, URL, XPath
 import datetime
+import dateutil
 
 TZ = pytz.timezone("US/Central")
 
@@ -56,16 +57,15 @@ class SenateAgendaPdf(PdfPage):
 
                 date = date.split(", ", 1)[1]
                 time = time.replace(".", "").replace("am", "AM").replace("pm", "PM")
-                start_time = f"{date} {time}"
-
+                # AR is after recess, which is undefined
+                start_time = f"{date} {time}".replace("AR", "")
                 try:
                     start_time = datetime.datetime.strptime(
                         start_time, "%B %d, %Y %I:%M %p"
                     )
                 except Exception:
-                    start_time = datetime.datetime.strptime(
-                        start_time, "%B %d, %Y %I %p"
-                    )
+                    start_time = dateutil.parser.parse(start_time)
+
                 location = f"400 High St, Jackson, MS 39201, {room}"
                 event = Event(
                     name=committee,
