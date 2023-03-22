@@ -67,9 +67,13 @@ class ALBillScraper(Scraper):
                     chamber=chamber,
                     classification=self.bill_types[row["InstrumentType"]],
                 )
+                sponsor = row["InstrumentSponsor"]
+                if sponsor == "":
+                    self.warning("No sponsors")
+                    continue
 
                 bill.add_sponsorship(
-                    name=row["InstrumentSponsor"],
+                    name=sponsor,
                     entity_type="person",
                     classification="primary",
                     primary=True,
