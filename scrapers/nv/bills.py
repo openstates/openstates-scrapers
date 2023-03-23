@@ -9,7 +9,6 @@ from openstates.scrape import Scraper, Bill
 from .common import session_slugs
 from spatula import HtmlListPage, HtmlPage, CSS, XPath, SelectorError
 
-
 TZ = pytz.timezone("PST8PDT")
 ACTION_CLASSIFIERS = (
     ("Approved by the Governor", "executive-signature"),
@@ -66,10 +65,24 @@ def extract_bdr(title):
     the number is in the title but it's useful as a structured extra
     """
     bdr = False
-    bdr_regex = re.search(r"\(BDR (\w+\-\w+)\)", title)
+    bdr_regex = re.search(r"\(BDR (\w+-\w+)\)", title)
     if bdr_regex:
         bdr = bdr_regex.group(1)
     return bdr
+
+
+def shorten_bill_title(title):
+    """
+    Used in cases where the bill title exceeds the
+    300-character limit that we have on this attribute.
+    """
+    title_bdr_re = re.compile(r"(.+)(\(BDR \w+-\w+\))")
+    title_bdr_match = title_bdr_re.search(title)
+    bdr_full = ""
+    if title_bdr_match:
+        title, bdr_full = title_bdr_match.groups()
+    title = f"{title[:280]}... + {bdr_full}"
+    return title
 
 
 @dataclass
