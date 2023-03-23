@@ -265,6 +265,9 @@ class BillTabDetail(HtmlPage):
                 )
                 return
 
+        if self.input.identifier == "SJR7-2021" and self.input.session == "82":
+            short_title = shorten_bill_title(short_title)
+
         bill = Bill(
             identifier=self.input.identifier,
             legislative_session=self.input.session,
