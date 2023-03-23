@@ -265,6 +265,7 @@ class BillTabDetail(HtmlPage):
                 )
                 return
 
+        # Only known case where bill title is over 300 characters
         if self.input.identifier == "SJR7-2021" and self.input.session == "82":
             short_title = shorten_bill_title(short_title)
 
