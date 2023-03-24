@@ -200,12 +200,12 @@ class SenDetail(HtmlPage):
             found = False
             for k in table.keys():
                 if c.text_content().find(k) >= 0:
-                   found = True
+                    found = True
             if not found:
                 if not first_committee:
                     committees_string += ", "
                 committees_string += c.text_content().lower()
-                first_committee = False;
+                first_committee = False
         p.extras["Committees"] = committees_string
 
         if table["District Address"] != "":
