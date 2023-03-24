@@ -15,7 +15,7 @@ class PersonDetail(HtmlPage):
     def parse_address_block(self, block):
         state = "address"
         # group lines by type
-        values = {"address": [], "phone": [], "fax": []}
+        values = {"address": [], "phone": [], "fax": [], "toll-free": []}
         for line in block.splitlines():
             line = line.strip()
             if not line:
@@ -24,26 +24,31 @@ class PersonDetail(HtmlPage):
                 state = "phone"
             elif line.startswith("Fax"):
                 state = "fax"
+            elif line.startswith("Toll-free"):
+                state = "toll-free"
+            else: state = "address"
 
             values[state].append(line)
 
         # postprocess values
 
+        result = {}
         phones = []
         for line in values["phone"]:
             for match in re.findall(r"\d{3}-\d{3}-\d{4}", line):
                 phones.append(match)
+        if len(phones) > 0:
+            result["voice"] = phones[0]
 
         faxes = []
         for line in values["fax"]:
             for match in re.findall(r"\d{3}-\d{3}-\d{4}", line):
                 faxes.append(match)
+        if len(faxes) > 0:
+            result["fax"] = faxes[0]
 
-        return {
-            "address": "; ".join(values["address"]),
-            "phones": phones,
-            "faxes": faxes,
-        }
+        result["address"] = ";".join(values["address"])
+        return result
 
     def extract_dd(self, name):
         return (
@@ -54,17 +59,21 @@ class PersonDetail(HtmlPage):
 
     image_sel = CSS("img.details-page-image-padding")
 
+
     def process_page(self):
-        # annapolis_info = (
-        #     XPath("//dt[text()='Annapolis Info']/following-sibling::dd[1]")
-        #     .match_one(self.root)
-        #     .text_content()
+        annapolis_text = (
+            XPath("//dt[text()='Annapolis Info']/following-sibling::dd[1]")
+            .match_one(self.root)
+             .text_content()
+        )
+        annapolis_info = self.parse_address_block(annapolis_text)
+        annapolis_info["classification"] = "capitol"
+        # interim_text = (
+        #    XPath("//dt[text()='Interim Info']/following-sibling::dd[1]")
+        #    .match_one(self.root)
+        #    .text_content()
         # )
-        # interim_info = (
-        #     XPath("//dt[text()='Interim Info']/following-sibling::dd[1]")
-        #     .match_one(self.root)
-        #     .text_content()
-        # )
+        # interim_info = self.parse_address_block(interim_text)
 
         # email is formatted mailto:<addr>?body...
         try:
@@ -82,6 +91,8 @@ class PersonDetail(HtmlPage):
             chamber=self.input["chamber"],
             email=email,
         )
+
+        p.capitol_office = annapolis_info
         p.add_link(self.source.url)
         p.add_source(self.source.url)
         return p
