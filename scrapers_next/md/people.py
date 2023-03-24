@@ -26,7 +26,8 @@ class PersonDetail(HtmlPage):
                 state = "fax"
             elif line.startswith("Toll-free"):
                 state = "toll-free"
-            else: state = "address"
+            else:
+                state = "address"
 
             values[state].append(line)
 
@@ -59,12 +60,11 @@ class PersonDetail(HtmlPage):
 
     image_sel = CSS("img.details-page-image-padding")
 
-
     def process_page(self):
         annapolis_text = (
             XPath("//dt[text()='Annapolis Info']/following-sibling::dd[1]")
             .match_one(self.root)
-             .text_content()
+            .text_content()
         )
         annapolis_info = self.parse_address_block(annapolis_text)
         annapolis_info["classification"] = "capitol"
