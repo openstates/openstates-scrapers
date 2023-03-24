@@ -1,5 +1,4 @@
 import attr
-import re
 from spatula import HtmlListPage, HtmlPage, XPath, CSS, SelectorError
 from openstates.models import ScrapePerson
 
@@ -140,8 +139,6 @@ class SenDetail(HtmlPage):
     )
 
     def process_page(self):
-        heading = CSS(".heading").match(self.root)[0]
-
         rows = XPath("//div[contains(@class,col-md-8)]/ul/li").match(self.root[0])
 
         image_container = CSS(".col-md-4").match(self.root)[0]
@@ -168,7 +165,7 @@ class SenDetail(HtmlPage):
         }
 
         for row in rows:
-            try: 
+            try:
                 text = row.text_content()
                 text = text.split(": ")
                 if len(text) < 2:
@@ -178,7 +175,7 @@ class SenDetail(HtmlPage):
                 table[item_name] = value
                 if item_name == "Legislative Service":
                     if value[0] != "H":
-                      value = value.replace('House', '; House')
+                        value = value.replace('House', '; House')
                     table[item_name] = value
                     break
 
@@ -198,7 +195,7 @@ class SenDetail(HtmlPage):
         )
 
         committees_string = ""
-        first_committee = True;
+        first_committee = True
         for c in committees:
             found = False
             for k in table.keys():
@@ -212,7 +209,7 @@ class SenDetail(HtmlPage):
         p.extras["Committees"] = committees_string
 
         if table["District Address"] != "":
-            address =  table["District Address"]
+            address = table["District Address"]
             full_address = address[:-5] + "AR " + address[-5:]
             p.district_office.address = full_address
         if table["Phone"] != "":
@@ -251,7 +248,7 @@ class SenList(HtmlListPage):
         description = item.text_content()
         nameFromDescription = description.split("\r\n")[2]
         link = list(item.iterlinks())
-        (element, attr, url,position) = link[1]
+        (element, attr, url, position) = link[1]
         p = PartialMember(name=nameFromDescription, chamber="upper", url=self.source.url)
         return SenDetail(p, source=url)
 
@@ -265,14 +262,13 @@ class AssemblyDetail(HtmlPage):
         heading = CSS(".py-sm-6").match(self.root)[0]
         name = self.input.name
         line2 = heading[2].text_content().split(" ")
-        party=line2[0]
+        party = line2[0]
         districtName = line2[2]
         districtNumber = ""
         for c in districtName:
-          if c.isdigit():
-            districtNumber += c
+            if c.isdigit():
+                districtNumber += c
 
-        
         leftInfobox = CSS(".col-lg-3").match(self.root)[0]
 
         table = {
@@ -293,13 +289,12 @@ class AssemblyDetail(HtmlPage):
         table["Title"] = "Representative"
         table["Party"] = party
 
-        image = XPath("//div[contains(@class,'col-lg-3')]"
-                         "//a/@href").match(self.root)[0]
+        image = XPath("//div[contains(@class,'col-lg-3')]//a/@href").match(self.root)[0]
 
         emailContainer = XPath("//p[contains(@class,'mb-0')]/a").match(self.root)[0]
         table["Email"] = emailContainer.text_content()
 
-        officeContainer =  XPath("//p[contains(@class,'mb-0')]").match(self.root)[1]
+        officeContainer = XPath("//p[contains(@class,'mb-0')]").match(self.root)[1]
         table["Phone"] = officeContainer[2].text_content()
         addressArray = XPath("//p[contains(@class,'mb-0')]/text()").match(self.root)
 
@@ -342,7 +337,7 @@ class AssemblyDetail(HtmlPage):
                 p.extras[key.lower()] = table[key]
 
         if table["District Address"] != "":
-            p.district_office.address =  table["District Address"]
+            p.district_office.address = table["District Address"]
         if table["Phone"] != "":
             p.district_office.voice = table["Phone"]
         return p
@@ -361,7 +356,6 @@ class AssemblyList(HtmlListPage):
         description = item.text_content()
         nameFromDescription = description.split("\n")[6].strip()
         link = list(item.iterlinks())
-        (element, attr, url,position) = link[0]
+        (element, attr, url, position) = link[0]
         p = PartialMember(name=nameFromDescription, chamber="lower", url=self.source.url)
         return AssemblyDetail(p, source=url)
-
