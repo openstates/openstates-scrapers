@@ -155,6 +155,9 @@ class KYEventScraper(Scraper):
             if "Other Meeting" in date_text:
                 continue
 
+            if "No documents available" in date_text:
+                continue
+
             when = dateutil.parser.parse(date_text)
 
             lookup_date = when.strftime("%Y-%m-%d")
