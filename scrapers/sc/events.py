@@ -4,6 +4,7 @@ import datetime
 import lxml.html
 
 from openstates.scrape import Scraper, Event
+from spatula import PdfPage, URL
 
 
 def normalize_time(time_string):
@@ -14,9 +15,13 @@ def normalize_time(time_string):
     """
 
     time_string = time_string.lower().strip()
+
+    # Fix inconsistent formatting of pm/am
+    time_string = time_string.replace("p.m.", "pm").replace("a.m.", "am")
+
     # replace "to XX:XX am|pm"
     time_string = re.sub(r"to \d{2}:\d{2} \w{2}", "", time_string).strip()
-    if re.search(r"adjourn", time_string):
+    if re.search(r"(upon|adjourn)", time_string):
         time_string = "12:00 am"
     if re.search(r" noon", time_string):
         time_string = time_string.replace(" noon", " pm")
@@ -45,6 +50,23 @@ def normalize_time(time_string):
             else:
                 time_string = start_time + " " + end_meridiem
     return time_string
+
+
+class Agenda(PdfPage):
+    # Allow up to 3 non-alpha-numeric characters between letter and number poriton of bill id
+    # Will correctly scrape bill ids like "H.123", "S(123)", "H - 0244", "S  43", "H. 55"
+    bill_re = re.compile(r"(\W|^)(H|S)\W{0,3}0*(\d+)")
+
+    def process_page(self):
+        # Use a set to remove duplicate bill ids
+        bill_ids = set()
+
+        for _, alpha, num in self.bill_re.findall(self.text):
+            # Format bill id and add it to the set
+            bill_id = f"{alpha} {num}"
+            bill_ids.add(bill_id)
+
+        yield from bill_ids
 
 
 class SCEventScraper(Scraper):
@@ -83,6 +105,14 @@ class SCEventScraper(Scraper):
         return re.findall(r"live_stream\((\d+)|$", onclick)[0]
 
     def scrape(self, chamber=None, session=None):
+        if chamber:
+            yield from self.scrape(chamber, session)
+        else:
+            yield from self.scrape_single_chamber("legislature", session)
+            yield from self.scrape_single_chamber("upper", session)
+            yield from self.scrape_single_chamber("lower", session)
+
+    def scrape_single_chamber(self, chamber=None, session=None):
         """
         Scrape the events data from all dates from the sc meetings page,
         then create and yield the events objects from the data.
@@ -92,8 +122,9 @@ class SCEventScraper(Scraper):
         """
 
         chambers = {
-            "upper": {"name": "Senate", "title": "Senator"},
-            "lower": {"name": "House", "title": "Representative"},
+            "upper": "Senate",
+            "lower": "House",
+            "legislature": "Joint",
         }
         if chamber == "other":
             return
@@ -103,9 +134,8 @@ class SCEventScraper(Scraper):
             events_url = "https://www.scstatehouse.gov/meetings.php"
         else:
             events_url = "https://www.scstatehouse.gov/meetings.php?chamber=%s" % (
-                chambers[chamber]["name"].upper()[0]
+                chambers[chamber].upper()[0]
             )
-
         page = self.get_page_from_url(events_url)
 
         meeting_year = page.xpath('//h2[@class="barheader"]/span')[0].text_content()
@@ -187,9 +217,11 @@ class SCEventScraper(Scraper):
                         note="Agenda", url=agenda_url, media_type="application/pdf"
                     )
 
-                    if ".pdf" not in agenda_url:
+                    if ".pdf" in agenda_url:
+                        for bill_id in Agenda(source=URL(agenda_url)).do_scrape():
+                            event.add_bill(bill_id)
+                    else:
                         agenda_page = self.get_page_from_url(agenda_url)
-
                         for bill in agenda_page.xpath(
                             ".//a[contains(@href,'billsearch.php')]"
                         ):

@@ -2,6 +2,7 @@ import re
 import datetime
 import lxml.html
 import requests
+import time
 from openstates.scrape import Scraper, Bill
 from .actions import Categorizer
 
@@ -10,19 +11,25 @@ class IABillScraper(Scraper):
     categorizer = Categorizer()
 
     def scrape(self, session=None, chamber=None, prefiles=None):
+
         self.retry_attempts = 3
         self.retry_wait_seconds = 6
         req_session = requests.Session()
         req_session.headers.update({"X-Requested-With": "XMLHttpRequest"})
         # openstates/issues#252 - IA continues to prefile after session starts
         # so we'll continue scraping both
-        # yield from self.scrape_prefiles(session)
+        yield from self.scrape_prefiles(session)
 
         session_id = self.get_session_id(session)
         url = f"https://www.legis.iowa.gov/legislation/findLegislation/allbills?ga={session_id}"
         page = lxml.html.fromstring(req_session.get(url).text)
-
+        start_time = time.time()
         for option in page.xpath("//*[@id='sortableTable']/tbody/tr"):
+            # Adding in timer here to track how long we are scraping, IA cuts us off at 15-17 mins
+            # If we scrape for 10 mins and then sleep 7 minutes we can scrape the whole site.
+            if (time.time() - start_time) >= 600:
+                time.sleep(420)
+                start_time = time.time()
             bill_id = option.xpath("td[2]/a/text()")[0]
             title = option.xpath("td[3]/text()")[0].split("(")[0]
             chamber = "lower" if bill_id[0] == "H" else "upper"
@@ -33,6 +40,38 @@ class IABillScraper(Scraper):
             yield self.scrape_bill(
                 chamber, session, session_id, bill_id, bill_url, title, sponsors
             )
+
+        # scrapes dropdown options on 'Bill Book' page
+        #  to get bill types not found on 'All Bills' page
+        bill_book_url = (
+            f"https://www.legis.iowa.gov/legislation/BillBook?ga={session_id}"
+        )
+        bill_book_page = lxml.html.fromstring(self.get(bill_book_url).text)
+
+        other_bill_ids = []
+        other_bill_prefixes = {"upper": ["SSB"], "lower": ["HSB"]}
+
+        for chamber, bill_prefixes in other_bill_prefixes.items():
+            for prefix in bill_prefixes:
+                select = "house" if chamber == "lower" else "senate"
+                options = bill_book_page.xpath(
+                    f".//select[@id='{select}Select']//option"
+                )
+                values = [x.get("value") for x in options if prefix in x.get("value")]
+                other_bill_ids += values
+
+        for bill_id in other_bill_ids:
+            if (time.time() - start_time) >= 600:
+                time.sleep(420)
+                start_time = time.time()
+            bill_url = (
+                "https://www.legis.iowa.gov/"
+                f"legislation/BillBook?ga={session_id}&ba={bill_id}"
+            )
+            chamber = "lower" if bill_id[0] == "H" else "upper"
+
+            # title and sponsors for these will be found during detail page scraping
+            yield self.scrape_bill(chamber, session, session_id, bill_id, bill_url)
 
     # IA does prefiles on a separate page, with no bill numbers,
     # after introduction they'll link bill numbers to the prefile doc id
@@ -99,7 +138,9 @@ class IABillScraper(Scraper):
         for subject in subjects:
             bill.add_subject(subject.strip())
 
-    def scrape_bill(self, chamber, session, session_id, bill_id, url, title, sponsors):
+    def scrape_bill(
+        self, chamber, session, session_id, bill_id, url, title=None, sponsors=None
+    ):
         req_session = requests.Session()
         req_session.headers.update({"X-Requested-With": "XMLHttpRequest"})
         try:
@@ -121,12 +162,26 @@ class IABillScraper(Scraper):
         page = lxml.html.fromstring(req.text)
         page.make_links_absolute("https://www.legis.iowa.gov")
 
+        # bills that had neither title nor sponsors passed in
+        if not title and not sponsors:
+            sponsors_div = page.xpath(
+                ".//div[@style='margin-left:10px;']//div[@class='divideVert']"
+            )[0]
+
+            raw_sponsors = sponsors_div.text
+            sponsors = re.sub(r"By\s+", "", raw_sponsors).strip()
+
+            raw_title = sponsors_div.getnext().text
+            title = re.sub(r"\(Formerly|\(See", "", raw_title).strip()
+
         if "HR" in bill_id or "SR" in bill_id:
             bill_type = ["resolution"]
         elif "HJR" in bill_id or "SJR" in bill_id:
             bill_type = ["joint resolution"]
         elif "HCR" in bill_id or "SCR" in bill_id:
             bill_type = ["concurrent resolution"]
+        elif "HSB" in bill_id or "SSB" in bill_id:
+            bill_type = ["proposed bill"]
         else:
             bill_type = ["bill"]
 
@@ -290,7 +345,7 @@ class IABillScraper(Scraper):
                     description=action, date=date, chamber=actor, classification=atype
                 )
 
-        # self.scrape_subjects(bill, bill_id, session, req_session)
+        self.scrape_subjects(bill, bill_id, session, req_session)
 
         yield bill
 

@@ -14,6 +14,7 @@ class MDEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Eastern")
     chambers = {"upper": "Senate", "lower": ""}
     date_format = "%m%d%Y"
+    bill_hear_re = re.compile(r"(.+)( - Bill Hearing)")
 
     def scrape(self, session=None, start=None, end=None):
         if start is None:
@@ -100,6 +101,10 @@ class MDEventScraper(Scraper, LXMLMixin):
 
             if com_row == "":
                 continue
+
+            bill_hearing_format = self.bill_hear_re.search(com_row)
+            if bill_hearing_format:
+                com_row = bill_hearing_format.groups()[0]
 
             # remove end dates
             when = re.sub(r"to \d+:\d+\s*\w+", "", f"{when} {time}").strip()

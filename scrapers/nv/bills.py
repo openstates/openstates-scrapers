@@ -9,7 +9,6 @@ from openstates.scrape import Scraper, Bill
 from .common import session_slugs
 from spatula import HtmlListPage, HtmlPage, CSS, XPath, SelectorError
 
-
 TZ = pytz.timezone("PST8PDT")
 ACTION_CLASSIFIERS = (
     ("Approved by the Governor", "executive-signature"),
@@ -66,10 +65,33 @@ def extract_bdr(title):
     the number is in the title but it's useful as a structured extra
     """
     bdr = False
-    bdr_regex = re.search(r"\(BDR (\w+\-\w+)\)", title)
+    bdr_regex = re.search(r"\(BDR (\w+-\w+)\)", title)
     if bdr_regex:
         bdr = bdr_regex.group(1)
     return bdr
+
+
+def shorten_bill_title(title):
+    """
+    Used in cases where the bill title exceeds the
+    300-character limit that we have on this attribute.
+    """
+    title_bdr_re = re.compile(r"(.+)(\(BDR \w+-\w+\))")
+    title_bdr_match = title_bdr_re.search(title)
+    bdr_full = ""
+    if title_bdr_match:
+        title, bdr_full = title_bdr_match.groups()
+    title = f"{title[:280]}... + {bdr_full}"
+    return title
+
+
+class BillTitleLengthError(BaseException):
+    def __init__(self, bill_id, title):
+        super().__init__(
+            f"Title of {bill_id} exceeds 30 characters:"
+            f"\n title -> '{title}'"
+            f"\n character length -> {len(title)}"
+        )
 
 
 @dataclass
@@ -252,6 +274,13 @@ class BillTabDetail(HtmlPage):
                 )
                 return
 
+        # Only known case where bill title is over 300 characters
+        if self.input.identifier == "SJR7-2021" and self.input.session == "82":
+            short_title = shorten_bill_title(short_title)
+        # If additional case arises in future
+        elif len(short_title) > 300:
+            raise BillTitleLengthError(self.input.identifier, short_title)
+
         bill = Bill(
             identifier=self.input.identifier,
             legislative_session=self.input.session,
@@ -297,6 +326,61 @@ class BillTabText(HtmlPage):
             title = row.text_content()
             link = row.get("href")
             bill.add_version_link(
+                title, link, media_type="application/pdf", on_duplicate="ignore"
+            )
+        ex_url = self.source.url.replace("Text", "Exhibits")
+        return ExhibitTabText(bill, source=ex_url)
+
+
+class ExhibitTabText(HtmlPage):
+    example_source = (
+        "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Bill/"
+        "FillSelectedBillTab?selectedTab=Exhibits&billKey=9581"
+    )
+
+    def process_page(self):
+        bill = self.input
+        for row in CSS("li.my-4 a").match(self.root, min_items=0):
+            title = row.text_content()
+            link = row.get("href")
+            bill.add_document_link(
+                title, link, media_type="application/pdf", on_duplicate="ignore"
+            )
+        am_url = self.source.url.replace("Text", "Amendments")
+        return AmendmentTabText(bill, source=am_url)
+
+
+class AmendmentTabText(HtmlPage):
+    example_source = (
+        "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Bill/"
+        "FillSelectedBillTab?selectedTab=Amendments&billKey=10039"
+    )
+
+    def process_page(self):
+        bill = self.input
+        for row in CSS("col-11 col-md").match(self.root, min_items=0):
+            title = row.text_content()
+            link = row.get("href")
+            bill.add_version_link(
+                title, link, media_type="application/pdf", on_duplicate="ignore"
+            )
+        fn_url = self.source.url.replace("Text", "FiscalNotes")
+        return FiscalTabText(bill, source=fn_url)
+
+
+class FiscalTabText(HtmlPage):
+    example_source = (
+        "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Bill/"
+        "FillSelectedBillTab?selectedTab=FiscalNotes&billKey=9528"
+    )
+
+    def process_page(self):
+        bill = self.input
+        for row in CSS("ul.list-unstyled li a").match(self.root, min_items=0):
+            title = row.text_content()
+            title = f"Fiscal Note: {title}"
+            link = row.get("href")
+            bill.add_document_link(
                 title, link, media_type="application/pdf", on_duplicate="ignore"
             )
         return bill

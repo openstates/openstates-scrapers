@@ -58,19 +58,36 @@ class USEventScraper(Scraper, LXMLMixin):
     # format is "2/28/2019" per AK's site
     def scrape(self, chamber=None, session=None, date_filter=None):
         event_count = 0
+        events = set()
         if chamber is None:
             for event in self.scrape_house():
+                if event.dedupe_key in events:
+                    self.warning(f"Duplicate event {event.dedupe_key}")
+                    continue
+                events.add(event.dedupe_key)
                 event_count += 1
                 yield event
             for event in self.scrape_senate():
+                if event.dedupe_key in events:
+                    self.warning(f"Duplicate event {event.dedupe_key}")
+                    continue
+                events.add(event.dedupe_key)
                 event_count += 1
                 yield event
         elif chamber == "lower":
             for event in self.scrape_house():
+                if event.dedupe_key in events:
+                    self.warning(f"Duplicate event {event.dedupe_key}")
+                    continue
+                events.add(event.dedupe_key)
                 event_count += 1
                 yield event
         elif chamber == "upper":
             for event in self.scrape_senate():
+                if event.dedupe_key in events:
+                    self.warning(f"Duplicate event {event.dedupe_key}")
+                    continue
+                events.add(event.dedupe_key)
                 event_count += 1
                 yield event
         if event_count < 1:
@@ -104,14 +121,14 @@ class USEventScraper(Scraper, LXMLMixin):
             event_date = dateutil.parser.parse(row.xpath("string(date)"))
 
             event_date = self._TZ.localize(event_date)
-
+            event_name = f"{com[:100]}#{address}#{event_date}"
             event = Event(
                 start_date=event_date,
                 name=com[:1000],
                 location_name=address,
                 classification="committee-meeting",
             )
-
+            event.dedupe_key = event_name
             agenda_item = event.add_agenda_item(description=agenda)
 
             for doc in row.xpath("//Documents/AssociatedDocument"):
@@ -220,14 +237,14 @@ class USEventScraper(Scraper, LXMLMixin):
                 "string(//meeting-details/meeting-location/capitol-complex/room)"
             )
             address = f"{building}, Room {room}"
-
+        event_name = f"{title[:100]}#{address}#{start_dt}"
         event = Event(
             start_date=start_dt,
             name=title[:1000],
             location_name=address,
             classification="committee-meeting",
         )
-
+        event.dedupe_key = event_name
         event.add_source(source_url)
 
         coms = xml.xpath("//committees/committee-name | //subcommittees/committee-name")

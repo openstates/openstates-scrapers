@@ -14,6 +14,37 @@ from dateutil.relativedelta import relativedelta
 import dateutil.parser
 import cloudscraper
 
+from spatula import PdfPage, URL
+
+
+class Agenda(PdfPage):
+    bill_re = re.compile(r"(\W|^)(SJR|HCR|HB|HR|SCR|SB|HJR|SR)\s{0,8}0*(\d+)")
+    am_sub_re = re.compile(r"Am(\.| ) ? Sub(\.| ) ?", flags=re.IGNORECASE)
+    enact_buget_re = re.compile(r"enact .*? budget", flags=re.IGNORECASE)
+
+    def process_page(self):
+        # Some bills have "Am. Sub. " before bill letter portion, remove it
+        self.text = self.am_sub_re.sub("", self.text)
+
+        # Some bills have "Enact .* budget" between "HB" and "123" portion, remove it
+        self.text = self.enact_buget_re.sub("", self.text)
+
+        # Multiple bill id formats are used: "S. B. No. 123", "H.B. 33", or "HB 234"
+        # After this step, all bill ids should be in the format "SB123", "HB33", or "HB234"
+        self.text = (
+            self.text.upper().replace("NO", "").replace(" ", "").replace(".", "")
+        )
+
+        bills = self.bill_re.findall(self.text)
+
+        # Store bill ids in a set to remove duplicates
+        formatted_bill_ids = set()
+        for _, alpha, num in bills:
+            # Format with space between letter and number portions
+            formatted_bill_ids.add(f"{alpha} {num}")
+
+        yield from formatted_bill_ids
+
 
 class OHEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
@@ -79,6 +110,12 @@ class OHEventScraper(Scraper):
             event = Event(
                 name=name, start_date=when, location_name=location, status=status
             )
+
+            # Scrape bill ids from the agenda PDF
+            # The server only returns data if a user agent is supplied
+            headers = {"User-Agent": "curl/7.88.1"}
+            for bill_id in Agenda(source=URL(agenda_url, headers=headers)).do_scrape():
+                event.add_bill(bill_id)
 
             match_coordinates(event, {"1 Capitol Square": (39.96019, -82.99946)})
 

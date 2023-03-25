@@ -41,48 +41,42 @@ class COBillScraper(Scraper, LXMLMixin):
         """
         Entry point when invoking this (or really whatever else)
         """
+        page = self.scrape_bill_list(session, 0)
+        bill_list = page.xpath(
+            '//header[contains(@class,"search-result-single-item")]'
+            '/h4[contains(@class,"node-title")]/a/@href'
+        )
 
-        chambers = [chamber] if chamber else ["upper", "lower"]
+        for bill_url in bill_list:
+            yield from self.scrape_bill(session, bill_url)
 
-        for chamber in chambers:
-            page = self.scrape_bill_list(session, chamber, 0)
-            bill_list = page.xpath(
-                '//header[contains(@class,"search-result-single-item")]'
-                '/h4[contains(@class,"node-title")]/a/@href'
-            )
+        try:
+            pagination_str = page.xpath(
+                '//div[contains(@class, "view-header")]/text()'
+            )[0]
+            max_results = re.search(r"of (\d+) results", pagination_str)
+            max_results = int(max_results.group(1))
+            max_page = int(math.ceil(max_results / 25.0))
+        except IndexError:
+            self.warning(f"No bills for {session}")
+            return
 
-            for bill_url in bill_list:
-                yield from self.scrape_bill(session, chamber, bill_url)
+        # We already have the first page load, so just grab later pages
+        if max_page > 1:
+            for i in range(1, max_page):
+                page = self.scrape_bill_list(session, i)
+                bill_list = page.xpath(
+                    '//header[contains(@class,"search-result-single-item")]'
+                    '/h4[contains(@class,"node-title")]/a/@href'
+                )
+                for bill_url in bill_list:
+                    yield from self.scrape_bill(session, bill_url)
 
-            try:
-                pagination_str = page.xpath(
-                    '//div[contains(@class, "view-header")]/text()'
-                )[0]
-                max_results = re.search(r"of (\d+) results", pagination_str)
-                max_results = int(max_results.group(1))
-                max_page = int(math.ceil(max_results / 25.0))
-            except IndexError:
-                self.warning(f"No bills for {chamber}")
-                return
-
-            # We already have the first page load, so just grab later pages
-            if max_page > 1:
-                for i in range(1, max_page):
-                    page = self.scrape_bill_list(session, chamber, i)
-                    bill_list = page.xpath(
-                        '//header[contains(@class,"search-result-single-item")]'
-                        '/h4[contains(@class,"node-title")]/a/@href'
-                    )
-                    for bill_url in bill_list:
-                        yield from self.scrape_bill(session, chamber, bill_url)
-
-    def scrape_bill_list(self, session, chamber, pageNumber):
-        chamber_code_map = {"lower": 1, "upper": 2}
-
+    def scrape_bill_list(self, session, pageNumber):
         ajax_url = "https://leg.colorado.gov/views/ajax"
 
         form = {
-            "field_chamber": chamber_code_map[chamber],
+            "field_chamber": "All",
             "field_bill_type": "All",
             "field_sessions": SESSION_DATA_ID[session],
             "sort_bef_combine": "search_api_relevance DESC",
@@ -106,8 +100,7 @@ class COBillScraper(Scraper, LXMLMixin):
         # so we can pull the max page # from it on page 1
         return page
 
-    def scrape_bill(self, session, chamber, bill_url):
-
+    def scrape_bill(self, session, bill_url):
         try:
             page = self.lxmlize("{}{}".format(CO_URL_BASE, bill_url))
         except scrapelib.HTTPError as e:
@@ -128,6 +121,7 @@ class COBillScraper(Scraper, LXMLMixin):
             'string(//div[contains(@class,"field-name-field-bill-summary")])'
         )
         bill_summary = bill_summary.replace("Read More", "").strip()
+        chamber = "lower" if "H" in bill_number else "upper"
         bill = Bill(
             bill_number, legislative_session=session, chamber=chamber, title=bill_title
         )
