@@ -16,6 +16,7 @@ class ALBillScraper(Scraper):
     gql_url = "https://gql.api.alison.legislature.state.al.us/graphql"
     session_year = ""
     session_type = ""
+    bill_ids = set()
 
     gql_headers = {
         "Accept": "*/*",
@@ -60,8 +61,15 @@ class ALBillScraper(Scraper):
                 if title == "":
                     title = row["Subject"]
 
+                # prevent duplicates
+                bill_id = row["InstrumentNbr"]
+                if bill_id in self.bill_ids:
+                    continue
+                else:
+                    self.bill_ids.add(bill_id)
+
                 bill = Bill(
-                    identifier=row["InstrumentNbr"],
+                    identifier=bill_id,
                     legislative_session=session,
                     title=title,
                     chamber=chamber,
