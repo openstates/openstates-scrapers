@@ -93,7 +93,7 @@ class AKEventScraper(Scraper, LXMLMixin):
 
         if room_name:
             # Combine room name with building address for full address
-            location = f"{room_name}, {building}"
+            location = f"{room_name.upper()}, {building}"
         else:
             # No room name, so just use building address
             location = building
