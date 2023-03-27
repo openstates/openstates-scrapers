@@ -134,15 +134,17 @@ class LegList(HtmlListPage):
 
 
 class SenDetail(HtmlPage):
-    example_source = (
-        "https://senate.arkansas.gov/senators/missy-irvin/"
-    )
+    example_source = "https://senate.arkansas.gov/senators/missy-irvin/"
 
     def process_page(self):
         rows = XPath("//div[contains(@class,col-md-8)]/ul/li").match(self.root[0])
 
         image_container = CSS(".col-md-4").match(self.root)[0]
-        image = XPath("//img[contains(@alt, '" + self.input.name + "')]").match(image_container)[0].get('src')
+        image = (
+            XPath("//img[contains(@alt, '" + self.input.name + "')]")
+            .match(image_container)[0]
+            .get("src")
+        )
         image = image.split("?")[0]
 
         biocontainer = CSS(".panel-body").match(self.root)[0]
@@ -175,7 +177,7 @@ class SenDetail(HtmlPage):
                 table[item_name] = value
                 if item_name == "Legislative Service":
                     if value[0] != "H":
-                        value = value.replace('House', '; House')
+                        value = value.replace("House", "; House")
                     table[item_name] = value
                     break
 
@@ -236,12 +238,8 @@ class SenDetail(HtmlPage):
 
 
 class SenList(HtmlListPage):
-    source = (
-        "https://senate.arkansas.gov/senators/senators-sorted-by-congressional-district-and-seniority/"
-    )
-    selector = XPath(
-        "//div[contains(@class,'col-sm-6')]"
-    )
+    source = "https://senate.arkansas.gov/senators/senators-sorted-by-congressional-district-and-seniority/"
+    selector = XPath("//div[contains(@class,'col-sm-6')]")
     chamber = "upper"
 
     def process_item(self, item):
@@ -249,14 +247,14 @@ class SenList(HtmlListPage):
         nameFromDescription = description.split("\r\n")[2]
         link = list(item.iterlinks())
         (element, attr, url, position) = link[1]
-        p = PartialMember(name=nameFromDescription, chamber="upper", url=self.source.url)
+        p = PartialMember(
+            name=nameFromDescription, chamber="upper", url=self.source.url
+        )
         return SenDetail(p, source=url)
 
 
 class AssemblyDetail(HtmlPage):
-    example_source = (
-        "https://www.arkansashouse.org/district/1"
-    )
+    example_source = "https://www.arkansashouse.org/district/1"
 
     def process_page(self):
         heading = CSS(".py-sm-6").match(self.root)[0]
@@ -279,7 +277,9 @@ class AssemblyDetail(HtmlPage):
         }
 
         for k in table.keys():
-            value = XPath("//dt[. = '" + k + "']//following-sibling::dd").match(leftInfobox)[0]
+            value = XPath("//dt[. = '" + k + "']//following-sibling::dd").match(
+                leftInfobox
+            )[0]
             valueString = value.text_content()
             if len(valueString) > 0:
                 table[k] = valueString
@@ -309,13 +309,19 @@ class AssemblyDetail(HtmlPage):
         address += addressArray[4]
         table["District Address"] = address
 
+        # Get the district from the URL as a fallback
+        district = table["District"]
+        if not "District" in table or len(district) < 1:
+            urlParts = self.source.url.split()
+            district = urlParts[len(urlParts) - 1]
+
         p = ScrapePerson(
             name=name,
             state="ar",
             chamber=self.input.chamber,
             party=table["Party"],
             image=image,
-            district=table["District"],
+            district=district,
             email=table["Email"],
         )
         p.add_source(self.source.url)
@@ -344,12 +350,8 @@ class AssemblyDetail(HtmlPage):
 
 
 class AssemblyList(HtmlListPage):
-    source = (
-        "https://www.arkansashouse.org/representatives/members"
-    )
-    selector = XPath(
-        "//div[contains(@class,'col-sm-6')]"
-    )
+    source = "https://www.arkansashouse.org/representatives/members"
+    selector = XPath("//div[contains(@class,'col-sm-6')]")
     chamber = "lower"
 
     def process_item(self, item):
@@ -357,5 +359,7 @@ class AssemblyList(HtmlListPage):
         nameFromDescription = description.split("\n")[6].strip()
         link = list(item.iterlinks())
         (element, attr, url, position) = link[0]
-        p = PartialMember(name=nameFromDescription, chamber="lower", url=self.source.url)
+        p = PartialMember(
+            name=nameFromDescription, chamber="lower", url=self.source.url
+        )
         return AssemblyDetail(p, source=url)
