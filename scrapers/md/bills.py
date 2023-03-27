@@ -389,6 +389,7 @@ class MDBillScraper(Scraper):
         )[0].strip()
 
         if "OIS Test" in title:
+            self.warning(f"Ignoring test bill {bill_id} - {title}")
             return
 
         if "B" in bill_id:
