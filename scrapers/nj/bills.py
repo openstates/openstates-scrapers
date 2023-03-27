@@ -74,7 +74,9 @@ class NJBillScraper(Scraper, MDBMixin):
         "SUB FOR": ("Substituted for", None),
         "SUB BY": ("Substituted by", None),
         "PA": ("Passed Assembly", "passage"),
+        "PA File": ("Passed Assembly", "passage"),
         "PS": ("Passed Senate", "passage"),
+        "PS File": ("Passed Senate", "passage"),
         "PA PBH": ("Passed Assembly (Passed Both Houses)", "passage"),
         "PS PBH": ("Passed Senate (Passed Both Houses)", "passage"),
         "APP": ("Approved", "executive-signature"),
@@ -197,6 +199,7 @@ class NJBillScraper(Scraper, MDBMixin):
     _doctypes = {
         "FE": "Legislative Fiscal Estimate",
         "I": "Introduced Version",
+        "RI": "Reprint of Introduced",
         "S": "Statement",
         "V": "Veto",
         "FN": "Fiscal Note",
