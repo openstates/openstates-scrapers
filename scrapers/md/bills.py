@@ -388,6 +388,9 @@ class MDBillScraper(Scraper):
             '//dt[contains(text(), "Title")]/following-sibling::dd[1]/text()'
         )[0].strip()
 
+        if "OIS Test" in title:
+            return
+
         if "B" in bill_id:
             _type = ["bill"]
         elif "J" in bill_id:
