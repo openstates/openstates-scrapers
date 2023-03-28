@@ -1,4 +1,3 @@
-import datetime
 import json
 import lxml
 import re
@@ -123,6 +122,7 @@ class OHEventScraper(Scraper):
             event.add_participant(com_name, type="committee", note="host")
             event.add_document("Agenda", agenda_url, media_type="application/pdf")
             event.add_source(url)
+            event.dedupe_key = name
             event_count += 1
             yield event
         if event_count < 1:
