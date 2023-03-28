@@ -99,6 +99,7 @@ class RIEventScraper(Scraper, LXMLMixin):
 
         event.add_document("Agenda", url, media_type="text/html", on_duplicate="ignore")
         event.add_source(url)
+        event.dedupe_key = event_desc
 
         # aight. Let's get us some bills!
         bills = page.xpath("//b/a")
