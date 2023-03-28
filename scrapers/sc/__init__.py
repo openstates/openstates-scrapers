@@ -4,6 +4,8 @@ from openstates.scrape import State
 import requests
 import lxml.html
 
+settings = {"SCRAPELIB_RPM": 30}
+
 
 class SouthCarolina(State):
     scrapers = {
