@@ -3,7 +3,7 @@ import datetime
 
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
-from spatula import HtmlPage, PdfPage, URL, XPath
+from spatula import HtmlPage, PdfPage, URL, XPath, SelectorError
 import re
 
 
@@ -19,23 +19,23 @@ start_time_re = re.compile(r"Start\s*Time\s*(\d+)\s*(AM|PM)", flags=re.IGNORECAS
 class AgendaStartTime(PdfPage):
     def process_page(self):
         # Simplify text to make regex simpler
-        self.text = self.text.replace(". ", "").replace(".", "")
+        text = self.text.replace(". ", "").replace(".", "")
 
-        start = start_time_re.search(self.text)
+        start = start_time_re.search(text)
         if not start:
             # Default to 12am if no start time is found
-            return "12:00 am"
-        time, ampm = start.groups(1)
-        return f"{time}:00 {ampm}"
+            return "12:00 AM"
+        time, am_pm = start.groups(1)
+        return f"{time}:00 {am_pm}"
 
 
 class Agenda(PdfPage):
     def process_page(self):
         # Simplify text to make regex simpler
-        self.text = self.text.replace(". ", "").replace(".", "")
+        text = self.text.replace(". ", "").replace(".", "")
 
         # Find all bill ids
-        bills = bills_re.findall(self.text)
+        bills = bills_re.findall(text)
 
         # Format bills before yielding
         formatted_bills = set()
@@ -78,6 +78,7 @@ class Meetings(HtmlPage):
 
 class CurrentMeetings(HtmlPage):
     _TZ = pytz.timezone("PST8PDT")
+    time_in_date_re = re.compile(r"(.+\d+:\d{2}\s+)(AM|PM|A\.M\.|P\.M\.)")
 
     def process_page(self):
         meetings = []
@@ -97,13 +98,6 @@ class CurrentMeetings(HtmlPage):
                 cur_row = []
 
         for i in meetings:
-            # Second element contains: a link the the agenda pdf
-            # Grabbing the second element first because the start time from the
-            # agenda pdf may be needed
-            agenda = XPath(
-                './/a[@title="View the agenda for this meeting"]/@href'
-            ).match_one(i[1])
-
             # First element contains: the title and date
             title = XPath(".//h3/a[1]/text()").match_one(i[0])
 
@@ -127,18 +121,43 @@ class CurrentMeetings(HtmlPage):
             if add_joint_prefix:
                 title = f"{joint_prefix}{title}"
 
-            # Get start date
-            date = XPath(".//h3/a[2]/text()").match_one(i[0])
-            # Remove day of the week information
-            date = date.split(", ", 1)[1]
-            if "[" in date:
-                # Date contains "upon adjourment" instead of start time
-                date = date.split("[")[0]
+            agenda_bills = []
+
+            # Some committee events (committee floor meetings)
+            #  do not have an agenda -> no link to agenda PDF
+            try:
+                # Second element contains: a link to the agenda pdf
+                agenda = XPath(
+                    './/a[@title="View the agenda for this meeting"]/@href'
+                ).match_one(i[1])
+
                 # Check PDF for start time
                 agenda_start_time = next(AgendaStartTime(source=agenda).do_scrape())
-                date = f"{date}{agenda_start_time}"
 
-            date = datetime.datetime.strptime(date, "%B %d, %Y %I:%M %p")
+                # Add bills from PDF
+                for bill in Agenda(source=agenda).do_scrape():
+                    agenda_bills.append(bill)
+
+            except SelectorError:
+                agenda = None
+                agenda_start_time = ""
+
+            # Get start date
+            date = XPath(".//h3/a[2]/text()").match_one(i[0])
+
+            # Remove day of the week information
+            date = date.split(", ", 1)[1]
+
+            if "[" in date:
+                # Date contains "upon adjournment" instead of start time
+                date_only = date.split("[")[0]
+                date = f"{date_only}{agenda_start_time}"
+
+            date_and_time_match = self.time_in_date_re.search(date)
+            if date_and_time_match:
+                date = datetime.datetime.strptime(date, "%B %d, %Y %I:%M %p")
+            else:
+                date = datetime.datetime.strptime(date, "%B %d, %Y")
 
             # Third element contains: a list of locations
             locations = XPath(".//li/text()").match(i[2])
@@ -150,15 +169,18 @@ class CurrentMeetings(HtmlPage):
                 location_name=locations[0].replace("\u00a0", " "),
             )
             event.add_source(self.source.url)
-            event.add_document("Agenda", url=agenda, media_type="pdf")
+
+            if agenda:
+                event.add_document("Agenda", url=agenda, media_type="pdf")
 
             # Add committees from title string
             for committee in committees:
                 event.add_committee(committee)
 
-            # Add bills from pdf
-            for bill in Agenda(source=agenda).do_scrape():
+            # Add any bills that were collected from PDF
+            for bill in agenda_bills:
                 event.add_bill(bill)
+
             yield event
 
 
