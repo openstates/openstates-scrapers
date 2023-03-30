@@ -12,11 +12,16 @@ urls = {
     "lower": "https://www.ilga.gov/house/schedules/weeklyhearings.asp",
 }
 
+chamber_names = {
+    "upper": "Senate",
+    "lower": "House",
+}
+
 
 class IlEventScraper(Scraper):
     localize = pytz.timezone("America/Chicago").localize
 
-    def scrape_page(self, url):
+    def scrape_page(self, url, chamber):
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
@@ -37,8 +42,12 @@ class IlEventScraper(Scraper):
             metainf[key] = value
 
         where = metainf["Location:"]
-        subject_matter = metainf["Subject Matter:"]
-        description = "{}, {}".format(ctty_name, subject_matter)
+
+        description = f"{chamber} {ctty_name}"
+        # Remove committee suffix from names
+        committee_suffix = " Committee"
+        if description.endswith(committee_suffix):
+            description = description[: -len(committee_suffix)]
 
         datetime = metainf["Scheduled Date:"]
         datetime = re.sub(r"\s+", " ", datetime)
@@ -72,7 +81,6 @@ class IlEventScraper(Scraper):
         no_scheduled_ct = 0
 
         for chamber in ("upper", "lower"):
-
             try:
                 url = urls[chamber]
             except KeyError:
@@ -91,7 +99,9 @@ class IlEventScraper(Scraper):
             for table in tables:
                 meetings = table.xpath(".//a")
                 for meeting in meetings:
-                    event, name = self.scrape_page(meeting.attrib["href"])
+                    event, name = self.scrape_page(
+                        meeting.attrib["href"], chamber_names[chamber]
+                    )
                     if event and name:
                         if name in events:
                             self.warning(f"Duplicate event {name}")
