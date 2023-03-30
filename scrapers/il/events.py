@@ -17,6 +17,8 @@ chamber_names = {
     "lower": "House",
 }
 
+bill_re = re.compile(r"(\w+?)\s*0*(\d+)")
+
 
 class IlEventScraper(Scraper):
     localize = pytz.timezone("America/Chicago").localize
@@ -72,6 +74,11 @@ class IlEventScraper(Scraper):
                 continue
             # First, let's get the bill ID:
             bill_id = tds[0].text_content()
+
+            # Apply correct spacing to bill id
+            (alpha, num) = bill_re.match(bill_id).groups()
+            bill_id = f"{alpha} {num}"
+
             agenda_item = event.add_agenda_item(bill_id)
             agenda_item.add_bill(bill_id)
 
