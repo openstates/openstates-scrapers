@@ -17,7 +17,13 @@ chamber_names = {
     "lower": "House",
 }
 
+# Used to extract parts of bill id
 bill_re = re.compile(r"(\w+?)\s*0*(\d+)")
+
+# Used to remove prefixes from committee name
+ctty_name_re = re.compile(
+    r"(hearing notice for )?(senate )?(house )?(.*)", flags=re.IGNORECASE
+)
 
 
 class IlEventScraper(Scraper):
@@ -29,6 +35,9 @@ class IlEventScraper(Scraper):
         doc.make_links_absolute(url)
 
         ctty_name = doc.xpath("//span[@class='heading']")[0].text_content()
+
+        # Remove prefixes from the name like "Hearing notice for"
+        ctty_name = ctty_name_re.match(ctty_name).group(4)
 
         tables = doc.xpath("//table[@cellpadding='3']")
         if not tables:
@@ -63,8 +72,6 @@ class IlEventScraper(Scraper):
         event.dedupe_key = event_name
         event.add_source(url)
 
-        if ctty_name.startswith("Hearing Notice For"):
-            ctty_name.replace("Hearing Notice For", "")
         event.add_participant(ctty_name, "organization")
 
         bills = tables[1]
