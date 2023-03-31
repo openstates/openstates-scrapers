@@ -62,7 +62,7 @@ class IlEventScraper(Scraper):
         # Add spacing around hyphens
         if "-" in description:
             descr_parts = description.split("-")
-            description = " - ".join([x.strip() for x in description])
+            description = " - ".join([x.strip() for x in descr_parts])
 
         datetime = metainf["Scheduled Date:"]
         datetime = re.sub(r"\s+", " ", datetime)
