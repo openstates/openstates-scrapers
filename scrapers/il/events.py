@@ -59,6 +59,10 @@ class IlEventScraper(Scraper):
         committee_suffix = " Committee"
         if description.endswith(committee_suffix):
             description = description[: -len(committee_suffix)]
+        # Add spacing around hyphens
+        if "-" in description:
+            descr_parts = description.split("-")
+            description = " - ".join([x.strip() for x in description])
 
         datetime = metainf["Scheduled Date:"]
         datetime = re.sub(r"\s+", " ", datetime)
