@@ -29,12 +29,13 @@ replace = {
 class RIEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Eastern")
     found_events = False
+    event_keys = set()
 
     def scrape_agenda(self, chamber, url):
         page = self.lxmlize(url)
         # Get the date/time info:
         date_time = page.xpath("//table[@class='time_place']")
-        if date_time == []:
+        if not date_time:
             return
 
         date_time = date_time[0]
@@ -99,8 +100,14 @@ class RIEventScraper(Scraper, LXMLMixin):
         event.add_source(url)
 
         # Unique key for preventing triggering of duplicate item error
-        event_name = f"{event_desc}#{event_start}#{where}"
-        event.dedupe_key = event_name
+        event_details_key = f"{event_desc}#{event_start}#{where}"
+
+        if event_details_key in self.event_keys:
+            self.warning(f"Duplicate event {event.dedupe_key}")
+        else:
+            self.event_keys.add(event_details_key)
+
+        event.dedupe_key = event_details_key
 
         # aight. Let's get us some bills!
         bills = page.xpath("//b/a")
