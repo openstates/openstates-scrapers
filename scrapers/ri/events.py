@@ -92,14 +92,15 @@ class RIEventScraper(Scraper, LXMLMixin):
                 break
             except ValueError:
                 continue
-
-        event = Event(
-            name=event_desc, start_date=self._tz.localize(datetime), location_name=where
-        )
+        event_start = self._tz.localize(datetime)
+        event = Event(name=event_desc, start_date=event_start, location_name=where)
 
         event.add_document("Agenda", url, media_type="text/html", on_duplicate="ignore")
         event.add_source(url)
-        event.dedupe_key = event_desc
+
+        # Unique key for preventing triggering of duplicate item error
+        event_name = f"{event_desc}#{event_start}#{where}"
+        event.dedupe_key = event_name
 
         # aight. Let's get us some bills!
         bills = page.xpath("//b/a")
