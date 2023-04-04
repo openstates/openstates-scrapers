@@ -30,11 +30,11 @@ class RIEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Eastern")
     found_events = False
 
-    def scrape_agenda(self, chamber, url):
+    def scrape_agenda(self, chamber, url, event_keys):
         page = self.lxmlize(url)
         # Get the date/time info:
         date_time = page.xpath("//table[@class='time_place']")
-        if date_time == []:
+        if not date_time:
             return
 
         date_time = date_time[0]
@@ -92,14 +92,22 @@ class RIEventScraper(Scraper, LXMLMixin):
                 break
             except ValueError:
                 continue
+        event_start = self._tz.localize(datetime)
 
-        event = Event(
-            name=event_desc, start_date=self._tz.localize(datetime), location_name=where
-        )
+        # Unique key to prevent triggering of DuplicateItemError during import,
+        #  so duplication check can be conducted below instead
+        event_details_key = f"{chamber}#{event_desc}#{event_start}#{where}"
 
+        if event_details_key in event_keys:
+            self.warning(f"Skipping duplicate event: {event_details_key}")
+            return
+        else:
+            event_keys.add(event_details_key)
+
+        event = Event(name=event_desc, start_date=event_start, location_name=where)
+        event.dedupe_key = event_details_key
         event.add_document("Agenda", url, media_type="text/html", on_duplicate="ignore")
         event.add_source(url)
-        event.dedupe_key = event_desc
 
         # aight. Let's get us some bills!
         bills = page.xpath("//b/a")
@@ -168,21 +176,23 @@ class RIEventScraper(Scraper, LXMLMixin):
             event.add_participant(committee, "committee", note="host")
 
         self.found_events = True
+
         yield event
 
-    def scrape_agenda_dir(self, chamber, url):
+    def scrape_agenda_dir(self, chamber, url, event_keys):
         page = self.lxmlize(url)
         rows = page.xpath("//table[@class='agenda_table']/tr")[1:]
         for row in rows:
             url = row.xpath("./td")[-1].xpath(".//a")[0]
-            yield from self.scrape_agenda(chamber, url.attrib["href"])
+            yield from self.scrape_agenda(chamber, url.attrib["href"], event_keys)
 
     def scrape(self, chamber=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
+        event_keys = set()
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber)
+            yield from self.scrape_chamber(chamber, event_keys)
 
-    def scrape_chamber(self, chamber):
+    def scrape_chamber(self, chamber, event_keys):
         offset = column_order[chamber]
         page = self.lxmlize(agenda_url)
         rows = page.xpath("//table[@class='agenda_table']/tr")[1:]
@@ -190,7 +200,9 @@ class RIEventScraper(Scraper, LXMLMixin):
             ctty = row.xpath("./td")[offset]
             to_scrape = ctty.xpath("./a")
             for page in to_scrape:
-                yield from self.scrape_agenda_dir(chamber, page.attrib["href"])
+                yield from self.scrape_agenda_dir(
+                    chamber, page.attrib["href"], event_keys
+                )
 
         if not self.found_events:
             raise EmptyScrape
