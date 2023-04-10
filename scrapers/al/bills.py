@@ -55,7 +55,7 @@ class ALBillScraper(Scraper):
 
             for row in page["data"]["allInstrumentOverviews"]:
                 chamber = self.chamber_map[row["Body"]]
-                title = row["ShortTitle"]
+                title = row["ShortTitle"].strip()
 
                 # some recently filed bills have no title, but a good subject which is close
                 if title == "":
