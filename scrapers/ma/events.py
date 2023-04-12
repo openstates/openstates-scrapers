@@ -16,20 +16,21 @@ class MAEventScraper(Scraper, LXMLMixin):
     non_session_count = 0
 
     def scrape(self, chamber=None, start=None, end=None):
+        dtdelta = datetime.timedelta(days=30)
+
         if start is None:
-            start_date = datetime.datetime.now().strftime(self.date_format)
+            start_date = datetime.datetime.now() - dtdelta
         else:
             start_date = datetime.datetime.strptime(start, "%Y-%m-%d")
-            start_date = start_date.strftime(self.date_format)
+        start_date = start_date.strftime(self.date_format)
 
         # default to 30 days if no end
         if end is None:
-            dtdelta = datetime.timedelta(days=30)
             end_date = datetime.datetime.now() + dtdelta
-            end_date = end_date.strftime(self.date_format)
         else:
             end_date = datetime.datetime.strptime(end, "%Y-%m-%d")
-            end_date = end_date.strftime(self.date_format)
+
+        end_date = end_date.strftime(self.date_format)
 
         url = "https://malegislature.gov/Events/FilterEventResults"
 
@@ -137,6 +138,13 @@ class MAEventScraper(Scraper, LXMLMixin):
 
         if event_type == "Hearing":
             event.add_participant(title, type="committee", note="host")
+
+        video_srcs = page.xpath("//video/source")
+        if video_srcs:
+            for video_src in video_srcs:
+                video_url = video_src.xpath("@src")[0].strip()
+                video_mime = video_src.xpath("@type")[0]
+                event.add_media_link("Hearing Video", video_url, video_mime)
 
         self.non_session_count += 1
         yield event
