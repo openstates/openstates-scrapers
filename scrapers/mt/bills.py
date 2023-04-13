@@ -72,6 +72,10 @@ class MTBillScraper(Scraper, LXMLMixin):
         )
 
     def scrape(self, chamber=None, session=None):
+        # adjust scrapelib settings to prevent ConnectionError
+        self.retry_attempts = 10
+        self.retry_wait_seconds = 30
+
         # set default parameters
         chambers = [chamber] if chamber else ["upper", "lower"]
 
