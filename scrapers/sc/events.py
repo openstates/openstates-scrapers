@@ -80,6 +80,8 @@ class SCEventScraper(Scraper):
 
     prior_event_time_string = None
 
+    event_keys = set()
+
     def get_page_from_url(self, url):
         """
         Get page from the provided url and change to string
@@ -207,6 +209,13 @@ class SCEventScraper(Scraper):
                 else:
                     classification = "other-meeting"
 
+                event_key = f"{description}#{location}#{date_time}"
+
+                if event_key in self.event_keys:
+                    continue
+                else:
+                    self.event_keys.add(event_key)
+
                 event = Event(
                     name=description,  # Event Name
                     start_date=date_time,  # When the event will take place
@@ -214,6 +223,8 @@ class SCEventScraper(Scraper):
                     classification=classification,
                     status=status,
                 )
+
+                event.dedupe_key = event_key
 
                 if "committee" in description.lower():
                     event.add_participant(description, type="committee", note="host")
