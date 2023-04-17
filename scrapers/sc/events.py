@@ -78,6 +78,8 @@ class SCEventScraper(Scraper):
     jurisdiction = "sc"
     _tz = pytz.timezone("US/Eastern")
 
+    prior_event_time_string = None
+
     def get_page_from_url(self, url):
         """
         Get page from the provided url and change to string
@@ -153,7 +155,7 @@ class SCEventScraper(Scraper):
             else:
                 continue
 
-            # If a event is in the next calendar year, the date_string
+            # If an event is in the next calendar year, the date_string
             # will have a year in it
             if date_string.count(",") == 2:
                 event_year = date_string[-4:]
@@ -172,6 +174,15 @@ class SCEventScraper(Scraper):
                 ):
                     status = "cancelled"
 
+                # For cases when time string is listed as a reference to prior
+                #  event's start time:
+                #   i.e. "Immediately after EOC full committee"
+                if "after" in time_string:
+                    time_string = self.prior_event_time_string
+
+                # Set attribute to be used for following event, as above case
+                self.prior_event_time_string = time_string
+
                 time_string = normalize_time(time_string)
                 date_time = datetime.datetime.strptime(
                     f"{event_year} {date_string} {time_string}",
@@ -179,6 +190,7 @@ class SCEventScraper(Scraper):
                 )
 
                 date_time = self._tz.localize(date_time)
+
                 try:
                     meeting_info = meeting.xpath("br[1]/preceding-sibling::node()")[1]
                     location, description = re.search(
