@@ -43,6 +43,7 @@ class CommitteeList(HtmlListPage):
 
 class CommitteeDetail(HtmlPage):
 
+    # Matches names with misplaced suffixes
     jr_sr_regex = re.compile(r"(.*)\s+(Jr|Jr\.|Sr|Sr\.)\s+(.*)")
 
     def process_page(self):
@@ -62,6 +63,8 @@ class CommitteeDetail(HtmlPage):
                 name_parts = name.split(", ")
                 name = ", ".join([name_parts[1], name_parts[0]])
 
+            # Name reformatting in cases of misplaced suffixes
+            #  ex. Stewart Jr. Cathey --> Stewart Cathey, Jr.
             jr_sr_match = self.jr_sr_regex.search(name)
             if jr_sr_match:
                 given, suffix, family = jr_sr_match.groups()
