@@ -498,33 +498,43 @@ class MTBillScraper(Scraper, LXMLMixin):
                         chamber=chamber, date=date, action=action, vote_url=vote_url
                     )
 
-                    # Update the vote object with voters..
-                    vote = self._parse_votes(vote_url, vote, bill)
-                    if vote:
-                        yield vote
+                    if vote_url.lower().endswith(".pdf"):
+                        # Skipping for now to avoid errors that may be resulting
+                        #  from attempted PDF parsing.
+                        # vote = self._parse_pdf_votes(vote_url, vote, bill)
+                        continue
+                    else:
+                        # Update the vote object with voters..
+                        vote = self._parse_html_votes(vote_url, vote, bill)
+                        if vote:
+                            yield vote
 
-    def _parse_votes(self, url, vote, bill):
+    def _parse_pdf_votes(self, url, bill):
+        """
+        Note: Currently being skipped.
+        """
+        # TODO: test method along with `PDFCommitteeVote` class
+        #  to determine solution for successful PDF parsing
+        try:
+            resp = self.get(url)
+        except HTTPError:
+            # This vote document wasn't found.
+            msg = "No document found at url %r" % url
+            self.logger.warning(msg)
+            return
+
+        try:
+            v = PDFCommitteeVote(url, resp.content, bill)
+            return v.asvote()
+        except PDFCommitteeVoteParseError:
+            # Warn and skip.
+            self.warning("Could't parse committee vote at %r" % url)
+            return
+
+    def _parse_html_votes(self, url, vote, bill):
         """Given a vote url and a vote object, extract the voters and
         the vote counts from the vote page and update the vote object.
         """
-        if url.lower().endswith(".pdf"):
-
-            try:
-                resp = self.get(url)
-            except HTTPError:
-                # This vote document wasn't found.
-                msg = "No document found at url %r" % url
-                self.logger.warning(msg)
-                return
-
-            try:
-                v = PDFCommitteeVote(url, resp.content, bill)
-                return v.asvote()
-            except PDFCommitteeVoteParseError:
-                # Warn and skip.
-                self.warning("Could't parse committee vote at %r" % url)
-                return
-
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
