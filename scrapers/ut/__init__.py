@@ -322,6 +322,7 @@ class Utah(State):
         },
     ]
     ignored_scraped_sessions = [
+        "2024 General Session",
         "2013 1st House Session",
         "2011 Veto Override Session",
         "2010 2nd Special Session",
