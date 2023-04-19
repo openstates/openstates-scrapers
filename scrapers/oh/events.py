@@ -15,6 +15,8 @@ import cloudscraper
 
 from spatula import PdfPage, URL
 
+from scrapelib import HTTPError
+
 
 class Agenda(PdfPage):
     bill_re = re.compile(r"(\W|^)(SJR|HCR|HB|HR|SCR|SB|HJR|SR)\s{0,8}0*(\d+)")
@@ -52,6 +54,8 @@ class OHEventScraper(Scraper):
 
     scraper = cloudscraper.create_scraper()
 
+    dedupe_keys = set()
+
     def scrape(self, start=None, end=None):
         if start is None:
             start = dt.datetime.today()
@@ -74,7 +78,13 @@ class OHEventScraper(Scraper):
 
         event_count = 0
         for item in data:
+            agenda_bill_ids = []
+
             name = item["title"].strip()
+
+            when = dateutil.parser.parse(item["start"])
+            when = self._tz.localize(when)
+
             status = "tentative"
             if "canceled" in name.lower():
                 status = "cancelled"
@@ -90,40 +100,64 @@ class OHEventScraper(Scraper):
 
             url = f"{self.base_url}{item['url']}"
 
-            when = dateutil.parser.parse(item["start"])
-            when = self._tz.localize(when)
-
             page = self.scraper.get(url).content
             page = lxml.html.fromstring(page)
 
-            location = page.xpath(
-                '//div[h2[contains(text(), "Location")]]/p[3]/text()'
-            )[0].strip()
-            agenda_url = page.xpath(
-                '//a[contains(@class,"link-button") and contains(text(),"Agenda")]/@href'
-            )[0]
+            if "Internal Server Error" in page.text_content():
+                self.warning(f"{name} at {when}: Room # and Agenda cannot be scraped")
+                location = "1 Capitol Square, Columbus, OH 43215"
+                agenda_url = None
+            else:
+                location = page.xpath(
+                    '//div[h2[contains(text(), "Location")]]/p[3]/text()'
+                )[0].strip()
+                if re.match(r"Room \d+", location, flags=re.IGNORECASE):
+                    location = f"{location}, 1 Capitol Square, Columbus, OH 43215"
+                agenda_url = page.xpath(
+                    '//a[contains(@class,"link-button") and contains(text(),"Agenda")]/@href'
+                )[0]
+                # Scrape bill ids from the agenda PDF
+                # The server only returns data if a user agent is supplied
+                headers = {"User-Agent": "curl/7.88.1"}
+                try:
+                    for bill_id in Agenda(
+                        source=URL(agenda_url, headers=headers)
+                    ).do_scrape():
+                        agenda_bill_ids.append(bill_id)
+                except HTTPError:
+                    self.warning(
+                        f"scrapelib.HTTPError: Skipping agenda scrape for "
+                        f"{when} - {name}"
+                    )
+                    agenda_url = None
 
-            if re.match(r"Room \d+", location, flags=re.IGNORECASE):
-                location = f"{location}, 1 Capitol Square, Columbus, OH 43215"
+            event_key = f"{name}#{when}#{location}"
+            if event_key in self.dedupe_keys:
+                continue
+            else:
+                self.dedupe_keys.add(event_key)
 
             event = Event(
                 name=name, start_date=when, location_name=location, status=status
             )
 
-            # Scrape bill ids from the agenda PDF
-            # The server only returns data if a user agent is supplied
-            headers = {"User-Agent": "curl/7.88.1"}
-            for bill_id in Agenda(source=URL(agenda_url, headers=headers)).do_scrape():
-                event.add_bill(bill_id)
+            event.dedupe_key = event_key
 
+            if agenda_url:
+                event.add_document("Agenda", agenda_url, media_type="application/pdf")
+
+            for bill in agenda_bill_ids:
+                event.add_bill(bill)
             match_coordinates(event, {"1 Capitol Square": (39.96019, -82.99946)})
 
             com_name = name.replace("Meeting", "").replace("CANCELED", "").strip()
             event.add_participant(com_name, type="committee", note="host")
-            event.add_document("Agenda", agenda_url, media_type="application/pdf")
+
             event.add_source(url)
-            event.dedupe_key = name
+
             event_count += 1
+
             yield event
+
         if event_count < 1:
             raise EmptyScrape
