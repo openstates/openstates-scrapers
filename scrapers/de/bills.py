@@ -52,11 +52,11 @@ class DEBillScraper(Scraper, LXMLMixin):
     def filter_bills(self, items):
         """
         Read through all bills on a page. If a bill has no subsitutes,
-        yield it. If a bill does have substitutes, keep the highest-
-        numbered substitute and only yield that Bill object.
+        yield it. If a bill does have substitutes, keep the highest-numbered
+        substitute and only yield that Bill object.
         Bills may be amended (`BILL_ID w/ AMENDMENT ID` on the website),
         but if that is the case then the original (unamended) version
-        should not exist any more.
+        should not exist anymore.
         """
         # Map of {bill_id: bill}
         bills = {}
@@ -210,7 +210,12 @@ class DEBillScraper(Scraper, LXMLMixin):
         }
 
         self.info("Fetching legislators")
-        page = self.post(url=search_form_url, data=form, allow_redirects=True).json()
+        page = self.post(
+            url=search_form_url,
+            data=form,
+            allow_redirects=True,
+            verify=False,
+        ).json()
         assert page["Data"], "Cound not fetch legislators!"
         for row in page["Data"]:
             self.legislators[str(row["PersonId"])] = row
@@ -452,7 +457,14 @@ class DEBillScraper(Scraper, LXMLMixin):
             "fromIntroDate": "",
             "toIntroDate": "",
         }
-        page = self.post(url=search_form_url, data=form, allow_redirects=True).json()
+
+        page = self.post(
+            url=search_form_url,
+            data=form,
+            allow_redirects=True,
+            verify=False,
+        ).json()
+
         return page
 
     def mime_from_link(self, link):

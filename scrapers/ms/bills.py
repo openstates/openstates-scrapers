@@ -348,6 +348,7 @@ class MSBillScraper(Scraper):
         "Passed As Amended": ("Passage as Amended", True),
         "Adopted As Amended": ("Passage as Amended", True),
         "Appointment Confirmed": ("Appointment Confirmation", True),
+        "Appointment Not Confirmed": ("Appointment Confirmation", False),
         "Committee Substitute Adopted": ("Adopt Committee Substitute", True),
         "Committee Substitute Failed": ("Adopt Committee Substitute", False),
         "Conference Report Filed": ("Conference Report Filed", True),

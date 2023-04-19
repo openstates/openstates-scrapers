@@ -80,6 +80,10 @@ class AZEventScraper(Scraper):
             else:
                 event_title = web_event["title"]
 
+            if event_title is None:
+                self.warning("No event title, skipping")
+                continue
+
             event_loc = web_event["body"]
             if event_loc in ["H", "S", "I"]:
                 event_loc = "1700 W. Washington St., Phoenix, Arizona, 85007"
@@ -110,7 +114,6 @@ class AZEventScraper(Scraper):
                 event.add_document("Agenda", pdf_url, media_type="application/pdf")
 
             event.add_source("https://www.azleg.gov/Alis-Today/")
-
             yield event
 
     def scrape_chamber(self, chamber):
