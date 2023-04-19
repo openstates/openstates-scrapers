@@ -89,6 +89,7 @@ class ALBillScraper(Scraper):
 
                 self.scrape_versions(bill, row)
                 self.scrape_actions(bill, row)
+                self.scrape_fiscal_notes(bill)
 
                 bill.add_source("https://alison.legislature.state.al.us/bill-search")
                 if row["InstrumentUrl"]:
@@ -178,4 +179,26 @@ class ALBillScraper(Scraper):
                 description=action_text,
                 date=action_date,
                 classification=action_class,
+            )
+
+    def scrape_fiscal_notes(self, bill):
+        bill_id = bill.identifier.replace(" ", "")
+        bill_type = "B" if "B" in bill_id else "R"
+
+        # {fiscalNotesBySessionYearInstrumentNbr(sessionType:\"2023 Regular Session\", sessionYear:\"2023\", instrumentNbr:\"HB246\", instrumentType:\"B\", ){ FiscalNoteDescription, FiscalNoteUrl, OidFiscalNote, SortOrder }}
+        json_data = {
+            "query": f'{{fiscalNotesBySessionYearInstrumentNbr(instrumentType:"{bill_type}", instrumentNbr:"{bill_id}", sessionYear:"{self.session_year}", sessionType:"{self.session_type}"){{ FiscalNoteDescription, FiscalNoteUrl, OidFiscalNote, SortOrder }}}}',
+            "operationName": "",
+            "variables": [],
+        }
+
+        page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
+        page = json.loads(page.content)
+
+        for row in page["data"]["fiscalNotesBySessionYearInstrumentNbr"]:
+            bill.add_document_link(
+                f"Fiscal Note: {row['FiscalNoteDescription']}",
+                row["FiscalNoteUrl"],
+                media_type="application/pdf",
+                on_duplicate="ignore",
             )
