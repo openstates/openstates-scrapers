@@ -1,9 +1,11 @@
 import pytz
 import json
+import lxml
 import re
 import datetime
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.exceptions import EmptyScrape
+from utils.media import get_media_type
 from .actions import Categorizer
 
 
@@ -180,6 +182,21 @@ class ALBillScraper(Scraper):
                 date=action_date,
                 classification=action_class,
             )
+
+            if row["AmdSubUrl"] != "":
+                page = lxml.html.fromstring(row["AmdSubUrl"])
+                link = page.xpath("//a")[0]
+                amd_url = link.xpath("@href")[0]
+                amd_name = link.xpath("text()")[0].strip()
+                amd_name = f"Amendment {amd_name}"
+                if row["Committee"] != "":
+                    amd_name = f"{row['Committee']} {amd_name}"
+
+                bill.add_version_link(
+                    amd_name,
+                    url=amd_url,
+                    media_type=get_media_type(amd_url),
+                )
 
             if int(row["VoteNbr"]) > 0:
                 yield from self.scrape_vote(bill, row)
