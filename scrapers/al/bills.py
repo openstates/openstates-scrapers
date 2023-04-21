@@ -229,7 +229,7 @@ class ALBillScraper(Scraper):
             result="pass" if passed else "fail",
             chamber=vote_chamber,
             bill=bill,
-            classification="other",
+            classification=[],
         )
         vote.set_count("yes", int(first_vote["Yeas"]))
         vote.set_count("no", int(first_vote["Nays"]))
