@@ -2,7 +2,7 @@ import pytz
 import json
 import re
 import datetime
-from openstates.scrape import Scraper, Bill
+from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.exceptions import EmptyScrape
 from .actions import Categorizer
 
@@ -11,6 +11,7 @@ class ALBillScraper(Scraper):
     categorizer = Categorizer()
     chamber_map = {"Senate": "upper", "House": "lower"}
     bill_types = {"B": "bill", "R": "resolution"}
+    vote_types = {"P": "not voting", "A": "abstain", "Y": "yes", "N": "no"}
     tz = pytz.timezone("US/Eastern")
     chamber_map_short = {"S": "upper", "H": "lower"}
     gql_url = "https://gql.api.alison.legislature.state.al.us/graphql"
@@ -88,8 +89,8 @@ class ALBillScraper(Scraper):
                 )
 
                 self.scrape_versions(bill, row)
-                self.scrape_actions(bill, row)
                 self.scrape_fiscal_notes(bill)
+                yield from self.scrape_actions(bill, row)
 
                 bill.add_source("https://alison.legislature.state.al.us/bill-search")
                 if row["InstrumentUrl"]:
@@ -153,12 +154,13 @@ class ALBillScraper(Scraper):
             )
 
         # Can this be ANDED together with the other graphql query?
-        # WARNING: 2023 session id is currently hardcoded
         json_data = {
             "query": f'{{instrumentHistoryBySessionYearInstNbr(sessionType:"{self.session_type}", sessionYear:"{self.session_year}", instrumentNbr:"{row["InstrumentNbr"]}", ){{ InstrumentNbr,SessionYear,SessionType,CalendarDate,Body,AmdSubUrl,Matter,Committee,Nay,Yea,Vote,VoteNbr }}}}',
             "operationName": "",
             "variables": [],
         }
+
+        print(json_data)
 
         page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
         page = json.loads(page.content)
@@ -181,6 +183,9 @@ class ALBillScraper(Scraper):
                 classification=action_class,
             )
 
+            if int(row["VoteNbr"]) > 0:
+                yield from self.scrape_vote(bill, row)
+
     def scrape_fiscal_notes(self, bill):
         bill_id = bill.identifier.replace(" ", "")
         bill_type = "B" if "B" in bill_id else "R"
@@ -202,3 +207,45 @@ class ALBillScraper(Scraper):
                 media_type="application/pdf",
                 on_duplicate="ignore",
             )
+
+    def scrape_vote(self, bill, action_row):
+        print(action_row)
+        cal_date = self.transform_date(action_row["CalendarDate"])
+        json_data = {
+            "query": f'{{rollCallVotesByRollNbr( instrumentNbr:"{action_row["InstrumentNbr"]}", sessionYear:"{self.session_year}", sessionType:"{self.session_type}", calendarDate:"{cal_date}", rollNumber:"{action_row["VoteNbr"]}"){{ FullName,Vote,Yeas,Nays,Abstains,Pass }}}}',
+            "operationName": "",
+            "variables": [],
+        }
+        print(json_data)
+        page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
+        print(page.content)
+        page = json.loads(page.content)
+
+        first_vote = page["data"]["rollCallVotesByRollNbr"][0]
+
+        passed = first_vote["Yeas"] > (first_vote["Nays"] + first_vote["Abstains"])
+
+        vote = VoteEvent(
+            start_date=cal_date,
+            motion_text=action_row["Matter"],
+            result="pass" if passed else "fail",
+            chamber=self.chamber_map_short[action_row["Body"]],
+            bill=bill,
+            classification="passage",
+        )
+        vote.set_count("yes", int(first_vote["Yeas"]))
+        vote.set_count("no", int(first_vote["Nays"]))
+        vote.set_count("abstain", int(first_vote["Abstains"]))
+        # Pass in AL is "i am passing on voting" not "i want the bill to pass"
+        vote.set_count("not voting", int(first_vote["Pass"]))
+        vote.add_source("https://alison.legislature.state.al.us/bill-search")
+
+        for row in page["data"]["rollCallVotesByRollNbr"]:
+            vote.vote(self.vote_types[row["Vote"]], row["FullName"])
+
+        yield vote
+
+    # The api gives us dates as m-d-y but needs them in Y-m-d
+    def transform_date(self, date: str) -> str:
+        date = datetime.datetime.strptime(date, "%m-%d-%Y")
+        return date.strftime("%Y-%m-%d")
