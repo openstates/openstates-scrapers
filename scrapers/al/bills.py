@@ -160,8 +160,6 @@ class ALBillScraper(Scraper):
             "variables": [],
         }
 
-        print(json_data)
-
         page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
         page = json.loads(page.content)
 
@@ -209,29 +207,29 @@ class ALBillScraper(Scraper):
             )
 
     def scrape_vote(self, bill, action_row):
-        print(action_row)
         cal_date = self.transform_date(action_row["CalendarDate"])
         json_data = {
             "query": f'{{rollCallVotesByRollNbr( instrumentNbr:"{action_row["InstrumentNbr"]}", sessionYear:"{self.session_year}", sessionType:"{self.session_type}", calendarDate:"{cal_date}", rollNumber:"{action_row["VoteNbr"]}"){{ FullName,Vote,Yeas,Nays,Abstains,Pass }}}}',
             "operationName": "",
             "variables": [],
         }
-        print(json_data)
         page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
-        print(page.content)
         page = json.loads(page.content)
 
         first_vote = page["data"]["rollCallVotesByRollNbr"][0]
-
         passed = first_vote["Yeas"] > (first_vote["Nays"] + first_vote["Abstains"])
+
+        vote_chamber = self.chamber_map_short[action_row["Body"]]
+        motion = f"Roll of the {action_row['Body']} for Vote {action_row['VoteNbr']} on {action_row['InstrumentNbr']} ({self.session_type})"
 
         vote = VoteEvent(
             start_date=cal_date,
-            motion_text=action_row["Matter"],
+            motion_text=motion,
+            bill_action=action_row["Matter"],
             result="pass" if passed else "fail",
-            chamber=self.chamber_map_short[action_row["Body"]],
+            chamber=vote_chamber,
             bill=bill,
-            classification="passage",
+            classification="other",
         )
         vote.set_count("yes", int(first_vote["Yeas"]))
         vote.set_count("no", int(first_vote["Nays"]))
@@ -245,7 +243,7 @@ class ALBillScraper(Scraper):
 
         yield vote
 
-    # The api gives us dates as m-d-y but needs them in Y-m-d
+    # The api gives us dates as m-d-Y but needs them in Y-m-d
     def transform_date(self, date: str) -> str:
         date = datetime.datetime.strptime(date, "%m-%d-%Y")
         return date.strftime("%Y-%m-%d")
