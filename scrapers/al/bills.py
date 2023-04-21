@@ -3,6 +3,7 @@ import json
 import lxml
 import re
 import datetime
+import dateutil
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.exceptions import EmptyScrape
 from utils.media import get_media_type
@@ -144,12 +145,50 @@ class ALBillScraper(Scraper):
                 media_type="application/pdf",
             )
 
-    def scrape_actions(self, bill, row):
-        if row["PrefiledDate"]:
-            action_date = datetime.datetime.strptime(row["PrefiledDate"], "%m/%d/%Y")
+    # the search JSON contains the act reference, but not the date,
+    # which we need to build the action. It's on the act page at the SoS though.
+    def scrape_act(self, bill, link):
+        act_page = lxml.html.fromstring(link)
+        link = act_page.xpath("//a")[0]
+        url = link.xpath("@href")[0]
+        act_number = link.xpath("text()")[0].replace("View Act", "").strip()
+
+        page = self.get(url).content
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+
+        # second td in the row containing Approved Date and Time
+        act_date = page.xpath(
+            '//tr[td[contains(text(),"Approved Date and Time")]]/td[2]/text()'
+        )[0]
+        act_date = act_date.strip().replace("&nbsp;", "")
+        action_date = dateutil.parser.parse(act_date)
+        action_date = self.tz.localize(action_date)
+        bill.add_action(
+            chamber="executive",
+            description=f"Enacted as {act_number}",
+            date=action_date,
+            classification="became-law",
+        )
+
+        if page.xpath("//a[input[@value='View Image']]"):
+            act_text_url = page.xpath("//a[input[@value='View Image']]/@href")[0]
+            bill.add_version_link(
+                f"Act {act_number}",
+                act_text_url,
+                media_type=get_media_type(act_text_url),
+            )
+
+        bill.extras["AL_ACT_NUMBER"] = act_number
+
+    def scrape_actions(self, bill, bill_row):
+        if bill_row["PrefiledDate"]:
+            action_date = datetime.datetime.strptime(
+                bill_row["PrefiledDate"], "%m/%d/%Y"
+            )
             action_date = self.tz.localize(action_date)
             bill.add_action(
-                chamber=self.chamber_map[row["Body"]],
+                chamber=self.chamber_map[bill_row["Body"]],
                 description="Filed",
                 date=action_date,
                 classification="filing",
@@ -157,7 +196,7 @@ class ALBillScraper(Scraper):
 
         # Can this be ANDED together with the other graphql query?
         json_data = {
-            "query": f'{{instrumentHistoryBySessionYearInstNbr(sessionType:"{self.session_type}", sessionYear:"{self.session_year}", instrumentNbr:"{row["InstrumentNbr"]}", ){{ InstrumentNbr,SessionYear,SessionType,CalendarDate,Body,AmdSubUrl,Matter,Committee,Nay,Yea,Vote,VoteNbr }}}}',
+            "query": f'{{instrumentHistoryBySessionYearInstNbr(sessionType:"{self.session_type}", sessionYear:"{self.session_year}", instrumentNbr:"{bill_row["InstrumentNbr"]}", ){{ InstrumentNbr,SessionYear,SessionType,CalendarDate,Body,AmdSubUrl,Matter,Committee,Nay,Yea,Vote,VoteNbr }}}}',
             "operationName": "",
             "variables": [],
         }
@@ -200,6 +239,9 @@ class ALBillScraper(Scraper):
 
             if int(row["VoteNbr"]) > 0:
                 yield from self.scrape_vote(bill, row)
+
+        if bill_row["ViewEnacted"]:
+            self.scrape_act(bill, bill_row["ViewEnacted"])
 
     def scrape_fiscal_notes(self, bill):
         bill_id = bill.identifier.replace(" ", "")
