@@ -17,6 +17,7 @@ TIMEZONE = pytz.timezone("US/Central")
 class ARBillScraper(Scraper):
     ftp_user = ""
     ftp_pass = ""
+    bills = {}
 
     def scrape(self, chamber=None, session=None):
 
@@ -34,11 +35,10 @@ class ARBillScraper(Scraper):
                 self.session_name = i["name"]
                 self.biennium = get_biennium_year(self.session_name)
 
-        chambers = [chamber] if chamber else ["upper", "lower"]
-        self.bills = {}
+        leg_chambers = [chamber] if chamber else ["upper", "lower"]
 
-        for Chamber in chambers:
-            yield from self.scrape_bill(Chamber, session)
+        for leg_chamber in leg_chambers:
+            yield from self.scrape_bill(leg_chamber, session)
         self.scrape_actions()
         if not self.bills:
             raise EmptyScrape
@@ -326,16 +326,18 @@ class ARBillScraper(Scraper):
                 media_type="application/pdf",
             )
 
-        for link in page.xpath(
-            "//div[@role=\"grid\"]/../..//a[contains(@href, '/Bills/Votes?id=')]"
-        ):
-            date = link.xpath("normalize-space(string(../../div[2]))")
-            date = TIMEZONE.localize(
-                datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
-            )
-
-            motion = link.xpath("string(../../div[3])")
-            yield from self.scrape_vote(bill, date, motion, link.attrib["href"])
+        # TODO: reincorporate below code block for vote processing
+        #  (commented out due to scraper having vote event processing issue)
+        # for link in page.xpath(
+        #     "//div[@role=\"grid\"]/../..//a[contains(@href, '/Bills/Votes?id=')]"
+        # ):
+        #     date = link.xpath("normalize-space(string(../../div[2]))")
+        #     date = TIMEZONE.localize(
+        #         datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
+        #     )
+        #
+        #     motion = link.xpath("string(../../div[3])")
+        #     yield from self.scrape_vote(bill, date, motion, link.attrib["href"])
 
     def scrape_vote(self, bill, date, motion, url):
         page = self.get(url).text
