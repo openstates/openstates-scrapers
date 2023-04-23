@@ -16,6 +16,8 @@ class LegDetail(HtmlPage):
             img = "https://www.oregonlegislature.gov/wagner/PublishingImages/member_photo.jpg"
         elif p.name == "Kathleen Taylor":
             img = "https://www.oregonlegislature.gov/taylor/PublishingImages/member_photo.jpg"
+        elif p.name == "Charlie Conrad":
+            img = "https://www.oregonlegislature.gov/conrad/PublishingImages/Pages/news/Rep%20Conrad%202023_Small2.jpg"
         else:
             img = CSS("h1 img").match_one(self.root).get("src")
         p.image = img
