@@ -63,6 +63,8 @@ class ALEventScraper(Scraper, LXMLMixin):
             if event_key in event_keys:
                 continue
 
+            event_keys.add(event_key)
+
             event = Event(
                 start_date=event_date,
                 name=event_title,
