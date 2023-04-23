@@ -46,6 +46,8 @@ class ALEventScraper(Scraper, LXMLMixin):
         if len(page["data"]["hearingsMeetings"]) == 0:
             raise EmptyScrape
 
+        event_keys = set()
+
         for row in page["data"]["hearingsMeetings"]:
             event_date = self._TZ.localize(dateutil.parser.parse(row["SortTime"]))
             event_title = row["EventTitle"]
@@ -56,6 +58,13 @@ class ALEventScraper(Scraper, LXMLMixin):
                 )
             event_desc = row["EventDesc"]
 
+            event_key = f"{event_title}#{event_location}#{event_date}"
+
+            if event_key in event_keys:
+                continue
+
+            event_keys.add(event_key)
+
             event = Event(
                 start_date=event_date,
                 name=event_title,
@@ -63,8 +72,7 @@ class ALEventScraper(Scraper, LXMLMixin):
                 description=event_desc,
             )
 
-            event_name = f"{event_title}#{event_location}#{event_date}"
-            event.dedupe_key = event_name
+            event.dedupe_key = event_key
 
             # TODO: When they add committees, agendas, and video streams
 

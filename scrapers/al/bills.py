@@ -21,6 +21,7 @@ class ALBillScraper(Scraper):
     session_year = ""
     session_type = ""
     bill_ids = set()
+    vote_keys = set()
 
     gql_headers = {
         "Accept": "*/*",
@@ -281,20 +282,34 @@ class ALBillScraper(Scraper):
         vote_chamber = self.chamber_map_short[action_row["Body"]]
         motion = f"Roll of the {action_row['Body']} for Vote {action_row['VoteNbr']} on {action_row['InstrumentNbr']} ({self.session_type})"
 
+        bill_action = action_row["Matter"]
+
+        vote_key = f"{cal_date}#{motion}#{bill_action}#{vote_chamber}"
+
+        # Duplication check
+        if vote_key in self.vote_keys:
+            return
+
+        self.vote_keys.add(vote_key)
+
         vote = VoteEvent(
             start_date=cal_date,
             motion_text=motion,
-            bill_action=action_row["Matter"],
+            bill_action=bill_action,
             result="pass" if passed else "fail",
             chamber=vote_chamber,
             bill=bill,
             classification=[],
         )
+
+        vote.dedupe_key = vote_key
+
         vote.set_count("yes", int(first_vote["Yeas"]))
         vote.set_count("no", int(first_vote["Nays"]))
         vote.set_count("abstain", int(first_vote["Abstains"]))
         # Pass in AL is "i am passing on voting" not "i want the bill to pass"
         vote.set_count("not voting", int(first_vote["Pass"]))
+
         vote.add_source("https://alison.legislature.state.al.us/bill-search")
 
         for row in page["data"]["rollCallVotesByRollNbr"]:
