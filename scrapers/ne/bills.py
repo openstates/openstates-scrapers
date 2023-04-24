@@ -184,7 +184,6 @@ class NEBillScraper(Scraper, LXMLMixin):
 
             if "Notice of hearing for" in action:
                 ref_date = action.replace("Notice of hearing for", "").strip()
-                ref_date = datetime.strptime(ref_date, "%B %d, %Y").strftime("%Y-%m-%d")
                 bill.extras["NE_REF_DATE"] = ref_date
 
             if "Referred to" in action:
