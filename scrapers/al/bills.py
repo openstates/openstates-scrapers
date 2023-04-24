@@ -4,6 +4,7 @@ import lxml
 import re
 import datetime
 import dateutil
+import requests
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.exceptions import EmptyScrape
 from utils.media import get_media_type
@@ -33,7 +34,7 @@ class ALBillScraper(Scraper):
     }
 
     def scrape(self, session):
-        scraper_ids = self.jurisdiction.get_scraper_ids(session="2023rs")
+        scraper_ids = self.jurisdiction.get_scraper_ids(session)
         self.session_year = scraper_ids["session_year"]
         self.session_type = scraper_ids["session_type"]
 
@@ -154,7 +155,12 @@ class ALBillScraper(Scraper):
         url = link.xpath("@href")[0]
         act_number = link.xpath("text()")[0].replace("View Act", "").strip()
 
-        page = self.get(url).content
+        try:
+            page = self.get(url, timeout=120).content
+        except requests.exceptions.ConnectTimeout:
+            self.warning(f"SoS website {url} is currently unavailable, skipping")
+            return
+
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -275,6 +281,11 @@ class ALBillScraper(Scraper):
         }
         page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
         page = json.loads(page.content)
+
+        # occasionally there's a vote number, but no data for it.
+        # ie 2023s1 SR5, vote number 4
+        if len(page["data"]["rollCallVotesByRollNbr"]) < 1:
+            return
 
         first_vote = page["data"]["rollCallVotesByRollNbr"][0]
         passed = first_vote["Yeas"] > (first_vote["Nays"] + first_vote["Abstains"])
