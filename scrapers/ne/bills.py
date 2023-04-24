@@ -12,6 +12,8 @@ VOTE_TYPE_MAP = {"yes": "yes", "no": "no"}
 
 
 class NEBillScraper(Scraper, LXMLMixin):
+    priority_bills = {}
+
     def scrape(self, session=None):
         if session is None:
             session = self.jurisdiction.legislative_sessions[-1]
@@ -29,11 +31,26 @@ class NEBillScraper(Scraper, LXMLMixin):
         if session["classification"] == "special":
             yield from self.scrape_special(session["identifier"], session["start_date"])
         else:
+            self.scrape_priorities()
             start_year = datetime.strptime(session["start_date"], "%Y-%m-%d").year
             end_year = datetime.strptime(session["end_date"], "%Y-%m-%d").year
             yield from self.scrape_year(session["identifier"], start_year)
             if start_year != end_year:
                 yield from self.scrape_year(session["identifier"], end_year)
+
+    def scrape_priorities(self):
+        priority_url = "https://nebraskalegislature.gov/session/priority.php"
+        page = self.lxmlize(priority_url)
+
+        for row in page.xpath(
+            "//table[@id='committee_bill_results' or @id='senator_bill_results' or @id='speaker_bill_results']/tr"
+        ):
+            bill_id = row.xpath("td[2]/a/text()")[0].strip()
+            prioritizer = row.xpath("td[1]/text()")[0].strip()
+
+            self.priority_bills[bill_id] = {
+                "prioritizer": prioritizer,
+            }
 
     # NE Specials are lumped in with regular data, just duped bill numbers.
     # Scrape by intro date, instead of by year.
@@ -165,6 +182,15 @@ class NEBillScraper(Scraper, LXMLMixin):
                 classification=action_type,
             )
 
+            if "Notice of hearing for" in action:
+                ref_date = action.replace("Notice of hearing for", "").strip()
+                ref_date = datetime.strptime(ref_date, "%B %d, %Y").strftime("%Y-%m-%d")
+                bill.extras["NE_REF_DATE"] = ref_date
+
+            if "Referred to" in action:
+                ref_com = action.split("Referred to")[1].strip()
+                bill.extras["NE_REF_COM"] = ref_com
+
         # Grabs bill version documents.
         version_links = self.get_nodes(
             bill_page, "/html/body/div[3]/div[2]/div[2]/div/" "div[3]/div[2]/ul/li/a"
@@ -213,6 +239,10 @@ class NEBillScraper(Scraper, LXMLMixin):
             bill.add_document_link(
                 amendment_name, amendment_url, media_type="application/pdf"
             )
+
+        if bill_number in self.priority_bills:
+            priority = self.priority_bills[bill_number]
+            bill.extras["NE_PRIORITIZER"] = priority["prioritizer"]
 
         yield bill
 
