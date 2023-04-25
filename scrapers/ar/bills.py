@@ -93,7 +93,7 @@ class ARBillScraper(Scraper):
                     primary=True,
                 )
 
-            # need year before if its a fiscal or special session beyond first
+            # need year before if it's a fiscal or special session beyond first
             year = session[0:4]
             if len(session) > 4 and session[-1] != "1":
                 year = int(year) - 1
@@ -326,6 +326,8 @@ class ARBillScraper(Scraper):
                 media_type="application/pdf",
             )
 
+        yield bill
+
         # TODO: reincorporate below code block for vote processing
         #  (commented out due to scraper having vote event processing issue)
         # for link in page.xpath(
@@ -426,7 +428,7 @@ class ARBillScraper(Scraper):
     def get_utf_16_ftp_content(self, url):
         # hacky code alert:
         # inserting the credentials inline plays nice with urllib.urlretrieve
-        # when other methods dont
+        # when other methods do not
         url = url.replace("ftp://", f"ftp://{self.ftp_user}:{self.ftp_pass}@")
         local_file, headers = urllib.request.urlretrieve(url)
         raw = open(local_file, "rb")
