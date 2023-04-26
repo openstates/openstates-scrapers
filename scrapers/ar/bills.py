@@ -26,8 +26,8 @@ class ARBillScraper(Scraper):
 
     def scrape(self, chamber=None, session=None):
 
-        self.ftp_user = os.environ.get("AR_FTP_USER", "arklegview")
-        self.ftp_pass = os.environ.get("AR_FTP_PASSWORD", "V1ew0nly!")
+        self.ftp_user = os.environ.get("AR_FTP_USER", None)
+        self.ftp_pass = os.environ.get("AR_FTP_PASSWORD", None)
 
         if not self.ftp_user or not self.ftp_pass:
             self.error("AR_FTP_USER and AR_FTP_PASSWORD env variables are required.")
