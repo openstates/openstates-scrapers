@@ -38,10 +38,13 @@ class ARBillScraper(Scraper):
         leg_chambers = [chamber] if chamber else ["upper", "lower"]
 
         for leg_chamber in leg_chambers:
-            yield from self.scrape_bill(leg_chamber, session)
+            self.scrape_bill(leg_chamber, session)
+
         self.scrape_actions()
+
         if not self.bills:
             raise EmptyScrape
+
         for bill_id, bill in self.bills.items():
             yield bill
 
@@ -93,7 +96,7 @@ class ARBillScraper(Scraper):
                     primary=True,
                 )
 
-            # need year before if its a fiscal or special session beyond first
+            # need year before if it's a fiscal or special session beyond first
             year = session[0:4]
             if len(session) > 4 and session[-1] != "1":
                 year = int(year) - 1
@@ -107,7 +110,7 @@ class ARBillScraper(Scraper):
                 version_url = f"https://www.arkleg.state.ar.us/assembly/{year}/{self.slug}/Bills/{bill_url}.pdf"
             bill.add_version_link(bill_id, version_url, media_type="application/pdf")
 
-            yield from self.scrape_bill_page(bill)
+            self.scrape_bill_page(bill)
 
             self.bills[bill_id] = bill
 
@@ -426,7 +429,7 @@ class ARBillScraper(Scraper):
     def get_utf_16_ftp_content(self, url):
         # hacky code alert:
         # inserting the credentials inline plays nice with urllib.urlretrieve
-        # when other methods dont
+        # when other methods do not
         url = url.replace("ftp://", f"ftp://{self.ftp_user}:{self.ftp_pass}@")
         local_file, headers = urllib.request.urlretrieve(url)
         raw = open(local_file, "rb")
