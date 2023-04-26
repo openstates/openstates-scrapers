@@ -15,14 +15,19 @@ TIMEZONE = pytz.timezone("US/Central")
 
 
 class ARBillScraper(Scraper):
+    """
+    The challenge here is that I need to comment out all
+
+    """
+
     ftp_user = ""
     ftp_pass = ""
     bills = {}
 
     def scrape(self, chamber=None, session=None):
 
-        self.ftp_user = os.environ.get("AR_FTP_USER", None)
-        self.ftp_pass = os.environ.get("AR_FTP_PASSWORD", None)
+        self.ftp_user = os.environ.get("AR_FTP_USER", "arklegview")
+        self.ftp_pass = os.environ.get("AR_FTP_PASSWORD", "V1ew0nly!")
 
         if not self.ftp_user or not self.ftp_pass:
             self.error("AR_FTP_USER and AR_FTP_PASSWORD env variables are required.")
@@ -38,10 +43,13 @@ class ARBillScraper(Scraper):
         leg_chambers = [chamber] if chamber else ["upper", "lower"]
 
         for leg_chamber in leg_chambers:
-            yield from self.scrape_bill(leg_chamber, session)
+            self.scrape_bill(leg_chamber, session)
+
         self.scrape_actions()
+
         if not self.bills:
             raise EmptyScrape
+
         for bill_id, bill in self.bills.items():
             yield bill
 
@@ -107,7 +115,7 @@ class ARBillScraper(Scraper):
                 version_url = f"https://www.arkleg.state.ar.us/assembly/{year}/{self.slug}/Bills/{bill_url}.pdf"
             bill.add_version_link(bill_id, version_url, media_type="application/pdf")
 
-            yield from self.scrape_bill_page(bill)
+            self.scrape_bill_page(bill)
 
             self.bills[bill_id] = bill
 
@@ -325,8 +333,6 @@ class ARBillScraper(Scraper):
                 date=date,
                 media_type="application/pdf",
             )
-
-        yield bill
 
         # TODO: reincorporate below code block for vote processing
         #  (commented out due to scraper having vote event processing issue)
