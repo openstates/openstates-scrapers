@@ -15,11 +15,6 @@ TIMEZONE = pytz.timezone("US/Central")
 
 
 class ARBillScraper(Scraper):
-    """
-    The challenge here is that I need to comment out all
-
-    """
-
     ftp_user = ""
     ftp_pass = ""
     bills = {}
