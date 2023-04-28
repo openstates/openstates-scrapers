@@ -2,6 +2,7 @@ import pytz
 import datetime
 
 from utils import LXMLMixin
+from utils.media import get_media_type
 from openstates.scrape import Scraper, Event
 from spatula import HtmlPage, PdfPage, URL, XPath, SelectorError
 import re
@@ -172,6 +173,31 @@ class CurrentMeetings(HtmlPage):
 
             if agenda:
                 event.add_document("Agenda", url=agenda, media_type="pdf")
+
+            try:
+                video_link = XPath(
+                    ".//button[@title='View  committee meeting']/@onclick"
+                ).match_one(i[1])
+                if video_link:
+                    video_link = video_link.replace("window.open('", "").replace(
+                        "')", ""
+                    )
+                    event.add_media_link(
+                        "Video", url=video_link, media_type="text/html"
+                    )
+            except SelectorError:
+                pass
+
+            try:
+                minutes_link = XPath(
+                    './/a[@title="View the minutes for this meeting"]/@href'
+                ).match_one(i[1])
+                if minutes_link:
+                    event.add_document(
+                        "Minutes", minutes_link, media_type=get_media_type(minutes_link)
+                    )
+            except SelectorError:
+                pass
 
             # Add committees from title string
             for committee in committees:
