@@ -94,6 +94,24 @@ class MTEventScraper(Scraper):
                     on_duplicate="ignore",
                 )
 
+            # both media links are incorrectly labelled "audio", but the first
+            # seems to always be video, and if there's only one it's video
+            media_links = row.xpath('.//a[contains(@href, "sliq.net")]/@href')
+            if len(media_links) > 0:
+                event.add_media_link(
+                    "Video",
+                    media_links[0],
+                    media_type="text/html",
+                    on_duplicate="ignore",
+                )
+            if len(media_links) == 2:
+                event.add_media_link(
+                    "Audio",
+                    media_links[1],
+                    media_type="text/html",
+                    on_duplicate="ignore",
+                )
+
             self.events[com][when_slug] = event
 
         for com in self.events:
