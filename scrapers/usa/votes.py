@@ -11,8 +11,11 @@ class USVoteScraper(Scraper):
 
     chamber_code = {"S": "upper", "H": "lower", "J": "legislature"}
     vote_codes = {
+        "Aye": "yes",
         "Yea": "yes",
+        "Yes": "yes",
         "Nay": "no",
+        "No": "no",
         "Not Voting": "not voting",
         "Present": "other",
         "Present, Giving Live Pair": "other",
@@ -44,6 +47,7 @@ class USVoteScraper(Scraper):
         "Bill Defeated": "fail",
         "Joint Resolution Passed": "pass",
         "Joint Resolution Defeated": "fail",
+        "Resolution Agreed to": "pass",
     }
 
     vote_classifiers = (
@@ -144,6 +148,10 @@ class USVoteScraper(Scraper):
             result = "fail"
 
         session = page.xpath("//rollcall-vote/vote-metadata/congress/text()")[0]
+
+        if not page.xpath("//rollcall-vote/vote-metadata/legis-num/text()"):
+            self.warning(f"No bill id for {url}, skipping")
+            return
 
         bill_id = page.xpath("//rollcall-vote/vote-metadata/legis-num/text()")[0]
 

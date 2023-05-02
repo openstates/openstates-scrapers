@@ -72,6 +72,7 @@ class SenDetail(HtmlPage):
             email=email,
             image=str(self.root.xpath('//div[@id="sidebar"]//img/@src').pop()),
         )
+        p.add_link(self.input.url, "member detail page")
 
         for item in self.contact_xpath.match(self.root):
             self.handle_office(item, p)
@@ -138,6 +139,7 @@ class RepContact(HtmlPage):
             district=str(self.input.district),
             image=self.input.image,
         )
+        p.add_link(self.input.url, "member detail page")
         for otype in ("district", "capitol"):
             odoc = self.root.xpath(f"//h3[@id='{otype}-office']/following-sibling::ul")
             if odoc:

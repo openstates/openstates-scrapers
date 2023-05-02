@@ -22,9 +22,11 @@ _categorizer_rules = (
     Rule("(m|M)otion to Concur In and Adopt adopted", "passage"),
     Rule("Third Reading Passed", "passage"),
     Rule("Reported from", "committee-passage"),
+    Rule("Reported Favorably", "committee-passage"),
     Rule("Indefinitely Postponed", "failure"),
     Rule("Passed by House of Origin", "passage"),
     Rule("Passed Second House", "passage"),
+    Rule("Read a Third Time and Pass", "passage"),
     # memorial resolutions can pass w/o debate
     Rule("Joint Rule 11", ["introduction", "passage"]),
     Rule("Lost in", "failure"),

@@ -1,9 +1,13 @@
 import pytz
 import json
+import lxml
 import re
 import datetime
-from openstates.scrape import Scraper, Bill
+import dateutil
+import requests
+from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.exceptions import EmptyScrape
+from utils.media import get_media_type
 from .actions import Categorizer
 
 
@@ -11,12 +15,14 @@ class ALBillScraper(Scraper):
     categorizer = Categorizer()
     chamber_map = {"Senate": "upper", "House": "lower"}
     bill_types = {"B": "bill", "R": "resolution"}
+    vote_types = {"P": "not voting", "A": "abstain", "Y": "yes", "N": "no"}
     tz = pytz.timezone("US/Eastern")
     chamber_map_short = {"S": "upper", "H": "lower"}
     gql_url = "https://gql.api.alison.legislature.state.al.us/graphql"
     session_year = ""
     session_type = ""
     bill_ids = set()
+    vote_keys = set()
 
     gql_headers = {
         "Accept": "*/*",
@@ -28,7 +34,7 @@ class ALBillScraper(Scraper):
     }
 
     def scrape(self, session):
-        scraper_ids = self.jurisdiction.get_scraper_ids(session="2023rs")
+        scraper_ids = self.jurisdiction.get_scraper_ids(session)
         self.session_year = scraper_ids["session_year"]
         self.session_type = scraper_ids["session_type"]
 
@@ -88,8 +94,8 @@ class ALBillScraper(Scraper):
                 )
 
                 self.scrape_versions(bill, row)
-                self.scrape_actions(bill, row)
                 self.scrape_fiscal_notes(bill)
+                yield from self.scrape_actions(bill, row)
 
                 bill.add_source("https://alison.legislature.state.al.us/bill-search")
                 if row["InstrumentUrl"]:
@@ -141,21 +147,63 @@ class ALBillScraper(Scraper):
                 media_type="application/pdf",
             )
 
-    def scrape_actions(self, bill, row):
-        if row["PrefiledDate"]:
-            action_date = datetime.datetime.strptime(row["PrefiledDate"], "%m/%d/%Y")
+    # the search JSON contains the act reference, but not the date,
+    # which we need to build the action. It's on the act page at the SoS though.
+    def scrape_act(self, bill, link):
+        act_page = lxml.html.fromstring(link)
+        link = act_page.xpath("//a")[0]
+        url = link.xpath("@href")[0]
+        act_number = link.xpath("text()")[0].replace("View Act", "").strip()
+
+        try:
+            page = self.get(url, timeout=120).content
+        except requests.exceptions.ConnectTimeout:
+            self.warning(f"SoS website {url} is currently unavailable, skipping")
+            return
+
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+
+        # second td in the row containing Approved Date and Time
+        act_date = page.xpath(
+            '//tr[td[contains(text(),"Approved Date and Time")]]/td[2]/text()'
+        )[0]
+        act_date = act_date.strip().replace("&nbsp;", "")
+        action_date = dateutil.parser.parse(act_date)
+        action_date = self.tz.localize(action_date)
+        bill.add_action(
+            chamber="executive",
+            description=f"Enacted as {act_number}",
+            date=action_date,
+            classification="became-law",
+        )
+
+        if page.xpath("//a[input[@value='View Image']]"):
+            act_text_url = page.xpath("//a[input[@value='View Image']]/@href")[0]
+            bill.add_version_link(
+                f"Act {act_number}",
+                act_text_url,
+                media_type=get_media_type(act_text_url),
+            )
+
+        bill.extras["AL_ACT_NUMBER"] = act_number
+
+    def scrape_actions(self, bill, bill_row):
+        if bill_row["PrefiledDate"]:
+            action_date = datetime.datetime.strptime(
+                bill_row["PrefiledDate"], "%m/%d/%Y"
+            )
             action_date = self.tz.localize(action_date)
             bill.add_action(
-                chamber=self.chamber_map[row["Body"]],
+                chamber=self.chamber_map[bill_row["Body"]],
                 description="Filed",
                 date=action_date,
                 classification="filing",
             )
 
         # Can this be ANDED together with the other graphql query?
-        # WARNING: 2023 session id is currently hardcoded
         json_data = {
-            "query": f'{{instrumentHistoryBySessionYearInstNbr(sessionType:"{self.session_type}", sessionYear:"{self.session_year}", instrumentNbr:"{row["InstrumentNbr"]}", ){{ InstrumentNbr,SessionYear,SessionType,CalendarDate,Body,AmdSubUrl,Matter,Committee,Nay,Yea,Vote,VoteNbr }}}}',
+            "query": f'{{instrumentHistoryBySessionYearInstNbr(sessionType:"{self.session_type}", sessionYear:"{self.session_year}", instrumentNbr:"{bill_row["InstrumentNbr"]}", ){{ InstrumentNbr,SessionYear,SessionType,CalendarDate,Body,AmdSubUrl,Matter,Committee,Nay,Yea,Vote,VoteNbr }}}}',
             "operationName": "",
             "variables": [],
         }
@@ -181,6 +229,27 @@ class ALBillScraper(Scraper):
                 classification=action_class,
             )
 
+            if row["AmdSubUrl"] != "":
+                page = lxml.html.fromstring(row["AmdSubUrl"])
+                link = page.xpath("//a")[0]
+                amd_url = link.xpath("@href")[0]
+                amd_name = link.xpath("text()")[0].strip()
+                amd_name = f"Amendment {amd_name}"
+                if row["Committee"] != "":
+                    amd_name = f"{row['Committee']} {amd_name}"
+
+                bill.add_version_link(
+                    amd_name,
+                    url=amd_url,
+                    media_type=get_media_type(amd_url),
+                )
+
+            if int(row["VoteNbr"]) > 0:
+                yield from self.scrape_vote(bill, row)
+
+        if bill_row["ViewEnacted"]:
+            self.scrape_act(bill, bill_row["ViewEnacted"])
+
     def scrape_fiscal_notes(self, bill):
         bill_id = bill.identifier.replace(" ", "")
         bill_type = "B" if "B" in bill_id else "R"
@@ -202,3 +271,64 @@ class ALBillScraper(Scraper):
                 media_type="application/pdf",
                 on_duplicate="ignore",
             )
+
+    def scrape_vote(self, bill, action_row):
+        cal_date = self.transform_date(action_row["CalendarDate"])
+        json_data = {
+            "query": f'{{rollCallVotesByRollNbr( instrumentNbr:"{action_row["InstrumentNbr"]}", sessionYear:"{self.session_year}", sessionType:"{self.session_type}", calendarDate:"{cal_date}", rollNumber:"{action_row["VoteNbr"]}"){{ FullName,Vote,Yeas,Nays,Abstains,Pass }}}}',
+            "operationName": "",
+            "variables": [],
+        }
+        page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
+        page = json.loads(page.content)
+
+        # occasionally there's a vote number, but no data for it.
+        # ie 2023s1 SR5, vote number 4
+        if len(page["data"]["rollCallVotesByRollNbr"]) < 1:
+            return
+
+        first_vote = page["data"]["rollCallVotesByRollNbr"][0]
+        passed = first_vote["Yeas"] > (first_vote["Nays"] + first_vote["Abstains"])
+
+        vote_chamber = self.chamber_map_short[action_row["Body"]]
+        motion = f"Roll of the {action_row['Body']} for Vote {action_row['VoteNbr']} on {action_row['InstrumentNbr']} ({self.session_type})"
+
+        bill_action = action_row["Matter"]
+
+        vote_key = f"{cal_date}#{motion}#{bill_action}#{vote_chamber}"
+
+        # Duplication check
+        if vote_key in self.vote_keys:
+            return
+
+        self.vote_keys.add(vote_key)
+
+        vote = VoteEvent(
+            start_date=cal_date,
+            motion_text=motion,
+            bill_action=bill_action,
+            result="pass" if passed else "fail",
+            chamber=vote_chamber,
+            bill=bill,
+            classification=[],
+        )
+
+        vote.dedupe_key = vote_key
+
+        vote.set_count("yes", int(first_vote["Yeas"]))
+        vote.set_count("no", int(first_vote["Nays"]))
+        vote.set_count("abstain", int(first_vote["Abstains"]))
+        # Pass in AL is "i am passing on voting" not "i want the bill to pass"
+        vote.set_count("not voting", int(first_vote["Pass"]))
+
+        vote.add_source("https://alison.legislature.state.al.us/bill-search")
+
+        for row in page["data"]["rollCallVotesByRollNbr"]:
+            vote.vote(self.vote_types[row["Vote"]], row["FullName"])
+
+        yield vote
+
+    # The api gives us dates as m-d-Y but needs them in Y-m-d
+    def transform_date(self, date: str) -> str:
+        date = datetime.datetime.strptime(date, "%m-%d-%Y")
+        return date.strftime("%Y-%m-%d")

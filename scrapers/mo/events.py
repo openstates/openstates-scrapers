@@ -9,27 +9,47 @@ from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 
 
-# Adds bills from text that may contain one or multiple bills
-# e.g. "SB 123" or "SBs 123 & 341"
+class UnknownBillStringPattern(BaseException):
+    def __init__(self, bill_string):
+        super().__init__(
+            "Char '&' present in string but known bill id patterns not found."
+            f" Bill string: '{bill_string}'"
+        )
+
+
+# Regex pattern for extracting multiple bill ids
+#  ex. "HJRs 33 & 45" or "HBs 882 & 518"
+multi_bills_re = re.compile(
+    r"(SJR|SRB|HCR|HB|HR|SRM|SCR|SB|HRM|HCB|HJR|SM|HRB|HEC|GRP|HC|SR)s\s+(.+)"
+)
+
+
 def add_bill_to_agenda(agenda_item, bill_text):
-    # Start by assuming that there is only one bill
-    parts = [bill_text]
+    """
+    Helper func adds bills from text that may contain one or multiple bills.
+    ex. "SB 123" or "SBs 123 & 341"
+    """
+    # Start by assuming there's only one bill in string
+    item_bills = [bill_text]
 
     # Multiple bills detected
     if "&" in bill_text:
-        # Split into parts for each bill
-        parts = [x.strip() for x in bill_text.split("&")]
-        # Remove plural
-        parts[0] = parts[0].replace("s", "")
-        # Extract letters from first bill
-        alpha, num = parts[0].split(" ")
-        parts[0] = num
-        # At this point, parts is a list of numbers
-        # Prepend letter portion to each bill number
-        parts = [f"{alpha} {num}" for num in parts]
+        multi_bill_match = multi_bills_re.search(bill_text)
+        if multi_bill_match:
+            prefix, raw_bill_nums = multi_bill_match.groups()
+            raw_bill_nums_list = raw_bill_nums.split()
+            item_bills = []
+            for raw_str in raw_bill_nums_list:
+                num_match = re.search(r"(\d+)", raw_str)
+                if num_match:
+                    bill_num = num_match.group(1)
+                    item_bills.append(f"{prefix} {bill_num}")
+        # If regex pattern does not cover particular case of '&' in string
+        else:
+            raise UnknownBillStringPattern(bill_text)
 
     # Add all bills
-    for bill in parts:
+    for bill in item_bills:
         agenda_item.add_bill(bill)
 
 

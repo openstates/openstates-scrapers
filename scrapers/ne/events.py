@@ -50,6 +50,7 @@ class NEEventScraper(Scraper):
     def scrape_events(self, page):
 
         page = lxml.html.fromstring(page)
+        page.make_links_absolute("https://nebraskalegislature.gov/")
 
         if page.xpath(
             "//h3[contains(text(),'There are no hearings for the date range')]"
@@ -104,9 +105,14 @@ class NEEventScraper(Scraper):
                     "", lxml.etree.tostring(details.xpath("div")[2]).decode()
                 ).strip()
                 agenda_item = event.add_agenda_item(description=desc)
+
                 if document not in ["Appointment"]:
                     bill_id = lxml.html.fromstring(document).text
                     agenda_item.add_bill(bill_id)
+
+                bill_links = row.xpath(".//a[contains(@href, 'view_bill.php')]")
+                for link in bill_links:
+                    agenda_item.add_bill(link.xpath("text()")[0].strip())
 
             event.add_source("https://nebraskalegislature.gov/calendar/calendar.php")
             yield event
