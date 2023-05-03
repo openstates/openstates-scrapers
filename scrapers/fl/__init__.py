@@ -200,9 +200,8 @@ class Florida(State):
             "identifier": "2023B",
             "classification": "special",
             "start_date": "2023-02-06",
-            # TODO: update end date
-            "end_date": "2023-02-17",
-            "active": True,
+            "end_date": "2023-02-10",
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [
