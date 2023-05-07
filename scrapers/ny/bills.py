@@ -380,6 +380,44 @@ class NYBillScraper(Scraper):
                 version, pdf_url, on_duplicate="ignore", media_type="application/pdf"
             )
 
+            for key, container in amendment["relatedLaws"]["items"].items():
+                for cite in container["items"]:
+                    law = cite[0:3]
+                    rest = cite[3:]
+
+                    if "generally" in cite.lower():
+                        formatted_cite = f"{law}"
+                    else:
+                        formatted_cite = f"{law} § {rest}"
+                        rest = ""
+
+                    bill.add_citation(
+                        "New York Laws",
+                        formatted_cite,
+                        citation_type="proposed",
+                        url=f"https://www.nysenate.gov/legislation/laws/{law}/{rest}",
+                    )
+
+            for item in amendment["sameAs"]["items"]:
+                companion_bill_id = item["basePrintNo"]
+                # Build companion bill session.
+                start_year = item["session"]
+                end_year = start_year + 1
+                companion_bill_session = "-".join([str(start_year), str(end_year)])
+                bill.add_related_bill(
+                    companion_bill_id, companion_bill_session, relation_type="companion"
+                )
+
+        for item in bill_data["previousVersions"]["items"]:
+            companion_bill_id = item["basePrintNo"]
+            # Build companion bill session.
+            start_year = item["session"]
+            end_year = start_year + 1
+            companion_bill_session = "-".join([str(start_year), str(end_year)])
+            bill.add_related_bill(
+                companion_bill_id, companion_bill_session, relation_type="prior-session"
+            )
+
         yield bill
 
     def scrape_assembly_votes(self, session, bill, assembly_url, bill_id):

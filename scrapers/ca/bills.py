@@ -395,7 +395,7 @@ class CABillScraper(Scraper, LXMLMixin):
                     cleaned_subjects = clean_title(version.subject)
                     # one has a super long subject, trims last few characters so still makes sense
                     if bill_id.strip() == "SB867" and session == "20232024":
-                        subject = cleaned_subjects[0:250]
+                        subject = [cleaned_subjects[0:-9]]
                     # another has a colon at the end instead of a period & verify flags an empty string list item later
                     elif bill_id.strip() == "SB889" and session == "20232024":
                         subject = cleaned_subjects[0:-1].split(":")
@@ -411,7 +411,7 @@ class CABillScraper(Scraper, LXMLMixin):
             if summary:
                 fsbill.add_abstract(summary, note="summary")
             fsbill.classification = type_
-            fsbill.subject = subject if subject else []
+            fsbill.subject = [*set(subject)] if subject else []
             fsbill.extras["impact_clause"] = impact_clause
             fsbill.extras["tags"] = tags
 
