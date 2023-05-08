@@ -254,6 +254,10 @@ class NYBillScraper(Scraper):
             )
             return
 
+        second_year = str(bill_data["session"] + 1)
+        first_year = str(bill_data["session"])
+        session = f"{first_year}-{second_year}"
+
         bill = Bill(
             bill_id,
             legislative_session=session,
@@ -270,7 +274,8 @@ class NYBillScraper(Scraper):
         if active_version != "":
             bill_active_version = bill_data["amendments"]["items"][active_version]
         else:
-            self.warning("No active version for {}".format(bill_id))
+            self.warning("No active version for {}, assuming first".format(bill_id))
+            bill_active_version = bill_data["amendments"]["items"][""]
 
         # Parse sponsors.
         if bill_data["sponsor"] is not None:
@@ -281,26 +286,40 @@ class NYBillScraper(Scraper):
                     classification="primary",
                     primary=True,
                 )
-            elif not bill_data["sponsor"]["budget"]:
+            elif bill_data["sponsor"]["budget"] is True:
+                bill.add_sponsorship(
+                    "Budget Committee",
+                    entity_type="organization",
+                    classification="primary",
+                    primary=True,
+                )
+            elif bill_data["sponsor"]["redistricting"] is True:
+                bill.add_sponsorship(
+                    "Redistricting Committee",
+                    entity_type="organization",
+                    classification="primary",
+                    primary=True,
+                )
+            else:
                 primary_sponsor = bill_data["sponsor"]["member"]
                 if primary_sponsor is not None:
                     bill.add_sponsorship(
-                        primary_sponsor["shortName"],
+                        primary_sponsor["fullName"],
                         entity_type="person",
                         classification="primary",
                         primary=True,
                     )
 
-                if bill_active_version:
-                    # There *shouldn't* be cosponsors if there is no sponsor.
-                    cosponsors = bill_active_version["coSponsors"]["items"]
-                    for cosponsor in cosponsors:
-                        bill.add_sponsorship(
-                            cosponsor["shortName"],
-                            entity_type="person",
-                            classification="cosponsor",
-                            primary=False,
-                        )
+        if bill_active_version:
+            # There *shouldn't* be cosponsors if there is no sponsor.
+            cosponsors = bill_active_version["coSponsors"]["items"]
+            for cosponsor in cosponsors:
+                bill.add_sponsorship(
+                    cosponsor["fullName"],
+                    entity_type="person",
+                    classification="cosponsor",
+                    primary=False,
+                )
 
         if bill_active_version:
             # List companion bill.
