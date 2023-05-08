@@ -320,6 +320,16 @@ class Utah(State):
             "end_date": "2023-03-03",
             "active": True,
         },
+        {
+            "_scraped_name": "2023 1st Special Session",
+            "classification": "special",
+            "identifier": "2023S1",
+            "name": "2023 1st Special Session",
+            # TODO: start, end dates
+            "start_date": "2000-01-01",
+            "end_date": "2000-01-01",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2024 General Session",
