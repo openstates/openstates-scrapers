@@ -194,6 +194,38 @@ class DEBillScraper(Scraper, LXMLMixin):
         if row["HasAmendments"] is True:
             self.scrape_amendments(bill, row["LegislationId"])
 
+        code_cite = html.xpath(
+            '//label[contains(text(),"Volume:Chapter")]'
+            "/following-sibling::div/text()"
+        )
+        if code_cite and "N/A" not in code_cite[0]:
+            code_cite = code_cite[0].strip().split(":")
+            eff_date = html.xpath(
+                '//label[contains(text(),"Effective Date")]'
+                "/following-sibling::div/text()"
+            )[0].strip()
+            exp_date = html.xpath(
+                '//label[contains(text(),"Sunset Date")]'
+                "/following-sibling::div/text()"
+            )[0].strip()
+
+            code_url = html.xpath("//a[contains(@href,'SessionLaws/Chapter')]/@href")[0]
+
+            if "N/A" in eff_date or eff_date == "":
+                eff_date = None
+
+            if "N/A" in exp_date or exp_date == "":
+                exp_date = None
+
+            bill.add_citation(
+                "The Laws of Delaware",
+                f"Volume {code_cite[0]} Chapter {code_cite[1]}",
+                "chapter",
+                url=code_url,
+                effective=eff_date,
+                expires=exp_date,
+            )
+
         yield from self.scrape_votes(bill, row["LegislationId"], session)
 
         yield bill
