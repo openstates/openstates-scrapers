@@ -2,6 +2,7 @@ from openstates.scrape import Scraper
 from openstates.scrape import Bill, VoteEvent
 import re
 import datetime
+import dateutil
 from collections import defaultdict
 import lxml.html
 from .actions import Categorizer
@@ -202,9 +203,10 @@ class IDBillScraper(Scraper):
                 last_date = date
             else:
                 date = last_date
-            date = datetime.datetime.strptime(
+            action_dt = datetime.datetime.strptime(
                 date + "/" + session[0:4], "%m/%d/%Y"
-            ).strftime("%Y-%m-%d")
+            )
+            date = action_dt.strftime("%Y-%m-%d")
             if action.startswith("House"):
                 actor = "lower"
             elif action.startswith("Senate"):
@@ -235,6 +237,32 @@ class IDBillScraper(Scraper):
                 actor = "lower"
             elif "to Senate" in action:
                 actor = "upper"
+
+            if "Session Law" in action:
+                law = re.search(
+                    r"Session Law (.*) Effective: (.*)",
+                    action,
+                    flags=re.MULTILINE | re.IGNORECASE,
+                )
+                if law and law.groups(0) and law.groups(1):
+                    bill_year = action_dt.strftime("%Y")
+                    chapter = law.groups()[0].strip()
+                    effective = law.groups()[1].strip()
+
+                    try:
+                        effective = dateutil.parser.parse(effective).date()
+                        bill.add_citation(
+                            f"Idaho Session Laws {bill_year}",
+                            chapter,
+                            "chapter",
+                            effective=effective,
+                        )
+                    except ValueError:
+                        bill.add_citation(
+                            f"Idaho Session Laws {bill_year}",
+                            chapter,
+                            "chapter",
+                        )
         yield bill
 
     def get_names(self, name_text):
