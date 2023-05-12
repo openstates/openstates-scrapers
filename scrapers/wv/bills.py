@@ -61,14 +61,6 @@ class WVBillScraper(Scraper):
 
     def scrape(self, chamber=None, session=None):
 
-        yield from self.scrape_bill(
-            session,
-            "upper",
-            "SB 633",
-            "test",
-            "http://www.wvlegislature.gov/Bill_Status/Bills_history.cfm?input=633&year=2023&sessiontype=RS&btype=bill",
-        )
-
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
