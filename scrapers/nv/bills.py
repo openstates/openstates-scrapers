@@ -88,7 +88,7 @@ def shorten_bill_title(title):
 class BillTitleLengthError(BaseException):
     def __init__(self, bill_id, title):
         super().__init__(
-            f"Title of {bill_id} exceeds 30 characters:"
+            f"Title of {bill_id} exceeds 300 characters:"
             f"\n title -> '{title}'"
             f"\n character length -> {len(title)}"
         )
@@ -274,9 +274,10 @@ class BillTabDetail(HtmlPage):
                 )
                 return
 
-        # Only known case where bill title is over 300 characters
-        if self.input.identifier == "SJR7-2021" and self.input.session == "82":
-            short_title = shorten_bill_title(short_title)
+        # Only known cases where bill title is over 300 characters
+        if self.input.session == "82":
+            if self.input.identifier in ("SJR7-2021", "AB488"):
+                short_title = shorten_bill_title(short_title)
         # If additional case arises in future
         elif len(short_title) > 300:
             raise BillTitleLengthError(self.input.identifier, short_title)
