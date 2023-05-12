@@ -351,11 +351,7 @@ class SCBillScraper(Scraper):
         else:
             raise ValueError("unknown bill type: %s" % bill_type)
 
-        # this is fragile, but less fragile than it was
-        # b = bill_div.xpath('./b[text()="Summary:"]')[0]
-        # bill_summary = b.getnext().tail.strip()
-
-        # Short "Summary" will be the bill title,
+        # Short "Summary" will be added as the bill title,
         #  while the longer summary will be added as an abstract
         summ_and_abst = [x.strip() for x in bill_div.xpath("./text()")]
         summary, abstract = [x for x in summ_and_abst if len(x)][-2:]
