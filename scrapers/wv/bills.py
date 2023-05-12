@@ -60,6 +60,7 @@ class WVBillScraper(Scraper):
     }
 
     def scrape(self, chamber=None, session=None):
+
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)

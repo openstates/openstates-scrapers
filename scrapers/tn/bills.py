@@ -21,8 +21,8 @@ def actions_from_table(bill, actions_table):
         action_taken = tds[0].text
         # sometimes there's an empty action ex:
         # https://wapp.capitol.tn.gov/apps/BillInfo/Default.aspx?BillNumber=HB0243&GA=113
-        if action_taken == "":
-            return
+        if action_taken.strip() == "":
+            continue
         strptime = datetime.datetime.strptime
         action_date = strptime(tds[1].text.strip(), "%m/%d/%Y").date()
         action_types, attrs = categorize_action(action_taken)
