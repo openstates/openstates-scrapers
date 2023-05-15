@@ -140,8 +140,8 @@ class Missouri(State):
     def get_session_list(self):
         http.client.parse_headers = parse_headers_override
         return url_xpath(
-            "https://www.house.mo.gov/billcentral.aspx?year=2019&code=S1&q=&id=",
-            '//select[@id="SearchSession"]/option/text()',
+            "https://www.house.mo.gov/Session.aspx",
+            '//*[@id="sessions"]/option/text()',
         )
 
 
