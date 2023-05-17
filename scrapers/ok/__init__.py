@@ -142,6 +142,14 @@ class Oklahoma(State):
             "end_date": "2023-05-29",
             "active": True,
         },
+        {
+            "_scraped_name": "2023 First Special Session",
+            "identifier": "2023S1",
+            "name": "2023 First Special Session",
+            "start_date": "2023-05-17",
+            "end_date": "2023-05-26",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "2023 Regular Session",
