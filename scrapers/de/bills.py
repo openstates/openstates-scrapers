@@ -209,7 +209,12 @@ class DEBillScraper(Scraper, LXMLMixin):
                 "/following-sibling::div/text()"
             )[0].strip()
 
-            code_url = html.xpath("//a[contains(@href,'SessionLaws/Chapter')]/@href")[0]
+            if html.xpath("//a[contains(@href,'SessionLaws/Chapter')]/@href"):
+                code_url = html.xpath(
+                    "//a[contains(@href,'SessionLaws/Chapter')]/@href"
+                )[0]
+            else:
+                code_url = None
 
             if "N/A" in eff_date or eff_date == "":
                 eff_date = None
