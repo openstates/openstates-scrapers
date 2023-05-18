@@ -8,7 +8,11 @@ def url_xpath(url, path, verify=True, user_agent=None):
     try:
         doc = lxml.html.fromstring(res.text)
     except Exception as e:
-        print(f"Failed to retrieve xpath from {url} :: {res.content} returned")
+        print(
+            f"Failed to retrieve xpath from {url} :: returned:\n"
+            f"CONTENT: {res.content} \n"
+            f"RETURN CODE: {res.status_code}"
+        )
         raise Exception(e)
     return doc.xpath(path)
 
