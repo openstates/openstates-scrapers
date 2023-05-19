@@ -177,6 +177,7 @@ class SenateDetail(HtmlPage):
     def process_page(self):
         p = self.input
         parent_block = CSS(".field-content").match(self.root)[0].getchildren()
+        email_block = CSS(".c-block--senator-email").match(self.root)[0].getchildren()
 
         for i in range(len(parent_block)):
             address_block = parent_block[i]
@@ -208,7 +209,8 @@ class SenateDetail(HtmlPage):
             elif mode == "capitol":
                 p.capitol_office.voice = phone
                 p.capitol_office.address = address
-
+        if len(email_block) == 2:
+            p.email = email_block[1].text_content()
         return p
 
 
