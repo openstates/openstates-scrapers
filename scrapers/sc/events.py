@@ -186,10 +186,17 @@ class SCEventScraper(Scraper):
                 self.prior_event_time_string = time_string
 
                 time_string = normalize_time(time_string)
-                date_time = datetime.datetime.strptime(
-                    f"{event_year} {date_string} {time_string}",
-                    "%Y %A, %B %d %I:%M %p",
-                )
+                try:
+                    date_time = datetime.datetime.strptime(
+                        f"{event_year} {date_string} {time_string}",
+                        "%Y %A, %B %d %I:%M %p",
+                    )
+                # if we can't parse the time due to manual additions, just set the day
+                except ValueError:
+                    self.warning(f"Unable to parse time string {time_string}")
+                    date_time = datetime.datetime.strptime(
+                        f"{event_year} {date_string}", "%Y %A, %B %d"
+                    )
 
                 date_time = self._tz.localize(date_time)
 
