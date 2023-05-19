@@ -86,7 +86,8 @@ _categorizer_rules = (
     Rule(r"(?i)Conference committee appointed.", ""),
     Rule(r"(?i)Conference committee report;", ""),
     Rule(
-        r"(?i).+ - Majority; \d+.+ substitute bill be substituted, do pass", "passage"
+        r"(?i).+ - Majority; \d+.+ substitute bill be substituted, do pass",
+        "substitution",
     ),
     Rule(r"President signed", "passage"),
     Rule(r"Speaker signed", "passage"),
