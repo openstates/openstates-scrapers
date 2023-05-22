@@ -109,7 +109,7 @@ class MEEventScraper(Scraper, LXMLMixin):
             )
             event.dedupe_key = event_name
 
-            if name.strip() == "":
+            if not name.strip():
                 self.warning(f"Skipping meeting with no name, ID# {row['Id']}")
                 continue
 
