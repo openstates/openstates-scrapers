@@ -273,9 +273,12 @@ class NYBillScraper(Scraper):
 
         if active_version != "":
             bill_active_version = bill_data["amendments"]["items"][active_version]
-        else:
-            self.warning("No active version for {}, assuming first".format(bill_id))
+        elif "" in bill_data["amendments"]["items"]:
+            # by default ny puts a blank key in the items object with our data
+            self.warning(f"No active version for {bill_id}, assuming first")
             bill_active_version = bill_data["amendments"]["items"][""]
+        else:
+            self.warning(f"No active version for {bill_id}")
 
         # Parse sponsors.
         if bill_data["sponsor"] is not None:
