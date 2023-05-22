@@ -103,7 +103,7 @@ class NYEventScraper(Scraper):
             start_date=when,
             location_name=location,
         )
-        event.dedupe_key = event_name
+        event.dedupe_key = event_name[:499]
 
         event.add_participant(com_name, type="committee", note="host")
 
@@ -168,7 +168,7 @@ class NYEventScraper(Scraper):
                 location_name=location,
                 description=description,
             )
-            event.dedupe_key = event_name
+            event.dedupe_key = event_name[:499]
 
             event.add_participant(com_name, type="committee", note="host")
 
