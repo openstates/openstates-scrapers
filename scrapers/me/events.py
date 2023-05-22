@@ -108,6 +108,11 @@ class MEEventScraper(Scraper, LXMLMixin):
                 classification="committee-meeting",
             )
             event.dedupe_key = event_name
+
+            if not name.strip():
+                self.warning(f"Skipping meeting with no name, ID# {row['Id']}")
+                continue
+
             event.add_participant(name=name, type="committee", note="host")
 
             event.add_source(
