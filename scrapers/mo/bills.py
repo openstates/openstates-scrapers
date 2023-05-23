@@ -442,29 +442,16 @@ class MOBillScraper(Scraper, LXMLMixin):
         bill_desc = clean_text(bill_desc)
 
         table_rows = bill_page.xpath("//table/tr")
-        # if there is a cosponsor all the rows are pushed down one for the extra row
-        # for the cosponsor:
-        cosponsorOffset = 0
-        if table_rows[2][0].text_content().strip() == "Co-Sponsor:":
-            cosponsorOffset = 1
 
-        lr_label_tag = table_rows[3 + cosponsorOffset]
-        assert lr_label_tag[0].text_content().strip() == "LR Number:"
-        # bill_lr = lr_label_tag[1].text_content()
+        meta = {}
 
-        lastActionOffset = 0
-        if (
-            table_rows[4 + cosponsorOffset][0].text_content().strip()
-            == "Governor Action:"
-        ):
-            lastActionOffset = 1
-        official_title_tag = table_rows[5 + cosponsorOffset + lastActionOffset]
-        assert official_title_tag[0].text_content().strip() == "Bill String:"
-        official_title = official_title_tag[1].text_content()
+        for row in table_rows:
+            if row.xpath("th"):
+                key = row.xpath("th")[0].text_content().strip()
+                val = row.xpath("td")[0]
+                meta[key] = val
 
-        # could substitute the description for the name,
-        # but keeping it separate for now.
-
+        official_title = meta["Bill String:"].text_content()
         bill_type = "bill"
         triplet = bill_id[:3]
 
@@ -505,7 +492,10 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         bill.add_source(url)
 
-        bill_sponsor = clean_text(table_rows[0][1].text_content())
+        if len(meta["Sponsor:"]) > 0:
+            bill_sponsor = clean_text(meta["Sponsor:"][0].text_content())
+        else:
+            bill_sponsor = ""
 
         # HEC is a petition for a recount, which can be sponsorless
         if bill_sponsor == "" and "HEC" in bill_id:
