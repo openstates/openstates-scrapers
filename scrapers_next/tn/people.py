@@ -25,8 +25,10 @@ class LegDetail(HtmlPage):
                 cap_address += " "
         p.capitol_office.address = cap_address.strip()
 
-        img = CSS("img.framed-photo").match_one(self.root).get("src")
-        p.image = img
+        # they changed the data source on the photos, so creating links instead
+        chamber = "house" if p.chamber == "lower" else "senate"
+        abbr = "h" if p.chamber == "lower" else "s"
+        p.image = f"https://www.capitol.tn.gov/{chamber}/members/images/{abbr}{p.district}.jpg"
 
         try:
             if (

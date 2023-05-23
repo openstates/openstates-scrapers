@@ -161,7 +161,7 @@ class LegList(HtmlListPage):
         elif "Appointed" in full_name.text_content():
             name, appointment = full_name.text_content().split("(Appointed")
             appointment = appointment.replace(")", "").replace("\r\n", "").strip()
-        name = name.replace("\r\n", "").strip()
+        name = name.replace("\r\n", "").replace(",", "").strip()
 
         p = PartialMember(
             name=name,
