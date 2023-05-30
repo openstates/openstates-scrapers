@@ -110,7 +110,7 @@ class PRVoteScraper(Scraper):
                     result = "pass"
                 else:
                     result = "fail"
-                    msg = "Voting result {} not guarenteed to be 'fail'. Take a look.".format(
+                    msg = "Voting result {} not guaranteed to be 'fail'. Take a look.".format(
                         vote_result["result"]
                     )
                     self.logger.warning(msg)

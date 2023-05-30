@@ -402,7 +402,7 @@ class MABillScraper(Scraper):
             self.info("No vote found in supplement for vote #%s" % supplement)
             return
 
-        # create list of independant items in vote_text
+        # create list of independent items in vote_text
         rows = vote_text.splitlines()
         lines = []
         for row in rows:

@@ -90,7 +90,7 @@ class MIEventScraper(Scraper):
 
         # The MI pages often contain broken markup for line breaks in the agenda
         # like </BR>. This gets stripped in text_content and we lose the information
-        # needed to seperate out agenda sections.
+        # needed to separate out agenda sections.
         # So instead, pull out the raw HTML, break it, then parse it.
         agenda = page.xpath("//td[contains(., 'Agenda')]/following-sibling::td")[0]
         agenda_html = lxml.etree.tostring(agenda, encoding="unicode")

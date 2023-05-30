@@ -218,7 +218,7 @@ class IDBillScraper(Scraper):
                     actor, date, row[2], session, bill_id, chamber, url
                 )
                 # bill.add_vote_event(vote)
-            # some td's text is seperated by br elements
+            # some td's text is separated by br elements
             if len(row[2]):
                 action = "".join(row[2].itertext())
             action = action.replace("\xa0", " ").strip()

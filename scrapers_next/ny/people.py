@@ -51,7 +51,7 @@ def block_to_text(elem):
 
 def parse_address_lines(text):
     """
-    a fairly common occurence, a bunch of lines like
+    a fairly common occurrence, a bunch of lines like
     addr line 1
     addr line 2
     addr line 3?

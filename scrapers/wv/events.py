@@ -161,7 +161,7 @@ class WVEventScraper(Scraper, LXMLMixin):
 
     def clean_date(self, when):
         # Remove all text after the third comma to make sure no extra text
-        # is included in the date. Required to correctly parse texxt like this:
+        # is included in the date. Required to correctly parse text like this:
         # "Friday, March 3, 2023, Following wrap up of morning agenda"
         when = ",".join(when.split(",")[:2])
 

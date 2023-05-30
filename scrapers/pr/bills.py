@@ -20,7 +20,7 @@ _classifiers = (
     ("Enviado al Gobernador", "executive", "executive-receipt"),
     ("Veto", "executive", "executive-veto"),
     ("Veto de Bolsillo", "executive", "executive-veto"),
-    # comissions give a report but sometimes they dont do any amendments and
+    # commissions give a report but sometimes they dont do any amendments and
     # leave them as they are.
     # i am not checking if they did or not. but it be easy just read the end and
     # if it doesn't have amendments it should say 'sin enmiendas'

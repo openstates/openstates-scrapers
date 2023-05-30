@@ -93,7 +93,7 @@ class SDEventScraper(Scraper):
             # Because the list of docs isn't ordered, We need to loop through this list multiple times.
             # once to grab DocumentTypeId = 5, which are the agendas for the actual meetings
             # then after we've created the events, again for DocumentTypeId = 4, which are the minutes
-            # we can skip the other DocumentTypeIds becase they're included in the /Documents endpoint,
+            # we can skip the other DocumentTypeIds because they're included in the /Documents endpoint,
             # or audio which is duplicated in DocumentTypeId 5
             for row in documents:
                 if row["NoMeeting"] is True:
