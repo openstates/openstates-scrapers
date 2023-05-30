@@ -268,7 +268,7 @@ class WIBillScraper(Scraper):
                 line,
             )
             if not match:
-                # So far, the only one that doens't match is
+                # So far, the only one that doesn't match is
                 # http://docs.legis.wisconsin.gov/2011/proposals/ab568
                 # In the following format:
                 # Introduced by Representatives Krusick and J. Ott, by ... ;

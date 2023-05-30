@@ -51,7 +51,7 @@ class DEBillScraper(Scraper, LXMLMixin):
 
     def filter_bills(self, items):
         """
-        Read through all bills on a page. If a bill has no subsitutes,
+        Read through all bills on a page. If a bill has no substitutes,
         yield it. If a bill does have substitutes, keep the highest-numbered
         substitute and only yield that Bill object.
         Bills may be amended (`BILL_ID w/ AMENDMENT ID` on the website),

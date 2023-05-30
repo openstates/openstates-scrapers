@@ -176,7 +176,7 @@ class MDBillScraper(Scraper):
             if not any(
                 motion_keyword in motion.lower() for motion_keyword in motion_keywords
             ):
-                # This condition covers for the bad formating in SB 1260
+                # This condition covers for the bad formatting in SB 1260
                 motion = lines[page_index - 3]
             if not any(
                 motion_keyword in motion.lower() for motion_keyword in motion_keywords
