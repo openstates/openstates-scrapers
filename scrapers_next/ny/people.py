@@ -31,7 +31,7 @@ class PartyAugmentation(HtmlPage):
             # party is indicated by just a red or blue cell in the table
             # get the last 6 characters off the background-color to see which color it is
             party_style = tds[1].get("style")[-6:]
-            party = "Democrat" if party_style == "3333FF" else "Republican"
+            party = "Democrat" if party_style == "B0CEFF" else "Republican"
             mapping[dist] = (name, party)
         return mapping
 
