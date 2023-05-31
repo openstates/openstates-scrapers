@@ -155,6 +155,16 @@ class Texas(State):
             "start_date": "2023-01-10",
             "active": True,
         },
+        {
+            "_scraped_name": "88(1) - 2023",
+            "classification": "special",
+            "identifier": "881",
+            "name": "88th Legislature, 1st Called Session (2023)",
+            "start_date": "2023-05-29",
+            # TODO: correct end date
+            "end_date": "2023-06-30",
+            "active": True,
+        },
         # TODO: Re-enable vote scraper when adding next regular session
     ]
     ignored_scraped_sessions = [
