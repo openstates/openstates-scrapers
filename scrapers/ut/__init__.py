@@ -325,9 +325,8 @@ class Utah(State):
             "classification": "special",
             "identifier": "2023S1",
             "name": "2023 1st Special Session",
-            # TODO: update end date
             "start_date": "2023-05-17",
-            "end_date": "2023-06-01",
+            "end_date": "2023-05-18",
             "active": True,
         },
     ]
