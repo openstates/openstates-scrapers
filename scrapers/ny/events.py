@@ -12,6 +12,7 @@ import dateutil.parser
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 from .apiclient import OpenLegislationAPIClient
+from utils import hash_key
 
 """
 Senate bill suffix regex.
@@ -103,7 +104,7 @@ class NYEventScraper(Scraper):
             start_date=when,
             location_name=location,
         )
-        event.dedupe_key = event_name[:499]
+        event.dedupe_key = hash_key(event_name)
 
         event.add_participant(com_name, type="committee", note="host")
 
