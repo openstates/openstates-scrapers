@@ -539,7 +539,7 @@ class UpperComVote(PdfPage):
                         votes["no"].append(member)
                     else:
                         raise ValueError(
-                            "Unparseable vote found for {} in {}:\n{}".format(
+                            "Unparsable vote found for {} in {}:\n{}".format(
                                 member, self.source.url, line
                             )
                         )

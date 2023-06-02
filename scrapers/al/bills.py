@@ -164,6 +164,11 @@ class ALBillScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
+        if not page.xpath(
+            '//tr[td[contains(text(),"Approved Date and Time")]]/td[2]/text()'
+        ):
+            return
+
         # second td in the row containing Approved Date and Time
         act_date = page.xpath(
             '//tr[td[contains(text(),"Approved Date and Time")]]/td[2]/text()'

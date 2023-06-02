@@ -20,7 +20,7 @@ jobs:
         python-version: "3.9"
     - name: install poetry
       run: pip install poetry wheel
-    - name: install depdenencies
+    - name: install dependencies
       run: poetry install --only=dev
     - name: flake8 check
       run: poetry run flake8 scrapers scrapers_next

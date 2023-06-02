@@ -285,7 +285,7 @@ class DCBillScraper(Scraper):
                                             v.vote("other", mem_name)
                                             other_count += 1
                                         else:
-                                            # Incase anything new pops up
+                                            # In case anything new pops up
                                             other_count += 1
                                             v.vote("other", mem_name)
 

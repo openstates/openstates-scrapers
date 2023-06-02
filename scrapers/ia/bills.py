@@ -103,7 +103,7 @@ class IABillScraper(Scraper):
                 elif ".pdf" in document_url:
                     media_type = "application/pdf"
                 bill.add_document_link(
-                    note="Backround Statement", url=document_url, media_type=media_type
+                    note="Background Statement", url=document_url, media_type=media_type
                 )
 
             bill.add_version_link(

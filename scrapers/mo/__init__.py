@@ -1,6 +1,3 @@
-import http
-import email
-from utils import url_xpath
 from openstates.scrape import State
 from .bills import MOBillScraper
 from .events import MOEventScraper
@@ -137,32 +134,49 @@ class Missouri(State):
         "2019 1st Extraordinary Session",
     ]
 
+    full_session_list = [
+        "2023 Regular Session",
+        "2022 1st Extraordinary Session",
+        "2022 Regular Session",
+        "2021 1st Extraordinary Session",
+        "2021 Regular Session",
+        "2020 2nd Extraordinary Session",
+        "2020 1st Extraordinary Session",
+        "2020 Regular Session",
+        "2019 1st Extraordinary Session",
+        "2019 Regular Session",
+        "2018 1st Extraordinary Session",
+        "2018 Special Session",
+        "2018 Regular Session",
+        "2017 2nd Extraordinary Session",
+        "2017 Extraordinary Session",
+        "2017 Regular Session",
+        "2016 Regular Session",
+        "2015 Regular Session",
+        "2014 Regular Session",
+        "2013 Extraordinary Session",
+        "2013 Regular Session",
+        "2012 Regular Session",
+        "2011 Extraordinary Session",
+        "2011 Regular Session",
+        "2010 Extraordinary Session",
+        "2010 Regular Session",
+        "2009 Regular Session",
+        "2008 Regular Session",
+        "2007 Extraordinary Session",
+        "2007 Regular Session",
+        "2006 Regular Session",
+        "2005 Extraordinary Session",
+        "2005 Regular Session",
+        "2004 Regular Session",
+        "2003 2nd Extraordinary Session",
+        "2003 1st Extraordinary Session",
+        "2003 Regular Session",
+        "2002 Regular Session",
+        "2001 Extraordinary Session",
+        "2001 Regular Session",
+        "2000 Regular Session",
+    ]
+
     def get_session_list(self):
-        http.client.parse_headers = parse_headers_override
-        return url_xpath(
-            "https://www.house.mo.gov/Session.aspx",
-            '//*[@id="sessions"]/option/text()',
-        )
-
-
-def parse_headers_override(fp, _class=http.client.HTTPMessage):
-    _MAXLINE = 2000
-    _MAXHEADERS = 2000
-    # based on Python's implementation but built to ignore bad headers
-    headers = []
-    while True:
-        line = fp.readline(_MAXLINE + 1)
-        if len(line) > _MAXLINE:
-            raise ValueError("header line")
-
-        # there is a bad header named default-src that has no colon, just skip it
-        if line.startswith(b"default-src"):
-            continue
-
-        headers.append(line)
-        if len(headers) > _MAXHEADERS:
-            raise ValueError("got more than %d headers" % _MAXHEADERS)
-        if line in (b"\r\n", b"\n", b""):
-            break
-    hstring = b"".join(headers).decode("iso-8859-1")
-    return email.parser.Parser(_class=_class).parsestr(hstring)
+        return self.full_session_list

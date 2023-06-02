@@ -243,7 +243,7 @@ class USVoteScraper(Scraper):
         roll_call = page.xpath("//roll_call_vote/vote_number/text()")[0]
         vote_id = "us-{}-upper-{}".format(when.year, roll_call)
 
-        # note: not everthing the senate votes on is a bill, this is OK
+        # note: not everything the senate votes on is a bill, this is OK
         # non bills include nominations and impeachments
         doc_type = page.xpath("//roll_call_vote/document/document_type/text()")[0]
 
