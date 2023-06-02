@@ -169,7 +169,7 @@ class NYEventScraper(Scraper):
                 location_name=location,
                 description=description,
             )
-            event.dedupe_key = event_name[:499]
+            event.dedupe_key = hash_key(event_name)
 
             event.add_participant(com_name, type="committee", note="host")
 
