@@ -105,11 +105,15 @@ class SCBillScraper(Scraper):
     urls = {
         "lower": {
             "daily-bill-index": "https://www.scstatehouse.gov/sessphp/hintros.php",
+            "2021-2022-DBI": "https://web.archive.org/web/20221110101038/https://www.scstatehouse.gov/sessphp/hintros.php",
+            "2019-2020-DBI": "https://web.archive.org/web/20201101155143/https://www.scstatehouse.gov/sessphp/hintros.php",
             "prefile-index": "https://www.scstatehouse.gov/sessphp/prefil"
             "{last_two_digits_of_session_year}.php",
         },
         "upper": {
             "daily-bill-index": "https://www.scstatehouse.gov/sessphp/sintros.php",
+            "2021-2022-DBI": "https://web.archive.org/web/20221110101352/https://www.scstatehouse.gov/sessphp/sintros.php",
+            "2019-2020-DBI": "https://web.archive.org/web/20201101152857/https://www.scstatehouse.gov/sessphp/sintros.php",
             "prefile-index": "https://www.scstatehouse.gov/sessphp/prefil"
             "{last_two_digits_of_session_year}.php",
         },
@@ -466,8 +470,30 @@ class SCBillScraper(Scraper):
         # get bill index
         chambers = [chamber] if chamber else ["upper", "lower"]
 
+        # TODO: Remove below block after successful past-session scrapes
+        # Dictionary of ids for URL paths to archived HTML of bill index pages
+        # from the prior two sessions. (Archives needed or index_url leads to current session bills.)
+        # Example of 2019-2020 House bill index URL:
+        # https://web.archive.org/web/20201101155143/https://www.scstatehouse.gov/sessphp/hintros.php
+        web_archive_ids = {
+            "2019-2020-lower": "20201101155143",
+            "2019-2020-upper": "20201101152857",
+            "2021-2022-lower": "20221110101038",
+            "2021-2022-upper": "20221110101352",
+        }
+        # Regex used to extract non-archived (actual) bill list pages
+        web_archive_re = re.compile(r"https://web\.archive\.org/web/\d+/(.+)")
+
         for chamber in chambers:
             index_url = self.urls[chamber]["daily-bill-index"]
+
+            # TODO: Remove below block after successful past-session scrapes
+            if not session == "2023-2024":
+                # Constructs web-archived page with given ids for past sessions
+                web_archive_id = web_archive_ids[f"{session}-{chamber}"]
+                web_arch_prepend = f"https://web.archive.org/web/{web_archive_id}"
+                index_url = f"{web_arch_prepend}/{index_url}"
+
             chamber_letter = "S" if chamber == "upper" else "H"
 
             page = self.get(index_url).text
@@ -477,6 +503,14 @@ class SCBillScraper(Scraper):
             # visit each day and extract bill ids
             days = doc.xpath("//div/b/a/@href")
             for day_url in days:
+
+                # TODO: Remove below block after successful past-session scrapes
+                web_archive_match = web_archive_re.match(day_url)
+                # If bill intro links are retrieved from archived page
+                if web_archive_match:
+                    # Extract actual page using the regex match object
+                    day_url = web_archive_match.group(1)
+
                 try:
                     data = self.get(day_url).text
                 except scrapelib.HTTPError:

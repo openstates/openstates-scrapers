@@ -52,6 +52,8 @@ class SouthCarolina(State):
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-08",
             "end_date": "2020-06-25",
+            # TODO: Remove below line after successful past-session scrapes
+            "active": True,
         },
         {
             "_scraped_name": "124 - (2021-2022)",
@@ -60,7 +62,8 @@ class SouthCarolina(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-12",
             "end_date": "2022-05-12",
-            "active": False,
+            # TODO: Revert below value to False after successful past-session scrapes
+            "active": True,
         },
         {
             "_scraped_name": "125 - (2023-2024)",
