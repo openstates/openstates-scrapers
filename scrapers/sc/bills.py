@@ -105,15 +105,11 @@ class SCBillScraper(Scraper):
     urls = {
         "lower": {
             "daily-bill-index": "https://www.scstatehouse.gov/sessphp/hintros.php",
-            "2021-2022-DBI": "https://web.archive.org/web/20221110101038/https://www.scstatehouse.gov/sessphp/hintros.php",
-            "2019-2020-DBI": "https://web.archive.org/web/20201101155143/https://www.scstatehouse.gov/sessphp/hintros.php",
             "prefile-index": "https://www.scstatehouse.gov/sessphp/prefil"
             "{last_two_digits_of_session_year}.php",
         },
         "upper": {
             "daily-bill-index": "https://www.scstatehouse.gov/sessphp/sintros.php",
-            "2021-2022-DBI": "https://web.archive.org/web/20221110101352/https://www.scstatehouse.gov/sessphp/sintros.php",
-            "2019-2020-DBI": "https://web.archive.org/web/20201101152857/https://www.scstatehouse.gov/sessphp/sintros.php",
             "prefile-index": "https://www.scstatehouse.gov/sessphp/prefil"
             "{last_two_digits_of_session_year}.php",
         },
