@@ -90,6 +90,51 @@ def action_type(action):
     return None
 
 
+def get_index_url(session, chamber, chamber_letter):
+    """
+    Note: a Web Archive ID should be added during session transitions to ensure
+    functionality of past session scrapes.
+    1. Search chamber-specific `index_url` on https://web.archive.org/
+    2. Select latest snapshot in the session end year that still has bill intros
+    listed for the full session (typically this is the early November snapshot)
+    3. The Web Archive ID is the 14-digit number string in that snapshot's URL
+
+    Example of 2019-2020 House bill index URL:
+    https://web.archive.org/web/20201101155143/https://www.scstatehouse.gov/sessphp/hintros.php
+    """
+    index_url = f"https://www.scstatehouse.gov/sessphp/{chamber_letter}intros.php"
+
+    # Dictionary of ids for URL paths to archived HTML of bill index pages
+    # from the prior two sessions. (Archives needed or index_url leads to current session bills.)
+    web_archive_ids = {
+        "2017-2018-lower": "20181101144929",
+        "2017-2018-upper": "20181101144422",
+        "2019-2020-lower": "20201101155143",
+        "2019-2020-upper": "20201101152857",
+        "2021-2022-lower": "20221110101038",
+        "2021-2022-upper": "20221110101352",
+        # TODO: Add archive id values during transition between sessions (i.e. Dec 2024).
+        "2023-2024-lower": None,
+        "2023-2024-upper": None,
+        "2025-2026-lower": None,
+        "2025-2026-upper": None,
+        "2027-2028-lower": None,
+        "2027-2028-upper": None,
+        "2029-2030-lower": None,
+        "2029-2030-upper": None,
+    }
+
+    web_archive_id = web_archive_ids[f"{session}-{chamber}"]
+
+    # Web Archive IDs should only be in collection for past sessions
+    if web_archive_id:
+        # Constructs web-archived page with given ids for past sessions
+        web_arch_prepend = f"https://web.archive.org/web/{web_archive_id}"
+        index_url = f"{web_arch_prepend}/{index_url}"
+
+    return index_url
+
+
 class SCBillScraper(Scraper):
     """
     Bill scraper that pulls down all legislatition on from sc website.
@@ -459,38 +504,23 @@ class SCBillScraper(Scraper):
 
         # Subject scraping disabled Summer 2020, openstates/issues#77
         # Leaving the remnants of this around since it is very possible that SC will
-        # update their web configuration and we can reuse this later, but for now it was
-        # breaking 75% of the time and it isn't worth the cost.
+        # update their web configuration, and we can reuse this later, but for now it was
+        # breaking 75% of the time, and it isn't worth the cost.
         # self.scrape_subjects(session)
 
         # get bill index
         chambers = [chamber] if chamber else ["upper", "lower"]
 
-        # TODO: Remove below block after successful past-session scrapes
-        # Dictionary of ids for URL paths to archived HTML of bill index pages
-        # from the prior two sessions. (Archives needed or index_url leads to current session bills.)
-        # Example of 2019-2020 House bill index URL:
-        # https://web.archive.org/web/20201101155143/https://www.scstatehouse.gov/sessphp/hintros.php
-        web_archive_ids = {
-            "2019-2020-lower": "20201101155143",
-            "2019-2020-upper": "20201101152857",
-            "2021-2022-lower": "20221110101038",
-            "2021-2022-upper": "20221110101352",
-        }
-        # Regex used to extract non-archived (actual) bill list pages
+        # Regex used to extract non-archived (actual) bill list page links
         web_archive_re = re.compile(r"https://web\.archive\.org/web/\d+/(.+)")
 
         for chamber in chambers:
-            index_url = self.urls[chamber]["daily-bill-index"]
+            chamber_letter = "s" if chamber == "upper" else "h"
 
-            # TODO: Remove below block after successful past-session scrapes
-            if not session == "2023-2024":
-                # Constructs web-archived page with given ids for past sessions
-                web_archive_id = web_archive_ids[f"{session}-{chamber}"]
-                web_arch_prepend = f"https://web.archive.org/web/{web_archive_id}"
-                index_url = f"{web_arch_prepend}/{index_url}"
-
-            chamber_letter = "S" if chamber == "upper" else "H"
+            # Uses helper function to get current session bill index page url,
+            # or archived url in case of past session
+            index_url = get_index_url(session, chamber, chamber_letter)
+            # TODO: Update Web Archive ID values in `get_index_url()` during session transitions
 
             page = self.get(index_url).text
             doc = lxml.html.fromstring(page)
@@ -500,9 +530,8 @@ class SCBillScraper(Scraper):
             days = doc.xpath("//div/b/a/@href")
             for day_url in days:
 
-                # TODO: Remove below block after successful past-session scrapes
-                web_archive_match = web_archive_re.match(day_url)
                 # If bill intro links are retrieved from archived page
+                web_archive_match = web_archive_re.match(day_url)
                 if web_archive_match:
                     # Extract actual page using the regex match object
                     day_url = web_archive_match.group(1)
@@ -517,13 +546,13 @@ class SCBillScraper(Scraper):
 
                 for bill_a in doc.xpath("//p/a[1]"):
                     bill_id = bill_a.text.replace(".", "")
-                    if bill_id.startswith(chamber_letter):
+                    if bill_id.lower().startswith(chamber_letter):
                         yield from self.scrape_details(
                             bill_a.get("href"), session, chamber, bill_id
                         )
 
-            prefile_url = self.urls[chamber]["prefile-index"].format(
-                last_two_digits_of_session_year=session[2:4]
+            prefile_url = (
+                f"https://www.scstatehouse.gov/sessphp/prefil{session[2:4]}.php"
             )
             page = self.get(prefile_url).text
             doc = lxml.html.fromstring(page)
@@ -546,7 +575,7 @@ class SCBillScraper(Scraper):
 
                 for bill_a in doc.xpath("//p/a[1]"):
                     bill_id = bill_a.text.replace(".", "")
-                    if bill_id.startswith(chamber_letter):
+                    if bill_id.lower().startswith(chamber_letter):
                         yield from self.scrape_details(
                             bill_a.get("href"), session, chamber, bill_id
                         )
