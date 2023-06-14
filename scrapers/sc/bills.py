@@ -113,18 +113,11 @@ def get_index_url(session, chamber, chamber_letter):
         "2019-2020-upper": "20201101152857",
         "2021-2022-lower": "20221110101038",
         "2021-2022-upper": "20221110101352",
-        # TODO: Add archive id values during transition between sessions (i.e. Dec 2024).
-        "2023-2024-lower": None,
-        "2023-2024-upper": None,
-        "2025-2026-lower": None,
-        "2025-2026-upper": None,
-        "2027-2028-lower": None,
-        "2027-2028-upper": None,
-        "2029-2030-lower": None,
-        "2029-2030-upper": None,
+        # TODO: Add archive id values for both chambers for outgoing session
+        #  during transition between sessions (Upcoming: Nov or Dec 2024).
     }
 
-    web_archive_id = web_archive_ids[f"{session}-{chamber}"]
+    web_archive_id = web_archive_ids.get(f"{session}-{chamber}", None)
 
     # Web Archive IDs should only be in collection for past sessions
     if web_archive_id:
@@ -137,7 +130,7 @@ def get_index_url(session, chamber, chamber_letter):
 
 class SCBillScraper(Scraper):
     """
-    Bill scraper that pulls down all legislatition on from sc website.
+    Bill scraper that pulls down all legislation on from SC website.
     Used to pull in information regarding Legislation, and basic associated metadata,
     using x-path to find and obtain the information
     """
@@ -146,19 +139,6 @@ class SCBillScraper(Scraper):
         super().__init__(*args, **kwargs)
         self.raise_errors = False
         self.retry_attempts = 5
-
-    urls = {
-        "lower": {
-            "daily-bill-index": "https://www.scstatehouse.gov/sessphp/hintros.php",
-            "prefile-index": "https://www.scstatehouse.gov/sessphp/prefil"
-            "{last_two_digits_of_session_year}.php",
-        },
-        "upper": {
-            "daily-bill-index": "https://www.scstatehouse.gov/sessphp/sintros.php",
-            "prefile-index": "https://www.scstatehouse.gov/sessphp/prefil"
-            "{last_two_digits_of_session_year}.php",
-        },
-    }
 
     _subjects = defaultdict(set)
 
@@ -174,7 +154,7 @@ class SCBillScraper(Scraper):
         """
         Obtain bill subjects, which will be saved onto _subjects global,
         to be added on to bill later on in process.
-        :param session_code:
+        :param session:
 
         """
         # only need to do it once
