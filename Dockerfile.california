@@ -13,7 +13,7 @@ RUN apt-get update -qq \
       unzip \
       mdbtools \
       libpq5 \
-      libgdal28 \
+      libgdal32 \
       libmariadb-dev \
       mariadb-server \
       mariadb-client \
