@@ -329,8 +329,18 @@ class Utah(State):
             "end_date": "2023-05-18",
             "active": True,
         },
+        # {
+        #     "_scraped_name": "2023 2nd Special Session",
+        #     "classification": "special",
+        #     "identifier": "2023S2",
+        #     "name": "2023 2nd Special Session",
+        #     "start_date": "2023-06-14",
+        #     "end_date": "2023-06-15",
+        #     "active": True,
+        # },
     ]
     ignored_scraped_sessions = [
+        "2023 2nd Special Session",
         "2024 General Session",
         "2013 1st House Session",
         "2011 Veto Override Session",
