@@ -7,7 +7,6 @@ from openstates.scrape import Scraper, Event
 from spatula import HtmlPage, PdfPage, URL, XPath, SelectorError
 import re
 
-
 bills_re = re.compile(
     r"(SJR|AR|AJR|IP|SCR|SB|ACR|SR|AB)\s{0,5}0*(\d+)", flags=re.IGNORECASE
 )
@@ -153,6 +152,9 @@ class CurrentMeetings(HtmlPage):
                 # Date contains "upon adjournment" instead of start time
                 date_only = date.split("[")[0]
                 date = f"{date_only}{agenda_start_time}"
+
+            # To prevent strptime() from failing due to extra whitespace
+            date = date.strip()
 
             date_and_time_match = self.time_in_date_re.search(date)
             if date_and_time_match:
