@@ -77,5 +77,5 @@ class NewYork(State):
     def get_session_list(self):
         return url_xpath(
             "http://nysenate.gov/search/legislation",
-            '//select[@name="bill_session_year"]/option[@value!=""]/@value',
+            '//select[@name="session_year"]/option[@value!="0"]/@value',
         )
