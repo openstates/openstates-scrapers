@@ -11,29 +11,30 @@ from spatula import HtmlListPage, HtmlPage, CSS, XPath, SelectorError
 
 TZ = pytz.timezone("PST8PDT")
 ACTION_CLASSIFIERS = (
-    ("Approved by the Governor", "executive-signature"),
-    ("Bill read. Veto not sustained", "veto-override-passage"),
-    ("Bill read. Veto sustained", "veto-override-failure"),
-    ("Enrolled and delivered to Governor", "executive-receipt"),
-    ("From committee: .+? adopted", "committee-passage"),
+    ("Approved by the Governor", ["executive-signature"]),
+    ("Bill read. Veto not sustained", ["veto-override-passage"]),
+    ("Bill read. Veto sustained", ["veto-override-failure"]),
+    ("Enrolled and delivered to Governor", ["executive-receipt"]),
+    ("From committee: .+? adopted", ["committee-passage"]),
     # the committee and chamber passage can be combined, see NV 80 SB 506
     (
         r"From committee: .+? pass(.*)Read Third time\.\s*Passed\.",
         ["committee-passage", "reading-3", "passage"],
     ),
-    ("From committee: .+? pass", "committee-passage"),
+    ("From committee: .+? pass", ["committee-passage"]),
     ("Prefiled. Referred", ["introduction", "referral-committee"]),
     ("Read first time. Referred", ["reading-1", "referral-committee"]),
-    ("Read first time.", "reading-1"),
-    ("Read second time.", "reading-2"),
+    ("Read first time.", ["reading-1"]),
+    ("Read second time.", ["reading-2"]),
     ("Read third time. Lost", ["failure", "reading-3"]),
     ("Read third time. Passed", ["passage", "reading-3"]),
-    ("Read third time.", "reading-3"),
-    ("Rereferred", "referral-committee"),
-    ("Resolution read and adopted", "passage"),
-    ("To enrollment", "passage"),
-    ("Approved by the Governor", "executive-signature"),
-    ("Vetoed by the Governor", "executive-veto"),
+    ("Read third time.", ["reading-3"]),
+    ("Rereferred", ["referral-committee"]),
+    ("Resolution read and adopted", ["passage"]),
+    ("Enrolled and delivered", ["enrolled"]),
+    ("To enrollment", ["passage"]),
+    ("Approved by the Governor", ["executive-signature"]),
+    ("Vetoed by the Governor", ["executive-veto"]),
 )
 
 # NV sometimes carries-over bills from previous sessions,
@@ -228,11 +229,18 @@ class BillTabDetail(HtmlPage):
                 elif "Governor" in action:
                     actor = "executive"
 
-                action_type = None
+                action_type = []
                 for pattern, atype in ACTION_CLASSIFIERS:
-                    if re.search(pattern, action, re.IGNORECASE):
-                        action_type = atype
-                        break
+                    if not re.search(pattern, action, re.IGNORECASE):
+                        continue
+                    # sometimes NV returns multiple actions in the same posting
+                    # so don't break here
+                    action_type = action_type + atype
+
+                if not action_type:
+                    action_type = None
+                else:
+                    action_type = list(set(action_type))
 
                 related_entities = []
                 if "Committee on" in action:
