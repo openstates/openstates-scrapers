@@ -31,6 +31,7 @@ ACTION_CLASSIFIERS = (
     ("Read third time.", "reading-3"),
     ("Rereferred", "referral-committee"),
     ("Resolution read and adopted", "passage"),
+    ("Enrolled and delivered", "enrolled"),
     ("To enrollment", "passage"),
     ("Approved by the Governor", "executive-signature"),
     ("Vetoed by the Governor", "executive-veto"),
@@ -228,11 +229,15 @@ class BillTabDetail(HtmlPage):
                 elif "Governor" in action:
                     actor = "executive"
 
-                action_type = None
+                action_type = []
                 for pattern, atype in ACTION_CLASSIFIERS:
                     if re.search(pattern, action, re.IGNORECASE):
-                        action_type = atype
-                        break
+                        if isinstance(atype, str):
+                            atype = [atype]
+                        action_type = list(set(action_type + atype))
+
+                if not action_type:
+                    action_type = None
 
                 related_entities = []
                 if "Committee on" in action:
