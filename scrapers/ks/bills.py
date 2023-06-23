@@ -53,9 +53,6 @@ class KSBillScraper(Scraper):
 
             bill_id = bill_data["BILLNO"]
 
-            if bill_id != "HB2022":
-                continue
-
             # filter other chambers
             if not bill_id.startswith(chamber_letter):
                 continue
