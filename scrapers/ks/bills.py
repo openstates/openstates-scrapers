@@ -53,6 +53,9 @@ class KSBillScraper(Scraper):
 
             bill_id = bill_data["BILLNO"]
 
+            if bill_id != "HB2022":
+                continue
+
             # filter other chambers
             if not bill_id.startswith(chamber_letter):
                 continue
@@ -89,7 +92,7 @@ class KSBillScraper(Scraper):
                     if "committee" in primary_sponsor.lower()
                     else "person",
                     primary=True,
-                    classification="original sponsor",
+                    classification="primary",
                 )
             for sponsor in bill_data["SPONSOR_NAMES"]:
                 if sponsor in bill_data["ORIGINAL_SPONSOR"]:
