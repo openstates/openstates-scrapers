@@ -241,6 +241,7 @@ class NCBillScraper(Scraper):
                 bill=bill,
                 classification="passage",  # TODO: classify votes
             )
+            ve.dedupe_key = rcs
             ve.set_count("yes", int(aye))
             ve.set_count("no", int(no))
             ve.set_count("not voting", int(nv))
