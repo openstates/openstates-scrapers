@@ -161,6 +161,15 @@ class Texas(State):
             "identifier": "881",
             "name": "88th Legislature, 1st Called Session (2023)",
             "start_date": "2023-05-29",
+            "end_date": "2023-06-27",
+            "active": False,
+        },
+        {
+            "_scraped_name": "88(2) - 2023",
+            "classification": "special",
+            "identifier": "882",
+            "name": "88th Legislature, 2nd Called Session (2023)",
+            "start_date": "2023-06-28",
             # TODO: correct end date
             "end_date": "2023-06-30",
             "active": True,
