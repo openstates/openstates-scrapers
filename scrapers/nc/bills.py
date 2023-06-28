@@ -234,6 +234,7 @@ class NCBillScraper(Scraper):
             date = date.isoformat()
 
             ve = VoteEvent(
+                identifier=f"Roll Call Number: {rcs}",
                 chamber=chamber,
                 start_date=date,
                 motion_text=subject,
