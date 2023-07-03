@@ -162,7 +162,7 @@ class Texas(State):
             "name": "88th Legislature, 1st Called Session (2023)",
             "start_date": "2023-05-29",
             "end_date": "2023-06-27",
-            "active": False,
+            "active": True,
         },
         {
             "_scraped_name": "88(2) - 2023",
