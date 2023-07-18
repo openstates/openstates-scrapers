@@ -382,7 +382,6 @@ class INBillScraper(Scraper):
         # ]
 
         for b in all_pages:
-            # print(b)
             bill_id = b["billName"]
             disp_bill_id = b["displayName"]
 
