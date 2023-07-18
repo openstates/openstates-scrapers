@@ -195,7 +195,6 @@ class CapitolPreservationComm(HtmlPage):
 
             # First line is always the title (since vacant positions are skipped already)
             name = title[0].strip()
-            print(name)
 
             # If the final character of the name is a comma, remove it
             if name.endswith(","):
