@@ -3,7 +3,7 @@ from openstates.scrape import State
 from .bills import VIBillScraper
 
 
-class USVirginIslands(State):
+class VirginIslands(State):
     scrapers = {
         "bills": VIBillScraper,
     }
@@ -12,13 +12,17 @@ class USVirginIslands(State):
             "_scraped_name": "30",
             "classification": "primary",
             "identifier": "30",
-            "name": "2013-2013 Regular Session",
+            "name": "2013-2014 Regular Session",
+            "start_date": "2013-01-09",
+            "end_date": "2014-12-31",
         },
         {
             "_scraped_name": "31",
             "classification": "primary",
             "identifier": "31",
             "name": "2015-2016 Regular Session",
+            "start_date": "2015-01-09",
+            "end_date": "2016-12-31",
         },
         {
             "_scraped_name": "32",
