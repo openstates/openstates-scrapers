@@ -2,7 +2,6 @@ import datetime
 import re
 
 import lxml.etree
-from itertools import izip
 
 from openstates.scrape import Bill, Scraper
 from utils import LXMLMixin
@@ -298,4 +297,4 @@ class VIBillScraper(Scraper, LXMLMixin):
     def grouped(self, iterable, n):
         # Return a list grouped by n
         # "s -> (s1,s1,s2,...sn-1), (sn,sn+1,sn+2,...s2n-1), (s2n,s2n+1,s2n+2,...s3n-1), ..."
-        return izip(*[iter(iterable)] * n)
+        return zip(*[iter(iterable)] * n)

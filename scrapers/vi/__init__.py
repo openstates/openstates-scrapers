@@ -1,12 +1,12 @@
 from utils import url_xpath
 from openstates.scrape import State
 
-# from .bills import VIBillScraper
+from .bills import VIBillScraper
 
 
 class USVirginIslands(State):
     scrapers = {
-        # 'bills': VIBillScraper,
+        "bills": VIBillScraper,
     }
     legislative_sessions = [
         {
