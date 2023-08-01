@@ -73,10 +73,10 @@ class VIBillScraper(Scraper, LXMLMixin):
         self.session = session
 
         if chambers is None:
-            chambers = ["upper", "lower"]
+            chambers = ["unicameral"]
 
         # First we get the Form to get our ASP viewstate variables
-        search_url = "http://www.legvi.org/vilegsearch/default.aspx"
+        search_url = f"https://legvi.org/billtracking/Results.aspx?l={self.session}"
         doc = lxml.html.fromstring(self.get(url=search_url).text)
 
         (viewstate,) = doc.xpath('//input[@id="__VIEWSTATE"]/@value')
