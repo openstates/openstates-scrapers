@@ -1,3 +1,4 @@
+from utils import url_xpath
 from openstates.scrape import State
 
 from .bills import VIBillScraper
@@ -61,4 +62,7 @@ class VirginIslands(State):
     ignored_scraped_sessions = ["21", "22", "23", "24", "25", "26", "27", "28", "29"]
 
     def get_session_list(self):
-        return [s["identifier"] for s in self.legislative_sessions]
+        return url_xpath(
+            "https://legvi.org/billtracking/",
+            '//select[@name="ctl00$ContentPlaceHolder$leginum"]/option/text()',
+        )
