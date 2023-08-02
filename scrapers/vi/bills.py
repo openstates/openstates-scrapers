@@ -239,7 +239,7 @@ class VIBillScraper(Scraper, LXMLMixin):
                 name=sponsor.strip(),
                 entity_type="person",
                 primary=(True if sponsor_type == "sponsor" else False),
-                on_duplicate="ignore",
+                # on_duplicate="ignore",
             )
 
     def parse_date_actions(self, bill, bill_page):
