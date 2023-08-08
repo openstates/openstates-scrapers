@@ -226,10 +226,19 @@ class WestVirginia(State):
             "end_date": "2023-03-11",
             "active": True,
         },
+        {
+            "_scraped_name": "2023",
+            "classification": "special",
+            "identifier": "20231S",
+            "name": "2023 First Special Session",
+            "start_date": "2023-08-06",
+            "end_date": "2023-08-11",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "2029",
-        *(str(each) for each in range(1940, 2011)),
+        *(str(each) for each in range(1930, 2011)),
     ]
 
     def get_session_list(self):
