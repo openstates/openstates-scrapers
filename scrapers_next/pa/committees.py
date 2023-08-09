@@ -214,7 +214,6 @@ class CapitolPreservationComm(HtmlPage):
                 # If member also has a title, append it to their role
                 if title != "":
                     role += f", {title}"
-                print(role)
 
             except SelectorError:
                 # If a member has no bold role, fall back on just using their
