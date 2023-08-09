@@ -249,7 +249,7 @@ class WABillScraper(Scraper, LXMLMixin):
         current = int(datetime.date.today().year)
         max_year = year if current < year + 1 else year + 1
         for y in (year, max_year):
-            self.build_subject_mapping(y)
+            # self.build_subject_mapping(y)
             url = "%s/GetLegislationByYear?year=%s" % (self._base_url, y)
 
             try:
