@@ -224,7 +224,7 @@ class WestVirginia(State):
             "name": "2023 Regular",
             "start_date": "2023-01-11",
             "end_date": "2023-03-11",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023",
