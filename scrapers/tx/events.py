@@ -17,6 +17,8 @@ class TXEventScraper(Scraper, LXMLMixin):
 
     events_seen = set()
 
+    videos = {"lower": {}}
+
     # Checks if an event is a duplicate.
     # Events are considered duplicate if they have the same
     # name, date, start time, and end time
@@ -39,6 +41,8 @@ class TXEventScraper(Scraper, LXMLMixin):
                     event_count += 1
                     yield obj
         else:
+            self.scrape_lower_videos()
+
             for obj in self.scrape_committee_upcoming(session, "upper"):
                 if not self.is_duplicate(obj):
                     event_count += 1
@@ -169,3 +173,30 @@ class TXEventScraper(Scraper, LXMLMixin):
         )
 
         yield from self.scrape_upcoming_page(session, chamber, url)
+
+    def scrape_lower_videos(self):
+        url = "https://tlchouse.granicus.com/ViewPublisher.php?view_id=78"
+        page = self.lxmlize(url)
+
+        for row in page.xpath("//tbody/tr"):
+            if row.xpath("td[3]/a"):
+                onclick = row.xpath("td[3]/a/@onclick")[0]
+                committee = row.xpath("td[3]/a/text()")[0]
+                url = re.findall(
+                    r"window\.open\('(.*)\',\'player", onclick, flags=re.IGNORECASE
+                )[0]
+                if url[0:2] == "//":
+                    url = f"https:{url}"
+                date = row.xpath("td[1]/text()")[0]
+                date = dateutil.parser.parse(date)
+                day = date.strftime("%Y-%m-%d")
+
+                print(date, committee, url)
+
+                if committee not in self.videos["lower"]:
+                    self.videos["lower"][committee] = {}
+
+                if day not in self.videos["lower"][committee]:
+                    self.videos["lower"][committee][day] = []
+
+                self.videos["lower"][committee][day].append(url)
