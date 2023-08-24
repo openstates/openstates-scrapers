@@ -19,6 +19,15 @@ class Alabama(State):
             "active": False,
         },
         {
+            "_scraped_name": "2023 Second Special Session",
+            "classification": "special",
+            "identifier": "2023s2",
+            "name": "2023 Second Special Session",
+            "start_date": "2023-03-08",
+            "end_date": "2023-03-14",
+            "active": False,
+        },
+        {
             "_scraped_name": "Regular Session 2023",
             "classification": "primary",
             "identifier": "2023rs",
@@ -39,6 +48,10 @@ class Alabama(State):
             "2023s1": {
                 "session_year": "2023",
                 "session_type": "2023 First Special Session",
+            },
+            "2023s2": {
+                "session_year": "2023",
+                "session_type": "2023 Second Special Session",
             },
         }
         return ids[session]
