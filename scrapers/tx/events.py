@@ -43,10 +43,10 @@ class TXEventScraper(Scraper, LXMLMixin):
         else:
             self.scrape_lower_videos()
 
-            for obj in self.scrape_committee_upcoming(session, "upper"):
-                if not self.is_duplicate(obj):
-                    event_count += 1
-                    yield obj
+            # for obj in self.scrape_committee_upcoming(session, "upper"):
+            #     if not self.is_duplicate(obj):
+            #         event_count += 1
+            #         yield obj
             for obj in self.scrape_committee_upcoming(session, "lower"):
                 if not self.is_duplicate(obj):
                     event_count += 1
@@ -100,6 +100,18 @@ class TXEventScraper(Scraper, LXMLMixin):
         for alpha, num in bills:
             bill_id = f"{alpha} {num}"
             agenda.add_bill(bill_id)
+
+        day = datetime.strftime("%Y-%m-%d")
+        videos = []
+        try:
+            videos = self.videos[chamber][committee][day]
+        except KeyError:
+            pass
+
+        for video in videos:
+            event.add_media_link(
+                "Hearing Video", video, "text/html", on_duplicate="ignore"
+            )
 
         yield event
 
