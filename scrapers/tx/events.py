@@ -17,7 +17,7 @@ class TXEventScraper(Scraper, LXMLMixin):
 
     events_seen = set()
 
-    videos = {"lower": {}}
+    videos = {"lower": {}, "upper": {}}
 
     # Checks if an event is a duplicate.
     # Events are considered duplicate if they have the same
@@ -36,17 +36,23 @@ class TXEventScraper(Scraper, LXMLMixin):
     def scrape(self, session=None, chamber=None):
         event_count = 0
         if chamber:
+            if chamber == "upper":
+                self.scrape_upper_videos()
+            elif chamber == "lower":
+                self.scrape_lower_videos()
+
             for obj in self.scrape_committee_upcoming(session, chamber):
                 if not self.is_duplicate(obj):
                     event_count += 1
                     yield obj
         else:
-            self.scrape_lower_videos()
+            self.scrape_upper_videos()
+            for obj in self.scrape_committee_upcoming(session, "upper"):
+                if not self.is_duplicate(obj):
+                    event_count += 1
+                    yield obj
 
-            # for obj in self.scrape_committee_upcoming(session, "upper"):
-            #     if not self.is_duplicate(obj):
-            #         event_count += 1
-            #         yield obj
+            self.scrape_lower_videos()
             for obj in self.scrape_committee_upcoming(session, "lower"):
                 if not self.is_duplicate(obj):
                     event_count += 1
@@ -212,3 +218,34 @@ class TXEventScraper(Scraper, LXMLMixin):
                     self.videos["lower"][committee][day] = []
 
                 self.videos["lower"][committee][day].append(url)
+
+    def scrape_upper_videos(self):
+        url = "https://senate.texas.gov/av-archive.php"
+        page = self.lxmlize(url)
+        page.make_links_absolute(url)
+
+        for row in page.xpath("//table/tr")[1:]:
+            if row.xpath("td[4]/a"):
+                committee = row.xpath("td[2]/text()")[0]
+                committee = re.findall(
+                    r"Senate Committee on (.*?)(\(Part.*)?$",
+                    committee,
+                    flags=re.IGNORECASE,
+                )
+                if len(committee) < 1:
+                    # probably a full senate session
+                    continue
+                committee = committee[0][0]
+                date = row.xpath("td[1]/text()")[0]
+                date = dateutil.parser.parse(date)
+                day = date.strftime("%Y-%m-%d")
+
+                url = row.xpath("td[4]/a/@href")[0]
+
+                if committee not in self.videos["upper"]:
+                    self.videos["upper"][committee] = {}
+
+                if day not in self.videos["upper"][committee]:
+                    self.videos["upper"][committee][day] = []
+
+                self.videos["upper"][committee][day].append(url)
