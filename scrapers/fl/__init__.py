@@ -207,11 +207,10 @@ class Florida(State):
             "name": "2024 Regular Session",
             "identifier": "2024",
             "classification": "primary",
-            # TODO: Update with accurate start/end dates as below dates are
-            #  estimates based on days of week of 2022 session start/end
+            # TODO: Update End Date
             "start_date": "2024-01-09",
             "end_date": "2024-03-11",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

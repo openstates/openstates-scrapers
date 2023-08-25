@@ -226,6 +226,9 @@ class ALBillScraper(Scraper):
 
             action_attr = self.categorizer.categorize(row["Matter"])
             action_class = action_attr["classification"]
+            if row["Body"] == "":
+                self.warning(f"No chamber for {action_text}, skipping")
+                continue
 
             bill.add_action(
                 chamber=self.chamber_map_short[row["Body"]],
