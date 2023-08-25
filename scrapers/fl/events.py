@@ -10,6 +10,7 @@ class FlEventScraper(Scraper):
     # https://www.myfloridahouse.gov/Sections/Documents/publications.aspx
     # select#ddlSession
     session_ids = {
+        "2024": "103",
         "2023B": "102",
         "2022A": "101",
         "2023": "99",
