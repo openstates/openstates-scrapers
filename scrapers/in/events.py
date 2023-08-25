@@ -9,6 +9,8 @@ import requests
 import time
 from openstates.scrape import Scraper, Event
 from .utils import add_space
+from openstates.exceptions import EmptyScrape
+
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +31,6 @@ class INEventScraper(Scraper):
         HTTPStatus.BAD_GATEWAY,
         HTTPStatus.SERVICE_UNAVAILABLE,
         HTTPStatus.GATEWAY_TIMEOUT,
-        520,
     )
 
     def _in_request(self, url):
@@ -47,27 +48,35 @@ class INEventScraper(Scraper):
         attempts = 0
         while attempts < 5 and res.status_code in self._retry_codes:
             log.warning(
-                f"Got rate-limiting or CloudFlare error response {res.status_code}. Retrying..."
+                f"Got rate-limiting error response {res.status_code} for {url}. Retrying..."
             )
             attempts += 1
             time.sleep(15)
             res = self._session.get(url, headers=headers)
+        if res.status_code == 520:
+            self.logger.warning(f"Got CloudFlare error for {url}. Skipping...")
+            return {}
         res.raise_for_status()
         return res
 
     def scrape(self):
         res = self._in_request(f"{self.base_url}/{self.session}/standing-committees")
+        if not res:
+            raise EmptyScrape
 
         for committee in res.json()["items"]:
             committee_path = committee["link"].replace(
                 "standing-committees", "committees"
             )
             url = f"{self.base_url}{committee_path}/meetings"
-            yield from self.extract_committee_events(url, committee)
+            for event in self.extract_committee_events(url, committee):
+                yield event
 
     def extract_committee_events(self, url, committee):
 
         res = self._in_request(url)
+        if not res:
+            return []
         event_names = set()
         committee_name = f"{committee['chamber']} {committee['name']}"
         for meeting in res.json()["items"]:
@@ -82,7 +91,11 @@ class INEventScraper(Scraper):
             time = meeting["starttime"]
             if time:
                 time = time.replace(" ", "")
-            location = meeting["location"] or extra_details["location"] or "See Agenda"
+            location = (
+                meeting["location"]
+                or extra_details.get("location", None)
+                or "See Agenda"
+            )
             video_url = (
                 f"https://iga.in.gov/legislative/{self.session}/meeting/watchlive/{_id}"
             )
@@ -115,7 +128,7 @@ class INEventScraper(Scraper):
             event.add_participant(committee_name, type="committee", note="host")
             event.add_media_link("Video of Hearing", video_url, media_type="text/html")
             agenda = event.add_agenda_item("Bills under consideration")
-            for item in extra_details["agenda"]:
+            for item in extra_details.get("agenda", []):
                 if not item.get("bill", None):
                     continue
                 bill_id = item["bill"].get("billName")
