@@ -3,8 +3,10 @@ import os
 from datetime import date
 
 import dateutil.parser
+from http import HTTPStatus
 import pytz
 import requests
+import time
 from openstates.scrape import Scraper, Event
 from .utils import add_space
 
@@ -20,8 +22,17 @@ class INEventScraper(Scraper):
     }
     base_url = "https://api.iga.in.gov"
     session = date.today().year
+    _session = requests.Session()
+    _retry_codes = (
+        HTTPStatus.TOO_MANY_REQUESTS,
+        HTTPStatus.INTERNAL_SERVER_ERROR,
+        HTTPStatus.BAD_GATEWAY,
+        HTTPStatus.SERVICE_UNAVAILABLE,
+        HTTPStatus.GATEWAY_TIMEOUT,
+        520,
+    )
 
-    def in_request(self, url):
+    def _in_request(self, url):
         """
         Make request to INDIANA API
         """
@@ -32,14 +43,20 @@ class INEventScraper(Scraper):
             "Accept": "application/json",
             "User-Agent": useragent,
         }
-        res = requests.get(url, headers=headers)
-
-        if res.status_code != 200:
-            res.raise_for_status()
+        res = self._session.get(url, headers=headers)
+        attempts = 0
+        while attempts < 5 and res.status_code in self._retry_codes:
+            log.warning(
+                f"Got rate-limiting or CloudFlare error response {res.status_code}. Retrying..."
+            )
+            attempts += 1
+            time.sleep(15)
+            res = self._session.get(url, headers=headers)
+        res.raise_for_status()
         return res
 
     def scrape(self):
-        res = self.in_request(f"{self.base_url}/{self.session}/standing-committees")
+        res = self._in_request(f"{self.base_url}/{self.session}/standing-committees")
 
         for committee in res.json()["items"]:
             committee_path = committee["link"].replace(
@@ -50,28 +67,25 @@ class INEventScraper(Scraper):
 
     def extract_committee_events(self, url, committee):
 
-        res = self.in_request(url)
+        res = self._in_request(url)
         event_names = set()
+        committee_name = f"{committee['chamber']} {committee['name']}"
         for meeting in res.json()["items"]:
+            if meeting["cancelled"] != "False":
+                continue
+
             link = meeting["link"]
             _id = link.split("/")[-1]
-
-            extra_details = self.in_request(f"{self.base_url}{link}").json()
+            extra_details = self._in_request(f"{self.base_url}{link}").json()
 
             date = meeting["meetingdate"].replace(" ", "")
             time = meeting["starttime"]
             if time:
                 time = time.replace(" ", "")
             location = meeting["location"] or extra_details["location"] or "See Agenda"
-            chamber = (
-                meeting["committee"]["chamber"]
-                .replace("(S)", "Senate")
-                .replace("(H)", "House")
+            video_url = (
+                f"https://iga.in.gov/legislative/{self.session}/meeting/watchlive/{_id}"
             )
-            video_url = f"https://iga.in.gov//legislative/{self.session}/meeting/watchlive/{_id}"
-
-            if extra_details["cancelled"] != "False":
-                continue
 
             try:
                 when = dateutil.parser.parse(f"{date} {time}")
@@ -85,21 +99,26 @@ class INEventScraper(Scraper):
                 continue
             event_names.add(event_name)
             event = Event(
-                name=chamber,
+                name=committee_name,
                 start_date=when,
                 location_name=location,
                 classification="committee-meeting",
             )
             event.dedupe_key = event_name
-            event.add_source(url)
-            event.add_participant(chamber, type="committee", note="host")
+            event.add_source(url, note="API document")
+            event.add_source(f"{self.base_url}{link}", note="API details")
+            name_slug = committee["name"].lower().replace(" ", "-")
+            event.add_source(
+                f"https://iga.in.gov/{self.session}/committees/{committee['chamber'].lower()}/{name_slug}",
+                note="Committee Schedule",
+            )
+            event.add_participant(committee_name, type="committee", note="host")
             event.add_media_link("Video of Hearing", video_url, media_type="text/html")
             agenda = event.add_agenda_item("Bills under consideration")
-            for bill in extra_details["agenda"]:
-
-                if bill.get("bill"):
-                    bill_id = bill.get("bill").get("billName")
-                    bill_id = add_space(bill_id)
-                    agenda.add_bill(bill_id)
-
+            for item in extra_details["agenda"]:
+                if not item.get("bill", None):
+                    continue
+                bill_id = item["bill"].get("billName")
+                bill_id = add_space(bill_id)
+                agenda.add_bill(bill_id)
             yield event
