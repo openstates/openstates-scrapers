@@ -338,7 +338,6 @@ class Utah(State):
             "end_date": "2023-06-15",
             "active": True,
         },
-
     ]
     ignored_scraped_sessions = [
         "2023 2nd Special Session",
