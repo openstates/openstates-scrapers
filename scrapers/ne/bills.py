@@ -224,20 +224,26 @@ class NEBillScraper(Scraper, LXMLMixin):
                 "Fiscal Note", fn[0].get("href"), media_type="application/pdf"
             )
 
-        # Adds any documents related to amendments.
-        amendment_links = self.get_nodes(
-            bill_page, ".//div[contains(@class, 'amend-link')]/a"
+        # Add amendments
+        amendment_rows = self.get_nodes(
+            bill_page,
+            ".//div[contains(@class, 'amends') and .//a[contains(@href, '/AM/')]]",
         )
 
-        for amendment_link in amendment_links:
-            amendment_name = amendment_link.text
-            amendment_url = amendment_link.attrib["href"]
-            # skip over transcripts
-            if "/AM/" not in amendment_url:
-                continue
-            bill.add_document_link(
-                amendment_name, amendment_url, media_type="application/pdf"
-            )
+        for row in amendment_rows:
+            status = row.xpath("div[2]")[0].text.strip()
+            amendment_name = row.xpath("div[1]/a/text()")[0]
+            amendment_url = row.xpath("div[1]/a/@href")[0]
+            # adopted amendments get added as versions, everything else goes into documents
+            if "adopted" in status:
+                bill.add_version_link(
+                    amendment_name, amendment_url, media_type="application/pdf"
+                )
+            else:
+                amendment_name = f"{amendment_name} ({status})"
+                bill.add_document_link(
+                    amendment_name, amendment_url, media_type="application/pdf"
+                )
 
         if bill_number in self.priority_bills:
             priority = self.priority_bills[bill_number]

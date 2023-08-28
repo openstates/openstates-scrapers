@@ -203,6 +203,15 @@ class Florida(State):
             "end_date": "2023-02-10",
             "active": False,
         },
+        {
+            "name": "2024 Regular Session",
+            "identifier": "2024",
+            "classification": "primary",
+            # TODO: Update End Date
+            "start_date": "2024-01-09",
+            "end_date": "2024-03-11",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         *(str(each) for each in range(1997, 2010)),
