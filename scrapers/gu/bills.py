@@ -6,6 +6,7 @@ import tempfile
 
 from openstates.scrape import Scraper, Bill
 from openstates.utils import convert_pdf
+from scrapelib import HTTPError
 
 
 class GUBillScraper(Scraper):
@@ -24,14 +25,23 @@ class GUBillScraper(Scraper):
     committee_re = re.compile("([cC]ommittee on [a-zA-Z, \n]+)")
 
     def _download_pdf(self, url: str):
-        res = self.get(url)
+        try:
+            res = self.get(url)
+        except HTTPError:
+            # This vote document wasn't found.
+            msg = "No document found at url %r" % url
+            self.logger.warning(msg)
+            return
         fd = tempfile.NamedTemporaryFile()
         fd.write(res.content)
         text = convert_pdf(fd.name, type="xml")
         return text
 
     def _get_bill_details(self, url: str):
-        data = lxml.html.fromstring(self._download_pdf(url)).xpath("//text")
+        text = self._download_pdf(url)
+        if not text:
+            return {}
+        data = lxml.html.fromstring(text).xpath("//text")
         # filter out empty and obvious text we don't need
         text_only = "\n".join(
             [
@@ -107,9 +117,9 @@ class GUBillScraper(Scraper):
         if "WITHDRAWN" in "".join(name_parts):
             bill_obj.add_source(url=bill_link, note="Bill Introduced")
             details = self._get_bill_details(bill_link)
-            if details["IntroducedDate"]:
+            if details.get("IntroducedDate", None):
                 bill_obj.add_action("Introduced", details["IntroducedDate"])
-            if details["ReferredDate"]:
+            if details.get("ReferredDate", None):
                 if details["Committee"]:
                     bill_obj.add_action(
                         "Referred To Committee",
@@ -131,7 +141,8 @@ class GUBillScraper(Scraper):
             description = (
                 self.desc_match_re.search(bill).group(1).strip().split("<p>")[-1]
             )
-            bill_obj.title = description.title()
+            if description:
+                bill_obj.title = description.title()
             # sponsors are deliniated by / and \n, so we need to strip many characters
             sponsors = [
                 s.strip("/").strip()
@@ -161,9 +172,9 @@ class GUBillScraper(Scraper):
 
             # status PDF has introduced/passed/etc. dates
             details = self._get_bill_details(status)
-            if details["IntroducedDate"]:
+            if details.get("IntroducedDate", None):
                 bill_obj.add_action("Introduced", details["IntroducedDate"])
-            if details["ReferredDate"]:
+            if details.get("ReferredDate", None):
                 if details["Committee"]:
                     bill_obj.add_action(
                         "Referred To Committee",
@@ -183,29 +194,37 @@ class GUBillScraper(Scraper):
         name = f"R-{res_parts[0].strip()}"
         # res_type = res_parts[1].strip(")").strip("(")
         bill_link = xml.xpath("//a/@href")[0]
-        description = self.res_desc_match_re.search(bill).group(1)
         bill_obj = Bill(
             name,
             legislative_session=session,
             chamber="unicameral",
-            title=description,
+            title="See Resolution Introduced Link",
             classification="resolution",
         )
+        description = self.res_desc_match_re.search(bill).group(1).strip()
+        if len(description) > 0:
+            bill_obj.title = description
         bill_obj.add_source(root_url, note="Resolution Index")
         bill_obj.add_source(bill_link, note="Resolution Introduced")
         # sponsors are deliniated by / and \n, so we need to strip many characters
         sponsors = [
-            s.strip("/").strip()
+            s.strip("/").strip().removesuffix("</p>")
             for s in self.sponsors_match_re.search(bill).group(1).split("\n")
             if s.strip()
         ]
+        # clean up steps may empty out a value by accident, so remove empty objects again
+        sponsors = [s for s in sponsors if s]
         result = None
         result_date = None
+
         if "-" in sponsors[-1]:
             name, result_data = sponsors[-1].split("-")
             sponsors[-1] = name
-            result, result_date = result_data.split()
-            result_date = self._tz.localize(dateutil.parser.parse(result_date))
+            result_data = result_data.split()
+            result = result_data[0]
+            if len(result_data) > 1:
+                result_date = self._tz.localize(dateutil.parser.parse(result_data[1]))
+
         if result and result_date:
             bill_obj.add_action(result, result_date)
 
@@ -221,6 +240,12 @@ class GUBillScraper(Scraper):
                 entity_type="person",
                 classification="cosponsor",
                 primary=False,
+            )
+        for link in xml.xpath("//li"):
+            url = link.xpath("a/@href")[0]
+            title = link.xpath("a")[0].text
+            bill_obj.add_document_link(
+                url=url, note=title, media_type="application/pdf"
             )
 
         details = self._get_resolution_details(bill_link)
