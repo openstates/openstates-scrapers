@@ -69,7 +69,10 @@ class GUBillScraper(Scraper):
         return details
 
     def _get_resolution_details(self, url: str):
-        data = lxml.html.fromstring(self._download_pdf(url)).xpath("//text")
+        text = self._download_pdf(url)
+        if not text:
+            return {}
+        data = lxml.html.fromstring(text).xpath("//text")
         # filter out empty and obvious text we don't need
         text_only = "\n".join(
             [
