@@ -92,7 +92,7 @@ class GUBillScraper(Scraper):
         name_parts = (
             xml.xpath("//strong")[0].text.strip().removeprefix("Bill No. ").split()
         )
-        name = name_parts[0].strip().removeprefix("Bill No. ")
+        name = f'B-{name_parts[0].strip().removeprefix("Bill No. ")}'
         # bill_type = name_parts[1].strip("(").strip(")")
         bill_link = xml.xpath("//a/@href")[0]
         bill_obj = Bill(
@@ -176,7 +176,7 @@ class GUBillScraper(Scraper):
         xml.make_links_absolute(root_url)
         # Bill No. 163-37 (LS) or Bill No. 160-37 (LS) - WITHDRAWN match
         res_parts = xml.xpath("//a")[0].text.removeprefix("Resolution No. ").split()
-        name = res_parts[0].strip()
+        name = f"R-{res_parts[0].strip()}"
         # res_type = res_parts[1].strip(")").strip("(")
         bill_link = xml.xpath("//a/@href")[0]
         bill_obj = Bill(
