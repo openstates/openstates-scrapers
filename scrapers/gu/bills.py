@@ -123,7 +123,9 @@ class GUBillScraper(Scraper):
 
             yield bill_obj
         else:
-            bill_obj.add_document_link(url=bill_link, note="Bill Introduced")
+            bill_obj.add_document_link(
+                url=bill_link, note="Bill Introduced", media_type="application/pdf"
+            )
             status = xml.xpath("//li")[0].xpath("a/@href")[0]
             bill_obj.add_source(url=status, note="Bill Status")
             description = (
@@ -153,7 +155,9 @@ class GUBillScraper(Scraper):
             for link in xml.xpath("//li")[1:]:
                 url = link.xpath("a/@href")[0]
                 title = link.xpath("a")[0].text
-                bill_obj.add_document_link(url=url, note=title)
+                bill_obj.add_document_link(
+                    url=url, note=title, media_type="application/pdf"
+                )
 
             # status PDF has introduced/passed/etc. dates
             details = self._get_bill_details(status)
@@ -175,22 +179,20 @@ class GUBillScraper(Scraper):
     def _process_resolution(self, session: str, bill: str, root_url: str):
         xml = lxml.html.fromstring(bill)
         xml.make_links_absolute(root_url)
-        # Bill No. 163-37 (LS) or Bill No. 160-37 (LS) - WITHDRAWN match
         res_parts = xml.xpath("//a")[0].text.removeprefix("Resolution No. ").split()
         name = f"R-{res_parts[0].strip()}"
         # res_type = res_parts[1].strip(")").strip("(")
         bill_link = xml.xpath("//a/@href")[0]
+        description = self.res_desc_match_re.search(bill).group(1)
         bill_obj = Bill(
             name,
             legislative_session=session,
             chamber="unicameral",
-            title="See Introduced Link",
+            title=description,
             classification="resolution",
         )
-        bill_obj.add_source(root_url, note="Bill Index")
-        bill_obj.add_source(bill_link, note="Bill Introduced")
-        description = self.res_desc_match_re.search(bill).group(1)
-        bill_obj.title = description.title()
+        bill_obj.add_source(root_url, note="Resolution Index")
+        bill_obj.add_source(bill_link, note="Resolution Introduced")
         # sponsors are deliniated by / and \n, so we need to strip many characters
         sponsors = [
             s.strip("/").strip()
@@ -221,7 +223,6 @@ class GUBillScraper(Scraper):
                 primary=False,
             )
 
-        # status PDF has introduced/passed/etc. dates
         details = self._get_resolution_details(bill_link)
         if details["IntroducedDate"]:
             bill_obj.add_action("Introduced", details["IntroducedDate"])
