@@ -35,15 +35,9 @@ class GUBillScraper(Scraper):
         fd = tempfile.NamedTemporaryFile()
         fd.write(res.content)
         text = convert_pdf(fd.name, type="xml")
-        return text
-
-    def _get_bill_details(self, url: str):
-        text = self._download_pdf(url)
-        if not text:
-            return {}
         data = lxml.html.fromstring(text).xpath("//text")
         # filter out empty and obvious text we don't need
-        text_only = "\n".join(
+        return "\n".join(
             [
                 d.text
                 for d in data
@@ -52,6 +46,11 @@ class GUBillScraper(Scraper):
                 and d.text.strip() not in self.filtered_details
             ]
         )
+
+    def _get_bill_details(self, url: str):
+        text_only = self._download_pdf(url)
+        if not text_only:
+            return {}
         details = {"IntroducedDate": None, "ReferredDate": None, "Committee": None}
         full_dates = self.date_time_re.findall(text_only)
         days = self.date_re.findall(text_only)
@@ -69,20 +68,9 @@ class GUBillScraper(Scraper):
         return details
 
     def _get_resolution_details(self, url: str):
-        text = self._download_pdf(url)
-        if not text:
+        text_only = self._download_pdf(url)
+        if not text_only:
             return {}
-        data = lxml.html.fromstring(text).xpath("//text")
-        # filter out empty and obvious text we don't need
-        text_only = "\n".join(
-            [
-                d.text
-                for d in data
-                if d.text
-                and d.text.strip()
-                and d.text.strip() not in self.filtered_details
-            ]
-        )
         details = {
             "IntroducedDate": None,
             "PresentationDate": None,
