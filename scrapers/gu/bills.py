@@ -103,9 +103,9 @@ class GUBillScraper(Scraper):
             classification="bill",
         )
         bill_obj.add_source(root_url, note="Bill Index")
-        bill_obj.add_source(bill_link, note="Bill Introduced")
         # withdrawn bills don't have regular links, so we dig elsewhere
         if "WITHDRAWN" in "".join(name_parts):
+            bill_obj.add_source(bill_link, note="Bill Introduced")
             details = self._get_bill_details(bill_link)
             if details["IntroducedDate"]:
                 bill_obj.add_action("Introduced", details["IntroducedDate"])
@@ -123,8 +123,9 @@ class GUBillScraper(Scraper):
 
             yield bill_obj
         else:
+            bill_obj.add_document_link(bill_link, note="Bill Introduced")
             status = xml.xpath("//li")[0].xpath("a/@href")[0]
-            bill_obj.add_document_link(url=status, note="Bill Status")
+            bill_obj.add_source(url=status, note="Bill Status")
             description = (
                 self.desc_match_re.search(bill).group(1).strip().split("<p>")[-1]
             )
