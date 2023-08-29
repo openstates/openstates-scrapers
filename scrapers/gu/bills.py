@@ -229,12 +229,10 @@ class GUBillScraper(Scraper):
         yield bill_obj
 
     def scrape(self, session):
-        """
         bills_url = f"https://guamlegislature.com/{session}_Guam_Legislature/{session}_bills_intro_content.htm"
         doc = self.get(bills_url).text.split("-->")[-1]
         for bill in self.bill_match_re.findall(doc):
             yield self._process_bill(session, bill, bills_url)
-        """
 
         # resolutions are at a separate address
         res_url = f"https://guamlegislature.com/{session}_Guam_Legislature/{session}_res_content.htm"
