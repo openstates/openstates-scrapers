@@ -12,10 +12,10 @@ class GUBillScraper(Scraper):
     _tz = pytz.timezone("Pacific/Guam")
     # non-greedy match on bills in the "list" page
     bill_match_re = re.compile("(<p>.*?<br>)", re.DOTALL)
-    res_match_re = re.compile(r"(<p align=\"left\">.*?<br>)", re.DOTALL)
-    sponsors_match_re = re.compile(r"Sponsor\(s\) -(.*)<p>", re.DOTALL)
+    res_match_re = re.compile('(<p align="left">.*?<br>)', re.DOTALL)
+    sponsors_match_re = re.compile(r"Sponsor\(s\) -(.*)<p", re.DOTALL)
     desc_match_re = re.compile(r"^\s?<p>(.*?)<li>", re.DOTALL)
-    res_desc_match_re = re.compile(r"<p align\=\"left\">([^<>]+)")
+    res_desc_match_re = re.compile('<p align="left">([^<>]+)')
     filtered_details = ["BILL HISTORY", "Bill HISTORY", "CLERKS OFFICE", "Page 1"]
     date_re = re.compile("([0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4})")
     date_time_re = re.compile(
@@ -73,20 +73,15 @@ class GUBillScraper(Scraper):
         details = {
             "IntroducedDate": None,
             "PresentationDate": None,
-            "AdoptedDate": None,
         }
         full_dates = self.date_time_re.findall(text_only)
         if full_dates:
             details["IntroducedDate"] = self._tz.localize(
-                dateutil.parser.parse(full_dates[1])
+                dateutil.parser.parse(full_dates[0])
             )
             if len(full_dates) > 1:
                 details["PresentationDate"] = self._tz.localize(
-                    dateutil.parser.parse(full_dates[2])
-                )
-            if len(full_dates) > 2:
-                details["AdoptedDate"] = self._tz.localize(
-                    dateutil.parser.parse(full_dates[3])
+                    dateutil.parser.parse(full_dates[1])
                 )
         return details
 
@@ -109,8 +104,9 @@ class GUBillScraper(Scraper):
         )
         bill_obj.add_source(root_url, note="Bill Index")
         bill_obj.add_source(bill_link, note="Bill Introduced")
+        # withdrawn bills don't have regular links, so we dig elsewhere
         if "WITHDRAWN" in "".join(name_parts):
-            details = self._get_details(bill_link)
+            details = self._get_bill_details(bill_link)
             if details["IntroducedDate"]:
                 bill_obj.add_action("Introduced", details["IntroducedDate"])
             if details["ReferredDate"]:
@@ -159,7 +155,7 @@ class GUBillScraper(Scraper):
                 bill_obj.add_document_link(url=url, note=title)
 
             # status PDF has introduced/passed/etc. dates
-            details = self._get_details(status)
+            details = self._get_bill_details(status)
             if details["IntroducedDate"]:
                 bill_obj.add_action("Introduced", details["IntroducedDate"])
             if details["ReferredDate"]:
@@ -179,7 +175,7 @@ class GUBillScraper(Scraper):
         xml = lxml.html.fromstring(bill)
         xml.make_links_absolute(root_url)
         # Bill No. 163-37 (LS) or Bill No. 160-37 (LS) - WITHDRAWN match
-        res_parts = xml.xpath("//a")[0].text.removeprefix("Res. No. ").split()
+        res_parts = xml.xpath("//a")[0].text.removeprefix("Resolution No. ").split()
         name = res_parts[0].strip()
         # res_type = res_parts[1].strip(")").strip("(")
         bill_link = xml.xpath("//a/@href")[0]
@@ -206,6 +202,7 @@ class GUBillScraper(Scraper):
             name, result_data = sponsors[-1].split("-")
             sponsors[-1] = name
             result, result_date = result_data.split()
+            result_date = self._tz.localize(dateutil.parser.parse(result_date))
         if result and result_date:
             bill_obj.add_action(result, result_date)
 
@@ -224,13 +221,11 @@ class GUBillScraper(Scraper):
             )
 
         # status PDF has introduced/passed/etc. dates
-        details = self._get_details(bill_link)
+        details = self._get_resolution_details(bill_link)
         if details["IntroducedDate"]:
             bill_obj.add_action("Introduced", details["IntroducedDate"])
         if details["PresentationDate"]:
-            bill_obj.add_action("Presented", details["ReferredDate"])
-        if details["AdoptedDate"]:
-            bill_obj.add_action("Adopted", details["ReferredDate"])
+            bill_obj.add_action("Presented", details["PresentationDate"])
         yield bill_obj
 
     def scrape(self, session):
