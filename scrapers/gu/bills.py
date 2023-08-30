@@ -99,7 +99,6 @@ class GUBillScraper(Scraper):
         bill_obj = Bill(
             name,
             legislative_session=session,
-            chamber="unicameral",
             title="See Introduced Link",
             classification="bill",
         )
@@ -188,7 +187,6 @@ class GUBillScraper(Scraper):
         bill_obj = Bill(
             name,
             legislative_session=session,
-            chamber="unicameral",
             title="See Resolution Introduced Link",
             classification="resolution",
         )
