@@ -240,9 +240,9 @@ class GUBillScraper(Scraper):
             )
 
         details = self._get_resolution_details(bill_link)
-        if details["IntroducedDate"]:
+        if details.get("IntroducedDate", None):
             bill_obj.add_action("Introduced", details["IntroducedDate"])
-        if details["PresentationDate"]:
+        if details.get("PresentationDate", None):
             bill_obj.add_action("Presented", details["PresentationDate"])
         yield bill_obj
 
