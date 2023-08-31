@@ -32,6 +32,7 @@ class GAEventScraper(Scraper):
             raise EmptyScrape
 
         for row in page:
+            print(row)
             status = "tentative"
 
             title = row["subject"]
@@ -82,6 +83,10 @@ class GAEventScraper(Scraper):
                 event.add_media_link(
                     "Video", row["livestreamUrl"], media_type="text/html"
                 )
+
+            if "committee" in title.lower():
+                com = re.sub(r"\(.*\)", "", title)
+                event.add_committee(com)
 
             event.add_source("https://www.legis.ga.gov/schedule/all")
             event_count += 1
