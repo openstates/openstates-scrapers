@@ -13,7 +13,7 @@ class MTEventScraper(Scraper):
     # the state lists out by bill, we want to cluster by event
     events = {}
 
-    def scrape(self, session=None):
+    def scrape(self, session=None, start=None, end=None):
         for i in self.jurisdiction.legislative_sessions:
             if i["identifier"] == session:
                 session_slug = i["_scraped_name"]
@@ -23,9 +23,15 @@ class MTEventScraper(Scraper):
             "&P_COM_NM=&P_ACTN_DTM={start}&U_ACTN_DTM={end}&Z_ACTION2=Find"
         )
 
-        start = datetime.datetime.today()
-        # this month and the next 2 months
-        end = start + relativedelta.relativedelta(months=+2)
+        if start is None:
+            start = datetime.datetime.today()
+        else:
+            start = parser.parse(start)
+
+        if end is None:
+            end = start + relativedelta.relativedelta(months=+2)
+        else:
+            end = parser.parse(end)
 
         url = url.format(
             session_slug=session_slug,
@@ -76,6 +82,8 @@ class MTEventScraper(Scraper):
                 event.add_source(row.xpath("td[1]/a[1]/@href")[0])
             else:
                 event = self.events[com][when_slug]
+
+            event.add_committee(com)
 
             agenda = event.add_agenda_item(bill_title)
             agenda.add_bill(bill)
