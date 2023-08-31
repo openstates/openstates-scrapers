@@ -117,6 +117,8 @@ class FlEventScraper(Scraper):
             event = Event(
                 name=com, start_date=start, location_name=location, description=summary
             )
+
+        event.add_committee(com)
         event.add_source(url)
 
         for h5 in page.xpath('//div[contains(@class,"meeting-actions-bills")]/h5'):
@@ -178,6 +180,8 @@ class FlEventScraper(Scraper):
                 continue
 
             event = Event(name=com, start_date=date, location_name=location)
+
+            event.add_committee(com)
 
             agenda_classes = [
                 "mtgrecord_notice",
