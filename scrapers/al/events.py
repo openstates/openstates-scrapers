@@ -6,6 +6,7 @@ import re
 
 from utils import LXMLMixin
 from utils.events import match_coordinates
+from utils.media import get_media_type
 from openstates.exceptions import EmptyScrape
 from openstates.scrape import Scraper, Event
 
@@ -34,7 +35,7 @@ class ALEventScraper(Scraper, LXMLMixin):
             '{hearingsMeetings(eventType:"meeting", body:"", keyword:"", toDate:"3000-02-06", '
             f'fromDate:"{start}", sortTime:"", direction:"ASC", orderBy:"SortTime", )'
             "{ EventDt,EventTm,Location,EventTitle,EventDesc,Body,DeadlineDt,PublicHearing,"
-            "Committee,AgendaUrl,SortTime,OidMeeting }}"
+            "Committee,AgendaUrl,SortTime,OidMeeting,LiveStream }}"
         )
 
         json_data = {
@@ -68,13 +69,18 @@ class ALEventScraper(Scraper, LXMLMixin):
 
             event_keys.add(event_key)
 
+            status = "tentative"
+
+            if "cancelled" in event_title.lower():
+                status = "cancelled"
+
             event = Event(
                 start_date=event_date,
                 name=event_title,
                 location_name=event_location,
                 description=event_desc,
+                status=status,
             )
-
             event.dedupe_key = event_key
 
             # TODO: When they add committees, agendas, and video streams
@@ -86,6 +92,18 @@ class ALEventScraper(Scraper, LXMLMixin):
             bills = re.findall(r"(SB\s*\d+)", event_title, flags=re.IGNORECASE)
             for bill in bills:
                 event.add_bill(bill)
+
+            if row["AgendaUrl"]:
+                mime = get_media_type(row["AgendaUrl"], default="text/html")
+                event.add_document(
+                    "Agenda", row["AgendaUrl"], media_type=mime, on_duplicate="ignore"
+                )
+
+            com = row["Committee"]
+            if com:
+                com = f"{row['Body']} {com}"
+                com = com.replace("- House", "").replace("- Senate", "")
+                event.add_committee(com)
 
             # TODO, looks like we can generate a source link from the room and OID,
             # does this stick after the event has ended?
