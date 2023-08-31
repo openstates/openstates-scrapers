@@ -32,7 +32,6 @@ class GAEventScraper(Scraper):
             raise EmptyScrape
 
         for row in page:
-            print(row)
             status = "tentative"
 
             title = row["subject"]
