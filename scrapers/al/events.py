@@ -2,6 +2,7 @@ import datetime
 import dateutil.parser
 import json
 import pytz
+import re
 
 from utils import LXMLMixin
 from utils.events import match_coordinates
@@ -13,7 +14,7 @@ class ALEventScraper(Scraper, LXMLMixin):
     _TZ = pytz.timezone("US/Eastern")
     _DATETIME_FORMAT = "%m/%d/%Y %I:%M %p"
 
-    def scrape(self):
+    def scrape(self, start=None):
         gql_url = "https://gql.api.alison.legislature.state.al.us/graphql"
 
         headers = {
@@ -25,11 +26,13 @@ class ALEventScraper(Scraper, LXMLMixin):
             "Referer": "https://alison.legislature.state.al.us/",
         }
 
-        # start from the first of the current month
-        from_date = datetime.datetime.today().replace(day=1).strftime("%Y-%m-%d")
+        if start is None:
+            # start from the first of the current month
+            start = datetime.datetime.today().replace(day=1).strftime("%Y-%m-%d")
+
         query = (
             '{hearingsMeetings(eventType:"meeting", body:"", keyword:"", toDate:"3000-02-06", '
-            f'fromDate:"{from_date}", sortTime:"", direction:"ASC", orderBy:"SortTime", )'
+            f'fromDate:"{start}", sortTime:"", direction:"ASC", orderBy:"SortTime", )'
             "{ EventDt,EventTm,Location,EventTitle,EventDesc,Body,DeadlineDt,PublicHearing,"
             "Committee,AgendaUrl,SortTime,OidMeeting }}"
         )
@@ -79,6 +82,10 @@ class ALEventScraper(Scraper, LXMLMixin):
             match_coordinates(
                 event, {"11 south union": (32.37707594063977, -86.29919861850152)}
             )
+
+            bills = re.findall(r"(SB\s*\d+)", event_title, flags=re.IGNORECASE)
+            for bill in bills:
+                event.add_bill(bill)
 
             # TODO, looks like we can generate a source link from the room and OID,
             # does this stick after the event has ended?
