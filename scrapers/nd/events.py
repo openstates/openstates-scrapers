@@ -82,6 +82,7 @@ class EventConsolidator(object):
                 description="Standing Committee Hearing",
                 start_date=date_with_offset,
             )
+            event_obj.add_committee(com)
             event_obj.dedupe_key = event_name
 
             for item_key in self.events[event]["item_keys"]:

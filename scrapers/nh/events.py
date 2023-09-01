@@ -52,9 +52,6 @@ class NHEventScraper(Scraper, LXMLMixin):
         # real data is double-json encoded string in the 'd' key
         page = json.loads(page["d"])
 
-        # print(page)
-
-        # event_root = "http://gencourt.state.nh.us/senate/schedule"
         event_root = f"https://gencourt.state.nh.us/{chamber_names[chamber]}/schedule"
         event_objects = set()
 
@@ -67,7 +64,10 @@ class NHEventScraper(Scraper, LXMLMixin):
             end = dateutil.parser.parse(row["end"])
             end = self._tz.localize(end)
 
-            if "cancelled" in row["title"] or "canceled" in row["title"]:
+            if (
+                "cancelled" in row["title"].lower()
+                or "canceled" in row["title"].lower()
+            ):
                 status = "cancelled"
 
             if start < self._tz.localize(datetime.datetime.now()):

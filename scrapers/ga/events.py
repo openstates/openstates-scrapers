@@ -83,6 +83,10 @@ class GAEventScraper(Scraper):
                     "Video", row["livestreamUrl"], media_type="text/html"
                 )
 
+            if "committee" in title.lower():
+                com = re.sub(r"\(.*\)", "", title)
+                event.add_committee(com)
+
             event.add_source("https://www.legis.ga.gov/schedule/all")
             event_count += 1
             yield event

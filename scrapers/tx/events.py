@@ -19,6 +19,8 @@ class TXEventScraper(Scraper, LXMLMixin):
 
     videos = {"lower": {}, "upper": {}}
 
+    chambers = {"lower": "House", "upper": "Senate"}
+
     # Checks if an event is a duplicate.
     # Events are considered duplicate if they have the same
     # name, date, start time, and end time
@@ -96,7 +98,9 @@ class TXEventScraper(Scraper, LXMLMixin):
         event.dedupe_key = url
 
         event.add_source(url)
-        event.add_participant(committee, type="committee", note="host")
+
+        full_name = f"{self.chambers[chamber]} {committee}"
+        event.add_participant(full_name, type="committee", note="host")
         if chair is not None:
             event.add_participant(chair, type="legislator", note="chair")
 
