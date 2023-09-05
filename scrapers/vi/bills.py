@@ -77,7 +77,7 @@ class VIBillScraper(Scraper, LXMLMixin):
 
         # First we get the Form to get our ASP viewstate variables
         search_url = "https://legvi.org/billtracking/default.aspx"
-        doc = lxml.html.fromstring(self.get(url=search_url).text)
+        doc = lxml.html.fromstring(self.get(url=search_url, verify=False).text)
 
         (viewstate,) = doc.xpath('//input[@id="__VIEWSTATE"]/@value')
         (viewstategenerator,) = doc.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
@@ -146,7 +146,7 @@ class VIBillScraper(Scraper, LXMLMixin):
                 yield from self.scrape_bill(landing_page)
 
     def scrape_bill(self, bill_page_url):
-        bill_page = lxml.html.fromstring(self.get(bill_page_url).text)
+        bill_page = lxml.html.fromstring(self.get(bill_page_url, verify=False).text)
 
         title = bill_page.xpath('//span[@id="ContentPlaceHolder_SubjectLabel"]/text()')
         if title:
