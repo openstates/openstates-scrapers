@@ -5,6 +5,7 @@ import lxml.html
 
 from openstates.scrape import Scraper, Event
 from spatula import PdfPage, URL
+from utils.events import match_coordinates
 
 
 def normalize_time(time_string):
@@ -223,6 +224,18 @@ class SCEventScraper(Scraper):
                 else:
                     self.event_keys.add(event_key)
 
+                location = location.replace(
+                    "Blatt", "Blatt Building, 1105 Pendleton St, Columbia, SC 29201"
+                )
+                location = location.replace(
+                    "Gressette",
+                    "Gressette Building, 1101 Pendleton St, Columbia, SC 29201",
+                )
+                location = location.replace(
+                    "State House",
+                    "South Carolina State House, 1100 Gervais St, Columbia, SC 29208",
+                )
+
                 event = Event(
                     name=description,  # Event Name
                     start_date=date_time,  # When the event will take place
@@ -286,5 +299,14 @@ class SCEventScraper(Scraper):
                         f"https://www.scstatehouse.gov/video/stream.php?key={stream_id}&audio=1",
                         media_type="text/html",
                     )
+
+                match_coordinates(
+                    event,
+                    {
+                        "Blatt Building": ("33.99860", "-81.03323"),
+                        "Gressette Building": ("33.99917", "-81.03306"),
+                        "State House": ("34.00028", "-81.032954"),
+                    },
+                )
 
                 yield event
