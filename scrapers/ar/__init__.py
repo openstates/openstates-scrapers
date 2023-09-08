@@ -215,6 +215,15 @@ class Arkansas(State):
             "start_date": "2023-01-09",
             # TODO: end date is approximate
             "end_date": "2023-03-12",
+            "active": False,
+        },
+        {
+            "_scraped_name": "First Extraordinary Session, 2023",
+            "classification": "special",
+            "identifier": "2023S1",
+            "name": "2023 First Extraordinary Session",
+            "start_date": "2023-08-08",
+            "end_date": "2023-08-15",
             "active": True,
         },
     ]
