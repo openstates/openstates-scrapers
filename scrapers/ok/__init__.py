@@ -137,9 +137,8 @@ class Oklahoma(State):
             "_scraped_name": "2023 Regular Session",
             "identifier": "2023",
             "name": "2023 Regular Session",
-            # TODO: update dates
-            "start_date": "2023-02-01",
-            "end_date": "2023-05-29",
+            "start_date": "2023-02-06",
+            "end_date": "2023-05-26",
             "active": True,
         },
         {
@@ -147,9 +146,18 @@ class Oklahoma(State):
             "identifier": "2023S1",
             "name": "2023 First Special Session",
             "start_date": "2023-05-17",
-            "end_date": "2023-05-26",
+            "end_date": "2023-07-31",
             "active": True,
         },
+        # {
+        #     "_scraped_name": "2023 Second Special Session",
+        #     "identifier": "2023S2",
+        #     "name": "2023 Second Special Session",
+        #     "start_date": "2023-10-03",
+        #     # TODO: update end date
+        #     "end_date": "2023-10-26",
+        #     "active": True,
+        # },
         {
             "_scraped_name": "2024 Regular Session",
             "identifier": "2024",
@@ -161,6 +169,7 @@ class Oklahoma(State):
         },
     ]
     ignored_scraped_sessions = [
+        "2023 Second Special Session",
         "2021 Regular Session - Web",
         "2020 Second Special Session",
         "2020 Regular Session (web)",
