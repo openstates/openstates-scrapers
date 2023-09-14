@@ -249,7 +249,12 @@ class USEventScraper(Scraper, LXMLMixin):
 
         coms = xml.xpath("//committees/committee-name | //subcommittees/committee-name")
         for com in coms:
-            com_name = com.xpath("string(.)")
+            if com.xpath("@parent-name"):
+                com_name = "{} {}".format(
+                    com.xpath("@parent-name")[0], com.xpath("string(.)")
+                )
+            else:
+                com_name = com.xpath("string(.)")
             com_name = f"House {com_name}"
             event.add_participant(
                 com_name,
