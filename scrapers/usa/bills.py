@@ -235,6 +235,11 @@ class USBillScraper(Scraper):
             action_text = self.get_xpath(row, "text")
             if action_text not in actions:
                 source = self.get_xpath(row, "sourceSystem/name")
+
+                if source is None:
+                    self.warning(f"Skipping action with no source: {action_text}")
+                    continue
+
                 action_type = self.get_xpath(row, "type")
 
                 actor = "lower"
