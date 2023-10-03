@@ -149,15 +149,15 @@ class Oklahoma(State):
             "end_date": "2023-07-31",
             "active": True,
         },
-        # {
-        #     "_scraped_name": "2023 Second Special Session",
-        #     "identifier": "2023S2",
-        #     "name": "2023 Second Special Session",
-        #     "start_date": "2023-10-03",
-        #     # TODO: update end date
-        #     "end_date": "2023-10-26",
-        #     "active": True,
-        # },
+        {
+            "_scraped_name": "2023 Second Special Session",
+            "identifier": "2023S2",
+            "name": "2023 Second Special Session",
+            "start_date": "2023-10-03",
+            # TODO: update end date
+            "end_date": "2023-10-26",
+            "active": True,
+        },
         {
             "_scraped_name": "2024 Regular Session",
             "identifier": "2024",
