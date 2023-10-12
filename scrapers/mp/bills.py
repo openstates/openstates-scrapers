@@ -1,6 +1,5 @@
 import cloudscraper
-
-# import dateutil
+import dateutil
 import lxml.html
 import pytz
 
@@ -13,6 +12,15 @@ class MPBillScraper(Scraper):
     scraper = cloudscraper.create_scraper()
     headers = {
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0"
+    }
+
+    bill_types = {
+        "Senate Resolutions:": "SR",
+        "Senate Bills:": "SB",
+        "Senate Legislative initiatives:": "LI",
+        "Senate Joint Resolutions:": "SJR",
+        "Senate Local Bills:": "SLB",
+        "Senate Commemorative Resolutions:": "SR",
     }
 
     def scrape(self, chamber=None, session=None):
@@ -39,25 +47,30 @@ class MPBillScraper(Scraper):
         page.make_links_absolute("https://cnmileg.net/")
 
         for row in page.xpath("//table/tr")[1:]:
-            bill_id = row.xpath("td[1]/text()")[0].strip()
-            bill_id = bill_id.replace("\u00a0", " ")
-            title = row.xpath("td[3]/text()")[0].strip()
-
-            bill = Bill(
-                identifier=bill_id,
-                title=title,
-                legislative_session=session,
-                chamber=chamber,
-            )
-
             bill_url = row.xpath("td[4]/a/@href")[0]
-            yield from self.scrape_bill(chamber, bill, bill_url)
+            yield from self.scrape_bill(session, chamber, bill_url)
 
-    def scrape_bill(self, chamber, bill, url):
+    def scrape_bill(self, session, chamber, url):
         self.info(f"GET {url}")
         page = self.scraper.get(url).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
+
+        bill_id = self.get_cell_text(page, "Number")
+
+        if chamber == "upper":
+            bill_type = page.xpath("//tr[@class='stshead']/th/text()")[0].strip()
+            bill_type = self.bill_types[bill_type]
+            bill_id = f"{bill_type} {bill_id}"
+
+        title = self.get_cell_text(page, "Subject/Title")
+
+        bill = Bill(
+            identifier=bill_id,
+            title=title,
+            legislative_session=session,
+            chamber=chamber,
+        )
 
         sponsor = self.get_cell_text(page, "Author")
         bill.add_sponsorship(
@@ -70,6 +83,15 @@ class MPBillScraper(Scraper):
         bill.add_version_link(last_action, version, media_type="application/pdf")
 
         bill.add_source(url)
+
+        action_text = self.get_cell_text(page, "Date Introduced")
+        if action_text:
+            bill.add_action(
+                "Introduced",
+                dateutil.parser.parse(action_text).strftime("%Y-%m-%d"),
+                chamber=chamber,
+                classification="introduction",
+            )
 
         yield bill
 
