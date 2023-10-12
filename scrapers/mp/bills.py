@@ -17,23 +17,22 @@ class MPBillScraper(Scraper):
 
     def scrape(self, chamber=None, session=None):
         chambers = [chamber] if chamber else ["upper", "lower"]
+        # throwaway request to get our session cookies before the POST
+        self.scraper.get("https://cnmileg.net/house.asp")
 
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
 
     def scrape_chamber(self, chamber, session):
 
-        if chamber == "upper":
-            return
-
-        # throwaway request to get our session cookies before the POST
-        page = self.scraper.get("https://cnmileg.net/house.asp")
+        sec_ids = {"upper": "2", "lower": "1"}
         data = {
             "legtypeID": "A",
             "submit": "Go",
-            "legsID": "23",
-            "secID": "1",
+            "legsID": session,
+            "secID": sec_ids[chamber],
         }
+        self.info("POST https://cnmileg.net/leglist.asp")
 
         page = self.scraper.post("https://cnmileg.net/leglist.asp", data=data).content
         page = lxml.html.fromstring(page)
