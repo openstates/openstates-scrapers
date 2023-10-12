@@ -149,11 +149,11 @@ class Texas(State):
         {
             "_scraped_name": "88(R) - 2023",
             "classification": "regular",
-            "end_date": "2023-05-29",
             "identifier": "88",
             "name": "88th Legislature (2023)",
             "start_date": "2023-01-10",
-            "active": True,
+            "end_date": "2023-05-29",
+            "active": False,
         },
         {
             "_scraped_name": "88(1) - 2023",
@@ -162,17 +162,16 @@ class Texas(State):
             "name": "88th Legislature, 1st Called Session (2023)",
             "start_date": "2023-05-29",
             "end_date": "2023-06-27",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "88(2) - 2023",
             "classification": "special",
             "identifier": "882",
             "name": "88th Legislature, 2nd Called Session (2023)",
-            "start_date": "2023-06-28",
-            # TODO: correct end date
-            "end_date": "2023-06-30",
-            "active": True,
+            "start_date": "2023-06-27",
+            "end_date": "2023-07-13",
+            "active": False,
         },
         {
             "_scraped_name": "88(3) - 2023",
