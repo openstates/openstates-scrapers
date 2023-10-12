@@ -108,6 +108,51 @@ class MPBillScraper(Scraper):
                 media_type="application/pdf",
             )
 
+        if self.get_cell_text(page, "Senate Committee") == last_action:
+            bill.add_action(
+                last_action,
+                dateutil.parser.parse(last_updated).strftime("%Y-%m-%d"),
+                chamber="upper",
+                classification="referral-committee",
+            )
+
+        if self.get_cell_text(page, "House Committee") == last_action:
+            bill.add_action(
+                last_action,
+                dateutil.parser.parse(last_updated).strftime("%Y-%m-%d"),
+                chamber="lower",
+                classification="referral-committee",
+            )
+
+        # Public Law
+        if "p.l." in last_action.lower():
+            bill.add_action(
+                last_action,
+                dateutil.parser.parse(last_updated).strftime("%Y-%m-%d"),
+                chamber="executive",
+                classification="became-law",
+            )
+
+            if self.get_cell(page, "Last Action").xpath("p/a/@href"):
+                bill.add_version_link(
+                    last_action,
+                    self.get_cell(page, "Last Action").xpath("p/a/@href")[0],
+                    media_type="application/pdf",
+                )
+
+            bill.add_citation("MP Public Laws", last_action, citation_type="chapter")
+
+        refs = self.get_cell_text(page, "References")
+        for line in refs.split("\n"):
+            if "governor" in line.lower():
+                action_date = re.findall(r"\d+\/\d+\/\d+", line)[0]
+                bill.add_action(
+                    "Sent to Governor",
+                    dateutil.parser.parse(action_date).strftime("%Y-%m-%d"),
+                    chamber="executive",
+                    classification="executive-receipt",
+                )
+
         yield bill
 
     # get the table td where the sibling th contains the text
