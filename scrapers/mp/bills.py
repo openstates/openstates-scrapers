@@ -2,6 +2,7 @@ import cloudscraper
 import dateutil
 import lxml.html
 import pytz
+import re
 
 from openstates.scrape import Scraper, Bill
 
@@ -78,19 +79,33 @@ class MPBillScraper(Scraper):
         )
 
         version = self.get_cell(page, "Number").xpath("a/@href")[0]
-
-        last_action = self.get_cell_text(page, "Last Action")
-        bill.add_version_link(last_action, version, media_type="application/pdf")
+        bill.add_version_link(bill_id, version, media_type="application/pdf")
 
         bill.add_source(url)
 
-        action_text = self.get_cell_text(page, "Date Introduced")
-        if action_text:
+        bill = self.do_action(bill, page, "Date Introduced", chamber, "introduction")
+        bill = self.do_action(bill, page, "House First Reading", "lower", "reading-1")
+        bill = self.do_action(bill, page, "House Final Reading", "lower", "reading-2")
+        bill = self.do_action(bill, page, "Senate First Reading", "upper", "reading-1")
+        bill = self.do_action(bill, page, "Senate Final Reading", "upper", "reading-2")
+
+        last_action = self.get_cell_text(page, "Last Action")
+        last_updated = self.get_cell_text(page, "Last Updated")
+
+        if "withdrawn" in last_action.lower():
             bill.add_action(
-                "Introduced",
-                dateutil.parser.parse(action_text).strftime("%Y-%m-%d"),
-                chamber=chamber,
-                classification="introduction",
+                "Withdrawn",
+                dateutil.parser.parse(last_updated).strftime("%Y-%m-%d"),
+                chamber=("upper" if "senate" in last_action.lower() else "lower"),
+                classification="withdrawal",
+            )
+
+        reports = page.xpath("//a[contains(@url, 'COMMITTEE%20REPORTS')]")
+        for report in reports:
+            bill.add_document_link(
+                report.xpath("text()")[0],
+                report.xpath("@url"),
+                media_type="application/pdf",
             )
 
         yield bill
@@ -101,3 +116,23 @@ class MPBillScraper(Scraper):
 
     def get_cell_text(self, page, text: str) -> str:
         return page.xpath(f"string(//tr[th[contains(text(), '{text}')]]/td)").strip()
+
+    def do_action(self, bill, page, text, chamber, classification):
+        action_text = self.get_cell_text(page, text)
+        if action_text:
+
+            try:
+                action_date = re.findall(r"\d+\/\d+\/\d+", action_text)[0]
+            except IndexError:
+                if re.match(r"\d+:\d+:\d+ AM", action_text):
+                    action_date = self.get_cell_text(page, "Last Updated")
+                else:
+                    return bill
+
+            bill.add_action(
+                text,
+                dateutil.parser.parse(action_date).strftime("%Y-%m-%d"),
+                chamber=chamber,
+                classification=classification,
+            )
+        return bill
