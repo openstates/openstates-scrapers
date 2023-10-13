@@ -113,7 +113,7 @@ class MPBillScraper(Scraper):
         ) == last_action or self.get_cell_text(
             page, "Senate Committee"
         ) == last_action.replace(
-            "HOUSE-", ""
+            "SENATE-", ""
         ):
             bill.add_action(
                 last_action,
@@ -122,12 +122,13 @@ class MPBillScraper(Scraper):
                 classification="referral-committee",
             )
 
+        #  e.g. if "JGO" is house com, and "House-JGO" is last action
         if self.get_cell_text(
             page, "House Committee"
         ) == last_action or self.get_cell_text(
-            page, "Senate Committee"
+            page, "House Committee"
         ) == last_action.replace(
-            "SENATE-", ""
+            "HOUSE-", ""
         ):
             bill.add_action(
                 last_action,
