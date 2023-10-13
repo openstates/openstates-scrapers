@@ -18,10 +18,27 @@ class MPBillScraper(Scraper):
     bill_types = {
         "Senate Resolutions:": "SR",
         "Senate Bills:": "SB",
-        "Senate Legislative initiatives:": "LI",
+        "Senate Legislative initiatives:": "SLI",
         "Senate Joint Resolutions:": "SJR",
         "Senate Local Bills:": "SLB",
         "Senate Commemorative Resolutions:": "SR",
+    }
+
+    bill_type_map = {
+        "HB": "bill",
+        "SB": "bill",
+        "HR": "resolution",
+        "SR": "resolution",
+        "HLB": "bill",
+        "SLB": "bill",
+        "HJR": "joint resolution",
+        "SJR": "joint resolution",
+        "HCR": "concurrent resolution",
+        "HLI": "bill",
+        "SLI": "bill",
+        "HLB": "bill",
+        "SLB": "bill",
+        "HCommRes": "resolution",
     }
 
     def scrape(self, chamber=None, session=None):
@@ -66,11 +83,14 @@ class MPBillScraper(Scraper):
 
         title = self.get_cell_text(page, "Subject/Title")
 
+        bill_type = self.bill_type_map[bill_id.split(" ")[0]]
+
         bill = Bill(
             identifier=bill_id,
             title=title,
             legislative_session=session,
             chamber=chamber,
+            classification=bill_type,
         )
 
         sponsor = self.get_cell_text(page, "Author")
@@ -137,9 +157,17 @@ class MPBillScraper(Scraper):
                 classification="referral-committee",
             )
 
+        if "duly adopted" in last_action.lower():
+            bill.add_action(
+                "Duly Adopted",
+                dateutil.parser.parse(last_updated).strftime("%Y-%m-%d"),
+                chamber="executive",
+                classification="enrolled",
+            )
+
         refs = self.get_cell_text(page, "References")
         for line in refs.split("\n"):
-            if "governor" in line.lower():
+            if "governor" in line.lower() or re.match(r"g-\s?\d+", line.lower()):
                 action_date = re.findall(r"\d+\/\d+\/\d+", line)[0]
                 bill.add_action(
                     "Sent to Governor",
