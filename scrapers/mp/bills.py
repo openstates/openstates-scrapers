@@ -108,7 +108,13 @@ class MPBillScraper(Scraper):
                 media_type="application/pdf",
             )
 
-        if self.get_cell_text(page, "Senate Committee") == last_action:
+        if self.get_cell_text(
+            page, "Senate Committee"
+        ) == last_action or self.get_cell_text(
+            page, "Senate Committee"
+        ) == last_action.replace(
+            "HOUSE-", ""
+        ):
             bill.add_action(
                 last_action,
                 dateutil.parser.parse(last_updated).strftime("%Y-%m-%d"),
@@ -116,7 +122,13 @@ class MPBillScraper(Scraper):
                 classification="referral-committee",
             )
 
-        if self.get_cell_text(page, "House Committee") == last_action:
+        if self.get_cell_text(
+            page, "House Committee"
+        ) == last_action or self.get_cell_text(
+            page, "Senate Committee"
+        ) == last_action.replace(
+            "SENATE-", ""
+        ):
             bill.add_action(
                 last_action,
                 dateutil.parser.parse(last_updated).strftime("%Y-%m-%d"),
