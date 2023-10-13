@@ -124,8 +124,19 @@ class MPBillScraper(Scraper):
                 classification="referral-committee",
             )
 
-        # Public Law
-        if "p.l." in last_action.lower():
+        refs = self.get_cell_text(page, "References")
+        for line in refs.split("\n"):
+            if "governor" in line.lower():
+                action_date = re.findall(r"\d+\/\d+\/\d+", line)[0]
+                bill.add_action(
+                    "Sent to Governor",
+                    dateutil.parser.parse(action_date).strftime("%Y-%m-%d"),
+                    chamber="executive",
+                    classification="executive-receipt",
+                )
+
+        # Public Law, or various local laws
+        if "p.l." in last_action.lower() or ".l.l." in last_action.lower():
             bill.add_action(
                 last_action,
                 dateutil.parser.parse(last_updated).strftime("%Y-%m-%d"),
@@ -140,17 +151,9 @@ class MPBillScraper(Scraper):
                     media_type="application/pdf",
                 )
 
-            bill.add_citation("MP Public Laws", last_action, citation_type="chapter")
-
-        refs = self.get_cell_text(page, "References")
-        for line in refs.split("\n"):
-            if "governor" in line.lower():
-                action_date = re.findall(r"\d+\/\d+\/\d+", line)[0]
-                bill.add_action(
-                    "Sent to Governor",
-                    dateutil.parser.parse(action_date).strftime("%Y-%m-%d"),
-                    chamber="executive",
-                    classification="executive-receipt",
+            if "p.l." in last_action.lower():
+                bill.add_citation(
+                    "MP Public Laws", last_action, citation_type="chapter"
                 )
 
         yield bill
