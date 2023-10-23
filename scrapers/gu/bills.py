@@ -20,7 +20,7 @@ class GUBillScraper(Scraper):
     filtered_details = ["BILL HISTORY", "Bill HISTORY", "CLERKS OFFICE", "Page 1"]
     date_re = re.compile("([0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4})")
     date_time_re = re.compile(
-        r"([0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}\s?\n?[0-9]{1,2}:[0-9]{2} [apAP]\.?[mM]\.?)",
+        r"([0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}\s?\n?[0-9]{1,2}:[0-9]{2}\s[apAP]\.?[mM]\.?)",
     )
     committee_re = re.compile("([cC]ommittee on [a-zA-Z, \n]+)")
 
