@@ -14,20 +14,14 @@ class GUEventScraper(Scraper):
         ical_url = "https://calendar.google.com/calendar/ical/webmaster%40guamlegislature.com/public/basic.ics"
 
         ical = requests.get(ical_url).text
-        print(ical)
-        print("\n")
+        self.info("Parsing event feed. This may take a moment.")
         cal = Calendar(ical)
         for e in cal.events:
-            print(e)
-
             location = e.location
             if not location or str(location).strip() == "":
                 location = "See Agenda"
 
-            print(location)
-
             name = e.name
-            print(name)
             if not name:
                 name = "See Agenda"
 
@@ -52,7 +46,19 @@ class GUEventScraper(Scraper):
             for bill in bills:
                 event.add_bill(bill)
 
-            # todo: youtube
+            for match in re.findall(
+                r"(https:\/\/[w\.]*(youtube\.com|youtu\.be)\/[\w\?\=\/]+)",
+                str(e.description),
+                flags=re.IGNORECASE,
+            ):
+                match = match[0]
+                # manual fix for common bad url
+                if match[-7:] == ".com/c/":
+                    continue
+                event.add_media_link(
+                    "Youtube", match, "text/html", on_duplicate="ignore"
+                )
+
             event.add_source(
                 "https://guamlegislature.com/index/schedules-and-calendars/"
             )
