@@ -46,17 +46,20 @@ class GUEventScraper(Scraper):
             for bill in bills:
                 event.add_bill(bill)
 
-            for match in re.findall(
-                r"(https:\/\/[w\.]*(youtube\.com|youtu\.be)\/[\w\?\=\/]+)",
-                str(e.description),
-                flags=re.IGNORECASE,
+            for counter, match in enumerate(
+                re.findall(
+                    r"(https:\/\/[w\.]*(youtube\.com|youtu\.be)\/[\w\?\=\/]+)",
+                    str(e.description),
+                    flags=re.IGNORECASE,
+                ),
+                start=1,
             ):
                 match = match[0]
                 # manual fix for common bad url
                 if match[-7:] == ".com/c/":
                     continue
                 event.add_media_link(
-                    "Youtube", match, "text/html", on_duplicate="ignore"
+                    f"Youtube link {counter}", match, "text/html", on_duplicate="ignore"
                 )
 
             event.add_source(
