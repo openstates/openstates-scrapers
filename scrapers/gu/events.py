@@ -1,5 +1,7 @@
 from openstates.scrape import Scraper, Event
 from ics import Calendar
+import datetime
+import pytz
 import re
 import requests
 
@@ -10,13 +12,23 @@ class GUEventScraper(Scraper):
         "resolution": "R",
     }
 
-    def scrape(self):
+    # there are over 8000 events in the ical feed, most of them quite old
+    # by default we yield the current year onward, set parse_older to get them all
+    def scrape(self, parse_older=None):
+        today = datetime.datetime.today()
+        jan_first = datetime.datetime(year=today.year, month=1, day=1, tzinfo=pytz.UTC)
+
         ical_url = "https://calendar.google.com/calendar/ical/webmaster%40guamlegislature.com/public/basic.ics"
 
         ical = requests.get(ical_url).text
         self.info("Parsing event feed. This may take a moment.")
         cal = Calendar(ical)
         for e in cal.events:
+
+            if parse_older is None and e.begin < jan_first:
+                self.info(f"Skipping event from {str(e.begin)}")
+                continue
+
             location = e.location
             if not location or str(location).strip() == "":
                 location = "See Agenda"
