@@ -30,9 +30,18 @@ class VIEventScraper(Scraper):
         # https://legvi.org/?method=ical&id=1381956
         url = f"https://legvi.org/?method=ical&id={event_id}"
         ical = self.get(url).text
-        cal = Calendar(ical)
+
+        try:
+            cal = Calendar(ical)
+        except ValueError:
+            self.warning(f"Unable to parse {url}, skipping")
+            return
 
         for e in cal.events:
+
+            if "holiday" in e.name.lower():
+                continue
+
             event = Event(
                 e.name,
                 str(e.begin),
@@ -40,7 +49,9 @@ class VIEventScraper(Scraper):
                 description=e.description,
                 end_date=str(e.end),
             )
-            event.add_participant(e.organizer.common_name, "person")
+
+            if e.organizer:
+                event.add_participant(e.organizer.common_name, "person")
 
             if "committee" in e.name.lower():
                 com_name = e.name.replace("Committee on", "")
