@@ -57,8 +57,9 @@ class VIEventScraper(Scraper):
                 start = row["startDate"]
                 description = row["description"]
 
-                if "reserved" in title.lower():
-                    self.info(f"Skipping {start} {title}, reserved.")
+                if "reserved" in title.lower() or "holiday" in title.lower():
+                    self.info(f"Skipping {start} {title}, holiday or reserved.")
+                    continue
 
                 # some weird placeholders for location in the data
                 if len(location) < 10:
