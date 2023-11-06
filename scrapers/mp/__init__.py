@@ -1,5 +1,6 @@
 from openstates.scrape import State
 from .bills import MPBillScraper
+from .events import MPEventScraper
 
 import requests
 import lxml
@@ -8,6 +9,7 @@ import lxml
 class NorthernMarianaIslands(State):
     scrapers = {
         "bills": MPBillScraper,
+        "events": MPEventScraper,
     }
     # sessions before 37th are missing many labels
     legislative_sessions = [
