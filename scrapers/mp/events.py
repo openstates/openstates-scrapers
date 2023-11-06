@@ -1,4 +1,5 @@
 import cloudscraper
+import datetime
 import dateutil
 import lxml
 import pytz
@@ -14,6 +15,8 @@ class MPEventScraper(Scraper):
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0"
     }
 
+    committee_regex = r"(?P<com>(Senate|House) Committee on (.*?))(Committee Meeting|Committee Public Hearing|Meeting)"
+
     # transform
     # MM_openBrWindow('calendar_event.asp?calID=7763','','scrollbars=yes,width=400,height=400')
     # to https://cnmileg.net/calendar_event.asp?calID=7763
@@ -23,17 +26,41 @@ class MPEventScraper(Scraper):
 
     # transform "10:30 a.m. - CHCC BOARD OF TRUSTEES" into "10:30 a.m."
     def extract_time(self, timestring: str) -> str:
+        # 10: 00 am to 10:00 am
+        timestring = timestring.replace(": ", "")
         matches = re.findall(r"\d+:\d+\s*[apm\.]*", timestring, flags=re.IGNORECASE)
+
+        if len(matches) == 0:
+            self.error(f"Could not parse timestring {timestring}")
+            return ""
+
         return matches[0]
 
     def scrape(self):
+        year = datetime.datetime.today().year
+
+        # the curdate vars in the post request
+        # are actually the first day of the
+        # NEXT MONTH of the data you want to see.
+
+        # 2 -> 12 will actually scrape
+        # jan -> nov
+        for month in range(2, 13):
+            date = datetime.datetime(year, month, 1)
+            yield from self.post_search(date)
+
+        # jan if the next year will actually scrape dec of the previous
+        yield from self.post_search(datetime.datetime(year + 1, 1, 1))
+
+    def post_search(self, date: datetime.datetime):
         data = {
             "subPrev.x": "14",
             "subPrev.y": "10",
-            "CURDATE_month": "October",
-            "CURDATE_YEAR": "2023",
-            "CURDATE": "10/1/2023",
+            "CURDATE_month": date.strftime("%B"),  # October
+            "CURDATE_YEAR": date.year,
+            "CURDATE": date.strftime("%m/%-d/%Y"),  # 10/1/2023
         }
+        self.info("POST https://cnmileg.net/calendar.asp", data)
         page = self.scraper.post("https://cnmileg.net/calendar.asp", data=data).content
 
         page = lxml.html.fromstring(page)
@@ -52,17 +79,24 @@ class MPEventScraper(Scraper):
 
         start = page.xpath("//h4[1]/text()")[0]
         title = page.xpath("//h5[1]/text()")[0]
-        time = page.xpath("//p[contains(text(), 'Time:')]/text()")[0]
-        time = time.replace("Time:", "").strip()
+        if page.xpath("//p[contains(text(), 'Time:')]/text()"):
+            time = page.xpath("//p[contains(text(), 'Time:')]/text()")[0]
+            time = time.replace("Time:", "").strip()
+        else:
+            # my kingdom for xpath 2.0 in lxml, so we can do regex matches...
+            time = page.xpath(
+                "//p[contains(text(), 'a.m.') or contains(text(), 'p.m.') or contains(text(), 'A.M.') or contains(text(), 'P.M.')]/text()"
+            )[0]
+
         time = self.extract_time(time)
 
         start = dateutil.parser.parse(f"{start} {time}")
         start = self._tz.localize(start)
 
-        location = page.xpath("//p[contains(text(), 'Location:')]/text()")[0]
+        location = page.xpath(
+            "//p[contains(text(), 'Location:') or contains(text(), 'LOCATION:')]/text()"
+        )[0]
         location = location.replace("Location:", "").strip()
-
-        print(start, title, time, location)
 
         event = Event(title, start, location)
 
@@ -73,6 +107,12 @@ class MPEventScraper(Scraper):
                 media_type="application/pdf",
                 on_duplicate="ignore",
             )
+
+        matches = re.findall(self.committee_regex, title, flags=re.IGNORECASE)
+
+        if matches:
+            com = matches[0][0].strip()
+            event.add_participant(com, "committee")
 
         event.add_source(url)
         yield event
