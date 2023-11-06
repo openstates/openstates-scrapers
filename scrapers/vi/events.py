@@ -1,65 +1,98 @@
-import lxml.html
+import datetime
+import html.parser
+import json
+import lxml
 import re
+import requests
 
 from openstates.scrape import Scraper, Event
-from openstates.exceptions import EmptyScrape
-from ics import Calendar
 
 
 class VIEventScraper(Scraper):
+    seen = []
+
     def scrape(self):
 
-        url = "https://legvi.org/calendars/"
+        event_count = 0
 
-        page = self.get(url).content
-        page = lxml.html.fromstring(page)
+        year = datetime.datetime.today().year
+        for month in range(1, 13):
+            self.info(f"Posting {year}-{month}")
+            data = {
+                "action": "mec_monthly_view_load_month",
+                "mec_year": year,
+                "mec_month": str(month).zfill(2),
+                "atts[sf_status]": "0",
+                "atts[sf_display_label]": "0",
+                "atts[show_past_events]": "1",
+                "atts[show_only_past_events]": "0",
+                "atts[show_only_ongoing_events]": "0",
+                "atts[_edit_lock]": "1676605531:1",
+                "atts[_edit_last]": "1",
+                "atts[ex_category]": "",
+                "atts[ex_location]": "",
+                "atts[ex_organizer]": "",
+                "atts[sf_reset_button]": "0",
+                "atts[sf_refine]": "0",
+                "atts[show_only_one_occurrence]": "0",
+                "atts[show_ongoing_events]": "0",
+                "atts[id]": "1376753",
+                "atts[sed_method]": "0",
+                "atts[image_popup]": "0",
+                "apply_sf_date": "0",
+                "navigator_click": "true",
+            }
 
-        for row in page.xpath("//article[contains(@class,'mec-event-article')]//a[1]"):
-            title = row.xpath("text()")[0]
-            if "reserved" in title.lower():
-                self.info(f"Skipping {title}, reserved.")
-                continue
+            res = requests.post("https://legvi.org/wp-admin/admin-ajax.php", data=data)
+            page = json.loads(res.content)
+            page = lxml.html.fromstring(page["month"])
 
-            event_id = row.xpath("@data-event-id")[0]
-            yield from self.parse_event(event_id)
+            # json, embedded in html, served as a string JSON key...
+            for script in page.xpath('//script[@type="application/ld+json"]'):
+                row = json.loads(script.text_content())
 
-        if not page.xpath("//article[contains(@class,'mec-event-article')]"):
-            yield EmptyScrape
+                title = html.parser.unescape(row["name"])
 
-    def parse_event(self, event_id):
-        # https://legvi.org/?method=ical&id=1381956
-        url = f"https://legvi.org/?method=ical&id={event_id}"
-        ical = self.get(url).text
+                location = f"{row['location']['name']}, {row['location']['address']}"
+                start = row["startDate"]
+                description = row["description"]
 
-        try:
-            cal = Calendar(ical)
-        except ValueError:
-            self.warning(f"Unable to parse {url}, skipping")
-            return
+                if "reserved" in title.lower():
+                    self.info(f"Skipping {start} {title}, reserved.")
 
-        for e in cal.events:
+                # some weird placeholders for location in the data
+                if len(location) < 10:
+                    location = "See Source"
 
-            if "holiday" in e.name.lower():
-                continue
+                event = Event(
+                    name=title,
+                    start_date=start,
+                    location_name=location,
+                    description=description,
+                )
 
-            event = Event(
-                e.name,
-                str(e.begin),
-                e.location,
-                description=e.description,
-                end_date=str(e.end),
-            )
+                dedupe_key = f"{start}-{title}"
 
-            if e.organizer:
-                event.add_participant(e.organizer.common_name, "person")
+                # the calendar will include a few events from last month if weekdays overlap,
+                # so don't double emit those.
+                if dedupe_key in self.seen:
+                    self.info(f"Skipping {start} - {title}, already scraped.")
+                    continue
+                else:
+                    self.seen.append(dedupe_key)
+                    event.dedupe_key = dedupe_key
 
-            if "committee" in e.name.lower():
-                com_name = e.name.replace("Committee on", "")
-                event.add_participant(com_name, "committee")
+                event.add_source(row["offers"]["url"])
 
-            for match in re.findall(r"Bill No\.\s(\d+\-\d+)", e.description):
-                event.add_bill(match)
+                if row["organizer"]["name"]:
+                    # todo type = Person
+                    event.add_participant(row["organizer"]["name"], "person")
 
-            event.add_source(e.url)
+                if "committee" in title.lower():
+                    event.add_participant(title, "committee")
 
-            yield event
+                for match in re.findall(r"Bill No\.\s(\d+\-\d+)", description):
+                    event.add_bill(match)
+
+                event_count += 1
+                yield event
