@@ -179,8 +179,17 @@ class Texas(State):
             "identifier": "883",
             "name": "88th Legislature, 3rd Called Session (2023)",
             "start_date": "2023-10-09",
+            "end_date": "2023-11-08",
+            "active": False,
+        },
+        {
+            "_scraped_name": "88(4) - 2023",
+            "classification": "special",
+            "identifier": "884",
+            "name": "88th Legislature, 4th Called Session (2023)",
+            "start_date": "2023-11-08",
             # TODO: correct end date
-            "end_date": "2023-10-13",
+            "end_date": "2023-11-17",
             "active": True,
         },
         # TODO: Re-enable vote scraper when adding next regular session
