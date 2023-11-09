@@ -57,7 +57,7 @@ class SubjectPDF(PdfPage):
 
 
 class BillList(HtmlListPage):
-    selector = XPath("//a[contains(@href, '/Session/Bill/')]")
+    selector = XPath("//th/a[contains(@href, '/Session/Bill/')]")
     next_page_selector = XPath("//a[@class='next']/@href")
     dependencies = {"subjects": SubjectPDF}
 
@@ -99,7 +99,7 @@ class BillList(HtmlListPage):
         elif bill_id.startswith(("SM ", "HM ")):
             bill_type = "memorial"
         else:
-            raise ValueError("Failed to identify bill type.")
+            raise ValueError(f"Failed to identify bill type for {bill_id}")
 
         bill = Bill(
             bill_id,
@@ -609,6 +609,7 @@ class HouseSearchPage(HtmlListPage):
         bill_number = re.search(r"^\w+\s(\d+\w*)$", self.input.identifier).group(1)
         session_number = {
             "2024": "103",
+            "2023C": "104",
             "2023B": "102",
             "2022A": "101",
             "2023": "99",

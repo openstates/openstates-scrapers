@@ -11,6 +11,7 @@ class FlEventScraper(Scraper):
     # select#ddlSession
     session_ids = {
         "2024": "103",
+        "2023C": "104",
         "2023B": "102",
         "2022A": "101",
         "2023": "99",
