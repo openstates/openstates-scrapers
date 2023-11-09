@@ -2,11 +2,13 @@
 from openstates.scrape import State
 
 from .bills import VIBillScraper
+from .events import VIEventScraper
 
 
 class VirginIslands(State):
     scrapers = {
         "bills": VIBillScraper,
+        "events": VIEventScraper,
     }
     legislative_sessions = [
         {

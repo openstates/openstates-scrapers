@@ -1,10 +1,12 @@
 from openstates.scrape import State
 from .bills import GUBillScraper
+from .events import GUEventScraper
 
 
 class Guam(State):
     scrapers = {
         "bills": GUBillScraper,
+        "events": GUEventScraper,
     }
     # sessions before 37th are missing many labels
     legislative_sessions = [
