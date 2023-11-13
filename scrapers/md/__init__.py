@@ -192,6 +192,7 @@ class Maryland(State):
         },
     ]
     ignored_scraped_sessions = [
+        "2024 Regular Session",
         "1996 Regular Session",
         "1997 Regular Session",
         "1998 Regular Session",
