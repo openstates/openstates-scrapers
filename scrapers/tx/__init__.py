@@ -180,7 +180,7 @@ class Texas(State):
             "name": "88th Legislature, 3rd Called Session (2023)",
             "start_date": "2023-10-09",
             "end_date": "2023-11-08",
-            "active": False,
+            "active": True,
         },
         {
             "_scraped_name": "88(4) - 2023",
