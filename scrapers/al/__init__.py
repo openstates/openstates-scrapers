@@ -41,8 +41,8 @@ class Alabama(State):
             "classification": "primary",
             "identifier": "2024rs",
             "name": "2024 Regular Session",
-            "start_date": "2024-03-07",
-            "end_date": "2024-06-08",
+            "start_date": "2024-02-06",
+            "end_date": "2024-05-24",
             "active": True,
         },
     ]
