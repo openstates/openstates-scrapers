@@ -6,7 +6,6 @@ import datetime
 import dateutil
 import requests
 from openstates.scrape import Scraper, Bill, VoteEvent
-from openstates.exceptions import EmptyScrape
 from utils.media import get_media_type
 from .actions import Categorizer
 
@@ -47,7 +46,6 @@ class ALBillScraper(Scraper):
         limit = 10000
         # max of 10 pages in case something goes way wrong
         while offset < 100000:
-            # WARNING: 2023 session id is currently hardcoded
             json_data = {
                 "query": f'{{allInstrumentOverviews(instrumentType:"{bill_type}", instrumentNbr:"", body:"", sessionYear:"{self.session_year}", sessionType:"{self.session_type}", assignedCommittee:"", status:"", currentStatus:"", subject:"", instrumentSponsor:"", companionInstrumentNbr:"", effectiveDateCertain:"", effectiveDateOther:"", firstReadSecondBody:"", secondReadSecondBody:"", direction:"ASC"orderBy:"InstrumentNbr"limit:"{limit}"offset:"{offset}"  search:"" customFilters: {{}}companionReport:"", ){{ ID,SessionYear,InstrumentNbr,InstrumentUrl, InstrumentSponsor,SessionType,Body,Subject,ShortTitle,AssignedCommittee,PrefiledDate,FirstRead,CurrentStatus,LastAction,ActSummary,ViewEnacted,CompanionInstrumentNbr,EffectiveDateCertain,EffectiveDateOther,InstrumentType,IntroducedUrl,EngrossedUrl,EnrolledUrl }}}}',
                 "operationName": "",
@@ -57,7 +55,9 @@ class ALBillScraper(Scraper):
             page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
             page = json.loads(page.content)
             if len(page["data"]["allInstrumentOverviews"]) < 1 and offset == 0:
-                raise EmptyScrape
+                # TODO: this fails if one chamber is empty and the other isn't
+                # raise EmptyScrape
+                return
 
             for row in page["data"]["allInstrumentOverviews"]:
                 chamber = self.chamber_map[row["Body"]]
