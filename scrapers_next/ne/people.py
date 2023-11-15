@@ -8,6 +8,7 @@ class LegPartial:
     name = attr.ib()
     district = attr.ib()
     url = attr.ib()
+    member_list_url = attr.ib()
 
 
 class LegPage(HtmlPage):
@@ -55,7 +56,8 @@ class LegPage(HtmlPage):
         )
         p.capitol_office.address = "; ".join(address)
         p.capitol_office.voice = phone
-        p.add_source(self.source.url)
+        p.add_source(self.source.url, "member detail page")
+        p.add_source(self.input.member_list_url, "members list page")
         p.add_link(self.source.url)
         return p
 
@@ -72,13 +74,15 @@ class Legislature(HtmlListPage):
             self.skip("not a person")
         if "Vacant" in name:
             self.skip("vacant")
-        last, first = name.split(",")
+        last, first = [x.strip() for x in name.split(",")]
         name = f"{first} {last}"
         district = int(CSS("a div span").match(item)[1].text)
+
         return LegPage(
             LegPartial(
                 name=name,
                 district=district,
-                url=f"http://news.legislature.ne.gov/dist{district:02d}/",
+                url=f"http://nebraskalegislature.gov/senators/landing-pages/index.php?District={district}",
+                member_list_url=self.source.url,
             )
         )

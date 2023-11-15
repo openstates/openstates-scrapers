@@ -43,7 +43,7 @@ class AKBillScraper(Scraper):
             bill_abbr = bill_link.text
             if " " in bill_abbr:
                 bill_abbr = bill_abbr.split(" ")[0]
-            elif "HCR" in bill_abbr:
+            elif "HCR" in bill_abbr or "SCR" in bill_abbr:
                 bill_abbr = bill_abbr[:3]
             else:
                 bill_abbr = bill_abbr[:2]

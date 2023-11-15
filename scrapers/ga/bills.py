@@ -64,11 +64,11 @@ class GABillScraper(Scraper):
         action_code_map = {
             "HI": None,
             "SI": None,
-            "HH": None,
-            "SH": None,
-            "HPF": ["introduction"],
+            "HH": ["introduction"],
+            "SH": ["introduction"],
+            "HPF": ["filing"],
             "HDSAS": None,
-            "SPF": ["introduction"],
+            "SPF": ["filing"],
             "HSR": ["reading-2"],
             "SSR": ["reading-2"],
             "HFR": ["reading-1"],
@@ -234,6 +234,11 @@ class GABillScraper(Scraper):
 
                     action_types = None
 
+                # vetos carry the same status as executive signed, "Signed Gov".
+                # see https://www.legis.ga.gov/legislation/64713
+                if "veto" in action["action"].lower():
+                    action_types = ["executive-veto"]
+
                 committees = []
                 if action_types and any(("committee" in x for x in action_types)):
                     committees = [str(x) for x in ccommittees.get(action_chamber, [])]
@@ -247,6 +252,14 @@ class GABillScraper(Scraper):
                 for committee in committees:
                     act.add_related_entity(committee, "organization")
                 act.extras = {"code": action["code"], "guid": action["_guid"]}
+
+                if action["action"].startswith("Act "):
+                    act_year = action["date"].strftime("%Y")
+                    bill.add_citation(
+                        f"Acts of Georgia, {act_year}",
+                        action["action"],
+                        citation_type="chapter",
+                    )
 
             sponsors = []
             if instrument["Authors"]:

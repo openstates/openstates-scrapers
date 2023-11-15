@@ -2,6 +2,23 @@ import re
 
 from .lxmlize import LXMLMixin  # noqa
 from .lxmlize import url_xpath  # noqa
+import hashlib
+import uuid
+
+
+def hash_key(key_str):
+    """
+    Used to shorten identifier strings while maintaining uniqueness.
+    :param key_str: type str - identifier of variable length
+    :return: type str - unique hash of identifier
+    """
+    hash_val = hashlib.md5()
+    hash_val.update(key_str.encode("utf-8"))
+    hex_encoded_hash = hash_val.hexdigest()
+    uuid_hex = uuid.UUID(hex_encoded_hash)
+    unique_event_hash_str = str(uuid_hex)
+    return unique_event_hash_str
+
 
 _phone_pattern = re.compile(r"\(?\d{3}\)?\s?-?\d{3}-?\d{4}")
 _email_pattern = re.compile(r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\." r"[a-zA-Z]{2,}\b")

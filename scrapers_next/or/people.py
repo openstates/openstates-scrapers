@@ -16,6 +16,8 @@ class LegDetail(HtmlPage):
             img = "https://www.oregonlegislature.gov/wagner/PublishingImages/member_photo.jpg"
         elif p.name == "Kathleen Taylor":
             img = "https://www.oregonlegislature.gov/taylor/PublishingImages/member_photo.jpg"
+        elif p.name == "Charlie Conrad":
+            img = "https://www.oregonlegislature.gov/conrad/PublishingImages/Pages/news/Rep%20Conrad%202023_Small2.jpg"
         else:
             img = CSS("h1 img").match_one(self.root).get("src")
         p.image = img
@@ -57,7 +59,7 @@ class LegDetail(HtmlPage):
 
 class LegList(JsonPage):
     source = URL(
-        "https://api.oregonlegislature.gov/odata/odataservice.svc/LegislativeSessions('2021R1')/Legislators",
+        "https://api.oregonlegislature.gov/odata/odataservice.svc/LegislativeSessions('2023R1')/Legislators",
         headers={"Accept": "application/json"},
     )
 
@@ -104,10 +106,13 @@ class LegList(JsonPage):
             if title not in ["Senator", "Representative"]:
                 p.extras["title"] = title
 
-            email = leg["EmailAddress"].strip()
-            p.email = email
+            email = leg["EmailAddress"]
+            p.email = email.strip() if email else ""
 
             website = leg["WebSiteUrl"]
+            # Fixes bad url in the JSON data for Sen. Elizabeth Steiner
+            website = website.replace("steinerhayward", "steiner")
+
             p.add_link(website, note="homepage")
             p.add_source(website)
 

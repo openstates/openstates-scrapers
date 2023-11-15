@@ -97,7 +97,7 @@ class Connecticut(State):
             "name": "2022 Regular Session",
             "start_date": "2022-02-09",
             "end_date": "2022-05-04",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023",
@@ -105,7 +105,7 @@ class Connecticut(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-04",
             "end_date": "2023-05-04",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

@@ -130,6 +130,15 @@ class Colorado(State):
             "name": "2022 Regular Session",
             "start_date": "2022-01-12",
             "end_date": "2022-05-11",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023 Regular Session",
+            "classification": "primary",
+            "identifier": "2023A",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-09",
+            "end_date": "2023-05-06",
             "active": True,
         },
     ]

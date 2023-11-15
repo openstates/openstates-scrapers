@@ -41,7 +41,13 @@ class PuertoRico(State):
             "active": True,
         },
     ]
-    ignored_scraped_sessions = ["2005-2008", "2001-2004", "1997-2000", "1993-1996"]
+    ignored_scraped_sessions = [
+        "2005-2008",
+        "2001-2004",
+        "1997-2000",
+        "1993-1996",
+        "1989-1992",
+    ]
 
     def get_session_list(self):
         from utils import url_xpath

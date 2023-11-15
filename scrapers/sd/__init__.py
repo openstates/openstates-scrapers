@@ -157,7 +157,7 @@ class SouthDakota(State):
             "name": "2022 Regular Session",
             "start_date": "2022-01-11",
             "end_date": "2022-03-28",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023",
@@ -165,10 +165,10 @@ class SouthDakota(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-10",
             "end_date": "2023-03-27",
-            "active": False,
+            "active": True,
         },
     ]
-    ignored_scraped_sessions = []
+    ignored_scraped_sessions = ["2024"]
 
     def get_session_list(self):
         api_url = "https://sdlegislature.gov/api/Sessions/"

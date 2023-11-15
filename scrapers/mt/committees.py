@@ -113,7 +113,7 @@ class MTCommitteeScraper(Scraper):
 
         The best solution to this is to throw out the offending text,
         and replace it with the correct text. The third and fourth
-        columns are joint comittees that are scraped from the Senate
+        columns are joint committees that are scraped from the Senate
         document, so the only column that needs to be inserted this way
         is the second.
         """

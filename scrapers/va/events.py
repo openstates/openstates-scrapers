@@ -23,9 +23,7 @@ class VaEventScraper(Scraper):
         yield from self.scrape_upper(session_id)
 
     def scrape_lower(self):
-        list_url = (
-            "https://virginiageneralassembly.gov/house/schedule/meetingSchedule.php"
-        )
+        list_url = "https://virginiageneralassembly.gov/house/schedule/meetingSchedule.php?range=long"
 
         page = self.get(list_url).content
         page = lxml.html.fromstring(page)
@@ -40,9 +38,7 @@ class VaEventScraper(Scraper):
                 continue
 
             # fallback for unlinked events
-            source = (
-                "https://virginiageneralassembly.gov/house/schedule/meetingSchedule.php"
-            )
+            source = "https://virginiageneralassembly.gov/house/schedule/meetingSchedule.php?range=long"
 
             if row.xpath(".//a[1]/text()"):
                 title = row.xpath(".//a[1]/text()")[0].strip()
@@ -139,8 +135,8 @@ class VaEventScraper(Scraper):
             description = row.xpath("td[3]/text()")[0].strip()
 
             # data on the house page is better
-            if "senate" not in description.lower():
-                continue
+            # if "senate" not in description.lower():
+            #    continue
 
             time = row.xpath("td[2]/text()")[0].strip()
 

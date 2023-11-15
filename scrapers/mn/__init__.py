@@ -199,7 +199,7 @@ class Minnesota(State):
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-05",
             "end_date": "2022-05-23",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "92nd Legislature, 2021 1st Special Session",
@@ -208,6 +208,7 @@ class Minnesota(State):
             "name": "2021, First Special Session",
             "start_date": "2021-06-14",
             "end_date": "2021-07-07",
+            "active": False,
         },
         {
             "_scraped_name": "93rd Legislature, 2023-2024",
@@ -216,7 +217,7 @@ class Minnesota(State):
             "name": "2023-2024 Regular Session",
             "start_date": "2023-01-03",
             "end_date": "2023-05-22",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

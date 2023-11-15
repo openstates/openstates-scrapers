@@ -2,23 +2,27 @@ name: Lint Python
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - "*"
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   lint:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: setup Python 3.9
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
-        python-version: 3.9
-    - name: install linters
-      run: pip install flake8 black
+        python-version: "3.9"
+    - name: install poetry
+      run: pip install poetry wheel
+    - name: install dependencies
+      run: poetry install --only=dev
     - name: flake8 check
-      run: flake8 scrapers scrapers_next
+      run: poetry run flake8 scrapers scrapers_next
     - name: black check
-      run: black --check scrapers scrapers_next
+      run: poetry run black --check --diff scrapers scrapers_next

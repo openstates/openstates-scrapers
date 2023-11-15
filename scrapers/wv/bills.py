@@ -50,6 +50,7 @@ class WVBillScraper(Scraper):
         "20222S": "2X",
         "20223S": "3X",
         "20224S": "4X",
+        "20231S": "1X",
     }
 
     bill_types = {
@@ -60,6 +61,7 @@ class WVBillScraper(Scraper):
     }
 
     def scrape(self, chamber=None, session=None):
+
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)

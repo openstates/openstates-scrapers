@@ -31,7 +31,6 @@ _party_map = {
 
 class RepDetail(HtmlPage):
     input_type = PartialPerson
-    district_re = re.compile(r"(\d+)\s+-")
 
     def process_page(self):
         district = (
@@ -42,7 +41,7 @@ class RepDetail(HtmlPage):
         district = XPath("text()").match(district)[0].strip()
         # https://legislature.maine.gov/house/house/MemberProfiles/Details/1193 has no district
         if district != "":
-            district = self.district_re.search(district).groups()[0]
+            district = district
         else:
             raise SkipItem("non-voting member")
 
@@ -61,8 +60,11 @@ class RepDetail(HtmlPage):
         img = CSS("img.drop-shadow").match_one(self.root).get("src")
         p.image = img
 
-        email = CSS("div#main-info p a").match(self.root)[0].text_content().strip()
-        p.email = email
+        try:
+            email = CSS("div#main-info p a").match(self.root)[0].text_content().strip()
+            p.email = email
+        except SelectorError:
+            return
 
         distr_addr = CSS("div#main-info p br").match(self.root)[0].tail.strip()
         p.district_office.address = distr_addr

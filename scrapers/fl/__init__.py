@@ -177,14 +177,6 @@ class Florida(State):
             "end_date": "2022-05-27",
             "active": False,
         },
-        {
-            "name": "2023 Regular Session",
-            "identifier": "2023",
-            "classification": "primary",
-            "start_date": "2023-03-07",
-            "end_date": "2023-05-05",
-            "active": True,
-        },
         # Yes, 2022 Special Session A
         # occurred after B,C, and D
         {
@@ -193,6 +185,38 @@ class Florida(State):
             "classification": "special",
             "start_date": "2022-12-12",
             "end_date": "2022-12-16",
+            "active": False,
+        },
+        {
+            "name": "2023 Regular Session",
+            "identifier": "2023",
+            "classification": "primary",
+            "start_date": "2023-03-07",
+            "end_date": "2023-05-05",
+            "active": True,
+        },
+        {
+            "name": "2023 Special Session B",
+            "identifier": "2023B",
+            "classification": "special",
+            "start_date": "2023-02-06",
+            "end_date": "2023-02-10",
+            "active": False,
+        },
+        {
+            "name": "2023 Special Session C",
+            "identifier": "2023C",
+            "classification": "special",
+            "start_date": "2023-11-06",
+            "end_date": "2023-11-09",
+            "active": True,
+        },
+        {
+            "name": "2024 Regular Session",
+            "identifier": "2024",
+            "classification": "primary",
+            "start_date": "2024-01-09",
+            "end_date": "2024-03-08",
             "active": True,
         },
     ]

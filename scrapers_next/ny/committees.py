@@ -25,7 +25,8 @@ class SenateCommitteeDetail(HtmlPage):
             pass
         try:
             for p in XPath(
-                "//div[contains(@class, 'c-senators-container')]//div[@class='view-content']/div[contains(@class, 'odd') or contains(@class, 'even')]"
+                "//div[contains(@class, 'c-senators-container')]//div[@class='view-content']/div[contains(@class, "
+                "'odd') or contains(@class, 'even')]"
             ).match(self.root):
                 name = CSS(".nys-senator--name").match_one(p).text_content()
 
@@ -50,21 +51,18 @@ class HouseCommitteeDetail(HtmlPage):
 
         try:
             chairs = CSS(".chair-info").match(self.root)
+
         except SelectorError:
             raise SkipItem("skipping committee without full information")
 
         # in case there are co-chairs
-        num_chairs = len(chairs)
+        if len(chairs) > 1:
+            chair_role = "Co-Chair"
+        else:
+            chair_role = "Chair"
 
         for chair in chairs:
             chair_name = CSS(".comm-chair-name").match_one(chair).text_content().strip()
-            chair_role = (
-                XPath(f"..//preceding-sibling::header[{num_chairs}]")
-                .match_one(chair)
-                .text_content()
-                .strip()
-                .lower()
-            )
             com.add_member(chair_name, chair_role)
 
         # some committees only have chairs and no members list
@@ -77,16 +75,16 @@ class HouseCommitteeDetail(HtmlPage):
             pass
 
         # some committees have temporary addresses, others have permanent ones
-        try:
-            temp, room, zip = XPath(
-                "//section[@id='comm-addr']/div[@class='mod-inner']//text()"
-            ).match(self.root)
-            com.extras["address"] = f"{temp}: {room}; {zip}"
-        except ValueError:
-            room, zip = XPath(
-                "//section[@id='comm-addr']/div[@class='mod-inner']//text()"
-            ).match(self.root)
-            com.extras["address"] = f"{room}; {zip}"
+        address_parts = self.root.xpath(
+            "//section[@id='comm-addr']/div[@class='mod-inner']//text()"
+        )
+        if address_parts:
+            try:
+                temp, room, zip_code = address_parts
+                com.extras["address"] = f"{temp}: {room}; {zip_code}"
+            except ValueError:
+                room, zip_code = address_parts
+                com.extras["address"] = f"{room}; {zip_code}"
 
         # some committees have press releases
         try:
