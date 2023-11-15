@@ -18,7 +18,7 @@ class WYEventScraper(Scraper):
 
         # this month and the next 2 months
         events = set()
-        for add in [0, 1, 2]:
+        for add in [-2, -1, 0, 1, 2]:
             test_date = today + relativedelta.relativedelta(months=+add)
             month_url = url.format(str(test_date.year), str(test_date.month).zfill(2))
             page = self.get(month_url).json()
