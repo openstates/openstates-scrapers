@@ -327,7 +327,7 @@ class WIBillScraper(Scraper):
             classification=vtype,
             bill=bill,
         )
-        v.dedupe_key = url.split("/")[-1]
+        v.dedupe_key = f'{url.split("/")[-1]}-{bill.identifier}'
         v.set_count("yes", yes)
         v.set_count("no", no)
 

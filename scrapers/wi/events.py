@@ -60,7 +60,7 @@ class WIEventScraper(Scraper, LXMLMixin):
             event.add_source(url)
             event.add_source(com_url)
 
-            # rename from "Committe Name (Senate)" to "Senate Committee Name"
+            # rename from "Committee Name (Senate)" to "Senate Committee Name"
             chamber_regex = r"(.*)\((Senate|Assembly|Joint)\)"
             if re.match(chamber_regex, title):
                 committee = re.sub(chamber_regex, r"\2 \1", title).strip()
