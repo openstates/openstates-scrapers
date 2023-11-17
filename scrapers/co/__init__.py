@@ -143,6 +143,7 @@ class Colorado(State):
         },
     ]
     ignored_scraped_sessions = [
+        "2023 Extraordinary Session ",
         "2020 Extraordinary Session",
         "2017 Extraordinary Session",
         "- All -",
