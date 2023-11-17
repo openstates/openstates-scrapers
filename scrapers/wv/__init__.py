@@ -245,6 +245,6 @@ class WestVirginia(State):
         from utils import url_xpath
 
         return url_xpath(
-            "http://www.legis.state.wv.us/Bill_Status/Bill_Status.cfm",
+            "https://www.wvlegislature.gov/Bill_Status/Bill_Status.cfm",
             '//select[@name="year"]/option/text()',
         )
