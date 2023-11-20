@@ -108,22 +108,26 @@ class GUBillScraper(Scraper):
             bill_obj.add_source(url=bill_link, note="Bill Introduced")
             details = self._get_bill_details(bill_link)
             if details.get("IntroducedDate", None):
-                bill_obj.add_action("Introduced", details["IntroducedDate"])
+                bill_obj.add_action(
+                    "Introduced", details["IntroducedDate"], chamber="legislature"
+                )
             if details.get("ReferredDate", None):
                 if details["Committee"]:
                     bill_obj.add_action(
                         "Referred To Committee",
                         details["ReferredDate"],
-                        organization=details["Committee"],
+                        chamber="legislature",
                     )
                 else:
                     bill_obj.add_action(
-                        "Referred To Committee", details["ReferredDate"]
+                        "Referred To Committee",
+                        details["ReferredDate"],
+                        chamber="legislature",
                     )
 
             yield bill_obj
         else:
-            bill_obj.add_document_link(
+            bill_obj.add_version_link(
                 url=bill_link, note="Bill Introduced", media_type="application/pdf"
             )
             status = xml.xpath("//li")[0].xpath("a/@href")[0]
@@ -156,24 +160,39 @@ class GUBillScraper(Scraper):
             for link in xml.xpath("//li")[1:]:
                 url = link.xpath("a/@href")[0]
                 title = link.xpath("a")[0].text
-                bill_obj.add_document_link(
-                    url=url, note=title, media_type="application/pdf"
-                )
+                if "fiscal note" in title.lower():
+                    bill_obj.add_document_link(
+                        url=url,
+                        note=title,
+                        media_type="application/pdf",
+                        on_duplicate="ignore",
+                    )
+                else:
+                    bill_obj.add_version_link(
+                        url=url,
+                        note=title,
+                        media_type="application/pdf",
+                        on_duplicate="ignore",
+                    )
 
             # status PDF has introduced/passed/etc. dates
             details = self._get_bill_details(status)
             if details.get("IntroducedDate", None):
-                bill_obj.add_action("Introduced", details["IntroducedDate"])
+                bill_obj.add_action(
+                    "Introduced", details["IntroducedDate"], chamber="legislature"
+                )
             if details.get("ReferredDate", None):
                 if details["Committee"]:
                     bill_obj.add_action(
                         "Referred To Committee",
                         details["ReferredDate"],
-                        organization=details["Committee"],
+                        chamber="legislature",
                     )
                 else:
                     bill_obj.add_action(
-                        "Referred To Committee", details["ReferredDate"]
+                        "Referred To Committee",
+                        details["ReferredDate"],
+                        chamber="legislature",
                     )
             yield bill_obj
 
@@ -215,7 +234,7 @@ class GUBillScraper(Scraper):
                 result_date = self._tz.localize(dateutil.parser.parse(result_data[1]))
 
         if result and result_date:
-            bill_obj.add_action(result, result_date)
+            bill_obj.add_action(result, result_date, chamber="legislature")
 
         bill_obj.add_sponsorship(
             name=sponsors[0],
@@ -233,15 +252,30 @@ class GUBillScraper(Scraper):
         for link in xml.xpath("//li"):
             url = link.xpath("a/@href")[0]
             title = link.xpath("a")[0].text
-            bill_obj.add_document_link(
-                url=url, note=title, media_type="application/pdf"
-            )
+            if "fiscal note" in title.lower():
+                bill_obj.add_document_link(
+                    url=url,
+                    note=title,
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
+            else:
+                bill_obj.add_version_link(
+                    url=url,
+                    note=title,
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
 
         details = self._get_resolution_details(bill_link)
         if details.get("IntroducedDate", None):
-            bill_obj.add_action("Introduced", details["IntroducedDate"])
+            bill_obj.add_action(
+                "Introduced", details["IntroducedDate"], chamber="legislature"
+            )
         if details.get("PresentationDate", None):
-            bill_obj.add_action("Presented", details["PresentationDate"])
+            bill_obj.add_action(
+                "Presented", details["PresentationDate"], chamber="legislature"
+            )
         yield bill_obj
 
     def scrape(self, session):
