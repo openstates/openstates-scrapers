@@ -139,11 +139,19 @@ class Colorado(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-09",
             "end_date": "2023-05-06",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023 Extraordinary Session",
+            "classification": "special",
+            "identifier": "2023B",
+            "name": "2023 First Extraordinary Session",
+            "start_date": "2023-11-18",
+            "end_date": "2023-11-14",
             "active": True,
         },
     ]
     ignored_scraped_sessions = [
-        "2023 Extraordinary Session ",
         "2020 Extraordinary Session",
         "2017 Extraordinary Session",
         "- All -",
