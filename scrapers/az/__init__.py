@@ -277,6 +277,16 @@ class Arizona(State):
             "name": "56th Legislature - First Regular Session",
             "start_date": "2023-01-09",
             "end_date": "2023-06-30",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2024 - Fifty-sixth Legislature - Second Regular Session",
+            "classification": "primary",
+            "identifier": "56th-2nd-regular",
+            "name": "56th Legislature - Second Regular Session",
+            # TODO: Correct dates
+            "start_date": "2024-01-09",
+            "end_date": "2024-06-30",
             "active": True,
         },
     ]
