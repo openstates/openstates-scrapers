@@ -267,6 +267,10 @@ class GUBillScraper(Scraper):
                     on_duplicate="ignore",
                 )
 
+        bill_obj.add_version_link(
+            url=bill_link, note="Current Status", media_type="application/pdf"
+        )
+
         details = self._get_resolution_details(bill_link)
         if details.get("IntroducedDate", None):
             bill_obj.add_action(
