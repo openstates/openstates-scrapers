@@ -6,6 +6,51 @@ import re
 from utils import LXMLMixin
 from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
+
+
+class UnknownBillStringPattern(BaseException):
+    def __init__(self, bill_string):
+        super().__init__(
+            "Char '&' present in string but known bill id patterns not found."
+            f" Bill string: '{bill_string}'"
+        )
+
+
+# Regex pattern for extracting multiple bill ids
+#  ex. "HJRs 33 & 45" or "HBs 882 & 518"
+multi_bills_re = re.compile(
+    r"(SJR|SRB|HCR|HB|HR|SRM|SCR|SB|HRM|HCB|HJR|SM|HRB|HEC|GRP|HC|SR)s\s+(.+)"
+)
+
+
+def add_bill_to_agenda(agenda_item, bill_text):
+    """
+    Helper func adds bills from text that may contain one or multiple bills.
+    ex. "SB 123" or "SBs 123 & 341"
+    """
+    # Start by assuming there's only one bill in string
+    item_bills = [bill_text]
+
+    # Multiple bills detected
+    if "&" in bill_text:
+        multi_bill_match = multi_bills_re.search(bill_text)
+        if multi_bill_match:
+            prefix, raw_bill_nums = multi_bill_match.groups()
+            raw_bill_nums_list = raw_bill_nums.split()
+            item_bills = []
+            for raw_str in raw_bill_nums_list:
+                num_match = re.search(r"(\d+)", raw_str)
+                if num_match:
+                    bill_num = num_match.group(1)
+                    item_bills.append(f"{prefix} {bill_num}")
+        # If regex pattern does not cover particular case of '&' in string
+        else:
+            raise UnknownBillStringPattern(bill_text)
+
+    # Add all bills
+    for bill in item_bills:
+        agenda_item.add_bill(bill)
 
 
 class MOEventScraper(Scraper, LXMLMixin):
@@ -15,11 +60,19 @@ class MOEventScraper(Scraper, LXMLMixin):
     )
 
     def scrape(self, chamber=None):
+        event_count = 0
         if chamber is None:
             for chamber in ["upper", "lower"]:
-                yield from self.scrape_chamber(chamber)
+                for event in self.scrape_chamber(chamber):
+                    event_count += 1
+                    yield event
         else:
-            yield from self.scrape_chamber(chamber)
+            for event in self.scrape_chamber(chamber):
+                event_count += 1
+                yield event
+
+        if event_count < 1:
+            raise EmptyScrape
 
     def scrape_chamber(self, chamber):
         if chamber == "upper":
@@ -31,6 +84,7 @@ class MOEventScraper(Scraper, LXMLMixin):
         listing_url = "https://www.senate.mo.gov/hearingsschedule/hrings.htm"
 
         html = self.get(listing_url).text
+        events = set()
 
         # The HTML here isn't wrapped in a container per-event
         # which makes xpath a pain. So string split by <hr>
@@ -53,18 +107,12 @@ class MOEventScraper(Scraper, LXMLMixin):
 
             location = self.row_content(page, "Room:")
 
-            location = "{}, {}".format(
-                location, "201 W Capitol Ave, Jefferson City, MO 65101"
-            )
+            location = f"{location}, 201 W Capitol Ave, Jefferson City, MO 65101"
 
-            if not page.xpath(
-                '//td[descendant::b[contains(text(),"Committee")]]/a/text()'
-            ):
+            if not page.xpath('//td//b[contains(text(),"Committee")]/a/text()'):
                 continue
 
-            com = page.xpath(
-                '//td[descendant::b[contains(text(),"Committee")]]/a/text()'
-            )[0]
+            com = page.xpath('//td//b[contains(text(),"Committee")]/a/text()')[0]
             com = com.split(", Senator")[0].strip()
 
             try:
@@ -73,14 +121,18 @@ class MOEventScraper(Scraper, LXMLMixin):
                 start_date = dateutil.parser.parse(when_date)
 
             start_date = self._TZ.localize(start_date)
-
+            event_name = f"Upper#{com}#{location}#{start_date}"
+            if event_name in events:
+                self.warning(f"Duplicate event {event_name}")
+                continue
+            events.add(event_name)
             event = Event(
                 start_date=start_date,
                 name=com,
                 location_name=location,
                 classification="committee-meeting",
             )
-
+            event.dedupe_key = event_name
             event.add_source(listing_url)
 
             event.add_participant(com, type="committee", note="host")
@@ -99,7 +151,7 @@ class MOEventScraper(Scraper, LXMLMixin):
                     agenda_item = event.add_agenda_item(description=agenda_line)
 
                     bill_link = bill_table.xpath(self.bill_link_xpath)[0].strip()
-                    agenda_item.add_bill(bill_link)
+                    add_bill_to_agenda(agenda_item, bill_link)
                 else:
                     agenda_line = bill_table.xpath("string(tr[1])").strip()
                     agenda_item = event.add_agenda_item(description=agenda_line)
@@ -114,6 +166,7 @@ class MOEventScraper(Scraper, LXMLMixin):
         # The HTML here isn't wrapped in a container per-event
         # which makes xpath a pain. So string split by <hr>
         # then parse each event's fragment for cleaner results
+        events = set()
         for fragment in html.split("<hr />")[1:]:
             page = lxml.html.fromstring(fragment)
 
@@ -121,7 +174,12 @@ class MOEventScraper(Scraper, LXMLMixin):
             if page.xpath('//div[@id="DateGroup"]'):
                 continue
             else:
-                yield from self.scrape_lower_item(page)
+                for item in self.scrape_lower_item(page):
+                    if item.dedupe_key in events:
+                        self.warning(f"Skipping duplicate event: {item.dedupe_key}")
+                        continue
+                    events.add(item.dedupe_key)
+                    yield item
 
     def scrape_lower_item(self, page):
         # print(lxml.etree.tostring(page, pretty_print=True))
@@ -131,9 +189,7 @@ class MOEventScraper(Scraper, LXMLMixin):
         location = self.table_row_content(page, "Location:")
 
         if "house hearing room" in location.lower():
-            location = "{}, {}".format(
-                location, "201 W Capitol Ave, Jefferson City, MO 65101"
-            )
+            location = f"{location}, 201 W Capitol Ave, Jefferson City, MO 65101"
 
         # fix some broken times, e.g. '12 :00'
         when_time = when_time.replace(" :", ":")
@@ -154,6 +210,7 @@ class MOEventScraper(Scraper, LXMLMixin):
             start_date = dateutil.parser.parse(when_date)
 
         start_date = self._TZ.localize(start_date)
+        event_name = f"Lower#{com}#{location}#{start_date}"
 
         event = Event(
             start_date=start_date,
@@ -161,7 +218,7 @@ class MOEventScraper(Scraper, LXMLMixin):
             location_name=location,
             classification="committee-meeting",
         )
-
+        event.dedupe_key = event_name
         event.add_source("https://house.mo.gov/HearingsTimeOrder.aspx")
 
         event.add_participant(com, type="committee", note="host")
@@ -184,8 +241,7 @@ class MOEventScraper(Scraper, LXMLMixin):
             bill_no = bill_no.replace("HCS", "").strip()
 
             agenda_item = event.add_agenda_item(description=bill_title)
-            agenda_item.add_bill(bill_no)
-
+            add_bill_to_agenda(agenda_item, bill_no)
         yield event
 
     # Given <td><b>header</b> other text</td>,

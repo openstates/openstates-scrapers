@@ -10,7 +10,7 @@ def clean_name(name):
 
 
 class Legislators(HtmlListPage):
-    session_num = "116"
+    session_num = "120"
     source = "https://leg.mt.gov/legislator-information/?session_select=" + session_num
     selector = XPath("//table[1]/tbody/tr")
 

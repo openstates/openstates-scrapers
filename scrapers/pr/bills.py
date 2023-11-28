@@ -20,7 +20,7 @@ _classifiers = (
     ("Enviado al Gobernador", "executive", "executive-receipt"),
     ("Veto", "executive", "executive-veto"),
     ("Veto de Bolsillo", "executive", "executive-veto"),
-    # comissions give a report but sometimes they dont do any amendments and
+    # commissions give a report but sometimes they dont do any amendments and
     # leave them as they are.
     # i am not checking if they did or not. but it be easy just read the end and
     # if it doesn't have amendments it should say 'sin enmiendas'
@@ -82,9 +82,7 @@ class PRBillScraper(Scraper):
             "__VIEWSTATE": viewstate,
             "__VIEWSTATEGENERATOR": viewstategenerator,
             "__EVENTVALIDATION": eventvalidation,
-            "__LASTFOCUS": "",
-            "__SCROLLPOSITIONX": "0",
-            "__SCROLLPOSITIONY": "453",
+            "ctl00_ModuloMenuSide_NavigationTree_SelectedNode": "",
         }
 
         form = {**form, **params}
@@ -93,7 +91,6 @@ class PRBillScraper(Scraper):
             domain="sutra.oslpr.org", name="SUTRASplash", value="NoSplash"
         )
         self.s.cookies.set_cookie(cookie_obj)
-
         xml = self.s.post(url, data=form, headers=headers).text
         return xml
 
@@ -169,39 +166,48 @@ class PRBillScraper(Scraper):
             tipo = "-1"
 
         params = {
-            "ctl00$CPHBody$lovCuatrienio": start_year,
-            "ctl00$CPHBody$lovTipoMedida": tipo.upper(),
-            "ctl00$CPHBody$lovCuerpoId": chamber_letter,
-            "ctl00$CPHBody$txt_Medida": bill_no,
-            "ctl00$CPHBody$txt_FechaDesde": start,
-            "ctl00$CPHBody$ME_txt_FechaDesde_ClientState": "",
-            "ctl00$CPHBody$txt_FechaHasta": end,
-            "ctl00$CPHBody$ME_txt_FechaHasta_ClientState": "",
-            "ctl00$CPHBody$txt_Titulo": "",
-            "ctl00$CPHBody$lovEvento": "-1",
-            "ctl00$CPHBody$lovComision": "-1",
-            "ctl00$CPHBody$txt_EventoFechaDesde": "",
-            "ctl00$CPHBody$ME_txt_EventoFechaDesde_ClientState": "",
-            "ctl00$CPHBody$txt_EventoFechaHasta": "",
-            "ctl00$CPHBody$ME_txt_EventoFechaHasta_ClientState": "",
+            "__LASTFOCUS": "",
+            "ctl00_ModuloMenuSide_NavigationTree_ExpandState": "nennnnnennnnnnnenn",
+            "ctl00_ModuloMenuSide_NavigationTree_SelectedNode": "",
             "__EVENTTARGET": "",
             "__EVENTARGUMENT": "",
+            "ctl00_ModuloMenuSide_NavigationTree_PopulateLog": "",
+            "ctl00$CPHBody$Tramites$lovCuatrienio": start_year,
+            "ctl00$CPHBody$Tramites$lovTipoMedida": tipo.upper(),
+            "ctl00$CPHBody$Tramites$lovCuerpoId": chamber_letter,
+            "ctl00$CPHBody$Tramites$txt_Medida": bill_no,
+            "ctl00$CPHBody$Tramites$txt_FechaDesde": start,
+            "ctl00$CPHBody$Tramites$ME_txt_FechaDesde_ClientState": "",
+            "ctl00$CPHBody$Tramites$txt_FechaHasta": end,
+            "ctl00$CPHBody$Tramites$ME_txt_FechaHasta_ClientState": "",
+            "ctl00$CPHBody$Tramites$txt_Titulo": "",
+            "ctl00$CPHBody$Tramites$chk_Autor": "on",
+            "ctl00$CPHBody$Tramites$chk_CoAutor": "on",
+            "ctl00$CPHBody$Tramites$lovEvento": "-1",
+            "ctl00$CPHBody$Tramites$txt_EventoFechaDesde": "",
+            "ctl00$CPHBody$Tramites$ME_txt_EventoFechaDesde_ClientState": "",
+            "ctl00$CPHBody$Tramites$txt_EventoFechaHasta": "",
+            "ctl00$CPHBody$Tramites$ME_txt_EventoFechaHasta_ClientState": "",
+            "ctl00$CPHBody$Tramites$lovComision": "-1",
+            "ctl00$ModalMsgBoxEmail$txt_To": "",
+            "ctl00$ModalMsgBoxEmail$WM_txt_To_ClientState": "",
+            "ctl00$ModalMsgBoxEmail$txt_msg": "",
+            "ctl00$ModalMsgBoxEmail$WM_txt_msg_ClientState": "",
         }
 
         # required for page 1, we need a copy of the dict to set Buscar for just this page
         first_scrape_params = params.copy()
-        first_scrape_params["ctl00$CPHBody$btnFilter"] = "Buscar"
+        first_scrape_params["ctl00$CPHBody$Tramites$btnFilter"] = "Buscar"
         yield from self.scrape_search_results(chamber, session, first_scrape_params)
 
-        page_field = "ctl00$CPHBody$dgResults$ctl54$ctl01"
+        page_field = "ctl00$CPHBody$Tramites$dgResults$ctl54$ctl01"
         params["__EVENTTARGET"] = page_field
-        params["ctl00$CPHBody$ddlPageSize"] = "-1"
+        # setting page size to -1 sets it to the end of results, gets all bills
+        params["ctl00$CPHBody$Tramites$ddlPageSize"] = "-1"
         yield from self.scrape_search_results(chamber, session, params, self.last_page)
 
     def scrape_search_results(self, chamber, session, params, page=None):
-        resp = self.asp_post(
-            "https://sutra.oslpr.org/osl/esutra/MedidaBus.aspx", params, page
-        )
+        resp = self.asp_post("https://sutra.oslpr.org/osl/esutra/", params, page)
         page = lxml.html.fromstring(resp)
         self.last_page = page
 

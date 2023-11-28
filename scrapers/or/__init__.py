@@ -181,7 +181,7 @@ class Oregon(State):
             "name": "2022 Regular Session",
             "start_date": "2022-02-01",
             "end_date": "2022-03-04",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023 Regular Session",
@@ -189,10 +189,11 @@ class Oregon(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-09",
             "end_date": "2023-06-25",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
+        "2023-2024 Interim",
         "Mock Session 2023",
         "2021-2022 Interim",
         "Mock Session 2020",
@@ -200,6 +201,7 @@ class Oregon(State):
         "2019-2020 Interim",
         "2017-2018 Interim",
         "2015-2016 Interim",
+        "2013 2nd Special Session",
         "2013 1st Special Session",
         "2012 1st Special Session",
         "2013 - 2014 Interim",

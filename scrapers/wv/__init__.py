@@ -205,7 +205,7 @@ class WestVirginia(State):
             "start_date": "2022-07-25",
             # TODO: update end date
             "end_date": "2022-08-05",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2022",
@@ -215,18 +215,36 @@ class WestVirginia(State):
             "start_date": "2022-09-12",
             # TODO: update end date
             "end_date": "2022-09-16",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023",
+            "classification": "primary",
+            "identifier": "2023",
+            "name": "2023 Regular",
+            "start_date": "2023-01-11",
+            "end_date": "2023-03-11",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023",
+            "classification": "special",
+            "identifier": "20231S",
+            "name": "2023 First Special Session",
+            "start_date": "2023-08-06",
+            "end_date": "2023-08-11",
             "active": True,
         },
     ]
     ignored_scraped_sessions = [
         "2029",
-        *(str(each) for each in range(1940, 2011)),
+        *(str(each) for each in range(1930, 2011)),
     ]
 
     def get_session_list(self):
         from utils import url_xpath
 
         return url_xpath(
-            "http://www.legis.state.wv.us/Bill_Status/Bill_Status.cfm",
+            "https://www.wvlegislature.gov/Bill_Status/Bill_Status.cfm",
             '//select[@name="year"]/option/text()',
         )

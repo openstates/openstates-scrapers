@@ -2,11 +2,11 @@ import re
 import pytz
 import logging
 import dateutil.parser
-import datetime
 import requests
 import lxml.html
 from spatula import HtmlPage
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 def time_is_earlier(new, current):
@@ -18,7 +18,7 @@ def time_is_earlier(new, current):
         return False
 
 
-class EventConsolidator:
+class EventConsolidator(object):
     def __init__(self, items, url):
         self.items = items
         self.events = {}
@@ -31,6 +31,9 @@ class EventConsolidator:
             local_date = dateutil.parser.parse(date_time)
 
             item_date, item_time = str(local_date).split()
+            agenda_time = item["agenda_time"]
+            bill_name = item["bill_name"]
+            item_id = f"{item_time}+{bill_name}"
 
             committee = item["committee"]
             location = item["location"]
@@ -46,47 +49,51 @@ class EventConsolidator:
                 if time_is_earlier(item_time, current_start):
                     self.events[event_key]["event_start_time"] = item_time
 
-            self.events[event_key]["item_keys"].add(item_time)
+            self.events[event_key]["item_keys"].add(item_id)
 
             agenda_item_details = {
                 "description": item["description"],
                 "bill_name": item["bill_name"],
+                "agenda_time": agenda_time,
                 "sub_com": item["sub_com"],
             }
-            self.events[event_key][item_time] = []
-            self.events[event_key][item_time].append(agenda_item_details)
+            self.events[event_key][item_id] = agenda_item_details
 
         yield from self.create_events()
 
     def create_events(self):
-
+        event_names = set()
         for event in self.events.keys():
             date, com, loc = re.search(r"(.+)\-(.+)\-(.+)", event).groups()
+            date = "".join(c for c in date if c.isdigit() or c in ["-"])
 
             start_time = self.events[event]["event_start_time"]
             date_time = f"{date} {start_time}"
             date_object = dateutil.parser.parse(date_time)
             date_with_offset = self._tz.localize(date_object)
-
+            event_name = f"{com}#{loc}#{date_time}"
+            if event_name in event_names:
+                logging.warning(f"Skipping duplicate event {event_name}")
+                continue
+            event_names.add(event_name)
             event_obj = Event(
                 name=com,
                 location_name=loc,
                 description="Standing Committee Hearing",
                 start_date=date_with_offset,
             )
+            event_obj.add_committee(com)
+            event_obj.dedupe_key = event_name
 
             for item_key in self.events[event]["item_keys"]:
-                agenda = self.events[event][item_key]
-                for item in agenda:
-                    time = datetime.datetime.strptime(item_key, "%H:%M:%S").strftime(
-                        "%I:%M %p"
-                    )
-                    descr_with_time = f"[{time}]: {item['description']}"
-                    item_descr = event_obj.add_agenda_item(descr_with_time)
-                    if item["bill_name"]:
-                        item_descr.add_bill(item["bill_name"])
-                    if item["sub_com"]:
-                        item_descr.extras["sub_committee"] = item["sub_com"]
+                item = self.events[event][item_key]
+                agenda_time = item["agenda_time"]
+                descr_with_time = f"[{agenda_time}]: {item['description']}"
+                item_descr = event_obj.add_agenda_item(descr_with_time)
+                if item["bill_name"]:
+                    item_descr.add_bill(item["bill_name"])
+                if item["sub_com"]:
+                    item_descr["extras"]["sub_committee"] = item["sub_com"]
 
             event_obj.add_source(self.url)
 
@@ -100,9 +107,12 @@ class BillNameScraper(HtmlPage):
     def get_bill_name(self):
         response = requests.get(self.source)
         content = lxml.html.fromstring(response.content)
-        bill_name_tag = content.xpath(".//div[@id='content']//h3")[0]
-        bill_name = bill_name_tag.text_content().strip()
-        return bill_name
+        try:
+            bill_name_tag = content.xpath(".//div[@id='content']//h3")[0]
+            bill_name = bill_name_tag.text_content().strip()
+            return bill_name
+        except Exception:
+            return ""
 
 
 class EventsTable(HtmlPage):
@@ -119,10 +129,9 @@ class EventsTable(HtmlPage):
         for row_item in table_rows:
             columns = row_item.xpath("./td")
             columns_content = [x.text_content().strip() for x in columns]
-            if len(columns_content) == 7:
-                columns_content = columns_content[:-1]
-
-            bill, part_date, com, sub_com, loc, descr = columns_content
+            if len(columns_content) > 7:
+                columns_content = columns_content[:7]
+            part_date, bill, agenda_time, com, sub_com, loc, descr = columns_content
             # Example Column:
             #   bill      part_date          com      sub_com  loc       descr
             # HB 1111 | 12/08 2:00 PM | Joint Approps |      | 327E | Funding bill
@@ -137,7 +146,7 @@ class EventsTable(HtmlPage):
                     if match_in_descr:
                         bill_name = match_in_descr.group()
                     else:
-                        bill_link = columns[0].xpath("./a")[0].get("href")
+                        bill_link = columns[1].xpath("./a")[0].get("href")
                         bill_name_scraper = BillNameScraper(bill_link)
                         bill_name = bill_name_scraper.get_bill_name()
                 else:
@@ -155,6 +164,7 @@ class EventsTable(HtmlPage):
             agenda_item = {
                 "bill_name": bill_name,
                 "date_time": date_time,
+                "agenda_time": agenda_time,
                 "committee": com,
                 "sub_com": sub_com,
                 "location": loc,
@@ -172,4 +182,9 @@ class NDEventScraper(Scraper):
     def scrape():
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
         event_list = EventsTable()
-        yield from event_list.do_scrape()
+        event_count = 0
+        for event in event_list.do_scrape():
+            event_count += 1
+            yield event
+        if event_count < 1:
+            raise EmptyScrape

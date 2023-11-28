@@ -11,7 +11,10 @@ class PartialMember:
 
 
 class LegDetail(HtmlPage):
-    example_source = "https://www.arkleg.state.ar.us/Legislators/Detail?member=B.+Ballinger&ddBienniumSession=2021%2F2021S1"
+    example_source = (
+        "https://www.arkleg.state.ar.us/Legislators/Detail?"
+        "member=B.+Ballinger&ddBienniumSession=2023%2F2023R"
+    )
 
     def process_page(self):
 
@@ -80,26 +83,29 @@ class LegDetail(HtmlPage):
             elif table[key] != "":
                 # remove the colon at the end
                 p.extras[key[:-1].lower()] = table[key]
-
-        address = CSS(".col-md-12 p b").match_one(self.root).text_content()
-        full_address = address[:-5] + "AR " + address[-5:]
+        try:
+            address = CSS(".col-md-12 p b").match_one(self.root).text_content()
+            full_address = address[:-5] + "AR " + address[-5:]
+            p.district_office.address = full_address
+        except SelectorError:
+            pass
 
         p.add_source(self.source.url)
         p.add_source(self.input.url)
-        p.district_office.address = full_address
 
         return p
 
 
 class LegList(HtmlListPage):
-    source = "https://www.arkleg.state.ar.us/Legislators/List?sort=Type&by=desc&ddBienniumSession=2021%2F2021S1#SearchResults"
-    selector = XPath(
-        "//div[@role='grid']//div[contains(@class, 'row')]//div[@class='col-md-6']"
+    source = (
+        "https://www.arkleg.state.ar.us/Legislators/List?"
+        "sort=Type&by=desc&ddBienniumSession=2023%2F2023R#SearchResults"
     )
-    # contains(@class, 'measure-tab')
-    # selector = XPath("//div[@class='row tableRow']")
-    # selector = CSS("row tableRow")
-    # selector = XPath('//div[@class="row tableRow"]')
+    selector = XPath(
+        "//div[@role='grid']"
+        "//div[contains(@class, 'row')]"
+        "//div[@class='col-md-6']"
+    )
 
     def process_item(self, item):
         chamber_name = (
@@ -113,7 +119,7 @@ class LegList(HtmlListPage):
         chamber = chamber_name[0]
 
         name = chamber_name[1].replace("  ", " ")
-        if "(Resigned)" in name:
+        if "resigned" in name.lower():
             self.skip()
 
         if chamber == "Senator":

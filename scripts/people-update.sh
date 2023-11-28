@@ -28,7 +28,7 @@ fi
 rm -rf "${SCRIPT_DIR}/../_scrapes/${TODAY}"
 mkdir -p "${SCRIPT_DIR}/../_scrapes"
 
-echo "ensuring depdendencies are up to date"
+echo "ensuring dependencies are up to date"
 poetry install
 
 echo "Cloning people repo..."

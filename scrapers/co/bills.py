@@ -25,6 +25,8 @@ SESSION_DATA_ID = {
     "2020B": "66691",
     "2021A": "66816",
     "2022A": "75371",
+    "2023A": "92641",
+    "2023B": "95726",
 }
 
 BAD_URLS = [
@@ -40,47 +42,42 @@ class COBillScraper(Scraper, LXMLMixin):
         """
         Entry point when invoking this (or really whatever else)
         """
-        chambers = [chamber] if chamber else ["upper", "lower"]
+        page = self.scrape_bill_list(session, 0)
+        bill_list = page.xpath(
+            '//header[contains(@class,"search-result-single-item")]'
+            '/h4[contains(@class,"node-title")]/a/@href'
+        )
 
-        for chamber in chambers:
-            page = self.scrape_bill_list(session, chamber, 0)
-            bill_list = page.xpath(
-                '//header[contains(@class,"search-result-single-item")]'
-                '/h4[contains(@class,"node-title")]/a/@href'
-            )
+        for bill_url in bill_list:
+            yield from self.scrape_bill(session, bill_url)
 
-            for bill_url in bill_list:
-                yield from self.scrape_bill(session, chamber, bill_url)
+        try:
+            pagination_str = page.xpath(
+                '//div[contains(@class, "view-header")]/text()'
+            )[0]
+            max_results = re.search(r"of (\d+) results", pagination_str)
+            max_results = int(max_results.group(1))
+            max_page = int(math.ceil(max_results / 25.0))
+        except IndexError:
+            self.warning(f"No bills for {session}")
+            return
 
-            try:
-                pagination_str = page.xpath(
-                    '//div[contains(@class, "view-header")]/text()'
-                )[0]
-                max_results = re.search(r"of (\d+) results", pagination_str)
-                max_results = int(max_results.group(1))
-                max_page = int(math.ceil(max_results / 25.0))
-            except IndexError:
-                self.warning(f"No bills for {chamber}")
-                return
+        # We already have the first page load, so just grab later pages
+        if max_page > 1:
+            for i in range(1, max_page):
+                page = self.scrape_bill_list(session, i)
+                bill_list = page.xpath(
+                    '//header[contains(@class,"search-result-single-item")]'
+                    '/h4[contains(@class,"node-title")]/a/@href'
+                )
+                for bill_url in bill_list:
+                    yield from self.scrape_bill(session, bill_url)
 
-            # We already have the first page load, so just grab later pages
-            if max_page > 1:
-                for i in range(1, max_page):
-                    page = self.scrape_bill_list(session, chamber, i)
-                    bill_list = page.xpath(
-                        '//header[contains(@class,"search-result-single-item")]'
-                        '/h4[contains(@class,"node-title")]/a/@href'
-                    )
-                    for bill_url in bill_list:
-                        yield from self.scrape_bill(session, chamber, bill_url)
-
-    def scrape_bill_list(self, session, chamber, pageNumber):
-        chamber_code_map = {"lower": 1, "upper": 2}
-
+    def scrape_bill_list(self, session, pageNumber):
         ajax_url = "https://leg.colorado.gov/views/ajax"
 
         form = {
-            "field_chamber": chamber_code_map[chamber],
+            "field_chamber": "All",
             "field_bill_type": "All",
             "field_sessions": SESSION_DATA_ID[session],
             "sort_bef_combine": "search_api_relevance DESC",
@@ -104,8 +101,7 @@ class COBillScraper(Scraper, LXMLMixin):
         # so we can pull the max page # from it on page 1
         return page
 
-    def scrape_bill(self, session, chamber, bill_url):
-
+    def scrape_bill(self, session, bill_url):
         try:
             page = self.lxmlize("{}{}".format(CO_URL_BASE, bill_url))
         except scrapelib.HTTPError as e:
@@ -126,6 +122,7 @@ class COBillScraper(Scraper, LXMLMixin):
             'string(//div[contains(@class,"field-name-field-bill-summary")])'
         )
         bill_summary = bill_summary.replace("Read More", "").strip()
+        chamber = "lower" if "H" in bill_number else "upper"
         bill = Bill(
             bill_number, legislative_session=session, chamber=chamber, title=bill_title
         )
@@ -236,6 +233,10 @@ class COBillScraper(Scraper, LXMLMixin):
         notes = page.xpath('//div[@id="bill-documents-tabs2"]//table//tbody//tr')
 
         for version in notes:
+            if not version.xpath("td[2]/text()"):
+                self.warning("Skipping fiscal note with no name or date")
+                return
+
             version_date = version.xpath("td[1]/text()")[0].strip()
             version_type = version.xpath("td[2]/text()")[0]
             version_url = version.xpath("td[3]/span/a/@href")[0]
@@ -327,15 +328,17 @@ class COBillScraper(Scraper, LXMLMixin):
 
     def scrape_votes(self, session, bill, page):
         votes = page.xpath('//div[@id="bill-documents-tabs4"]//table//tbody//tr')
+
         for vote in votes:
             if vote.xpath(".//a/@href"):
                 vote_url = vote.xpath(".//a/@href")[0]
                 bill.add_source(vote_url)
                 page = self.lxmlize(vote_url)
-                header = page.xpath('//div[@id="page"]//table//tr//font/text()')[0]
+                try:
+                    header = page.xpath('//div[@id="page"]//table//tr//font/text()')[0]
                 # Some vote headers have missing information,
                 # so we cannot save the vote information
-                if not header:
+                except IndexError:
                     self.warning(
                         "No date and committee information available in the vote header."
                     )

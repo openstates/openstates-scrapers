@@ -1,107 +1,133 @@
-import re
+import datetime
 import dateutil.parser
-import pytz
+import json
 import lxml.html
+import pytz
+import re
 import requests
+
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
+
 from utils.events import match_coordinates
+from spatula import PdfPage, URL
+
+bills_re = re.compile(
+    r"(SJR|HCR|HB|HR|SCR|SB|HJR|SR)\s{0,5}0*(\d+)", flags=re.IGNORECASE
+)
+
+
+class Agenda(PdfPage):
+    def process_page(self):
+        # Find all bill ids
+        bills = bills_re.findall(self.text)
+
+        # Format bills before yielding
+        formatted_bills = set()
+        for alpha, num in bills:
+            formatted_bills.add(f"{alpha.upper()} {num}")
+
+        yield from formatted_bills
 
 
 class OKEventScraper(Scraper):
     _tz = pytz.timezone("CST6CDT")
     session = requests.Session()
 
-    def scrape(self, chamber=None):
+    # usage:
+    # poetry run os-update ne \
+    # events --scrape start=2022-02-01 end=2022-03-02
+    def scrape(self, start=None, end=None):
+        if start is None:
+            delta = datetime.timedelta(days=90)
+            start = datetime.date.today() - delta
+            start = start.isoformat()
 
-        # we need to GET the page once to set up the ASP.net vars
-        # then POST to it to set it to monthly
-        url = "https://www.okhouse.gov/Committees/MeetingNotices.aspx"
+            end = datetime.date.today() + delta
+            end = end.isoformat()
 
-        params = {
-            "__EVENTTARGET": "ctl00$ContentPlaceHolder1$cbMonthly",
-            "ctl00$ScriptManager1": "ctl00$ContentPlaceHolder1$ctl00$ContentPlaceHolder1$RadAjaxPanel1Panel|ctl00$ContentPlaceHolder1$cbMonthly",
-            "ctl00_FormDecorator1_ClientState": "",
-            "ctl00_RadToolTipManager1_ClientState": "",
-            "ctl00_mainNav_ClientState": "",
-            "ctl00$ContentPlaceHolder1$cbToday": "on",
-            "ctl00$ContentPlaceHolder1$cbMonthly": "on",
-            "ctl00_ContentPlaceHolder1_dgrdNotices_ClientState": "",
-            "__ASYNCPOST": "true",
-            "RadAJAXControlID": "ctl00_ContentPlaceHolder1_RadAjaxPanel1",
+        yield from self.scrape_page(start, end)
+
+    def scrape_page(self, start, end, offset=0, limit=20):
+        self.info(f"Fetching {start} - {end} offset {offset}")
+
+        url = "https://www.okhouse.gov/api/events"
+
+        post_data = {
+            "start": f"{start}T00:00:00.000Z",
+            "end": f"{end}T00:00:00.000Z",
+            "offset": offset,
+            "limit": limit,
         }
 
-        page = self.get(url).content
-        page = lxml.html.fromstring(page)
+        headers = {"origin": "https://www.okhouse.gov", "user-agent": "openstates.org"}
 
-        html = self.asp_post(url, page, params)
-        page = lxml.html.fromstring(html)
+        page = requests.post(
+            url=url, data=json.dumps(post_data), headers=headers, allow_redirects=True
+        ).content
+        page = json.loads(page)
 
-        for row in page.xpath('//tr[contains(@id,"_dgrdNotices_")]'):
+        if offset == 0 and len(page["events"]["data"]) == 0:
+            raise EmptyScrape
+
+        for row in page["events"]["data"]:
+            meta = row["attributes"]
+
             status = "tentative"
-            agenda_link = row.xpath('.//a[@id="hlMeetAgenda"]')[0]
-            title = agenda_link.xpath("text()")[0].strip()
-            agenda_url = agenda_link.xpath("@href")[0]
-            location = row.xpath("td[3]")[0].text_content().strip()
 
-            if re.match(r"^room [\w\d]+$", location, flags=re.I) or re.match(
-                r"senate room [\w\d]+$", location, flags=re.I
-            ):
-                location = f"{location} 2300 N Lincoln Blvd, Oklahoma City, OK 73105"
-
-            # swap in a space for the <br/>
-            when = row.xpath("td[4]")[0]
-            for br in when.xpath(".//br"):
-                br.tail = " " + br.tail if br.tail else " "
-
-            when = when.text_content().strip()
-            if "cancelled" in when.lower():
+            if meta["isCancelled"] is True:
                 status = "cancelled"
 
-            when = re.sub("CANCELLED", "", when, re.IGNORECASE)
-            when = self._tz.localize(dateutil.parser.parse(when))
+            if meta["location"]:
+                location = meta["location"]
+                if re.match(r"^room [\w\d]+$", location, flags=re.I) or re.match(
+                    r"senate room [\w\d]+$", location, flags=re.I
+                ):
+                    location = (
+                        f"{location} 2300 N Lincoln Blvd, Oklahoma City, OK 73105"
+                    )
+            else:
+                meta["location"] = "See agenda"
+
+            when = dateutil.parser.parse(meta["startDatetime"])
 
             event = Event(
-                name=title,
+                name=meta["title"],
                 location_name=location,
                 start_date=when,
                 classification="committee-meeting",
                 status=status,
             )
-
-            event.add_source(url)
-
-            event.add_committee(title, note="host")
-
-            event.add_document("Agenda", agenda_url, media_type="application/pdf")
-
+            event.dedupe_key = f"ok-{meta['slug']}"
+            event.add_source(f"https://www.okhouse.gov/events/{meta['slug']}")
             match_coordinates(event, {"2300 N Lincoln Blvd": (35.49293, -97.50311)})
+
+            if meta["committee"]["data"]:
+                event.add_committee(
+                    meta["committee"]["data"]["attributes"]["name"], note="host"
+                )
+
+            for link in meta["links"]:
+                event.add_document(
+                    link["label"], link["route"], media_type="application/pdf"
+                )
+
+                for bill in Agenda(source=URL(link["route"])).do_scrape():
+                    event.add_bill(bill)
+
+            for agenda in meta["agenda"]:
+                agenda_text = lxml.html.fromstring(agenda["info"])
+                agenda_text = " ".join(agenda_text.xpath("//text()"))
+                event.add_agenda_item(agenda_text)
+
+                if agenda["measure"]["data"]:
+                    self.info(agenda["measure"])
+                    self.error(
+                        "Finally found an agenda with linked measure. Modify the code to handle it."
+                    )
 
             yield event
 
-    def asp_post(self, url, page, params):
-        page = self.session.get(url)
-        page = lxml.html.fromstring(page.content)
-        (viewstate,) = page.xpath('//input[@id="__VIEWSTATE"]/@value')
-        (viewstategenerator,) = page.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
-        (eventvalidation,) = page.xpath('//input[@id="__EVENTVALIDATION"]/@value')
-        (scriptmanager,) = page.xpath('//input[@id="ctl00_ScriptManager1_TSM"]/@value')
-
-        headers = {
-            "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36",
-            "x-microsoftajax": "Delta=true",
-            "referer": "https://www.okhouse.gov/Committees/MeetingNotices.aspx",
-            "origin": "https://www.okhouse.gov",
-        }
-
-        form = {
-            "__VIEWSTATE": viewstate,
-            "__VIEWSTATEGENERATOR": viewstategenerator,
-            "__EVENTVALIDATION": eventvalidation,
-            "__EVENTARGUMENT": "",
-            "__LASTFOCUS": "",
-        }
-
-        form = {**form, **params}
-
-        response = self.session.post(url, form, headers=headers).content
-        return response
+        current_max = offset + limit
+        if page["events"]["meta"]["pagination"]["total"] > current_max:
+            yield from self.scrape_page(start, end, offset + limit, limit)

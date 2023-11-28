@@ -197,10 +197,20 @@ class Virginia(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-11",
             "end_date": "2023-03-11",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023 Special Session I",
+            "classification": "special",
+            "identifier": "2023S1",
+            "name": "2023, 1st Special Session",
+            "start_date": "2023-08-05",
+            "end_date": "2023-08-13",
             "active": True,
         },
     ]
     ignored_scraped_sessions = [
+        "2024",
         "2021 Special Session I",
         "2015 Special Session I",
         "2015 Session",

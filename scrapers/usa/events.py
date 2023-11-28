@@ -1,12 +1,14 @@
 import pytz
 import lxml
 import datetime
+import dateutil
 import re
 import requests
 
 from utils import LXMLMixin
 from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape, ScrapeValueError
 
 
 class USEventScraper(Scraper, LXMLMixin):
@@ -20,6 +22,7 @@ class USEventScraper(Scraper, LXMLMixin):
 
     hearing_document_types = {
         "HW": "Witness List",
+        "HM": "Meeting Roster",
         "HC": "Hearing Notice",
         "SD": "Instructions for Submitting a Request to Testify",
         "BR": "Bill Text",
@@ -54,14 +57,41 @@ class USEventScraper(Scraper, LXMLMixin):
     # date_filter argument can give you just one day;
     # format is "2/28/2019" per AK's site
     def scrape(self, chamber=None, session=None, date_filter=None):
-        # todo: yield from
+        event_count = 0
+        events = set()
         if chamber is None:
-            yield from self.scrape_house()
-            yield from self.scrape_senate()
+            for event in self.scrape_house():
+                if event.dedupe_key in events:
+                    self.warning(f"Duplicate event {event.dedupe_key}")
+                    continue
+                events.add(event.dedupe_key)
+                event_count += 1
+                yield event
+            for event in self.scrape_senate():
+                if event.dedupe_key in events:
+                    self.warning(f"Duplicate event {event.dedupe_key}")
+                    continue
+                events.add(event.dedupe_key)
+                event_count += 1
+                yield event
         elif chamber == "lower":
-            yield from self.scrape_house()
+            for event in self.scrape_house():
+                if event.dedupe_key in events:
+                    self.warning(f"Duplicate event {event.dedupe_key}")
+                    continue
+                events.add(event.dedupe_key)
+                event_count += 1
+                yield event
         elif chamber == "upper":
-            yield from self.scrape_senate()
+            for event in self.scrape_senate():
+                if event.dedupe_key in events:
+                    self.warning(f"Duplicate event {event.dedupe_key}")
+                    continue
+                events.add(event.dedupe_key)
+                event_count += 1
+                yield event
+        if event_count < 1:
+            raise EmptyScrape
 
     def scrape_senate(self):
         url = "https://www.senate.gov/general/committee_schedules/hearings.xml"
@@ -77,37 +107,28 @@ class USEventScraper(Scraper, LXMLMixin):
             if com == "":
                 continue
 
-            com = "Senate {}".format(com)
+            com = f"Senate {com}"
 
             address = row.xpath("string(room)")
             parts = address.split("-")
             building_code = parts[0]
 
             if self.buildings.get(building_code):
-                address = "{}, Room {}".format(
-                    self.buildings.get(building_code), parts[1]
-                )
+                address = f"{building_code}, Room {parts[1]}"
 
             agenda = row.xpath("string(matter)")
 
-            try:
-                event_date = datetime.datetime.strptime(
-                    row.xpath("string(date)"), "%d-%b-%Y %H:%M %p"
-                )
-            except ValueError:
-                event_date = datetime.datetime.strptime(
-                    row.xpath("string(date)"), "%d-%b-%Y"
-                )
+            event_date = dateutil.parser.parse(row.xpath("string(date)"))
 
             event_date = self._TZ.localize(event_date)
-
+            event_name = f"{com[:100]}#{address}#{event_date}"
             event = Event(
                 start_date=event_date,
-                name=com,
+                name=com[:1000],
                 location_name=address,
                 classification="committee-meeting",
             )
-
+            event.dedupe_key = event_name
             agenda_item = event.add_agenda_item(description=agenda)
 
             for doc in row.xpath("//Documents/AssociatedDocument"):
@@ -121,9 +142,13 @@ class USEventScraper(Scraper, LXMLMixin):
                 doc_id = f"{doc_congress}-{doc_prefix}-{doc_num}"
 
                 bill_id = f"{doc_prefix} {doc_num}"
-                agenda_item.add_entity(
-                    name=bill_id, entity_type=doc_type, id=doc_id, note=doc_title
-                )
+                try:
+                    agenda_item.add_entity(
+                        name=bill_id, entity_type=doc_type, id=doc_id, note=doc_title
+                    )
+                except ScrapeValueError:
+                    self.warning(f"Skipping agenda item {bill_id} of type {doc_type}")
+                    pass
 
             event.add_participant(
                 com,
@@ -132,6 +157,8 @@ class USEventScraper(Scraper, LXMLMixin):
             )
 
             self.geocode(event)
+
+            event.extras["US_SENATE_EVENT_ID"] = row.xpath("string(identifier)")
 
             event.add_source("https://www.senate.gov/committees/hearings_meetings.htm")
 
@@ -168,7 +195,7 @@ class USEventScraper(Scraper, LXMLMixin):
                     "__EVENTARGUMENT": "",
                 }
 
-                self.info("Fetching {} via POST".format(row.get("href")))
+                self.info(f"Fetching {row.get('href')} via POST")
                 xml = self.asp_post(row.get("href"), params)
 
                 try:
@@ -187,18 +214,14 @@ class USEventScraper(Scraper, LXMLMixin):
         start_time = xml.xpath("string(//meeting-date/start-time)")
         end_time = xml.xpath("string(//meeting-date/end-time)")
 
-        start_dt = datetime.datetime.strptime(
-            "{} {}".format(meeting_date, start_time), "%Y-%m-%d %H:%M:%S"
-        )
+        start_dt = dateutil.parser.parse(f"{meeting_date} {start_time}")
 
         start_dt = self._TZ.localize(start_dt)
 
         end_dt = None
 
         if end_time != "":
-            end_dt = datetime.datetime.strptime(
-                "{} {}".format(meeting_date, end_time), "%Y-%m-%d %H:%M:%S"
-            )
+            end_dt = dateutil.parser.parse(f"{meeting_date} {end_time}")
             end_dt = self._TZ.localize(end_dt)
 
         building = xml.xpath(
@@ -213,21 +236,26 @@ class USEventScraper(Scraper, LXMLMixin):
             room = xml.xpath(
                 "string(//meeting-details/meeting-location/capitol-complex/room)"
             )
-            address = "{}, Room {}".format(building, room)
-
+            address = f"{building}, Room {room}"
+        event_name = f"{title[:100]}#{address}#{start_dt}"
         event = Event(
             start_date=start_dt,
-            name=title,
+            name=title[:1000],
             location_name=address,
             classification="committee-meeting",
         )
-
+        event.dedupe_key = event_name
         event.add_source(source_url)
 
         coms = xml.xpath("//committees/committee-name | //subcommittees/committee-name")
         for com in coms:
-            com_name = com.xpath("string(.)")
-            com_name = "House {}".format(com_name)
+            if com.xpath("@parent-name"):
+                com_name = "{} {}".format(
+                    com.xpath("@parent-name")[0], com.xpath("string(.)")
+                )
+            else:
+                com_name = com.xpath("string(.)")
+            com_name = f"House {com_name}"
             event.add_participant(
                 com_name,
                 type="committee",
@@ -253,7 +281,7 @@ class USEventScraper(Scraper, LXMLMixin):
                         match = matches[0]
                         bill_type = match[0].replace(".", "")
                         bill_number = match[1]
-                        bill_name = "{} {}".format(bill_type, bill_number)
+                        bill_name = f"{bill_type} {bill_number}"
                         agenda = event.add_agenda_item(description=bill_name)
                         agenda.add_bill(bill_name)
 
@@ -261,15 +289,15 @@ class USEventScraper(Scraper, LXMLMixin):
                     try:
                         doc_name = self.hearing_document_types[doc.get("type")]
                     except KeyError:
-                        self.warning(
-                            "Unable to find document type: {}".format(doc.get("type"))
-                        )
+                        self.warning(f"Unable to find document type: {doc.get('type')}")
 
                 event.add_document(
                     doc_name, url, media_type=media_type, on_duplicate="ignore"
                 )
 
         self.geocode(event)
+        event.extras["US_HOUSE_EVENT_ID"] = xml.xpath("//committee-meeting/@meeting-id")
+
         yield event
 
     def asp_post(self, url, params):

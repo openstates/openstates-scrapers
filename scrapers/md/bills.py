@@ -176,7 +176,7 @@ class MDBillScraper(Scraper):
             if not any(
                 motion_keyword in motion.lower() for motion_keyword in motion_keywords
             ):
-                # This condition covers for the bad formating in SB 1260
+                # This condition covers for the bad formatting in SB 1260
                 motion = lines[page_index - 3]
             if not any(
                 motion_keyword in motion.lower() for motion_keyword in motion_keywords
@@ -388,6 +388,10 @@ class MDBillScraper(Scraper):
             '//dt[contains(text(), "Title")]/following-sibling::dd[1]/text()'
         )[0].strip()
 
+        if "OIS Test" in title:
+            self.warning(f"Ignoring test bill {bill_id} - {title}")
+            return
+
         if "B" in bill_id:
             _type = ["bill"]
         elif "J" in bill_id:
@@ -429,6 +433,31 @@ class MDBillScraper(Scraper):
             eff_date = eff_date.replace("Effective Date(s):", "").strip()
             # this can contain multiple dates, eg "July 1, 2020, July 1, 2022"
             bill.extras["date_effective"] = eff_date
+
+        # companion bills
+        companion_link = page.xpath("//div[contains(.,'Cross-filed')]/a")
+        if companion_link:
+            # get the bill from the text of the link
+            bill.add_related_bill(
+                companion_link[0].xpath("text()")[0],
+                legislative_session=session,
+                relation_type="companion",
+            )
+
+        # previous session version of the bill
+        prev_div = page.xpath("//div[contains(text(),'Introduced in a prior session')]")
+        if prev_div:
+            # Get the session from the text following "Session:"
+            prev_div = prev_div[0]
+            prev_div_text = prev_div.xpath("text()")[1]
+            prev_session = re.search(r"Session\:\s(.*)", prev_div_text).group(1)
+            # Get the bill from the text of the link
+            prev_bill = prev_div.xpath("a/text()")[0]
+            bill.add_related_bill(
+                prev_bill,
+                legislative_session=prev_session,
+                relation_type="prior-session",
+            )
 
         # yield from self.parse_bill_votes_new(doc, bill)
         yield bill

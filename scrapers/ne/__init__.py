@@ -65,7 +65,7 @@ class Nebraska(State):
             "start_date": "2022-01-05",
             "end_date": "2022-04-20",
             "classification": "primary",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "107th Legislature 1st Special Session",
@@ -75,6 +75,15 @@ class Nebraska(State):
             "end_date": "2022-09-14",
             "classification": "special",
             "active": False,
+        },
+        {
+            "_scraped_name": "108th Legislature 1st and 2nd Sessions",
+            "identifier": "108",
+            "name": "108th Legislature (2023-2024)",
+            "start_date": "2023-01-04",
+            "end_date": "2024-04-19",
+            "classification": "primary",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

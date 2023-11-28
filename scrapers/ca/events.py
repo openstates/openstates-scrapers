@@ -4,6 +4,7 @@ import pytz
 from collections import defaultdict
 
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
@@ -39,8 +40,13 @@ class CAEventScraper(Scraper):
 
     def scrape(self, chamber=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
+        event_count = 0
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber)
+            for event in self.scrape_chamber(chamber):
+                event_count += 1
+                yield event
+        if event_count < 1:
+            raise EmptyScrape
 
     def scrape_chamber(self, chamber):
         grouped_hearings = defaultdict(list)
@@ -82,7 +88,6 @@ class CAEventScraper(Scraper):
                 name=desc,
                 start_date=date,
                 location_name=committee_name,
-                type="committee-meeting",
             )
             event.add_committee(committee_name, note="host")
             for bill_id in bills:

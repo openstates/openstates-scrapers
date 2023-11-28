@@ -50,6 +50,7 @@ class WVBillScraper(Scraper):
         "20222S": "2X",
         "20223S": "3X",
         "20224S": "4X",
+        "20231S": "1X",
     }
 
     bill_types = {
@@ -60,6 +61,7 @@ class WVBillScraper(Scraper):
     }
 
     def scrape(self, chamber=None, session=None):
+
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
@@ -73,7 +75,7 @@ class WVBillScraper(Scraper):
         # scrape bills
         if "special" in self.jurisdiction.legislative_sessions[-1]["name"].lower():
             url = (
-                "http://www.legis.state.wv.us/Bill_Status/Bills_all_bills.cfm?"
+                "https://www.wvlegislature.gov/Bill_Status/Bills_all_bills.cfm?"
                 "year=%s&sessiontype=%s&btype=bill&orig=%s"
                 % (
                     self.jurisdiction.legislative_sessions[-1]["_scraped_name"],
@@ -83,7 +85,7 @@ class WVBillScraper(Scraper):
             )
         else:
             url = (
-                "http://www.legis.state.wv.us/Bill_Status/Bills_all_bills.cfm?"
+                "https://www.wvlegislature.gov/Bill_Status/Bills_all_bills.cfm?"
                 "year=%s&sessiontype=RS&btype=bill&orig=%s" % (session, orig)
             )
 
@@ -96,7 +98,7 @@ class WVBillScraper(Scraper):
         #     "upper",
         #     "SB 500",
         #     "test",
-        #     "http://www.legis.state.wv.us/Bill_Status/Bills_history.cfm?input=500&year=2020&sessiontype=RS&btype=bill",
+        #     "https://www.wvlegislature.gov/Bill_Status/Bills_history.cfm?input=500&year=2020&sessiontype=RS&btype=bill",
         # )
 
         for link in page.xpath("//a[contains(@href, 'Bills_history')]"):
@@ -112,7 +114,7 @@ class WVBillScraper(Scraper):
         # scrape resolutions
         if "special" in self.jurisdiction.legislative_sessions[-1]["name"].lower():
             res_url = (
-                "http://www.legis.state.wv.us/Bill_Status/res_list.cfm?year=%s"
+                "https://www.wvlegislature.gov/Bill_Status/res_list.cfm?year=%s"
                 "&sessiontype=%s&btype=res"
                 % (
                     self.jurisdiction.legislative_sessions[-1]["_scraped_name"],
@@ -121,7 +123,7 @@ class WVBillScraper(Scraper):
             )
         else:
             res_url = (
-                "http://www.legis.state.wv.us/Bill_Status/res_list.cfm?year=%s"
+                "https://www.wvlegislature.gov/Bill_Status/res_list.cfm?year=%s"
                 "&sessiontype=rs&btype=res"
                 % (self.jurisdiction.legislative_sessions[-1]["_scraped_name"])
             )
@@ -424,7 +426,7 @@ class WVBillScraper(Scraper):
 
     def scrape_senate_vote_3col(self, bill, vote, text, url, date):
         """Scrape senate votes like this one:
-        http://www.legis.state.wv.us/legisdocs/2013/RS/votes/senate/02-26-0001.pdf
+        https://www.wvlegislature.gov/legisdocs/2013/RS/votes/senate/02-26-0001.pdf
         """
         counts = dict(re.findall(r"(Yea|Nay|Absent): (\d+)", text))
         lines = filter(None, text.splitlines())

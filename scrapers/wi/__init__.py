@@ -153,7 +153,7 @@ class Wisconsin(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-04",
             "end_date": "2022-05-27",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "January 2021 Special Session",
@@ -163,6 +163,25 @@ class Wisconsin(State):
             "start_date": "2021-01-19",
             "end_date": "2021-02-21",
             "active": False,
+        },
+        {
+            "_scraped_name": "2023 Regular Session",
+            "classification": "primary",
+            "identifier": "2023",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-03",
+            "end_date": "2024-05-25",
+            "active": True,
+        },
+        {
+            "_scraped_name": "September 2023 Special Session",
+            "classification": "special",
+            "identifier": "2023S1",
+            "name": "September 2023 Special Session",
+            "start_date": "2023-09-21",
+            # TODO: correct end date
+            "end_date": "2023-09-22",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

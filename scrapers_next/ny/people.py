@@ -51,7 +51,7 @@ def block_to_text(elem):
 
 def parse_address_lines(text):
     """
-    a fairly common occurence, a bunch of lines like
+    a fairly common occurrence, a bunch of lines like
     addr line 1
     addr line 2
     addr line 3?
@@ -91,6 +91,46 @@ def parse_address_lines(text):
             address.append(line)
 
     return {"address": "; ".join(address), "fax": fax, "phone": phone, "email": email}
+
+
+def senate_address_phone(address_block):
+    city_zip = [i.text for i in address_block.getchildren()[0]]
+    city_zip = city_zip[2:5]
+    try:
+        city_zip = [i.strip() for i in city_zip]
+    except AttributeError:
+        try:
+            phone = address_block.getchildren()[0][1].text_content()
+            return ["", phone]
+        except AttributeError:
+            return ["", ""]
+
+    street = [i.text for i in address_block.getchildren()[0][1].getchildren()][
+        -1
+    ].strip()
+
+    try:
+        phone = address_block.getchildren()[0][5].text_content()
+    except AttributeError:
+        phone = ""
+
+    try:
+        address_string = (
+            street
+            + "; "
+            + city_zip[0].strip()
+            + city_zip[1].strip()
+            + " "
+            + city_zip[2].strip()
+        )
+    except AttributeError:
+        address_string = ""
+    if "Phone:" in phone:
+        phone = phone.split(": ")[1]
+    else:
+        phone = ""
+
+    return [address_string, phone]
 
 
 class Assembly(HtmlListPage):
@@ -157,6 +197,45 @@ class Assembly(HtmlListPage):
         p.capitol_office.address = capitol_addr["address"]
         p.capitol_office.voice = capitol_addr["phone"] or ""
         p.capitol_office.fax = capitol_addr["fax"] or ""
+        return p
+
+
+class SenateDetail(HtmlPage):
+    def process_page(self):
+        p = self.input
+        parent_block = CSS(".field-content").match(self.root)[0].getchildren()
+
+        for i in range(len(parent_block)):
+            address_block = parent_block[i]
+
+            try:
+                city_zip = [i.text for i in address_block.getchildren()[0]]
+                if len(city_zip) == 0:
+                    continue
+            except AttributeError:
+                continue
+
+            if "District" in city_zip[0]:
+                mode = "district"
+            elif (
+                "albany" in city_zip[0].lower()
+                and "please note that" not in city_zip[0].lower()
+            ):
+                mode = "capitol"
+            else:
+                continue
+
+            address = senate_address_phone(address_block)[0]
+            phone = senate_address_phone(address_block)[1]
+
+            if mode == "district":
+                p.district_office.voice = phone
+                p.district_office.address = address
+
+            elif mode == "capitol":
+                p.capitol_office.voice = phone
+                p.capitol_office.address = address
+
         return p
 
 
@@ -254,5 +333,19 @@ class Senate(HtmlListPage):
         The only issue is some senators have unicode characters in their names, which are converted
         to non-unicode characters in the link.
         """
+        base_url = "https://www.nysenate.gov/senators/"
+        url_name = name.lower().replace(".", "").replace(" ", "-")
+        if url_name[-1] == "-":
+            url_name = url_name[:-1]
 
-        return p
+        if "cooney" in name.lower():
+            url_name = "jeremy-cooney"
+        elif "griffo" in name.lower():
+            url_name = "joseph-griffo"
+        elif "o'mara" in name.lower():
+            url_name = "thomas-f-omara"
+
+        url_name = url_name + "/contact"
+        detail_link = URL(base_url + url_name)
+
+        return SenateDetail(p, source=detail_link)

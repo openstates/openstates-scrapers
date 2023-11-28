@@ -231,7 +231,7 @@ class Mississippi(State):
             "name": "2022 First Extraordinary Session",
             "start_date": "2022-11-02",
             "end_date": "2022-11-04",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023 Regular Session",
@@ -240,10 +240,11 @@ class Mississippi(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-03",
             "end_date": "2023-04-02",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
+        "2022 Extraordinary Session",
         "2008 First Extraordinary Session",
         "2007 Regular Session",
         "2007 First Extraordinary Session",

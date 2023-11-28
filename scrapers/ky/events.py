@@ -1,20 +1,21 @@
-import re
-import lxml
+import dateutil.parser
+from dateutil.parser import ParserError
 import functools
-
+import lxml
 import pytz
+import re
 
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
-
-import dateutil.parser
-from dateutil.parser import ParserError
 
 
 class KYEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
 
     def scrape(self):
+        self.headers[
+            "User-Agent"
+        ] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36"
         url = "https://apps.legislature.ky.gov/legislativecalendar"
 
         page = self.get(url).content
@@ -22,6 +23,8 @@ class KYEventScraper(Scraper):
 
         if len(page.xpath('//div[contains(@class,"TimeAndLocation")]')) == 0:
             raise EmptyScrape
+        event_count = 0
+        events = set()
 
         for time_row in page.xpath('//div[contains(@class,"TimeAndLocation")]'):
             date = (
@@ -70,7 +73,11 @@ class KYEventScraper(Scraper):
                 .text_content()
                 .strip()
             )
-
+            event_name = f"{com_name}#{location}#{when}"
+            if event_name in events:
+                self.warning(f"Duplicate event: {event_name}")
+                continue
+            events.add(event_name)
             event = Event(
                 name=com_name,
                 start_date=when,
@@ -78,7 +85,7 @@ class KYEventScraper(Scraper):
                 location_name=location,
                 status=status,
             )
-
+            event.dedupe_key = event_name
             if time_row.xpath('following-sibling::div[contains(@class,"Agenda")][1]'):
                 agenda_row = time_row.xpath(
                     'following-sibling::div[contains(@class,"Agenda")][1]'
@@ -94,7 +101,7 @@ class KYEventScraper(Scraper):
 
             com_page_link = time_row.xpath(
                 'following-sibling::div[contains(@class,"CommitteeName")][1]/a/@href'
-            )[0]
+            )[0].replace(" ", "+")
 
             docs = self.scrape_com_docs(com_page_link)
             lookup_date = when.strftime("%Y-%m-%d")
@@ -109,7 +116,11 @@ class KYEventScraper(Scraper):
 
             event.add_source(url)
 
+            event_count += 1
             yield event
+
+        if event_count < 1:
+            raise EmptyScrape
 
     @functools.lru_cache(maxsize=None)
     def scrape_com_docs(self, url):
@@ -144,6 +155,9 @@ class KYEventScraper(Scraper):
             if "Other Meeting" in date_text:
                 continue
 
+            if "No documents available" in date_text:
+                continue
+
             when = dateutil.parser.parse(date_text)
 
             lookup_date = when.strftime("%Y-%m-%d")
@@ -171,6 +185,11 @@ class KYEventScraper(Scraper):
             when = dateutil.parser.parse(link.text_content())
             lookup_date = when.strftime("%Y-%m-%d")
 
-            docs[lookup_date] = {"url": link.xpath("@href")[0], "text": "Minutes"}
+            if lookup_date not in docs:
+                docs[lookup_date] = []
 
+            if link.xpath("@href"):
+                docs[lookup_date].append(
+                    {"url": link.xpath("@href")[0], "text": "Minutes"}
+                )
         return docs

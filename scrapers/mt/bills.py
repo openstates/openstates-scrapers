@@ -72,6 +72,10 @@ class MTBillScraper(Scraper, LXMLMixin):
         )
 
     def scrape(self, chamber=None, session=None):
+        # adjust scrapelib settings to prevent ConnectionError
+        self.retry_attempts = 10
+        self.retry_wait_seconds = 30
+
         # set default parameters
         chambers = [chamber] if chamber else ["upper", "lower"]
 
@@ -117,21 +121,26 @@ class MTBillScraper(Scraper, LXMLMixin):
                 bills.append({"url": bill_url, "sponsor": sponsor})
 
         for bill_info in bills:
-            bill, votes = self.parse_bill(
-                bill_info["url"], bill_info["sponsor"], session
-            )
+            bill = self.parse_bill(bill_info["url"], bill_info["sponsor"], session)
+            # bill, votes = self.parse_bill(
+            #     bill_info["url"], bill_info["sponsor"], session
+            # )
             yield bill
-            for vote in votes:
-                if vote.dedupe_key not in self._seen_vote_ids:
-                    self._seen_vote_ids.add(vote.dedupe_key)
-                    yield vote
+            # TODO: reincorporate vote processing
+            #  (this is only being removed / commented out temporarily)
+            # for vote in votes:
+            #     if vote.dedupe_key not in self._seen_vote_ids:
+            #         self._seen_vote_ids.add(vote.dedupe_key)
+            #         yield vote
 
     def parse_bill(self, bill_url, list_sponsor, session):
         # list_sponsor passed to support proposed bills (aka "unintroduced") which have "LC XXXX" bill numbers
         bill = None
         doc = self.lxmlize(bill_url)
 
-        bill, votes = self.parse_bill_status_page(bill_url, doc, list_sponsor, session)
+        # TODO: add votes back in
+        # bill, votes = self.parse_bill_status_page(bill_url, doc, list_sponsor, session)
+        bill = self.parse_bill_status_page(bill_url, doc, list_sponsor, session)
 
         # Get versions on the detail page.
         versions = [
@@ -164,7 +173,9 @@ class MTBillScraper(Scraper, LXMLMixin):
         # Add bill url as a source.
         bill.add_source(bill_url)
 
-        return bill, votes
+        # TODO: add votes back in
+        # return bill, votes
+        return bill
 
     def scrape_new_site_versions(self, bill, url):
         page = self.lxmlize(url)
@@ -260,7 +271,8 @@ class MTBillScraper(Scraper, LXMLMixin):
         )
 
         self.add_actions(bill, page)
-        votes = self.add_votes(bill, page, url)
+        # TODO: add votes back in
+        # votes = self.add_votes(bill, page, url)
 
         tabledata = self._get_tabledata(page)
 
@@ -343,7 +355,9 @@ class MTBillScraper(Scraper, LXMLMixin):
 
         self.add_fiscal_notes(page, bill)
 
-        return bill, list(votes)
+        # TODO: add votes back in
+        # return bill, list(votes)
+        return bill
 
     def add_actions(self, bill, status_page):
         for idx, action in enumerate(
@@ -494,33 +508,43 @@ class MTBillScraper(Scraper, LXMLMixin):
                         chamber=chamber, date=date, action=action, vote_url=vote_url
                     )
 
-                    # Update the vote object with voters..
-                    vote = self._parse_votes(vote_url, vote, bill)
-                    if vote:
-                        yield vote
+                    if vote_url.lower().endswith(".pdf"):
+                        # Skipping for now to avoid errors that may be resulting
+                        #  from attempted PDF parsing.
+                        # vote = self._parse_pdf_votes(vote_url, vote, bill)
+                        continue
+                    else:
+                        # Update the vote object with voters..
+                        vote = self._parse_html_votes(vote_url, vote, bill)
+                        if vote:
+                            yield vote
 
-    def _parse_votes(self, url, vote, bill):
+    def _parse_pdf_votes(self, url, bill):
+        """
+        Note: Currently being skipped.
+        """
+        # TODO: test method along with `PDFCommitteeVote` class
+        #  to determine solution for successful PDF parsing
+        try:
+            resp = self.get(url)
+        except HTTPError:
+            # This vote document wasn't found.
+            msg = "No document found at url %r" % url
+            self.logger.warning(msg)
+            return
+
+        try:
+            v = PDFCommitteeVote(url, resp.content, bill)
+            return v.asvote()
+        except PDFCommitteeVoteParseError:
+            # Warn and skip.
+            self.warning("Could't parse committee vote at %r" % url)
+            return
+
+    def _parse_html_votes(self, url, vote, bill):
         """Given a vote url and a vote object, extract the voters and
         the vote counts from the vote page and update the vote object.
         """
-        if url.lower().endswith(".pdf"):
-
-            try:
-                resp = self.get(url)
-            except HTTPError:
-                # This vote document wasn't found.
-                msg = "No document found at url %r" % url
-                self.logger.warning(msg)
-                return
-
-            try:
-                v = PDFCommitteeVote(url, resp.content, bill)
-                return v.asvote()
-            except PDFCommitteeVoteParseError:
-                # Warn and skip.
-                self.warning("Could't parse committee vote at %r" % url)
-                return
-
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
@@ -736,8 +760,11 @@ class PDFCommitteeVote(object):
                 break
 
         line = next(text)
-        _, motion = line.split(" - ")
-        motion = motion.strip()
+        try:
+            _, motion = line.split(" - ")
+            motion = motion.strip()
+        except Exception:
+            motion = line.strip()
         return motion
 
     def _getcounts(self):

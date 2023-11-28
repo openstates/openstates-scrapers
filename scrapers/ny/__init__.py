@@ -61,6 +61,14 @@ class NewYork(State):
             "name": "2021 Regular Session",
             "start_date": "2021-01-06",
             "end_date": "2022-06-10",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023",
+            "identifier": "2023-2024",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-04",
+            "end_date": "2023-12-31",
             "active": True,
         },
     ]
@@ -69,5 +77,5 @@ class NewYork(State):
     def get_session_list(self):
         return url_xpath(
             "http://nysenate.gov/search/legislation",
-            '//select[@name="bill_session_year"]/option[@value!=""]/@value',
+            '//select[@name="session_year"]/option[@value!="0"]/@value',
         )

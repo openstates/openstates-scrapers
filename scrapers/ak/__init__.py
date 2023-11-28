@@ -44,6 +44,14 @@ class Alaska(State):
             "name": "32nd Legislature (2021-2022)",
             "start_date": "2021-01-19",
             "end_date": "2021-04-19",
+            "active": False,
+        },
+        {
+            "_scraped_name": "33rd Legislature (2023-2024)",
+            "identifier": "33",
+            "name": "33rd Legislature (2023-2024)",
+            "start_date": "2023-01-17",
+            "end_date": "2023-04-19",
             "active": True,
         },
     ]

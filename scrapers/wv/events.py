@@ -10,28 +10,37 @@ from utils import LXMLMixin
 class WVEventScraper(Scraper, LXMLMixin):
     verify = False
     _tz = pytz.timezone("US/Eastern")
-    # "house bill 123" "senate bill 123" "H.B. 4043" "HB 23" "SCR 29" "S. C. R 23"
-    bill_regex = (
-        r"((House Bill|Senate Bill|[HS]\.\s*[BCR]\.\s*([R]\.)*|H\.?\s*B\.?)\s*\d+)"
-    )
 
     def scrape(self):
         com_urls = [
-            "http://www.wvlegislature.gov/committees/senate/main.cfm",
-            "http://www.wvlegislature.gov/committees/House/main.cfm",
-            "http://www.wvlegislature.gov/committees/Interims/interims.cfm",
+            ("Senate", "http://www.wvlegislature.gov/committees/senate/main.cfm"),
+            ("House", "http://www.wvlegislature.gov/committees/House/main.cfm"),
+            (
+                "Interim",
+                "http://www.wvlegislature.gov/committees/Interims/interims.cfm",
+            ),
         ]
-        for url in com_urls:
-            yield from self.scrape_committees(url)
+        for chamber, url in com_urls:
+            yield from self.scrape_committees(chamber, url)
 
-    def scrape_committees(self, url):
+    def scrape_committees(self, chamber, url):
+        event_objects = set()
         page = self.lxmlize(url)
         page.make_links_absolute(url)
         # note house uses div#wrapleftcol and sen uses div#wrapleftcolr on some pages
         for link in page.xpath(
             '//div[contains(@id,"wrapleftcol")]/a[contains(@href,"agendas.cfm")]/@href'
         ):
-            yield from self.scrape_committee_page(link)
+            for event in self.scrape_committee_page(link):
+                event_name = f"{chamber}#{event.name}#{event.start_date}#{event.end_date}#{event.location['name']}#{event.description}"[
+                    :500
+                ]
+                if event_name in event_objects:
+                    self.warning(f"Found duplicate {event_name}. Skipping.")
+                    continue
+                event_objects.add(event_name)
+                event.dedupe_key = event_name
+                yield event
 
     def scrape_committee_page(self, url):
         # grab the first event, then look up the pages for the table entries
@@ -80,9 +89,14 @@ class WVEventScraper(Scraper, LXMLMixin):
             when = re.sub("TBA", "", when, flags=re.IGNORECASE)
 
         when = re.sub(r"or\s+conclusion\s+(.*)", "", when, flags=re.IGNORECASE)
+        when = re.sub(r", After Session Ends", ", 5:00 PM", when, flags=re.IGNORECASE)
+        when = re.sub(
+            r", 30 Minutes Following House Floor Session", "", when, flags=re.IGNORECASE
+        )
 
         when = when.split("-")[0]
         when = self.clean_date(when)
+        when.replace("Thursady", "Thursday")
         when = dateutil.parser.parse(when)
         when = self._tz.localize(when)
 
@@ -98,12 +112,12 @@ class WVEventScraper(Scraper, LXMLMixin):
             .text_content()
             .strip()
         )
-
         event = Event(
             name=com,
             start_date=when,
             location_name=where,
             classification="committee-meeting",
+            # descriptions have a character limit
             description=desc,
         )
 
@@ -114,10 +128,31 @@ class WVEventScraper(Scraper, LXMLMixin):
                 agenda = event.add_agenda_item(
                     row.text_content().strip().replace("\u25a1", "")
                 )
-                for bill in re.findall(self.bill_regex, row.text_content()):
-                    bill_id = re.sub(r"\.\s*", "", bill[0], flags=re.IGNORECASE)
-                    bill_id = re.sub(r"house bill", "HB", bill_id, flags=re.IGNORECASE)
-                    bill_id = re.sub(r"senate bill", "SB", bill_id, flags=re.IGNORECASE)
+
+                # Matches (SJR, HCR, HB, HR, SCR, SB, HJR, SR) + id
+                # Allows for house, senate, joint, or bill to be fully spelled out
+                # Allows for "." after H, S, J, C, and B
+                # Allows for up to two spaces before the id
+                bills = re.findall(
+                    r"((S\.?|Senate|H\.?|House)\s?((J|C|Joint)\.?\s?)?(B\.?|Bill|R\.?)\s?\s?(\d+))",
+                    row.text_content(),
+                    flags=re.IGNORECASE,
+                )
+
+                component_re = re.compile(r"([A-Z]+)\s*(\d+)", flags=re.IGNORECASE)
+                period_and_whitespace_re = re.compile(r"\.\s*", flags=re.IGNORECASE)
+                house_bill_re = re.compile(r"house bill", flags=re.IGNORECASE)
+                senate_bill_re = re.compile(r"senate bill", flags=re.IGNORECASE)
+
+                for bill in bills:
+                    bill_id = period_and_whitespace_re.sub("", bill[0])
+                    bill_id = house_bill_re.sub("HB", bill_id)
+                    bill_id = senate_bill_re.sub("SB", bill_id)
+
+                    # Final step to set correct number of spaces in the id
+                    components = component_re.search(bill_id)
+                    bill_id = f"{components.group(1)} {int(components.group(2))}"
+
                     agenda.add_bill(bill_id)
 
         event.add_source(url)
@@ -125,6 +160,11 @@ class WVEventScraper(Scraper, LXMLMixin):
         yield event
 
     def clean_date(self, when):
+        # Remove all text after the third comma to make sure no extra text
+        # is included in the date. Required to correctly parse text like this:
+        # "Friday, March 3, 2023, Following wrap up of morning agenda"
+        when = ",".join(when.split(",")[:2])
+
         # Feb is a tough one, isn't it?
         # After feburary, februarary, febuary, just give up and regex it
         when = re.sub(r"feb(.*?)y", "February", when, flags=re.IGNORECASE)
@@ -138,11 +178,12 @@ class WVEventScraper(Scraper, LXMLMixin):
             when,
             flags=re.IGNORECASE,
         )
+        when = re.sub(r"Changed to", "", when, flags=re.IGNORECASE)
         when = re.sub(r"To Be Announced", "", when, flags=re.IGNORECASE)
         when = re.sub(r"TB(.*)", "", when, flags=re.IGNORECASE)
         when = re.sub(r"\*", "", when, flags=re.IGNORECASE)
         when = re.sub(
-            r"\d+ minutes following the evening floor session(.*)",
+            r"\d+ minutes following (the evening floor|conclusion of floor)?\s*session(.*)",
             "",
             when,
             flags=re.IGNORECASE,
