@@ -295,6 +295,11 @@ class GABillScraper(Scraper):
                     url = (
                         f"https://www.legis.ga.gov/api/legislation/document/{bill_bit}"
                     )
+                if session == "2023_ss":
+                    # gets url as 2023EX220573.pdf
+                    # so would be easier to put together using session & version id
+                    # to get https://www.legis.ga.gov/api/legislation/document/2023EX/220573
+                    url = f"https://www.legis.ga.gov/api/legislation/document/2023EX/{doc_id}"
                 link = bill.add_version_link(name, url, media_type="application/pdf")
                 link["extras"] = {
                     "_internal_document_id": doc_id,
