@@ -90,6 +90,14 @@ class Georgia(State):
             "end_date": "2024-04-02",
             "active": True,
         },
+        {
+            "_scraped_name": "2023 Special Session",
+            "identifier": "2023_ss",
+            "name": "2023 Special Session",
+            "start_date": "2023-11-29",
+            "end_date": "2021-12-01",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "2009-2010 Regular Session",
