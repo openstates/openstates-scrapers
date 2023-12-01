@@ -109,7 +109,7 @@ class MPBillScraper(Scraper):
         bill = self.do_action(bill, page, "Senate First Reading", "upper", "reading-1")
         bill = self.do_action(bill, page, "Senate Final Reading", "upper", "reading-2")
 
-        last_action = self.get_cell_text(page, "Last Action")
+        last_action = self.get_cell_text(page, "Last Action").strip()
         last_updated = self.get_cell_text(page, "Last Updated")
 
         if "withdrawn" in last_action.lower():
@@ -128,34 +128,35 @@ class MPBillScraper(Scraper):
                 media_type="application/pdf",
             )
 
-        if self.get_cell_text(
-            page, "Senate Committee"
-        ) == last_action or self.get_cell_text(
-            page, "Senate Committee"
-        ) == last_action.replace(
-            "SENATE-", ""
-        ):
-            bill.add_action(
-                last_action,
-                dateutil.parser.parse(last_updated).strftime("%Y-%m-%d"),
-                chamber="upper",
-                classification="referral-committee",
-            )
+        if last_action != "":
+            if self.get_cell_text(
+                page, "Senate Committee"
+            ) == last_action or self.get_cell_text(
+                page, "Senate Committee"
+            ) == last_action.replace(
+                "SENATE-", ""
+            ):
+                bill.add_action(
+                    last_action,
+                    dateutil.parser.parse(last_updated).strftime("%Y-%m-%d"),
+                    chamber="upper",
+                    classification="referral-committee",
+                )
 
-        #  e.g. if "JGO" is house com, and "House-JGO" is last action
-        if self.get_cell_text(
-            page, "House Committee"
-        ) == last_action or self.get_cell_text(
-            page, "House Committee"
-        ) == last_action.replace(
-            "HOUSE-", ""
-        ):
-            bill.add_action(
-                last_action,
-                dateutil.parser.parse(last_updated).strftime("%Y-%m-%d"),
-                chamber="lower",
-                classification="referral-committee",
-            )
+            #  e.g. if "JGO" is house com, and "House-JGO" is last action
+            if self.get_cell_text(
+                page, "House Committee"
+            ) == last_action or self.get_cell_text(
+                page, "House Committee"
+            ) == last_action.replace(
+                "HOUSE-", ""
+            ):
+                bill.add_action(
+                    last_action,
+                    dateutil.parser.parse(last_updated).strftime("%Y-%m-%d"),
+                    chamber="lower",
+                    classification="referral-committee",
+                )
 
         if "duly adopted" in last_action.lower():
             bill.add_action(
