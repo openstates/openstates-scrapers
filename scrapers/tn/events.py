@@ -153,9 +153,21 @@ class TNEventScraper(Scraper, LXMLMixin):
                     for doc in agenda:
                         agenda_url = doc.attrib["href"]
                         if agenda_url.endswith(".pdf"):
+                            event.add_document(
+                                "Agenda",
+                                agenda_url,
+                                media_type="application/pdf",
+                                on_duplicate="ignore",
+                            )
                             for bill in AgendaPdf(source=agenda_url).do_scrape():
                                 event.add_bill(bill)
                         else:
+                            event.add_document(
+                                "Agenda",
+                                agenda_url,
+                                media_type="text/html",
+                                on_duplicate="ignore",
+                            )
                             for bill in AgendaHtml(source=agenda_url).do_scrape():
                                 event.add_bill(bill)
 
