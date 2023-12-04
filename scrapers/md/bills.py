@@ -176,7 +176,7 @@ class MDBillScraper(Scraper):
             if not any(
                 motion_keyword in motion.lower() for motion_keyword in motion_keywords
             ):
-                # This condition covers for the bad formating in SB 1260
+                # This condition covers for the bad formatting in SB 1260
                 motion = lines[page_index - 3]
             if not any(
                 motion_keyword in motion.lower() for motion_keyword in motion_keywords
@@ -387,6 +387,10 @@ class MDBillScraper(Scraper):
         title = page.xpath(
             '//dt[contains(text(), "Title")]/following-sibling::dd[1]/text()'
         )[0].strip()
+
+        if "OIS Test" in title:
+            self.warning(f"Ignoring test bill {bill_id} - {title}")
+            return
 
         if "B" in bill_id:
             _type = ["bill"]

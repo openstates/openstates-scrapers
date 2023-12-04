@@ -74,6 +74,7 @@ class MIEventScraper(Scraper):
         event = Event(
             name=title, start_date=self._tz.localize(datetime), location_name=where
         )
+        event.dedupe_key = f"{chamber}#{title}#{where}#{self._tz.localize(datetime)}"
         event.add_source(url)
         event.add_source(mi_events)
 
@@ -89,7 +90,7 @@ class MIEventScraper(Scraper):
 
         # The MI pages often contain broken markup for line breaks in the agenda
         # like </BR>. This gets stripped in text_content and we lose the information
-        # needed to seperate out agenda sections.
+        # needed to separate out agenda sections.
         # So instead, pull out the raw HTML, break it, then parse it.
         agenda = page.xpath("//td[contains(., 'Agenda')]/following-sibling::td")[0]
         agenda_html = lxml.etree.tostring(agenda, encoding="unicode")
@@ -128,6 +129,7 @@ class MIEventScraper(Scraper):
             raise EmptyScrape
             return
 
+        event_objects = set()
         for chamber in chambers:
             span = page.xpath(xpaths[chamber])
             if len(span) > 0:
@@ -139,4 +141,10 @@ class MIEventScraper(Scraper):
                 url = event.attrib["href"]
                 if "doPostBack" in url:
                     continue
-                yield from self.scrape_event_page(url, chamber)
+                for event in self.scrape_event_page(url, chamber):
+                    event_name = event.dedupe_key
+                    if event_name in event_objects:
+                        self.warning(f"Skipping duplicate event: {event_name}")
+                        continue
+                    event_objects.add(event_name)
+                    yield event

@@ -77,7 +77,7 @@ class CommitteeMembers(HtmlPage):
 
 
 class CommitteeList(HtmlPage):
-    # This page is scraped before geting the json data because the current
+    # This page is scraped before getting the json data because the current
     # session id needs to be extracted. This page has a <select> element where
     # the first <option> inside of it has the required session id.
     source = "https://legis.delaware.gov/Committees"

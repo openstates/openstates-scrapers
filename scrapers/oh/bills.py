@@ -3,6 +3,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 import scrapelib
 import pytz
 import re
+import dateutil
 
 BAD_BILLS = [("134", "SB 92")]
 
@@ -258,11 +259,10 @@ class OHBillScraper(Scraper):
                             )
                             action_type = None
 
-                        date = self._tz.localize(
-                            datetime.datetime.strptime(
-                                action["datetime"], "%Y-%m-%dT%H:%M:%S"
-                            )
-                        )
+                        date = dateutil.parser.parse(action["datetime"])
+                        if date.tzinfo is None:
+                            date = self._tz.localize(date)
+
                         date = "{:%Y-%m-%d}".format(date)
 
                         bill.add_action(

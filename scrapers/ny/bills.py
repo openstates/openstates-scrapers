@@ -254,6 +254,10 @@ class NYBillScraper(Scraper):
             )
             return
 
+        second_year = str(bill_data["session"] + 1)
+        first_year = str(bill_data["session"])
+        session = f"{first_year}-{second_year}"
+
         bill = Bill(
             bill_id,
             legislative_session=session,
@@ -269,8 +273,12 @@ class NYBillScraper(Scraper):
 
         if active_version != "":
             bill_active_version = bill_data["amendments"]["items"][active_version]
+        elif "" in bill_data["amendments"]["items"]:
+            # by default ny puts a blank key in the items object with our data
+            self.warning(f"No active version for {bill_id}, assuming first")
+            bill_active_version = bill_data["amendments"]["items"][""]
         else:
-            self.warning("No active version for {}".format(bill_id))
+            self.warning(f"No active version for {bill_id}")
 
         # Parse sponsors.
         if bill_data["sponsor"] is not None:
@@ -281,26 +289,40 @@ class NYBillScraper(Scraper):
                     classification="primary",
                     primary=True,
                 )
-            elif not bill_data["sponsor"]["budget"]:
+            elif bill_data["sponsor"]["budget"] is True:
+                bill.add_sponsorship(
+                    "Budget Committee",
+                    entity_type="organization",
+                    classification="primary",
+                    primary=True,
+                )
+            elif bill_data["sponsor"]["redistricting"] is True:
+                bill.add_sponsorship(
+                    "Redistricting Committee",
+                    entity_type="organization",
+                    classification="primary",
+                    primary=True,
+                )
+            else:
                 primary_sponsor = bill_data["sponsor"]["member"]
                 if primary_sponsor is not None:
                     bill.add_sponsorship(
-                        primary_sponsor["shortName"],
+                        primary_sponsor["fullName"],
                         entity_type="person",
                         classification="primary",
                         primary=True,
                     )
 
-                if bill_active_version:
-                    # There *shouldn't* be cosponsors if there is no sponsor.
-                    cosponsors = bill_active_version["coSponsors"]["items"]
-                    for cosponsor in cosponsors:
-                        bill.add_sponsorship(
-                            cosponsor["shortName"],
-                            entity_type="person",
-                            classification="cosponsor",
-                            primary=False,
-                        )
+        if bill_active_version:
+            # There *shouldn't* be cosponsors if there is no sponsor.
+            cosponsors = bill_active_version["coSponsors"]["items"]
+            for cosponsor in cosponsors:
+                bill.add_sponsorship(
+                    cosponsor["fullName"],
+                    entity_type="person",
+                    classification="cosponsor",
+                    primary=False,
+                )
 
         if bill_active_version:
             # List companion bill.
@@ -380,6 +402,44 @@ class NYBillScraper(Scraper):
                 version, pdf_url, on_duplicate="ignore", media_type="application/pdf"
             )
 
+            for key, container in amendment["relatedLaws"]["items"].items():
+                for cite in container["items"]:
+                    law = cite[0:3]
+                    rest = cite[3:]
+
+                    if "generally" in cite.lower():
+                        formatted_cite = f"{law}"
+                    else:
+                        formatted_cite = f"{law} § {rest}"
+                        rest = ""
+
+                    bill.add_citation(
+                        "New York Laws",
+                        formatted_cite,
+                        citation_type="proposed",
+                        url=f"https://www.nysenate.gov/legislation/laws/{law}/{rest}",
+                    )
+
+            for item in amendment["sameAs"]["items"]:
+                companion_bill_id = item["basePrintNo"]
+                # Build companion bill session.
+                start_year = item["session"]
+                end_year = start_year + 1
+                companion_bill_session = "-".join([str(start_year), str(end_year)])
+                bill.add_related_bill(
+                    companion_bill_id, companion_bill_session, relation_type="companion"
+                )
+
+        for item in bill_data["previousVersions"]["items"]:
+            companion_bill_id = item["basePrintNo"]
+            # Build companion bill session.
+            start_year = item["session"]
+            end_year = start_year + 1
+            companion_bill_session = "-".join([str(start_year), str(end_year)])
+            bill.add_related_bill(
+                companion_bill_id, companion_bill_session, relation_type="prior-session"
+            )
+
         yield bill
 
     def scrape_assembly_votes(self, session, bill, assembly_url, bill_id):
@@ -442,11 +502,12 @@ class NYBillScraper(Scraper):
 
                 for vote_pair in votes:
                     name, vote_val = vote_pair
-                    vote.vote(vote_dictionary[vote_val], name)
-                    if vote_val == "AB":
-                        absent_count += 1
-                    elif vote_val == "ER":
-                        excused_count += 1
+                    if "participated via videoconferencing" not in name:
+                        vote.vote(vote_dictionary[vote_val], name)
+                        if vote_val == "AB":
+                            absent_count += 1
+                        elif vote_val == "ER":
+                            excused_count += 1
 
                 vote.set_count("absent", absent_count)
                 vote.set_count("excused", excused_count)

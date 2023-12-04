@@ -31,7 +31,7 @@ rules = (
     Rule("adopted in final form", "passage"),
     Rule("Received", "receipt"),
     Rule("committee.*recommends.*deferred", "committee-passage-unfavorable"),
-    Rule("Passed Final Reading", "passed"),
+    Rule("Passed Final Reading", "passage"),
     Rule("disagrees with.*amendment", "amendment-failure"),
     Rule("Carried over", "carried-over"),
     Rule("[Dd]efer", "deferral"),

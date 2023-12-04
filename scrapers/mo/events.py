@@ -9,6 +9,50 @@ from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 
 
+class UnknownBillStringPattern(BaseException):
+    def __init__(self, bill_string):
+        super().__init__(
+            "Char '&' present in string but known bill id patterns not found."
+            f" Bill string: '{bill_string}'"
+        )
+
+
+# Regex pattern for extracting multiple bill ids
+#  ex. "HJRs 33 & 45" or "HBs 882 & 518"
+multi_bills_re = re.compile(
+    r"(SJR|SRB|HCR|HB|HR|SRM|SCR|SB|HRM|HCB|HJR|SM|HRB|HEC|GRP|HC|SR)s\s+(.+)"
+)
+
+
+def add_bill_to_agenda(agenda_item, bill_text):
+    """
+    Helper func adds bills from text that may contain one or multiple bills.
+    ex. "SB 123" or "SBs 123 & 341"
+    """
+    # Start by assuming there's only one bill in string
+    item_bills = [bill_text]
+
+    # Multiple bills detected
+    if "&" in bill_text:
+        multi_bill_match = multi_bills_re.search(bill_text)
+        if multi_bill_match:
+            prefix, raw_bill_nums = multi_bill_match.groups()
+            raw_bill_nums_list = raw_bill_nums.split()
+            item_bills = []
+            for raw_str in raw_bill_nums_list:
+                num_match = re.search(r"(\d+)", raw_str)
+                if num_match:
+                    bill_num = num_match.group(1)
+                    item_bills.append(f"{prefix} {bill_num}")
+        # If regex pattern does not cover particular case of '&' in string
+        else:
+            raise UnknownBillStringPattern(bill_text)
+
+    # Add all bills
+    for bill in item_bills:
+        agenda_item.add_bill(bill)
+
+
 class MOEventScraper(Scraper, LXMLMixin):
     _TZ = pytz.timezone("America/Chicago")
     bill_link_xpath = (
@@ -65,14 +109,10 @@ class MOEventScraper(Scraper, LXMLMixin):
 
             location = f"{location}, 201 W Capitol Ave, Jefferson City, MO 65101"
 
-            if not page.xpath(
-                '//td[descendant::b[contains(text(),"Committee")]]/a/text()'
-            ):
+            if not page.xpath('//td//b[contains(text(),"Committee")]/a/text()'):
                 continue
 
-            com = page.xpath(
-                '//td[descendant::b[contains(text(),"Committee")]]/a/text()'
-            )[0]
+            com = page.xpath('//td//b[contains(text(),"Committee")]/a/text()')[0]
             com = com.split(", Senator")[0].strip()
 
             try:
@@ -111,7 +151,7 @@ class MOEventScraper(Scraper, LXMLMixin):
                     agenda_item = event.add_agenda_item(description=agenda_line)
 
                     bill_link = bill_table.xpath(self.bill_link_xpath)[0].strip()
-                    agenda_item.add_bill(bill_link)
+                    add_bill_to_agenda(agenda_item, bill_link)
                 else:
                     agenda_line = bill_table.xpath("string(tr[1])").strip()
                     agenda_item = event.add_agenda_item(description=agenda_line)
@@ -201,8 +241,7 @@ class MOEventScraper(Scraper, LXMLMixin):
             bill_no = bill_no.replace("HCS", "").strip()
 
             agenda_item = event.add_agenda_item(description=bill_title)
-            agenda_item.add_bill(bill_no)
-
+            add_bill_to_agenda(agenda_item, bill_no)
         yield event
 
     # Given <td><b>header</b> other text</td>,

@@ -1,5 +1,5 @@
 import re
-from spatula import XPath, HtmlListPage
+from spatula import XPath, HtmlListPage, SkipItem
 from openstates.models import ScrapePerson
 
 
@@ -27,6 +27,7 @@ class Legislators(HtmlListPage):
         "playlists",
         "photos",
         "/",
+        "@",
     ]
     social_remove_regexes = [re.compile(string) for string in social_removal]
 
@@ -64,7 +65,10 @@ class Legislators(HtmlListPage):
         dist_text = item.xpath("div/a")[0].text_content().strip()
         chamber, district = [x.strip() for x in dist_text.split("District")]
 
-        contact_info = item.xpath("div/address")[0]
+        try:
+            contact_info = item.xpath("div/address")[0]
+        except IndexError:
+            raise SkipItem(f"No contact data found for: {first_name} {last_name}")
         split_lines = contact_info.text_content().split("\r\n")
         contact_list = [x.strip() for x in split_lines if len(x.strip())]
 

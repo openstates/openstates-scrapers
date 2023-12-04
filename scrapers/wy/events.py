@@ -9,6 +9,7 @@ from utils.events import set_location_url, match_coordinates
 class WYEventScraper(Scraper):
     _tz = pytz.timezone("America/Denver")
     base_url = "https://web.wyoleg.gov/"
+    document_base_url = "https://wyoleg.gov/"
 
     def scrape(self):
         today = datetime.datetime.today()
@@ -18,7 +19,7 @@ class WYEventScraper(Scraper):
 
         # this month and the next 2 months
         events = set()
-        for add in [0, 1, 2]:
+        for add in [-2, -1, 0, 1, 2]:
             test_date = today + relativedelta.relativedelta(months=+add)
             month_url = url.format(str(test_date.year), str(test_date.month).zfill(2))
             page = self.get(month_url).json()
@@ -74,7 +75,7 @@ class WYEventScraper(Scraper):
                 for doc in row["meetingDocuments"]:
                     event.add_document(
                         doc["title"],
-                        f"{self.base_url}{doc['documentUrl']}",
+                        f"{self.document_base_url}{doc['documentUrl']}",
                         on_duplicate="ignore",
                     )
 
@@ -115,14 +116,14 @@ class WYEventScraper(Scraper):
         for doc in item["meetingDocuments"]:
             event.add_document(
                 doc["title"],
-                f"{self.base_url}{doc['documentUrl']}",
+                f"{self.document_base_url}{doc['documentUrl']}",
                 on_duplicate="ignore",
             )
 
         for doc in item["budgetMeetingDocuments"]:
             event.add_document(
                 doc["displayTitle"],
-                f"{self.base_url}{doc['documentUrl']}",
+                f"{self.document_base_url}{doc['documentUrl']}",
                 on_duplicate="ignore",
             )
 

@@ -89,6 +89,10 @@ class NJEventScraper(Scraper, MDBMixin):
 
             description = "Meeting of the {}".format(hr_name)
 
+            # Skips full-chamber events, helps limit scope to committee events
+            if "on the Whole" in description:
+                continue
+
             location = (
                 record["Location"]
                 or "New Jersey Statehouse, 125 W State St, Trenton, NJ 08608"

@@ -237,6 +237,7 @@ class HIBillScraper(Scraper):
     def scrape_bill(self, session, chamber, bill_type, url):
         bill_html = self.get(url).text
         bill_page = lxml.html.fromstring(bill_html)
+        bill_page.make_links_absolute(url)
 
         qs = dict(urlparse.parse_qsl(urlparse.urlparse(url).query))
         bill_id = "{}{}".format(qs["billtype"], qs["billnumber"])
@@ -330,6 +331,11 @@ class HIBillScraper(Scraper):
         current_referral = meta["Current Referral"].strip()
         if current_referral:
             b.extras["current_referral"] = current_referral
+
+        if meta["Act"]:
+            act_num = meta["Act"]
+            act_url = bill_page.xpath(f"//a[text()={act_num}]/@href")[0]
+            b.add_citation(f"Hawaii {session} Acts", act_num, "chapter", url=act_url)
 
         yield from self.parse_bill_actions_table(
             b, action_table, bill_id, session, url, chamber

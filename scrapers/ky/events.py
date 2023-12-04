@@ -155,6 +155,9 @@ class KYEventScraper(Scraper):
             if "Other Meeting" in date_text:
                 continue
 
+            if "No documents available" in date_text:
+                continue
+
             when = dateutil.parser.parse(date_text)
 
             lookup_date = when.strftime("%Y-%m-%d")
@@ -182,6 +185,11 @@ class KYEventScraper(Scraper):
             when = dateutil.parser.parse(link.text_content())
             lookup_date = when.strftime("%Y-%m-%d")
 
-            docs[lookup_date] = {"url": link.xpath("@href")[0], "text": "Minutes"}
+            if lookup_date not in docs:
+                docs[lookup_date] = []
 
+            if link.xpath("@href"):
+                docs[lookup_date].append(
+                    {"url": link.xpath("@href")[0], "text": "Minutes"}
+                )
         return docs

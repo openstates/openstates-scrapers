@@ -7,13 +7,6 @@ The classes that should be run to ensure every committee is scraped include:
 - House
 - Senate
 - JointCommitteeList
-- LegReapportionmentComm
-- LocalGovernmentComm
-- LegBudgetFinanceComm
-- LegAuditAdvisoryComm
-- StateGovernmentComm
-- CommissionOnSentencing
-- CapitolPreservationComm
 """
 
 
@@ -201,7 +194,7 @@ class CapitolPreservationComm(HtmlPage):
             title = XPath("./p/text()").match(member)
 
             # First line is always the title (since vacant positions are skipped already)
-            name = title[0]
+            name = title[0].strip()
 
             # If the final character of the name is a comma, remove it
             if name.endswith(","):
@@ -216,7 +209,7 @@ class CapitolPreservationComm(HtmlPage):
             role = None
             try:
                 # Sometimes the role is listed in bold.
-                role = XPath("./p/strong/text()").match_one(member)
+                role = XPath("./p/strong/text()").match_one(member).strip()
 
                 # If member also has a title, append it to their role
                 if title != "":

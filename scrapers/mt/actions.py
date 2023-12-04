@@ -211,8 +211,8 @@ _actions = {
         "mappings": ["committee-failure"],
     },
     # Misc actions
-    "signed by speaker": {"type": "compare", "mappings": ["became-law"]},
-    "signed by president": {"type": "compare", "mappings": ["became-law"]},
+    "signed by speaker": {"type": "compare", "mappings": ["passage"]},
+    "signed by president": {"type": "compare", "mappings": ["passage"]},
     "failed": {"type": "compare", "mappings": ["failure"]},
     "received": {"type": "compare", "mappings": ["receipt"]},
     "enrolled": {"type": "compare", "mappings": ["enrolled"]},

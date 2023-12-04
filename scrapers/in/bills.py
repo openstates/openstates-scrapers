@@ -375,6 +375,12 @@ class INBillScraper(Scraper):
         client = ApiClient(self)
         r = client.get("bills", session=session)
         all_pages = client.unpaginate(r)
+
+        # if you need to test a single bill:
+        # all_pages = [
+        #     {"billName": "SB0001", "displayName": "SB 1", "link": "/2023/bills/sb0001/"}
+        # ]
+
         for b in all_pages:
             bill_id = b["billName"]
             disp_bill_id = b["displayName"]
@@ -436,11 +442,12 @@ class INBillScraper(Scraper):
                 actions = client.get(
                     "bill_actions", session=session, bill_id=bill_id.lower()
                 )
+                actions = client.unpaginate(actions)
             except scrapelib.HTTPError:
                 self.logger.warning("Could not find bill actions page")
                 actions = {"items": []}
 
-            for a in actions["items"]:
+            for a in actions:
                 action_desc = a["description"]
                 if "governor" in action_desc.lower():
                     action_chamber = "executive"

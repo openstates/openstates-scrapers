@@ -9,23 +9,56 @@ from openstates.exceptions import EmptyScrape
 
 import pytz
 
+bill_re = re.compile(r"(SJR|HCR|HB|HR|SCR|SB|HJR|SR) (\d+)")
+
 
 class TXEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Central")
 
+    events_seen = set()
+
+    videos = {"lower": {}, "upper": {}}
+
+    chambers = {"lower": "House", "upper": "Senate"}
+
+    # Checks if an event is a duplicate.
+    # Events are considered duplicate if they have the same
+    # name, date, start time, and end time
+    def is_duplicate(self, event):
+        # Convert event to string, keys are in the format:
+        # "2023-03-08 10:30:00-06:00 General Investigating"
+        event = str(event)
+
+        if event in self.events_seen:
+            return False
+        else:
+            self.events_seen.add(event)
+            return True
+
     def scrape(self, session=None, chamber=None):
         event_count = 0
         if chamber:
+            if chamber == "upper":
+                self.scrape_upper_videos()
+            elif chamber == "lower":
+                self.scrape_lower_videos()
+
             for obj in self.scrape_committee_upcoming(session, chamber):
-                event_count += 1
-                yield obj
+                if not self.is_duplicate(obj):
+                    event_count += 1
+                    yield obj
         else:
+            self.scrape_upper_videos()
             for obj in self.scrape_committee_upcoming(session, "upper"):
-                event_count += 1
-                yield obj
+                if not self.is_duplicate(obj):
+                    event_count += 1
+                    yield obj
+
+            self.scrape_lower_videos()
             for obj in self.scrape_committee_upcoming(session, "lower"):
-                event_count += 1
-                yield obj
+                if not self.is_duplicate(obj):
+                    event_count += 1
+                    yield obj
         if event_count < 1:
             raise EmptyScrape
 
@@ -57,8 +90,7 @@ class TXEventScraper(Scraper, LXMLMixin):
             chair = metainfo["CHAIR"]
 
         plaintext = re.sub(r"\s+", " ", plaintext).strip()
-        regexp = r"(S|J|H)(B|M|R) (\d+)"
-        bills = re.findall(regexp, plaintext)
+        bills = bill_re.findall(plaintext)
 
         event = Event(
             name=committee, start_date=self._tz.localize(datetime), location_name=where
@@ -66,17 +98,30 @@ class TXEventScraper(Scraper, LXMLMixin):
         event.dedupe_key = url
 
         event.add_source(url)
-        event.add_participant(committee, type="committee", note="host")
+
+        full_name = f"{self.chambers[chamber]} {committee}"
+        event.add_participant(full_name, type="committee", note="host")
         if chair is not None:
             event.add_participant(chair, type="legislator", note="chair")
 
         # add a single agenda item, attach all bills
         agenda = event.add_agenda_item(plaintext)
 
-        for bill in bills:
-            chamber, type, number = bill
-            bill_id = "%s%s %s" % (chamber, type, number)
+        for alpha, num in bills:
+            bill_id = f"{alpha} {num}"
             agenda.add_bill(bill_id)
+
+        day = datetime.strftime("%Y-%m-%d")
+        videos = []
+        try:
+            videos = self.videos[chamber][committee][day]
+        except KeyError:
+            pass
+
+        for video in videos:
+            event.add_media_link(
+                "Hearing Video", video, "text/html", on_duplicate="ignore"
+            )
 
         yield event
 
@@ -113,7 +158,6 @@ class TXEventScraper(Scraper, LXMLMixin):
 
             events = row.xpath(".//a[contains(@href, 'schedules/html')]")
             for event in events:
-
                 # Ignore text after the datetime proper (ie, after "AM" or "PM")
                 datetime = "{} {}".format(date, time)
                 datetime = re.search(r"(?i)(.+?[ap]m).+", datetime)
@@ -151,3 +195,61 @@ class TXEventScraper(Scraper, LXMLMixin):
         )
 
         yield from self.scrape_upcoming_page(session, chamber, url)
+
+    def scrape_lower_videos(self):
+        url = "https://tlchouse.granicus.com/ViewPublisher.php?view_id=78"
+        page = self.lxmlize(url)
+
+        for row in page.xpath("//tbody/tr"):
+            if row.xpath("td[3]/a"):
+                onclick = row.xpath("td[3]/a/@onclick")[0]
+                committee = row.xpath("td[3]/a/text()")[0]
+                url = re.findall(
+                    r"window\.open\('(.*)\',\'player", onclick, flags=re.IGNORECASE
+                )[0]
+                if url[0:2] == "//":
+                    url = f"https:{url}"
+                date = row.xpath("td[1]/text()")[0]
+                date = dateutil.parser.parse(date)
+                day = date.strftime("%Y-%m-%d")
+
+                print(date, committee, url)
+
+                if committee not in self.videos["lower"]:
+                    self.videos["lower"][committee] = {}
+
+                if day not in self.videos["lower"][committee]:
+                    self.videos["lower"][committee][day] = []
+
+                self.videos["lower"][committee][day].append(url)
+
+    def scrape_upper_videos(self):
+        url = "https://senate.texas.gov/av-archive.php"
+        page = self.lxmlize(url)
+        page.make_links_absolute(url)
+
+        for row in page.xpath("//table/tr")[1:]:
+            if row.xpath("td[4]/a"):
+                committee = row.xpath("td[2]/text()")[0]
+                committee = re.findall(
+                    r"Senate Committee on (.*?)(\(Part.*)?$",
+                    committee,
+                    flags=re.IGNORECASE,
+                )
+                if len(committee) < 1:
+                    # probably a full senate session
+                    continue
+                committee = committee[0][0]
+                date = row.xpath("td[1]/text()")[0]
+                date = dateutil.parser.parse(date)
+                day = date.strftime("%Y-%m-%d")
+
+                url = row.xpath("td[4]/a/@href")[0]
+
+                if committee not in self.videos["upper"]:
+                    self.videos["upper"][committee] = {}
+
+                if day not in self.videos["upper"][committee]:
+                    self.videos["upper"][committee][day] = []
+
+                self.videos["upper"][committee][day].append(url)

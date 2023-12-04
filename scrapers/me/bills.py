@@ -463,6 +463,7 @@ class MEBillScraper(Scraper):
             actions = []
             for action in action.splitlines():
                 action = re.sub(r"\s+", " ", action)
+                action = action.strip()
                 if not action or "Unfinished Business" in action:
                     continue
 

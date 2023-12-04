@@ -6,6 +6,7 @@ import pytz
 import lxml
 
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 from .utils import xpath
 
 
@@ -45,6 +46,8 @@ class WAEventScraper(Scraper, LXMLMixin):
     def get_xml(self, start, end):
         if self.meetings is not None:
             return self.meetings
+        else:
+            raise EmptyScrape
 
         event_url = (
             "http://wslwebservices.leg.wa.gov/CommitteeMeetingService.asmx"

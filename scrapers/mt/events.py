@@ -13,7 +13,7 @@ class MTEventScraper(Scraper):
     # the state lists out by bill, we want to cluster by event
     events = {}
 
-    def scrape(self, session=None):
+    def scrape(self, session=None, start=None, end=None):
         for i in self.jurisdiction.legislative_sessions:
             if i["identifier"] == session:
                 session_slug = i["_scraped_name"]
@@ -23,9 +23,15 @@ class MTEventScraper(Scraper):
             "&P_COM_NM=&P_ACTN_DTM={start}&U_ACTN_DTM={end}&Z_ACTION2=Find"
         )
 
-        start = datetime.datetime.today()
-        # this month and the next 2 months
-        end = start + relativedelta.relativedelta(months=+2)
+        if start is None:
+            start = datetime.datetime.today()
+        else:
+            start = parser.parse(start)
+
+        if end is None:
+            end = start + relativedelta.relativedelta(months=+2)
+        else:
+            end = parser.parse(end)
 
         url = url.format(
             session_slug=session_slug,
@@ -77,6 +83,8 @@ class MTEventScraper(Scraper):
             else:
                 event = self.events[com][when_slug]
 
+            event.add_committee(com)
+
             agenda = event.add_agenda_item(bill_title)
             agenda.add_bill(bill)
 
@@ -91,6 +99,24 @@ class MTEventScraper(Scraper):
                     bill_title,
                     bill_url,
                     media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
+
+            # both media links are incorrectly labelled "audio", but the first
+            # seems to always be video, and if there's only one it's video
+            media_links = row.xpath('.//a[contains(@href, "sliq.net")]/@href')
+            if len(media_links) > 0:
+                event.add_media_link(
+                    "Video",
+                    media_links[0],
+                    media_type="text/html",
+                    on_duplicate="ignore",
+                )
+            if len(media_links) == 2:
+                event.add_media_link(
+                    "Audio",
+                    media_links[1],
+                    media_type="text/html",
                     on_duplicate="ignore",
                 )
 

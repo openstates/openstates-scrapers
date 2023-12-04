@@ -1,70 +1,71 @@
 import lxml.html
-import dateutil.parser
 import pytz
+import re
 
+from ics import Calendar
 from openstates.scrape import Scraper, Event
+from utils.media import get_media_type
 
 
 class DCEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
 
+    bill_prefixes = {"bill": "B", "resolution": "R"}
+
     def scrape(self):
-        url = "https://dccouncil.gov/events/list/"
+        # use ical to get the full feed and start dates, which aren't cleanly in the html
+        ical_url = (
+            "https://dccouncil.gov/?post_type=tribe_events&ical=1&eventDisplay=list"
+        )
 
-        yield from self.scrape_cal_page(url)
+        ical = self.get(ical_url).text
+        self.info("Parsing event feed. This may take a moment.")
+        cal = Calendar(ical)
+        for e in cal.events:
+            yield from self.scrape_cal_page(e)
 
-    def scrape_cal_page(self, url):
-        page = self.get(url).content
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
+    def scrape_cal_page(self, e):
+        # scrape the html to get the correct links and description
+        page = lxml.html.fromstring(self.get(e.url).content)
 
-        for row in page.xpath("//article[contains(@class,'accordion')]"):
-            when = row.xpath(".//time/@datetime")[0]
-            when = dateutil.parser.parse(when)
+        title = e.name
+        start = str(e.begin)
+        location = e.location
+        description = str(e.description)
 
-            title = row.xpath(".//h3[contains(@class,'heading-link')]/text()")[
-                0
-            ].strip()
+        event = Event(
+            title,
+            start,
+            location,
+            description=description,
+            end_date=str(e.end),
+        )
 
-            description = row.xpath(
-                "section/div[contains(@class,'large-8')]/div[contains(@class,'base')]"
-            )[0].text_content()
+        bill_regex = r"(?P<type>Bill|Resolution) (?P<session>\d+)-(?P<billnumber>\d+)"
+        matches = re.findall(bill_regex, description, flags=re.IGNORECASE)
 
-            # fix special chars
-            description = (
-                description.replace("\n\u2013", " ")
-                .replace("\n", " ")
-                .replace("\u203a", "")
+        for match in matches:
+            bill = (
+                f"{self.bill_prefixes[match[0].lower()]} {match[1]}-{match[2].zfill(4)}"
             )
-            description = description.replace("More about this event", "").strip()
+            event.add_bill(bill)
 
-            location = row.xpath(
-                "header/div/div[contains(@class,'large-8')]/div/div[contains(@class,'text-right')]/p"
-            )[0].text_content()
-
-            event = Event(
-                name=title,
-                description=description,
-                start_date=when,
-                location_name=location,
-            )
-
-            agenda_url = row.xpath(
-                ".//a[contains(text(),'More about this event')]/@href"
-            )
-            if agenda_url != []:
-                event.add_document(
-                    "Details and Agenda", agenda_url[0], media_type="text/html"
-                )
-
-            if "committee meeting" in title.lower():
-                com_name = title.replace("Committee Meeting", "").strip()
+        header = page.xpath("//header[contains(@class,'article-header')]/p[1]/text()")[
+            0
+        ]
+        if "&bullet;" in header:
+            com_name = header.split("&bullet;")[1].strip()
+            if "whole" not in com_name.lower():
                 event.add_participant(com_name, type="committee", note="host")
 
-            event.add_source(url)
+        materials = page.xpath(
+            "//section[contains(@class,'aside-section')]//a[contains(@class,'icon-link')]"
+        )
+        for mat in materials:
+            title = mat.xpath("text()")[0].strip()
+            url = mat.xpath("@href")[0]
+            event.add_document(title, url, media_type=get_media_type(url))
 
-            yield event
+        event.add_source(e.url)
 
-        if page.xpath("//a[contains(text(), 'Upcoming Events')]"):
-            next_url = page.xpath("//a[contains(text(), 'Upcoming Events')]/@href")[0]
-            yield from self.scrape_cal_page(next_url)
+        yield event

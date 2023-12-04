@@ -51,12 +51,12 @@ class DEBillScraper(Scraper, LXMLMixin):
 
     def filter_bills(self, items):
         """
-        Read through all bills on a page. If a bill has no subsitutes,
-        yield it. If a bill does have substitutes, keep the highest-
-        numbered substitute and only yield that Bill object.
+        Read through all bills on a page. If a bill has no substitutes,
+        yield it. If a bill does have substitutes, keep the highest-numbered
+        substitute and only yield that Bill object.
         Bills may be amended (`BILL_ID w/ AMENDMENT ID` on the website),
         but if that is the case then the original (unamended) version
-        should not exist any more.
+        should not exist anymore.
         """
         # Map of {bill_id: bill}
         bills = {}
@@ -194,6 +194,43 @@ class DEBillScraper(Scraper, LXMLMixin):
         if row["HasAmendments"] is True:
             self.scrape_amendments(bill, row["LegislationId"])
 
+        code_cite = html.xpath(
+            '//label[contains(text(),"Volume:Chapter")]'
+            "/following-sibling::div/text()"
+        )
+        if code_cite and "N/A" not in code_cite[0]:
+            code_cite = code_cite[0].strip().split(":")
+            eff_date = html.xpath(
+                '//label[contains(text(),"Effective Date")]'
+                "/following-sibling::div/text()"
+            )[0].strip()
+            exp_date = html.xpath(
+                '//label[contains(text(),"Sunset Date")]'
+                "/following-sibling::div/text()"
+            )[0].strip()
+
+            if html.xpath("//a[contains(@href,'SessionLaws/Chapter')]/@href"):
+                code_url = html.xpath(
+                    "//a[contains(@href,'SessionLaws/Chapter')]/@href"
+                )[0]
+            else:
+                code_url = None
+
+            if "N/A" in eff_date or eff_date == "":
+                eff_date = None
+
+            if "N/A" in exp_date or exp_date == "":
+                exp_date = None
+
+            bill.add_citation(
+                "The Laws of Delaware",
+                f"Volume {code_cite[0]} Chapter {code_cite[1]}",
+                "chapter",
+                url=code_url,
+                effective=eff_date,
+                expires=exp_date,
+            )
+
         yield from self.scrape_votes(bill, row["LegislationId"], session)
 
         yield bill
@@ -210,7 +247,12 @@ class DEBillScraper(Scraper, LXMLMixin):
         }
 
         self.info("Fetching legislators")
-        page = self.post(url=search_form_url, data=form, allow_redirects=True).json()
+        page = self.post(
+            url=search_form_url,
+            data=form,
+            allow_redirects=True,
+            verify=False,
+        ).json()
         assert page["Data"], "Cound not fetch legislators!"
         for row in page["Data"]:
             self.legislators[str(row["PersonId"])] = row
@@ -452,7 +494,14 @@ class DEBillScraper(Scraper, LXMLMixin):
             "fromIntroDate": "",
             "toIntroDate": "",
         }
-        page = self.post(url=search_form_url, data=form, allow_redirects=True).json()
+
+        page = self.post(
+            url=search_form_url,
+            data=form,
+            allow_redirects=True,
+            verify=False,
+        ).json()
+
         return page
 
     def mime_from_link(self, link):

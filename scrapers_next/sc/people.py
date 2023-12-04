@@ -38,18 +38,21 @@ class LegDetail(HtmlPage):
             )
             home_addr = home_addr_path.text
             home_addr += " "
-            home_line2 = home_addr_path.getchildren()[0].tail
-            if " SC " not in home_line2:
-                # special case: when only zipcode is on home address line 2
-                if len(home_line2.strip()) == 5:
-                    home_line2 = f", SC {home_line2}"
-                else:
-                    city, h_zip = self.zip2_re.search(home_line2).groups()
-                    home_line2 = f"{city}, SC {h_zip}"
+            try:
+                home_line2 = home_addr_path.getchildren()[0].tail
+                if " SC " not in home_line2:
+                    # special case: when only zipcode is on home address line 2
+                    if len(home_line2.strip()) == 5:
+                        home_line2 = f", SC {home_line2}"
+                    else:
+                        city, h_zip = self.zip2_re.search(home_line2).groups()
+                        home_line2 = f"{city}, SC {h_zip}"
 
-            home_addr += home_line2
-            home_addr = re.sub(" ,", ",", home_addr)
-            p.district_office.address = home_addr
+                home_addr += home_line2
+                home_addr = re.sub(" ,", ",", home_addr)
+                p.district_office.address = home_addr
+            except IndexError:
+                pass
 
         except SelectorError:
             pass

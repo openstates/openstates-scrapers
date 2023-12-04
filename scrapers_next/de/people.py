@@ -87,7 +87,11 @@ class LegList(JsonPage):
 
 
 class Senate(LegList):
-    source = URL("https://legis.delaware.gov/json/Senate/GetSenators", method="POST")
+    source = URL(
+        "https://legis.delaware.gov/json/Senate/GetSenators",
+        method="POST",
+        verify=False,
+    )
     chamber = "upper"
 
 
@@ -95,5 +99,6 @@ class House(LegList):
     source = URL(
         "https://legis.delaware.gov/json/House/GetRepresentatives",
         method="POST",
+        verify=False,
     )
     chamber = "lower"

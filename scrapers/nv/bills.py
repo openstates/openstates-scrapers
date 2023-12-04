@@ -9,32 +9,32 @@ from openstates.scrape import Scraper, Bill
 from .common import session_slugs
 from spatula import HtmlListPage, HtmlPage, CSS, XPath, SelectorError
 
-
 TZ = pytz.timezone("PST8PDT")
 ACTION_CLASSIFIERS = (
-    ("Approved by the Governor", "executive-signature"),
-    ("Bill read. Veto not sustained", "veto-override-passage"),
-    ("Bill read. Veto sustained", "veto-override-failure"),
-    ("Enrolled and delivered to Governor", "executive-receipt"),
-    ("From committee: .+? adopted", "committee-passage"),
+    ("Approved by the Governor", ["executive-signature"]),
+    ("Bill read. Veto not sustained", ["veto-override-passage"]),
+    ("Bill read. Veto sustained", ["veto-override-failure"]),
+    ("Enrolled and delivered to Governor", ["executive-receipt"]),
+    ("From committee: .+? adopted", ["committee-passage"]),
     # the committee and chamber passage can be combined, see NV 80 SB 506
     (
         r"From committee: .+? pass(.*)Read Third time\.\s*Passed\.",
         ["committee-passage", "reading-3", "passage"],
     ),
-    ("From committee: .+? pass", "committee-passage"),
+    ("From committee: .+? pass", ["committee-passage"]),
     ("Prefiled. Referred", ["introduction", "referral-committee"]),
     ("Read first time. Referred", ["reading-1", "referral-committee"]),
-    ("Read first time.", "reading-1"),
-    ("Read second time.", "reading-2"),
+    ("Read first time.", ["reading-1"]),
+    ("Read second time.", ["reading-2"]),
     ("Read third time. Lost", ["failure", "reading-3"]),
     ("Read third time. Passed", ["passage", "reading-3"]),
-    ("Read third time.", "reading-3"),
-    ("Rereferred", "referral-committee"),
-    ("Resolution read and adopted", "passage"),
-    ("To enrollment", "passage"),
-    ("Approved by the Governor", "executive-signature"),
-    ("Vetoed by the Governor", "executive-veto"),
+    ("Read third time.", ["reading-3"]),
+    ("Rereferred", ["referral-committee"]),
+    ("Resolution read and adopted", ["passage"]),
+    ("Enrolled and delivered", ["enrolled"]),
+    ("To enrollment", ["passage"]),
+    ("Approved by the Governor", ["executive-signature"]),
+    ("Vetoed by the Governor", ["executive-veto"]),
 )
 
 # NV sometimes carries-over bills from previous sessions,
@@ -66,10 +66,33 @@ def extract_bdr(title):
     the number is in the title but it's useful as a structured extra
     """
     bdr = False
-    bdr_regex = re.search(r"\(BDR (\w+\-\w+)\)", title)
+    bdr_regex = re.search(r"\(BDR (\w+-\w+)\)", title)
     if bdr_regex:
         bdr = bdr_regex.group(1)
     return bdr
+
+
+def shorten_bill_title(title):
+    """
+    Used in cases where the bill title exceeds the
+    300-character limit that we have on this attribute.
+    """
+    title_bdr_re = re.compile(r"(.+)(\(BDR \w+-\w+\))")
+    title_bdr_match = title_bdr_re.search(title)
+    bdr_full = ""
+    if title_bdr_match:
+        title, bdr_full = title_bdr_match.groups()
+    title = f"{title[:280]}... + {bdr_full}"
+    return title
+
+
+class BillTitleLengthError(BaseException):
+    def __init__(self, bill_id, title):
+        super().__init__(
+            f"Title of {bill_id} exceeds 300 characters:"
+            f"\n title -> '{title}'"
+            f"\n character length -> {len(title)}"
+        )
 
 
 @dataclass
@@ -206,11 +229,18 @@ class BillTabDetail(HtmlPage):
                 elif "Governor" in action:
                     actor = "executive"
 
-                action_type = None
+                action_type = []
                 for pattern, atype in ACTION_CLASSIFIERS:
-                    if re.search(pattern, action, re.IGNORECASE):
-                        action_type = atype
-                        break
+                    if not re.search(pattern, action, re.IGNORECASE):
+                        continue
+                    # sometimes NV returns multiple actions in the same posting
+                    # so don't break here
+                    action_type = action_type + atype
+
+                if not action_type:
+                    action_type = None
+                else:
+                    action_type = list(set(action_type))
 
                 related_entities = []
                 if "Committee on" in action:
@@ -251,6 +281,14 @@ class BillTabDetail(HtmlPage):
                     f"Unidentified carryover bill {self.input.identifier}. Update CARRYOVERS dict in bills.py"
                 )
                 return
+
+        # Only known cases where bill title is over 300 characters
+        if self.input.session == "82":
+            if self.input.identifier in ("SJR7-2021", "AB488"):
+                short_title = shorten_bill_title(short_title)
+        # If additional case arises in future
+        elif len(short_title) > 300:
+            raise BillTitleLengthError(self.input.identifier, short_title)
 
         bill = Bill(
             identifier=self.input.identifier,
@@ -297,6 +335,61 @@ class BillTabText(HtmlPage):
             title = row.text_content()
             link = row.get("href")
             bill.add_version_link(
+                title, link, media_type="application/pdf", on_duplicate="ignore"
+            )
+        ex_url = self.source.url.replace("Text", "Exhibits")
+        return ExhibitTabText(bill, source=ex_url)
+
+
+class ExhibitTabText(HtmlPage):
+    example_source = (
+        "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Bill/"
+        "FillSelectedBillTab?selectedTab=Exhibits&billKey=9581"
+    )
+
+    def process_page(self):
+        bill = self.input
+        for row in CSS("li.my-4 a").match(self.root, min_items=0):
+            title = row.text_content()
+            link = row.get("href")
+            bill.add_document_link(
+                title, link, media_type="application/pdf", on_duplicate="ignore"
+            )
+        am_url = self.source.url.replace("Text", "Amendments")
+        return AmendmentTabText(bill, source=am_url)
+
+
+class AmendmentTabText(HtmlPage):
+    example_source = (
+        "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Bill/"
+        "FillSelectedBillTab?selectedTab=Amendments&billKey=10039"
+    )
+
+    def process_page(self):
+        bill = self.input
+        for row in CSS("col-11 col-md").match(self.root, min_items=0):
+            title = row.text_content()
+            link = row.get("href")
+            bill.add_version_link(
+                title, link, media_type="application/pdf", on_duplicate="ignore"
+            )
+        fn_url = self.source.url.replace("Text", "FiscalNotes")
+        return FiscalTabText(bill, source=fn_url)
+
+
+class FiscalTabText(HtmlPage):
+    example_source = (
+        "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Bill/"
+        "FillSelectedBillTab?selectedTab=FiscalNotes&billKey=9528"
+    )
+
+    def process_page(self):
+        bill = self.input
+        for row in CSS("ul.list-unstyled li a").match(self.root, min_items=0):
+            title = row.text_content()
+            title = f"Fiscal Note: {title}"
+            link = row.get("href")
+            bill.add_document_link(
                 title, link, media_type="application/pdf", on_duplicate="ignore"
             )
         return bill

@@ -7,6 +7,20 @@ import json
 import lxml
 import datetime
 from openstates.scrape import Scraper, Event
+from utils.events import match_coordinates
+import re
+
+bill_re = re.compile(
+    r"([a-z]+)0*(\d+)",
+    flags=re.IGNORECASE,
+)
+
+
+# Adds a space and removes any leading zeros from a bill id
+# example input: "HB01234", example output: "HB 123"
+def format_bill(bill):
+    component = bill_re.match(bill)
+    return f"{component.group(1)} {component.group(2)}"
 
 
 class NHEventScraper(Scraper, LXMLMixin):
@@ -39,9 +53,6 @@ class NHEventScraper(Scraper, LXMLMixin):
         # real data is double-json encoded string in the 'd' key
         page = json.loads(page["d"])
 
-        # print(page)
-
-        # event_root = "http://gencourt.state.nh.us/senate/schedule"
         event_root = f"https://gencourt.state.nh.us/{chamber_names[chamber]}/schedule"
         event_objects = set()
 
@@ -54,9 +65,6 @@ class NHEventScraper(Scraper, LXMLMixin):
             end = dateutil.parser.parse(row["end"])
             end = self._tz.localize(end)
 
-            if "cancelled" in row["title"] or "canceled" in row["title"]:
-                status = "cancelled"
-
             if start < self._tz.localize(datetime.datetime.now()):
                 status = "passed"
 
@@ -68,12 +76,33 @@ class NHEventScraper(Scraper, LXMLMixin):
                 classification = "other"
 
             location = row["title"].split(":")[-1].strip()
+            location = location.replace(
+                "LOB",
+                "Legislative Office Building, 33 North State Street, Concord, NH 03301",
+            )
+            location = location.replace(
+                "SH",
+                "New Hampshire State House, 107 North Main Street, Concord, NH 03301",
+            )
 
             event_name = f"{event_url}#{location}#{start}"
             if event_name in event_objects:
                 self.warning(f"Duplicate event {event_name}. Skipping.")
                 continue
             event_objects.add(event_name)
+
+            title = row["title"].split(":")[0].strip()
+
+            title = re.sub(
+                r"==(revised|time change|room change)==", "", title, flags=re.IGNORECASE
+            )
+
+            if (
+                "cancelled" in row["title"].lower()
+                or "canceled" in row["title"].lower()
+            ):
+                status = "cancelled"
+                title = re.sub("==Cancell?ed==", "", title, flags=re.IGNORECASE)
 
             event = Event(
                 name=title,
@@ -86,7 +115,22 @@ class NHEventScraper(Scraper, LXMLMixin):
             event.dedupe_key = event_name
             event.add_source(event_url)
 
+            if "commission" not in title.lower():
+                prefix = chamber_names[chamber].title()
+                if title.isupper():
+                    prefix = prefix.upper()
+                event.add_committee(f"{prefix} {title}")
+
             self.scrape_event_details(event, event_url)
+
+            match_coordinates(
+                event,
+                {
+                    "Legislative Office Building": ("43.20662", "-71.53938"),
+                    "State House": ("43.20699", "-71.53811"),
+                },
+            )
+
             yield event
 
     def scrape_event_details(self, event, url):
@@ -94,11 +138,12 @@ class NHEventScraper(Scraper, LXMLMixin):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for row in page.xpath('//table[@id="gvDetails"]/tr'):
+        for row in page.xpath('//table[@id="pageBody_gvDetails"]/tr'):
             when = row.xpath("td[1]")[0].text_content().strip()
             item = row.xpath("td[3]")[0].text_content().strip()
-            bill_id = row.xpath(
-                './/a[contains(@href, "bill_Status/bill_docket")]/text()'
-            )[0]
+            bill_id = row.xpath('.//a[contains(@href, "bill_Status/billinfo")]/text()')[
+                0
+            ]
+            bill_id = format_bill(bill_id)
             agenda = event.add_agenda_item(f"{when} {item}")
             agenda.add_bill(bill_id)

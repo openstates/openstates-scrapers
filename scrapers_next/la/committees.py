@@ -1,5 +1,6 @@
 from spatula import HtmlPage, HtmlListPage, XPath, URL, SkipItem
 from openstates.models import ScrapeCommittee
+import re
 
 
 def extract_info(name_list):
@@ -41,19 +42,34 @@ class CommitteeList(HtmlListPage):
 
 
 class CommitteeDetail(HtmlPage):
+
+    # Matches names with misplaced suffixes
+    jr_sr_regex = re.compile(r"(.*)\s+(Jr|Jr\.|Sr|Sr\.)\s+(.*)")
+
     def process_page(self):
         com = self.input
 
-        members = self.root.xpath("//div[@class='card-R22']/a[@class='memlink22']")
+        members = self.root.xpath(
+            "//div[contains(@class,'card-')]/a[@class='memlink22']"
+        )
         for member in members:
             name_and_title = [
                 x.strip() for x in member.text_content().split("\r\n") if len(x.strip())
             ]
             last_name, first_name, role = extract_info(name_and_title)
             name = first_name + " " + last_name
+
             if ", " in name:
                 name_parts = name.split(", ")
                 name = ", ".join([name_parts[1], name_parts[0]])
+
+            # Name reformatting in cases of misplaced suffixes
+            #  ex. Stewart Jr. Cathey --> Stewart Cathey, Jr.
+            jr_sr_match = self.jr_sr_regex.search(name)
+            if jr_sr_match:
+                given, suffix, family = jr_sr_match.groups()
+                name = f"{given} {family}, {suffix}"
+
             com.add_member(name, role)
 
         com.add_source(self.source.url, note="Committee Detail Page")

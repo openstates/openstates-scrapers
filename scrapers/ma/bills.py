@@ -167,8 +167,8 @@ class MABillScraper(Scraper):
 
         bill_summary = None
         if page.xpath('//p[@id="pinslip"]/text()'):
-            bill_summary = page.xpath('//p[@id="pinslip"]/text()')[0]
-        if bill_summary:
+            bill_summary = page.xpath('//p[@id="pinslip"]/text()')[0].strip()
+        if bill_summary and bill_summary != "":
             bill.add_abstract(bill_summary, "summary")
 
         if bill_meta["BillNumber"] and bill_meta["DocketNumber"]:
@@ -402,7 +402,7 @@ class MABillScraper(Scraper):
             self.info("No vote found in supplement for vote #%s" % supplement)
             return
 
-        # create list of independant items in vote_text
+        # create list of independent items in vote_text
         rows = vote_text.splitlines()
         lines = []
         for row in rows:

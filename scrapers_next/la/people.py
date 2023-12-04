@@ -70,8 +70,9 @@ class LegislatorDetail(HtmlPage):
             .text_content()
             .strip()
         )
-        if fax != "":
-            p.district_office.fax = fax
+        fax = self.phone_re.search(fax)
+        if fax:
+            p.district_office.fax = fax.groups()[0]
 
         leg_assistant = (
             CSS("span#body_FormView6_LEGISLATIVEAIDELabel")

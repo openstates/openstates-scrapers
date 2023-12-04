@@ -348,6 +348,7 @@ class MSBillScraper(Scraper):
         "Passed As Amended": ("Passage as Amended", True),
         "Adopted As Amended": ("Passage as Amended", True),
         "Appointment Confirmed": ("Appointment Confirmation", True),
+        "Appointment Not Confirmed": ("Appointment Confirmation", False),
         "Committee Substitute Adopted": ("Adopt Committee Substitute", True),
         "Committee Substitute Failed": ("Adopt Committee Substitute", False),
         "Conference Report Filed": ("Conference Report Filed", True),
@@ -427,7 +428,7 @@ class MSBillScraper(Scraper):
                     cur_array = None
 
                 match = re.match(r"(.+?)\. Total--.*", name)
-                if match:
+                if match and cur_array is not None:
                     cur_array.append(match.groups()[0])
                     cur_array = None
 

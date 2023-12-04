@@ -15,6 +15,8 @@ class AKEventScraper(Scraper, LXMLMixin):
     CHAMBERS = {"S": "upper", "H": "lower", "J": "joint"}
     COMMITTEES = {"upper": {}, "lower": {}, "joint": {}}
     COMMITTEES_PRETTY = {"upper": "SENATE", "lower": "HOUSE", "joint": "JOINT"}
+    tsbldg_room_re = re.compile(r"(.*?\d+).*$")
+    anch_lio_room_re = re.compile(r"^ANCH LIO (.*) Rm$")
 
     # date_filter argument can give you just one day;
     # format is "2/28/2019" per AK's site
@@ -69,19 +71,32 @@ class AKEventScraper(Scraper, LXMLMixin):
         location = row.xpath("string(Location)").strip()
 
         # events with no location all seem to be committee hearings
-        if location == "" or re.match(r"^\w+\s\d+$", location):
-            location = "Alaska State Capitol, 120 4th St, Juneau, AK 99801"
-        elif re.match(r"^\w+\s\d+$", location) or re.match(
-            r"(HOUSE|SENATE)\s\w+(\s\d+)?", location
-        ):
-            location = f"{location}, Alaska State Capitol, 120 4th St, Juneau, AK 99801"
-        elif "anch lio" in location.lower():
-            location = re.sub(
-                r"anch lio",
-                "Anchorage Legislative Information Office, 1500 W Benson Blvd, Anchorage, AK 99503",
-                location,
-                flags=re.IGNORECASE,
-            )
+
+        # Determine full address from location field
+        building = None
+        room_name = None
+        if "(TSBldg)" in location:
+            # TSBldg rooms have a name and number
+            building = "Thomas B. Stewart Legislative Office Building, 206 4th St, Juneau, AK 99801"
+            room_name = self.tsbldg_room_re.match(location).group(1).title()
+        elif "ANCH LIO" in location:
+            # Anch lio rooms only have a name
+            building = "Anchorage Legislative Information Office, 1500 W Benson Blvd, Anchorage, AK 99503"
+            room_name = self.anch_lio_room_re.match(location).group(1).title()
+            room_name = f"{room_name} Room"
+
+        else:
+            # Default to capitol building, even when there is no location
+            # The entire location string is the room name, with or without a room number
+            building = "Alaska State Capitol, 120 4th St, Juneau, AK 99801"
+            room_name = location
+
+        if room_name:
+            # Combine room name with building address for full address
+            location = f"{room_name.upper()}, {building}"
+        else:
+            # No room name, so just use building address
+            location = building
 
         start_date = dateutil.parser.parse(row.xpath("string(Schedule)"))
         # todo: do i need to self._TZ.localize() ?
