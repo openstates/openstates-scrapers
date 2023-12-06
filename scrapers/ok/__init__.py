@@ -139,7 +139,7 @@ class Oklahoma(State):
             "name": "2023 Regular Session",
             "start_date": "2023-02-06",
             "end_date": "2023-05-26",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023 First Special Session",
@@ -147,24 +147,22 @@ class Oklahoma(State):
             "name": "2023 First Special Session",
             "start_date": "2023-05-17",
             "end_date": "2023-07-31",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023 Second Special Session",
             "identifier": "2023S2",
             "name": "2023 Second Special Session",
             "start_date": "2023-10-03",
-            # TODO: update end date
-            "end_date": "2023-10-26",
-            "active": True,
+            "end_date": "2023-10-04",
+            "active": False,
         },
         {
             "_scraped_name": "2024 Regular Session",
             "identifier": "2024",
             "name": "2024 Regular Session",
-            # TODO: update dates
-            "start_date": "2024-02-01",
-            "end_date": "2024-05-29",
+            "start_date": "2024-02-05",
+            "end_date": "2024-05-31",
             "active": True,
         },
     ]
