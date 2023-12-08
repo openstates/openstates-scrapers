@@ -186,7 +186,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                     bill_type,
                 )
                 # Parse HTML
-                html = self.get(url).text
+                html = self.get(url, verify=False).text
                 doc = lxml.html.fromstring(html)
 
                 # get table containing bills
@@ -318,7 +318,7 @@ class MNBillScraper(Scraper, LXMLMixin):
             search_chamber,
             search_session,
         )
-        html = self.get(url).text
+        html = self.get(url, verify=False).text
         doc = lxml.html.fromstring(html)
 
         # For testing purposes, we don't really care about getting
@@ -337,7 +337,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                 "&topic[]=%s&submit_topic=GO"
                 % (BILL_DETAIL_URL_BASE, search_chamber, search_session, value)
             )
-            opt_html = self.get(opt_url).text
+            opt_html = self.get(opt_url, verify=False).text
             opt_doc = lxml.html.fromstring(opt_html)
             for bill in opt_doc.xpath("//table/tbody/tr/td[2]/a/text()"):
                 bill = self.make_bill_id(bill)
@@ -474,7 +474,7 @@ class MNBillScraper(Scraper, LXMLMixin):
         ):
             cite_url = link.xpath("@href")[0]
             chapter = link.xpath("text()")[0]
-            html = self.get(cite_url).text
+            html = self.get(cite_url, verify=False).text
             doc = lxml.html.fromstring(html)
 
             title = doc.xpath(
