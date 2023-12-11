@@ -133,7 +133,10 @@ class USBillScraper(Scraper):
         bill.add_source(xml_url)
         # need to get Congress.gov URL for source & additional versions
         # https://www.congress.gov/bill/116th-congress/house-bill/1
-        cg_url = f"https://congress.gov/bill/{session}th-congress/{chamber_name.lower()}-{classification.lower()}/{bill_num}"
+        if "J" in bill_type:
+            cg_url = f"https://congress.gov/bill/{session}th-congress/{chamber_name.lower()}-joint-{classification.lower()}/{bill_num}"
+        else:
+            cg_url = f"https://congress.gov/bill/{session}th-congress/{chamber_name.lower()}-{classification.lower()}/{bill_num}"
         bill.add_source(cg_url)
 
         # use cg_url to get additional version for public law
