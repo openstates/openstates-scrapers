@@ -1,3 +1,5 @@
+import requests
+import lxml.html
 from openstates.scrape import State
 from .bills import PRBillScraper
 from .votes import PRVoteScraper
@@ -50,11 +52,22 @@ class PuertoRico(State):
     ]
 
     def get_session_list(self):
-        from utils import url_xpath
-
+        s = requests.Session()
         # this URL should work even for future sessions
-        return url_xpath(
-            "https://sutra.oslpr.org/osl/esutra/",
-            '//select[@id="ctl00_CPHBody_Tramites_lovCuatrienio"]/option/text()',
-            False,
+        url = "https://sutra.oslpr.org/osl/esutra/"
+
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/79.0.3945.117 Safari/537.36",
+            "referer": url,
+            "origin": "https://sutra.oslpr.org",
+            "authority": "sutra.oslpr.org",
+        }
+
+        data = s.get(url, headers=headers, verify=False)
+
+        doc = lxml.html.fromstring(data.text)
+        sessions = doc.xpath(
+            "//select[@id='ctl00_CPHBody_Tramites_lovCuatrienio']/option/text()"
         )
+        return sessions
