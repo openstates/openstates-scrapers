@@ -4,7 +4,7 @@ from openstates.scrape import State
 from .bills import PRBillScraper
 from .votes import PRVoteScraper
 
-settings = dict(SCRAPELIB_TIMEOUT=300)
+settings = dict(SCRAPELIB_TIMEOUT=600)
 
 
 class PuertoRico(State):
