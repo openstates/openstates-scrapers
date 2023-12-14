@@ -983,7 +983,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         # house Witnesses
         for row in response.xpath("//BillInformation/Witness"):
             path = row.xpath("./WitnessFormsLink/text()")[0].strip()
-            summary_name = f"Bill Summary (Witnesses)"
+            summary_name = "Bill Summary (Witnesses)"
             if ".pdf" in path:
                 mimetype = "application/pdf"
             else:
