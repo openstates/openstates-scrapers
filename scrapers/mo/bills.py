@@ -27,9 +27,7 @@ TIMEZONE = pytz.timezone("America/Chicago")
 
 class UnrecognizedSessionType(BaseException):
     def __init__(self, session):
-        super().__init__(
-            f"Session {session} has the unrecognized session types."
-        )
+        super().__init__(f"Session {session} has the unrecognized session types.")
 
 
 class MOBillScraper(Scraper, LXMLMixin):
@@ -347,7 +345,7 @@ class MOBillScraper(Scraper, LXMLMixin):
             subject_text = subject.xpath("@id")[0].strip()
             self.info(f"Searching for bills in {subject_text}.")
 
-            subject_page = self.lxmlize(subject.xpath('@href')[0])
+            subject_page = self.lxmlize(subject.xpath("@href")[0])
 
             bill_nodes = self.get_nodes(
                 subject_page,
@@ -690,25 +688,24 @@ class MOBillScraper(Scraper, LXMLMixin):
     def _scrape_lower_chamber(self, session):
         self.info("Scraping bills from lower chamber.")
 
-        session_list_url = f'https://documents.house.mo.gov/xml/{self._get_session_code(session)}-SessionList.XML'
+        session_list_url = f"https://documents.house.mo.gov/xml/{self._get_session_code(session)}-SessionList.XML"
         session_list = self.get(session_list_url)
         session_list_response = lxml.etree.fromstring(session_list.content)
         session_id = None
 
-        for session_elem in self.get_nodes(session_list_response, '//Session'):
-            session_id = session_elem.xpath('./ID/text()')[0]
-            session_year = session_elem.xpath('./SessionYear/text()')[0]
-            session_code = session_elem.xpath('./SessionCode/text()')[0]
-            session_code = '' if session_code == 'R' else session_code
-            if f'{session_year}{session_code}' == session:
+        for session_elem in self.get_nodes(session_list_response, "//Session"):
+            session_id = session_elem.xpath("./ID/text()")[0]
+            session_year = session_elem.xpath("./SessionYear/text()")[0]
+            session_code = session_elem.xpath("./SessionCode/text()")[0]
+            session_code = "" if session_code == "R" else session_code
+            if f"{session_year}{session_code}" == session:
                 break
 
-        zipped_xml_url = f'https://documents.house.mo.gov/xml/{session_id}.zip'
+        zipped_xml_url = f"https://documents.house.mo.gov/xml/{session_id}.zip"
         zip_response = self.get(zipped_xml_url)
         zip_file = ZipFile(BytesIO(zip_response.content))
         # read 221-BillList.xml in zip file
-        bill_list_content = zip_file.read(
-            f'{session_id}/{session_id}-BillList.xml')
+        bill_list_content = zip_file.read(f"{session_id}/{session_id}-BillList.xml")
         bl_response = lxml.etree.fromstring(bill_list_content)
 
         for bill in bl_response.xpath("//BillXML"):
@@ -719,17 +716,19 @@ class MOBillScraper(Scraper, LXMLMixin):
             bill_code = bill.xpath("./SessionCode/text()")[0]
             bill_id = f"{bill_type} {bill_num}"
 
-            bill_file_name = bill_url.replace("https://documents.house.mo.gov/xml", session_id)
+            bill_file_name = bill_url.replace(
+                "https://documents.house.mo.gov/xml", session_id
+            )
             bill_content = zip_file.read(bill_file_name)
             ib_response = lxml.etree.fromstring(bill_content)
 
-            yield from self.parse_house_bill(ib_response, bill_id, bill_year, bill_code, session)
+            yield from self.parse_house_bill(
+                ib_response, bill_id, bill_year, bill_code, session
+            )
 
     def parse_house_bill(self, response, bill_id, bill_year, bill_code, session):
-        official_title = response.xpath(
-            '//BillInformation/CurrentBillString/text()')[0]
-        bill_desc = response.xpath(
-            '//BillInformation/Title/LongTitle/text()')[0]
+        official_title = response.xpath("//BillInformation/CurrentBillString/text()")[0]
+        bill_desc = response.xpath("//BillInformation/Title/LongTitle/text()")[0]
         bill_type = "bill"
         triplet = bill_id[:3]
         if triplet in bill_types:
@@ -761,12 +760,12 @@ class MOBillScraper(Scraper, LXMLMixin):
             title=bill_desc,
             chamber="lower",
             legislative_session=session,
-            classification=bill_type
+            classification=bill_type,
         )
 
         bill.subject = subs
         bill.add_title(official_title, note="official")
-        bill_url = f'https://www.house.mo.gov/BillContent.aspx?bill={bid}&year={bill_year}&code={bill_code}&style=new'
+        bill_url = f"https://www.house.mo.gov/BillContent.aspx?bill={bid}&year={bill_year}&code={bill_code}&style=new"
         bill.add_source(bill_url)
 
         # add sponsors
@@ -782,27 +781,27 @@ class MOBillScraper(Scraper, LXMLMixin):
         yield bill
 
     def parse_house_sponsors(self, response, bill_id, bill):
-        bill_sponsors = response.xpath('//BillInformation/Sponsor')
+        bill_sponsors = response.xpath("//BillInformation/Sponsor")
         for sponsor in bill_sponsors:
-            sponsor_type = sponsor.xpath('./SponsorType/text()')[0]
-            if sponsor_type == 'Co-Sponsor':
-                classification = 'cosponsor'
+            sponsor_type = sponsor.xpath("./SponsorType/text()")[0]
+            if sponsor_type == "Co-Sponsor":
+                classification = "cosponsor"
                 primary = False
-            elif sponsor_type == 'Sponsor':
-                classification = 'primary'
+            elif sponsor_type == "Sponsor":
+                classification = "primary"
                 primary = True
-            elif sponsor_type == 'HouseConferee' or sponsor_type == 'SenateConferee':
+            elif sponsor_type == "HouseConferee" or sponsor_type == "SenateConferee":
                 # these appear not to be actual sponsors of the bill but rather people who will
                 # negotiate differing versions of the bill in a cross-chamber conference
                 continue
-            elif sponsor_type == 'Handler':
+            elif sponsor_type == "Handler":
                 # slightly distinct from sponsor: The member who manages a bill on the floor of the House or Senate.
                 # https://house.mo.gov/billtracking/info/glossary.htm
                 continue
             else:
-                classification = ''
+                classification = ""
 
-            bill_sponsor = sponsor.xpath('./FullName/text()')[0]
+            bill_sponsor = sponsor.xpath("./FullName/text()")[0]
             if bill_sponsor == "" and "HEC" in bill_id:
                 bill.add_sponsorship(
                     "Petition", entity_type="", classification="primary", primary=True
@@ -818,41 +817,45 @@ class MOBillScraper(Scraper, LXMLMixin):
     # Get the house bill actions and return the possible votes
     def parse_house_actions(self, response, bill):
         # add actions
-        bill_actions = response.xpath('//BillInformation/Action')
-        old_action_url = ''
+        bill_actions = response.xpath("//BillInformation/Action")
+        old_action_url = ""
         votes = []
 
         for action in bill_actions:
-            action_url = action.xpath(
-                './Link/text()')[0].replace('.aspx', 'actions.aspx').strip()
+            action_url = (
+                action.xpath("./Link/text()")[0]
+                .replace(".aspx", "actions.aspx")
+                .strip()
+            )
             # the correct action description in the website is the combination of
             # Description, Comments, and RollCall
             # = Description - Comments - RollCall
-            action_title = action.xpath('./Description/text()')[0]
+            action_title = action.xpath("./Description/text()")[0]
             # if there is comments
-            if action.xpath('./Comments'):
-                action_comment = action.xpath('./Comments/text()')[0]
-                action_title = f'{action_title} - {action_comment}'
+            if action.xpath("./Comments"):
+                action_comment = action.xpath("./Comments/text()")[0]
+                action_title = f"{action_title} - {action_comment}"
             action_date = dt.datetime.strptime(
-                action.xpath('./PubDate/text()')[0], '%Y-%m-%d')
+                action.xpath("./PubDate/text()")[0], "%Y-%m-%d"
+            )
             actor = house_get_actor_from_action(action_title)
             type_class = self._get_action(actor, action_title)
 
             # if there is rollcall
-            if action.xpath('./RollCall'):
+            if action.xpath("./RollCall"):
                 try:
-                    rc_yes = action.xpath('./RollCall/TotalYes/text()')[0]
+                    rc_yes = action.xpath("./RollCall/TotalYes/text()")[0]
                 except IndexError:
                     rc_yes = ""
                 try:
-                    rc_no = action.xpath('./RollCall/TotalNo/text()')[0]
+                    rc_no = action.xpath("./RollCall/TotalNo/text()")[0]
                 except IndexError:
                     rc_no = ""
                 try:
-                    rc_present = action.xpath('./RollCall/TotalPresent/text()')[0]
+                    rc_present = action.xpath("./RollCall/TotalPresent/text()")[0]
                 except IndexError:
                     rc_present = ""
-                action_title = f'{action_title} - AYES: {rc_yes} NOES: {rc_no} PRESENT: {rc_present}'
+                action_title = f"{action_title} - AYES: {rc_yes} NOES: {rc_no} PRESENT: {rc_present}"
 
                 vote = VoteEvent(
                     chamber=actor,
@@ -909,13 +912,13 @@ class MOBillScraper(Scraper, LXMLMixin):
     # Get the house bill versions
     def parse_house_bill_versions(self, response, bill):
         # house bill text
-        for row in response.xpath('//BillInformation/BillText'):
+        for row in response.xpath("//BillInformation/BillText"):
             # some rows are just broken links, not real versions
-            if row.xpath('./BillTextLink/text()'):
-                version = row.xpath('./DocumentName/text()')[0]
+            if row.xpath("./BillTextLink/text()"):
+                version = row.xpath("./DocumentName/text()")[0]
                 if not version:
                     version = "Missing description"
-                path = row.xpath('./BillTextLink/text()')[0]
+                path = row.xpath("./BillTextLink/text()")[0]
                 if ".pdf" in path:
                     mimetype = "application/pdf"
                 else:
@@ -925,14 +928,14 @@ class MOBillScraper(Scraper, LXMLMixin):
                 )
 
         # house bill summaries
-        for row in response.xpath('//BillInformation/BillSummary'):
+        for row in response.xpath("//BillInformation/BillSummary"):
             try:
-                document = row.xpath('./DocumentName/text()')[0]
+                document = row.xpath("./DocumentName/text()")[0]
             except IndexError:
                 # occasionally the xml element is just empty, ignore
                 continue
             if document:
-                path = row.xpath('./SummaryTextLink/text()')[0]
+                path = row.xpath("./SummaryTextLink/text()")[0]
                 summary_name = "Bill Summary ({})".format(document)
                 if ".pdf" in path:
                     mimetype = "application/pdf"
@@ -943,16 +946,16 @@ class MOBillScraper(Scraper, LXMLMixin):
                 )
 
         # house bill amendments
-        for row in response.xpath('//BillInformation/Amendment'):
+        for row in response.xpath("//BillInformation/Amendment"):
             try:
                 version = row.xpath("./AmendmentDescription/text()")[0]
             except IndexError:
                 version = None
             path = row.xpath("./AmendmentText/text()")[0].strip()
-            path_name = path.split('/')[-1].replace('.pdf', '')
+            path_name = path.split("/")[-1].replace(".pdf", "")
             summary_name = f"Amendment {version or path_name}"
 
-            status_desc = row.xpath('./StatusDescription/text()')[0]
+            status_desc = row.xpath("./StatusDescription/text()")[0]
             if status_desc:
                 summary_name = f"{summary_name} ({status_desc})"
 
@@ -965,10 +968,10 @@ class MOBillScraper(Scraper, LXMLMixin):
             )
 
         # house fiscal notes
-        for row in response.xpath('//BillInformation/FiscalNote'):
-            path = row.xpath('./FiscalNoteLink/text()')[0].strip()
-            version = path.split('/')[-1].replace('.pdf', '')
-            summary_name = f'Fiscal Note {version}'
+        for row in response.xpath("//BillInformation/FiscalNote"):
+            path = row.xpath("./FiscalNoteLink/text()")[0].strip()
+            version = path.split("/")[-1].replace(".pdf", "")
+            summary_name = f"Fiscal Note {version}"
             if ".pdf" in path:
                 mimetype = "application/pdf"
             else:
@@ -978,9 +981,9 @@ class MOBillScraper(Scraper, LXMLMixin):
             )
 
         # house Witnesses
-        for row in response.xpath('//BillInformation/Witness'):
-            path = row.xpath('./WitnessFormsLink/text()')[0].strip()
-            summary_name = f'Bill Summary (Witnesses)'
+        for row in response.xpath("//BillInformation/Witness"):
+            path = row.xpath("./WitnessFormsLink/text()")[0].strip()
+            summary_name = f"Bill Summary (Witnesses)"
             if ".pdf" in path:
                 mimetype = "application/pdf"
             else:
