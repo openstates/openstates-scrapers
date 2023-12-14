@@ -203,7 +203,7 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         # get the actions
         action_url = bill_page.xpath('//a[@id="hlAllActions"]')
-        if len(action_url) > 0:
+        if len(action_url) > 0 and action_url[0].xpath("@href"):
             action_url = action_url[0].attrib["href"]
             self._parse_senate_actions(bill, action_url)
 
