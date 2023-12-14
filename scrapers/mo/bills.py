@@ -2,8 +2,11 @@ import re
 import pytz
 import datetime as dt
 from collections import defaultdict
+from io import BytesIO
+from zipfile import ZipFile
 
 import lxml.html
+import lxml.etree
 from openstates.scrape import Scraper, Bill, VoteEvent
 
 from utils import LXMLMixin
@@ -20,6 +23,13 @@ bill_types = {
 }
 
 TIMEZONE = pytz.timezone("America/Chicago")
+
+
+class UnrecognizedSessionType(BaseException):
+    def __init__(self, session):
+        super().__init__(
+            f"Session {session} has the unrecognized session types."
+        )
 
 
 class MOBillScraper(Scraper, LXMLMixin):
@@ -66,6 +76,18 @@ class MOBillScraper(Scraper, LXMLMixin):
                 categories.append(acat)
 
         return categories or None
+
+    def _get_session_code(self, session):
+        # R or S1
+        year = session[2:]
+        if len(session) == 4:
+            return f"{year}1"
+        elif "S1" in session:
+            return f"{year}3"
+        elif "S2" in session:
+            return f"{year}4"
+        else:
+            raise UnrecognizedSessionType(session)
 
     def _get_votes(self, date, actor, action, bill, url):
         vre = r"(?P<leader>.*)(AYES|YEAS):\s+(?P<yeas>\d+)\s+(NOES|NAYS):\s+(?P<nays>\d+).*"
@@ -317,19 +339,15 @@ class MOBillScraper(Scraper, LXMLMixin):
         # Create a list of all the possible bill subjects.
         subjects = self.get_nodes(
             subject_page,
-            "//div[@id='ContentPlaceHolder1_panelParentDIV']"  # ...
-            "/div[@id='panelDIV']//div[@id='ExpandedPanel']//a",
+            '//div[@id="ExpandedPanel3"]/div[@class="panelCell"]/a',
         )
 
         # Find the list of bills within each subject.
         for subject in subjects:
-
-            subject_text = re.sub(
-                r"\([0-9]+\).*", "", subject.text, re.IGNORECASE
-            ).strip()
+            subject_text = subject.xpath("@id")[0].strip()
             self.info(f"Searching for bills in {subject_text}.")
 
-            subject_page = self.lxmlize(subject.attrib["href"])
+            subject_page = self.lxmlize(subject.xpath('@href')[0])
 
             bill_nodes = self.get_nodes(
                 subject_page,
@@ -341,9 +359,7 @@ class MOBillScraper(Scraper, LXMLMixin):
                 continue
 
             for bill_node in bill_nodes:
-                bill_id = self.get_node(
-                    bill_node, "(./td)[1]/a/text()[normalize-space()]"
-                )
+                bill_id = bill_node.xpath("./td[1]/a/text()[normalize-space()]")[0]
 
                 # Skip to the next bill if no ID could be found.
                 if bill_id is None or not (len(bill_id) > 0):
@@ -674,20 +690,308 @@ class MOBillScraper(Scraper, LXMLMixin):
     def _scrape_lower_chamber(self, session):
         self.info("Scraping bills from lower chamber.")
 
-        if "S" in session:
-            year = session[:4]
-            code = session[4:]
-        else:
-            year = session
-            code = "R"
+        session_list_url = f'https://documents.house.mo.gov/xml/{self._get_session_code(session)}-SessionList.XML'
+        session_list = self.get(session_list_url)
+        session_list_response = lxml.etree.fromstring(session_list.content)
+        session_id = None
 
-        bill_page_url = "{}/BillList.aspx?year={}&code={}".format(
-            self._house_base_url, year, code
+        for session_elem in self.get_nodes(session_list_response, '//Session'):
+            session_id = session_elem.xpath('./ID/text()')[0]
+            session_year = session_elem.xpath('./SessionYear/text()')[0]
+            session_code = session_elem.xpath('./SessionCode/text()')[0]
+            session_code = '' if session_code == 'R' else session_code
+            if f'{session_year}{session_code}' == session:
+                break
+
+        zipped_xml_url = f'https://documents.house.mo.gov/xml/{session_id}.zip'
+        zip_response = self.get(zipped_xml_url)
+        zip_file = ZipFile(BytesIO(zip_response.content))
+        # read 221-BillList.xml in zip file
+        bill_list_content = zip_file.read(
+            f'{session_id}/{session_id}-BillList.xml')
+        bl_response = lxml.etree.fromstring(bill_list_content)
+
+        for bill in bl_response.xpath("//BillXML"):
+            bill_url = bill.xpath("./BillXMLLink/text()")[0]
+            bill_type = bill.xpath("./BillType/text()")[0]
+            bill_num = bill.xpath("./BillNumber/text()")[0]
+            bill_year = bill.xpath("./SessionYear/text()")[0]
+            bill_code = bill.xpath("./SessionCode/text()")[0]
+            bill_id = f"{bill_type} {bill_num}"
+
+            bill_file_name = bill_url.replace("https://documents.house.mo.gov/xml", session_id)
+            bill_content = zip_file.read(bill_file_name)
+            ib_response = lxml.etree.fromstring(bill_content)
+
+            yield from self.parse_house_bill(ib_response, bill_id, bill_year, bill_code, session)
+
+    def parse_house_bill(self, response, bill_id, bill_year, bill_code, session):
+        official_title = response.xpath(
+            '//BillInformation/CurrentBillString/text()')[0]
+        bill_desc = response.xpath(
+            '//BillInformation/Title/LongTitle/text()')[0]
+        bill_type = "bill"
+        triplet = bill_id[:3]
+        if triplet in bill_types:
+            bill_type = bill_types[triplet]
+            bill_number = int(bill_id[3:].strip())
+        else:
+            bill_number = int(bill_id[3:])
+        subs = []
+        bid = bill_id.replace(" ", "")
+
+        if bid in self._subjects:
+            subs = self._subjects[bid]
+            self.logger.info("With subjects for this bill")
+
+        if bill_desc == "":
+            if bill_number <= 20:
+                # blank bill titles early in session are approp. bills
+                bill_desc = "Appropriations Bill"
+            else:
+                self.logger.error(
+                    "Blank title. Skipping. {} / {} / {}".format(
+                        bill_id, bill_desc, official_title
+                    )
+                )
+                return
+
+        bill = Bill(
+            identifier=bill_id,
+            title=bill_desc,
+            chamber="lower",
+            legislative_session=session,
+            classification=bill_type
         )
-        yield from self._parse_house_billpage(bill_page_url, year)
+
+        bill.subject = subs
+        bill.add_title(official_title, note="official")
+        bill_url = f'https://www.house.mo.gov/BillContent.aspx?bill={bid}&year={bill_year}&code={bill_code}&style=new'
+        bill.add_source(bill_url)
+
+        # add sponsors
+        self.parse_house_sponsors(response, bill_id, bill)
+        # add actions
+        votes = self.parse_house_actions(response, bill)
+        # yield if there are votes in the actions
+        for vote in votes:
+            yield vote
+        # add bill versions
+        self.parse_house_bill_versions(response, bill)
+
+        yield bill
+
+    def parse_house_sponsors(self, response, bill_id, bill):
+        bill_sponsors = response.xpath('//BillInformation/Sponsor')
+        for sponsor in bill_sponsors:
+            sponsor_type = sponsor.xpath('./SponsorType/text()')[0]
+            if sponsor_type == 'Co-Sponsor':
+                classification = 'cosponsor'
+                primary = False
+            elif sponsor_type == 'Sponsor':
+                classification = 'primary'
+                primary = True
+            elif sponsor_type == 'HouseConferee' or sponsor_type == 'SenateConferee':
+                # these appear not to be actual sponsors of the bill but rather people who will
+                # negotiate differing versions of the bill in a cross-chamber conference
+                continue
+            elif sponsor_type == 'Handler':
+                # slightly distinct from sponsor: The member who manages a bill on the floor of the House or Senate.
+                # https://house.mo.gov/billtracking/info/glossary.htm
+                continue
+            else:
+                classification = ''
+
+            bill_sponsor = sponsor.xpath('./FullName/text()')[0]
+            if bill_sponsor == "" and "HEC" in bill_id:
+                bill.add_sponsorship(
+                    "Petition", entity_type="", classification="primary", primary=True
+                )
+            else:
+                bill.add_sponsorship(
+                    bill_sponsor,
+                    entity_type="person",
+                    classification=classification,
+                    primary=primary,
+                )
+
+    # Get the house bill actions and return the possible votes
+    def parse_house_actions(self, response, bill):
+        # add actions
+        bill_actions = response.xpath('//BillInformation/Action')
+        old_action_url = ''
+        votes = []
+
+        for action in bill_actions:
+            action_url = action.xpath(
+                './Link/text()')[0].replace('.aspx', 'actions.aspx').strip()
+            # the correct action description in the website is the combination of
+            # Description, Comments, and RollCall
+            # = Description - Comments - RollCall
+            action_title = action.xpath('./Description/text()')[0]
+            # if there is comments
+            if action.xpath('./Comments'):
+                action_comment = action.xpath('./Comments/text()')[0]
+                action_title = f'{action_title} - {action_comment}'
+            action_date = dt.datetime.strptime(
+                action.xpath('./PubDate/text()')[0], '%Y-%m-%d')
+            actor = house_get_actor_from_action(action_title)
+            type_class = self._get_action(actor, action_title)
+
+            # if there is rollcall
+            if action.xpath('./RollCall'):
+                try:
+                    rc_yes = action.xpath('./RollCall/TotalYes/text()')[0]
+                except IndexError:
+                    rc_yes = ""
+                try:
+                    rc_no = action.xpath('./RollCall/TotalNo/text()')[0]
+                except IndexError:
+                    rc_no = ""
+                try:
+                    rc_present = action.xpath('./RollCall/TotalPresent/text()')[0]
+                except IndexError:
+                    rc_present = ""
+                action_title = f'{action_title} - AYES: {rc_yes} NOES: {rc_no} PRESENT: {rc_present}'
+
+                vote = VoteEvent(
+                    chamber=actor,
+                    motion_text=action_title,
+                    result="pass" if rc_yes > rc_no else "fail",
+                    classification="passage",
+                    start_date=TIMEZONE.localize(action_date),
+                    bill=bill,
+                )
+
+                vote.add_source(action_url)
+                votes.append(vote)
+
+            bill.add_action(
+                action_title,
+                TIMEZONE.localize(action_date),
+                chamber=actor,
+                classification=type_class,
+            )
+            if old_action_url != action_url:
+                bill.add_source(action_url)
+
+            old_action_url = action_url
+
+            # get journals (uncomments if this script needs)
+            # journal_link = action.xpath('./JournalLink/text()').get()
+            # if journal_link:
+            #     house_journal_start = action.xpath(
+            #         './HouseJournalStartPage/text()').get()
+            #     senate_journal_start = action.xpath(
+            #         './SenateJournalStartPage/text()').get()
+            #     house_journal_end = action.xpath(
+            #         './HouseJournalEndPage/text()').get()
+            #     senate_journal_end = action.xpath(
+            #         './SenateJournalEndPage/text()').get()
+            #     version = ' - '.join(list(filter(None, [house_journal_start, house_journal_end]))) or ' - '.join(
+            #         list(filter(None, [senate_journal_start, senate_journal_end])))
+            #     if version:
+            #         version = 'S' if senate_journal_start else 'H' + version
+            #     else:
+            #         version = "Missing description"
+            #     if 'pdf' in journal_link:
+            #         mimetype = "application/pdf"
+            #     else:
+            #         mimetype = "text/html"
+            #     bill.add_version_link(
+            #         version,
+            #         journal_link,
+            #         media_type=mimetype,
+            #         on_duplicate="ignore",
+            #     )
+        return votes
+
+    # Get the house bill versions
+    def parse_house_bill_versions(self, response, bill):
+        # house bill text
+        for row in response.xpath('//BillInformation/BillText'):
+            # some rows are just broken links, not real versions
+            if row.xpath('./BillTextLink/text()'):
+                version = row.xpath('./DocumentName/text()')[0]
+                if not version:
+                    version = "Missing description"
+                path = row.xpath('./BillTextLink/text()')[0]
+                if ".pdf" in path:
+                    mimetype = "application/pdf"
+                else:
+                    mimetype = "text/html"
+                bill.add_version_link(
+                    version, path, media_type=mimetype, on_duplicate="ignore"
+                )
+
+        # house bill summaries
+        for row in response.xpath('//BillInformation/BillSummary'):
+            try:
+                document = row.xpath('./DocumentName/text()')[0]
+            except IndexError:
+                # occasionally the xml element is just empty, ignore
+                continue
+            if document:
+                path = row.xpath('./SummaryTextLink/text()')[0]
+                summary_name = "Bill Summary ({})".format(document)
+                if ".pdf" in path:
+                    mimetype = "application/pdf"
+                else:
+                    mimetype = "text/html"
+                bill.add_document_link(
+                    summary_name, path, media_type=mimetype, on_duplicate="ignore"
+                )
+
+        # house bill amendments
+        for row in response.xpath('//BillInformation/Amendment'):
+            try:
+                version = row.xpath("./AmendmentDescription/text()")[0]
+            except IndexError:
+                version = None
+            path = row.xpath("./AmendmentText/text()")[0].strip()
+            path_name = path.split('/')[-1].replace('.pdf', '')
+            summary_name = f"Amendment {version or path_name}"
+
+            status_desc = row.xpath('./StatusDescription/text()')[0]
+            if status_desc:
+                summary_name = f"{summary_name} ({status_desc})"
+
+            if ".pdf" in path:
+                mimetype = "application/pdf"
+            else:
+                mimetype = "text/html"
+            bill.add_version_link(
+                summary_name, path, media_type=mimetype, on_duplicate="ignore"
+            )
+
+        # house fiscal notes
+        for row in response.xpath('//BillInformation/FiscalNote'):
+            path = row.xpath('./FiscalNoteLink/text()')[0].strip()
+            version = path.split('/')[-1].replace('.pdf', '')
+            summary_name = f'Fiscal Note {version}'
+            if ".pdf" in path:
+                mimetype = "application/pdf"
+            else:
+                mimetype = ""
+            bill.add_document_link(
+                summary_name, path, media_type=mimetype, on_duplicate="ignore"
+            )
+
+        # house Witnesses
+        for row in response.xpath('//BillInformation/Witness'):
+            path = row.xpath('./WitnessFormsLink/text()')[0].strip()
+            summary_name = f'Bill Summary (Witnesses)'
+            if ".pdf" in path:
+                mimetype = "application/pdf"
+            else:
+                mimetype = ""
+            bill.add_document_link(
+                summary_name, path, media_type=mimetype, on_duplicate="ignore"
+            )
 
     def scrape(self, chamber=None, session=None):
         self._scrape_subjects(session)
+
         # special sessions and other year manipulation messes up the session variable
         # but we need it for correct output
         self._session_id = session
