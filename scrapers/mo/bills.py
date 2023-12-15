@@ -505,7 +505,9 @@ class MOBillScraper(Scraper, LXMLMixin):
                 # https://house.mo.gov/billtracking/info/glossary.htm
                 continue
             else:
-                classification = ""
+                # didn't recognize sponsorship type, so we can't make this a sponsor
+                # as classification is required (cannot be empty string)
+                continue
 
             bill_sponsor = sponsor.xpath("./FullName/text()")[0]
             if bill_sponsor == "" and "HEC" in bill_id:
