@@ -231,13 +231,13 @@ class NEBillScraper(Scraper, LXMLMixin):
         )
 
         for row in amendment_rows:
-            if not row.xpath("div[2]"):
-                continue
-            status = row.xpath("div[2]")[0].text.strip()
-            amendment_name = row.xpath("div[1]/a/text()")[0]
-            amendment_url = row.xpath("div[1]/a/@href")[0]
+            status = row.xpath(".//p[contains(@class,'fw-bold')]")[0].text.strip()
+            amendment_names = row.xpath(".//h6/a/text()")
+            amendment_names = [name.strip() for name in amendment_names]
+            amendment_name = " ".join(amendment_names)
+            amendment_url = row.xpath(".//h6/a/@href")[0]
             # adopted amendments get added as versions, everything else goes into documents
-            if "adopted" in status:
+            if "adopted" in status.lower():
                 bill.add_version_link(
                     amendment_name, amendment_url, media_type="application/pdf"
                 )
