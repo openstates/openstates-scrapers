@@ -231,7 +231,11 @@ class NEBillScraper(Scraper, LXMLMixin):
         )
 
         for row in amendment_rows:
-            status = row.xpath(".//p[contains(@class,'fw-bold')]")[0].text.strip()
+            if not row.xpath(".//p[contains(@class,'fw-bold')]"):
+                continue
+            status = (
+                row.xpath(".//p[contains(@class,'fw-bold')]")[0].text_content().strip()
+            )
             amendment_names = row.xpath(".//h6/a/text()")
             amendment_names = [name.strip() for name in amendment_names]
             amendment_name = " ".join(amendment_names)
