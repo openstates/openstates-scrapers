@@ -231,6 +231,8 @@ class NEBillScraper(Scraper, LXMLMixin):
         )
 
         for row in amendment_rows:
+            if not row.xpath("div[2]"):
+                continue
             status = row.xpath("div[2]")[0].text.strip()
             amendment_name = row.xpath("div[1]/a/text()")[0]
             amendment_url = row.xpath("div[1]/a/@href")[0]
