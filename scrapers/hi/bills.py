@@ -5,8 +5,8 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from .utils import get_short_codes
 from urllib import parse as urlparse
 
-HI_URL_BASE = "https://capitol.hawaii.gov"
-SHORT_CODES = "%s/legislature/committees.aspx?chamber=all" % (HI_URL_BASE)
+HI_URL_BASE = "https://www.capitol.hawaii.gov"
+SHORT_CODES = f"{HI_URL_BASE}/legislature/committees.aspx?chamber=all"
 repeated_action = ["Excused: none", "Representative(s) Eli"]
 
 

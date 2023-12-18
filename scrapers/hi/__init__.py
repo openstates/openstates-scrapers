@@ -120,6 +120,6 @@ class Hawaii(State):
         # doesn't include current session, we need to change it
         sessions = url_xpath(
             "https://www.capitol.hawaii.gov/session/archives/main.aspx",
-            "//*[@id='ctl00_MainContent_yearList']/option/text()",
+            "//*[@id='MainContent_yearList']/option/text()",
         )
         return sessions
