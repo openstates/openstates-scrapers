@@ -451,6 +451,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         )
 
         bill.subject = subs
+        bill.add_title(official_title, note="official")
         bill_url = f"https://www.house.mo.gov/BillContent.aspx?bill={bid}&year={bill_year}&code={bill_code}&style=new"
         bill.add_source(bill_url)
 
