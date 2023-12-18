@@ -33,6 +33,7 @@ class USVoteScraper(Scraper):
         "Cloture Motion Rejected": "fail",
         "Cloture on the Motion to Proceed Rejected": "fail",
         "Cloture on the Motion to Proceed Agreed to": "pass",
+        "Conference Report Agreed to": "pass",
         "Amendment Rejected": "fail",
         "Decision of Chair Sustained": "pass",
         "Motion Agreed to": "pass",
@@ -71,6 +72,10 @@ class USVoteScraper(Scraper):
     )
 
     def scrape(self, session=None, chamber=None, year=None, start=None):
+        if year is None:
+            today = datetime.date.today()
+            year = today.year
+
         if start:
             start = datetime.datetime.strptime(start, "%Y-%m-%d %H:%I:%S")
         else:
