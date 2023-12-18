@@ -503,7 +503,9 @@ class MOBillScraper(Scraper, LXMLMixin):
             elif sponsor_type == "Handler":
                 # slightly distinct from sponsor: The member who manages a bill on the floor of the House or Senate.
                 # https://house.mo.gov/billtracking/info/glossary.htm
-                continue
+                # we decided to consider this a "cosponsor" relationship
+                classification = "cosponsor"
+                primary = False
             else:
                 # didn't recognize sponsorship type, so we can't make this a sponsor
                 # as classification is required (cannot be empty string)
