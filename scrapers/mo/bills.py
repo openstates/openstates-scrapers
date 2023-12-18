@@ -2,8 +2,6 @@ import re
 import pytz
 import datetime as dt
 from collections import defaultdict
-from io import BytesIO
-from zipfile import ZipFile
 
 import lxml.html
 import lxml.etree
@@ -393,26 +391,12 @@ class MOBillScraper(Scraper, LXMLMixin):
 
     def _scrape_lower_chamber(self, session):
         self.info("Scraping bills from lower chamber.")
+        session_id = self._get_session_code(session)
 
-        session_list_url = f"https://documents.house.mo.gov/xml/{self._get_session_code(session)}-SessionList.XML"
-        session_list = self.get(session_list_url)
-        session_list_response = lxml.etree.fromstring(session_list.content)
-        session_id = None
-
-        for session_elem in self.get_nodes(session_list_response, "//Session"):
-            session_id = session_elem.xpath("./ID/text()")[0]
-            session_year = session_elem.xpath("./SessionYear/text()")[0]
-            session_code = session_elem.xpath("./SessionCode/text()")[0]
-            session_code = "" if session_code == "R" else session_code
-            if f"{session_year}{session_code}" == session:
-                break
-
-        zipped_xml_url = f"https://documents.house.mo.gov/xml/{session_id}.zip"
-        zip_response = self.get(zipped_xml_url)
-        zip_file = ZipFile(BytesIO(zip_response.content))
-        # read 221-BillList.xml in zip file
-        bill_list_content = zip_file.read(f"{session_id}/{session_id}-BillList.xml")
-        bl_response = lxml.etree.fromstring(bill_list_content)
+        bill_list_content = self.get(
+            f"https://documents.house.mo.gov/xml/{session_id}-BillList.xml"
+        )
+        bl_response = lxml.etree.fromstring(bill_list_content.content)
 
         for bill in bl_response.xpath("//BillXML"):
             bill_url = bill.xpath("./BillXMLLink/text()")[0]
@@ -422,11 +406,8 @@ class MOBillScraper(Scraper, LXMLMixin):
             bill_code = bill.xpath("./SessionCode/text()")[0]
             bill_id = f"{bill_type} {bill_num}"
 
-            bill_file_name = bill_url.replace(
-                "https://documents.house.mo.gov/xml", session_id
-            )
-            bill_content = zip_file.read(bill_file_name)
-            ib_response = lxml.etree.fromstring(bill_content)
+            bill_content = self.get(bill_url)
+            ib_response = lxml.etree.fromstring(bill_content.content)
 
             yield from self.parse_house_bill(
                 ib_response, bill_id, bill_year, bill_code, session
@@ -470,7 +451,6 @@ class MOBillScraper(Scraper, LXMLMixin):
         )
 
         bill.subject = subs
-        bill.add_title(official_title, note="official")
         bill_url = f"https://www.house.mo.gov/BillContent.aspx?bill={bid}&year={bill_year}&code={bill_code}&style=new"
         bill.add_source(bill_url)
 
