@@ -684,7 +684,8 @@ class MOBillScraper(Scraper, LXMLMixin):
             )
 
     def scrape(self, chamber=None, session=None):
-        self._scrape_subjects(session)
+        # TODO: add back OR get subjects on detail page, depending on email back from their developers
+        # self._scrape_subjects(session)
 
         # special sessions and other year manipulation messes up the session variable
         # but we need it for correct output
