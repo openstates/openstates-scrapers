@@ -29,7 +29,7 @@ class UnrecognizedSessionType(BaseException):
 
 
 class MOBillScraper(Scraper, LXMLMixin):
-    _house_base_url = "http://www.house.mo.gov"
+    _house_base_url = "https://www.house.mo.gov"
     # List of URLS that aren't working when we try to visit them (but
     # probably should work):
     _bad_urls = []
@@ -119,13 +119,6 @@ class MOBillScraper(Scraper, LXMLMixin):
                 primary=False,
             )
 
-    def _scrape_subjects(self, session):
-        self._scrape_senate_subjects(session)
-        if "S" in session:
-            self.warning("skipping house subjects for special session")
-        else:
-            self._scrape_house_subjects(session)
-
     def session_type(self, session):
         # R or S1
         if len(session) == 4:
@@ -141,7 +134,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         self.info("Collecting subject tags from upper house.")
 
         subject_list_url = (
-            "http://www.senate.mo.gov/{}info/BTS_Web/"
+            "https://www.senate.mo.gov/{}info/BTS_Web/"
             "Keywords.aspx?SessionType={}".format(
                 session[2:4], self.session_type(session)
             )
@@ -324,46 +317,6 @@ class MOBillScraper(Scraper, LXMLMixin):
                     primary=False,
                 )
 
-    def _scrape_house_subjects(self, session):
-        self.info("Collecting subject tags from lower house.")
-
-        subject_list_url = "http://house.mo.gov/LegislationSP.aspx?code=R&category=subjectindex&year={}".format(
-            session
-        )
-        subject_page = self.lxmlize(subject_list_url)
-
-        # Create a list of all the possible bill subjects.
-        subjects = self.get_nodes(
-            subject_page,
-            '//div[@id="ExpandedPanel3"]/div[@class="panelCell"]/a',
-        )
-
-        # Find the list of bills within each subject.
-        for subject in subjects:
-            subject_text = subject.xpath("@id")[0].strip()
-            self.info(f"Searching for bills in {subject_text}.")
-
-            subject_page = self.lxmlize(subject.xpath("@href")[0])
-
-            bill_nodes = self.get_nodes(
-                subject_page,
-                '//table[@id="reportgrid"]/tbody/tr[@class="reportbillinfo"]',
-            )
-
-            # Move onto the next subject if no bills were found.
-            if bill_nodes is None or not (len(bill_nodes) > 0):
-                continue
-
-            for bill_node in bill_nodes:
-                bill_id = bill_node.xpath("./td[1]/a/text()[normalize-space()]")[0]
-
-                # Skip to the next bill if no ID could be found.
-                if bill_id is None or not (len(bill_id) > 0):
-                    continue
-
-                self.info("Found {}.".format(bill_id))
-                self._subjects[bill_id].append(subject_text)
-
     def _scrape_upper_chamber(self, session):
         self.info("Scraping bills from upper chamber.")
 
@@ -423,12 +376,7 @@ class MOBillScraper(Scraper, LXMLMixin):
             bill_number = int(bill_id[3:].strip())
         else:
             bill_number = int(bill_id[3:])
-        subs = []
         bid = bill_id.replace(" ", "")
-
-        if bid in self._subjects:
-            subs = self._subjects[bid]
-            self.logger.info("With subjects for this bill")
 
         if bill_desc == "":
             if bill_number <= 20:
@@ -450,7 +398,6 @@ class MOBillScraper(Scraper, LXMLMixin):
             classification=bill_type,
         )
 
-        bill.subject = subs
         bill.add_title(official_title, note="official")
         bill_url = f"https://www.house.mo.gov/BillContent.aspx?bill={bid}&year={bill_year}&code={bill_code}&style=new"
         bill.add_source(bill_url)
@@ -464,6 +411,8 @@ class MOBillScraper(Scraper, LXMLMixin):
             yield vote
         # add bill versions
         self.parse_house_bill_versions(response, bill)
+        # add bill subjects
+        self.parse_house_bill_subjects(response, bill)
 
         yield bill
 
@@ -683,14 +632,20 @@ class MOBillScraper(Scraper, LXMLMixin):
                 summary_name, path, media_type=mimetype, on_duplicate="ignore"
             )
 
-    def scrape(self, chamber=None, session=None):
-        self._scrape_subjects(session)
+    def parse_house_bill_subjects(self, response, bill):
+        for row in response.xpath("//BillInformation/SubjectIndex"):
+            subject = row.xpath("./SubjectName/text()")[0]
+            if not subject:
+                subject = "Missing subject"
+            bill.add_subject(subject)
 
+    def scrape(self, chamber=None, session=None):
         # special sessions and other year manipulation messes up the session variable
         # but we need it for correct output
         self._session_id = session
 
         if chamber in ["upper", None]:
+            self._scrape_senate_subjects(session)
             yield from self._scrape_upper_chamber(session)
         if chamber in ["lower", None]:
             yield from self._scrape_lower_chamber(session)
