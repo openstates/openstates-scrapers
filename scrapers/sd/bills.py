@@ -6,6 +6,7 @@ from openstates.exceptions import EmptyScrape
 
 from utils import LXMLMixin
 
+# via https://sdlegislature.gov/api/Sessions
 SESSION_IDS = {
     "2021": "44",
     "2020": "43",
@@ -13,6 +14,7 @@ SESSION_IDS = {
     "2021i": "66",
     "2022": "64",
     "2023": "68",
+    "2024": "69",
 }
 
 
