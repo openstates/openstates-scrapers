@@ -86,8 +86,9 @@ class PAEventScraper(Scraper):
                     for bill in bills:
                         parsed = urllib.parse.urlparse(bill.get("href"))
                         qs = urllib.parse.parse_qs(parsed.query)
+                        print(qs)
                         item.add_bill(
-                            "{}{} {}".format(qs["body"], qs["type"], qs["bn"])
+                            "{}{} {}".format(qs["body"][0], qs["type"][0], qs["bn"][0])
                         )
                     for committee in committees:
                         parsed = urllib.parse.urlparse(committee.get("href"))
