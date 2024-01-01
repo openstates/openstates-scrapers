@@ -112,7 +112,7 @@ class Connecticut(State):
             "identifier": "2024",
             "name": "2024 Regular Session",
             "start_date": "2024-01-04",
-            "end_date": "2024-05-04",
+            "end_date": "2024-05-08",
             "active": True,
         },
     ]
