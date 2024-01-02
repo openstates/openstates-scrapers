@@ -175,6 +175,15 @@ class Kentucky(State):
             "end_date": "2023-03-30",
             "active": True,
         },
+        {
+            "_scraped_name": "2024 Regular Session",
+            "classification": "primary",
+            "identifier": "2024RS",
+            "name": "2024 Regular Session",
+            "start_date": "2024-01-02",
+            "end_date": "2024-04-15",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "2020 Regualr Session Prefiled",
