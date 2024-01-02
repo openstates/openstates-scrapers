@@ -435,27 +435,33 @@ class VoteList(HtmlPage):
         vote_url = input_data["url"]
         bill = input_data["bill"]
 
-        for row in CSS("#billVoteWidget > div").match(self.root, min_items=0):
-            summary = CSS(".h3", min_items=0).match(row)
-            if len(summary) == 0:
-                continue
-            summary = summary[0].text
+        summaries = CSS("h2.h3", min_items=0).match(self.root)
+        if len(summaries) == 0:
+            return
+        summaries = [summary.text for summary in summaries]
 
+        vote_re = re.compile(
+            r"(?P<vt_option>Yea|Nay|Excused|Absent|Not Voting): (?P<vt_cnt>\d+)", re.U | re.I)
+        date_re = re.compile(r"Date\s+(?P<date>.*)", re.U | re.I)
+        index = 0
+
+        for row in CSS(".vote-revision", min_items=0).match(self.root):
+            summary = summaries[index]
+            index += 1
             chamber = "lower" if "Assembly" in summary else (
                 "upper" if "Senate" in summary else "")
-            vote_re = re.compile(
-                r"(?P<vt_option>Yea|Nay|Excused|Absent|Not Voting): (?P<vt_cnt>\d+)", re.U | re.I)
-            date_re = re.compile(r"Date\s+(?P<date>.*)", re.U | re.I)
+
             vote_options = {}
             start_date = None
 
-            for child_row in CSS(".vote-revision ul li").match(self.root):
+            for child_row in CSS("ul li", min_items=0).match(row):
                 content = child_row.text_content().strip()
 
                 vote_match = re.match(vote_re, content)
                 if vote_match:
                     vo = vote_match.groupdict()
-                    vote_options[vo["vt_option"].lower()] = int(vo["vt_cnt"])
+                    vote_options[vo["vt_option"].lower()] = int(
+                        vo["vt_cnt"])
 
                 date_match = re.match(date_re, content)
                 if date_match:
@@ -476,7 +482,6 @@ class VoteList(HtmlPage):
 
             votes_members_url = CSS(
                 ".panelAllVoters a").match_one(row).get("href")
-
             yield VoteMembers(vote, source=votes_members_url)
 
 
