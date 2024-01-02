@@ -137,7 +137,7 @@ class Legislators(HtmlListPage):
             party = "Democratic"
         elif party == "(R)":
             party = "Republican"
-        elif party == "()":
+        elif party == "()" or party == "(I)":
             party = "Independent"
         district = CSS("div.district a").match_one(item).text_content().strip()
         district = self.district_re.search(district).groups()[0]
