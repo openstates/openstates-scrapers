@@ -173,7 +173,7 @@ class Kentucky(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-03",
             "end_date": "2023-03-30",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2024 Regular Session",
