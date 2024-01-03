@@ -11,8 +11,7 @@ from openstates.scrape import Scraper, VoteEvent
 # Senate vote header
 s_vote_header = re.compile(r"(YES)|(NO)|(ABS)|(EXC)|(REC)")
 # House vote header
-h_vote_header = re.compile(
-    r"(YEA(?!S))|(NAY(?!S))|(EXCUSED(?!:))|(ABSENT(?!:))")
+h_vote_header = re.compile(r"(YEA(?!S))|(NAY(?!S))|(EXCUSED(?!:))|(ABSENT(?!:))")
 
 # Date regex for senate and house parser
 date_regex = re.compile(r"([0-1][0-9]/[0-3][0-9]/\d+)")
@@ -30,8 +29,7 @@ class NMVoteScraper(Scraper):
         through it and attach them to their related bills"""
         session_path = self.session_slug(session)
 
-        doc_path = "http://www.nmlegis.gov/Sessions/{}/votes/".format(
-            session_path)
+        doc_path = "http://www.nmlegis.gov/Sessions/{}/votes/".format(session_path)
 
         self.info("Getting doc at {}".format(doc_path))
         content = self.get(doc_path).text
@@ -40,7 +38,7 @@ class NMVoteScraper(Scraper):
         # all links but first one
         for fname in tree.xpath("//a/text()")[1:]:
             # If filename includes COPY or # or not PDF, skips them
-            if "COPY" in fname or "#" in fname or 'PDF' not in fname:
+            if "COPY" in fname or "#" in fname or "PDF" not in fname:
                 continue
 
             # Delete any errant words found following the file name
@@ -57,7 +55,9 @@ class NMVoteScraper(Scraper):
             bill_id = bill_type + " " + bill_num
 
             # votes
-            if ("SVOTE" in suffix and chamber == "upper") or ("HVOTE" in suffix and chamber == "lower"):
+            if ("SVOTE" in suffix and chamber == "upper") or (
+                "HVOTE" in suffix and chamber == "lower"
+            ):
                 sv_doc = self.scrape_document(doc_path + fname)
                 if not sv_doc:
                     continue
@@ -67,7 +67,8 @@ class NMVoteScraper(Scraper):
                 )
                 if not vote:
                     self.warning(
-                        "Bad parse on the {} vote for {}".format(chamber, bill_id))
+                        "Bad parse on the {} vote for {}".format(chamber, bill_id)
+                    )
                 else:
                     yield vote
 
@@ -83,7 +84,7 @@ class NMVoteScraper(Scraper):
         return doc
 
     def parse_vote(self, doc, url, session, bill_id, chamber):
-        headers = ['yes', 'no', 'absent', 'excused', 'other']
+        headers = ["yes", "no", "absent", "excused", "other"]
         # Add new columns as they appear to be safe
         # doc[0] -> page 1
         # get_text() function returns all text from page
@@ -93,18 +94,18 @@ class NMVoteScraper(Scraper):
         pdf_tables = doc[0].find_tables()
         # convert table to pandas's DataFrame
         if len(pdf_tables.tables) == 0:
-            self.warning(f'Not found tables from {url}')
+            self.warning(f"Not found tables from {url}")
             return
 
         pdf_table_df = pdf_tables.tables[0].to_pandas()
 
         total_votes, vote_record = self.extract_votes(
-            headers, pdf_text_content, pdf_table_df)
+            headers, pdf_text_content, pdf_table_df
+        )
 
-        motion_text = "senate passage" if chamber == 'upper' else 'house passage'
+        motion_text = "senate passage" if chamber == "upper" else "house passage"
 
-        vote = self.build_vote(session, bill_id, url,
-                               vote_record, chamber, motion_text)
+        vote = self.build_vote(session, bill_id, url, vote_record, chamber, motion_text)
         self.validate_vote(headers, total_votes, vote_record)
         return vote
 
@@ -119,15 +120,15 @@ class NMVoteScraper(Scraper):
         # if new case would be found, raises ValueError exception
         date_string = date_regex.search(pdf_text_content).group()
         if len(date_string) == 8:
-            vote_record['date'] = datetime.strptime(date_string, '%m/%d/%y')
+            vote_record["date"] = datetime.strptime(date_string, "%m/%d/%y")
         elif len(date_string) == 10:
-            vote_record['date'] = datetime.strptime(date_string, '%m/%d/%Y')
+            vote_record["date"] = datetime.strptime(date_string, "%m/%d/%Y")
         else:
-            raise ValueError(f'Wrong date string in {date_string}')
+            raise ValueError(f"Wrong date string in {date_string}")
 
         # divide dataframe into 2 parts: left and right
         columns = pdf_table_df.columns.tolist()
-        columns_len = int(len(columns)/2)
+        columns_len = int(len(columns) / 2)
         df_left = pdf_table_df[columns[0:columns_len]]
         df_right = pdf_table_df[columns[columns_len:]]
         columns = self.get_correct_columns(columns[0:columns_len])
@@ -136,25 +137,28 @@ class NMVoteScraper(Scraper):
         # HVOTE Case
         if h_vote_header.search(pdf_text_content):
             total_votes = {}
-            total_votes['yes'] = re.search(
-                r"YE.*?:\s?(\d+)", pdf_text_content).group(1)
-            total_votes['no'] = re.search(
-                r"NA.*?:\s?(\d+)", pdf_text_content).group(1)
-            total_votes['absent'] = int(
-                re.search(r"AB.*?:\s?(\d+)", pdf_text_content).group(1))
-            total_votes['excused'] = int(
-                re.search(r"EX.*?:\s?(\d+)", pdf_text_content).group(1))
-            total_votes['other'] = int(
-                re.search(r"PNV:\s?(\d+)", pdf_text_content).group(1))
+            total_votes["yes"] = re.search(r"YE.*?:\s?(\d+)", pdf_text_content).group(1)
+            total_votes["no"] = re.search(r"NA.*?:\s?(\d+)", pdf_text_content).group(1)
+            total_votes["absent"] = int(
+                re.search(r"AB.*?:\s?(\d+)", pdf_text_content).group(1)
+            )
+            total_votes["excused"] = int(
+                re.search(r"EX.*?:\s?(\d+)", pdf_text_content).group(1)
+            )
+            total_votes["other"] = int(
+                re.search(r"PNV:\s?(\d+)", pdf_text_content).group(1)
+            )
         # SVOTE Case
         elif s_vote_header.search(pdf_text_content):
-            total_votes = df_right[df_right['name'].isin(['TOTAL =>'])]
-            total_votes = total_votes[headers].to_dict('records')[0]
+            total_votes = df_right[df_right["name"].isin(["TOTAL =>"])]
+            total_votes = total_votes[headers].to_dict("records")[0]
 
         # Get the voters by vote type
         for header in headers:
-            vote_record[header] = df_left[df_left[header].isin(['X'])]['name'].tolist(
-            ) + df_right[df_right[header].isin(['X'])]['name'].tolist()
+            vote_record[header] = (
+                df_left[df_left[header].isin(["X"])]["name"].tolist()
+                + df_right[df_right[header].isin(["X"])]["name"].tolist()
+            )
 
         return total_votes, vote_record
 
@@ -166,16 +170,16 @@ class NMVoteScraper(Scraper):
         # SVOTE : [Col0 1-YES 2-NO 3-EXC 4-ABS 5-REC]
         new_header = []
         header_map = {
-            'Y': 'yes',
-            'N': 'no',
-            'A': 'absent',
-            'E': 'excused',
+            "Y": "yes",
+            "N": "no",
+            "A": "absent",
+            "E": "excused",
         }
         for h in header:
-            if h.startswith('Col') or 'REPR' in h:
-                new_header.append('name')
-            elif '-' in h and (first_letter := h.split('-')[1][0]):
-                new_header.append(header_map.get(first_letter, 'other'))
+            if h.startswith("Col") or "REPR" in h:
+                new_header.append("name")
+            elif "-" in h and (first_letter := h.split("-")[1][0]):
+                new_header.append(header_map.get(first_letter, "other"))
 
         return new_header
 
@@ -213,7 +217,8 @@ class NMVoteScraper(Scraper):
     def validate_vote(self, headers, sane, vote_record):
         # Make sure the parsed vote totals match up with counts in the
         # total field
-        result = all([int(sane[header]) == len(vote_record[header])
-                      for header in headers])
+        result = all(
+            [int(sane[header]) == len(vote_record[header]) for header in headers]
+        )
         if not result:
             raise ValueError("Votes were not parsed correctly")
