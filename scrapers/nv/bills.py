@@ -9,7 +9,6 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from .common import session_slugs
 from spatula import HtmlListPage, HtmlPage, CSS, XPath, SelectorError
 
-
 TZ = pytz.timezone("PST8PDT")
 ACTION_CLASSIFIERS = (
     ("Approved by the Governor", ["executive-signature"]),
@@ -140,8 +139,7 @@ class SubjectMapping(HtmlPage):
             else:
                 if subject:
                     for a in p.xpath(".//a"):
-                        bill_id = a.text.replace(
-                            "\r\n", "") if a.text else None
+                        bill_id = a.text.replace("\r\n", "") if a.text else None
                         subjects[bill_id].add(subject)
         return subjects
 
@@ -252,8 +250,7 @@ class BillTabDetail(HtmlPage):
 
                 related_entities = []
                 if "Committee on" in action:
-                    committees = re.findall(
-                        r"Committee on ([a-zA-Z, ]*)\.", action)
+                    committees = re.findall(r"Committee on ([a-zA-Z, ]*)\.", action)
                     for committee in committees:
                         related_entities.append(
                             {"type": "committee", "name": committee}
@@ -441,15 +438,20 @@ class VoteList(HtmlPage):
         summaries = [summary.text for summary in summaries]
 
         vote_re = re.compile(
-            r"(?P<vt_option>Yea|Nay|Excused|Absent|Not Voting): (?P<vt_cnt>\d+)", re.U | re.I)
+            r"(?P<vt_option>Yea|Nay|Excused|Absent|Not Voting): (?P<vt_cnt>\d+)",
+            re.U | re.I,
+        )
         date_re = re.compile(r"Date\s+(?P<date>.*)", re.U | re.I)
         index = 0
 
         for row in CSS(".vote-revision", min_items=0).match(self.root):
             summary = summaries[index]
             index += 1
-            chamber = "lower" if "Assembly" in summary else (
-                "upper" if "Senate" in summary else "")
+            chamber = (
+                "lower"
+                if "Assembly" in summary
+                else ("upper" if "Senate" in summary else "")
+            )
 
             vote_options = {}
             start_date = None
@@ -460,8 +462,7 @@ class VoteList(HtmlPage):
                 vote_match = re.match(vote_re, content)
                 if vote_match:
                     vo = vote_match.groupdict()
-                    vote_options[vo["vt_option"].lower()] = int(
-                        vo["vt_cnt"])
+                    vote_options[vo["vt_option"].lower()] = int(vo["vt_cnt"])
 
                 date_match = re.match(date_re, content)
                 if date_match:
@@ -480,8 +481,7 @@ class VoteList(HtmlPage):
             for name, value in vote_options.items():
                 vote.set_count(VOTES_MAPPINGS.get(name, "other"), value)
 
-            votes_members_url = CSS(
-                ".panelAllVoters a").match_one(row).get("href")
+            votes_members_url = CSS(".panelAllVoters a").match_one(row).get("href")
             yield VoteMembers(vote, source=votes_members_url)
 
 
@@ -494,7 +494,8 @@ class VoteMembers(HtmlPage):
     def process_page(self):
         vote = self.input
         member_re = re.compile(
-            r"\s+(?P<member>.*)\s+\((?P<vote_type>.*)\)\s+", re.U | re.I)
+            r"\s+(?P<member>.*)\s+\((?P<vote_type>.*)\)\s+", re.U | re.I
+        )
 
         for row in CSS(".vote").match(self.root):
             content = row.text_content()
@@ -502,8 +503,7 @@ class VoteMembers(HtmlPage):
             if match:
                 v = match.groupdict()
                 voter = v["member"].strip()
-                vote_type = VOTES_MAPPINGS.get(
-                    v["vote_type"].lower().strip(), "other")
+                vote_type = VOTES_MAPPINGS.get(v["vote_type"].lower().strip(), "other")
                 vote.vote(vote_type, voter)
 
         yield vote
