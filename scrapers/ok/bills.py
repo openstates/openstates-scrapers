@@ -1,9 +1,13 @@
 import re
 import datetime
 import collections
-import lxml.html
+import unicodedata
+
+from lxml import html
 import scrapelib
+
 from urllib import parse
+
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 from .actions import Categorizer
 
@@ -46,10 +50,10 @@ class OKBillScraper(Scraper):
 
     def scrape_chamber(self, chamber, session, only_bills):
         # start by building subject map
-        self.scrape_subjects(chamber, session)
+        # self.scrape_subjects(chamber, session)
 
         url = "http://webserver1.lsb.state.ok.us/WebApplication3/WebForm1.aspx"
-        form_page = lxml.html.fromstring(self.get(url).text)
+        form_page = html.fromstring(self.get(url).text)
 
         if chamber == "upper":
             chamber_letter = "S"
@@ -74,7 +78,7 @@ class OKBillScraper(Scraper):
             values[hidden.attrib["name"]] = hidden.attrib["value"]
 
         page = self.post(url, data=values).text
-        page = lxml.html.fromstring(page)
+        page = html.fromstring(page)
         page.make_links_absolute(url)
 
         bill_nums = []
@@ -85,14 +89,16 @@ class OKBillScraper(Scraper):
                 self.warning("skipping likely bad bill %s" % bill_id)
                 continue
             if only_bills is not None and bill_id not in only_bills:
-                self.warning("skipping bill we are not interested in %s" % bill_id)
+                self.warning(
+                    "skipping bill we are not interested in %s" % bill_id)
                 continue
             bill_nums.append(bill_num)
             yield from self.scrape_bill(chamber, session, bill_id, link.attrib["href"])
+            break
 
     def scrape_bill(self, chamber, session, bill_id, url):
         try:
-            page = lxml.html.fromstring(self.get(url).text)
+            page = html.fromstring(self.get(url).text)
         except scrapelib.HTTPError as e:
             self.warning("error (%s) fetching %s, skipping" % (e, url))
             return
@@ -202,7 +208,11 @@ class OKBillScraper(Scraper):
 
         for link in page.xpath(".//a[contains(@href, '_VOTES')]"):
             if "HT_" not in link.attrib["href"]:
-                yield from self.scrape_votes(bill, self.urlescape(link.attrib["href"]))
+                # yield from self.scrape_votes(bill, self.urlescape(link.attrib["href"]))
+                yield from self.scrape_votes(
+                    bill,
+                    "http://webserver1.lsb.state.ok.us/cf/2023-24%20SUPPORT%20DOCUMENTS/votes/Senate/SB249_VOTES.HTM",
+                )
 
         # # If the bill has no actions and no versions, it's a bogus bill on
         # # their website, which appears to happen occasionally. Skip.
@@ -229,13 +239,19 @@ class OKBillScraper(Scraper):
             )
 
     def scrape_votes(self, bill, url):
-        page = lxml.html.fromstring(self.get(url).text.replace("\xa0", " "))
+        html_content = unicodedata.normalize(
+            "NFKD", self.get(url).text.replace("\r\n", " ")
+        )
+
+        page = html.fromstring(html_content)
 
         seen_rcs = set()
 
-        re_ns = "http://exslt.org/regular-expressions"
-        path = r"//p[re:test(text(), 'OKLAHOMA\s+(HOUSE|STATE\s+SENATE)')]"
-        for header in page.xpath(path, namespaces={"re": re_ns}):
+        headers_xpath = page.xpath(
+            '//p[contains(string(), "OKLAHOMA HOUSE") or contains(string(), "OKLAHOMA STATE SENATE")]'
+        )
+
+        for header in headers_xpath:
             bad_vote = False
             # Each chamber has the motion name on a different line of the file
             if "HOUSE" in header.xpath("string()"):
@@ -248,6 +264,7 @@ class OKBillScraper(Scraper):
             motion = header.xpath(
                 "string(following-sibling::p[%d])" % motion_index
             ).strip()
+
             motion = re.sub(r"\s+", " ", motion)
             if not motion.strip():
                 self.warning("Motion text not found")
@@ -258,8 +275,8 @@ class OKBillScraper(Scraper):
                 passed = match.group(2) == "PASSED"
             else:
                 passed = None
-
-            rcs_p = header.xpath("following-sibling::p[contains(., 'RCS#')]")[0]
+            rcs_p = header.xpath(
+                "following-sibling::p[contains(., 'RCS#')]")[0]
             rcs_line = rcs_p.xpath("string()").replace("\xa0", " ")
             rcs = re.search(r"RCS#\s+(\d+)", rcs_line).group(1)
 
@@ -278,21 +295,25 @@ class OKBillScraper(Scraper):
 
             seen_yes = False
 
-            for sib in header.xpath("following-sibling::p")[13:]:
-                line = sib.xpath("string()").replace("\r\n", " ").strip()
-                if "*****" in line:
+            for sib in header.xpath("following-sibling::p")[12:]:
+                line = sib.xpath("string()").strip()
+                if "*****" in line or "motion by" in line:
                     break
                 regex = (
-                    r"(YEAS|NAYS|EXCUSED|VACANT|CONSTITUTIONAL "
+                    r"(YEAS|AYES|NAYS|EXCUSED|VACANT|CONSTITUTIONAL "
                     r"PRIVILEGE|NOT VOTING|N/V)\s*:\s*(\d+)(.*)"
                 )
                 match = re.match(regex, line)
                 if match:
-                    if match.group(1) == "YEAS" and "RCS#" not in line:
+                    if (match.group(1) in ["YEAS", "AYES"]) and "RCS#" not in line:
                         vtype = "yes"
                         seen_yes = True
                     elif match.group(1) == "NAYS" and seen_yes:
                         vtype = "no"
+                    elif match.group(1) == "EXCUSED" and seen_yes:
+                        vtype = "excused"
+                    elif match.group(1) in ["NOT VOTING", "N/V"] and seen_yes:
+                        vtype = "not voting"
                     elif match.group(1) == "VACANT":
                         continue  # skip these
                     elif seen_yes:
@@ -313,7 +334,7 @@ class OKBillScraper(Scraper):
                 continue
 
             if passed is None:
-                passed = counts["yes"] > (counts["no"] + counts["other"])
+                passed = counts["yes"] > counts["no"]
 
             vote = Vote(
                 chamber=chamber,
@@ -324,27 +345,34 @@ class OKBillScraper(Scraper):
                 classification="passage",
             )
             vote.set_count("yes", counts["yes"])
-            vote.set_count("no", counts["no"])
-            vote.set_count("other", counts["other"])
-            vote.dedupe_key = url + "#" + rcs
-
-            vote.add_source(url)
-
             for name in votes["yes"]:
                 vote.yes(name)
+            vote.set_count("no", counts["no"])
             for name in votes["no"]:
                 if ":" in name:
                     raise Exception(name)
                 vote.no(name)
+            if "excused" in counts:
+                vote.set_count("excused", counts["excused"])
+                for name in votes["excused"]:
+                    vote.vote("excused", name)
+            if "not voting" in counts:
+                vote.set_count("not voting", counts["not voting"])
+                for name in votes["not voting"]:
+                    vote.vote("not voting", name)
+            vote.set_count("other", counts["other"])
             for name in votes["other"]:
                 vote.vote("other", name)
+            vote.dedupe_key = url + "#" + rcs
+
+            vote.add_source(url)
 
             yield vote
 
     def scrape_subjects(self, chamber, session):
         form_url = "http://webserver1.lsb.state.ok.us/WebApplication19/WebForm1.aspx"
         form_html = self.get(form_url).text
-        fdoc = lxml.html.fromstring(form_html)
+        fdoc = html.fromstring(form_html)
 
         # bill types
         letter = "H" if chamber == "lower" else "S"
@@ -367,7 +395,7 @@ class OKBillScraper(Scraper):
                 values[hidden.attrib["name"]] = hidden.attrib["value"]
             # values = urllib.urlencode(values, doseq=True)
             page_data = self.post(form_url, data=values).text
-            page_doc = lxml.html.fromstring(page_data)
+            page_doc = html.fromstring(page_data)
 
             # all links after first are bill_ids
             for bill_id in page_doc.xpath("//a/text()")[1:]:
