@@ -89,8 +89,7 @@ class OKBillScraper(Scraper):
                 self.warning("skipping likely bad bill %s" % bill_id)
                 continue
             if only_bills is not None and bill_id not in only_bills:
-                self.warning(
-                    "skipping bill we are not interested in %s" % bill_id)
+                self.warning("skipping bill we are not interested in %s" % bill_id)
                 continue
             bill_nums.append(bill_num)
             yield from self.scrape_bill(chamber, session, bill_id, link.attrib["href"])
@@ -103,7 +102,9 @@ class OKBillScraper(Scraper):
             self.warning("error (%s) fetching %s, skipping" % (e, url))
             return
 
-        title = page.xpath("string(//span[contains(@id, 'PlaceHolder1_txtST')])").strip()
+        title = page.xpath(
+            "string(//span[contains(@id, 'PlaceHolder1_txtST')])"
+        ).strip()
         if not title:
             self.warning("blank bill on %s - skipping", url)
             return
@@ -254,11 +255,11 @@ class OKBillScraper(Scraper):
             # Each chamber has the motion name on a different line of the file
             if "HOUSE" in header.xpath("string()"):
                 chamber = "lower"
-                motion_text= 'house passage'
+                motion_text = "house passage"
                 motion_index = 8
             else:
                 chamber = "upper"
-                motion_text= 'senate passage'
+                motion_text = "senate passage"
                 motion_index = 13
 
             motion = header.xpath(
