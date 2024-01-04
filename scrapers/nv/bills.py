@@ -5,7 +5,7 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass
 import dateutil.parser
-from openstates.scrape import Scraper, Bill
+from openstates.scrape import Scraper, Bill, VoteEvent
 from .common import session_slugs
 from spatula import HtmlListPage, HtmlPage, CSS, XPath, SelectorError
 
@@ -36,7 +36,13 @@ ACTION_CLASSIFIERS = (
     ("Approved by the Governor", ["executive-signature"]),
     ("Vetoed by the Governor", ["executive-veto"]),
 )
-
+VOTES_MAPPINGS = {
+    "yea": "yes",
+    "nay": "no",
+    "excused": "excused",
+    "not voting": "not voting",
+    "absent": "absent",
+}
 # NV sometimes carries-over bills from previous sessions,
 # without regard for bill number conflicts.
 # so AB1* could get carried in, even if there's already an existing AB1
@@ -321,11 +327,15 @@ class BillTabDetail(HtmlPage):
         text_url = self.source.url.replace("Overview", "Text")
         yield BillTabText(bill, source=text_url)
 
+        # TODO: figure out vote events VotesTab -> VoteList -> VoteMembers
+        votes_url = self.source.url.replace("Overview", "Votes")
+        yield VotesTab(bill, source=votes_url)
+
 
 class BillTabText(HtmlPage):
     example_source = (
-        "https://www.leg.state.nv.us/App/NELIS/REL/81st2021/Bill/"
-        "FillSelectedBillTab?selectedTab=Text&billKey=7366"
+        "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Bill/"
+        "GetBillVoteMembers?voteKey=10429&voteResultPanel=All"
     )
 
     def process_page(self):
@@ -373,6 +383,7 @@ class AmendmentTabText(HtmlPage):
             bill.add_version_link(
                 title, link, media_type="application/pdf", on_duplicate="ignore"
             )
+
         fn_url = self.source.url.replace("Text", "FiscalNotes")
         return FiscalTabText(bill, source=fn_url)
 
@@ -393,6 +404,109 @@ class FiscalTabText(HtmlPage):
                 title, link, media_type="application/pdf", on_duplicate="ignore"
             )
         return bill
+
+
+class VotesTab(HtmlPage):
+    example_source = (
+        "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Bill/"
+        "FillSelectedBillTab?selectedTab=Votes&billKey=9545"
+    )
+
+    def process_page(self):
+        bill = self.input
+
+        votes = CSS("#vote-revisions a", min_items=0).match(self.root)
+        if len(votes) > 0:
+            votes_url = votes[0].get("href")
+            return VoteList(dict(bill=bill, url=self.source.url), source=votes_url)
+
+
+class VoteList(HtmlPage):
+    example_source = (
+        "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Bill/"
+        "GetBillVotes?billKey=9545&voteTypeId=3"
+    )
+
+    def process_page(self):
+        input_data = self.input
+        vote_url = input_data["url"]
+        bill = input_data["bill"]
+
+        summaries = CSS("h2.h3", min_items=0).match(self.root)
+        if len(summaries) == 0:
+            return
+        summaries = [summary.text for summary in summaries]
+
+        vote_re = re.compile(
+            r"(?P<vt_option>Yea|Nay|Excused|Absent|Not Voting): (?P<vt_cnt>\d+)",
+            re.U | re.I,
+        )
+        date_re = re.compile(r"Date\s+(?P<date>.*)", re.U | re.I)
+        index = 0
+
+        for row in CSS(".vote-revision", min_items=0).match(self.root):
+            summary = summaries[index]
+            index += 1
+            chamber = (
+                "lower"
+                if "Assembly" in summary
+                else ("upper" if "Senate" in summary else "")
+            )
+
+            vote_options = {}
+            start_date = None
+
+            for child_row in CSS("ul li", min_items=0).match(row):
+                content = child_row.text_content().strip()
+
+                vote_match = re.match(vote_re, content)
+                if vote_match:
+                    vo = vote_match.groupdict()
+                    vote_options[vo["vt_option"].lower()] = int(vo["vt_cnt"])
+
+                date_match = re.match(date_re, content)
+                if date_match:
+                    start_date = date_match.groupdict()["date"]
+                    start_date = parse_date(start_date)
+
+            vote = VoteEvent(
+                chamber=chamber,
+                motion_text=summary,
+                result="pass" if vote_options["yea"] > vote_options["nay"] else "fail",
+                classification="passage",
+                start_date=start_date,
+                bill=bill,
+            )
+            vote.add_source(vote_url)
+            for name, value in vote_options.items():
+                vote.set_count(VOTES_MAPPINGS.get(name, "other"), value)
+
+            votes_members_url = CSS(".panelAllVoters a").match_one(row).get("href")
+            yield VoteMembers(vote, source=votes_members_url)
+
+
+class VoteMembers(HtmlPage):
+    example_source = (
+        "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Bill/"
+        "GetBillVotes?billKey=9545&voteTypeId=3"
+    )
+
+    def process_page(self):
+        vote = self.input
+        member_re = re.compile(
+            r"\s+(?P<member>.*)\s+\((?P<vote_type>.*)\)\s+", re.U | re.I
+        )
+
+        for row in CSS(".vote").match(self.root):
+            content = row.text_content()
+            match = member_re.match(content)
+            if match:
+                v = match.groupdict()
+                voter = v["member"].strip()
+                vote_type = VOTES_MAPPINGS.get(v["vote_type"].lower().strip(), "other")
+                vote.vote(vote_type, voter)
+
+        yield vote
 
 
 class NVBillScraper(Scraper):
