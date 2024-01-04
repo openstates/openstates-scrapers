@@ -193,7 +193,7 @@ class NewMexico(State):
             "name": "2024 Regular Session",
             "start_date": "2024-01-16",
             "end_date": "2024-02-15",
-            "active": True,
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [
