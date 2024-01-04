@@ -50,7 +50,7 @@ class OKBillScraper(Scraper):
 
     def scrape_chamber(self, chamber, session, only_bills):
         # start by building subject map
-        # self.scrape_subjects(chamber, session)
+        self.scrape_subjects(chamber, session)
 
         url = "http://webserver1.lsb.state.ok.us/WebApplication3/WebForm1.aspx"
         form_page = html.fromstring(self.get(url).text)
@@ -93,7 +93,6 @@ class OKBillScraper(Scraper):
                 continue
             bill_nums.append(bill_num)
             yield from self.scrape_bill(chamber, session, bill_id, link.attrib["href"])
-            break
 
     def scrape_bill(self, chamber, session, bill_id, url):
         try:
@@ -207,11 +206,7 @@ class OKBillScraper(Scraper):
 
         for link in page.xpath(".//a[contains(@href, '_VOTES')]"):
             if "HT_" not in link.attrib["href"]:
-                # yield from self.scrape_votes(bill, self.urlescape(link.attrib["href"]))
-                yield from self.scrape_votes(
-                    bill,
-                    "http://webserver1.lsb.state.ok.us/cf/2023-24%20SUPPORT%20DOCUMENTS/votes/Senate/SB249_VOTES.HTM",
-                )
+                yield from self.scrape_votes(bill, self.urlescape(link.attrib["href"]))
 
         # # If the bill has no actions and no versions, it's a bogus bill on
         # # their website, which appears to happen occasionally. Skip.
@@ -250,40 +245,59 @@ class OKBillScraper(Scraper):
             '//p[contains(string(), "OKLAHOMA HOUSE") or contains(string(), "OKLAHOMA STATE SENATE")]'
         )
 
+        motions = {}
+        for motion in page.xpath(
+            '//a[contains(@href, "#")][not(contains(@href,"Top_of_Page"))]'
+        ):
+            motion_text = motion.xpath("string()").strip("#").replace("_", " ")
+            motion_link = motion.xpath("@href")[0].strip("#").replace("RCS", "")
+
+            if "committee" in motion_text.lower():
+                motion_index = (
+                    motion_link.lstrip("0")
+                    if motion_link.isdigit()
+                    else motion_link.split("_")[1].lstrip("0")
+                )
+                motion_text = "DO PASS"
+            else:
+                motion_index = motion_link.lstrip("0")
+                motion_text = motion_text.split("(")[0].strip()
+            motions[motion_index] = motion_text
+
         for header in headers_xpath:
             bad_vote = False
             # Each chamber has the motion name on a different line of the file
             if "HOUSE" in header.xpath("string()"):
                 chamber = "lower"
-                motion_text = "house passage"
-                motion_index = 8
             else:
                 chamber = "upper"
-                motion_text = "senate passage"
-                motion_index = 13
 
-            motion = header.xpath(
-                "string(following-sibling::p[%d])" % motion_index
-            ).strip()
-
-            motion = re.sub(r"\s+", " ", motion)
-            if not motion.strip():
-                self.warning("Motion text not found")
-
-            match = re.match(r"^(.*) (PASSED|FAILED)$", motion)
-            if match:
-                motion = match.group(1)
-                passed = match.group(2) == "PASSED"
-            else:
-                passed = None
             rcs_p = header.xpath("following-sibling::p[contains(., 'RCS#')]")[0]
             rcs_line = rcs_p.xpath("string()").replace("\xa0", " ")
             rcs = re.search(r"RCS#\s+(\d+)", rcs_line).group(1)
-
             if rcs in seen_rcs:
                 continue
             else:
                 seen_rcs.add(rcs)
+
+            do_pass_motion = header.xpath(
+                "following-sibling::p[contains(., 'DO PASS')]"
+            )
+            do_pass_motion = (
+                do_pass_motion[0]
+                .xpath("string()")
+                .replace("PASSED", "")
+                .replace("FAILED", "")
+                .strip()
+                if do_pass_motion
+                else None
+            )
+            motion = do_pass_motion or motions.get(rcs) or ""
+            if not motion.strip():
+                self.warning("Motion text not found")
+                continue
+
+            passed = None
 
             date_line = rcs_p.getnext().xpath("string()")
             date = re.search(r"\d+/\d+/\d+", date_line).group(0)
@@ -339,7 +353,7 @@ class OKBillScraper(Scraper):
             vote = Vote(
                 chamber=chamber,
                 start_date=date.strftime("%Y-%m-%d"),
-                motion_text=motion_text,
+                motion_text=motion,
                 result="pass" if passed else "fail",
                 bill=bill,
                 classification="passage",
