@@ -30,6 +30,10 @@ class MemberList(JsonPage):
             # Remove extra text from district
             district = member.get("District").split(" ")[-1]
 
+            if "zzz" in member.get("FullName"):
+                self.logger.warning(f"{district} is vacant, skipping.")
+                continue
+
             p = ScrapePerson(
                 name=member.get("FullName"),
                 state="al",
