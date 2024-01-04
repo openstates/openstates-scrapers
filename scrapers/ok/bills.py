@@ -103,9 +103,7 @@ class OKBillScraper(Scraper):
             self.warning("error (%s) fetching %s, skipping" % (e, url))
             return
 
-        title = page.xpath(
-            "string(//span[contains(@id, 'PlaceHolder1_txtST')])"
-        ).strip()
+        title = page.xpath("string(//span[contains(@id, 'PlaceHolder1_txtST')])").strip()
         if not title:
             self.warning("blank bill on %s - skipping", url)
             return
@@ -256,9 +254,11 @@ class OKBillScraper(Scraper):
             # Each chamber has the motion name on a different line of the file
             if "HOUSE" in header.xpath("string()"):
                 chamber = "lower"
+                motion_text= 'house passage'
                 motion_index = 8
             else:
                 chamber = "upper"
+                motion_text= 'senate passage'
                 motion_index = 13
 
             motion = header.xpath(
@@ -268,15 +268,14 @@ class OKBillScraper(Scraper):
             motion = re.sub(r"\s+", " ", motion)
             if not motion.strip():
                 self.warning("Motion text not found")
-                return
+
             match = re.match(r"^(.*) (PASSED|FAILED)$", motion)
             if match:
                 motion = match.group(1)
                 passed = match.group(2) == "PASSED"
             else:
                 passed = None
-            rcs_p = header.xpath(
-                "following-sibling::p[contains(., 'RCS#')]")[0]
+            rcs_p = header.xpath("following-sibling::p[contains(., 'RCS#')]")[0]
             rcs_line = rcs_p.xpath("string()").replace("\xa0", " ")
             rcs = re.search(r"RCS#\s+(\d+)", rcs_line).group(1)
 
@@ -339,7 +338,7 @@ class OKBillScraper(Scraper):
             vote = Vote(
                 chamber=chamber,
                 start_date=date.strftime("%Y-%m-%d"),
-                motion_text=motion,
+                motion_text=motion_text,
                 result="pass" if passed else "fail",
                 bill=bill,
                 classification="passage",
