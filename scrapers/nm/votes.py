@@ -29,7 +29,7 @@ class NMVoteScraper(Scraper):
         through it and attach them to their related bills"""
         session_path = self.session_slug(session)
 
-        doc_path = "http://www.nmlegis.gov/Sessions/{}/votes/".format(session_path)
+        doc_path = "https://www.nmlegis.gov/Sessions/{}/votes/".format(session_path)
 
         self.info("Getting doc at {}".format(doc_path))
         content = self.get(doc_path).text
