@@ -1,14 +1,18 @@
 import re
 import datetime
-from operator import itemgetter
-from collections import defaultdict
 import string
-from openstates.scrape import Scraper, Bill, VoteEvent as Vote
+import urllib3
+
+from collections import defaultdict
+from operator import itemgetter
+
+import lxml.html
+
+from openstates.scrape import Scraper, Bill
 from .utils import parse_directory_listing, open_csv
 from .actions import Categorizer
 
-
-import lxml.html
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class SkipBill(Exception):
@@ -134,90 +138,12 @@ class CTBillScraper(Scraper):
             bill.add_document_link(link.text.strip(), link.attrib["href"])
 
         for link in page.xpath(
-            "//a[(contains(@href, '/pdf/') or contains(@href, '/PDF/')) and (contains(@href, '/TOB/') or contains(@href, '/FC/') or contains(@href, '/ACT/'))]"
+            "//a[(contains(@href, '/pdf/') or contains(@href, '/PDF/')) and "
+            "(contains(@href, '/TOB/') or contains(@href, '/FC/') or contains(@href, '/ACT/'))]"
         ):
             bill.add_version_link(
                 link.text.strip(), link.attrib["href"], media_type="application/pdf"
             )
-
-        for link in page.xpath("//a[contains(@href, 'VOTE')]"):
-            # 2011 HJ 31 has a blank vote, others might too
-            if link.attrib["href"].endswith(".htm") and link.text:
-                pdf_link = link.getprevious()
-                if pdf_link:
-                    yield from self.scrape_vote(
-                        bill, pdf_link.text.strip(), link.attrib["href"]
-                    )
-
-    def scrape_vote(self, bill, name, url):
-        if "VOTE/h" in url:
-            vote_chamber = "lower"
-            cols = (1, 5, 9, 13)
-            name_offset = 3
-            yes_offset = 0
-            no_offset = 1
-        else:
-            vote_chamber = "upper"
-            cols = (1, 6)
-            name_offset = 4
-            yes_offset = 1
-            no_offset = 2
-
-        page = self.get(url, verify=False).text
-
-        if "BUDGET ADDRESS" in page:
-            return
-
-        page = lxml.html.fromstring(page)
-
-        yes_count = page.xpath("string(//span[contains(., 'Those voting Yea')])")
-        yes_count = int(re.match(r"[^\d]*(\d+)[^\d]*", yes_count).group(1))
-
-        no_count = page.xpath("string(//span[contains(., 'Those voting Nay')])")
-        no_count = int(re.match(r"[^\d]*(\d+)[^\d]*", no_count).group(1))
-
-        other_count = page.xpath("string(//span[contains(., 'Those absent')])")
-        other_count = int(re.match(r"[^\d]*(\d+)[^\d]*", other_count).group(1))
-
-        need_count = page.xpath("string(//span[contains(., 'Necessary for')])")
-        need_count = int(re.match(r"[^\d]*(\d+)[^\d]*", need_count).group(1))
-
-        date = page.xpath("string(//span[contains(., 'Taken on')])")
-        date = re.match(r".*Taken\s+on\s+(\d+/\s?\d+)", date).group(1)
-        date = date.replace(" ", "")
-        date = datetime.datetime.strptime(
-            date + " " + bill.legislative_session, "%m/%d %Y"
-        ).date()
-
-        # not sure about classification.
-        vote = Vote(
-            chamber=vote_chamber,
-            start_date=date,
-            motion_text=name,
-            result="pass" if yes_count > need_count else "fail",
-            classification="passage",
-            bill=bill,
-        )
-        vote.set_count("yes", yes_count)
-        vote.set_count("no", no_count)
-        vote.set_count("other", other_count)
-        vote.add_source(url)
-        table = page.xpath("//table")[0]
-        for row in table.xpath("tr"):
-            for i in cols:
-                name = row.xpath("string(td[%d])" % (i + name_offset)).strip()
-
-                if not name or name == "VACANT":
-                    continue
-                name = string.capwords(name)
-                if "Y" in row.xpath("string(td[%d])" % (i + yes_offset)):
-                    vote.yes(name)
-                elif "N" in row.xpath("string(td[%d])" % (i + no_offset)):
-                    vote.no(name)
-                else:
-                    vote.vote("other", name)
-
-        yield vote
 
     def scrape_bill_history(self):
         history_url = "ftp://ftp.cga.ct.gov/pub/data/bill_history.csv"
@@ -232,7 +158,7 @@ class CTBillScraper(Scraper):
             if bill_id in self.bills:
                 action_rows[bill_id].append(row)
 
-        for (bill_id, actions) in action_rows.items():
+        for bill_id, actions in action_rows.items():
             bill = self.bills[bill_id][0]
 
             actions.sort(key=itemgetter("act_date"))
