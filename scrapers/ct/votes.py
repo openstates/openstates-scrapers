@@ -31,18 +31,24 @@ class CTVoteScraper(Scraper):
             ftp_uri = f"/{session}/vote/{chamber_map[chamber]}/pdf/"
             ftp.cwd(ftp_uri)
             files = ftp.nlst()
+            pdf_urls += [
+                (f"https://www.cga.ct.gov{ftp_uri}{file_name}", session, chamber)
+                for file_name in files
+            ]
 
-            for file_name in files:
-                pdf_urls += [f"{ftp_uri}{file_name}" for file_name in files]
-                r = BytesIO()
-                ftp.retrbinary(f"RETR {ftp_uri}{file_name}", r.write)
+        ftp.close()
 
-                yield self.parse_vote(
-                    f"https://www.cga.ct.gov{ftp_uri}{file_name}", r, session, chamber
-                )
+        for pdf_url, session, chamber in pdf_urls:
+            yield from self.parse_vote(pdf_url, session, chamber)
 
-    def parse_vote(self, url, pdf_content, session, vote_chamber):
-        # response = self.get(url, verify=False)
+    def parse_vote(self, url, session, vote_chamber):
+        try:
+            response = self.get(url, verify=False)
+        except Exception as e:
+            self.error(f"Failed request in {url} - {e}")
+            return
+
+        pdf_content = BytesIO(response.content)
         doc = fitz.open("pdf", pdf_content)
 
         pdf_text = doc[0].get_text()
