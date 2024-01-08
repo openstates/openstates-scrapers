@@ -30,7 +30,10 @@ class LegList(JsonPage):
 
             p.image = leg["image"]
 
-            p.email = leg["email"].strip()
+            try:
+                p.email = leg["email"].strip()
+            except KeyError:
+                self.logger.warning(f"No email for {name}")
 
             if leg["address"].strip() != ", , ,":
                 if (
