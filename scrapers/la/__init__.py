@@ -242,6 +242,7 @@ class Louisiana(State):
         },
     ]
     ignored_scraped_sessions = [
+        "2024 Organizational Session",
         "2023 Veto Session",
         "2022 Veto Session",
         "2021 Veto Session",
