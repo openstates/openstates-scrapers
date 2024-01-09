@@ -240,6 +240,33 @@ class Louisiana(State):
             "end_date": "2023-02-05",
             "active": False,
         },
+        {
+            "_scraped_name": "2024 First Extraordinary Session",
+            "classification": "special",
+            "identifier": "2024s1",
+            "name": "2024 First Extraordinary Session",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-23",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2024 Second Extraordinary Session",
+            "classification": "special",
+            "identifier": "2024s2",
+            "name": "2024 Second Extraordinary Session",
+            "start_date": "2024-02-19",
+            "end_date": "2024-03-06",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2024 Regular Session",
+            "classification": "primary",
+            "identifier": "2024",
+            "name": "2024 Regular Session",
+            "start_date": "2024-03-11",
+            "end_date": "2024-06-03",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2024 Organizational Session",
