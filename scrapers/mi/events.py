@@ -36,8 +36,6 @@ class MIEventScraper(Scraper):
             metainf["Time"]["txt"].replace(".", ""),
         )
 
-        print(metainf)
-
         status = "tentative"
         if "Cancelled" in datetime:
             status = "cancelled"
