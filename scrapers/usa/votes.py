@@ -33,9 +33,11 @@ class USVoteScraper(Scraper):
         "Cloture Motion Rejected": "fail",
         "Cloture on the Motion to Proceed Rejected": "fail",
         "Cloture on the Motion to Proceed Agreed to": "pass",
+        "Conference Report Agreed to": "pass",
         "Amendment Rejected": "fail",
         "Decision of Chair Sustained": "pass",
         "Motion Agreed to": "pass",
+        "Motion for Attendance Agreed to": "pass",
         "Motion to Discharge Agreed to": "pass",
         "Motion to Discharge Rejected": "fail",
         "Motion to Table Failed": "fail",
@@ -48,6 +50,8 @@ class USVoteScraper(Scraper):
         "Joint Resolution Passed": "pass",
         "Joint Resolution Defeated": "fail",
         "Resolution Agreed to": "pass",
+        "Resolution of Ratification Agreed to": "pass",
+        "Veto Sustained": "fail",
     }
 
     vote_classifiers = (
@@ -68,6 +72,10 @@ class USVoteScraper(Scraper):
     )
 
     def scrape(self, session=None, chamber=None, year=None, start=None):
+        if year is None:
+            today = datetime.date.today()
+            year = today.year
+
         if start:
             start = datetime.datetime.strptime(start, "%Y-%m-%d %H:%I:%S")
         else:

@@ -186,7 +186,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                     bill_type,
                 )
                 # Parse HTML
-                html = self.get(url).text
+                html = self.get(url, verify=False).text
                 doc = lxml.html.fromstring(html)
 
                 # get table containing bills
@@ -318,7 +318,7 @@ class MNBillScraper(Scraper, LXMLMixin):
             search_chamber,
             search_session,
         )
-        html = self.get(url).text
+        html = self.get(url, verify=False).text
         doc = lxml.html.fromstring(html)
 
         # For testing purposes, we don't really care about getting
@@ -337,7 +337,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                 "&topic[]=%s&submit_topic=GO"
                 % (BILL_DETAIL_URL_BASE, search_chamber, search_session, value)
             )
-            opt_html = self.get(opt_url).text
+            opt_html = self.get(opt_url, verify=False).text
             opt_doc = lxml.html.fromstring(opt_html)
             for bill in opt_doc.xpath("//table/tbody/tr/td[2]/a/text()"):
                 bill = self.make_bill_id(bill)
@@ -474,7 +474,7 @@ class MNBillScraper(Scraper, LXMLMixin):
         ):
             cite_url = link.xpath("@href")[0]
             chapter = link.xpath("text()")[0]
-            html = self.get(cite_url).text
+            html = self.get(cite_url, verify=False).text
             doc = lxml.html.fromstring(html)
 
             title = doc.xpath(
@@ -553,7 +553,7 @@ class MNBillScraper(Scraper, LXMLMixin):
             current = doc.xpath("//div[contains(text(), 'Current bill text')]/a[1]")[0]
 
             current_html_url = current.xpath("@href")[0]
-            current_response = requests.get(current_html_url)
+            current_response = requests.get(current_html_url, verify=False)
             current_content = lxml.html.fromstring(current_response.content)
 
             pdf_xpath = ".//a[contains(text(), 'Authors and Status')]/../following-sibling::td/a"
@@ -585,7 +585,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                 if href:
                     vers_html_url = href[0]
                     vers_html_url = format_version_url(vers_html_url)
-                    vers_response = requests.get(vers_html_url)
+                    vers_response = requests.get(vers_html_url, verify=False)
                     vers_content = lxml.html.fromstring(vers_response.content)
                     vers_pdf_url = vers_content.xpath(pdf_xpath)[0].xpath("@href")[0]
                     vers_pdf_url = format_version_url(vers_pdf_url)

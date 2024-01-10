@@ -69,8 +69,8 @@ class PartialMember:
 
 
 class MemberList(HtmlListPage):
-    session_id = "221"  # 2022
-    source = f"http://lis.virginia.gov/{session_id}/mbr/MBR.HTM"
+    session_id = "241"  # 2024
+    source = f"https://lis.virginia.gov/{session_id}/mbr/MBR.HTM"
 
     def process_item(self, item):
         name = item.text

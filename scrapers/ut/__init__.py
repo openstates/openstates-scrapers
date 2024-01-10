@@ -327,7 +327,7 @@ class Utah(State):
             "name": "2023 1st Special Session",
             "start_date": "2023-05-17",
             "end_date": "2023-05-18",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023 2nd Special Session",
@@ -336,13 +336,20 @@ class Utah(State):
             "name": "2023 2nd Special Session",
             "start_date": "2023-06-14",
             "end_date": "2023-06-15",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2024 General Session",
+            "classification": "primary",
+            "identifier": "2024",
+            "name": "2024 General Session",
+            "start_date": "2024-01-16",
+            "end_date": "2024-03-01",
             "active": True,
         },
     ]
     ignored_scraped_sessions = [
         "2023 1st House Extraordinary Session",
-        "2023 2nd Special Session",
-        "2024 General Session",
         "2013 1st House Session",
         "2011 Veto Override Session",
         "2010 2nd Special Session",
