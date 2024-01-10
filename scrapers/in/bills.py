@@ -184,7 +184,6 @@ class INBillScraper(Scraper):
         docs["Fiscal Note"] = version.get("fiscal-notes", [])
         docs["Committee Report"] = version.get("committee-reports", [])
 
-        print(docs)
         # sometimes amendments appear in multiple places
         # cmte_amendment vs amendment
         # so we're only adding once but using the more
@@ -220,7 +219,6 @@ class INBillScraper(Scraper):
             if version_chamber != api_name_chamber[1]:
                 versions_match = False
 
-        # link = PROXY_BASE_URL + version["link"]
         link = f"https://iga.in.gov/pdf-documents/{self.session_prefixes[session]}{version['link']}.pdf"
         # if the chambers don't match, swap the chamber on version name
         # ex: Engrossed Senate Bill (S) to Engrossed Senate Bill (H)
@@ -229,7 +227,6 @@ class INBillScraper(Scraper):
             if versions_match
             else api_version_name[:-2] + version_chamber + api_version_name[-1:]
         )
-        print(version)
         if link not in urls_seen:
             urls_seen.append(link)
             update_date = version["updated"]
@@ -402,7 +399,6 @@ class INBillScraper(Scraper):
                 self.logger.warning("Bill could not be accessed. Skipping.")
                 continue
 
-            print(bill_json)
             title = bill_json["description"]
             if title == "NoneNone":
                 title = None
