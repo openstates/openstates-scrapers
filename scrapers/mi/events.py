@@ -53,7 +53,6 @@ class MIEventScraper(Scraper):
             if t in datetime:
                 datetime = datetime.replace(t, translate[t])
 
-        print(datetime)
         datetime = re.sub(r"\s+", " ", datetime)
 
         for text_to_remove in [
