@@ -46,6 +46,7 @@ class NJBillScraper(Scraper):
 
             action = act["HistoryAction"].strip()
             actor = "upper" if "Senate" in action else "lower"
+            # TODO: add action classification
             bill.add_action(
                 action,
                 date=TIMEZONE.localize(date),
