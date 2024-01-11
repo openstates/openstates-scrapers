@@ -2,6 +2,7 @@ import requests
 from openstates.scrape import State
 from .bills import NJBillScraper
 from .events import NJEventScraper
+from .new_bills import NJNewBillScraper
 
 # don't retry- if a file isn't on FTP just let it go
 settings = dict(SCRAPELIB_RETRY_ATTEMPTS=0)
@@ -11,6 +12,7 @@ class NewJersey(State):
     scrapers = {
         "bills": NJBillScraper,
         "events": NJEventScraper,
+        "new": NJNewBillScraper,
     }
     legislative_sessions = [
         {
@@ -69,7 +71,7 @@ class NewJersey(State):
             "name": "2022-2023 Regular Session",
             "start_date": "2022-01-11",
             "end_date": "2023-12-31",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2024-2025 Session",
@@ -77,7 +79,7 @@ class NewJersey(State):
             "name": "2024-2025 Regular Session",
             "start_date": "2024-01-09",
             "end_date": "2025-12-31",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
