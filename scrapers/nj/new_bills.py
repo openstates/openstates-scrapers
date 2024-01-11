@@ -1,48 +1,10 @@
 import pytz
 import json
 import logging
-
-# import dateutil.parser
+import dateutil.parser
 from openstates.scrape import Scraper, Bill
 
 TIMEZONE = pytz.timezone("US/Eastern")
-
-
-# class BillVersions(JsonPage):
-#     def process_page(self):
-#         resp = self.response.json()
-#         for item in resp:
-#             description = item["Description"].strip()
-#             pdf = item["PDFLink"].strip()
-#             html = item["HTML_Link"].strip()
-#             base_url = "https://pub.njleg.state.nj.us"
-#
-#             self.input["bill"].add_version_link(
-#                 description,
-#                 url=f"{base_url}{pdf}",
-#                 media_type="application/pdf",
-#             )
-#             self.input["bill"].add_version_link(
-#                 description,
-#                 url=f"{base_url}{html}",
-#                 media_type="text/html",
-#             )
-#
-#
-# class BillActions(JsonPage):
-#     def process_page(self):
-#         resp = self.response.json()
-#         for item in resp:
-#             date = item["ActionDate"].strip()
-#             date = dateutil.parser.parse(date)
-#
-#             action = item["HistoryAction"].strip()
-#             actor = "upper" if "Senate" in action else "lower"
-#             self.input["bill"].add_action(
-#                 action,
-#                 date=TIMEZONE.localize(date),
-#                 chamber=actor,
-#             )
 
 
 class NJNewBillScraper(Scraper):
@@ -53,22 +15,64 @@ class NJNewBillScraper(Scraper):
         "CR": "concurrent resolution",
     }
 
+    def process_versions(self, year, bill):
+        url = f"https://www.njleg.state.nj.us/api/billDetail/billText/{bill.identifier}/{year}"
+        json_data = self.get(url).text
+        version_list = json.loads(json_data)
+        for version in version_list:
+            description = version["Description"].strip()
+            pdf = version["PDFLink"].strip()
+            html = version["HTML_Link"].strip()
+            base_url = "https://pub.njleg.state.nj.us"
+
+            bill.add_version_link(
+                description,
+                url=f"{base_url}{pdf}",
+                media_type="application/pdf",
+            )
+            bill.add_version_link(
+                description,
+                url=f"{base_url}{html}",
+                media_type="text/html",
+            )
+
+    def process_actions(self, year, bill):
+        url = f"https://www.njleg.state.nj.us/api/billDetail/billHistory/{bill.identifier}/{year}"
+        json_data = self.get(url).text
+        action_list = json.loads(json_data)
+        for act in action_list:
+            date = act["ActionDate"].strip()
+            date = dateutil.parser.parse(date)
+
+            action = act["HistoryAction"].strip()
+            actor = "upper" if "Senate" in action else "lower"
+            bill.add_action(
+                action,
+                date=TIMEZONE.localize(date),
+                chamber=actor,
+            )
+
     def process_sponsors(self, year, bill):
         url = f"https://www.njleg.state.nj.us/api/billDetail/billSponsors/{bill.identifier}/{year}"
         json_data = self.get(url).text
-        sponsor_list = json.loads(json_data)
-        for i in range(len(sponsor_list)):
-            name = sponsor_list[i][0]["Full_Name"].strip()
-            if "Primary" in sponsor_list[i][0]["SponsorDescription"]:
-                classification = "primary"
-            else:
-                classification = "cosponsor"
+        primary_list = json.loads(json_data)[0]
+        cosponsor_list = json.loads(json_data)[1]
 
+        for primary in primary_list:
+            name = primary["Full_Name"].strip()
             bill.add_sponsorship(
                 name,
                 entity_type="person",
-                classification=classification,
-                primary=classification == "primary",
+                classification="primary",
+                primary=True,
+            )
+        for cosponsor in cosponsor_list:
+            name = cosponsor["Full_Name"].strip()
+            bill.add_sponsorship(
+                name,
+                entity_type="person",
+                classification="cosponsor",
+                primary=False,
             )
 
     def scrape(self, session=None):
@@ -101,17 +105,9 @@ class NJNewBillScraper(Scraper):
                     relation_type="companion",
                 )
 
-            # yield BillVersions(
-            #     bill,
-            #     source=f"https://www.njleg.state.nj.us/api/billDetail/billText/{bill_id}/{year_abr}",
-            # )
-            # yield BillActions(
-            #     bill,
-            #     source=f"https://www.njleg.state.nj.us/api/billDetail/billHistory/{bill_id}/{year_abr}",
-            # )
-            #
-            if item["NumberOfSponsors"] > 0:
-                self.process_sponsors(year_abr, bill)
+            self.process_versions(year_abr, bill)
+            self.process_actions(year_abr, bill)
+            self.process_sponsors(year_abr, bill)
 
             source_url = (
                 f"https://www.njleg.state.nj.us/bill-search/{year_abr}/{bill_id}"
