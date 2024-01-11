@@ -236,43 +236,57 @@ class OKBillScraper(Scraper):
         html_content = unicodedata.normalize(
             "NFKD", self.get(url).text.replace("\r\n", " ")
         )
-
         page = html.fromstring(html_content)
 
         seen_rcs = set()
-
-        headers_xpath = page.xpath(
-            '//p[contains(string(), "OKLAHOMA HOUSE") or contains(string(), "OKLAHOMA STATE SENATE")]'
-        )
-
         motions = {}
+        headers_xpath = page.xpath('//p[contains(., "Top_of_Page")]')
+
         for motion in page.xpath(
             '//a[contains(@href, "#")][not(contains(@href,"Top_of_Page"))]'
         ):
             motion_text = motion.xpath("string()").strip("#").replace("_", " ")
             motion_link = motion.xpath("@href")[0].strip("#").replace("RCS", "")
 
-            if "committee" in motion_text.lower():
+            if "committee" in motion_text.lower() and "(" not in motion_text:
                 motion_index = (
                     motion_link.lstrip("0")
                     if motion_link.isdigit()
                     else motion_link.split("_")[1].lstrip("0")
                 )
-                motion_text = "DO PASS"
+                do_pass_motion = motion_link.split("_")
+                do_index = do_pass_motion.index("DO") if "DO" in do_pass_motion else -1
+                passed_index = (
+                    do_pass_motion.index("PASSED")
+                    if "PASSED" in do_pass_motion
+                    else do_pass_motion.index("FAILED")
+                    if "FAILED" in do_pass_motion
+                    else -1
+                )
+                do_pass_motion = (
+                    " ".join(do_pass_motion[do_index:passed_index]).strip().title()
+                )
+                motion_text = do_pass_motion or "Do Pass"
             else:
                 motion_index = motion_link.lstrip("0")
-                motion_text = motion_text.split("(")[0].strip()
+                if "OKLAHOMA" in motion_text:
+                    motion_text = "Committee Vote"
+                else:
+                    motion_text = motion_text.split("(")[0].strip().title()
+
             motions[motion_index] = motion_text
 
         for header in headers_xpath:
             bad_vote = False
             # Each chamber has the motion name on a different line of the file
-            if "HOUSE" in header.xpath("string()"):
+            if "house" in url.lower():
                 chamber = "lower"
             else:
                 chamber = "upper"
 
-            rcs_p = header.xpath("following-sibling::p[contains(., 'RCS#')]")[0]
+            rcs_p = header.xpath(
+                "following-sibling::p[contains(., '***')][1]/preceding-sibling::p[contains(., 'RCS#')][1]"
+            )[0]
             rcs_line = rcs_p.xpath("string()").replace("\xa0", " ")
             rcs = re.search(r"RCS#\s+(\d+)", rcs_line).group(1)
             if rcs in seen_rcs:
@@ -280,19 +294,78 @@ class OKBillScraper(Scraper):
             else:
                 seen_rcs.add(rcs)
 
-            do_pass_motion = header.xpath(
-                "following-sibling::p[contains(., 'DO PASS')]"
-            )
-            do_pass_motion = (
-                do_pass_motion[0]
-                .xpath("string()")
-                .replace("PASSED", "")
-                .replace("FAILED", "")
-                .strip()
-                if do_pass_motion
-                else None
-            )
-            motion = do_pass_motion or motions.get(rcs) or ""
+            committee_motion = None
+            committees = [
+                "Administrative Rules",
+                "Aeronautics and Transportation",
+                "Aeronautics & Transportation",
+                "Agriculture and Rural Affairs",
+                "Agriculture & Rural Affairs",
+                "Appropriations",
+                "Business and Commerce",
+                "Business & Commerce",
+                "Education",
+                "Energy and Telecommunications",
+                "Energy & Telecommunications",
+                "Finance",
+                "General Government",
+                "Health and Human Services",
+                "Health & Human Services",
+                "Judiciary",
+                "Public Safety",
+                "Retirement and Insurance",
+                "Retirement & Insurance",
+                "Rules",
+                "Tourism and Wildlife",
+                "Tourism & Wildlife",
+                "Veterans and Military Affairs",
+                "Veterans & Military Affairs",
+                "Committee",
+                "Subcommittee",
+            ]
+
+            motion_text = motions.get(rcs)
+            committee_motion = None
+
+            if "Do Pass" in motion_text or "Committee" in motion_text:
+                for line in header.xpath("following-sibling::p"):
+                    line_text = line.xpath("string()")
+
+                    if "*****" in line_text:
+                        break
+                    if not committee_motion:
+                        filter_motion = [
+                            committee
+                            for committee in committees
+                            if committee in line_text
+                            and "motion by Senator" not in line_text
+                        ]
+                        if len(filter_motion) > 0:
+                            committee_motion = line_text.strip()
+                            continue
+
+                    if "motion by Senator" in line_text:
+                        do_pass_motion = line_text.strip().title()
+                        committee_motion += ": " + do_pass_motion
+                        break
+
+                    if ("DO PASS" in line_text or "Do Pass" in line_text) and (
+                        "PASSED" in line_text or "FAILED" in line_text
+                    ):
+                        do_pass_motion = (
+                            motion_text
+                            if "Do Pass" in motion_text
+                            else line_text.replace("PASSED", "")
+                            .replace("FAILED", "")
+                            .replace("STRIKE THE T", "STRIKE THE TITLE")
+                            .strip()
+                            .title()
+                        )
+                        committee_motion += ": " + do_pass_motion
+                        break
+
+            motion = committee_motion or motion_text
+
             if not motion.strip():
                 self.warning("Motion text not found")
                 continue
@@ -309,7 +382,9 @@ class OKBillScraper(Scraper):
 
             seen_yes = False
 
-            for sib in header.xpath("following-sibling::p")[12:]:
+            for sib in header.xpath(
+                "//following-sibling::p[contains(., 'YEAS:')][1]/following-sibling::p"
+            )[4:]:
                 line = sib.xpath("string()").strip()
                 if "*****" in line or "motion by" in line:
                     break
