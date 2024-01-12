@@ -179,9 +179,6 @@ class MOEventScraper(Scraper, LXMLMixin):
         xml_content = self.get(listing_xml_url).text
         tree = lxml.html.fromstring(xml_content)
 
-        # The HTML here isn't wrapped in a container per-event
-        # which makes xpath a pain. So string split by <hr>
-        # then parse each event's fragment for cleaner results
         events = set()
         for hearing in tree.xpath("//hearinginfo"):
             for item in self.scrape_lower_item(hearing):
@@ -192,7 +189,6 @@ class MOEventScraper(Scraper, LXMLMixin):
                 yield item
 
     def scrape_lower_item(self, page):
-        # print(lxml.etree.tostring(page, pretty_print=True))
         com = page.xpath("./committeename/text()")[0]
         when_date = page.xpath("./hearingdate/text()")[0]
         when_time = page.xpath("./hearingtime/text()")[0]
@@ -232,8 +228,6 @@ class MOEventScraper(Scraper, LXMLMixin):
         event.add_source("https://house.mo.gov/HearingsTimeOrder.aspx")
 
         event.add_participant(com, type="committee", note="host")
-
-        # different from general MO link xpath due to the <b>
 
         match_coordinates(
             event,
