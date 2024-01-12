@@ -248,11 +248,11 @@ class OKBillScraper(Scraper):
             motion_text = motion.xpath("string()").strip("#").replace("_", " ")
             motion_link = motion.xpath("@href")[0].strip("#").replace("RCS", "")
 
-            if "committee" in motion_text.lower() and "(" not in motion_text:
+            if "committee" in motion_text.lower() and "RCS" not in motion_text:
                 motion_index = (
-                    motion_link.lstrip("0")
+                    motion_link.lstrip("0").zfill(1)
                     if motion_link.isdigit()
-                    else motion_link.split("_")[1].lstrip("0")
+                    else motion_link.split("_")[1].lstrip("0").zfill(1)
                 )
                 do_pass_motion = motion_link.split("_")
                 do_index = do_pass_motion.index("DO") if "DO" in do_pass_motion else -1
@@ -268,7 +268,7 @@ class OKBillScraper(Scraper):
                 )
                 motion_text = do_pass_motion or "Do Pass"
             else:
-                motion_index = motion_link.lstrip("0")
+                motion_index = motion_link.lstrip("0").zfill(1)
                 if "OKLAHOMA" in motion_text:
                     motion_text = "Committee Vote"
                 else:
@@ -284,53 +284,57 @@ class OKBillScraper(Scraper):
             else:
                 chamber = "upper"
 
-            rcs_p = header.xpath(
+            rcs_xpath = header.xpath(
                 "following-sibling::p[contains(., '***')][1]/preceding-sibling::p[contains(., 'RCS#')][1]"
-            )[0]
-            rcs_line = rcs_p.xpath("string()").replace("\xa0", " ")
-            rcs = re.search(r"RCS#\s+(\d+)", rcs_line).group(1)
-            if rcs in seen_rcs:
-                continue
-            else:
-                seen_rcs.add(rcs)
+            )
 
-            committee_motion = None
+            if rcs_xpath:
+                rcs_p = rcs_xpath[0]
+                rcs_line = rcs_p.xpath("string()").replace("\xa0", " ")
+                rcs = re.search(r"RCS#\s+(\d+)", rcs_line).group(1)
+                if rcs in seen_rcs:
+                    continue
+                else:
+                    seen_rcs.add(rcs)
+            else:
+                continue
             committees = [
                 "Administrative Rules",
-                "Aeronautics and Transportation",
+                "Aeronautics And Transportation",
                 "Aeronautics & Transportation",
-                "Agriculture and Rural Affairs",
+                "Agriculture And Rural Affairs",
                 "Agriculture & Rural Affairs",
                 "Appropriations",
                 "Business and Commerce",
                 "Business & Commerce",
                 "Education",
-                "Energy and Telecommunications",
+                "Energy And Telecommunications",
                 "Energy & Telecommunications",
                 "Finance",
                 "General Government",
-                "Health and Human Services",
+                "Health And Human Services",
                 "Health & Human Services",
                 "Judiciary",
                 "Public Safety",
-                "Retirement and Insurance",
+                "Retirement And Insurance",
                 "Retirement & Insurance",
                 "Rules",
-                "Tourism and Wildlife",
+                "Tourism And Wildlife",
                 "Tourism & Wildlife",
-                "Veterans and Military Affairs",
+                "Veterans And Military Affairs",
                 "Veterans & Military Affairs",
                 "Committee",
                 "Subcommittee",
             ]
 
-            motion_text = motions.get(rcs)
-            committee_motion = None
+            motion_text = motions.get(rcs, "Committee Vote")
+            committee_motion = ""
 
             if "Do Pass" in motion_text or "Committee" in motion_text:
                 for line in header.xpath("following-sibling::p"):
-                    line_text = line.xpath("string()")
-
+                    line_text = (
+                        line.xpath("string()").replace("  ", " ").title().strip()
+                    )
                     if "*****" in line_text:
                         break
                     if not committee_motion:
@@ -338,42 +342,45 @@ class OKBillScraper(Scraper):
                             committee
                             for committee in committees
                             if committee in line_text
-                            and "motion by Senator" not in line_text
+                            and "Motion By Senator" not in line_text
                         ]
                         if len(filter_motion) > 0:
-                            committee_motion = line_text.strip()
-                            continue
+                            committee_motion = line_text
+                        continue
 
-                    if "motion by Senator" in line_text:
-                        do_pass_motion = line_text.strip().title()
-                        committee_motion += ": " + do_pass_motion
+                    if "Motion By Senator" in line_text:
+                        committee_motion += ": " + line_text
                         break
 
-                    if ("DO PASS" in line_text or "Do Pass" in line_text) and (
-                        "PASSED" in line_text or "FAILED" in line_text
+                    if "Do Pass" in line_text and (
+                        "Passed" in line_text or "Failed" in line_text
                     ):
                         do_pass_motion = (
                             motion_text
                             if "Do Pass" in motion_text
-                            else line_text.replace("PASSED", "")
-                            .replace("FAILED", "")
-                            .replace("STRIKE THE T", "STRIKE THE TITLE")
+                            else line_text.replace("Passed", "")
+                            .replace("Failed", "")
+                            .replace("Recommendation:", "")
+                            .replace("Strike The T", "Strike The Title")
+                            .replace("Strike The E", "Strike The Enacting Clause")
                             .strip()
-                            .title()
                         )
                         committee_motion += ": " + do_pass_motion
                         break
 
             motion = committee_motion or motion_text
 
-            if not motion.strip():
+            if not motion:
                 self.warning("Motion text not found")
                 continue
 
             passed = None
 
             date_line = rcs_p.getnext().xpath("string()")
-            date = re.search(r"\d+/\d+/\d+", date_line).group(0)
+            date = re.search(r"\d+/\d+/\d+", date_line)
+            if not date:
+                continue
+            date = date.group(0)
             date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
 
             vtype = None
