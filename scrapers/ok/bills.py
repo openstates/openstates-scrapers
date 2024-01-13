@@ -389,9 +389,7 @@ class OKBillScraper(Scraper):
 
             seen_yes = False
 
-            for sib in header.xpath(
-                "//following-sibling::p[contains(., 'YEAS:')][1]/following-sibling::p"
-            )[4:]:
+            for sib in header.xpath("following-sibling::p"):
                 line = sib.xpath("string()").strip()
                 if "*****" in line or "motion by" in line:
                     break
