@@ -76,7 +76,7 @@ class MNBillScraper(Scraper, LXMLMixin):
     # For testing purposes, this will do a lite version of things.  If
     # testing_bills is set, only these bills will be scraped.  Use SF0077
     testing = False
-    testing_bills = ["SF3307"]
+    testing_bills = ["SF3035"]
 
     # Regular expressions to match category of actions
     _categorizers = (
@@ -671,6 +671,10 @@ class MNBillScraper(Scraper, LXMLMixin):
                 nays = int(parts.group(2))
                 # Check for URL
                 vote_date = action["action_date"]
+                if not vote_element.xpath(".//a[@href]/@href"):
+                    self.warning("No vote url")
+                    return [None] * 2
+
                 vote_url = urllib.parse.urlparse(
                     vote_element.xpath(".//a[@href]/@href")[0]
                 )
@@ -705,11 +709,11 @@ class MNBillScraper(Scraper, LXMLMixin):
                 no_voters = []
 
                 yes_voter_re = re.compile(
-                    r"Those who voted in the affirmative were:([\s\S]+?)(Pursuant|\d+.*?DAY)",
+                    r"Those who voted in the affirmative were:([\s\S]+?)(Pursuant|\d+.*?DAY|By |The )",
                     re.M | re.U | re.I,
                 )
                 no_voter_re = re.compile(
-                    r"Those who voted in the negative were:([\s\S]+?)(Pursuant|\d+.*?DAY)",
+                    r"Those who voted in the negative were:([\s\S]+?)(Pursuant|\d+.*?DAY|By |The )",
                     re.M | re.U | re.I,
                 )
                 if len(yes_voter_re.findall(page)) == 0:
@@ -735,7 +739,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                 # # Attach to bill
                 return vote, number
 
-        return None, None
+        return [None] * 2
 
     def make_bill_id(self, bill):
         """
