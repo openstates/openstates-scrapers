@@ -22,7 +22,7 @@ def create_bill_report_url(chamber, year, bill_type):
 
     return (
         HI_URL_BASE
-        + "/advreports/advreport.aspx?report=deadline&rpt_type=&measuretype="
+        + "/advreports/advreport.aspx?report=deadline&active=true&rpt_type=&measuretype="
         + bill_slug[bill_type]
         + "&year="
         + year
@@ -235,7 +235,7 @@ class HIBillScraper(Scraper):
             bill.add_document_link(name, filename, media_type=media_type)
 
     def scrape_bill(self, session, chamber, bill_type, url):
-        bill_html = self.get(url).text
+        bill_html = self.get(url, verify=False).text
         bill_page = lxml.html.fromstring(bill_html)
         bill_page.make_links_absolute(url)
 
@@ -323,9 +323,7 @@ class HIBillScraper(Scraper):
         self.parse_testimony(b, bill_page)
         self.parse_cmte_reports(b, bill_page)
 
-        if bill_page.xpath(
-            "//input[@id='ctl00_ContentPlaceHolderCol1_ImageButtonPDF']"
-        ):
+        if bill_page.xpath("//input[@id='MainContent_ImageButtonPDF']"):
             self.parse_bill_header_versions(b, bill_id, session, bill_page)
 
         current_referral = meta["Current Referral"].strip()
@@ -383,7 +381,7 @@ class HIBillScraper(Scraper):
             "gm": "proclamation",
         }[billtype]
 
-        list_html = self.get(report_page_url).text
+        list_html = self.get(report_page_url, verify=False).text
         list_page = lxml.html.fromstring(list_html)
         for bill_url in list_page.xpath("//a[@class='report']"):
             bill_url = bill_url.attrib["href"].replace("www.", "")
