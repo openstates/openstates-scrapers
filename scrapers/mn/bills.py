@@ -1,7 +1,6 @@
 import re
 import datetime
 import urllib.parse
-from attr import has
 import lxml.html
 from collections import defaultdict
 from io import BytesIO
