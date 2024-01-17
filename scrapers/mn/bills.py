@@ -1,15 +1,17 @@
 import re
 import datetime
 import urllib.parse
-from collections import defaultdict
 import lxml.html
+from collections import defaultdict
+from io import BytesIO
 
-from openstates.scrape import Scraper, Bill
+from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 
 from utils import LXMLMixin
 
+import fitz
 import requests
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from urllib3.exceptions import InsecureRequestWarning
 
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -74,7 +76,7 @@ class MNBillScraper(Scraper, LXMLMixin):
     # For testing purposes, this will do a lite version of things.  If
     # testing_bills is set, only these bills will be scraped.  Use SF0077
     testing = False
-    testing_bills = ["SF0077"]
+    testing_bills = ["SF2934"]
 
     # Regular expressions to match category of actions
     _categorizers = (
@@ -127,7 +129,6 @@ class MNBillScraper(Scraper, LXMLMixin):
 
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
-
             # Get bill topics for matching later
             self.get_bill_topics(chamber, session)
 
@@ -137,7 +138,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                     bill_url = BILL_DETAIL_URL % (
                         self.search_chamber(chamber),
                         b,
-                        "2022",
+                        "2023",
                     )
                     version_url = VERSION_URL % (
                         self.search_session(session)[-4:],
@@ -147,7 +148,6 @@ class MNBillScraper(Scraper, LXMLMixin):
                     yield self.get_bill_info(chamber, session, bill_url, version_url)
                 return
             else:
-
                 # Find list of all bills
                 bills = self.get_full_bill_list(chamber, session)
 
@@ -297,11 +297,14 @@ class MNBillScraper(Scraper, LXMLMixin):
         bill = self.extract_sponsors(bill, doc, chamber)
 
         # Add Actions performed on the bill.
-        bill = self.extract_actions(bill, doc, chamber)
+        bill, votes = self.extract_actions(bill, doc)
 
         bill = self.extract_versions(bill, doc)
 
         bill = self.extract_citations(bill, doc)
+
+        for vote in votes:
+            yield vote
 
         yield bill
 
@@ -362,95 +365,28 @@ class MNBillScraper(Scraper, LXMLMixin):
 
         raise ValueError("'%s' is not a recognized date/time" % datestr)
 
-    def extract_actions(self, bill, doc, current_chamber):
+    def extract_actions(self, bill, doc):
         """
         Extract the actions taken on a bill.
         A bill can have actions taken from either chamber.  The current
         chamber's actions will be the first table of actions. The other
         chamber's actions will be in the second table.
         """
+        votes = []
+        bill_actions = []
+        for chamber in ["house", "senate"]:
+            tables = doc.cssselect(f".{chamber} table.actions")
+            current_chamber_type = "upper" if chamber == "senate" else "lower"
+            if len(tables) > 0:
+                chamber_actions, chamber_votes = self.process_actions_table(
+                    bill, tables[0], current_chamber_type
+                )
+                bill_actions = bill_actions + chamber_actions
+                votes = votes + chamber_votes
 
-        bill_actions = list()
-        action_tables = doc.xpath('//table[contains(@class,"actions")]')
+        # action_tables = doc.xpath('//table[contains(@class,"actions")]')
 
-        for cur_table in action_tables:
-            for row in cur_table.xpath(".//tr"):
-                bill_action = dict()
-
-                # Split up columns
-                date_col, the_rest = row.xpath("td")
-
-                # The second column can hold a link to full text
-                # and pages (what should be in another column),
-                # but also links to committee elements or other spanned
-                # content.
-                action_date = date_col.text_content().strip()
-                action_text = row.xpath("td[2]/div/div")[0].text_content().strip()
-                # Remove large whitespace blocks
-                action_text = re.sub(r"\s+", " ", action_text)
-
-                committee = the_rest.xpath("a[contains(@href,'committee')]/text()")
-                extra = "".join(the_rest.xpath("span[not(@style)]/text() | a/text()"))
-                # skip non-actions (don't have date)
-                if action_text in ("Chapter number", "See also", "See"):
-                    continue
-
-                if action_date:
-                    action_date = self.parse_dates(action_date)
-                else:
-                    inline_date = self.parse_inline_action_date(action_text)
-                    if inline_date:
-                        action_date = self.parse_dates(inline_date)
-                    else:
-                        self.warning("ACTION without date: %s" % action_text)
-                        continue
-
-                # categorize actions
-                action_type = None
-                for pattern, atype in self._categorizers:
-                    if re.match(pattern, action_text):
-                        action_type = atype
-                        if "referral-committee" in action_type and len(committee) > 0:
-                            bill_action["committees"] = committee[0]
-                        break
-
-                if extra:
-                    action_text += " " + extra
-                bill_action["action_text"] = action_text
-                if isinstance(action_type, list):
-                    for atype in action_type:
-                        if atype is not None and (
-                            atype.startswith("governor")
-                            or atype.startswith("executive")
-                            or atype.startswith("became")
-                        ):
-                            bill_action["action_chamber"] = "executive"
-                            break
-                    else:
-                        bill_action["action_chamber"] = current_chamber
-                else:
-                    if action_type is not None and (
-                        action_type.startswith("governor")
-                        or action_type.startswith("executive")
-                        or action_type.startswith("became")
-                    ):
-                        bill_action["action_chamber"] = "executive"
-                    else:
-                        bill_action["action_chamber"] = current_chamber
-                bill_action["action_date"] = action_date
-                bill_action["action_type"] = action_type
-                bill_actions.append(bill_action)
-
-                # Try to extract vote
-                # bill = self.extract_vote_from_action(bill, bill_action, current_chamber, row)
-
-            # if there's a second table, toggle the current chamber
-            if current_chamber == "upper":
-                current_chamber = "lower"
-            else:
-                current_chamber = "upper"
-
-        # Add acctions to bill
+        # Add actions to bill
         for action in bill_actions:
             act = bill.add_action(
                 action["action_text"],
@@ -463,7 +399,100 @@ class MNBillScraper(Scraper, LXMLMixin):
                 committee = action["committees"]
                 act.add_related_entity(committee, "organization")
 
-        return bill
+        return bill, votes
+
+    def process_actions_table(self, bill: Bill, cur_table, current_chamber):
+        votes = list()
+        pages = list()
+        bill_actions = list()
+        for row in cur_table.xpath(".//tr"):
+            bill_action = dict()
+
+            # Split up columns
+            date_col, the_rest = row.xpath("td")
+
+            # The second column can hold a link to full text
+            # and pages (what should be in another column),
+            # but also links to committee elements or other spanned
+            # content.
+            action_date = date_col.text_content().strip()
+            action_text = row.xpath("td[2]/div/div")[0].text_content().strip()
+            # Remove large whitespace blocks
+            action_text = re.sub(r"\s+", " ", action_text)
+
+            committee = the_rest.xpath("a[contains(@href,'committee')]/text()")
+            extra = "".join(the_rest.xpath("span[not(@style)]/text() | a/text()"))
+            # skip non-actions (don't have date)
+            if action_text in ("Chapter number", "See also", "See"):
+                continue
+            if action_date:
+                action_date = self.parse_dates(action_date)
+            else:
+                inline_date = self.parse_inline_action_date(action_text)
+                if inline_date:
+                    action_date = self.parse_dates(inline_date)
+                else:
+                    self.warning("ACTION without date: %s" % action_text)
+                    continue
+
+            # categorize actions
+            action_type = None
+            for pattern, atype in self._categorizers:
+                if re.match(pattern, action_text):
+                    action_type = atype
+                    if "referral-committee" in action_type and len(committee) > 0:
+                        bill_action["committees"] = committee[0]
+                    break
+
+            if extra:
+                action_text += " " + extra
+            bill_action["action_text"] = action_text
+            if isinstance(action_type, list):
+                for atype in action_type:
+                    if atype is not None and (
+                        atype.startswith("governor")
+                        or atype.startswith("executive")
+                        or atype.startswith("became")
+                    ):
+                        bill_action["action_chamber"] = "executive"
+                        break
+                else:
+                    bill_action["action_chamber"] = current_chamber
+            else:
+                if action_type is not None and (
+                    action_type.startswith("governor")
+                    or action_type.startswith("executive")
+                    or action_type.startswith("became")
+                ):
+                    bill_action["action_chamber"] = "executive"
+                else:
+                    bill_action["action_chamber"] = current_chamber
+            bill_action["action_date"] = action_date
+            bill_action["action_type"] = action_type
+            bill_actions.append(bill_action)
+
+            # see if there is a link to a journal page in this action item
+            # sometimes a vote has no link, and the relevant page is the previously-mentioned page
+            page_links = row.xpath(
+                'td//div[contains(@class, "action_item")]//a[contains(@href,"gotopage")]/@href'
+            )
+            if len(page_links) > 1:
+                raise Exception(
+                    f"{bill.identifier}: Unexpectedly have multiple page links in a single action"
+                )
+            elif len(page_links) > 0:
+                pages.append(page_links[0])
+
+            # Try to extract vote
+            # senate vote only, house votes are scraped by the vote_event.py scraper
+            if current_chamber == "upper":
+                vote = self.extract_vote_from_action(
+                    bill, bill_action, current_chamber, row, pages
+                )
+                if vote:
+                    votes.append(vote)
+
+        return bill_actions, votes
 
     # MN provides data in two parts,
     # the session law (or chaptered law), which makes the list of changes legal until a new code is printed
@@ -637,40 +666,139 @@ class MNBillScraper(Scraper, LXMLMixin):
 
         return bill
 
-    # def extract_vote_from_action(self, bill, action, chamber, action_row):
-    #     """
-    #     Gets vote data.  For the Senate, we can only get yes and no
-    #     counts, but for the House, we can get details on who voted
-    #     what.
+    def extract_vote_from_action(self, bill, action, chamber, action_row, pages):
+        """
+        Gets vote data.  For the Senate, we can only get yes and no
+        counts, but for the House, we can get details on who voted
+        what.
+        For only Senate vote.
+        For House vote, refer to vote_events.py.
+        """
+        # Check if there is vote at all
+        has_vote = action_row.xpath(
+            'td//div[contains(@class, "action_item")][contains(., "vote")]'
+        )
+        if len(has_vote) > 0:
+            vote_element = has_vote[0]
+            parts = re.search(
+                r"vote:\s+([0-9]*)-([0-9]*)",
+                vote_element.text_content(),
+                flags=re.M | re.U,
+            )
+            if parts is not None:
+                yeas = int(parts.group(1))
+                nays = int(parts.group(2))
+                # Check for URL
+                vote_date = action["action_date"]
+                if not vote_element.xpath(".//a[@href]/@href"):
+                    # in this case, use the previous vote url
+                    vote_url = pages[-1]
+                    self.warning(
+                        f"No vote url in the page. trying to use the previous vote url: {vote_url}"
+                    )
+                    if not vote_url:
+                        return [None] * 2
+                else:
+                    vote_url = vote_element.xpath(".//a[@href]/@href")[0]
 
-    #     TODO: Follow links for Houses and get votes for individuals.
-    #     Above todo done in votes.py
-    #     """
+                vote_url_obj = urllib.parse.urlparse(vote_url)
+                vote_url_qs = urllib.parse.parse_qs(vote_url_obj.query)
+                session = vote_url_qs["session"][0].replace("ls", "")
+                number = re.sub("[^0-9]", "", vote_url_qs["number"][0])
+                vote_pdf_api = f"https://www.senate.mn/api/journal/gotopage?page={number}&ls={session}"
+                vote_pdf_res = self.get(vote_pdf_api).json()
+                page_number = vote_pdf_res["internal_page"]
+                filename = vote_pdf_res["filename"]
+                biennium = vote_pdf_res["fileBiennium"]
+                pdf_url = f"https://www.senate.mn/journals/{biennium}/{filename}.pdf"
 
-    #     # Check if there is vote at all
-    #     has_vote = action_row.xpath('td/span[contains(text(), "vote:")]')
-    #     if len(has_vote) > 0:
-    #         vote_element = has_vote[0]
-    #         parts = re.match(r'vote:\s+([0-9]*)-([0-9]*)', vote_element.text_content())
-    #         if parts is not None:
-    #             yeas = int(parts.group(1))
-    #             nays = int(parts.group(2))
+                # Vote found
+                vote = Vote(
+                    chamber=chamber,
+                    start_date=vote_date,
+                    motion_text=action["action_text"],
+                    result="pass" if yeas > nays else "fail",
+                    bill=bill,
+                    classification="passage",
+                )
+                vote.add_source(f"{pdf_url}#{page_number}")
+                vote.set_count("yes", yeas)
+                vote.set_count("no", nays)
 
-    #             # Check for URL
-    #             vote_url = None
-    #             if len(vote_element.xpath('a[@href]')) > 0:
-    #                 vote_url = vote_element.xpath('a[@href]')[0].get('href')
+                pdf_response = self.get(pdf_url)
+                doc = fitz.open("pdf", BytesIO(pdf_response.content))
 
-    #             # Vote found
-    #             # vote = Vote(chamber, action['action_date'],
-    #             #     action['action_text'], yeas > nays, yeas, nays, 0)
-    #             # # Add source
-    #             # if vote_url is not None:
-    #             #     vote.add_source(vote_url)
-    #             # # Attach to bill
-    #             # bill.add_vote(vote)
+                first_page = max(0, page_number - 2)
+                last_page = min(page_number, doc.page_count - 1)
 
-    #     return bill
+                page = "\n".join(
+                    [
+                        doc[p].get_text()
+                        for p in range(
+                            first_page,
+                            last_page + 1,
+                        )
+                        if not doc.is_closed
+                    ]
+                )
+                page = page.replace("\u200b", "")
+                yes_voters = []
+                no_voters = []
+
+                wait_yes = False
+                seen_yes = False
+                wait_no = False
+                seen_no = False
+
+                for line in page.splitlines():
+                    if (
+                        re.match(r"^\d+$", line)
+                        or "DAY" in line
+                        or "SENATE" in line
+                        or not line
+                    ):
+                        continue
+                    if seen_yes:
+                        if len(line.split(" ")) > 2 or len(yes_voters) == yeas:
+                            seen_yes = False
+                            wait_no = True
+                        else:
+                            yes_voters.append(line)
+                    if seen_no:
+                        if len(line.split(" ")) > 2 or len(no_voters) == nays:
+                            seen_no = False
+                            break
+                        else:
+                            no_voters.append(line)
+
+                    if f"yeas {yeas} and nays {nays}" in line:
+                        wait_yes = True
+                        continue
+                    elif yeas == 0 and wait_yes:
+                        wait_no = True
+                        continue
+                    elif "Those who voted in the affirmative were" in line and wait_yes:
+                        seen_yes = True
+                        continue
+                    elif nays == 0 and wait_no:
+                        break
+                    elif "Those who voted in the negative were" in line and wait_no:
+                        seen_no = True
+                        continue
+
+                if (len(yes_voters) == yeas) and (len(no_voters) == nays):
+                    for line in yes_voters:
+                        vote.yes(line)
+                    for line in no_voters:
+                        vote.no(line)
+                else:
+                    self.warning(
+                        f"{vote.bill_identifier}: Inconsistent between vote number and length of voters: {yeas}: {nays} \n {yes_voters} \n {no_voters}"
+                    )
+                # # Attach to bill
+                return vote
+
+        return None
 
     def make_bill_id(self, bill):
         """

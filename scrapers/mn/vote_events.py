@@ -30,6 +30,7 @@ VOTES_URLS = {
 }
 
 
+# Please note: this only supports the MN House, not the Senate. Senate votes are scraped in bills.py
 class MNVoteScraper(Scraper):
     # bad SSL as of August 2017
     verify = False
