@@ -22,7 +22,7 @@ def create_bill_report_url(chamber, year, bill_type):
 
     return (
         HI_URL_BASE
-        + "/advreports/advreport.aspx?report=deadline&active=true&rpt_type=&measuretype="
+        + "/advreports/advreport.aspx?report=deadline&rpt_type=&measuretype="
         + bill_slug[bill_type]
         + "&year="
         + year
@@ -245,9 +245,15 @@ class HIBillScraper(Scraper):
             "//*[@id='ctl00_MainContent_UpdatePanel2']/div/div/div"
         )
 
-        metainf_table = bill_page.xpath(
-            '//div[contains(@id, "itemPlaceholder")]//table[1]'
-        )[0]
+        try:
+            metainf_table = bill_page.xpath(
+                '//div[contains(@id, "itemPlaceholder")]//table[1]'
+            )[0]
+        except IndexError:
+            self.error("Missing Metainf table")
+            self.error(bill_html)
+            return
+
         action_table = bill_page.xpath(
             '//div[contains(@id, "UpdatePanel1")]//table[1]'
         )[0]
@@ -275,7 +281,7 @@ class HIBillScraper(Scraper):
         companion = meta["Companion"].strip()
         if companion:
             companion_url = bill_page.xpath(
-                "//span[@id='ctl00_MainContent_ListView1_ctrl0_companionLabel']/a/@href"
+                "//span[@id='MainContent_ListView1_companionLabel_0']/a/@href"
             )[0]
             # a companion's session year is the last 4 chars of the link
             # this will match the _scraped_name of a session in __init__.py
