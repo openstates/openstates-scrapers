@@ -76,7 +76,7 @@ class MNBillScraper(Scraper, LXMLMixin):
     # For testing purposes, this will do a lite version of things.  If
     # testing_bills is set, only these bills will be scraped.  Use SF0077
     testing = False
-    testing_bills = ["SF3035"]
+    testing_bills = ["SF2934"]
 
     # Regular expressions to match category of actions
     _categorizers = (
@@ -447,11 +447,11 @@ class MNBillScraper(Scraper, LXMLMixin):
                 # Try to extract vote
                 # senate vote only: i = 0 => senate, i = 1 => house
                 if i == 0:
-                    vote, page_number = self.extract_vote_from_action(
+                    vote, vote_url = self.extract_vote_from_action(
                         bill, bill_action, current_chamber, row, pages
                     )
                     if vote:
-                        pages.append(page_number)
+                        pages.append(vote_url)
                         votes.append(vote)
 
             # if there's a second table, toggle the current chamber
@@ -672,15 +672,20 @@ class MNBillScraper(Scraper, LXMLMixin):
                 # Check for URL
                 vote_date = action["action_date"]
                 if not vote_element.xpath(".//a[@href]/@href"):
-                    self.warning("No vote url")
-                    return [None] * 2
+                    # in this case, use the previous vote url
+                    vote_url = pages[-1]
+                    self.warning(
+                        f"No vote url in the page. trying to use the previous vote url: {vote_url}"
+                    )
+                    if not vote_url:
+                        return [None] * 2
+                else:
+                    vote_url = vote_element.xpath(".//a[@href]/@href")[0]
 
-                vote_url = urllib.parse.urlparse(
-                    vote_element.xpath(".//a[@href]/@href")[0]
-                )
-                vote_url_parse = urllib.parse.parse_qs(vote_url.query)
-                session = vote_url_parse["session"][0].replace("ls", "")
-                number = vote_url_parse["number"][0]
+                vote_url_obj = urllib.parse.urlparse(vote_url)
+                vote_url_qs = urllib.parse.parse_qs(vote_url_obj.query)
+                session = vote_url_qs["session"][0].replace("ls", "")
+                number = vote_url_qs["number"][0]
                 vote_pdf_api = f"https://www.senate.mn/api/journal/gotopage?page={number}&ls={session}"
                 vote_pdf_res = self.get(vote_pdf_api).json()
                 page_number = vote_pdf_res["internal_page"]
@@ -703,41 +708,77 @@ class MNBillScraper(Scraper, LXMLMixin):
 
                 pdf_response = self.get(pdf_url)
                 doc = fitz.open("pdf", BytesIO(pdf_response.content))
-                page = doc[page_number - 1].get_text() + doc[page_number].get_text()
+
+                first_page = max(0, page_number - 2)
+                last_page = min(page_number, doc.page_count - 1)
+
+                page = "\n".join(
+                    [
+                        doc[p].get_text()
+                        for p in range(
+                            first_page,
+                            last_page + 1,
+                        )
+                        if not doc.is_closed
+                    ]
+                )
                 page = page.replace("\u200b", "")
                 yes_voters = []
                 no_voters = []
 
-                yes_voter_re = re.compile(
-                    r"Those who voted in the affirmative were:([\s\S]+?)(Pursuant|\d+.*?DAY|By |The )",
-                    re.M | re.U | re.I,
-                )
-                no_voter_re = re.compile(
-                    r"Those who voted in the negative were:([\s\S]+?)(Pursuant|\d+.*?DAY|By |The )",
-                    re.M | re.U | re.I,
-                )
-                if len(yes_voter_re.findall(page)) == 0:
-                    yes_voters = []
-                else:
-                    yes_voters = yes_voter_re.findall(page)[int(page_number in pages)][
-                        0
-                    ].split("\n")
-                if len(no_voter_re.findall(page)) == 0:
-                    no_voters = []
-                else:
-                    no_voters = no_voter_re.findall(page)[int(page_number in pages)][
-                        0
-                    ].split("\n")
+                wait_yes = False
+                seen_yes = False
+                wait_no = False
+                seen_no = False
 
-                real_yes = list(filter(None, yes_voters))[0:yeas]
-                real_no = list(filter(None, no_voters))[0:nays]
-                if (len(real_yes) == yeas) and (len(real_no) == nays):
-                    for line in real_yes:
+                for line in page.splitlines():
+                    if (
+                        re.match(r"^\d+$", line)
+                        or "DAY" in line
+                        or "SENATE" in line
+                        or not line
+                    ):
+                        continue
+                    if seen_yes:
+                        if len(line.split(" ")) > 2 or len(yes_voters) == yeas:
+                            seen_yes = False
+                            wait_no = True
+                        else:
+                            yes_voters.append(line)
+                    if seen_no:
+                        if len(line.split(" ")) > 2 or len(no_voters) == nays:
+                            seen_no = False
+                            break
+                        else:
+                            no_voters.append(line)
+
+                    if f"yeas {yeas} and nays {nays}" in line:
+                        wait_yes = True
+                        continue
+                    elif yeas == 0 and wait_yes:
+                        wait_no = True
+                        continue
+                    elif "Those who voted in the affirmative were" in line and wait_yes:
+                        seen_yes = True
+                        continue
+                    elif nays == 0 and wait_no:
+                        break
+                    elif "Those who voted in the negative were" in line and wait_no:
+                        seen_no = True
+                        continue
+
+                if (len(yes_voters) == yeas) and (len(no_voters) == nays):
+                    for line in yes_voters:
                         vote.yes(line)
-                    for line in real_no:
+                    for line in no_voters:
                         vote.no(line)
+                else:
+                    self.warning(
+                        f"Inconsistent between vote number and length of voters: "
+                        "{yeas}: {nays} \n {yes_voters} \n {no_voters}"
+                    )
                 # # Attach to bill
-                return vote, number
+                return vote, vote_url
 
         return [None] * 2
 
