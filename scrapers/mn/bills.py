@@ -774,8 +774,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                         vote.no(line)
                 else:
                     self.warning(
-                        f"Inconsistent between vote number and length of voters: "
-                        "{yeas}: {nays} \n {yes_voters} \n {no_voters}"
+                        f"Inconsistent between vote number and length of voters: {yeas}: {nays} \n {yes_voters} \n {no_voters}"
                     )
                 # # Attach to bill
                 return vote, vote_url
