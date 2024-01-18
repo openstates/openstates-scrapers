@@ -64,7 +64,7 @@ class OpenLegislationAPIClient(object):
             "committees/{session_year}/{chamber}/{committee_name}/history"
             "?limit={limit}&offset={offset}&full={full}&order={sort_order}"
         ),
-        meetings=("agendas/meetings/{start}/{end}?"),
+        meetings=("agendas/meetings/{start}/{end}?limit=1000"),
         meeting=("agendas/{year}/{agenda_id}/{committee}?"),
         members=(
             "members/{session_year}?limit={limit}&offset={offset}&full={full}"
