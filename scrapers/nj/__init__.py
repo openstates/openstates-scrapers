@@ -2,7 +2,6 @@ import requests
 from openstates.scrape import State
 from .bills import NJBillScraper
 from .events import NJEventScraper
-from .new_events import NJNewEventScraper
 
 # don't retry- if a file isn't on FTP just let it go
 settings = dict(SCRAPELIB_RETRY_ATTEMPTS=0)
@@ -12,7 +11,6 @@ class NewJersey(State):
     scrapers = {
         "bills": NJBillScraper,
         "events": NJEventScraper,
-        "new": NJNewEventScraper,
     }
     legislative_sessions = [
         {
