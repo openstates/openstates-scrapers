@@ -252,7 +252,7 @@ class Mississippi(State):
             "active": True,
         },
         {
-            "_scraped_name": "2024 1st Extraordinary Session",
+            "_scraped_name": "2024 First Extraordinary Session",
             "classification": "special",
             "identifier": "20241E",
             "name": "2024 First Extraordinary Session",
