@@ -1,10 +1,8 @@
-from sqlite3 import Row
 import pytz
 import datetime
 import dateutil.parser
 import lxml.html
 
-from collections import defaultdict
 from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
 
