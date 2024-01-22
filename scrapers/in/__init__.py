@@ -144,9 +144,8 @@ class Indiana(State):
             "classification": "primary",
             "identifier": "2024",
             "name": "2024 Regular Session",
-            # TODO: correct dates
-            "start_date": "2024-01-10",
-            "end_date": "2024-04-29",
+            "start_date": "2024-01-08",
+            "end_date": "2024-03-14",  # https://iga.in.gov/session/2024/deadlines
             "active": True,
         },
     ]

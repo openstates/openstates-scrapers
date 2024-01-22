@@ -146,13 +146,13 @@ class Illinois(State):
             "classification": "primary",
             "active": False,
         },
-        # TODO: check dates,
         # check senate prez in session_details in bills.py
+        # https://www.ilga.gov/house/schedules/2024_House_Spring_Session.pdf
         {
             "name": "103rd Regular Session",
             "identifier": "103rd",
             "start_date": "2023-01-11",
-            "end_date": "2023-06-01",
+            "end_date": "2024-05-24",
             "classification": "primary",
             "active": True,
         },
