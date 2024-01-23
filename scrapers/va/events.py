@@ -236,8 +236,12 @@ class VaEventScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
+        title = " ".join(
+            [sub_title.xpath("string()") for sub_title in page.xpath("//center/b")]
+        )
+        agenda = event.add_agenda_item(title)
         for row in page.xpath("//p[./b/b/a/@href]"):
-            title = row.xpath("following-sibling::p[2]/b[1]/text()")[0]
-            agenda = event.add_agenda_item(title)
             bill = "".join(row.xpath("./b/b/a/text()")[0].replace(".", "").split())
-            agenda.add_bill(bill)
+            bill_regex = re.compile(r"(HB|HJ|HR|SB|SJ|SR)[0-9]+")
+            if bill_regex.match(bill):
+                agenda.add_bill(bill)
