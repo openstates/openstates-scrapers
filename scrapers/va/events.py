@@ -113,11 +113,23 @@ class VaEventScraper(Scraper):
                 './/span[contains(@class,"reportBlockContainerCon")]/h2/text()'
             )[0].strip()
             agenda = event.add_agenda_item(title)
-
-            for bill in row.xpath(
-                './/tr[contains(@class, "standardZebra")]/td[1]/a/text()'
-            ):
-                agenda.add_bill(bill)
+            summary = row.xpath(".//table/@summary")
+            if not summary:
+                continue
+            summary = summary[0]
+            for bill in row.xpath('.//tr[contains(@class, "standardZebra")]/td[1]/a'):
+                name = bill.xpath("string()").strip()
+                if "Attachment" in summary:
+                    url = bill.xpath("@href")[0]
+                    agenda.add_media_link(name, url, media_type="application/pdf")
+                elif "Block of this committee" in summary:
+                    bill_regex = re.compile(r"(HB|HJ|HR|SB|SJ|SR)[0-9]+")
+                    if bill_regex.match(name):
+                        agenda.add_bill(name)
+                    else:
+                        raise Exception("Invalid format of Bill ID")
+                else:
+                    raise Exception("Unknown types of agenda")
 
     def scrape_upper(self, session_id):
         list_url = f"https://lis.virginia.gov/cgi-bin/legp604.exe?{session_id}+oth+MTG&{session_id}+oth+MTG"
@@ -125,8 +137,8 @@ class VaEventScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(list_url)
 
-        date = None
-        time = None
+        date = ""
+        time = ""
         # note the [td] at the end, they have some empty tr-s so skip them
         for row in page.xpath("//div[@id='mainC']/center/table//tr[td]"):
             if row.xpath("td[1]/text()")[0].strip() != "":
@@ -139,7 +151,7 @@ class VaEventScraper(Scraper):
             if "a.m." in time_col or "p.m." in time_col:
                 time = time_col.replace("a.m.", "am").replace("p.m.", "pm").strip()
 
-            when = dateutil.parser.parse(f"{date} {time}")
+            when = dateutil.parser.parse(f"{date} {time}".strip())
             when = self._tz.localize(when)
 
             description = row.xpath("td[3]")[0].xpath("string()")
@@ -227,5 +239,5 @@ class VaEventScraper(Scraper):
         for row in page.xpath("//p[./b/b/a/@href]"):
             title = row.xpath("following-sibling::p[2]/b[1]/text()")[0]
             agenda = event.add_agenda_item(title)
-            bill = " ".join(row.xpath("./b/b/a/text()")[0].replace(".", "").split())
+            bill = "".join(row.xpath("./b/b/a/text()")[0].replace(".", "").split())
             agenda.add_bill(bill)
