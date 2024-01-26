@@ -334,6 +334,8 @@ class NEBillScraper(Scraper, LXMLMixin):
             action_type = "referral-committee"
         elif "Indefinitely postponed" in action:
             action_type = "committee-failure"
+        elif "Placed on General File" in action:
+            action_type = "committee-passage"
         elif ("File" in action) or ("filed" in action):
             action_type = "filing"
         elif "Placed on Final Reading" in action:
