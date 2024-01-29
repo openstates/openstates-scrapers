@@ -50,12 +50,7 @@ class VTAgendaOfWeek(HtmlPage):
                 ),
             )
             event.add_source(self.source.url)
-            committe_name = (
-                info["LongName"]
-                .replace("Senate Committee on", "")
-                .replace("House Committee on", "")
-                .strip()
-            )
+            committe_name = info["LongName"].strip()
             event.add_committee(name=committe_name, note="host")
             for member in members:
                 event.add_person(member[0], note=member[1])
