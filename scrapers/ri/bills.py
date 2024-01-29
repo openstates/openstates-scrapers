@@ -80,6 +80,7 @@ BILL_STRING_FLAGS = {
 
 BILL_TITLE_RE = re.compile("ENTITLED,\s+([^(]+)(\(.+\))?")
 
+
 class RIBillScraper(Scraper):
     # when scraping votes we only get 'S101' so we can't tie them to their parent bill
     # so we keep a dict of (chamber, number) -> bill_id from the bill scrape to be used in the
