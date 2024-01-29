@@ -78,7 +78,7 @@ BILL_STRING_FLAGS = {
     "act": r"^Act\ \d*$",
 }
 
-BILL_TITLE_RE = re.compile("ENTITLED,\s+([^(]+)(\(.+\))?")
+BILL_TITLE_RE = re.compile(r"ENTITLED,\s+([^(]+)(\(.+\))?")
 
 
 class RIBillScraper(Scraper):
