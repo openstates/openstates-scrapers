@@ -276,7 +276,6 @@ class OHBillScraper(Scraper):
                             action.add_related_entity(
                                 committee,
                                 entity_type="organization",
-                                entity_id=committee_id,
                             )
 
                 # attach documents gathered earlier
