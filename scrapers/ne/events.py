@@ -58,9 +58,10 @@ class NEEventScraper(Scraper):
             raise EmptyScrape
 
         for meeting in page.xpath('//div[@class="card mb-4"]'):
-            com = meeting.xpath('div[contains(@class, "card-header")]/text()')[
-                0
-            ].strip()
+            com = meeting.xpath(
+                'div[contains(@class, "card-header")]/div/div[1]/text()'
+            )[0].strip()
+
             details = meeting.xpath(
                 'div[contains(@class, "card-header")]/small/text()'
             )[0].strip()
