@@ -149,6 +149,7 @@ class NEBillScraper(Scraper, LXMLMixin):
             bill_page, '//div[@class="main-content"]/div[5]//table/tbody/tr'
         )
 
+        actor = "legislature"
         for action_node in action_nodes:
             date = self.get_node(action_node, "./td[1]").text
             date = datetime.strptime(date, "%b %d, %Y")
@@ -169,8 +170,6 @@ class NEBillScraper(Scraper, LXMLMixin):
 
             if "Governor" in action:
                 actor = "executive"
-            elif "Speaker" in action:
-                actor = "legislature"
             else:
                 actor = "legislature"
 
