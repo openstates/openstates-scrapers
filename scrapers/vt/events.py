@@ -55,6 +55,7 @@ class VTAgendaOfWeek(HtmlPage):
             for member in members:
                 event.add_person(member[0], note=member[1])
 
+            bills_mentioned = set()
             for row in XPath("following-sibling::p").match(event_row, min_items=0):
                 style = row.get("style")
                 if style and "tab-stop" in style:
@@ -64,7 +65,9 @@ class VTAgendaOfWeek(HtmlPage):
 
                 if bill_id:
                     bill_id = bill_id.group(1).replace(".", "").strip()
-                    event.add_bill(bill_id)
+                    if bill_id and bill_id not in bills_mentioned:
+                        event.add_bill(bill_id)
+                        bills_mentioned.add(bill_id)
 
             yield event
 
@@ -80,10 +83,14 @@ class VTEventScraper(Scraper):
         json_data = self.get(url).text
         events = json.loads(json_data)["data"]
         event_count = 0
+        # This should be some point in the past, because some event agendas actually include dates
+        # that are later than the info["MeetingDate"] (which is just a day, has no time info)
+        # setting to a week ago to ensure we get the most current/near-future events possible
+        parse_events_after_date = datetime.datetime.today() - datetime.timedelta(days=7)
         for info in events:
             # Determine when the committee meets
             start_time = dateutil.parser.parse(info["MeetingDate"])
-            if start_time < datetime.datetime.today():
+            if start_time < parse_events_after_date:
                 continue
 
             if "htm" in info["AgendaName"]:
