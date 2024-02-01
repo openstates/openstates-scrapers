@@ -5,7 +5,7 @@ from openstates.models import ScrapeCommittee
 
 class SenateCommitteeDetail(HtmlPage):
     example_source = (
-        "https://committees.senate.michigan.gov/details?com=ADVC&sessionId=14"
+        "https://committees.senate.michigan.gov/details?com=ADVC&sessionId=15"
     )
 
     def process_page(self):
