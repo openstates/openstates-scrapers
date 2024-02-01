@@ -5,7 +5,7 @@ import re
 
 class LegList(HtmlListPage):
     selector = CSS(
-        "div .row-equal-height.padding-two-top.sm-padding-two-top.xs-padding-two-top.hcode-inner-row"
+        "div .hcode-inner-row.padding-two-top.sm-padding-two-top.xs-padding-two-top"
     )
 
     def process_item(self, item):
