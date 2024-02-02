@@ -237,9 +237,13 @@ class MOEventScraper(Scraper, LXMLMixin):
         )
 
         for bill in page.xpath("./hearingbills/hearingbill"):
-            bill_title = bill.xpath("./shorttitle/text()")[0]
             bill_no = bill.xpath("./currentbillstring/text()")[0]
             bill_no = bill_no.replace("HCS", "").strip()
+
+            if bill.xpath("./shorttitle/text()"):
+                bill_title = bill.xpath("./shorttitle/text()")[0]
+            else:
+                bill_title = bill_no
 
             agenda_item = event.add_agenda_item(description=bill_title)
             add_bill_to_agenda(agenda_item, bill_no)
