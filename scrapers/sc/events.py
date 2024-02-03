@@ -148,15 +148,17 @@ class SCEventScraper(Scraper):
             r"Week of [A-Z][a-z]+\s+[0-9]{1,2}, ([0-9]{4})", meeting_year
         ).group(1)
 
+        # Mostly each event is in a UL>LI, with date of event in UL>SPAN
+        # But some ULs do not include a date SPAN
+        # (subsequent ULs are on the same date, until a new date)
+        date_string = ""
         dates = page.xpath("//div[@id='contentsection']/ul")
 
         for date in dates:
-            date_string = date.xpath("span")
+            date_elements = date.xpath("span")
 
-            if len(date_string) == 1:
-                date_string = date_string[0].text_content()
-            else:
-                continue
+            if len(date_elements) == 1:
+                date_string = date_elements[0].text_content()
 
             # If an event is in the next calendar year, the date_string
             # will have a year in it
@@ -217,6 +219,7 @@ class SCEventScraper(Scraper):
                 else:
                     classification = "other-meeting"
 
+                description = re.sub(" on$", "", description.strip())
                 event_key = f"{description}#{location}#{date_time}"
 
                 if event_key in self.event_keys:
