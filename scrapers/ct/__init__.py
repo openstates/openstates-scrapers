@@ -1,6 +1,7 @@
 from openstates.scrape import State
 from .bills import CTBillScraper
 from .events import CTEventScraper
+from .votes import CTVoteScraper
 
 settings = {"SCRAPELIB_RPM": 20}
 
@@ -11,6 +12,7 @@ class Connecticut(State):
     scrapers = {
         "bills": CTBillScraper,
         "events": CTEventScraper,
+        "votes": CTVoteScraper,
     }
     legislative_sessions = [
         {
