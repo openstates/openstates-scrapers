@@ -4,6 +4,7 @@ from openstates.scrape import State
 from .bills import CABillScraper
 
 from .events import CAEventScraper
+from .events_web import CAEventWebScraper
 
 settings = dict(SCRAPELIB_RPM=30)
 
@@ -12,6 +13,7 @@ class California(State):
     scrapers = {
         "bills": CABillScraper,
         "events": CAEventScraper,
+        "events_web": CAEventWebScraper,
     }
     legislative_sessions = [
         {
