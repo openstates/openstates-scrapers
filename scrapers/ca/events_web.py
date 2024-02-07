@@ -180,7 +180,7 @@ class CAEventWebScraper(Scraper, LXMLMixin):
         for date_row in page.xpath("//h5[@class='date']"):
             hearing_date = date_row.xpath("string()").strip()
             for content_xpath in date_row.xpath(
-                'following-sibling::div[@class="wrapper--border"]'
+                './following-sibling::div[@class="wrapper--border"][1]/div[@class="dailyfile-section-item"]'
             ):
                 hearing_title = (
                     content_xpath.xpath('.//div[@class="hearing-name"]')[0]
