@@ -146,7 +146,7 @@ class NEBillScraper(Scraper, LXMLMixin):
         )
 
         action_nodes = self.get_nodes(
-            bill_page, '//div[@class="main-content"]/div[5]//table/tbody/tr'
+            bill_page, '//table[contains(@class,"history")]/tbody/tr'
         )
 
         actor = "legislature"

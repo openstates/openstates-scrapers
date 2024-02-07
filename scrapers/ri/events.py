@@ -80,6 +80,7 @@ class RIEventScraper(Scraper, LXMLMixin):
             "POSTPONED": "",
             "RESCHEDULED": "",
             "and Rise of the Senate": "",
+            "MOVED": "",
         }
         for trans in transtable:
             datetime = datetime.replace(trans, transtable[trans])
@@ -92,6 +93,11 @@ class RIEventScraper(Scraper, LXMLMixin):
                 break
             except ValueError:
                 continue
+
+        if isinstance(datetime, str):
+            self.error(f"Unable to parse datetime {datetime}, skipping")
+            return
+
         event_start = self._tz.localize(datetime)
 
         # Unique key to prevent triggering of DuplicateItemError during import,
