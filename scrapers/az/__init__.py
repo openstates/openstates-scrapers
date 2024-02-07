@@ -284,9 +284,8 @@ class Arizona(State):
             "classification": "primary",
             "identifier": "56th-2nd-regular",
             "name": "56th Legislature - Second Regular Session",
-            # TODO: Correct dates
-            "start_date": "2024-01-09",
-            "end_date": "2024-06-30",
+            "start_date": "2024-01-08",
+            "end_date": "2024-04-20",
             "active": True,
         },
     ]

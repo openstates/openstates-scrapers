@@ -92,9 +92,13 @@ class SenatorDetail(HtmlPage):
     input_type = PartialMember
 
     def process_page(self):
-        party = self.root.xpath('//*[@id="mempg_top"]/div[2]/p[last()]/text()')[
-            0
-        ].strip()
+        try:
+            party = self.root.xpath('//*[@id="mempg_top"]/div[2]/p[last()]/text()')[
+                0
+            ].strip()
+        except IndexError:
+            self.logger.warning("No party caught")
+            return
 
         p = ScrapePerson(
             name=self.input.name,

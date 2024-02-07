@@ -31,7 +31,6 @@ class VaEventScraper(Scraper):
         page.make_links_absolute(list_url)
 
         for row in page.xpath("//table[contains(@class, 'CODayTable')]/tbody/tr"):
-
             # TODO: it would be nice to go back in and update the record to mark it as cancelled,
             # but since there's no ics link it makes the day logic way more complicated
             if row.xpath(".//span[contains(@class, 'COCancelled')]"):
@@ -114,11 +113,23 @@ class VaEventScraper(Scraper):
                 './/span[contains(@class,"reportBlockContainerCon")]/h2/text()'
             )[0].strip()
             agenda = event.add_agenda_item(title)
-
-            for bill in row.xpath(
-                './/tr[contains(@class, "standardZebra")]/td[1]/a/text()'
-            ):
-                agenda.add_bill(bill)
+            summary = row.xpath(".//table/@summary")
+            if not summary:
+                continue
+            summary = summary[0]
+            for bill in row.xpath('.//tr[contains(@class, "standardZebra")]/td[1]/a'):
+                name = bill.xpath("string()").strip()
+                if "Attachment" in summary:
+                    url = bill.xpath("@href")[0]
+                    agenda.add_media_link(name, url, media_type="application/pdf")
+                elif "Block of this committee" in summary:
+                    bill_regex = re.compile(r"(HB|HJ|HR|SB|SJ|SR)[0-9]+")
+                    if bill_regex.match(name):
+                        agenda.add_bill(name)
+                    else:
+                        raise Exception("Invalid format of Bill ID")
+                else:
+                    raise Exception("Unknown types of agenda")
 
     def scrape_upper(self, session_id):
         list_url = f"https://lis.virginia.gov/cgi-bin/legp604.exe?{session_id}+oth+MTG&{session_id}+oth+MTG"
@@ -126,34 +137,35 @@ class VaEventScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(list_url)
 
-        date = None
+        date = ""
+        time = ""
         # note the [td] at the end, they have some empty tr-s so skip them
-        for row in page.xpath("//div[@id='mainC']/center/table/tr[td]"):
+        for row in page.xpath("//div[@id='mainC']/center/table//tr[td]"):
             if row.xpath("td[1]/text()")[0].strip() != "":
                 date = row.xpath("td[1]/text()")[0].strip()
 
-            description = row.xpath("td[3]/text()")[0].strip()
-
-            # data on the house page is better
-            # if "senate" not in description.lower():
-            #    continue
-
-            time = row.xpath("td[2]/text()")[0].strip()
-
+            time_col = row.xpath("td[2]/text()")[0]
             status = "tentative"
-            if "CANCELLED" in time.lower():
+            if "cancelled" in time_col.lower():
                 status = "cancelled"
+            if "a.m." in time_col or "p.m." in time_col:
+                time = time_col.replace("a.m.", "am").replace("p.m.", "pm").strip()
 
-            try:
-                when = dateutil.parser.parse(f"{date} {time}")
-            except dateutil.parser._parser.ParserError:
-                when = dateutil.parser.parse(date)
-
+            when = dateutil.parser.parse(f"{date} {time}".strip())
             when = self._tz.localize(when)
 
-            # TODO: Post covid figure out how they post locations
-            if "virtual" in description.lower():
-                location = "Virtual"
+            description = row.xpath("td[3]")[0].xpath("string()")
+            description = " ".join(description.split()).strip()
+
+            # location is generally everything after the semicolon in the description
+            # it is sometimes the thing after colon in description
+            # removes these strings "- 1/2 hour, - 2 hours, - 30 minutes, - Immediately, (...)" in the description
+            desc_split = re.split(
+                r"(?:\:|;|\(|\)|-[\s\d\/\.]+(?:hour(?:s)?|minute(?:s)?|Immediately))",
+                description,
+            )
+            if len(desc_split) > 1:
+                location = desc_split[1].strip()
             else:
                 location = "Unknown"
 
@@ -164,6 +176,72 @@ class VaEventScraper(Scraper):
                 location_name=location,
                 status=status,
             )
-
             event.add_source(list_url)
+
+            # committee info & sub-committee info urls
+            committee_info_xpath = row.xpath(
+                './/a[contains(., "committee info")]/@href'
+            )
+            # for senate only.
+            if "Senate" in description and committee_info_xpath:
+                committee_url = committee_info_xpath[0]
+                self.scrape_upper_com(event, committee_url)
+
             yield event
+
+    def scrape_upper_com(self, event, url):
+        page = self.get(url).content
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+
+        # add members
+        for person in (
+            page.xpath('//div[@id="mainC"]/p[./a[contains(@href, "mbr")]]')[0]
+            .xpath("string()")
+            .split(",")
+        ):
+            event.add_participant(
+                person.split("(")[0].strip(),
+                type="person",
+                note=person.split("(")[1].strip(") ").lower()
+                if "(" in person
+                else "member",
+            )
+
+        # add committee name
+        committee_name = (
+            page.xpath('//div[@id="mainC"]/h3[@class="xpad"]')[0]
+            .xpath("string()")
+            .replace("\n", "")
+            .strip()
+        )
+        event.add_participant(committee_name, type="committee", note="host")
+        # get the url for only event date
+        event_dt = event.start_date.strftime("%B %d")
+        # the url contains +com+ for committee.
+        if "com" in url:
+            # click committee dockets (only 1 url). used "for" statement to avoid exception.
+            for doc_url in page.xpath('//a[contains(@href, "DOC")]/@href'):
+                doc_page = self.get(doc_url).content
+                page = lxml.html.fromstring(doc_page)
+                page.make_links_absolute(url)
+        # click dockets for the current event date. only 1 url if exists.
+        for url in page.xpath(f'//a[contains(., "{event_dt}")]/@href'):
+            event.add_document("Agenda", url, media_type="text/html")
+            self.scrape_upper_agenda(event, url)
+
+    def scrape_upper_agenda(self, event, url):
+        # scrape agenda title and bill ids
+        page = self.get(url).content
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+
+        title = " ".join(
+            [sub_title.xpath("string()") for sub_title in page.xpath("//center/b")]
+        )
+        agenda = event.add_agenda_item(title)
+        for row in page.xpath("//p[./b/b/a/@href]"):
+            bill = "".join(row.xpath("./b/b/a/text()")[0].replace(".", "").split())
+            bill_regex = re.compile(r"(HB|HJ|HR|SB|SJ|SR)[0-9]+")
+            if bill_regex.match(bill):
+                agenda.add_bill(bill)

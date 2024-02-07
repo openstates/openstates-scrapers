@@ -5,6 +5,7 @@ import pytz
 from utils import LXMLMixin
 from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 class UTEventScraper(Scraper, LXMLMixin):
@@ -15,6 +16,8 @@ class UTEventScraper(Scraper, LXMLMixin):
         url = "https://le.utah.gov/CalServ/CalServ?month={}&year={}"
 
         year = datetime.datetime.today().year
+
+        event_count = 0
 
         for i in range(0, 12):
             page = self.get(url.format(i, year)).json()
@@ -138,4 +141,8 @@ class UTEventScraper(Scraper, LXMLMixin):
                         },
                     )
 
+                    event_count += 1
                     yield event
+
+        if event_count == 0:
+            raise EmptyScrape

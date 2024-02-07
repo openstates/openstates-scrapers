@@ -35,8 +35,10 @@ class MIEventScraper(Scraper):
             metainf["Date"]["txt"],
             metainf["Time"]["txt"].replace(".", ""),
         )
+
+        status = "tentative"
         if "Cancelled" in datetime:
-            return
+            status = "cancelled"
 
         translate = {
             "noon": " PM",
@@ -56,8 +58,9 @@ class MIEventScraper(Scraper):
             "or later immediately after committees are given leave",
             "or later after committees are given leave by the House to meet",
             "**Please note time**",
+            "Cancelled",
         ]:
-            datetime = datetime.split(text_to_remove)[0].strip()
+            datetime = datetime.replace(text_to_remove, "").strip()
 
         datetime = datetime.replace("p.m.", "pm")
         datetime = datetime.replace("Noon", "pm")
@@ -72,7 +75,10 @@ class MIEventScraper(Scraper):
             chamber = "joint"
 
         event = Event(
-            name=title, start_date=self._tz.localize(datetime), location_name=where
+            name=title,
+            start_date=self._tz.localize(datetime),
+            location_name=where,
+            status=status,
         )
         event.dedupe_key = f"{chamber}#{title}#{where}#{self._tz.localize(datetime)}"
         event.add_source(url)

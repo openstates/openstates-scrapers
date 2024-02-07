@@ -10,7 +10,7 @@ mary_shallcross_re = re.compile("shallcrosssmith/")
 cruz_re = re.compile("delacruz/")
 
 EXCEL_URL = URL(
-    "http://www.rilegislature.gov/SiteAssets/MailingLists/Representatives.xls",
+    "https://www.rilegislature.gov/SiteAssets/Representatives.xls",
     timeout=30,
 )
 
@@ -120,7 +120,7 @@ class SenList(LegList):
     dependencies = {
         "detail_mapping": LegacyExcelPage(
             source=URL(
-                "http://www.rilegislature.gov/SiteAssets/MailingLists/Senators.xls",
+                "https://www.rilegislature.gov/SiteAssets/Senators.xls",
                 timeout=30,
             )
         )

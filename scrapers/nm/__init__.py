@@ -184,7 +184,7 @@ class NewMexico(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-17",
             "end_date": "2023-03-18",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2024 Regular",

@@ -65,7 +65,7 @@ class Iowa(State):
             "identifier": "2023-2024",
             "name": "2023-2024 Regular Session",
             "start_date": "2023-01-09",
-            "end_date": "2023-04-18",
+            "end_date": "2024-04-16",
             "active": True,
         },
     ]
