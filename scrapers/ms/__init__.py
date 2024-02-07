@@ -261,6 +261,16 @@ class Mississippi(State):
             "end_date": "2024-01-26",
             "active": True,
         },
+        {
+            "_scraped_name": "2024 Second Extraordinary Session",
+            "classification": "special",
+            "identifier": "20242E",
+            "name": "2024 Second Extraordinary Session",
+            "start_date": "2024-02-01",
+            # TODO: real end date
+            "end_date": "2024-02-02",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "2022 Extraordinary Session",

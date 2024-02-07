@@ -71,7 +71,7 @@ class CommitteeDetail(HtmlListPage):
             else:
                 role = "Member"
 
-            time.sleep(15)
+            time.sleep(40)
             detail_link = member_items[i].get("href")
             # .do_scrape() allows us to get information from MemberDetail without
             # returning/writing a com object to disk
@@ -116,13 +116,13 @@ class FindSubCommittees(HtmlListPage):
         com.add_source(self.source.url, note="homepage")
         com.add_source(detail_link)
 
-        time.sleep(20)
+        time.sleep(40)
 
         return CommitteeDetail(com, source=URL(detail_link, timeout=120))
 
 
 class CommitteeList(HtmlListPage):
-    source = "https://lis.virginia.gov/231/com/COM.HTM"
+    source = "https://lis.virginia.gov/241/com/COM.HTM"
     selector = CSS(".linkSect a")
 
     def process_item(self, item):
@@ -144,13 +144,13 @@ class CommitteeList(HtmlListPage):
         com.add_source(self.source.url, note="homepage")
         com.add_source(detail_link)
 
-        time.sleep(10)
+        time.sleep(40)
 
         return CommitteeDetail(com, source=URL(detail_link, timeout=120, retries=3))
 
 
 class SubCommitteeList(HtmlListPage):
-    source = "https://lis.virginia.gov/231/com/COM.HTM"
+    source = "https://lis.virginia.gov/241/com/COM.HTM"
     selector = CSS(".linkSect a")
 
     def process_item(self, item):

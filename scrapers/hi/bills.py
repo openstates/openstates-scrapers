@@ -5,6 +5,8 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from .actions import Categorizer, find_committee
 from .utils import get_short_codes
 from urllib import parse as urlparse
+import dateutil
+import pytz
 
 HI_URL_BASE = "https://capitol.hawaii.gov"
 SHORT_CODES = "%s/legislature/committees.aspx?chamber=all" % (HI_URL_BASE)
@@ -42,6 +44,8 @@ def split_specific_votes(voters):
 
 class HIBillScraper(Scraper):
     categorizer = Categorizer()
+    bill_types = ["HB", "HR", "HCR", "SB", "SR", "SCR", "GM"]
+    tz = pytz.timezone("US/Hawaii")
 
     def parse_bill_metainf_table(self, metainf_table):
         def _sponsor_interceptor(line):
@@ -395,16 +399,51 @@ class HIBillScraper(Scraper):
                 bill_url = f"{HI_URL_BASE}{bill_url}"
             yield from self.scrape_bill(session, chamber, billtype_map, bill_url)
 
-    def scrape(self, chamber=None, session=None):
+    def scrape(self, chamber=None, session=None, scrape_since=None):
         get_short_codes(self)
-        bill_types = ["bill", "cr", "r"]
-        chambers = [chamber] if chamber else ["lower", "upper"]
-        for chamber in chambers:
-            # only scrape GMs once
-            if chamber == "upper":
-                bill_types.append("gm")
-            for typ in bill_types:
-                yield from self.scrape_type(chamber, session, typ)
+
+        if scrape_since is None:
+            bill_types = ["bill", "cr", "r"]
+            chambers = [chamber] if chamber else ["lower", "upper"]
+            for chamber in chambers:
+                # only scrape GMs once
+                if chamber == "upper":
+                    bill_types.append("gm")
+                for typ in bill_types:
+                    yield from self.scrape_type(chamber, session, typ)
+        else:
+            day = dt.datetime.now(self.tz).date() - dt.timedelta(days=int(scrape_since))
+            yield from self.scrape_xml(session, day)
+
+    def scrape_xml(self, session, day):
+        url = "https://www.capitol.hawaii.gov/sessions/session2024/rss/"
+        self.info(f"fetching url {url}")
+        page = self.get(url, verify=False).text
+        # this content isn't amenable to lxml, but it's machine generated so regex should be ok
+        bill_re = r"(?P<date>\d+\/\d+\/\d+)\s+(?P<time>.*?)\s+\d+\s\<a href=\"(?P<url>.*?)\">(?P<filename>.*?)\.xml<\/a>"
+        for match in re.finditer(bill_re, page, flags=re.IGNORECASE):
+            posted = dateutil.parser.parse(
+                f"{match.group('date')} {match.group('time')}"
+            )
+            posted = self.tz.localize(posted)
+            posted = posted.date()
+            bill_type, bill_num = self.parse_bill_number(match.group("filename"))
+            if posted >= day and bill_type in self.bill_types:
+                self.info(
+                    f"Scraping {bill_type}{bill_num} posted on {posted.strftime('%Y-%m-%d')}"
+                )
+                chamber, classification = self.classify_bill_type(
+                    match.group("filename")
+                )
+
+                # https://www.capitol.hawaii.gov/session/measure_indiv.aspx?billtype=SB&billnumber=3013
+                bill_url = f"https://www.capitol.hawaii.gov/session/measure_indiv.aspx?billtype={bill_type}&billnumber={bill_num}"
+
+                yield from self.scrape_bill(session, chamber, classification, bill_url)
+            else:
+                self.info(
+                    f"Skipping {bill_type}{bill_num} posted on {posted.strftime('%Y-%m-%d')}"
+                )
 
     def session_from_scraped_name(self, scraped_name):
         # find the session from __init__.py matching scraped_name
@@ -414,3 +453,24 @@ class HIBillScraper(Scraper):
             if each["_scraped_name"] == scraped_name
         )
         return details["name"]
+
+    def classify_bill_type(self, bill: str) -> tuple:
+        billtypes = {
+            "HB": ("lower", "bill"),
+            "HR": ("lower", "resolution"),
+            "HCR": ("lower", "concurrent resolution"),
+            "SB": ("upper", "bill"),
+            "SR": ("upper", "resolution"),
+            "SCR": ("upper", "concurrent resolution"),
+            "GM": ("upper", "proclamation"),
+        }
+
+        for key, val in billtypes.items():
+            if bill.startswith(key):
+                return val
+
+        self.error(f"Invalid bill type: {bill}")
+
+    def parse_bill_number(self, bill: str) -> tuple:
+        match = re.search(r"(?P<type>[A-Z]+)(?P<number>\d+)", bill)
+        return (match.group("type"), match.group("number"))

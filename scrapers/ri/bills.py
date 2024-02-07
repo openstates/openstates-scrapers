@@ -78,6 +78,8 @@ BILL_STRING_FLAGS = {
     "act": r"^Act\ \d*$",
 }
 
+BILL_TITLE_RE = re.compile(r"ENTITLED,\s+([^(]+)(\(.+\))?")
+
 
 class RIBillScraper(Scraper):
     # when scraping votes we only get 'S101' so we can't tie them to their parent bill
@@ -243,7 +245,12 @@ class RIBillScraper(Scraper):
                     except KeyError:
                         pass
 
-                    title = bill["title"][len("ENTITLED, ") :]
+                    title_match = BILL_TITLE_RE.match(bill["title"])
+                    title = title_match[1].strip()
+                    abstract = None
+                    if title_match[2]:
+                        abstract = title_match[2].strip("() ")
+
                     billid = bill["bill_id"]
                     try:
                         subs = subjects[bill["bill_id"]]
@@ -265,6 +272,9 @@ class RIBillScraper(Scraper):
                         classification=self.get_type_by_name(bill["bill_id"]),
                     )
                     b.subject = subs
+
+                    if abstract:
+                        b.add_abstract(abstract, "summary")
 
                     # keep bill ID around
                     self._bill_id_by_type[

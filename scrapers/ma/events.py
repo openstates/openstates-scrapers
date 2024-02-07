@@ -1,12 +1,11 @@
-import pytz
-import lxml
-import dateutil.parser
 import datetime
-import re
+import dateutil.parser
+import lxml
+import pytz
 
-from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
+from utils import LXMLMixin
 
 
 class MAEventScraper(Scraper, LXMLMixin):
@@ -69,36 +68,60 @@ class MAEventScraper(Scraper, LXMLMixin):
         page = self.lxmlize(url)
         page.make_links_absolute("https://malegislature.gov/")
 
-        title = page.xpath('string(//div[contains(@class,"followable")]/h1)')
-        title = title.replace("Hearing Details", "").strip()
-        title = title.replace("Special Event Details", "")
-
-        start_day = page.xpath(
-            '//dl[contains(@class,"eventInformation")]/dd[2]/text()[last()]'
-        )[0].strip()
-        start_time = page.xpath(
-            'string(//dl[contains(@class,"eventInformation")]/dd[3])'
+        title = page.xpath('string(//div[contains(@class,"followable")]/h1)').strip()
+        sub_title = page.xpath(
+            'string(//div[contains(@class,"followable")]/h1/span)'
         ).strip()
+        title = title.replace(sub_title, "")
 
-        # If an event gets moved, ignore the original time
-        start_time = re.sub(
-            r"Original Start Time(.*)New Start Time(\n*)",
-            "",
-            start_time,
-            flags=re.IGNORECASE | re.MULTILINE | re.DOTALL,
+        status = (
+            page.xpath('string(//dt[contains(., "Status:")]/following-sibling::dd[1])')
+            .lower()
+            .strip()
         )
-        location = page.xpath(
-            'string(//dl[contains(@class,"eventInformation")]/dd[4]//a)'
-        ).strip()
+        if "cancel" in status:
+            status = "cancelled"
+        elif "complete" in status:
+            status = "passed"
+        elif "confirm" in status:
+            status = "confirmed"
+        elif "reschedule" in status:
+            status = "confirmed"
+        else:
+            status = "tentative"
 
-        if location == "":
-            location = page.xpath(
-                'string(//dl[contains(@class,"eventInformation")]/dd[4])'
-            ).strip()
+        start_day = (
+            page.xpath(
+                'string(//dt[contains(., "Event Date:")]/following-sibling::dd[1])'
+            )
+            .split("New Start Date")[-1]
+            .strip()
+        )
+        start_time = (
+            page.xpath(
+                'string(//dt[contains(., "Start Time:")]/following-sibling::dd[1])'
+            )
+            .split("New Start Time")[-1]
+            .strip()
+        )
 
-        description = page.xpath(
-            'string(//dl[contains(@class,"eventInformation")]/dd[5])'
-        ).strip()
+        location = (
+            page.xpath(
+                'string(//dt[contains(., "Location:")]/following-sibling::dd[1])'
+            )
+            .split("New Location")[-1]
+            .strip()
+        )
+        location = " ".join(location.split())
+
+        description = (
+            page.xpath(
+                'string(//dt[contains(., "Event Description")]/following-sibling::dd[1])'
+            )
+            .split("\n")[0]
+            .strip()
+        )
+        description = " ".join(description.split())
 
         start_date = self._TZ.localize(
             dateutil.parser.parse("{} {}".format(start_day, start_time))
@@ -109,13 +132,13 @@ class MAEventScraper(Scraper, LXMLMixin):
             name=title,
             location_name=location,
             description=description,
+            status=status,
         )
 
         event.add_source(url)
 
         agenda_rows = page.xpath(
-            '//div[contains(@class,"col-sm-8") and .//h2[contains(@class,"agendaHeader")]]'
-            '/div/div/div[contains(@class,"panel-default")]'
+            '//div[@id="agendaSection"]//div[contains(@class,"panel-default")]'
         )
 
         for row in agenda_rows:
@@ -133,11 +156,10 @@ class MAEventScraper(Scraper, LXMLMixin):
 
             bills = row.xpath(".//tbody/tr/td[1]/a/text()")
             for bill in bills:
-                bill = bill.strip().replace(".", " ")
+                bill = bill.strip().replace(".", "")
                 agenda.add_bill(bill)
 
-        if event_type == "Hearing":
-            event.add_participant(title, type="committee", note="host")
+        event.add_participant(title, type="committee", note="host")
 
         video_srcs = page.xpath("//video/source")
         if video_srcs:

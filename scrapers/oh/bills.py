@@ -244,30 +244,39 @@ class OHBillScraper(Scraper):
                 except scrapelib.HTTPError:
                     pass
                 else:
-
                     actions = action_doc.json()
-                    for action in reversed(actions["items"]):
-                        actor = chamber_dict[action["chamber"]]
-                        action_desc = action["description"]
+                    for action_row in reversed(actions["items"]):
+                        actor = chamber_dict[action_row["chamber"]]
+                        action_desc = action_row["description"]
                         try:
-                            action_type = action_dict[action["actioncode"]]
+                            action_type = action_dict[action_row["actioncode"]]
                         except KeyError:
                             self.warning(
                                 "Unknown action {desc} with code {code}."
                                 " Add it to the action_dict"
-                                ".".format(desc=action_desc, code=action["actioncode"])
+                                ".".format(
+                                    desc=action_desc, code=action_row["actioncode"]
+                                )
                             )
                             action_type = None
 
-                        date = dateutil.parser.parse(action["datetime"])
+                        date = dateutil.parser.parse(action_row["datetime"])
                         if date.tzinfo is None:
                             date = self._tz.localize(date)
 
                         date = "{:%Y-%m-%d}".format(date)
 
-                        bill.add_action(
+                        action = bill.add_action(
                             action_desc, date, chamber=actor, classification=action_type
                         )
+                        committee = action_row.get("committee", "")
+                        committee_id = action_row.get("cmte_lpid", "")
+                        if committee_id:
+                            committee = f'{action_row.get("chamber", "")} {committee} Committee'.strip()
+                            action.add_related_entity(
+                                committee,
+                                entity_type="organization",
+                            )
 
                 # attach documents gathered earlier
                 self.add_document(all_amendments, bill_id, "amendment", bill, base_url)
