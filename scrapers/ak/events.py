@@ -38,10 +38,6 @@ class AKEventScraper(Scraper, LXMLMixin):
 
         events = set()
         for row in events_xml:
-            # Their spelling, not a typo
-            if row.get("Canceled") == "true":
-                continue
-
             row_chamber = row.xpath("string(chamber)")
             if chamber and self.CHAMBERS[row_chamber] != chamber:
                 continue
@@ -54,6 +50,11 @@ class AKEventScraper(Scraper, LXMLMixin):
                 yield event
 
     def parse_event(self, row, chamber):
+        status = "tentative"
+        # Their spelling, not a typo
+        if row.get("Canceled") == "true":
+            status = "cancelled"
+
         # sample event available at http://www.akleg.gov/apptester.html
         committee_code = row.xpath("string(Sponsor)").strip()
 
@@ -101,7 +102,9 @@ class AKEventScraper(Scraper, LXMLMixin):
         start_date = dateutil.parser.parse(row.xpath("string(Schedule)"))
         # todo: do i need to self._TZ.localize() ?
         event_name = f"{name}#{location}#{start_date}"
-        event = Event(start_date=start_date, name=name, location_name=location)
+        event = Event(
+            start_date=start_date, name=name, location_name=location, status=status
+        )
         event.dedupe_key = event_name
 
         event.add_source("http://w3.akleg.gov/index.php#tab4")

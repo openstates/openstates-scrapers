@@ -26,6 +26,13 @@ class INBillScraper(Scraper):
 
     _tz = pytz.timezone("US/Eastern")
 
+    # prefixes for PDF files for session
+    session_prefixes = {
+        "2024": "123",
+        "2023": "123",
+        "2022": "122",
+    }
+
     def _get_bill_id_components(self, bill_id):
         bill_prefix = "".join([c for c in bill_id if c.isalpha()])
         bill_number = "".join([c for c in bill_id if c.isdigit()]).lstrip("0")
@@ -186,7 +193,7 @@ class INBillScraper(Scraper):
             doc_list = docs[doc_type]
             for doc in doc_list:
                 title = "{doc_type}: {name}".format(doc_type=doc_type, name=doc["name"])
-                link = PROXY_BASE_URL + doc["link"]
+                link = f"https://iga.in.gov/pdf-documents/{self.session_prefixes[session]}{doc['link']}.pdf"
                 if link not in urls_seen:
                     urls_seen.append(link)
                     bill.add_document_link(
@@ -212,7 +219,7 @@ class INBillScraper(Scraper):
             if version_chamber != api_name_chamber[1]:
                 versions_match = False
 
-        link = PROXY_BASE_URL + version["link"]
+        link = f"https://iga.in.gov/pdf-documents/{self.session_prefixes[session]}{version['link']}.pdf"
         # if the chambers don't match, swap the chamber on version name
         # ex: Engrossed Senate Bill (S) to Engrossed Senate Bill (H)
         name = (
@@ -220,7 +227,6 @@ class INBillScraper(Scraper):
             if versions_match
             else api_version_name[:-2] + version_chamber + api_version_name[-1:]
         )
-
         if link not in urls_seen:
             urls_seen.append(link)
             update_date = version["updated"]
@@ -512,28 +518,39 @@ class INBillScraper(Scraper):
             if bill_json["latestVersion"]["digest"]:
                 bill.add_abstract(bill_json["latestVersion"]["digest"], note="Digest")
 
-            # put this behind a flag 2021-03-18 (openstates/issues#291)
-            if not SCRAPE_WEB_VERSIONS:
-                # votes
-                yield from self._process_votes(
-                    bill_json["latestVersion"]["rollcalls"],
-                    disp_bill_id,
-                    original_chamber,
-                    session,
+            for v in bill_json["versions"]:
+                # note there are a number of links in the API response that won't work with just a browser, they need an api key
+                # https://iga.in.gov/pdf-documents/123/2024/house/resolutions/HC0001/HC0001.01.INTR.pdf
+                category = "resolutions" if "resolution" in bill_type else "bills"
+                url = f"https://iga.in.gov/pdf-documents/{self.session_prefixes[session]}/{bill_json['year']}/{bill_json['originChamber']}/{category}/{v['billName']}/{v['printVersionName']}.pdf"
+                bill.add_version_link(
+                    v["stageVerbose"],
+                    url,
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
                 )
-                # versions
-                self.deal_with_version(
-                    bill_json["latestVersion"], bill, bill_id, original_chamber, session
-                )
-                for version in bill_json["versions"][::-1]:
-                    self.deal_with_version(
-                        version,
-                        bill,
-                        bill_id,
-                        original_chamber,
-                        session,
-                    )
-            else:
-                self.scrape_web_versions(session, bill, bill_id)
+            # # put this behind a flag 2021-03-18 (openstates/issues#291)
+            # if not SCRAPE_WEB_VERSIONS:
+            #     # votes
+            #     yield from self._process_votes(
+            #         bill_json["latestVersion"]["rollcalls"],
+            #         disp_bill_id,
+            #         original_chamber,
+            #         session,
+            #     )
+            #     # versions
+            #     self.deal_with_version(
+            #         bill_json["latestVersion"], bill, bill_id, original_chamber, session
+            #     )
+            #     for version in bill_json["versions"][::-1]:
+            #         self.deal_with_version(
+            #             version,
+            #             bill,
+            #             bill_id,
+            #             original_chamber,
+            #             session,
+            #         )
+            # else:
+            #     self.scrape_web_versions(session, bill, bill_id)
 
             yield bill

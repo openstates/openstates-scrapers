@@ -189,6 +189,14 @@ class Oregon(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-09",
             "end_date": "2023-06-25",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2024 Regular Session",
+            "identifier": "2024R1",
+            "name": "2024 Regular Session",
+            "start_date": "2024-02-05",
+            "end_date": "2024-03-10",
             "active": True,
         },
     ]

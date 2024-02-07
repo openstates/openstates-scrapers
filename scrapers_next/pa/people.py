@@ -64,7 +64,7 @@ class LegDetail(HtmlPage):
                     fb_id = fb[-2]
                 else:
                     fb_id = fb[-1]
-                p.ids.facebook = fb_id
+                p.ids.facebook = fb_id.replace("@", "")
             elif re.search(r"twitter", link.get("href")):
                 twitter = link.get("href").split("/")
                 if twitter[-1] == "":

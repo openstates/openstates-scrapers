@@ -1,9 +1,13 @@
 import re
 import datetime
 import collections
-import lxml.html
+import unicodedata
+
+from lxml import html
 import scrapelib
+
 from urllib import parse
+
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 from .actions import Categorizer
 
@@ -37,6 +41,7 @@ class OKBillScraper(Scraper):
         "2023S1": "231X",
         "2023S2": "232X",
         "2024": "2400",
+        "2024S3": "243X",
     }
 
     def scrape(self, chamber=None, session=None, only_bills=None):
@@ -49,7 +54,7 @@ class OKBillScraper(Scraper):
         self.scrape_subjects(chamber, session)
 
         url = "http://webserver1.lsb.state.ok.us/WebApplication3/WebForm1.aspx"
-        form_page = lxml.html.fromstring(self.get(url).text)
+        form_page = html.fromstring(self.get(url).text)
 
         if chamber == "upper":
             chamber_letter = "S"
@@ -74,7 +79,7 @@ class OKBillScraper(Scraper):
             values[hidden.attrib["name"]] = hidden.attrib["value"]
 
         page = self.post(url, data=values).text
-        page = lxml.html.fromstring(page)
+        page = html.fromstring(page)
         page.make_links_absolute(url)
 
         bill_nums = []
@@ -92,7 +97,7 @@ class OKBillScraper(Scraper):
 
     def scrape_bill(self, chamber, session, bill_id, url):
         try:
-            page = lxml.html.fromstring(self.get(url).text)
+            page = html.fromstring(self.get(url).text)
         except scrapelib.HTTPError as e:
             self.warning("error (%s) fetching %s, skipping" % (e, url))
             return
@@ -229,47 +234,154 @@ class OKBillScraper(Scraper):
             )
 
     def scrape_votes(self, bill, url):
-        page = lxml.html.fromstring(self.get(url).text.replace("\xa0", " "))
+        html_content = unicodedata.normalize(
+            "NFKD", self.get(url).text.replace("\r\n", " ")
+        )
+        page = html.fromstring(html_content)
 
         seen_rcs = set()
+        motions = {}
+        headers_xpath = page.xpath('//p[contains(., "Top_of_Page")]')
 
-        re_ns = "http://exslt.org/regular-expressions"
-        path = r"//p[re:test(text(), 'OKLAHOMA\s+(HOUSE|STATE\s+SENATE)')]"
-        for header in page.xpath(path, namespaces={"re": re_ns}):
+        for motion in page.xpath(
+            '//a[contains(@href, "#")][not(contains(@href,"Top_of_Page"))]'
+        ):
+            motion_text = motion.xpath("string()").strip("#").replace("_", " ")
+            motion_link = motion.xpath("@href")[0].strip("#").replace("RCS", "")
+
+            if "committee" in motion_text.lower() and "RCS" not in motion_text:
+                motion_index = (
+                    motion_link.lstrip("0").zfill(1)
+                    if motion_link.isdigit()
+                    else motion_link.split("_")[1].lstrip("0").zfill(1)
+                )
+                do_pass_motion = motion_link.split("_")
+                do_index = do_pass_motion.index("DO") if "DO" in do_pass_motion else -1
+                passed_index = (
+                    do_pass_motion.index("PASSED")
+                    if "PASSED" in do_pass_motion
+                    else do_pass_motion.index("FAILED")
+                    if "FAILED" in do_pass_motion
+                    else -1
+                )
+                do_pass_motion = (
+                    " ".join(do_pass_motion[do_index:passed_index]).strip().title()
+                )
+                motion_text = do_pass_motion or "Do Pass"
+            else:
+                motion_index = motion_link.lstrip("0").zfill(1)
+                if "OKLAHOMA" in motion_text:
+                    motion_text = "Committee Vote"
+                else:
+                    motion_text = motion_text.split("(")[0].strip().title()
+
+            motions[motion_index] = motion_text
+
+        for header in headers_xpath:
             bad_vote = False
             # Each chamber has the motion name on a different line of the file
-            if "HOUSE" in header.xpath("string()"):
+            if "house" in url.lower():
                 chamber = "lower"
-                motion_index = 8
             else:
                 chamber = "upper"
-                motion_index = 13
 
-            motion = header.xpath(
-                "string(following-sibling::p[%d])" % motion_index
-            ).strip()
-            motion = re.sub(r"\s+", " ", motion)
-            if not motion.strip():
-                self.warning("Motion text not found")
-                return
-            match = re.match(r"^(.*) (PASSED|FAILED)$", motion)
-            if match:
-                motion = match.group(1)
-                passed = match.group(2) == "PASSED"
+            rcs_xpath = header.xpath(
+                "following-sibling::p[contains(., '***')][1]/preceding-sibling::p[contains(., 'RCS#')][1]"
+            )
+
+            if rcs_xpath:
+                rcs_p = rcs_xpath[0]
+                rcs_line = rcs_p.xpath("string()").replace("\xa0", " ")
+                rcs = re.search(r"RCS#\s+(\d+)", rcs_line).group(1)
+                if rcs in seen_rcs:
+                    continue
+                else:
+                    seen_rcs.add(rcs)
             else:
-                passed = None
-
-            rcs_p = header.xpath("following-sibling::p[contains(., 'RCS#')]")[0]
-            rcs_line = rcs_p.xpath("string()").replace("\xa0", " ")
-            rcs = re.search(r"RCS#\s+(\d+)", rcs_line).group(1)
-
-            if rcs in seen_rcs:
                 continue
-            else:
-                seen_rcs.add(rcs)
+            committees = [
+                "Administrative Rules",
+                "Aeronautics And Transportation",
+                "Aeronautics & Transportation",
+                "Agriculture And Rural Affairs",
+                "Agriculture & Rural Affairs",
+                "Appropriations",
+                "Business and Commerce",
+                "Business & Commerce",
+                "Education",
+                "Energy And Telecommunications",
+                "Energy & Telecommunications",
+                "Finance",
+                "General Government",
+                "Health And Human Services",
+                "Health & Human Services",
+                "Judiciary",
+                "Public Safety",
+                "Retirement And Insurance",
+                "Retirement & Insurance",
+                "Rules",
+                "Tourism And Wildlife",
+                "Tourism & Wildlife",
+                "Veterans And Military Affairs",
+                "Veterans & Military Affairs",
+                "Committee",
+                "Subcommittee",
+            ]
+
+            motion_text = motions.get(rcs, "Committee Vote")
+            committee_motion = ""
+
+            if "Do Pass" in motion_text or "Committee" in motion_text:
+                for line in header.xpath("following-sibling::p"):
+                    line_text = (
+                        line.xpath("string()").replace("  ", " ").title().strip()
+                    )
+                    if "*****" in line_text:
+                        break
+                    if not committee_motion:
+                        filter_motion = [
+                            committee
+                            for committee in committees
+                            if committee in line_text
+                            and "Motion By Senator" not in line_text
+                        ]
+                        if len(filter_motion) > 0:
+                            committee_motion = line_text
+                        continue
+
+                    if "Motion By Senator" in line_text:
+                        committee_motion += ": " + line_text
+                        break
+
+                    if "Do Pass" in line_text and (
+                        "Passed" in line_text or "Failed" in line_text
+                    ):
+                        do_pass_motion = (
+                            motion_text
+                            if "Do Pass" in motion_text
+                            else line_text.replace("Passed", "")
+                            .replace("Failed", "")
+                            .replace("Recommendation:", "")
+                            .replace("Strike The T", "Strike The Title")
+                            .replace("Strike The E", "Strike The Enacting Clause")
+                            .strip()
+                        )
+                        committee_motion += ": " + do_pass_motion
+                        break
+
+            motion = committee_motion or motion_text
+
+            if not motion:
+                self.warning("Motion text not found")
+                continue
+
+            passed = None
 
             date_line = rcs_p.getnext().xpath("string()")
-            date = re.search(r"\d+/\d+/\d+", date_line).group(0)
+            date = re.search(r"\d+/\d+/\d+", date_line)
+            if not date:
+                continue
+            date = date.group(0)
             date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
 
             vtype = None
@@ -278,21 +390,25 @@ class OKBillScraper(Scraper):
 
             seen_yes = False
 
-            for sib in header.xpath("following-sibling::p")[13:]:
-                line = sib.xpath("string()").replace("\r\n", " ").strip()
-                if "*****" in line:
+            for sib in header.xpath("following-sibling::p"):
+                line = sib.xpath("string()").strip()
+                if "*****" in line or "motion by" in line:
                     break
                 regex = (
-                    r"(YEAS|NAYS|EXCUSED|VACANT|CONSTITUTIONAL "
+                    r"(YEAS|AYES|NAYS|EXCUSED|VACANT|CONSTITUTIONAL "
                     r"PRIVILEGE|NOT VOTING|N/V)\s*:\s*(\d+)(.*)"
                 )
                 match = re.match(regex, line)
                 if match:
-                    if match.group(1) == "YEAS" and "RCS#" not in line:
+                    if (match.group(1) in ["YEAS", "AYES"]) and "RCS#" not in line:
                         vtype = "yes"
                         seen_yes = True
                     elif match.group(1) == "NAYS" and seen_yes:
                         vtype = "no"
+                    elif match.group(1) == "EXCUSED" and seen_yes:
+                        vtype = "excused"
+                    elif match.group(1) in ["NOT VOTING", "N/V"] and seen_yes:
+                        vtype = "not voting"
                     elif match.group(1) == "VACANT":
                         continue  # skip these
                     elif seen_yes:
@@ -313,7 +429,7 @@ class OKBillScraper(Scraper):
                 continue
 
             if passed is None:
-                passed = counts["yes"] > (counts["no"] + counts["other"])
+                passed = counts["yes"] > counts["no"]
 
             vote = Vote(
                 chamber=chamber,
@@ -324,27 +440,34 @@ class OKBillScraper(Scraper):
                 classification="passage",
             )
             vote.set_count("yes", counts["yes"])
-            vote.set_count("no", counts["no"])
-            vote.set_count("other", counts["other"])
-            vote.dedupe_key = url + "#" + rcs
-
-            vote.add_source(url)
-
             for name in votes["yes"]:
                 vote.yes(name)
+            vote.set_count("no", counts["no"])
             for name in votes["no"]:
                 if ":" in name:
                     raise Exception(name)
                 vote.no(name)
+            if "excused" in counts:
+                vote.set_count("excused", counts["excused"])
+                for name in votes["excused"]:
+                    vote.vote("excused", name)
+            if "not voting" in counts:
+                vote.set_count("not voting", counts["not voting"])
+                for name in votes["not voting"]:
+                    vote.vote("not voting", name)
+            vote.set_count("other", counts["other"])
             for name in votes["other"]:
                 vote.vote("other", name)
+            vote.dedupe_key = url + "#" + rcs
+
+            vote.add_source(url)
 
             yield vote
 
     def scrape_subjects(self, chamber, session):
         form_url = "http://webserver1.lsb.state.ok.us/WebApplication19/WebForm1.aspx"
         form_html = self.get(form_url).text
-        fdoc = lxml.html.fromstring(form_html)
+        fdoc = html.fromstring(form_html)
 
         # bill types
         letter = "H" if chamber == "lower" else "S"
@@ -367,7 +490,7 @@ class OKBillScraper(Scraper):
                 values[hidden.attrib["name"]] = hidden.attrib["value"]
             # values = urllib.urlencode(values, doseq=True)
             page_data = self.post(form_url, data=values).text
-            page_doc = lxml.html.fromstring(page_data)
+            page_doc = html.fromstring(page_data)
 
             # all links after first are bill_ids
             for bill_id in page_doc.xpath("//a/text()")[1:]:

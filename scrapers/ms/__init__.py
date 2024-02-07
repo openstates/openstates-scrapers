@@ -240,6 +240,35 @@ class Mississippi(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-03",
             "end_date": "2023-04-02",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2024 Regular Session",
+            "classification": "primary",
+            "identifier": "2024",
+            "name": "2024 Regular Session",
+            "start_date": "2024-01-02",
+            "end_date": "2024-05-05",
+            "active": True,
+        },
+        {
+            "_scraped_name": "2024 First Extraordinary Session",
+            "classification": "special",
+            "identifier": "20241E",
+            "name": "2024 First Extraordinary Session",
+            "start_date": "2024-01-19",
+            # TODO: real end date
+            "end_date": "2024-01-26",
+            "active": True,
+        },
+        {
+            "_scraped_name": "2024 Second Extraordinary Session",
+            "classification": "special",
+            "identifier": "20242E",
+            "name": "2024 Second Extraordinary Session",
+            "start_date": "2024-02-01",
+            # TODO: real end date
+            "end_date": "2024-02-02",
             "active": True,
         },
     ]

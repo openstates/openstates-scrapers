@@ -159,34 +159,40 @@ class MOEventScraper(Scraper, LXMLMixin):
             yield event
 
     def scrape_lower(self):
-        listing_url = "https://house.mo.gov/HearingsTimeOrder.aspx"
+        headers = {
+            "sec-ch-ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+            "Referer": "https://documents.house.mo.gov/",
+            "sec-ch-ua-mobile": "?0",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "sec-ch-ua-platform": '"Windows"',
+        }
+        response = self.get(
+            "https://documents.house.mo.gov/SessionSet.js?v=2", headers=headers
+        )
+        session_code_re = re.compile(r"sessionyearcode = '(\d+)'")
+        session_code = session_code_re.search(response.text).group(1)
 
-        html = self.get(listing_url).text
+        listing_xml_url = (
+            f"https://documents.house.mo.gov/xml/{session_code}-UpcomingHearingList.XML"
+        )
 
-        # The HTML here isn't wrapped in a container per-event
-        # which makes xpath a pain. So string split by <hr>
-        # then parse each event's fragment for cleaner results
+        xml_content = self.get(listing_xml_url).text
+        tree = lxml.html.fromstring(xml_content)
+
         events = set()
-        for fragment in html.split("<hr />")[1:]:
-            page = lxml.html.fromstring(fragment)
-
-            # Skip date header rows
-            if page.xpath('//div[@id="DateGroup"]'):
-                continue
-            else:
-                for item in self.scrape_lower_item(page):
-                    if item.dedupe_key in events:
-                        self.warning(f"Skipping duplicate event: {item.dedupe_key}")
-                        continue
-                    events.add(item.dedupe_key)
-                    yield item
+        for hearing in tree.xpath("//hearinginfo"):
+            for item in self.scrape_lower_item(hearing):
+                if item.dedupe_key in events:
+                    self.warning(f"Skipping duplicate event: {item.dedupe_key}")
+                    continue
+                events.add(item.dedupe_key)
+                yield item
 
     def scrape_lower_item(self, page):
-        # print(lxml.etree.tostring(page, pretty_print=True))
-        com = self.table_row_content(page, "Committee:")
-        when_date = self.table_row_content(page, "Date:")
-        when_time = self.table_row_content(page, "Time:")
-        location = self.table_row_content(page, "Location:")
+        com = page.xpath("./committeename/text()")[0]
+        when_date = page.xpath("./hearingdate/text()")[0]
+        when_time = page.xpath("./hearingtime/text()")[0]
+        location = page.xpath("./hearinglocation/text()")[0]
 
         if "house hearing room" in location.lower():
             location = f"{location}, 201 W Capitol Ave, Jefferson City, MO 65101"
@@ -223,12 +229,6 @@ class MOEventScraper(Scraper, LXMLMixin):
 
         event.add_participant(com, type="committee", note="host")
 
-        # different from general MO link xpath due to the <b>
-        house_link_xpath = (
-            './/a[contains(@href, "Bill.aspx") '
-            'or contains(@href, "bill.aspx")]/b/text()'
-        )
-
         match_coordinates(
             event,
             {
@@ -236,12 +236,18 @@ class MOEventScraper(Scraper, LXMLMixin):
             },
         )
 
-        for bill_title in page.xpath(house_link_xpath):
-            bill_no = bill_title.split("--")[0].strip()
+        for bill in page.xpath("./hearingbills/hearingbill"):
+            bill_no = bill.xpath("./currentbillstring/text()")[0]
             bill_no = bill_no.replace("HCS", "").strip()
+
+            if bill.xpath("./shorttitle/text()"):
+                bill_title = bill.xpath("./shorttitle/text()")[0]
+            else:
+                bill_title = bill_no
 
             agenda_item = event.add_agenda_item(description=bill_title)
             add_bill_to_agenda(agenda_item, bill_no)
+
         yield event
 
     # Given <td><b>header</b> other text</td>,
@@ -252,14 +258,5 @@ class MOEventScraper(Scraper, LXMLMixin):
         )
         if len(content) > 0:
             return content[0].strip()
-        else:
-            return ""
-
-    def table_row_content(self, page, header):
-        content = page.xpath(
-            'string(.//tr[td[contains(string(.), "{}")]]/td[2])'.format(header)
-        )
-        if len(content) > 0:
-            return content.strip()
         else:
             return ""

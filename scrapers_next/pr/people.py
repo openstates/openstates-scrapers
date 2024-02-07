@@ -205,13 +205,16 @@ class RepDetail(HtmlPage):
             socials = CSS(".ova-social li a").match(self.root)
             for link in socials:
                 social_link = link.get("href")
-                split_social_link = social_link.split(".com/")[1]
-                if "twitter" in social_link:
-                    p.ids.twitter = split_social_link
-                elif "facebook" in social_link:
-                    p.ids.facebook = split_social_link
-                elif "instagram" in social_link:
-                    p.ids.instagram = split_social_link
+                try:
+                    split_social_link = social_link.split(".com/")[1]
+                    if "twitter" in social_link:
+                        p.ids.twitter = split_social_link
+                    elif "facebook" in social_link:
+                        p.ids.facebook = split_social_link
+                    elif "instagram" in social_link:
+                        p.ids.instagram = split_social_link
+                except IndexError:
+                    self.logger.warning("Not an actual social media account link")
         except SelectorError:
             pass
 

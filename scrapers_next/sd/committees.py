@@ -4,12 +4,15 @@ from openstates.models import ScrapeCommittee
 
 class CommitteeList(JsonListPage):
 
-    source_string = "https://sdlegislature.gov/api/SessionCommittees/Session/68"
+    source_string = "https://sdlegislature.gov/api/SessionCommittees/Session/69"
     source = URL(source_string)
 
     def standardize_chamber(self, original_chamber_text):
-        chamber_conversion = {"H": "lower", "S": "upper", "J": "legislature"}
-        return chamber_conversion[original_chamber_text]
+        try:
+            chamber_conversion = {"H": "lower", "S": "upper", "J": "legislature"}
+            return chamber_conversion[original_chamber_text]
+        except KeyError:
+            return
 
     def process_item(self, item):
         committee_json = item["Committee"]
