@@ -1,7 +1,7 @@
 # API Docs available at
-# http://kslegislature.org/klois/includes/kliss_restian_interface_guide_v11.pdf
+# http://kslegislature.org/klois/includes/kliss_restian_interface_guide_v12.pdf
 ksleg = "http://www.kslegislature.org/li"
-url = "%s/api/v11/rev-1/" % ksleg
+url = "%s/api/v12/rev-1/" % ksleg
 
 # These actions are from the KLISS API documentation,
 # and are in the same order as that table
@@ -14,6 +14,7 @@ action_codes = {
     "efa_fabc_343": "passage",
     "efa_fabc_342": "passage",
     "cref_cref_500": "referral-committee",
+    "cref_cref_318": "referral-committee",
     # As of 2023, gov_avm_336 is failure, despite what the API docs say.
     # See 2023 SB 169, 2023 SB 26
     "gov_avm_336": "veto-override-failure",
@@ -53,8 +54,8 @@ action_codes = {
     "efa_fabc_933": "passage",  # these 3 are 2/3 emergency clause votes...
     "efa_fabc_936": "failure",
     "efa_fabc_934": "passage",
-    "cref_cref_316": ["withdrawal", "referral-committee"],
-    "cref_cref_315": ["withdrawal", "referral-committee"],
+    "cref_cref_316": "referral-committee",
+    "cref_cref_315": "referral-committee",
     "cur_con_374": None,  # non-concur, conf. com. requested
     "cr_rsc_801": "committee-passage-unfavorable",  # these 3 are appointments..
     "cr_rsc_800": "committee-passage-favorable",
