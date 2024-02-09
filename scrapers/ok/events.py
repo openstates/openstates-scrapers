@@ -75,6 +75,7 @@ class OKEventScraper(Scraper):
         ]
 
         title = f"Senate {title}"
+        title = re.sub(r"(2ND|3RD|4TH)* REVISED", "", title).strip()
 
         if location.lower()[0:4] == "room":
             location = f"2300 N Lincoln Blvd., Oklahoma City, OK 73105 {location}"
