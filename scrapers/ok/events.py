@@ -38,6 +38,8 @@ class OKEventScraper(Scraper):
     # poetry run os-update ne \
     # events --scrape start=2022-02-01 end=2022-03-02
     def scrape(self, start=None, end=None):
+        yield from self.scrape_senate()
+
         if start is None:
             delta = datetime.timedelta(days=90)
             start = datetime.date.today() - delta
@@ -47,6 +49,55 @@ class OKEventScraper(Scraper):
             end = end.isoformat()
 
         yield from self.scrape_page(start, end)
+
+    def scrape_senate(self):
+        url = "https://oksenate.gov/committee-meetings"
+        page = lxml.html.fromstring(self.get(url).content)
+        page.make_links_absolute(url)
+
+        for row in page.xpath("//div[contains(@class,'bTiles__items')]/span"):
+            event_link = row.xpath(".//a[contains(@class,'bTiles__title')]")[0]
+            event_title = event_link.xpath("string(.)")
+            event_url = event_link.xpath("@href")[0]
+
+            if "legislative session" in event_title.lower():
+                continue
+
+            yield from self.scrape_senate_event(event_url)
+
+    def scrape_senate_event(self, url):
+        page = lxml.html.fromstring(self.get(url).content)
+        page.make_links_absolute(url)
+
+        title = page.xpath("//span[contains(@class,'field--name-title')]/text()")[0]
+        location = page.xpath("//a[contains(@class,'events_custom_timetable')]/text()")[
+            0
+        ]
+
+        title = f"Senate {title}"
+
+        if location.lower()[0:4] == "room":
+            location = f"2300 N Lincoln Blvd., Oklahoma City, OK 73105 {location}"
+
+        when = page.xpath(
+            "//div[contains(@class,'pageIn__infoIt')]/strong/time/@datetime"
+        )[0]
+        when = dateutil.parser.parse(when)
+
+        event = Event(title, when, location)
+        for row in page.xpath("//article//ol/li"):
+            item = event.add_agenda_item(row.xpath("string(.)"))
+            for bill_link in row.xpath(".//a[contains(@href,'/cf_pdf/')]"):
+                item.add_bill(bill_link.xpath("text()")[0])
+
+        event.add_committee(title)
+
+        event.add_source(url)
+
+        event.add_document("Agenda", url, media_type="text/html")
+
+        match_coordinates(event, {"2300 N Lincoln Blvd": (35.49293, -97.50311)})
+        yield event
 
     def scrape_page(self, start, end, offset=0, limit=20):
         self.info(f"Fetching {start} - {end} offset {offset}")
