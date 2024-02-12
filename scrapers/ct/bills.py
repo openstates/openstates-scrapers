@@ -75,7 +75,6 @@ class CTBillScraper(Scraper):
                     bill.subject.append(subject)
 
                 self.bills[bill_id] = [bill, chamber]
-                print(bill)
                 yield from self.scrape_bill_page(bill)
             except SkipBill:
                 self.warning("no such bill: " + bill_id)
