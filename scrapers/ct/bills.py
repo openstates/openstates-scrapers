@@ -75,7 +75,7 @@ class CTBillScraper(Scraper):
                     bill.subject.append(subject)
 
                 self.bills[bill_id] = [bill, chamber]
-
+                print(bill)
                 yield from self.scrape_bill_page(bill)
             except SkipBill:
                 self.warning("no such bill: " + bill_id)
@@ -112,7 +112,6 @@ class CTBillScraper(Scraper):
                     entity_type="person",
                     primary=spon_type == "primary",
                 )
-
         for link in page.xpath("//a[contains(@href, '/FN/')]"):
             bill.add_document_link(link.text.strip(), link.attrib["href"])
 
@@ -126,6 +125,8 @@ class CTBillScraper(Scraper):
             bill.add_version_link(
                 link.text.strip(), link.attrib["href"], media_type="application/pdf"
             )
+
+        yield bill
 
     def scrape_bill_history(self):
         history_url = "ftp://ftp.cga.ct.gov/pub/data/bill_history.csv"
