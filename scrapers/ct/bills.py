@@ -27,12 +27,9 @@ class CTBillScraper(Scraper):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         self.bills = defaultdict(list)
         self._committee_names = {}
-        self._introducers = defaultdict(set)
         self._subjects = defaultdict(list)
         self.scrape_committee_names()
         self.scrape_subjects()
-        self.scrape_introducers("upper")
-        self.scrape_introducers("lower")
         yield from self.scrape_bill_info(session, chambers)
         # for chamber in chambers:
         #     self.scrape_versions(chamber, session)
@@ -73,19 +70,6 @@ class CTBillScraper(Scraper):
             )
             bill.add_source(info_url)
 
-            for introducer in self._introducers[bill_id]:
-                introducer = string.capwords(
-                    introducer.decode("utf-8").replace("Rep. ", "").replace("Sen. ", "")
-                )
-                if "Dist." in introducer:
-                    introducer = " ".join(introducer.split()[:-2])
-                bill.add_sponsorship(
-                    name=introducer,
-                    classification="primary",
-                    primary=True,
-                    entity_type="person",
-                )
-
             try:
                 for subject in self._subjects[bill_id]:
                     bill.subject.append(subject)
@@ -114,22 +98,20 @@ class CTBillScraper(Scraper):
         bill.add_source(url)
 
         spon_type = "primary"
-        if not bill.sponsorships:
-            for sponsor in page.xpath('//h5[text()="Introduced by: "]/../text()'):
-                sponsor = str(sponsor.strip())
-                if sponsor:
-                    sponsor = string.capwords(
-                        sponsor.replace("Rep. ", "").replace("Sen. ", "")
-                    )
-                    if "Dist." in sponsor:
-                        sponsor = " ".join(sponsor.split()[:-2])
-                    bill.add_sponsorship(
-                        name=sponsor,
-                        classification=spon_type,
-                        entity_type="person",
-                        primary=spon_type == "primary",
-                    )
-                    # spon_type = 'cosponsor'
+
+        for sponsor in page.xpath('//a[contains(@href,"CGAMemberBills.asp")]/text()'):
+            sponsor = str(sponsor.strip())
+            if sponsor:
+                sponsor = string.capwords(
+                    sponsor.replace("Rep. ", "").replace("Sen. ", "")
+                )
+                sponsor = sponsor.split(",")[0]
+                bill.add_sponsorship(
+                    name=sponsor,
+                    classification=spon_type,
+                    entity_type="person",
+                    primary=spon_type == "primary",
+                )
 
         for link in page.xpath("//a[contains(@href, '/FN/')]"):
             bill.add_document_link(link.text.strip(), link.attrib["href"])
@@ -256,26 +238,3 @@ class CTBillScraper(Scraper):
             comm_name = row["comm_name"].strip()
             comm_name = re.sub(r" Committee$", "", comm_name)
             self._committee_names[comm_code] = comm_name
-
-    def scrape_introducers(self, chamber):
-        chamber_letter = {"upper": "s", "lower": "h"}[chamber]
-        url = "https://www.cga.ct.gov/asp/menu/%slist.asp" % chamber_letter
-
-        page = self.get(url, verify=False).text
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-
-        for link in page.xpath("//a[contains(@href, 'MemberBills')]"):
-            name = link.xpath("../../td[2]/a/text()")[0].encode("utf-8").strip()
-            # we encode the URL here because there are weird characters that
-            # cause problems
-            url = link.attrib["href"].encode("utf-8")
-            self.scrape_introducer(name, url)
-
-    def scrape_introducer(self, name, url):
-        page = self.get(url, verify=False).text
-        page = lxml.html.fromstring(page)
-
-        for link in page.xpath("//a[contains(@href, 'billstatus')]"):
-            bill_id = link.text.strip()
-            self._introducers[bill_id].add(name)
