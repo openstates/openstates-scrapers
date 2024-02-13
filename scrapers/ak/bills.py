@@ -15,6 +15,7 @@ class AKBillScraper(Scraper):
             "JR": "joint resolution",
             "J": "bill",  # joint bill
             "CR": "concurrent resolution",
+            "SC": "concurrent resolution",
             "SCR": "concurrent resolution",
         }
 
