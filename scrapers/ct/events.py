@@ -52,6 +52,10 @@ class CTEventScraper(Scraper):
         )
         event_objects = set()
         events_data = self.get(events_url, verify=False).text
+
+        if not events_data:
+            self.info(f"No events from {code}")
+            return
         events = json.loads(events_data)
 
         DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
