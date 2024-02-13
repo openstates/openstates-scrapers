@@ -30,7 +30,7 @@ class CommitteeDetail(HtmlPage):
 
 
 class CommitteeList(HtmlListPage):
-    source = URL("https://dccouncil.us/committees-for-council-period-23/")
+    source = URL("https://dccouncil.gov/committees-for-council-period-25/")
     selector = CSS("div ul li div")
     chamber = "legislature"
 

@@ -12,6 +12,16 @@ import dateutil.parser
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 from .apiclient import OpenLegislationAPIClient
+from utils import hash_key
+
+"""
+Senate bill suffix regex.
+Occasionally, NY appends a suffix to a bill
+to indicate a new version. Because OS doesn't
+see S123A === S123, this breaks some matching
+for events
+"""
+bill_id_re = re.compile(r"^(S\d+)([A-Z]+)$")
 
 
 class NYEventScraper(Scraper):
@@ -21,14 +31,12 @@ class NYEventScraper(Scraper):
 
     def scrape(self, session=None, start=None, end=None):
 
-        # yield from self.scrape_lower()
-
         self.api_key = os.environ["NEW_YORK_API_KEY"]
         self.api_client = OpenLegislationAPIClient(self)
 
         if session is None:
             session = self.latest_session()
-            self.info("no session specified, using %s", session)
+            self.info(f"no session specified, using {session}")
 
         if start is None:
             start = dt.datetime.today()
@@ -60,8 +68,14 @@ class NYEventScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
+        events = set()
         for link in page.xpath('//a[contains(@href,"agenda=")]'):
-            yield from self.scrape_lower_event(link.xpath("@href")[0])
+            for event, name in self.scrape_lower_event(link.xpath("@href")[0]):
+                if name in events:
+                    self.warning(f"Duplicate event: {name}")
+                    continue
+                events.add(name)
+                yield event
 
     def scrape_lower_event(self, url):
         page = self.get(url).content
@@ -80,13 +94,17 @@ class NYEventScraper(Scraper):
         when = self.clean_date(meta[1])
         when = dateutil.parser.parse(when)
         when = self._tz.localize(when)
-        location = meta[2]
-
+        if len(meta) > 2:
+            location = meta[2]
+        else:
+            location = "See Agenda"
+        event_name = f"{com_name}#{location}#{when}"
         event = Event(
             name=com_name,
             start_date=when,
             location_name=location,
         )
+        event.dedupe_key = hash_key(event_name)
 
         event.add_participant(com_name, type="committee", note="host")
 
@@ -97,13 +115,19 @@ class NYEventScraper(Scraper):
             for bill_link in table.xpath('.//a[contains(@href, "/leg/")]'):
                 agenda.add_bill(bill_link.text_content().strip())
 
-        yield event
+        yield event, event_name
 
     def scrape_upper(self, start, end):
         response = self.api_client.get("meetings", start=start, end=end)
 
+        events = set()
         for item in response["result"]["items"]:
-            yield from self.upper_parse_agenda_item(item)
+            for event, name in self.upper_parse_agenda_item(item):
+                if name in events:
+                    self.warning(f"Duplicate event: {name}")
+                    continue
+                events.add(name)
+                yield event
 
     def upper_parse_agenda_item(self, item):
         response = self.api_client.get(
@@ -138,13 +162,14 @@ class NYEventScraper(Scraper):
 
             if "canceled" in description.lower():
                 continue
-
+            event_name = f"{com_name}#{description}#{location}#{when}"
             event = Event(
                 name=com_name,
                 start_date=when,
                 location_name=location,
                 description=description,
             )
+            event.dedupe_key = hash_key(event_name)
 
             event.add_participant(com_name, type="committee", note="host")
 
@@ -160,9 +185,13 @@ class NYEventScraper(Scraper):
                 agenda = event.add_agenda_item("Bills under consideration")
 
             for bill in bills:
-                agenda.add_bill(bill["billId"]["printNo"])
+                bill_id = bill["billId"]["printNo"]
+                match = bill_id_re.search(bill_id)
+                if match:
+                    bill_id = match.groups()[0]
+                agenda.add_bill(bill_id)
 
-            yield event
+            yield event, event_name
 
     def clean_date(self, date: str) -> str:
         date = date.replace("OFF THE FLOOR,", "")

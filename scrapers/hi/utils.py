@@ -5,14 +5,7 @@ SHORT_CODES = f"{HI_URL_BASE}/legislature/committees.aspx?chamber=all"
 
 
 def get_short_codes(scraper):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/79.0.3945.117 Safari/537.36",
-        "referer": HI_URL_BASE,
-        "authority": "www.capitol.hawaii.gov",
-    }
-
-    list_html = scraper.get(SHORT_CODES, headers=headers, verify=False, timeout=30).text
+    list_html = scraper.get(SHORT_CODES, verify=False).text
     list_page = lxml.html.fromstring(list_html)
     rows = list_page.xpath("//*[@id='MainContent_GridView1']//tr")
     scraper.short_ids = {"CONF": {"chamber": "joint", "name": "Conference Committee"}}

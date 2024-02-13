@@ -63,10 +63,13 @@ class LegList(JsonPage):
     def process_page(self):
         for item in self.data["Data"]:
             name = item["PersonFullName"]
+            district = item["DistrictNumber"]
+            if name is None:
+                self.logger.warning(f"{district} has no listed person, skipping.")
+                continue
             party_code = item["PartyCode"]
             party_dict = {"D": "Democratic", "R": "Republican", "I": "Independent"}
             party = party_dict[party_code]
-            district = item["DistrictNumber"]
 
             p = ScrapePerson(
                 name=name,
@@ -87,7 +90,11 @@ class LegList(JsonPage):
 
 
 class Senate(LegList):
-    source = URL("https://legis.delaware.gov/json/Senate/GetSenators", method="POST")
+    source = URL(
+        "https://legis.delaware.gov/json/Senate/GetSenators",
+        method="POST",
+        verify=False,
+    )
     chamber = "upper"
 
 
@@ -95,5 +102,6 @@ class House(LegList):
     source = URL(
         "https://legis.delaware.gov/json/House/GetRepresentatives",
         method="POST",
+        verify=False,
     )
     chamber = "lower"

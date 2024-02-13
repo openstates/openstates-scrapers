@@ -14,7 +14,9 @@ action_codes = {
     "efa_fabc_343": "passage",
     "efa_fabc_342": "passage",
     "cref_cref_500": "referral-committee",
-    "gov_avm_336": "veto-override-passage",
+    # As of 2023, gov_avm_336 is failure, despite what the API docs say.
+    # See 2023 SB 169, 2023 SB 26
+    "gov_avm_336": "veto-override-failure",
     # change sequence
     "mot_cgo_200": None,
     "mot_cgo_201": None,
@@ -147,7 +149,9 @@ action_codes = {
     "cow_jcow_688": None,
     "cow_jcow_689": None,
     # veto overrides
-    "gov_avm_885": "veto-override-failure",
+    # As of 2023, gov_avm_885 is passage, despite what the API docs say.
+    # See 2023 HB 2094, 2023 HB 2138
+    "gov_avm_885": "veto-override-passage",
     "gov_avm_887": "veto-override-passage",
     "ref_rsc_312": "referral-committee",
     # more COW actions

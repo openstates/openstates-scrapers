@@ -35,8 +35,10 @@ class MIEventScraper(Scraper):
             metainf["Date"]["txt"],
             metainf["Time"]["txt"].replace(".", ""),
         )
+
+        status = "tentative"
         if "Cancelled" in datetime:
-            return
+            status = "cancelled"
 
         translate = {
             "noon": " PM",
@@ -56,8 +58,9 @@ class MIEventScraper(Scraper):
             "or later immediately after committees are given leave",
             "or later after committees are given leave by the House to meet",
             "**Please note time**",
+            "Cancelled",
         ]:
-            datetime = datetime.split(text_to_remove)[0].strip()
+            datetime = datetime.replace(text_to_remove, "").strip()
 
         datetime = datetime.replace("p.m.", "pm")
         datetime = datetime.replace("Noon", "pm")
@@ -72,8 +75,12 @@ class MIEventScraper(Scraper):
             chamber = "joint"
 
         event = Event(
-            name=title, start_date=self._tz.localize(datetime), location_name=where
+            name=title,
+            start_date=self._tz.localize(datetime),
+            location_name=where,
+            status=status,
         )
+        event.dedupe_key = f"{chamber}#{title}#{where}#{self._tz.localize(datetime)}"
         event.add_source(url)
         event.add_source(mi_events)
 
@@ -89,7 +96,7 @@ class MIEventScraper(Scraper):
 
         # The MI pages often contain broken markup for line breaks in the agenda
         # like </BR>. This gets stripped in text_content and we lose the information
-        # needed to seperate out agenda sections.
+        # needed to separate out agenda sections.
         # So instead, pull out the raw HTML, break it, then parse it.
         agenda = page.xpath("//td[contains(., 'Agenda')]/following-sibling::td")[0]
         agenda_html = lxml.etree.tostring(agenda, encoding="unicode")
@@ -128,6 +135,7 @@ class MIEventScraper(Scraper):
             raise EmptyScrape
             return
 
+        event_objects = set()
         for chamber in chambers:
             span = page.xpath(xpaths[chamber])
             if len(span) > 0:
@@ -139,4 +147,10 @@ class MIEventScraper(Scraper):
                 url = event.attrib["href"]
                 if "doPostBack" in url:
                     continue
-                yield from self.scrape_event_page(url, chamber)
+                for event in self.scrape_event_page(url, chamber):
+                    event_name = event.dedupe_key
+                    if event_name in event_objects:
+                        self.warning(f"Skipping duplicate event: {event_name}")
+                        continue
+                    event_objects.add(event_name)
+                    yield event

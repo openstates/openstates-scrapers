@@ -137,11 +137,19 @@ class Indiana(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-10",
             "end_date": "2023-04-29",
+            "active": False,
+        },
+        {
+            "_scraped_name": "Second Regular Session 123rd General Assembly (2024)",
+            "classification": "primary",
+            "identifier": "2024",
+            "name": "2024 Regular Session",
+            "start_date": "2024-01-08",
+            "end_date": "2024-03-14",  # https://iga.in.gov/session/2024/deadlines
             "active": True,
         },
     ]
     ignored_scraped_sessions = [
-        "First Regular Session 123rd General Assembly (2023)",
         "2012 Regular Session",
         "2011 Regular Session",
         "2010 Regular Session",

@@ -1,6 +1,7 @@
 from openstates.scrape import State
 from .bills import CTBillScraper
 from .events import CTEventScraper
+from .votes import CTVoteScraper
 
 settings = {"SCRAPELIB_RPM": 20}
 
@@ -11,6 +12,7 @@ class Connecticut(State):
     scrapers = {
         "bills": CTBillScraper,
         "events": CTEventScraper,
+        "votes": CTVoteScraper,
     }
     legislative_sessions = [
         {
@@ -105,6 +107,14 @@ class Connecticut(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-04",
             "end_date": "2023-05-04",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2024",
+            "identifier": "2024",
+            "name": "2024 Regular Session",
+            "start_date": "2024-01-04",
+            "end_date": "2024-05-08",
             "active": True,
         },
     ]

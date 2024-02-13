@@ -72,6 +72,7 @@ class SenDetail(HtmlPage):
             email=email,
             image=str(self.root.xpath('//div[@id="sidebar"]//img/@src').pop()),
         )
+        p.add_link(self.input.url, "member detail page")
 
         for item in self.contact_xpath.match(self.root):
             self.handle_office(item, p)
@@ -138,6 +139,7 @@ class RepContact(HtmlPage):
             district=str(self.input.district),
             image=self.input.image,
         )
+        p.add_link(self.input.url, "member detail page")
         for otype in ("district", "capitol"):
             odoc = self.root.xpath(f"//h3[@id='{otype}-office']/following-sibling::ul")
             if odoc:
@@ -168,7 +170,8 @@ class Representatives(HtmlListPage):
         name = item.xpath("./a/div[@class='team-txt']/h5/text()")[0].strip()
 
         # skips empty chairs due to pending regular/special election
-        if "pending, special" or "pending, election" in name.lower():
+        # if "pending, special" in name.lower() or "pending, election" in name.lower():
+        if any(s in name.lower() for s in ["pending, special", "pending, election"]):
             self.skip()
 
         party = item.xpath("./a/div[@class='team-txt']/p[1]/text()")[0].split()[0]

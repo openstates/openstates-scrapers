@@ -4,6 +4,8 @@ import datetime
 import lxml.html
 
 from openstates.scrape import Scraper, Event
+from spatula import PdfPage, URL
+from utils.events import match_coordinates
 
 
 def normalize_time(time_string):
@@ -12,8 +14,15 @@ def normalize_time(time_string):
     :param time_string:
     :return:
     """
+
     time_string = time_string.lower().strip()
-    if re.search(r"adjourn", time_string):
+
+    # Fix inconsistent formatting of pm/am
+    time_string = time_string.replace("p.m.", "pm").replace("a.m.", "am")
+
+    # replace "to XX:XX am|pm"
+    time_string = re.sub(r"to \d{2}:\d{2} \w{2}", "", time_string).strip()
+    if re.search(r"(upon|adjourn)", time_string):
         time_string = "12:00 am"
     if re.search(r" noon", time_string):
         time_string = time_string.replace(" noon", " pm")
@@ -44,6 +53,23 @@ def normalize_time(time_string):
     return time_string
 
 
+class Agenda(PdfPage):
+    # Allow up to 3 non-alpha-numeric characters between letter and number poriton of bill id
+    # Will correctly scrape bill ids like "H.123", "S(123)", "H - 0244", "S  43", "H. 55"
+    bill_re = re.compile(r"(\W|^)(H|S)\W{0,3}0*(\d+)")
+
+    def process_page(self):
+        # Use a set to remove duplicate bill ids
+        bill_ids = set()
+
+        for _, alpha, num in self.bill_re.findall(self.text):
+            # Format bill id and add it to the set
+            bill_id = f"{alpha} {num}"
+            bill_ids.add(bill_id)
+
+        yield from bill_ids
+
+
 class SCEventScraper(Scraper):
     """
     Event scraper to pull down information regarding upcoming (or past) Events
@@ -52,6 +78,10 @@ class SCEventScraper(Scraper):
 
     jurisdiction = "sc"
     _tz = pytz.timezone("US/Eastern")
+
+    prior_event_time_string = None
+
+    event_keys = set()
 
     def get_page_from_url(self, url):
         """
@@ -80,6 +110,14 @@ class SCEventScraper(Scraper):
         return re.findall(r"live_stream\((\d+)|$", onclick)[0]
 
     def scrape(self, chamber=None, session=None):
+        if chamber:
+            yield from self.scrape(chamber, session)
+        else:
+            yield from self.scrape_single_chamber("legislature", session)
+            yield from self.scrape_single_chamber("upper", session)
+            yield from self.scrape_single_chamber("lower", session)
+
+    def scrape_single_chamber(self, chamber=None, session=None):
         """
         Scrape the events data from all dates from the sc meetings page,
         then create and yield the events objects from the data.
@@ -89,8 +127,9 @@ class SCEventScraper(Scraper):
         """
 
         chambers = {
-            "upper": {"name": "Senate", "title": "Senator"},
-            "lower": {"name": "House", "title": "Representative"},
+            "upper": "Senate",
+            "lower": "House",
+            "legislature": "Joint",
         }
         if chamber == "other":
             return
@@ -100,9 +139,8 @@ class SCEventScraper(Scraper):
             events_url = "https://www.scstatehouse.gov/meetings.php"
         else:
             events_url = "https://www.scstatehouse.gov/meetings.php?chamber=%s" % (
-                chambers[chamber]["name"].upper()[0]
+                chambers[chamber].upper()[0]
             )
-
         page = self.get_page_from_url(events_url)
 
         meeting_year = page.xpath('//h2[@class="barheader"]/span')[0].text_content()
@@ -110,17 +148,19 @@ class SCEventScraper(Scraper):
             r"Week of [A-Z][a-z]+\s+[0-9]{1,2}, ([0-9]{4})", meeting_year
         ).group(1)
 
+        # Mostly each event is in a UL>LI, with date of event in UL>SPAN
+        # But some ULs do not include a date SPAN
+        # (subsequent ULs are on the same date, until a new date)
+        date_string = ""
         dates = page.xpath("//div[@id='contentsection']/ul")
 
         for date in dates:
-            date_string = date.xpath("span")
+            date_elements = date.xpath("span")
 
-            if len(date_string) == 1:
-                date_string = date_string[0].text_content()
-            else:
-                continue
+            if len(date_elements) == 1:
+                date_string = date_elements[0].text_content()
 
-            # If a event is in the next calendar year, the date_string
+            # If an event is in the next calendar year, the date_string
             # will have a year in it
             if date_string.count(",") == 2:
                 event_year = date_string[-4:]
@@ -128,9 +168,7 @@ class SCEventScraper(Scraper):
             elif date_string.count(",") == 1:
                 event_year = meeting_year
             else:
-                raise AssertionError("This is not a valid date: '{}'").format(
-                    date_string
-                )
+                raise AssertionError(f"This is not a valid date: '{date_string}'")
 
             for meeting in date.xpath("li"):
                 time_string = meeting.xpath("span")[0].text_content()
@@ -141,22 +179,65 @@ class SCEventScraper(Scraper):
                 ):
                     status = "cancelled"
 
+                # For cases when time string is listed as a reference to prior
+                #  event's start time:
+                #   i.e. "Immediately after EOC full committee"
+                if "after" in time_string:
+                    time_string = self.prior_event_time_string
+
+                # Set attribute to be used for following event, as above case
+                self.prior_event_time_string = time_string
+
                 time_string = normalize_time(time_string)
-                date_time = datetime.datetime.strptime(
-                    event_year + " " + date_string + " " + time_string,
-                    "%Y %A, %B %d %I:%M %p",
-                )
+                try:
+                    date_time = datetime.datetime.strptime(
+                        f"{event_year} {date_string} {time_string}",
+                        "%Y %A, %B %d %I:%M %p",
+                    )
+                # if we can't parse the time due to manual additions, just set the day
+                except ValueError:
+                    self.warning(f"Unable to parse time string {time_string}")
+                    date_time = datetime.datetime.strptime(
+                        f"{event_year} {date_string}", "%Y %A, %B %d"
+                    )
 
                 date_time = self._tz.localize(date_time)
-                meeting_info = meeting.xpath("br[1]/preceding-sibling::node()")[1]
-                location, description = re.search(
-                    r"-- (.*?) -- (.*)", meeting_info
-                ).groups()
+
+                try:
+                    meeting_info = meeting.xpath("br[1]/preceding-sibling::node()")[1]
+                    location, description = re.search(
+                        r"-- (.*?) -- (.*)", meeting_info
+                    ).groups()
+                except Exception:
+                    meeting_info = meeting.xpath("br[2]/preceding-sibling::node()")[4]
+                    location, description = re.search(
+                        r"(.*?) -- (.*)", meeting_info
+                    ).groups()
 
                 if re.search(r"committee", description, re.I):
                     classification = "committee-meeting"
                 else:
                     classification = "other-meeting"
+
+                description = re.sub(" on$", "", description.strip())
+                event_key = f"{description}#{location}#{date_time}"
+
+                if event_key in self.event_keys:
+                    continue
+                else:
+                    self.event_keys.add(event_key)
+
+                location = location.replace(
+                    "Blatt", "Blatt Building, 1105 Pendleton St, Columbia, SC 29201"
+                )
+                location = location.replace(
+                    "Gressette",
+                    "Gressette Building, 1101 Pendleton St, Columbia, SC 29201",
+                )
+                location = location.replace(
+                    "State House",
+                    "South Carolina State House, 1100 Gervais St, Columbia, SC 29208",
+                )
 
                 event = Event(
                     name=description,  # Event Name
@@ -165,6 +246,8 @@ class SCEventScraper(Scraper):
                     classification=classification,
                     status=status,
                 )
+
+                event.dedupe_key = event_key
 
                 if "committee" in description.lower():
                     event.add_participant(description, type="committee", note="host")
@@ -180,9 +263,11 @@ class SCEventScraper(Scraper):
                         note="Agenda", url=agenda_url, media_type="application/pdf"
                     )
 
-                    if ".pdf" not in agenda_url:
+                    if ".pdf" in agenda_url:
+                        for bill_id in Agenda(source=URL(agenda_url)).do_scrape():
+                            event.add_bill(bill_id)
+                    else:
                         agenda_page = self.get_page_from_url(agenda_url)
-
                         for bill in agenda_page.xpath(
                             ".//a[contains(@href,'billsearch.php')]"
                         ):
@@ -217,5 +302,14 @@ class SCEventScraper(Scraper):
                         f"https://www.scstatehouse.gov/video/stream.php?key={stream_id}&audio=1",
                         media_type="text/html",
                     )
+
+                match_coordinates(
+                    event,
+                    {
+                        "Blatt Building": ("33.99860", "-81.03323"),
+                        "Gressette Building": ("33.99917", "-81.03306"),
+                        "State House": ("34.00028", "-81.032954"),
+                    },
+                )
 
                 yield event

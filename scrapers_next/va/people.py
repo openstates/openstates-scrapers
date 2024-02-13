@@ -69,8 +69,8 @@ class PartialMember:
 
 
 class MemberList(HtmlListPage):
-    session_id = "221"  # 2022
-    source = f"http://lis.virginia.gov/{session_id}/mbr/MBR.HTM"
+    session_id = "241"  # 2024
+    source = f"https://lis.virginia.gov/{session_id}/mbr/MBR.HTM"
 
     def process_item(self, item):
         name = item.text
@@ -110,29 +110,38 @@ class MemberDetail(HtmlPage):
         return p
 
     def get_offices(self, person):
-        for ul in self.root.xpath('//ul[@class="linkNon" and normalize-space()]'):
-            address = []
-            phone = None
-            email = None
-            for li in ul.getchildren():
-                text = li.text_content()
-                if re.match(r"\(\d{3}\)", text):
-                    phone = text.strip()
-                elif text.startswith("email:"):
-                    email = text.strip("email: ").strip()
-                else:
-                    address.append(text.strip())
+        # div[1] and div[2] is where contacted info is located
+        for i in range(1, 3):
+            for ul in self.root.xpath(f"/html/body/div/div[2]/div[2]/div[{i}]/ul"):
+                address = []
+                phone = None
+                email = None
+                for li in ul.getchildren():
+                    text = li.text_content()
+                    if re.match(r"\(\d{3}\)", text):
+                        phone = text.strip()
+                    elif text.startswith("email:"):
+                        email = text.strip("email: ").strip()
+                    else:
+                        address.append(text.strip())
 
-                if "Capitol Square" in address:
-                    office_obj = person.capitol_office
-                else:
-                    office_obj = person.district_office
+                    # the first contact block is capital
+                    if i == 1:
+                        office_obj = person.capitol_office
 
-            office_obj.address = "; ".join(address)
-            if phone:
-                office_obj.voice = phone
-            if email:
-                person.email = email
+                    else:
+                        office_obj = person.district_office
+
+                office_obj.address = "; ".join(address)
+                if phone:
+                    # making sure we don't add the same phone number for district and capitol offices
+                    if i != 1:
+                        office_obj.voice = phone
+                    else:
+                        if phone == person.capitol_office.voice:
+                            office_obj.voice = ""
+                if email:
+                    person.email = email
 
 
 class SenateDetail(MemberDetail):

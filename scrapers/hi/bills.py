@@ -2,8 +2,11 @@ import datetime as dt
 import lxml.html
 import re
 from openstates.scrape import Scraper, Bill, VoteEvent
+from .actions import Categorizer, find_committee
 from .utils import get_short_codes
 from urllib import parse as urlparse
+import dateutil
+import pytz
 
 HI_URL_BASE = "https://www.capitol.hawaii.gov"
 SHORT_CODES = f"{HI_URL_BASE}/legislature/committees.aspx?chamber=all"
@@ -28,43 +31,6 @@ def create_bill_report_url(chamber, year, bill_type):
     )
 
 
-def categorize_action(action):
-    classifiers = (
-        ("Pass(ed)? First Reading", "reading-1"),
-        ("Introduced and Pass(ed)? First Reading", ["introduction", "reading-1"]),
-        ("Introduced", "introduction"),
-        ("Re(-re)?ferred to ", "referral-committee"),
-        (
-            "Passed Second Reading .* referred to the committee",
-            ["reading-2", "referral-committee"],
-        ),
-        (".* that the measure be PASSED", "committee-passage-favorable"),
-        ("Received from (House|Senate)", "introduction"),
-        ("Floor amendment .* offered", "amendment-introduction"),
-        ("Floor amendment adopted", "amendment-passage"),
-        ("Floor amendment failed", "amendment-failure"),
-        (".*Passed Third Reading", "passage"),
-        ("Report and Resolution Adopted", "passage"),
-        ("Enrolled to Governor", "executive-receipt"),
-        (" Act ", "became-law"),
-        # Note, occasionally the gov sends intent to veto then doesn't. So use Vetoed not Veto
-        ("Vetoed .* line-item", "executive-veto-line-item"),
-        ("Vetoed", "executive-veto"),
-        ("Veto overridden", "veto-override-passage"),
-        # these are for resolutions
-        ("Offered", "introduction"),
-        ("Adopted", "passage"),
-    )
-    ctty = None
-    for pattern, types in classifiers:
-        if re.match(pattern, action):
-            if "referral-committee" in types:
-                ctty = re.findall(r"\w+", re.sub(pattern, "", action))
-            return (types, ctty)
-    # return other by default
-    return (None, ctty)
-
-
 def split_specific_votes(voters):
     if voters is None or voters.startswith("none"):
         return []
@@ -77,6 +43,10 @@ def split_specific_votes(voters):
 
 
 class HIBillScraper(Scraper):
+    categorizer = Categorizer()
+    bill_types = ["HB", "HR", "HCR", "SB", "SR", "SCR", "GM"]
+    tz = pytz.timezone("US/Hawaii")
+
     def parse_bill_metainf_table(self, metainf_table):
         def _sponsor_interceptor(line):
             return [guy.strip() for guy in line.split(",")]
@@ -116,7 +86,10 @@ class HIBillScraper(Scraper):
             actor_code = action[1].text_content().upper()
             string = action[2].text_content()
             actor = self._vote_type_map[actor_code]
-            act_type, committees = categorize_action(string)
+            committees = find_committee(string)
+
+            action_attr = self.categorizer.categorize(string)
+            atype = action_attr["classification"]
             # XXX: Translate short-code to full committee name for the
             #      matcher.
 
@@ -136,7 +109,7 @@ class HIBillScraper(Scraper):
                 and any(description in string for description in repeated_action)
             ):
                 continue
-            act = bill.add_action(string, date, chamber=actor, classification=act_type)
+            act = bill.add_action(string, date, chamber=actor, classification=atype)
 
             for committee in real_committees:
                 act.add_related_entity(name=committee, entity_type="organization")
@@ -266,8 +239,9 @@ class HIBillScraper(Scraper):
             bill.add_document_link(name, filename, media_type=media_type)
 
     def scrape_bill(self, session, chamber, bill_type, url):
-        bill_html = self.get(url).text
+        bill_html = self.get(url, verify=False).text
         bill_page = lxml.html.fromstring(bill_html)
+        bill_page.make_links_absolute(url)
 
         qs = dict(urlparse.parse_qsl(urlparse.urlparse(url).query))
         bill_id = "{}{}".format(qs["billtype"], qs["billnumber"])
@@ -275,9 +249,15 @@ class HIBillScraper(Scraper):
             "//*[@id='ctl00_MainContent_UpdatePanel2']/div/div/div"
         )
 
-        metainf_table = bill_page.xpath(
-            '//div[contains(@id, "itemPlaceholder")]//table[1]'
-        )[0]
+        try:
+            metainf_table = bill_page.xpath(
+                '//div[contains(@id, "itemPlaceholder")]//table[1]'
+            )[0]
+        except IndexError:
+            self.error("Missing Metainf table")
+            self.error(bill_html)
+            return
+
         action_table = bill_page.xpath(
             '//div[contains(@id, "UpdatePanel1")]//table[1]'
         )[0]
@@ -301,26 +281,39 @@ class HIBillScraper(Scraper):
         if url:
             b.add_source(url)
 
-        prior_session = "{} Regular Session".format(str(int(session[:4]) - 1))
+        # check for companion bills
         companion = meta["Companion"].strip()
         if companion:
+            companion_url = bill_page.xpath(
+                "//span[@id='MainContent_ListView1_companionLabel_0']/a/@href"
+            )[0]
+            # a companion's session year is the last 4 chars of the link
+            # this will match the _scraped_name of a session in __init__.py
+            companion_year = companion_url[-4:]
+            companion_session = self.session_from_scraped_name(companion_year)
             b.add_related_bill(
                 identifier=companion.replace("\xa0", " "),
-                legislative_session=prior_session,
+                legislative_session=companion_session,
                 relation_type="companion",
             )
+
+        # check for prior session bills
         if bill_page.xpath(
             "//table[@id='ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()"
         ):
             prior = bill_page.xpath(
                 "//table[@id='ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()"
             )[-1]
+            # "2023 Regular Session" -> "2022" -> "2022 Regular Session"
+            prior_year = str(int(session[:4]) - 1)
+            prior_session = f"{prior_year} Regular Session"
             if "carried over" in prior.lower():
                 b.add_related_bill(
                     identifier=bill_id.replace("\xa0", " "),
                     legislative_session=prior_session,
-                    relation_type="companion",
+                    relation_type="prior-session",
                 )
+
         for sponsor in meta["Introducer(s)"]:
             if "(Introduced by request of another party)" in sponsor:
                 sponsor = sponsor.replace(
@@ -330,7 +323,7 @@ class HIBillScraper(Scraper):
                 # all caps sponsors are primary, others are secondary
                 primary = sponsor.upper() == sponsor
                 b.add_sponsorship(
-                    sponsor, "primary" if primary else "secondary", "person", primary
+                    sponsor, "primary" if primary else "cosponsor", "person", primary
                 )
 
         if "gm" in bill_id.lower():
@@ -340,14 +333,17 @@ class HIBillScraper(Scraper):
         self.parse_testimony(b, bill_page)
         self.parse_cmte_reports(b, bill_page)
 
-        if bill_page.xpath(
-            "//input[@id='ctl00_ContentPlaceHolderCol1_ImageButtonPDF']"
-        ):
+        if bill_page.xpath("//input[@id='MainContent_ImageButtonPDF']"):
             self.parse_bill_header_versions(b, bill_id, session, bill_page)
 
         current_referral = meta["Current Referral"].strip()
         if current_referral:
             b.extras["current_referral"] = current_referral
+
+        if meta["Act"]:
+            act_num = meta["Act"]
+            act_url = bill_page.xpath(f"//a[text()={act_num}]/@href")[0]
+            b.add_citation(f"Hawaii {session} Acts", act_num, "chapter", url=act_url)
 
         yield from self.parse_bill_actions_table(
             b, action_table, bill_id, session, url, chamber
@@ -395,7 +391,7 @@ class HIBillScraper(Scraper):
             "gm": "proclamation",
         }[billtype]
 
-        list_html = self.get(report_page_url).text
+        list_html = self.get(report_page_url, verify=False).text
         list_page = lxml.html.fromstring(list_html)
         for bill_url in list_page.xpath("//a[@class='report']"):
             bill_url = bill_url.attrib["href"].replace("www.", "")
@@ -403,13 +399,78 @@ class HIBillScraper(Scraper):
                 bill_url = f"{HI_URL_BASE}{bill_url}"
             yield from self.scrape_bill(session, chamber, billtype_map, bill_url)
 
-    def scrape(self, chamber=None, session=None):
+    def scrape(self, chamber=None, session=None, scrape_since=None):
         get_short_codes(self)
-        bill_types = ["bill", "cr", "r"]
-        chambers = [chamber] if chamber else ["lower", "upper"]
-        for chamber in chambers:
-            # only scrape GMs once
-            if chamber == "upper":
-                bill_types.append("gm")
-            for typ in bill_types:
-                yield from self.scrape_type(chamber, session, typ)
+
+        if scrape_since is None:
+            bill_types = ["bill", "cr", "r"]
+            chambers = [chamber] if chamber else ["lower", "upper"]
+            for chamber in chambers:
+                # only scrape GMs once
+                if chamber == "upper":
+                    bill_types.append("gm")
+                for typ in bill_types:
+                    yield from self.scrape_type(chamber, session, typ)
+        else:
+            day = dt.datetime.now(self.tz).date() - dt.timedelta(days=int(scrape_since))
+            yield from self.scrape_xml(session, day)
+
+    def scrape_xml(self, session, day):
+        url = "https://www.capitol.hawaii.gov/sessions/session2024/rss/"
+        self.info(f"fetching url {url}")
+        page = self.get(url, verify=False).text
+        # this content isn't amenable to lxml, but it's machine generated so regex should be ok
+        bill_re = r"(?P<date>\d+\/\d+\/\d+)\s+(?P<time>.*?)\s+\d+\s\<a href=\"(?P<url>.*?)\">(?P<filename>.*?)\.xml<\/a>"
+        for match in re.finditer(bill_re, page, flags=re.IGNORECASE):
+            posted = dateutil.parser.parse(
+                f"{match.group('date')} {match.group('time')}"
+            )
+            posted = self.tz.localize(posted)
+            posted = posted.date()
+            bill_type, bill_num = self.parse_bill_number(match.group("filename"))
+            if posted >= day and bill_type in self.bill_types:
+                self.info(
+                    f"Scraping {bill_type}{bill_num} posted on {posted.strftime('%Y-%m-%d')}"
+                )
+                chamber, classification = self.classify_bill_type(
+                    match.group("filename")
+                )
+
+                # https://www.capitol.hawaii.gov/session/measure_indiv.aspx?billtype=SB&billnumber=3013
+                bill_url = f"https://www.capitol.hawaii.gov/session/measure_indiv.aspx?billtype={bill_type}&billnumber={bill_num}"
+
+                yield from self.scrape_bill(session, chamber, classification, bill_url)
+            else:
+                self.info(
+                    f"Skipping {bill_type}{bill_num} posted on {posted.strftime('%Y-%m-%d')}"
+                )
+
+    def session_from_scraped_name(self, scraped_name):
+        # find the session from __init__.py matching scraped_name
+        details = next(
+            each
+            for each in self.jurisdiction.legislative_sessions
+            if each["_scraped_name"] == scraped_name
+        )
+        return details["name"]
+
+    def classify_bill_type(self, bill: str) -> tuple:
+        billtypes = {
+            "HB": ("lower", "bill"),
+            "HR": ("lower", "resolution"),
+            "HCR": ("lower", "concurrent resolution"),
+            "SB": ("upper", "bill"),
+            "SR": ("upper", "resolution"),
+            "SCR": ("upper", "concurrent resolution"),
+            "GM": ("upper", "proclamation"),
+        }
+
+        for key, val in billtypes.items():
+            if bill.startswith(key):
+                return val
+
+        self.error(f"Invalid bill type: {bill}")
+
+    def parse_bill_number(self, bill: str) -> tuple:
+        match = re.search(r"(?P<type>[A-Z]+)(?P<number>\d+)", bill)
+        return (match.group("type"), match.group("number"))

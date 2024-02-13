@@ -125,9 +125,17 @@ class Tennessee(State):
             "identifier": "113",
             "name": "113th Regular Session (2023-2024)",
             "start_date": "2023-01-10",
-            # TODO: end date approximate
-            "end_date": "2023-05-06",
+            "end_date": "2024-04-25",
             "active": True,
+        },
+        {
+            "_scraped_name": "First Extraordinary Session (August 2023)",
+            "classification": "special",
+            "identifier": "113S1",
+            "name": "113th First Extraordinary Session (August 2023)",
+            "start_date": "2023-08-09",
+            "end_date": "2023-08-29",
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [

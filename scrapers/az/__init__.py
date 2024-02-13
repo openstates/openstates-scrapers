@@ -277,10 +277,20 @@ class Arizona(State):
             "name": "56th Legislature - First Regular Session",
             "start_date": "2023-01-09",
             "end_date": "2023-06-30",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2024 - Fifty-sixth Legislature - Second Regular Session",
+            "classification": "primary",
+            "identifier": "56th-2nd-regular",
+            "name": "56th Legislature - Second Regular Session",
+            "start_date": "2024-01-08",
+            "end_date": "2024-04-20",
             "active": True,
         },
     ]
     ignored_scraped_sessions = [
+        "2024 - Fifty-sixth Legislature - Second Regular Session",
         "2008 - Forty-eighth Legislature - Second Regular Session",
         "2007 - Forty-eighth Legislature - First Regular Session",
         "2006 - Forty-seventh Legislature - First Special Session",

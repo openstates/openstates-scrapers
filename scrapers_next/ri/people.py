@@ -6,11 +6,11 @@ import re
 # Regex patterns to fix specific bad urls provided for new member bio pages
 #  TODO: Check at future point in 2023 session if these urls still bad,
 #   or if regex string substitution fix can be removed from LegList
-alex_finkelman_re = re.compile("finkelman/")
-linda_ujifusa_re = re.compile("ujifusa/")
+mary_shallcross_re = re.compile("shallcrosssmith/")
+cruz_re = re.compile("delacruz/")
 
 EXCEL_URL = URL(
-    "http://www.rilegislature.gov/SiteAssets/MailingLists/Representatives.xls",
+    "https://www.rilegislature.gov/SiteAssets/Representatives.xls",
     timeout=30,
 )
 
@@ -85,9 +85,9 @@ class LegList(HtmlListPage):
 
         bio = CSS("td center a").match_one(item).get("href")
 
-        # Fixes bio page bad urls for Rep. Alex Finkelman, Sen. Linda Ujifusa
-        bio = alex_finkelman_re.sub("finkelmana/", bio)
-        bio = linda_ujifusa_re.sub("ujifusal/", bio)
+        # Fixes bio page bad urls for Rep Shallcross, Sen Cruz
+        bio = mary_shallcross_re.sub("shallcross%20smith/", bio)
+        bio = cruz_re.sub("de%20la%20Cruz/", bio)
 
         p.email = email
         p.add_link(bio)
@@ -120,7 +120,7 @@ class SenList(LegList):
     dependencies = {
         "detail_mapping": LegacyExcelPage(
             source=URL(
-                "http://www.rilegislature.gov/SiteAssets/MailingLists/Senators.xls",
+                "https://www.rilegislature.gov/SiteAssets/Senators.xls",
                 timeout=30,
             )
         )

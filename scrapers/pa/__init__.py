@@ -93,7 +93,7 @@ class Pennsylvania(State):
             "identifier": "2023-2024S1",
             "name": "2023-2024 Special Session #1",
             "start_date": "2023-01-09",
-            "end_date": "2023-01-13",
+            "end_date": "2024-11-30",
             "active": True,
         },
     ]

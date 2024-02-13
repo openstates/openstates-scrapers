@@ -1,0 +1,36 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Open States Scrapers
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: James
+    family-names: Turk
+    orcid: 'https://orcid.org/0000-0003-1762-1420'
+  - given-names: Michael
+    family-names: Stephens
+  - given-names: Tim
+    family-names: Showers
+  - given-names: Thom
+    family-names: Neale
+  - given-names: Miles
+    family-names: Watkins
+  - given-names: Paul
+    family-names: Tagliamonte
+  - given-names: Rylie
+    family-names: Johnson
+  - given-names: Rachel
+    family-names: Shorey
+  - given-names: Dan
+    family-names: Schneiderman
+  - given-names: Josh
+    family-names: Carp
+repository-code: 'https://openstates.org'
+abstract: >-
+  Python web scrapers for all 50 state legislatures, DC, and
+  Puerto Rico.
+license: GPL-3.0

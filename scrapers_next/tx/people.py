@@ -92,9 +92,13 @@ class SenatorDetail(HtmlPage):
     input_type = PartialMember
 
     def process_page(self):
-        party = self.root.xpath('//*[@id="mempg_top"]/div[2]/p[last()]/text()')[
-            0
-        ].strip()
+        try:
+            party = self.root.xpath('//*[@id="mempg_top"]/div[2]/p[last()]/text()')[
+                0
+            ].strip()
+        except IndexError:
+            self.logger.warning("No party caught")
+            return
 
         p = ScrapePerson(
             name=self.input.name,
@@ -136,7 +140,7 @@ class SenatorDetail(HtmlPage):
 
 class HouseParties(HtmlListPage):
     source = (
-        "https://lrl.texas.gov/legeLeaders/members/membersearch.cfm?leg=87&chamber=H"
+        "https://lrl.texas.gov/legeLeaders/members/membersearch.cfm?leg=88&chamber=H"
     )
     selector = XPath('//table[@id="tableToSort"]/tbody/', num_items=1)
 

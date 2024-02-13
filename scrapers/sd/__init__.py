@@ -165,6 +165,14 @@ class SouthDakota(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-10",
             "end_date": "2023-03-27",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2024",
+            "identifier": "2024",
+            "name": "2024 Regular Session",
+            "start_date": "2024-01-09",
+            "end_date": "2024-03-25",
             "active": True,
         },
     ]

@@ -138,20 +138,21 @@ class Illinois(State):
         # Leave this on until 2023-01-31,
         # IL has a history post-session governor actions
         {
+            "_scraped_name": "102   (2021-2022)",
             "name": "102nd Regular Session",
             "identifier": "102nd",
             "start_date": "2021-01-13",
             "end_date": "2021-06-01",
             "classification": "primary",
-            "active": True,
+            "active": False,
         },
-        # TODO: check dates,
         # check senate prez in session_details in bills.py
+        # https://www.ilga.gov/house/schedules/2024_House_Spring_Session.pdf
         {
             "name": "103rd Regular Session",
             "identifier": "103rd",
             "start_date": "2023-01-11",
-            "end_date": "2023-06-01",
+            "end_date": "2024-05-24",
             "classification": "primary",
             "active": True,
         },

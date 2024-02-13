@@ -5,6 +5,7 @@ import lxml
 import pytz
 from openstates.scrape import Scraper, Event
 from utils.events import match_coordinates
+from spatula import PdfPage, URL
 
 
 # usage:
@@ -87,15 +88,15 @@ class AREventScraper(Scraper):
                 agenda_url = row.xpath(".//a[@aria-label='Agenda']/@href")[0]
                 event.add_document("Agenda", agenda_url, media_type="application/pdf")
 
+                # Scrape bill ids from agenda pdf
+                for bill in Agenda(source=URL(agenda_url)).do_scrape():
+                    event.add_bill(bill)
+
             if row.xpath(".//a[@aria-label='Play Video']"):
                 video_url = row.xpath(".//a[@aria-label='Play Video']/@href")[0]
                 event.add_media_link(
                     "Video of Hearing", video_url, media_type="text/html"
                 )
-
-            if row.xpath(".//a[@aria-label='Referred']"):
-                bill_url = row.xpath(".//a[@aria-label='Referred']/@href")[0]
-                self.scrape_referred_bills(event, bill_url)
 
             if row.xpath("div[2]/b/a"):
                 event.add_committee(title, note="host")
@@ -110,13 +111,19 @@ class AREventScraper(Scraper):
 
             yield event
 
-    def scrape_referred_bills(self, event, url):
-        page = self.get(url).content
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
 
-        if page.xpath("//div[contains(@class,'billSubtitle')]"):
-            agenda = event.add_agenda_item("Referred Bills")
+class Agenda(PdfPage):
+    def process_page(self):
+        # Search for bill ids in text
+        matches = re.findall(
+            r"((SB|HB|SR|HR)\d+)",
+            self.text,
+        )
 
-            for row in page.xpath("//div[contains(@class,'measureTitle')]/a/text()"):
-                agenda.add_bill(row.strip())
+        # Remove duplicates
+        matches = list(set(matches))
+
+        # Yield results, ignoring an a duplicate part of the regex
+        for m, _ in matches:
+            # Add in space between letters and numbers
+            yield f"{m[:2]} {m[2:]}"

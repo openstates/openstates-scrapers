@@ -43,7 +43,7 @@ services:
       - "host.docker.internal:host-gateway"
 
   mysql:
-    image: mariadb:10.3
+    image: mariadb:10.5
 #    command: mysqld_safe --max_allowed_packet=512M
     ports:
       - "3306:3306"
@@ -98,7 +98,7 @@ services:
       - openstates-network
     command: ["postgres", "-c", "log_statement=all"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -q -d db -U db"]
+      test: ["CMD-SHELL", "pg_isready -q -d openstatesorg -U openstates"]
       interval: 10s
       timeout: 5s
       retries: 15

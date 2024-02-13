@@ -75,7 +75,7 @@ class Massachusetts(State):
             "identifier": "193rd",
             "name": "193rd Legislature (2023-2024)",
             "start_date": "2023-01-04",
-            "end_date": "2023-12-31",
+            "end_date": "2024-07-31",  # https://malegislature.gov/ClerksOffice/Senate/Deadlines
             "active": True,
         },
     ]

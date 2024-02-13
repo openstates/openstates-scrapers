@@ -5,7 +5,7 @@ import re
 
 class LegList(HtmlListPage):
     selector = CSS(
-        "div .row-equal-height.padding-two-top.sm-padding-two-top.xs-padding-two-top.hcode-inner-row"
+        "div .hcode-inner-row.padding-two-top.sm-padding-two-top.xs-padding-two-top"
     )
 
     def process_item(self, item):
@@ -22,6 +22,9 @@ class LegList(HtmlListPage):
         party_letter = re.search(r"(.+)(\(([A-Z])\))(.+)", all_text).groups()[2]
         party_dict = {"D": "Democratic", "R": "Republican", "I": "Independent"}
         party = party_dict[party_letter]
+        if self.chamber == "lower":
+            seat = re.search(r"House Seat\s(.)", all_text).groups()[0]
+            district = f"{district}{seat}"
 
         p = ScrapePerson(
             name=name,

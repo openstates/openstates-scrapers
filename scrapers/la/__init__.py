@@ -220,7 +220,7 @@ class Louisiana(State):
             "name": "2022 Second Extraordinary Session",
             "start_date": "2022-06-15",
             "end_date": "2022-06-18",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2023 Regular Session",
@@ -231,8 +231,46 @@ class Louisiana(State):
             "end_date": "2023-06-08",
             "active": False,
         },
+        {
+            "_scraped_name": "2023 First Extraordinary Session",
+            "classification": "primary",
+            "identifier": "2023s1",
+            "name": "2023 First Extraordinary Session",
+            "start_date": "2023-01-30",
+            "end_date": "2023-02-05",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2024 First Extraordinary Session",
+            "classification": "special",
+            "identifier": "2024s1",
+            "name": "2024 First Extraordinary Session",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-23",
+            "active": True,
+        },
+        {
+            "_scraped_name": "2024 Second Extraordinary Session",
+            "classification": "special",
+            "identifier": "2024s2",
+            "name": "2024 Second Extraordinary Session",
+            "start_date": "2024-02-19",
+            "end_date": "2024-03-06",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2024 Regular Session",
+            "classification": "primary",
+            "identifier": "2024",
+            "name": "2024 Regular Session",
+            "start_date": "2024-03-11",
+            "end_date": "2024-06-03",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
+        "2024 Organizational Session",
+        "2023 Veto Session",
         "2022 Veto Session",
         "2021 Veto Session",
         "2020 Organizational Session",
@@ -282,7 +320,7 @@ class Louisiana(State):
 
     def get_session_list(self):
         return url_xpath(
-            "http://www.legis.la.gov/Legis/SessionInfo/SessionInfo.aspx",
+            "https://www.legis.la.gov/Legis/SessionInfo/SessionInfo.aspx",
             '//table[@id="ctl00_ctl00_PageBody_DataListSessions"]//a[contains'
             '(text(), "Session")]/text()',
         )

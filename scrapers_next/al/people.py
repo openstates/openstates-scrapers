@@ -1,151 +1,131 @@
-import re
-import attr
-from html import unescape
-from spatula import HtmlListPage, HtmlPage, XPath, CSS, SkipItem, URL
+from spatula import JsonPage, URL
 from openstates.models import ScrapePerson
+import json
 
 
-@attr.s(auto_attribs=True)
-class PartialMember:
-    url: str
-    chamber: str = ""
-
-
-class LegDetail(HtmlPage):
-    example_source = "https://www.legislature.state.al.us/aliswww/ISD/ALRepresentative.aspx?NAME=Alexander&OID_SPONSOR=100537&OID_PERSON=7710&SESSNAME=Regular%20Session%202022"
-
+class MemberList(JsonPage):
     def process_page(self):
+        data = self.response.json().get("data")
 
-        name = (
-            CSS(".container-main #ContentPlaceHolder1_lblMember")
-            .match_one(self.root)
-            .text_content()
-        )
+        # Combine all data fields that contain a member object
+        members = []
+        member_fields = [
+            "houseMembersNewImgUrl",
+            "houseLeadersNewImgUrl",
+            "senateMembersNewImgUrl",
+            "senateLeadersNewImgUrl",
+        ]
+        for field in member_fields:
+            # Ignore fields that are missing
+            if data.get(field):
+                members += data.get(field)
 
-        if self.input.chamber == "upper":
-            name_split = re.split("SENATOR|, ", name)
-        elif self.input.chamber == "lower":
-            name_split = re.split("REPRESENTATIVE|, ", name)
-        full_name = unescape(f"{name_split[2]}{name_split[1]}")
+        for member in members:
+            # Skip adding member if district info isn't found.
+            if not member.get("District") or member.get("District") == "Not Available":
+                name = member.get("FullName")
+                self.logger.warning(f"{name} has no listed district, skipping.")
+                continue
 
-        table = CSS("#ContentPlaceHolder1_TabSenator_TabLeg_gvLEG").match_one(self.root)
+            # Remove extra text from district
+            district = member.get("District").split(" ")[-1]
 
-        party = (
-            district
-        ) = county = phone = fax = street = office = city = postal = email = ""
+            if "zzz" in member.get("FullName"):
+                self.logger.warning(f"{district} is vacant, skipping.")
+                continue
 
-        for tr in CSS("tr").match(table):
-            type, info = CSS("td").match(tr)
-            type = type.text_content()
-            info = info.text_content()
+            p = ScrapePerson(
+                name=member.get("FullName"),
+                state="al",
+                chamber=self.chamber,
+                party=member.get("Affiliation"),
+                district=district,
+                email=member.get("Email"),
+                image=member.get("NewImgUrl"),
+                given_name=member.get("FirstName"),
+                family_name=member.get("LastName"),
+            )
 
-            if type == "Affiliation:":
-                party = ""
-                if info == "(R)":
-                    party = "Republican"
-                elif info == "(D)":
-                    party = "Democrat"
-                else:
-                    party = info
-            elif type == "District:":
-                district = info.split(" ")[2]
-            elif type == "County:":
-                county = info
-            elif type == "Phone Number:":
-                phone = info
-            elif type == "Fax Number:":
-                if info != "":
-                    fax = info
-            elif type == "Street:":
-                street = info
-            elif type == "Office:":
-                office = info
-            elif type == "City:":
-                city = info
-            elif type == "Postal Code:":
-                postal = info
-            elif type == "Email:":
-                email = info
+            p.add_source(
+                self.source.url, note="graphql endpoint for member information"
+            )
 
-        address = f"{street}, {office}, {city} AL"
+            # Member profiles can't be access by url alone, so add homepage links
+            # for house/senate list page instead
+            if self.chamber == "upper":
+                # Senate member list
+                p.add_link(
+                    "https://alison.legislature.state.al.us/senate-leaders-members",
+                    note="homepage",
+                )
+            elif self.chamber == "lower":
+                # House member list
+                p.add_link(
+                    "https://alison.legislature.state.al.us/house-leaders-members",
+                    note="homepage",
+                )
 
-        image = (
-            CSS("#ContentPlaceHolder1_TabSenator_TabLeg_imgLEG")
-            .match_one(self.root)
-            .get("src")
-        )
+            # Missing data may sometimes be set to a string like "None Listed"
+            capitol_address = member.get("FullAddress")
+            if not capitol_address.startswith("No Address Listed"):
+                p.capitol_office.address = capitol_address.strip().replace("\n", ",")
 
-        p = ScrapePerson(
-            name=full_name.title(),
-            state="al",
-            chamber=self.input.chamber,
-            party=party,
-            district=district,
-            email=email,
-            image=image,
-        )
-        p.add_source(self.source.url)
-        p.add_source(self.input.url)
+            capitol_phone = member.get("Phone")
+            if capitol_phone and not capitol_phone == "None Listed":
+                p.capitol_office.voice = capitol_phone
 
-        # This address is the capitol office
-        if "11 South Union Street" in street:
-            p.capitol_office.address = address
-            p.capitol_office.voice = phone
-            try:
-                p.capitol_office.fax = fax
-            except ValueError:
-                pass
-        else:
-            p.district_office.address = address
-            p.district_office.voice = phone
-            try:
-                p.district_office.fax = fax
-            except ValueError:
-                pass
+            district_address = member.get("FullDistrictAddress")
+            if not district_address.startswith("No District Address Listed"):
+                p.district_office.address = district_address.strip().replace("\n", ",")
 
-        p.extras["postal code"] = postal
-        p.extras["county"] = county
+            district_phone = member.get("DistrictPhone")
+            if district_phone and not district_phone == "None Listed":
+                p.district_office.voice = district_phone
 
-        return p
+            p.extras["counties"] = member.get("Counties")
+
+            yield p
 
 
-class SenList(HtmlListPage):
-    selector = XPath("//input[@type='image']")
-    source = URL(
-        "https://www.legislature.state.al.us/aliswww/ISD/Senate/ALSenators.aspx",
-        timeout=30,
+def graphql_query(data):
+    return URL(
+        "https://gql.api.alison.legislature.state.al.us/graphql",
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            # Referer required or graphql will respond with http error 403
+            "Referer": "https://alison.legislature.state.al.us/",
+        },
+        data=json.dumps(data),
     )
-    chamber = "upper"
-
-    def process_item(self, item):
-        last_name = re.split("Pictures/|_", item.get("src"))[1]
-
-        oid_person = item.get("alt")
-
-        oid_sponsor = item.get("longdesc").split("Senate/")[1]
-        url = f"https://www.legislature.state.al.us/aliswww/ISD/ALSenator.aspx?NAME={last_name}&OID_SPONSOR={oid_sponsor}&OID_PERSON={oid_person}&SESSNAME=Regular%20Session%202022"
-        p = PartialMember(url=self.source.url, chamber=self.chamber)
-
-        return LegDetail(p, source=URL(url, timeout=30))
 
 
-class RepList(HtmlListPage):
-    selector = XPath("//input[@type='image']")
-    source = URL(
-        "https://www.legislature.state.al.us/aliswww/ISD/House/ALRepresentatives.aspx",
-        timeout=30,
+def get_members_source(chamber):
+    chamber_type = "house" if chamber == "lower" else "senate"
+    fields = "Affiliation,FullName,FirstName,LastName,NewImgUrl,District,Counties,FullAddress,Phone,Email,FullDistrictAddress,DistrictOffice,Fax,DistrictFax,DistrictPhone,DistrictEmail"
+    # Need to check both Members and Leaders
+    return graphql_query(
+        {
+            "query": "{"
+            + chamber_type
+            + "MembersNewImgUrl{"
+            + fields
+            + "} "
+            + chamber_type
+            + "LeadersNewImgUrl{"
+            + fields
+            + "}}",
+            "operationName": "",
+            "variables": [],
+        },
     )
+
+
+class RepList(MemberList):
     chamber = "lower"
+    source = get_members_source(chamber="lower")
 
-    def process_item(self, item):
-        last_name = re.split("Pictures/|_", item.get("src"))[1]
 
-        if last_name == "VACANT.jpeg":
-            raise SkipItem("vacant")
-        oid_person = item.get("alt")
-
-        oid_sponsor = item.get("longdesc").split("House/")[1]
-        url = f"http://www.legislature.state.al.us/aliswww/ISD/ALRepresentative.aspx?NAME={last_name}&OID_SPONSOR={oid_sponsor}&OID_PERSON={oid_person}&SESSNAME="
-        p = PartialMember(url=self.source.url, chamber=self.chamber)
-
-        return LegDetail(p, source=URL(url, timeout=30))
+class SenList(MemberList):
+    chamber = "upper"
+    source = get_members_source(chamber="upper")

@@ -25,7 +25,10 @@ class LegPartial:
 
 class LegList(HtmlListPage):
     def process_item(self, item):
-        name = CSS(".media-overlay-caption-text-line-1").match_one(item).text
+        try:
+            name = CSS(".media-overlay-caption-text-line-1").match_one(item).text
+        except SelectorError:
+            self.skip("vacant")
 
         if "vacant" in name.lower():
             self.skip("vacant")

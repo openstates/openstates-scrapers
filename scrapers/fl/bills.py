@@ -57,7 +57,7 @@ class SubjectPDF(PdfPage):
 
 
 class BillList(HtmlListPage):
-    selector = XPath("//a[contains(@href, '/Session/Bill/')]")
+    selector = XPath("//th/a[contains(@href, '/Session/Bill/')]")
     next_page_selector = XPath("//a[@class='next']/@href")
     dependencies = {"subjects": SubjectPDF}
 
@@ -99,7 +99,7 @@ class BillList(HtmlListPage):
         elif bill_id.startswith(("SM ", "HM ")):
             bill_type = "memorial"
         else:
-            raise ValueError("Failed to identify bill type.")
+            raise ValueError(f"Failed to identify bill type for {bill_id}")
 
         bill = Bill(
             bill_id,
@@ -137,6 +137,7 @@ class BillDetail(HtmlPage):
             self.process_analysis()
             self.process_amendments()
             self.process_summary()
+            self.process_citations()
         yield self.input  # the bill, now augmented
         yield HouseSearchPage(self.input)
         yield from self.process_votes()
@@ -275,6 +276,39 @@ class BillDetail(HtmlPage):
         except IndexError:
             self.logger.warning(
                 "No analysis table for {}".format(self.input.identifier)
+            )
+
+    def process_citations(self):
+        try:
+            cites_table = self.root.xpath(
+                "//div[@id = 'tabBodyCitations']/table[thead/tr/th[contains(.,'Citation')]]"
+            )[0]
+            for tr in cites_table.xpath("tbody/tr"):
+                cite = tr.xpath("string(td[1])").strip()
+                url = tr.xpath("td[1]/a/@href")[0]
+
+                self.input.add_citation(
+                    "Florida Statues", cite, citation_type="proposed", url=url
+                )
+        except IndexError:
+            self.logger.warning(
+                "No citations table for {}".format(self.input.identifier)
+            )
+
+        try:
+            chapter_table = self.root.xpath(
+                "//div[@id = 'tabBodyCitations']/table[thead/tr/th[contains(.,'Chapter Law')]]"
+            )[0]
+            for tr in chapter_table.xpath("tbody/tr"):
+                cite = tr.xpath("string(td[1])").strip()
+                url = tr.xpath("td[1]/a/@href")[0]
+
+                self.input.add_citation(
+                    "Florida Chapter Law", cite, citation_type="chapter", url=url
+                )
+        except IndexError:
+            self.logger.warning(
+                "No chapter law table for {}".format(self.input.identifier)
             )
 
     def process_history(self):
@@ -505,7 +539,7 @@ class UpperComVote(PdfPage):
                         votes["no"].append(member)
                     else:
                         raise ValueError(
-                            "Unparseable vote found for {} in {}:\n{}".format(
+                            "Unparsable vote found for {} in {}:\n{}".format(
                                 member, self.source.url, line
                             )
                         )
@@ -574,6 +608,9 @@ class HouseSearchPage(HtmlListPage):
         # Keep the digits and all following characters in the bill's ID
         bill_number = re.search(r"^\w+\s(\d+\w*)$", self.input.identifier).group(1)
         session_number = {
+            "2024": "103",
+            "2023C": "104",
+            "2023B": "102",
             "2022A": "101",
             "2023": "99",
             "2022D": "96",

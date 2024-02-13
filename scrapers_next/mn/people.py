@@ -43,8 +43,8 @@ class Representatives(HtmlListPage):
     selector = XPath('//div[@id="Alpha"]//div[@class="media my-3"]')
 
     def process_item(self, item):
-        photo_url = item.xpath("./img/@src")[0]
-        url = item.xpath(".//h5/a/@href")[0]
+        photo_url = item.xpath("./a/img/@src")[0]
+        url = item.xpath("./a/@href")[0]
         name_text = item.xpath(".//h5/a/b/text()")[0]
 
         name_match = re.match(r"^(.+)\(([0-9]{2}[AB]), ([A-Z]+)\)$", name_text)
@@ -64,7 +64,7 @@ class Representatives(HtmlListPage):
         # if validate_phone_number(phone_text):
         phone = phone_text
 
-        email_text = item.xpath(".//a/@href")[1].replace("mailto:", "").strip()
+        email_text = item.xpath("./div/a/@href")[0].replace("mailto:", "").strip()
         # if validate_email_address(email_text):
         email = email_text
 

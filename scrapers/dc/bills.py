@@ -7,6 +7,8 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from openstates.scrape import Scraper, Bill, VoteEvent
 from .actions import Bill_Categorizer, Vote_Categorizer
 
+from utils.media import get_media_type
+
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
@@ -90,7 +92,9 @@ class DCBillScraper(Scraper):
                             download = "https://lims.dccouncil.gov/" + download
 
                         mimetype = (
-                            "application/pdf" if download.endswith("pdf") else None
+                            "application/pdf"
+                            if ".pdf" in download
+                            else get_media_type(download)
                         )
                         is_version = False
                         # figure out if it's a version from type/name
@@ -281,7 +285,7 @@ class DCBillScraper(Scraper):
                                             v.vote("other", mem_name)
                                             other_count += 1
                                         else:
-                                            # Incase anything new pops up
+                                            # In case anything new pops up
                                             other_count += 1
                                             v.vote("other", mem_name)
 

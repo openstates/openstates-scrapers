@@ -216,7 +216,7 @@ class Minnesota(State):
             "identifier": "2023-2024",
             "name": "2023-2024 Regular Session",
             "start_date": "2023-01-03",
-            "end_date": "2023-05-22",
+            "end_date": "2024-05-20",
             "active": True,
         },
     ]

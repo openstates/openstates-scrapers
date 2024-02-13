@@ -138,6 +138,8 @@ class Delaware(State):
 
     def get_session_list(self):
         url = "https://legis.delaware.gov/"
-        sessions = url_xpath(url, '//select[@id="billSearchGARefiner"]/option/text()')
+        sessions = url_xpath(
+            url, '//select[@id="billSearchGARefiner"]/option/text()', verify=False
+        )
         sessions = [session.strip() for session in sessions if session.strip()]
         return sessions
