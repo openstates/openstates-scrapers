@@ -1,7 +1,7 @@
 import lxml
 
-HI_URL_BASE = "https://capitol.hawaii.gov"
-SHORT_CODES = "%s/legislature/committees.aspx?chamber=all" % (HI_URL_BASE)
+HI_URL_BASE = "https://www.capitol.hawaii.gov"
+SHORT_CODES = f"{HI_URL_BASE}/legislature/committees.aspx?chamber=all"
 
 
 def get_short_codes(scraper):
