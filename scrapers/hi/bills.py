@@ -427,7 +427,11 @@ class HIBillScraper(Scraper):
             )
             posted = self.tz.localize(posted)
             posted = posted.date()
-            bill_type, bill_num = self.parse_bill_number(match.group("filename"))
+            try:
+                bill_type, bill_num = self.parse_bill_number(match.group("filename"))
+            except TypeError:
+                self.error(f"Skipping {match.group('filename')}")
+                continue
             if posted >= day and bill_type in self.bill_types:
                 self.info(
                     f"Scraping {bill_type}{bill_num} posted on {posted.strftime('%Y-%m-%d')}"
@@ -473,4 +477,5 @@ class HIBillScraper(Scraper):
 
     def parse_bill_number(self, bill: str) -> tuple:
         match = re.search(r"(?P<type>[A-Z]+)(?P<number>\d+)", bill)
-        return (match.group("type"), match.group("number"))
+        if match:
+            return (match.group("type"), match.group("number"))
