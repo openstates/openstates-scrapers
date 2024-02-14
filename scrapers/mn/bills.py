@@ -483,14 +483,15 @@ class MNBillScraper(Scraper, LXMLMixin):
             elif len(page_links) > 0:
                 pages.append(page_links[0])
 
+            # TODO: add votes back in once not broken
             # Try to extract vote
             # senate vote only, house votes are scraped by the vote_event.py scraper
-            if current_chamber == "upper":
-                vote = self.extract_vote_from_action(
-                    bill, bill_action, current_chamber, row, pages
-                )
-                if vote:
-                    votes.append(vote)
+            # if current_chamber == "upper":
+            #     vote = self.extract_vote_from_action(
+            #         bill, bill_action, current_chamber, row, pages
+            #     )
+            #     if vote:
+            #         votes.append(vote)
 
         return bill_actions, votes
 
