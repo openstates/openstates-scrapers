@@ -247,7 +247,7 @@ class Louisiana(State):
             "name": "2024 First Extraordinary Session",
             "start_date": "2024-01-15",
             "end_date": "2024-01-23",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2024 Second Extraordinary Session",
@@ -256,7 +256,7 @@ class Louisiana(State):
             "name": "2024 Second Extraordinary Session",
             "start_date": "2024-02-19",
             "end_date": "2024-03-06",
-            "active": False,
+            "active": True,
         },
         {
             "_scraped_name": "2024 Regular Session",
