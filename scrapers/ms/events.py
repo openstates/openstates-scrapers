@@ -4,7 +4,7 @@ import re
 from utils.events import match_coordinates
 from openstates.scrape import Scraper
 from openstates.scrape import Event
-from spatula import PdfPage, HtmlPage, URL
+from spatula import PdfPage, HtmlPage
 import datetime
 import dateutil
 
@@ -23,13 +23,13 @@ bill_re = re.compile(
 
 # Finds the required agenda pdf, the url changes yearly
 class SenateAgenda(HtmlPage):
-    source = (
-        "https://www.legislature.ms.gov/calendars-and-schedules/senate-committee-agenda/"
-    )
+    source = "https://www.legislature.ms.gov/calendars-and-schedules/senate-committee-agenda/"
 
     def process_page(self):
-        pdf_link = "https://legislature.ms.gov/media/1151/2024_SENATE_COMMITTEE_AGENDAS.pdf"
-        yield from SenateAgendaPdf(source=URL(pdf_link)).do_scrape()
+        pdf_link = (
+            "https://legislature.ms.gov/media/1151/2024_SENATE_COMMITTEE_AGENDAS.pdf"
+        )
+        yield from SenateAgendaPdf(source=pdf_link).do_scrape()
 
 
 # Parses events from a pdf
