@@ -37,18 +37,24 @@ class SenateList(HtmlListPage):
     def process_item(self, item):
         # committee codes dictionary used to map subcommittees to parent committees
         comm_codes_dict = {
+            "APED": "Approp Ed",
             "SAPP": "Appropriations",
             "SCCL": "Criminal Law",
             "SENE": "Energy and Public Utilities",
             "SEXC": "Executive",
+            "SFIC": "Financial Institutions",
             "SHEA": "Health",
             "SINS": "Insurance",
+            "SGOA": "State Government",
             "SJUD": "Judiciary",
             "SLAB": "Labor",
             "SLIC": "Licensed Activities",
             "SRED": "Redistricting",
             "SREV": "Revenue",
+            "SSCC": "Criminal Law & Public Safety",
+            "SSCP": "Pensions",
             "STRN": "Transportation",
+            "SVET": "Veterans Affairs",
         }
 
         if item.getchildren():
@@ -114,13 +120,21 @@ class HouseList(HtmlListPage):
     def process_item(self, item):
         # committee codes dictionary used to map subcommittees to parent committees
         comm_codes_dict = {
+            "HACW": "Adoption & Child Welfare",
+            "HAGC": "Agriculture & Conservation",
             "HAPI": "Appropriations- Higher Education",
-            "HAPH": "Appropriations- Human Services",
+            "HAPH": "Appropriations- Health & Human Services",
+            "HAPP": "Appropriations- Public Safety",
             "HCIV": "Cities & Villages",
             "HCON": "Consumer Protection",
             "HENG": "Energy & Environment",
+            "HELO": "Elementary & Secondary Education",
             "SHEE": "Ethics & Elections Committee",
             "HFIN": "Financial Institutions",
+            "HHCA": "Health Care Availability & Accessibility",
+            "HEXC": "Executive",
+            "HHCL": "Health Care Licenses",
+            "HHED": "Higher Education",
             "HHSV": "Human Services",
             "HINS": "Insurance",
             "HJUA": "Judiciary- Civil",
@@ -130,10 +144,11 @@ class HouseList(HtmlListPage):
             "HMAC": "Museums, Arts, & Cultural Enhancement",
             "HPPN": "Personnel & Pensions",
             "SHPF": "Police & Fire Committee",
+            "HPDA": "Prescription Drug Affordability",
             "HPUB": "Public Utilities",
             "HREF": "Revenue & Finance",
             "HSGA": "State Government Administration",
-            "HTRR": "Transportation: Regulation, Roads",
+            "HTRR": "Transportation: Regulations, Roads & Bridges",
             "HVES": "Transportation: Vehicles & Safety",
         }
 
