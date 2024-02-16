@@ -397,7 +397,7 @@ class CABillScraper(Scraper, LXMLMixin):
                     if bill_id.strip() == "SB867" and session == "20232024":
                         subject = [cleaned_subjects[0:-9]]
                     # another has a colon at the end instead of a period & verify flags an empty string list item later
-                    elif bill_id.strip() == "SB889" and session == "20232024":
+                    elif bill_id.strip() == "SB1211" and session == "20232024":
                         subject = cleaned_subjects[0:-1].split(":")
                     # break up subject to actually be a list of them instead of one long string
                     else:
