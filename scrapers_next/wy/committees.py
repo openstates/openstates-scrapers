@@ -48,8 +48,8 @@ class CommitteeList(JsonListPage):
             parent = None
             if "subcommittee" in name.lower():
                 if (
-                        "capitol interpretive exhibits" in name.lower()
-                        or "capitol governance" in name.lower()
+                    "capitol interpretive exhibits" in name.lower()
+                    or "capitol governance" in name.lower()
                 ):
                     name = name.replace("Subcommittee", "").strip()
                 else:
