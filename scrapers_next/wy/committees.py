@@ -11,7 +11,7 @@ class UnknownSubCommFound(BaseException):
 
 
 class CommitteeList(JsonListPage):
-    year = 2023
+    year = 2024
     source = URL(
         f"https://web.wyoleg.gov/LsoService/api/committeeList/{year}/J", timeout=15
     )
@@ -47,7 +47,10 @@ class CommitteeList(JsonListPage):
             classification = "committee"
             parent = None
             if "subcommittee" in name.lower():
-                if "capitol interpretive exhibits" in name.lower():
+                if (
+                    "capitol interpretive exhibits" in name.lower()
+                    or "capitol governance" in name.lower()
+                ):
                     name = name.replace("Subcommittee", "").strip()
                 else:
                     raise UnknownSubCommFound(name)

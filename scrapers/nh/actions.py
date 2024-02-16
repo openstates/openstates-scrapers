@@ -3,7 +3,7 @@ from utils.actions import Rule, BaseCategorizer
 # These are regex patterns that map to action categories.
 _categorizer_rules = (
     Rule(r"Minority Committee Report", None),  # avoid calling these passage
-    Rule(r"Ought to Pass", ["passage"]),
+    Rule(r"^Ought to Pass", ["passage"]),
     Rule(r"Passed by Third Reading", ["reading-3", "passage"]),
     Rule(r".*Ought to Pass", ["committee-passage-favorable"]),
     Rule(r".*Introduced(.*) and (R|r)eferred", ["introduction", "referral-committee"]),
