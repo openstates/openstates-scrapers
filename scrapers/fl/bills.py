@@ -496,6 +496,10 @@ class UpperComVote(PdfPage):
 
     def process_page(self):
         lines = self.text.splitlines()
+        if len(lines) < 5:
+            self.warning(f"Couldn't split {self.text}, skipping")
+            return
+
         (_, motion) = lines[5].split("FINAL ACTION:")
         motion = motion.strip()
         if not motion:
