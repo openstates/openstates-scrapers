@@ -90,6 +90,8 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                 when = (
                     " ".join([hearing_date, hearing_time])
                     .replace("or upon adjournment of Session", "")
+                    .replace("and upon adjournment of Session, if necessary", "")
+                    .replace("and upon adjournment of Session", "")
                     .strip()
                 )
                 when = dateutil.parser.parse(when)
