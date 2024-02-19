@@ -90,6 +90,7 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                 when = (
                     " ".join([hearing_date, hearing_time])
                     .replace("or upon adjournment of Session", "")
+                    .replace("and upon adjournment of Session, if necessary", "")
                     .strip()
                 )
                 when = dateutil.parser.parse(when)
@@ -211,7 +212,12 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                 )
                 hearing_location = hearing_location.strip(strip_chars)
 
-                when = " ".join([hearing_date, hearing_time]).strip()
+                when = (
+                    " ".join([hearing_date, hearing_time])
+                    .replace("or upon adjournment of Session", "")
+                    .replace("and upon adjournment of Session, if necessary", "")
+                    .strip()
+                )
                 when = dateutil.parser.parse(when)
                 when = self._tz.localize(when)
 
