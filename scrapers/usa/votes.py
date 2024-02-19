@@ -40,6 +40,7 @@ class USVoteScraper(Scraper):
         "Motion for Attendance Agreed to": "pass",
         "Motion to Discharge Agreed to": "pass",
         "Motion to Discharge Rejected": "fail",
+        "Motion to Reconsider Agreed to": "pass",
         "Motion to Table Failed": "fail",
         "Motion to Table Agreed to": "pass",
         "Motion to Table Motion to Recommit Agreed to": "pass",
