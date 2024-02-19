@@ -12,8 +12,8 @@ class IABillScraper(Scraper):
 
     def scrape(self, session=None, chamber=None, prefiles=None):
 
-        self.retry_attempts = 3
-        self.retry_wait_seconds = 6
+        self.retry_attempts = 10
+        self.retry_wait_seconds = 30
         req_session = requests.Session()
         req_session.headers.update({"X-Requested-With": "XMLHttpRequest"})
         # openstates/issues#252 - IA continues to prefile after session starts
