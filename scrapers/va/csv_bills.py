@@ -311,9 +311,10 @@ class VaCSVBillScraper(Scraper):
                 attrs = self.categorizer.categorize(cleaned_action)
                 atype = attrs["classification"]
 
-                b.add_action(
-                    cleaned_action, date, chamber=chamber, classification=atype
-                )
+                if cleaned_action.strip() != "":
+                    b.add_action(
+                        cleaned_action, date, chamber=chamber, classification=atype
+                    )
 
                 if len(vote_id) > 0:
                     total_yes = 0
