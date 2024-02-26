@@ -165,40 +165,32 @@ class WVEventScraper(Scraper, LXMLMixin):
         # "Friday, March 3, 2023, Following wrap up of morning agenda"
         when = ",".join(when.split(",")[:2])
 
+        removals = [
+            r"Immediately(.*)",
+            r"Time Announced(.*)",
+            r"\d+ min\. After Floor Session",
+            r"(?:Shortly| One Hour)?\s*(After|following)\s*(?:the)?\s*(?:second)?\s*Floor Session",
+            r"Changed to",
+            r"at end of floor session",
+            r"TB(.*)",
+            r"\*",
+            r"\d+ minutes following (the evening floor|conclusion of floor)?\s*session(.*)",
+            r",?\s+following\s+floor\s+session",
+            r"ONE HOUR BEFORE SENATE FLOOR SESSION(.*)",
+            r"\d+ (mins\.|minutes) After (.*)",
+            r",\s+\d+ mins following (.*)",
+        ]
+
+        for removal in removals:
+            when = re.sub(removal, "", when, flags=re.IGNORECASE)
+
         # Feb is a tough one, isn't it?
         # After feburary, februarary, febuary, just give up and regex it
         when = re.sub(r"feb(.*?)y", "February", when, flags=re.IGNORECASE)
         when = re.sub(r"Tuesdat", "Tuesday", when, flags=re.IGNORECASE)
-        when = re.sub(r"Immediately(.*)", "", when, flags=re.IGNORECASE)
-        when = re.sub(r"Time Announced(.*)", "", when, flags=re.IGNORECASE)
-        when = re.sub(r"\d+ min\. After Floor Session", "", when, flags=re.IGNORECASE)
-        when = re.sub(
-            r"(?:Shortly| One Hour)?\s*(After|following)\s*(?:the)?\s*(?:second)?\s*Floor Session",
-            "",
-            when,
-            flags=re.IGNORECASE,
-        )
-        when = re.sub(r"Changed to", "", when, flags=re.IGNORECASE)
-        when = re.sub(r"To Be Announced", "", when, flags=re.IGNORECASE)
-        when = re.sub(r"TB(.*)", "", when, flags=re.IGNORECASE)
-        when = re.sub(r"\*", "", when, flags=re.IGNORECASE)
-        when = re.sub(
-            r"\d+ minutes following (the evening floor|conclusion of floor)?\s*session(.*)",
-            "",
-            when,
-            flags=re.IGNORECASE,
-        )
-        when = re.sub(
-            r",?\s+following\s+floor\s+session", "", when, flags=re.IGNORECASE
-        )
-        when = re.sub(
-            r"ONE HOUR BEFORE SENATE FLOOR SESSION(.*)", "", when, flags=re.IGNORECASE
-        )
-        when = re.sub(r"\d+ (mins\.|minutes) After (.*)", "", when, flags=re.IGNORECASE)
         when = when.replace("22021", "2021")
         when = when.replace("20201", "2021")
         when = when.replace("20202", "2020")
-        when = re.sub(r",\s+\d+ mins following (.*)", "", when)
         # Convert 1:300PM -> 1:30PM
         when = re.sub(r"(\d0)0([ap])", r"\1\2", when, flags=re.IGNORECASE)
 
