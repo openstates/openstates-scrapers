@@ -8,7 +8,7 @@ from openstates.scrape import Scraper, Event
 import requests
 
 
-strip_chars = ",\t\n\r "
+strip_chars = ".,\t\n\r "
 
 
 class CAEventWebScraper(Scraper, LXMLMixin):
@@ -89,8 +89,8 @@ class CAEventWebScraper(Scraper, LXMLMixin):
 
                 when = (
                     " ".join([hearing_date, hearing_time])
-                    .replace("or upon adjournment of Session", "")
-                    .replace("and upon adjournment of Session, if necessary", "")
+                    .split("or")[0]
+                    .split("and")[0]
                     .strip()
                 )
                 when = dateutil.parser.parse(when)
@@ -126,14 +126,21 @@ class CAEventWebScraper(Scraper, LXMLMixin):
         response = self.get(url).json()
         page = lxml.html.fromstring(response["agenda"])
         page.make_links_absolute(url)
+        start = False
 
-        for span in page.xpath(
-            './/span[@class="CommitteeTopic "]/span[@class="HearingTopic"]/following-sibling::span'
-        ):
+        for span in page.xpath('.//span[@class="CommitteeTopic "]/span'):
             span_class = span.xpath("@class")[0].strip(strip_chars)
             span_title = span.xpath("string()").strip(strip_chars)
             span_title = re.sub(r"\s+", " ", span_title)
             span_title = re.sub(r"^\d+", "", span_title)
+            span_title = span_title.replace("SUBJECT:", "").strip(strip_chars)
+
+            if "linesep" in span_class:
+                start = True
+            if not start:
+                continue
+            if "HearingTopic " in span_class:
+                continue
             if not span_title:
                 continue
             agenda = event.add_agenda_item(span_title)
@@ -155,18 +162,18 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                 )
                 agenda.add_person(appointee_name, note=appointee_position)
 
-            elif "Measure " in span_class:
+            elif "Measure row" in span_class:
                 bill_id = (
                     span.xpath('.//a[contains(@class, "MeasureLink")]')[0]
                     .xpath("string()")
                     .replace("No", "")
                     .replace(".", "")
-                    .replace("  ", " ")
+                    .replace(" ", "")
                     .strip(strip_chars)
                 )
                 note = (
-                    span.xpath('.//span[contains(@class, "Topic")]')[0]
-                    .xpath("string()")
+                    " ".join(span.xpath('.//span[contains(@class, "Topic")]//text()'))
+                    .strip(strip_chars)
                     .strip(strip_chars)
                 )
                 agenda.add_bill(bill_id, note=note)
@@ -180,6 +187,7 @@ class CAEventWebScraper(Scraper, LXMLMixin):
 
         for date_row in page.xpath("//h5[@class='date']"):
             hearing_date = date_row.xpath("string()").strip()
+
             for content_xpath in date_row.xpath(
                 './following-sibling::div[@class="wrapper--border"][1]/div[@class="dailyfile-section-item"]'
             ):
@@ -214,8 +222,8 @@ class CAEventWebScraper(Scraper, LXMLMixin):
 
                 when = (
                     " ".join([hearing_date, hearing_time])
-                    .replace("or upon adjournment of Session", "")
-                    .replace("and upon adjournment of Session, if necessary", "")
+                    .split("or")[0]
+                    .split("and")[0]
                     .strip()
                 )
                 when = dateutil.parser.parse(when)
@@ -248,13 +256,37 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                 yield event
 
     def scrape_lower_agenda(self, event, committees, page):
-        for span in page.xpath(
-            './/span[@class="CommitteeTopic"]/span[@class="HearingTopic"]/following-sibling::span'
-        ):
-            span_title = span.xpath("string()").strip(strip_chars)
+        start = False
+
+        for span in page.xpath('.//span[@class="CommitteeTopic"]/span'):
+            span_class = span.xpath("@class")[0].strip(strip_chars)
+            span_title = (" ".join(span.xpath(".//text()"))).strip(strip_chars)
             span_title = re.sub(r"\s+", " ", span_title)
             span_title = re.sub(r"^\d+", "", span_title)
+            span_title = span_title.replace("SUBJECT:", "").strip(strip_chars)
+
+            if "linesp" in span_class or "HearingTopic" in span_class:
+                start = True
+            if not start:
+                continue
+            if "HearingTopic" in span_class or "Header" in span_class:
+                continue
+
             if span_title:
                 agenda = event.add_agenda_item(span_title)
                 for committee in committees:
                     agenda.add_committee(committee, note="host")
+
+            if "Measure" == span_class:
+                bill_id = (
+                    span.xpath(".//a")[0]
+                    .xpath("string()")
+                    .replace("No", "")
+                    .replace(".", "")
+                    .replace(" ", "")
+                    .strip(strip_chars)
+                )
+                note = " ".join(
+                    span.xpath('.//span[contains(@class, "Topic")]//text()')
+                ).strip(strip_chars)
+                agenda.add_bill(bill_id, note=note)
