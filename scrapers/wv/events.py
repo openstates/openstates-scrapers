@@ -179,6 +179,7 @@ class WVEventScraper(Scraper, LXMLMixin):
             r"ONE HOUR BEFORE SENATE FLOOR SESSION(.*)",
             r"\d+ (mins\.|minutes) After (.*)",
             r",\s+\d+ mins following (.*)",
+            r", To be Announced on the Floor",
         ]
 
         for removal in removals:

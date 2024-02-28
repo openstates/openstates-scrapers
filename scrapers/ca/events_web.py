@@ -73,7 +73,7 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                 time_loc = [
                     row
                     for row in panel_content.split("\n")
-                    if "p.m." in row or "a.m." in row or " - " in row
+                    if "p.m." in row or "pm" in row or "a.m." in row or " - " in row
                 ]
                 time_loc = "".join(time_loc)
 
@@ -87,11 +87,9 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                 hearing_location = " ".join(time_loc_parts[1:])
                 hearing_location = hearing_location.strip(strip_chars)
 
-                when = (
-                    " ".join([hearing_date, hearing_time])
-                    .replace("or upon adjournment of Session", "")
-                    .replace("and upon adjournment of Session, if necessary", "")
-                    .strip()
+                when = " ".join([hearing_date, hearing_time]).strip()
+                when = re.sub(
+                    r"(or|and) Upon Adjournment(.*)", "", when, flags=re.IGNORECASE
                 )
                 when = dateutil.parser.parse(when)
                 when = self._tz.localize(when)
@@ -212,11 +210,9 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                 )
                 hearing_location = hearing_location.strip(strip_chars)
 
-                when = (
-                    " ".join([hearing_date, hearing_time])
-                    .replace("or upon adjournment of Session", "")
-                    .replace("and upon adjournment of Session, if necessary", "")
-                    .strip()
+                when = " ".join([hearing_date, hearing_time]).strip()
+                when = re.sub(
+                    r"(or|and) Upon Adjournment(.*)", "", when, flags=re.IGNORECASE
                 )
                 when = dateutil.parser.parse(when)
                 when = self._tz.localize(when)
