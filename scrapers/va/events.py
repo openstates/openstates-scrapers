@@ -185,7 +185,8 @@ class VaEventScraper(Scraper):
             # for senate only.
             if "Senate" in description and committee_info_xpath:
                 committee_url = committee_info_xpath[0]
-                self.scrape_upper_com(event, committee_url)
+                if "lis.virginia.gov" in committee_url:
+                    self.scrape_upper_com(event, committee_url)
 
             yield event
 
