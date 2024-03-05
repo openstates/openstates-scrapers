@@ -168,7 +168,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         removals = [
             r"Immediately(.*)",
             r"Time Announced(.*)",
-            r"\d+ min\. After Floor Session",
+            r"(\d+|Thirty) (min\.|minutes) After Floor Session",
             r"(?:Shortly| One Hour)?\s*(After|following)\s*(?:the)?\s*(?:second)?\s*Floor Session",
             r"Changed to",
             r"at end of floor session",
