@@ -118,6 +118,8 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                 view_agenda_id = committee_row.xpath(
                     './/button[contains(@class, "view-agenda")]/@data-nid'
                 )[0]
+                event_key = f"{hearing_title}#{when}#{view_agenda_id}"
+                event.dedupe_key = event_key
                 view_agenda_url = f"https://www.senate.ca.gov/getagenda?dfid={view_agenda_id}&type=committee"
                 self.scrape_upper_agenda(event, committees, view_agenda_url)
                 yield event
@@ -236,6 +238,8 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                     start_date=when,
                     classification="committee-meeting",
                 )
+                event_key = f"{hearing_title}#{when}#{hearing_location}"
+                event.dedupe_key = event_key
 
                 committees = [
                     f"Assembly {com.strip()} Committee"
