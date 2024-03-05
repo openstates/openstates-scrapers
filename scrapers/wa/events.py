@@ -126,5 +126,7 @@ class WAEventScraper(Scraper, LXMLMixin):
             desc = xpath(row, "string(wa:ItemDescription)")
 
             if bill_id:
+                if bill_id.startswith(("ESB ", "SSB ", "EHB ", "SHB ")):
+                    bill_id = bill_id[1:]
                 item = event.add_agenda_item(desc)
                 item.add_bill(bill_id)
