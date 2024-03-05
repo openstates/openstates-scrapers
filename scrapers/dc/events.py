@@ -62,9 +62,11 @@ class DCEventScraper(Scraper):
             "//section[contains(@class,'aside-section')]//a[contains(@class,'icon-link')]"
         )
         for mat in materials:
-            title = mat.xpath("text()")[0].strip()
-            url = mat.xpath("@href")[0]
-            event.add_document(title, url, media_type=get_media_type(url))
+            # sometimes they add broken empty links here
+            if mat.xpath("text()"):
+                title = mat.xpath("text()")[0].strip()
+                url = mat.xpath("@href")[0]
+                event.add_document(title, url, media_type=get_media_type(url))
 
         event.add_source(e.url)
 

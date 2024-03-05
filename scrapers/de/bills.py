@@ -28,6 +28,9 @@ class DEBillScraper(Scraper, LXMLMixin):
     }
 
     def scrape(self, session=None):
+        self.retry_attempts = 10
+        self.retry_wait_seconds = 30
+        self.timeout = 130
         # Cache the legislators, we'll need them for sponsors and votes
         self.scrape_legislators(session)
 

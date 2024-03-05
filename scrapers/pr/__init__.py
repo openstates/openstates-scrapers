@@ -49,6 +49,7 @@ class PuertoRico(State):
         "1997-2000",
         "1993-1996",
         "1989-1992",
+        "1985-1988",
     ]
 
     def get_session_list(self):
