@@ -41,9 +41,9 @@ class USEventScraper(Scraper, LXMLMixin):
         "FHOB": "Ford House Office Building, 441 2nd Street SW, Washington, D.C. 20515",
         "CAPITOL": "US Capitol, 25 Independence Ave SE, Washington, DC 20004",
         "HVC": "US Capitol Visitor's Center, House Side, "
-        "First Street Southeast, Washington, DC 20004",
+               "First Street Southeast, Washington, DC 20004",
         "SVC": "US Capitol Visitor's Center, Senate Side, "
-        "First Street Southeast, Washington, DC 20004",
+               "First Street Southeast, Washington, DC 20004",
     }
 
     # Senate XML uses non-standard bill prefixes
@@ -122,9 +122,10 @@ class USEventScraper(Scraper, LXMLMixin):
 
             event_date = self._TZ.localize(event_date)
             event_name = f"{com[:100]}#{address}#{event_date}"
+            title = re.sub(r"\s+", " ", com[:290])
             event = Event(
                 start_date=event_date,
-                name=com[:1000],
+                name=title,
                 location_name=address,
                 classification="committee-meeting",
             )
@@ -238,9 +239,10 @@ class USEventScraper(Scraper, LXMLMixin):
             )
             address = f"{building}, Room {room}"
         event_name = f"{title[:100]}#{address}#{start_dt}"
+        title = re.sub(r"\s+", " ", title[:290])
         event = Event(
             start_date=start_dt,
-            name=title[:290],
+            name=title,
             location_name=address,
             classification="committee-meeting",
         )
