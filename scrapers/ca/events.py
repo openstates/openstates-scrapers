@@ -108,6 +108,10 @@ class CAEventScraper(Scraper):
 # (probably) represent, based on direct correlation they bore
 # to hearing locations that resemble committee names in
 # the location_code_tbl in the db dump.
+#
+# if you hit a key error here, enter the mysql db and do
+# SELECT * FROM location_code_tbl WHERE location_code LIKE '%82';
+# replacing 82 with your missing index.
 _committee_nr = {
     1: "Assembly Agriculture",
     2: "Assembly Accountability and Administrative Review",
@@ -171,4 +175,5 @@ _committee_nr = {
     75: "Senate Housing",
     80: "Senate Insurance, Banking and Financial Institutions",
     81: "Assembly Emergency Management",
+    82: "Senate Local Government",
 }
