@@ -90,9 +90,11 @@ class WYEventScraper(Scraper):
                             "Bills under Consideration"
                         )
                     # Separate "SF" from "0012" in "SF0012" to strip leading zeroes
-                    num_match = re.search('([A-Z]+)(\d+)',bill["billNumber"] )
-                    if (num_match):
-                        bills_agenda_item.add_bill(num_match[1] + " " + num_match[2].lstrip("0"))
+                    num_match = re.search(r"([A-Z]+)(\d+)", bill["billNumber"])
+                    if num_match:
+                        bills_agenda_item.add_bill(
+                            num_match[1] + " " + num_match[2].lstrip("0")
+                        )
                     else:
                         bills_agenda_item.add_bill(bill["billNumber"])
 
