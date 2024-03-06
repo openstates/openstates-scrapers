@@ -41,9 +41,9 @@ class USEventScraper(Scraper, LXMLMixin):
         "FHOB": "Ford House Office Building, 441 2nd Street SW, Washington, D.C. 20515",
         "CAPITOL": "US Capitol, 25 Independence Ave SE, Washington, DC 20004",
         "HVC": "US Capitol Visitor's Center, House Side, "
-               "First Street Southeast, Washington, DC 20004",
+        "First Street Southeast, Washington, DC 20004",
         "SVC": "US Capitol Visitor's Center, Senate Side, "
-               "First Street Southeast, Washington, DC 20004",
+        "First Street Southeast, Washington, DC 20004",
     }
 
     # Senate XML uses non-standard bill prefixes
