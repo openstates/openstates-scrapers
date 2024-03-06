@@ -3,6 +3,7 @@ from openstates.exceptions import EmptyScrape
 from dateutil import parser, relativedelta
 import datetime
 import pytz
+import re
 from utils.events import set_location_url, match_coordinates
 
 
@@ -88,7 +89,14 @@ class WYEventScraper(Scraper):
                         bills_agenda_item = event.add_agenda_item(
                             "Bills under Consideration"
                         )
-                    bills_agenda_item.add_bill(bill["billNumber"])
+                    # Separate "SF" from "0012" in "SF0012" to strip leading zeroes
+                    num_match = re.search(r"([A-Z]+)(\d+)", bill["billNumber"])
+                    if num_match:
+                        bills_agenda_item.add_bill(
+                            num_match[1] + " " + num_match[2].lstrip("0")
+                        )
+                    else:
+                        bills_agenda_item.add_bill(bill["billNumber"])
 
                 web_url = "https://www.wyoleg.gov/Calendar/{year}{month}01/Meeting?type=committee&id={meeting_id}"
                 web_url = web_url.format(
