@@ -128,6 +128,7 @@ class USEventScraper(Scraper, LXMLMixin):
                 name=title,
                 location_name=address,
                 classification="committee-meeting",
+                description=com,
             )
             event.dedupe_key = event_name
             agenda_item = event.add_agenda_item(description=agenda)
@@ -209,7 +210,7 @@ class USEventScraper(Scraper, LXMLMixin):
 
     def house_meeting(self, xml, source_url):
 
-        title = xml.xpath("string(//meeting-details/meeting-title)")
+        meeting_title = xml.xpath("string(//meeting-details/meeting-title)")
 
         meeting_date = xml.xpath("string(//meeting-date/calendar-date)")
         start_time = xml.xpath("string(//meeting-date/start-time)")
@@ -238,13 +239,14 @@ class USEventScraper(Scraper, LXMLMixin):
                 "string(//meeting-details/meeting-location/capitol-complex/room)"
             )
             address = f"{building}, Room {room}"
-        event_name = f"{title[:100]}#{address}#{start_dt}"
-        title = re.sub(r"\s+", " ", title[:290])
+        event_name = f"{meeting_title[:100]}#{address}#{start_dt}"
+        title = re.sub(r"\s+", " ", meeting_title[:290])
         event = Event(
             start_date=start_dt,
             name=title,
             location_name=address,
             classification="committee-meeting",
+            description=meeting_title,
         )
         event.dedupe_key = event_name
         event.add_source(source_url)
