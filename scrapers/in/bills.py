@@ -518,6 +518,14 @@ class INBillScraper(Scraper):
             if bill_json["latestVersion"]["digest"]:
                 bill.add_abstract(bill_json["latestVersion"]["digest"], note="Digest")
 
+            # votes
+            yield from self._process_votes(
+                bill_json["all_rollcalls"],
+                disp_bill_id,
+                original_chamber,
+                session,
+            )
+
             for v in bill_json["versions"]:
                 # note there are a number of links in the API response that won't work with just a browser, they need an api key
                 # https://iga.in.gov/pdf-documents/123/2024/house/resolutions/HC0001/HC0001.01.INTR.pdf
@@ -531,13 +539,6 @@ class INBillScraper(Scraper):
                 )
             # # put this behind a flag 2021-03-18 (openstates/issues#291)
             # if not SCRAPE_WEB_VERSIONS:
-            #     # votes
-            #     yield from self._process_votes(
-            #         bill_json["latestVersion"]["rollcalls"],
-            #         disp_bill_id,
-            #         original_chamber,
-            #         session,
-            #     )
             #     # versions
             #     self.deal_with_version(
             #         bill_json["latestVersion"], bill, bill_id, original_chamber, session
