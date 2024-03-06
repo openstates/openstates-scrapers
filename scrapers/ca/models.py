@@ -53,6 +53,7 @@ class CABill(Base):
         "CAVoteSummary",
         backref=backref("bill"),
         order_by="CAVoteSummary.vote_date_time",
+        overlaps="bill,detail_votes",
     )
 
     analyses = relation(
