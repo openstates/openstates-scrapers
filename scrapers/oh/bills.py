@@ -388,7 +388,9 @@ class OHBillScraper(Scraper):
                 bill_numbers_seen.add(bill["number"])
                 total_bills.append(bill)
             else:
-                self.logger.warning(f"Duplicate bill found in bills API response: {bill['number']}")
+                self.logger.warning(
+                    f"Duplicate bill found in bills API response: {bill['number']}"
+                )
 
         res_url = f"https://search-prod.lis.state.oh.us/solarapi/v1/general_assembly_{session}/resolutions"
         res_data = self.get(res_url, verify=False).json()
@@ -399,7 +401,9 @@ class OHBillScraper(Scraper):
                 bill_numbers_seen.add(bill["number"])
                 total_bills.append(bill)
             else:
-                self.logger.warning(f"Duplicate bill found in resolutions API response: {bill['number']}")
+                self.logger.warning(
+                    f"Duplicate bill found in resolutions API response: {bill['number']}"
+                )
 
         return total_bills
 
