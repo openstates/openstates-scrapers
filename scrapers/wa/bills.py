@@ -331,8 +331,6 @@ class WABillScraper(Scraper, LXMLMixin):
 
         bill.add_source(fake_source)
 
-        print(self.versions[bill_id])
-
         try:
             for version in self.versions[bill_id]:
                 bill.add_version_link(
