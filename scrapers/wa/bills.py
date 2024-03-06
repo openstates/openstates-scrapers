@@ -101,6 +101,7 @@ class WABillScraper(Scraper, LXMLMixin):
             "Concurrent Resolutions": "CR",
             "Joint Memorials": "JM",
             "Joint Resolutions": "JR",
+            "Passed Legislature": "B",
         }
         chamber = {"lower": "House", "upper": "Senate"}[chamber]
 
@@ -123,7 +124,9 @@ class WABillScraper(Scraper, LXMLMixin):
 
                 bill_id = chamber[0] + bill_types[bill_type] + " " + bill_num
 
-                name = bill_type[:-1]
+                if bill_type != "Passed Legislature":
+                    name = bill_type[:-1]
+
                 if is_substitute:
                     name = f"Substitute {name}"
                     if substitute_num:
@@ -227,16 +230,20 @@ class WABillScraper(Scraper, LXMLMixin):
         year = int(session[0:4])
 
         self._bill_id_list = self.get_prefiles(chamber, session, year)
+        self.biennium = "%s-%s" % (session[0:4], session[7:9])
 
         for chamber in chambers:
             self.scrape_chamber(chamber, session)
+
+        # uncomment the line below to scrape a single bill
+        # self._bill_id_list = ["HB 1589"]
 
         # de-dup bill_id
         for bill_id in list(set(self._bill_id_list)):
             yield from self.scrape_bill(chamber, session, bill_id, year)
 
     def scrape_chamber(self, chamber, session):
-        self.biennium = "%s-%s" % (session[0:4], session[7:9])
+
         self._load_versions(chamber)
         self._load_documents(chamber)
 
