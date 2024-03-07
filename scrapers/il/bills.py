@@ -129,7 +129,6 @@ _action_classifiers = (
     (re.compile(r"Arrived? in"), ["introduction"]),
     (re.compile(r"First Reading"), ["reading-1"]),
     (re.compile(r"(Recalled to )?Second Reading"), ["reading-2"]),
-    (re.compile(r"(Re-r|R)eferred to"), ["referral-committee"]),
     (re.compile(r"(Re-a|A)ssigned to"), ["referral-committee"]),
     (re.compile(r"Sent to the Governor"), ["executive-receipt"]),
     (re.compile(r"Governor Approved"), ["executive-signature"]),
