@@ -2,7 +2,6 @@ import datetime
 import dateutil.parser
 import json
 import pytz
-import re
 
 from utils import LXMLMixin
 from utils.events import match_coordinates
