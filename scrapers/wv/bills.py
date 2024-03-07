@@ -501,6 +501,7 @@ class WVBillScraper(Scraper):
         ):
             version_name = row.xpath("string(.)").strip()
             version_url = row.xpath("@href")[0]
+            version_url = version_url.replace(" ", "%20")
             bill.add_version_link(
                 version_name, version_url, media_type="text/html", on_duplicate="ignore"
             )
