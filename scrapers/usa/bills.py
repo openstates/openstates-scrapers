@@ -5,7 +5,8 @@ import re
 import scrapelib
 import xml.etree.ElementTree as ET
 
-from openstates.scrape import Bill, Scraper
+from openstates.scrape import Bill, Scraper, VoteEvent
+
 
 # NOTE: This is a US federal bill scraper designed to output bills in the
 # openstates format, for compatibility with systems that already ingest the pupa format.
@@ -31,6 +32,50 @@ class USBillScraper(Scraper):
 
     chambers = {"House": "lower", "Joint": "joint", "Senate": "upper"}
     chamber_map = {"upper": "s", "lower": "h"}
+    chamber_code = {"S": "upper", "H": "lower", "J": "legislature"}
+    vote_codes = {
+        "Aye": "yes",
+        "Yea": "yes",
+        "Yes": "yes",
+        "Nay": "no",
+        "No": "no",
+        "Not Voting": "not voting",
+        "Present": "other",
+        "Present, Giving Live Pair": "other",
+    }
+    senate_statuses = {
+        "Agreed to": "pass",
+        "Amendment Agreed to": "pass",
+        "Bill Passed": "pass",
+        "Confirmed": "pass",
+        "Rejected": "fail",
+        "Passed": "pass",
+        "Nomination Confirmed": "pass",
+        "Cloture Motion Agreed to": "pass",
+        "Cloture Motion Rejected": "fail",
+        "Cloture on the Motion to Proceed Rejected": "fail",
+        "Cloture on the Motion to Proceed Agreed to": "pass",
+        "Conference Report Agreed to": "pass",
+        "Amendment Rejected": "fail",
+        "Decision of Chair Sustained": "pass",
+        "Motion Agreed to": "pass",
+        "Motion for Attendance Agreed to": "pass",
+        "Motion to Discharge Agreed to": "pass",
+        "Motion to Discharge Rejected": "fail",
+        "Motion to Reconsider Agreed to": "pass",
+        "Motion to Table Failed": "fail",
+        "Motion to Table Agreed to": "pass",
+        "Motion to Table Motion to Recommit Agreed to": "pass",
+        "Motion to Proceed Agreed to": "pass",
+        "Motion to Proceed Rejected": "fail",
+        "Motion Rejected": "fail",
+        "Bill Defeated": "fail",
+        "Joint Resolution Passed": "pass",
+        "Joint Resolution Defeated": "fail",
+        "Resolution Agreed to": "pass",
+        "Resolution of Ratification Agreed to": "pass",
+        "Veto Sustained": "fail",
+    }
 
     classifications = {
         "HRES": "resolution",
@@ -128,6 +173,9 @@ class USBillScraper(Scraper):
         self.scrape_summaries(bill, xml)
         self.scrape_titles(bill, xml)
         self.scrape_versions(bill, xml)
+
+        for vote in self.scrape_votes(bill, xml):
+            yield vote
 
         xml_url = f"https://www.govinfo.gov/bulkdata/BILLSTATUS/{session}/{bill_type.lower()}/BILLSTATUS-{session}{bill_type.lower()}{bill_num}.xml"
         bill.add_source(xml_url)
@@ -494,3 +542,170 @@ class USBillScraper(Scraper):
                 media_type="application/pdf",
                 date=date,
             )
+
+    def scrape_votes(self, bill, xml):
+        vote_urls = []
+        for row in xml.findall("bill/actions/item/recordedVotes/recordedVote"):
+            url = self.get_xpath(row, "url")
+            chamber = self.get_xpath(row, "chamber")
+            if url not in vote_urls:
+                vote_urls.append((url, chamber))
+
+        for url, chamber in vote_urls:
+            content = self.get(url).content
+            vote_xml = lxml.html.fromstring(content)
+            if chamber.lower() == "senate":
+                vote = self.scrape_senate_votes(bill, vote_xml, url)
+            elif chamber.lower() == "house":
+                vote = self.scrape_house_votes(bill, vote_xml, url)
+            yield vote
+
+    def scrape_senate_votes(self, bill, page, url):
+        vote_date = page.xpath("//roll_call_vote/vote_date/text()")[0].strip()
+        when = self._TZ.localize(
+            datetime.datetime.strptime(vote_date, "%B %d, %Y, %H:%M %p")
+        )
+
+        session = page.xpath("//roll_call_vote/congress/text()")[0]
+
+        roll_call = page.xpath("//roll_call_vote/vote_number/text()")[0]
+        vote_id = "us-{}-upper-{}".format(when.year, roll_call)
+
+        # note: not everything the senate votes on is a bill, this is OK
+        # non bills include nominations and impeachments
+        doc_type = page.xpath("//roll_call_vote/document/document_type/text()")[0]
+
+        if page.xpath("//roll_call_vote/amendment/amendment_to_document_number/text()"):
+            bill_id = page.xpath(
+                "//roll_call_vote/amendment/amendment_to_document_number/text()"
+            )[0].replace(".", "")
+        else:
+            bill_id = page.xpath("//roll_call_vote/document/document_name/text()")[
+                0
+            ].replace(".", "")
+
+        if re.match(r"PN\d*", bill_id):
+            return
+
+        motion = page.xpath("//roll_call_vote/vote_question_text/text()")[0]
+
+        result_text = page.xpath("//roll_call_vote/vote_result/text()")[0]
+
+        result = self.senate_statuses[result_text]
+
+        vote = VoteEvent(
+            start_date=when,
+            bill_chamber="lower" if doc_type[0] == "H" else "upper",
+            motion_text=motion,
+            classification="passage",  # TODO
+            result=result,
+            legislative_session=session,
+            identifier=vote_id,
+            bill=bill_id,
+            chamber="upper",
+        )
+
+        vote.add_source(url)
+
+        vote.extras["senate-rollcall-num"] = roll_call
+
+        yeas = page.xpath("//roll_call_vote/count/yeas/text()")[0]
+        nays = page.xpath("//roll_call_vote/count/nays/text()")[0]
+
+        if page.xpath("//roll_call_vote/count/absent/text()"):
+            absents = page.xpath("//roll_call_vote/count/absent/text()")[0]
+        else:
+            absents = 0
+
+        if page.xpath("//roll_call_vote/count/present/text()"):
+            presents = page.xpath("//roll_call_vote/count/present/text()")[0]
+        else:
+            presents = 0
+
+        vote.set_count("yes", int(yeas))
+        vote.set_count("no", int(nays))
+        vote.set_count("absent", int(absents))
+        vote.set_count("abstain", int(presents))
+
+        for row in page.xpath("//roll_call_vote/members/member"):
+            lis_id = row.xpath("lis_member_id/text()")[0]
+            name = row.xpath("member_full/text()")[0]
+            choice = row.xpath("vote_cast/text()")[0]
+
+            vote.vote(self.vote_codes[choice], name, note=lis_id)
+
+        yield vote
+
+    def scrape_house_votes(self, bill, page, url):
+        vote_date = page.xpath("//rollcall-vote/vote-metadata/action-date/text()")[0]
+        vote_time = page.xpath("//rollcall-vote/vote-metadata/action-time/@time-etz")[0]
+
+        when = self._TZ.localize(
+            datetime.datetime.strptime(
+                "{} {}".format(vote_date, vote_time), "%d-%b-%Y %H:%M"
+            )
+        )
+
+        motion = page.xpath("//rollcall-vote/vote-metadata/vote-question/text()")[0]
+        result = page.xpath("//rollcall-vote/vote-metadata/vote-result/text()")[0]
+        if result == "Passed":
+            result = "pass"
+        else:
+            result = "fail"
+
+        session = page.xpath("//rollcall-vote/vote-metadata/congress/text()")[0]
+
+        if not page.xpath("//rollcall-vote/vote-metadata/legis-num/text()"):
+            self.warning(f"No bill id for {url}, skipping")
+            return
+
+        bill_id = page.xpath("//rollcall-vote/vote-metadata/legis-num/text()")[0]
+        # for some reason these are "H R 123" which nobody uses, so fix to "HR 123"
+        bill_id = re.sub(r"([A-Z])\s([A-Z])", r"\1\2", bill_id)
+
+        roll_call = page.xpath("//rollcall-vote/vote-metadata/rollcall-num/text()")[0]
+
+        vote_id = "us-{}-lower-{}".format(when.year, roll_call)
+
+        vote = VoteEvent(
+            start_date=when,
+            bill_chamber="lower" if bill_id[0] == "H" else "upper",
+            motion_text=motion,
+            classification="passage",  # TODO
+            result=result,
+            legislative_session=session,
+            identifier=vote_id,
+            bill=bill_id,
+            chamber="lower",
+        )
+        vote.add_source(url)
+
+        vote.extras["house-rollcall-num"] = roll_call
+
+        yeas = page.xpath(
+            "//rollcall-vote/vote-metadata/vote-totals/totals-by-vote/yea-total/text()"
+        )[0]
+        nays = page.xpath(
+            "//rollcall-vote/vote-metadata/vote-totals/totals-by-vote/nay-total/text()"
+        )[0]
+        nvs = page.xpath(
+            "//rollcall-vote/vote-metadata/vote-totals/totals-by-vote/not-voting-total/text()"
+        )[0]
+        presents = page.xpath(
+            "//rollcall-vote/vote-metadata/vote-totals/totals-by-vote/present-total/text()"
+        )[0]
+
+        vote.set_count("yes", int(yeas))
+        vote.set_count("no", int(nays))
+        vote.set_count("not voting", int(nvs))
+        vote.set_count("abstain", int(presents))
+
+        # vote.yes vote.no vote.vote
+        for row in page.xpath("//rollcall-vote/vote-data/recorded-vote"):
+            bioguide = row.xpath("legislator/@name-id")[0]
+            name = row.xpath("legislator/@sort-field")[0]
+            choice = row.xpath("vote/text()")[0]
+
+            vote.vote(self.vote_codes[choice], name, note=bioguide)
+
+        return vote

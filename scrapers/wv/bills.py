@@ -439,21 +439,25 @@ class WVBillScraper(Scraper):
             for vote_val, name in vals:
                 vote_val = vote_val.strip()
                 name = name.strip()
-                if vote_val == "Y":
-                    # Fix for "Class Y special hunting" in
-                    # http://www.wvlegislature.gov/legisdocs/2020/RS/votes/senate/01-27-0033.pdf
-                    if "Class Y" in line:
-                        continue
+                # check that it's an uppercase name, not a sentence
+                # was catching 'A squatter cannot be considered a tenant in WV.' as an absent vote
+                # on https://www.wvlegislature.gov/legisdocs/2024/RS/votes/senate/03-05-0369.pdf
+                if name.isupper():
+                    if vote_val == "Y":
+                        # Fix for "Class Y special hunting" in
+                        # http://www.wvlegislature.gov/legisdocs/2020/RS/votes/senate/01-27-0033.pdf
+                        if "Class Y" in line:
+                            continue
 
-                    vote.yes(name)
-                    yes_count += 1
-                elif vote_val == "N":
-                    vote.no(name)
-                    no_count += 1
-                else:
-                    vote.vote("other", name)
-                    other_count += 1
-                actual_vote[vote_val] += 1
+                        vote.yes(name)
+                        yes_count += 1
+                    elif vote_val == "N":
+                        vote.no(name)
+                        no_count += 1
+                    else:
+                        vote.vote("other", name)
+                        other_count += 1
+                    actual_vote[vote_val] += 1
         vote.set_count("yes", yes_count)
         vote.set_count("no", no_count)
         vote.set_count("other", other_count)
@@ -497,6 +501,7 @@ class WVBillScraper(Scraper):
         ):
             version_name = row.xpath("string(.)").strip()
             version_url = row.xpath("@href")[0]
+            version_url = version_url.replace(" ", "%20")
             bill.add_version_link(
                 version_name, version_url, media_type="text/html", on_duplicate="ignore"
             )
