@@ -122,13 +122,7 @@ class NYBillScraper(Scraper):
         vote_rolls = vote_data["memberVotes"]["items"]
 
         yes_count, no_count, exc_count, abs_count, other_count = [0] * 5
-        vote_abbr = {
-            "AYE": "yes",
-            "AYEWR": "yes",
-            "NAY": "no",
-            "EXC": "excused",
-            "ABS": "absent",
-        }
+
         # Count all yea votes.
         if "items" in vote_rolls.get("AYE", {}):
             for legislator in vote_rolls["AYE"]["items"]:
