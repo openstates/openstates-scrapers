@@ -193,7 +193,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2023-03-07",
             "end_date": "2023-05-05",
-            "active": True,
+            "active": False,
         },
         {
             "name": "2023 Special Session B",
@@ -209,7 +209,7 @@ class Florida(State):
             "classification": "special",
             "start_date": "2023-11-06",
             "end_date": "2023-11-09",
-            "active": True,
+            "active": False,
         },
         {
             "name": "2024 Regular Session",

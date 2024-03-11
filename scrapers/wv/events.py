@@ -166,6 +166,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         when = ",".join(when.split(",")[:2])
 
         removals = [
+            r"(\d+|Thirty) (min\.|mins\.|minutes) After (.*)",
             r"Immediately(.*)",
             r"Time Announced(.*)",
             r"(?:Shortly| One Hour)?\s*(After|following)\s*(?:the)?\s*(?:second)?\s*Floor Session",
@@ -176,7 +177,6 @@ class WVEventScraper(Scraper, LXMLMixin):
             r"\d+ minutes following (the evening floor|conclusion of floor)?\s*session(.*)",
             r",?\s+following\s+floor\s+session",
             r"ONE HOUR BEFORE SENATE FLOOR SESSION(.*)",
-            r"(\d+|Thirty) (min\.|mins\.|minutes) After (.*)",
             r",\s+\d+ mins following (.*)",
             r", To be Announced on the Floor",
         ]
