@@ -226,6 +226,16 @@ class Arkansas(State):
             "end_date": "2023-08-15",
             "active": True,
         },
+        {
+            "_scraped_name": "Fiscal Session, 2024",
+            "classification": "primary",
+            "identifier": "2024F",
+            "name": "2024 Fiscal Session",
+            "start_date": "2024-04-10",
+            # TODO real end date
+            "end_date": "2024-05-10",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "Regular Session, 2009",
