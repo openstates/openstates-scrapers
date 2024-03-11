@@ -213,8 +213,7 @@ class Arkansas(State):
             "identifier": "2023",
             "name": "2023 Regular Session",
             "start_date": "2023-01-09",
-            # TODO: end date is approximate
-            "end_date": "2023-03-12",
+            "end_date": "2023-05-01",
             "active": False,
         },
         {
@@ -232,8 +231,7 @@ class Arkansas(State):
             "identifier": "2024F",
             "name": "2024 Fiscal Session",
             "start_date": "2024-04-10",
-            # TODO real end date
-            "end_date": "2024-05-10",
+            "end_date": "2024-05-09",
             "active": False,
         },
     ]
