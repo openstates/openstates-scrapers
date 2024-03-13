@@ -69,6 +69,7 @@ class USBillScraper(Scraper):
         "Motion to Proceed Agreed to": "pass",
         "Motion to Proceed Rejected": "fail",
         "Motion Rejected": "fail",
+        "Motion to Refer Rejected": "fail",
         "Bill Defeated": "fail",
         "Joint Resolution Passed": "pass",
         "Joint Resolution Defeated": "fail",
@@ -552,13 +553,17 @@ class USBillScraper(Scraper):
                 vote_urls.append((url, chamber))
 
         for url, chamber in vote_urls:
-            content = self.get(url).content
-            vote_xml = lxml.html.fromstring(content)
-            if chamber.lower() == "senate":
-                vote = self.scrape_senate_votes(bill, vote_xml, url)
-            elif chamber.lower() == "house":
-                vote = self.scrape_house_votes(bill, vote_xml, url)
-            yield vote
+            try:
+                content = self.get(url).content
+                vote_xml = lxml.html.fromstring(content)
+                if chamber.lower() == "senate":
+                    vote = self.scrape_senate_votes(bill, vote_xml, url)
+                elif chamber.lower() == "house":
+                    vote = self.scrape_house_votes(bill, vote_xml, url)
+                yield vote
+            except scrapelib.HTTPError:
+                self.info(f"Error fetching {url}, skipping")
+                return
 
     def scrape_senate_votes(self, bill, page, url):
         vote_date = page.xpath("//roll_call_vote/vote_date/text()")[0].strip()
