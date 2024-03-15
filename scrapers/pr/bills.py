@@ -409,7 +409,14 @@ class PRBillScraper(Scraper):
         report_url = "https://sutra.oslpr.org/osl/esutra/VerSQLReportingPRM.aspx?rpt=SUTRA-011&Q={}&Medida={}".format(
             year, bill_id
         )
-        html = self.get(report_url).text
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/79.0.3945.117 Safari/537.36",
+            "referer": report_url,
+            "origin": "https://sutra.oslpr.org",
+            "authority": "sutra.oslpr.org",
+        }
+        html = self.get(report_url, headers=headers).text
         page = lxml.html.fromstring(html)
 
         for row in page.xpath('//tr[td/div/div[contains(text(),"Autor")]]')[1:]:
@@ -479,7 +486,14 @@ class PRBillScraper(Scraper):
                 self.parse_version(bill, row)
 
     def scrape_bill(self, chamber, session, url):
-        html = self.get(url).text
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/79.0.3945.117 Safari/537.36",
+            "referer": url,
+            "origin": "https://sutra.oslpr.org",
+            "authority": "sutra.oslpr.org",
+        }
+        html = self.get(url, headers=headers).text
         page = lxml.html.fromstring(html)
         # search for Titulo, accent over i messes up lxml, so use 'tulo'
         title = page.xpath('//span[@id="ctl00_CPHBody_txtTitulo"]/text()')[0].strip()
