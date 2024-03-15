@@ -168,6 +168,9 @@ class TNEventScraper(Scraper, LXMLMixin):
                                 media_type="text/html",
                                 on_duplicate="ignore",
                             )
+                            event.dedupe_key = re.search(
+                                r"ID=(\d*)&", agenda_url
+                            ).group(1)
                             for bill in AgendaHtml(source=agenda_url).do_scrape():
                                 event.add_bill(bill)
 
