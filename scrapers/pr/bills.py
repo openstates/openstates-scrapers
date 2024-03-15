@@ -411,7 +411,7 @@ class PRBillScraper(Scraper):
         )
         headers = {
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                          "Chrome/79.0.3945.117 Safari/537.36",
+            "Chrome/79.0.3945.117 Safari/537.36",
             "referer": report_url,
             "origin": "https://sutra.oslpr.org",
             "authority": "sutra.oslpr.org",
@@ -488,7 +488,7 @@ class PRBillScraper(Scraper):
     def scrape_bill(self, chamber, session, url):
         headers = {
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                          "Chrome/79.0.3945.117 Safari/537.36",
+            "Chrome/79.0.3945.117 Safari/537.36",
             "referer": url,
             "origin": "https://sutra.oslpr.org",
             "authority": "sutra.oslpr.org",
