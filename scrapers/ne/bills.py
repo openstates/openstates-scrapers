@@ -8,7 +8,6 @@ from utils import LXMLMixin
 
 
 TIMEZONE = pytz.timezone("US/Central")
-VOTE_TYPE_MAP = {"yes": "yes", "no": "no"}
 
 
 class NEBillScraper(Scraper, LXMLMixin):
@@ -283,9 +282,7 @@ class NEBillScraper(Scraper, LXMLMixin):
             motion_text = motion_td.text_content()
             vote_page = self.lxmlize(vote_url)
             passed = "Passed" in motion_text or "Advanced" in motion_text
-            cells = vote_page.xpath(
-                '//div[contains(@class,"table-responsive")]/table//td'
-            )
+
             vote = VoteEvent(
                 bill=bill,
                 chamber=chamber,
@@ -295,11 +292,11 @@ class NEBillScraper(Scraper, LXMLMixin):
                 result="pass" if passed else "fail",
             )
 
-            yes_count = self.process_count(vote_page, "Yes:")
-            no_count = self.process_count(vote_page, "No:")
-            exc_count = self.process_count(vote_page, "Excused - Not Voting:")
-            absent_count = self.process_count(vote_page, "Absent - Not Voting:")
-            present_count = self.process_count(vote_page, "Present - Not Voting:")
+            yes_voters, yes_count = self.get_votes(vote_page, "Yes :")
+            no_voters, no_count = self.get_votes(vote_page, "No :")
+            exc_voters, exc_count = self.get_votes(vote_page, "Excused Not Voting:")
+            abs_voters, absent_count = self.get_votes(vote_page, "Absent Not Voting:")
+            pre_voters, present_count = self.get_votes(vote_page, "Present Not Voting:")
 
             vote.set_count("yes", yes_count)
             vote.set_count("no", no_count)
@@ -310,21 +307,33 @@ class NEBillScraper(Scraper, LXMLMixin):
             query_params = urllib.parse.parse_qs(urllib.parse.urlparse(vote_url).query)
             vote.dedupe_key = query_params["KeyID"][0]
             vote.add_source(vote_url)
-            for chunk in range(0, len(cells), 2):
-                name = cells[chunk].text
-                vote_type = cells[chunk + 1].text
-                if name and vote_type:
-                    vote.vote(VOTE_TYPE_MAP.get(vote_type.lower(), "other"), name)
+
+            for name in yes_voters:
+                vote.yes(name)
+            for name in no_voters:
+                vote.no(name)
+            for name in exc_voters:
+                vote.vote("excused", name)
+            for name in abs_voters:
+                vote.vote("absent", name)
+            for name in pre_voters:
+                vote.vote("abstain", name)
+
             yield vote
 
     # Find the vote count row containing row_string, and return the integer count
-    def process_count(self, page, row_string):
-        count_xpath = (
-            'string(//ul[contains(@class,"list-unstyled")]/li[contains(text(),"{}")])'
-        )
+    def get_votes(self, page, row_string):
+        count_xpath = 'string(//div[@id="by_vote_viewport"]//div[contains(@class, "card-header")][contains(text(),"{}")])'
         count_text = page.xpath(count_xpath.format(row_string))
         value = "".join(x for x in count_text if x and x.isdigit())
-        return int(value) if value else 0
+        cells_xpath = (
+            '//div[@id="by_vote_viewport"]//div[contains(@class, "card-header")][contains(text(),"{}")]'
+            "/following-sibling::table//td/div/text()"
+        )
+        cells_xpath = page.xpath(cells_xpath.format(row_string))
+        cells = [cell.strip() for cell in cells_xpath if cell.strip()]
+
+        return cells, int(value) if value else 0
 
     def action_types(self, action):
         if "Date of introduction" in action:
