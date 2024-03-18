@@ -121,36 +121,57 @@ class NYBillScraper(Scraper):
 
         vote_rolls = vote_data["memberVotes"]["items"]
 
-        yes_count, no_count, other_count = 0, 0, 0
+        yes_count, no_count, exc_count, abs_count, other_count = [0] * 5
 
         # Count all yea votes.
         if "items" in vote_rolls.get("AYE", {}):
             for legislator in vote_rolls["AYE"]["items"]:
-                vote.yes(legislator["fullName"])
+                vote.yes(legislator.get("fullName") or legislator.get("shortName"))
                 yes_count += 1
 
         if "items" in vote_rolls.get("AYEWR", {}):
             for legislator in vote_rolls["AYEWR"]["items"]:
-                vote.yes(legislator["fullName"])
+                vote.yes(legislator.get("fullName") or legislator.get("shortName"))
                 yes_count += 1
 
         # Count all nay votes.
         if "items" in vote_rolls.get("NAY", {}):
             for legislator in vote_rolls["NAY"]["items"]:
-                vote.no(legislator["fullName"])
+                vote.no(legislator.get("fullName") or legislator.get("shortName"))
                 no_count += 1
 
+        # Count all exc votes.
+        if "items" in vote_rolls.get("EXC", {}):
+            for legislator in vote_rolls["EXC"]["items"]:
+                vote.vote(
+                    "excused", legislator.get("fullName") or legislator.get("shortName")
+                )
+                exc_count += 1
+
+        # Count all abs votes.
+        if "items" in vote_rolls.get("ABS", {}):
+            for legislator in vote_rolls["ABS"]["items"]:
+                vote.vote(
+                    "absent", legislator.get("fullName") or legislator.get("shortName")
+                )
+                abs_count += 1
+
         # Count all other types of votes.
-        other_vote_types = ("EXC", "ABS", "ABD")
-        for vote_type in other_vote_types:
-            if vote_rolls.get(vote_type, []):
-                for legislator in vote_rolls[vote_type]["items"]:
-                    vote.vote("other", legislator["fullName"])
-                    other_count += 1
+        for vote_type in vote_rolls.keys():
+            if vote_type in ["AYE", "AYEWR", "NAY", "EXC", "ABS"]:
+                continue
+            for legislator in vote_rolls[vote_type]["items"]:
+                vote.vote(
+                    "other",
+                    legislator.get("fullName") or legislator.get("shortName"),
+                )
+                other_count += 1
 
         vote.result = "pass" if yes_count > no_count else "fail"
         vote.set_count("yes", yes_count)
         vote.set_count("no", no_count)
+        vote.set_count("excused", exc_count)
+        vote.set_count("absent", abs_count)
         vote.set_count("other", other_count)
 
         return vote
@@ -378,6 +399,7 @@ class NYBillScraper(Scraper):
         # Chamber-specific processing.
         for vote_data in bill_data["votes"]["items"]:
             yield self._parse_senate_votes(vote_data, bill, api_url)
+
         yield from self.scrape_assembly_votes(session, bill, assembly_url, bill_id)
 
         # A little strange the way it works out, but the Assembly
@@ -488,12 +510,22 @@ class NYBillScraper(Scraper):
                 vote.set_count("no", no_count)
                 absent_count = 0
                 excused_count = 0
-                tds = table.xpath("tr/td/text()")
-                votes = [tds[i : i + 2] for i in range(0, len(tds), 2)]
+                nv_count = 0
+                other_count = 0
+
+                votes = [
+                    (
+                        div.xpath('string(div[@class="vote"])')
+                        .replace("‡", "")
+                        .strip(),
+                        div.xpath('string(div[@class="name"])').strip(),
+                    )
+                    for div in table.xpath('//div[@class="vote-name"]')
+                ]
 
                 vote_dictionary = {
-                    "Y": "yes",
-                    "NO": "no",
+                    "Yes": "yes",
+                    "No": "no",
                     "ER": "excused",
                     "AB": "absent",
                     "NV": "not voting",
@@ -501,17 +533,23 @@ class NYBillScraper(Scraper):
                 }
 
                 for vote_pair in votes:
-                    name, vote_val = vote_pair
-                    if "participated via videoconferencing" not in name:
-                        vote.vote(vote_dictionary[vote_val], name)
-                        if vote_val == "AB":
-                            absent_count += 1
-                        elif vote_val == "ER":
-                            excused_count += 1
+                    vote_val, name = vote_pair
+                    vote.vote(vote_dictionary[vote_val], name)
+                    if vote_val == "AB":
+                        absent_count += 1
+                    elif vote_val == "ER":
+                        excused_count += 1
+                    elif vote_val == "NV":
+                        nv_count += 1
+                    elif vote_val not in ["Yes", "No"]:
+                        other_count += 1
 
                 vote.set_count("absent", absent_count)
                 vote.set_count("excused", excused_count)
+                vote.set_count("not voting", nv_count)
+                vote.set_count("other", other_count)
                 vote.add_source(url)
+
                 vote.dedupe_key = url + motion + spanText[1]
 
                 yield vote
@@ -525,7 +563,7 @@ class NYBillScraper(Scraper):
             return
         parts = parts.groupdict()
         time_params = {}
-        for (name, param) in parts.items():
+        for name, param in parts.items():
             if param:
                 time_params[name] = int(param)
         return datetime.timedelta(**time_params)
