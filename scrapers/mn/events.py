@@ -97,6 +97,7 @@ class MNEventScraper(Scraper, LXMLMixin):
             for bill in get_bill_ids(desc):
                 event.add_bill(bill)
                 bills.add(bill)
+
             self.info(
                 f"Associated {len(bills)} bills with {com}#{where}#{when}: {bills}"
             )
@@ -127,12 +128,28 @@ class MNEventScraper(Scraper, LXMLMixin):
                     doc_name, doc_url, media_type=media_type, on_duplicate="ignore"
                 )
 
-            for committee in row.xpath(
-                'div[contains(@class,"card-header")]/h3/a[contains(@class,"text-white")]/b/text()'
+            for committee_url in row.xpath(
+                'div[contains(@class,"card-header")]/h3/a[contains(@class,"text-white")]/@href'
             ):
-                event.add_participant(committee, type="committee", note="host")
+                self.scrape_committee(committee_url, event)
 
             yield event
+
+    def scrape_committee(self, url, event):
+        page = self.lxmlize(url)
+        committee = page.xpath("string(//h1)").strip()
+        if "Committee" not in committee:
+            committee = committee + " Committee"
+
+        event.add_participant(committee, type="committee", note="host")
+        chair_name = page.xpath(
+            '//span[./b[contains(text(), "Committee Chair:")]]/text()'
+        )[0]
+        event.add_participant(chair_name, type="person", note="chair")
+        vice_chair_name = page.xpath(
+            '//span[./b[contains(text(), "Vice Chair:")]]/text()'
+        )[0]
+        event.add_participant(vice_chair_name, type="person", note="vice_chair")
 
     def scrape_upper(self):
         url = "https://www.senate.mn/api/schedule/upcoming"
