@@ -124,6 +124,7 @@ class NJEventScraper(Scraper, MDBMixin):
             event_url = f"https://www.njleg.state.nj.us/live-proceedings/{url_date}/{record['CommHouse']}/{record['Type']}"
             if status != "cancelled":
                 event.add_source(event_url)
+            event.dedupe_key = f"{hr_name} {record['Type']} {url_date}"
 
             if status == "passed":
                 year = date_time.strftime("%Y")
