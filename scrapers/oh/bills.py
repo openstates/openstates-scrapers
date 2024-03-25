@@ -608,7 +608,7 @@ class OHBillScraper(Scraper):
             # like vote categories, throw a warning if so
             for key, val in v.items():
                 if (
-                    type(val) == list
+                    type(val) is list
                     and len(val) > 0
                     and key not in ["yeas", "nays", "absent", "excused"]
                 ):
