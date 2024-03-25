@@ -218,6 +218,11 @@ class ALBillScraper(Scraper):
 
         for row in page["data"]["instrumentHistoryBySessionYearInstNbr"]:
             action_text = row["Matter"]
+
+            if action_text == "":
+                self.warning(f"Skipping blank action for {bill}")
+                continue
+
             if row["Committee"]:
                 action_text = f'{row["Matter"]} ({row["Committee"]})'
 
