@@ -132,9 +132,12 @@ class HIBillScraper(Scraper):
                 )
                 reconsiderations.discard(actor)
                 vote.add_source(url)
-                vote.set_count("yes", int(v["n_yes"] or 0))
-                vote.set_count("no", int(v["n_no"] or 0))
+                yays = v["n_yes"]
+                nays = v["n_no"]
+                vote.set_count("yes", int(yays or 0))
+                vote.set_count("no", int(nays or 0))
                 vote.set_count("not voting", int(v["n_excused"] or 0))
+                vote.dedupe_key = f"{date}#yes{yays}#no{nays}"
                 for voter in split_specific_votes(v["yes"]):
                     voter = self.clean_voter_name(voter)
                     vote.yes(voter)
