@@ -70,6 +70,7 @@ class Michigan(State):
         },
     ]
     ignored_scraped_sessions = [
+        "All",
         "2009-2010",
         "2007-2008",
         "2005-2006",
