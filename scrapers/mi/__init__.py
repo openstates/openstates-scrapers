@@ -70,6 +70,7 @@ class Michigan(State):
         },
     ]
     ignored_scraped_sessions = [
+        "All",
         "2009-2010",
         "2007-2008",
         "2005-2006",
@@ -87,7 +88,7 @@ class Michigan(State):
         return [
             s.strip()
             for s in url_xpath(
-                "http://www.legislature.mi.gov/mileg.aspx?page=LegBasicSearch",
+                "https://www.legislature.mi.gov/Search/LegDocSearch",
                 "//option/text()",
             )
             if s.strip()
