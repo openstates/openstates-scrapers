@@ -138,9 +138,9 @@ class MNEventScraper(Scraper, LXMLMixin):
     def scrape_committee(self, url, event):
         page = self.lxmlize(url)
         committee = page.xpath("string(//h1)").strip()
-        # name = f"House {committee}" if committee != "House" else committee
+        name = f"House {committee}" if committee != "House" else committee
 
-        event.add_participant(committee, type="committee", note="host")
+        event.add_participant(name, type="committee", note="host")
         chair_name = page.xpath(
             '//span[./b[contains(text(), "Committee Chair:")]]/text()'
         )[0]
@@ -182,8 +182,8 @@ class MNEventScraper(Scraper, LXMLMixin):
                 classification="committee-meeting",
                 description=description,
             )
-            # com_name = f"Senate {com}" if com != "Senate" else com
-            event.add_participant(com, type="committee", note="host")
+            com_name = f"Senate {com}" if com != "Senate" else com
+            event.add_participant(com_name, type="committee", note="host")
 
             for bill in get_bill_ids(description):
                 event.add_bill(bill)

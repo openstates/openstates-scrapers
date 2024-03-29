@@ -194,18 +194,18 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "boto3"
-version = "1.34.70"
+version = "1.34.74"
 description = "The AWS SDK for Python"
 category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.34.70-py3-none-any.whl", hash = "sha256:8d7902e2c0c62837457ba18146e3feaf1dec62018617edc5c0336b65b305b682"},
-    {file = "boto3-1.34.70.tar.gz", hash = "sha256:54150a52eb93028b8e09df00319e8dcb68be7459333d5da00d706d75ba5130d6"},
+    {file = "boto3-1.34.74-py3-none-any.whl", hash = "sha256:71f551491fb12fe07727d371d5561c5919fdf33dbc1d4251c57940d267a53a9e"},
+    {file = "boto3-1.34.74.tar.gz", hash = "sha256:b703e22775561a748adc4576c30424b81abd2a00d3c6fb28eec2e5cde92c1eed"},
 ]
 
 [package.dependencies]
-botocore = ">=1.34.70,<1.35.0"
+botocore = ">=1.34.74,<1.35.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -214,14 +214,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.34.70"
+version = "1.34.74"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.34.70-py3-none-any.whl", hash = "sha256:c86944114e85c8a8d5da06fb84f2609ed3bd23cd2fc06b30250bef7e37e8c589"},
-    {file = "botocore-1.34.70.tar.gz", hash = "sha256:fa03d4972cd57d505e6c0eb5d7c7a1caeb7dd49e84f963f7ebeca41fe8ab736e"},
+    {file = "botocore-1.34.74-py3-none-any.whl", hash = "sha256:5d2015b5d91d6c402c122783729ce995ed7283a746b0380957026dc2b3b75969"},
+    {file = "botocore-1.34.74.tar.gz", hash = "sha256:32bb519bae62483893330c18a0ea4fd09d1ffa32bc573cd8559c2d9a08fb8c5c"},
 ]
 
 [package.dependencies]
@@ -1209,14 +1209,14 @@ et-xmlfile = "*"
 
 [[package]]
 name = "openstates"
-version = "6.18.4"
+version = "6.18.5"
 description = "core infrastructure for the openstates project"
 category = "main"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "openstates-6.18.4-py3-none-any.whl", hash = "sha256:b2f5e76de5787a7991b5d427b95be9dd97a2769e215a8c0592bb2893f255d357"},
-    {file = "openstates-6.18.4.tar.gz", hash = "sha256:e6380902934996ed2ed24ffb402ed4e3382293c3c4c01e26719e042a8a45d442"},
+    {file = "openstates-6.18.5-py3-none-any.whl", hash = "sha256:af42483dae490cdb3135e148b6c09d032541e60f9ea560470808a011d7364a84"},
+    {file = "openstates-6.18.5.tar.gz", hash = "sha256:b52ee95698f753fc2245b4bba0d38ce35a879ebe9b9f78f535bfcf225d9de96e"},
 ]
 
 [package.dependencies]
@@ -2524,4 +2524,4 @@ california = ["SQLAlchemy", "mysqlclient"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "8c9cee86e54435469ec496b1c12da62d45dad254452ceb9b0470d3b9c65d03cf"
+content-hash = "5de160c9ad538fe3d6f4556d1015dc66258a5b9fbe2bdafe4245d4406674e170"
