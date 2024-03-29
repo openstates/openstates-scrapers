@@ -141,14 +141,6 @@ class MNEventScraper(Scraper, LXMLMixin):
         name = f"House {committee}" if committee != "House" else committee
 
         event.add_participant(name, type="committee", note="host")
-        chair_name = page.xpath(
-            '//span[./b[contains(text(), "Committee Chair:")]]/text()'
-        )[0]
-        event.add_participant(chair_name, type="person", note="chair")
-        vice_chair_name = page.xpath(
-            '//span[./b[contains(text(), "Vice Chair:")]]/text()'
-        )[0]
-        event.add_participant(vice_chair_name, type="person", note="vice_chair")
 
     def scrape_upper(self):
         url = "https://www.senate.mn/api/schedule/upcoming"
