@@ -6,12 +6,13 @@ import pytz
 import lxml
 
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 from .utils import xpath
 
 
 class WAEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Pacific")
-    _ns = {"wa": "http://WSLWebServices.leg.wa.gov/"}
+    _ns = {"wa": "https://WSLWebServices.leg.wa.gov/"}
 
     meetings = None
 
@@ -43,11 +44,8 @@ class WAEventScraper(Scraper, LXMLMixin):
 
     # Only need to fetch the XML once for both chambers
     def get_xml(self, start, end):
-        if self.meetings is not None:
-            return self.meetings
-
         event_url = (
-            "http://wslwebservices.leg.wa.gov/CommitteeMeetingService.asmx"
+            "https://wslwebservices.leg.wa.gov/CommitteeMeetingService.asmx"
             "/GetCommitteeMeetings?beginDate={}&endDate={}"
         )
 
@@ -57,6 +55,10 @@ class WAEventScraper(Scraper, LXMLMixin):
         page = lxml.etree.fromstring(page)
 
         self.meetings = page
+        if self.meetings is not None:
+            return self.meetings
+        else:
+            raise EmptyScrape
         return page
 
     def scrape_chamber(self, chamber, session, start, end):
@@ -110,7 +112,7 @@ class WAEventScraper(Scraper, LXMLMixin):
 
     def scrape_agenda_items(self, agenda_id, event):
         agenda_url = (
-            "http://wslwebservices.leg.wa.gov/CommitteeMeetingService.asmx/"
+            "https://wslwebservices.leg.wa.gov/CommitteeMeetingService.asmx/"
             "GetCommitteeMeetingItems?agendaId={}".format(agenda_id)
         )
 
@@ -124,5 +126,7 @@ class WAEventScraper(Scraper, LXMLMixin):
             desc = xpath(row, "string(wa:ItemDescription)")
 
             if bill_id:
+                if bill_id.startswith(("ESB ", "SSB ", "EHB ", "SHB ")):
+                    bill_id = bill_id[1:]
                 item = event.add_agenda_item(desc)
                 item.add_bill(bill_id)

@@ -19,31 +19,38 @@ class LegDetail(HtmlPage):
         occupation = CSS("span").match_one(all_info[3]).text_content().strip()
         if occupation != "":
             p.extras["occupation"] = occupation
+        """
+        2023-01-18 -> NM removed addresses from leg detail pages
+        Keeping the code in a block in case they re-add it
+        """
+        try:
+            address = XPath(".//span/text()").match(all_info[4])
 
-        address = XPath(".//span/text()").match(all_info[4])
-        if len(address) > 1:
-            district_addr = address[0] + " " + address[1]
-            p.district_office.address = district_addr
-        elif address[0].strip() != ",":
-            district_addr = address[0].strip()
-            p.district_office.address = district_addr
-        # storing 'Address' as district_office.address
+            if len(address) > 1:
+                district_addr = address[0] + " " + address[1]
+                p.district_office.address = district_addr
+            elif address[0].strip() != ",":
+                district_addr = address[0].strip()
+                p.district_office.address = district_addr
+            # storing 'Address' as district_office.address
 
-        capitol_room = CSS("span").match_one(all_info[5]).text_content().strip()
-        if capitol_room != "":
-            cap_addr = f"Room {capitol_room} State Capitol;490 Old Santa Fe Trail, Santa Fe, NM 87501"
-            p.capitol_office.address = cap_addr
-            # this address was found using google search
+            capitol_room = CSS("span").match_one(all_info[5]).text_content().strip()
+            if capitol_room != "":
+                cap_addr = f"Room {capitol_room} State Capitol;490 Old Santa Fe Trail, Santa Fe, NM 87501"
+                p.capitol_office.address = cap_addr
+                # this address was found using google search
 
-        office_phone = CSS("span").match_one(all_info[6]).text_content().strip()
-        if office_phone != "":
-            p.district_office.voice = office_phone
+            office_phone = CSS("span").match_one(all_info[6]).text_content().strip()
+            if office_phone != "":
+                p.district_office.voice = office_phone
 
-        home_phone = CSS("span").match_one(all_info[7]).text_content().strip()
-        if home_phone != "":
-            p.extras["home phone"] = home_phone
+            home_phone = CSS("span").match_one(all_info[7]).text_content().strip()
+            if home_phone != "":
+                p.extras["home phone"] = home_phone
+            email = CSS("a").match_one(all_info[8]).text_content().strip()
+        except Exception:
+            email = CSS("a").match_one(all_info[4]).text_content().strip()
 
-        email = CSS("a").match_one(all_info[8]).text_content().strip()
         p.email = email
 
         return p
@@ -55,6 +62,8 @@ class LegList(HtmlListPage):
     def process_item(self, item):
         name_party = CSS("span").match(item)[0].text_content().strip().split(" - ")
         name = name_party[0].strip()
+        if not re.search(r"[a-z]", name) or "vacant" in name.lower():
+            self.skip("vacant")
         party = name_party[1].strip()
         if party == "(D)":
             party = "Democratic"

@@ -17,14 +17,16 @@ class LegDetail(HtmlPage):
             .match_one(self.root)
             .getnext()
         )
-        cap_addr = cap_addr_path.text or ""
-        cap_addr += " "
-        line2 = cap_addr_path.getchildren()[0].tail
-        if " SC " not in line2:
-            zipcode = self.zipcode_re.search(line2).groups()[0]
-            line2 = f"Columbia, SC {zipcode}"
-        cap_addr += line2
-        p.capitol_office.address = cap_addr
+        if len(cap_addr_path):
+            cap_addr = cap_addr_path.text or ""
+            cap_addr += " "
+
+            line2 = cap_addr_path.getchildren()[0].tail
+            if " SC " not in line2:
+                zipcode = self.zipcode_re.search(line2).groups()[0]
+                line2 = f"Columbia, SC {zipcode}"
+            cap_addr += line2
+            p.capitol_office.address = cap_addr
 
         try:
             home_addr_path = (
@@ -36,12 +38,22 @@ class LegDetail(HtmlPage):
             )
             home_addr = home_addr_path.text
             home_addr += " "
-            home_line2 = home_addr_path.getchildren()[0].tail
-            if " SC " not in home_line2:
-                city, h_zip = self.zip2_re.search(home_line2).groups()
-                home_line2 = f"{city}, SC {h_zip}"
-            home_addr += home_line2
-            p.district_office.address = home_addr
+            try:
+                home_line2 = home_addr_path.getchildren()[0].tail
+                if " SC " not in home_line2:
+                    # special case: when only zipcode is on home address line 2
+                    if len(home_line2.strip()) == 5:
+                        home_line2 = f", SC {home_line2}"
+                    else:
+                        city, h_zip = self.zip2_re.search(home_line2).groups()
+                        home_line2 = f"{city}, SC {h_zip}"
+
+                home_addr += home_line2
+                home_addr = re.sub(" ,", ",", home_addr)
+                p.district_office.address = home_addr
+            except IndexError:
+                pass
+
         except SelectorError:
             pass
 
@@ -120,13 +132,13 @@ class Legislators(HtmlListPage):
     def process_item(self, item):
         name = CSS("a.membername").match_one(item).text_content()
         name = self.title_re.search(name).groups()[1]
-
         party = CSS("a.membername").match_one(item).tail.strip()
         if party == "(D)":
             party = "Democratic"
         elif party == "(R)":
             party = "Republican"
-
+        elif party == "()" or party == "(I)":
+            party = "Independent"
         district = CSS("div.district a").match_one(item).text_content().strip()
         district = self.district_re.search(district).groups()[0]
 

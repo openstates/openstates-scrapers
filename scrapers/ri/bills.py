@@ -3,6 +3,7 @@ import lxml.html
 import re
 
 from openstates.scrape import Scraper, Bill, VoteEvent
+from .actions import Categorizer
 
 from utils import url_xpath
 
@@ -77,12 +78,15 @@ BILL_STRING_FLAGS = {
     "act": r"^Act\ \d*$",
 }
 
+BILL_TITLE_RE = re.compile(r"ENTITLED,\s+([^(]+)(\(.+\))?")
+
 
 class RIBillScraper(Scraper):
     # when scraping votes we only get 'S101' so we can't tie them to their parent bill
     # so we keep a dict of (chamber, number) -> bill_id from the bill scrape to be used in the
     # vote scrape
     _bill_id_by_type = {}
+    categorizer = Categorizer()
 
     def parse_results_page(self, page):
         blocks = []
@@ -111,7 +115,7 @@ class RIBillScraper(Scraper):
             lines = [(n.text_content().strip(), n) for n in node]
             if "No Bills Met this Criteria" in [x[0] for x in lines]:
                 self.info("No results. Skipping block")
-                # return []
+                return []
 
             for line in lines:
                 line, node = line
@@ -156,6 +160,7 @@ class RIBillScraper(Scraper):
             default_headers["ctl00$rilinContent$cbCategory"] = subjects[subject]
             default_headers["ctl00$rilinContent$cbYear"] = session
 
+            self.info(f"Fetching bills subject mapping for {subject}")
             blocks = self.parse_results_page(
                 self.post(SEARCH_URL, data=default_headers).text
             )
@@ -186,11 +191,14 @@ class RIBillScraper(Scraper):
                 actor = "executive"
             date = action.split(" ")[0]
             date = dt.datetime.strptime(date, "%m/%d/%Y")
+            action_attr = self.categorizer.categorize(action)
+            atype = action_attr["classification"]
+
             bill.add_action(
                 action,
                 date.strftime("%Y-%m-%d"),
                 chamber=actor,
-                classification=self.get_type_by_action(action),
+                classification=atype,
             )
 
     def get_type_by_name(self, name):
@@ -207,29 +215,6 @@ class RIBillScraper(Scraper):
         self.warning("XXX: Bill type fallthrough. This ain't great.")
         return "bill"
 
-    def get_type_by_action(self, name):
-        types = {
-            "introduced": "introduction",
-            "referred": "referral-committee",
-            "passed": "passage",
-            "recommends passage": "committee-passage-favorable",
-            # XXX: need to find the unfavorable string
-            # XXX: What's "recommended measure be held for further study"?
-            "withdrawn": "withdrawal",
-            "signed by governor": "executive-signature",
-            "transmitted to governor": "executive-receipt",
-            "effective without governor's signature": "became-law",
-        }
-        ret = []
-        name = name.lower()
-        for flag in types:
-            if flag in name:
-                ret.append(types[flag])
-
-        if len(ret) > 0:
-            return ret
-        return None
-
     def scrape_bills(self, chamber, session, subjects):
         idexes = bill_start_numbers(session)[chamber]
         FROM = "ctl00$rilinContent$txtBillFrom"
@@ -238,6 +223,9 @@ class RIBillScraper(Scraper):
         for idex in idexes:
             blocks = "FOO"  # Ugh.
             while len(blocks) > 0:
+                self.info(
+                    f"Searching for bills in {chamber} in range {idex} to {idex + MAXQUERY}"
+                )
                 default_headers = get_default_headers(SEARCH_URL)
                 default_headers[FROM] = idex
                 default_headers[TO] = idex + MAXQUERY
@@ -257,7 +245,12 @@ class RIBillScraper(Scraper):
                     except KeyError:
                         pass
 
-                    title = bill["title"][len("ENTITLED, ") :]
+                    title_match = BILL_TITLE_RE.match(bill["title"])
+                    title = title_match[1].strip()
+                    abstract = None
+                    if title_match[2]:
+                        abstract = title_match[2].strip("() ")
+
                     billid = bill["bill_id"]
                     try:
                         subs = subjects[bill["bill_id"]]
@@ -279,6 +272,9 @@ class RIBillScraper(Scraper):
                         classification=self.get_type_by_name(bill["bill_id"]),
                     )
                     b.subject = subs
+
+                    if abstract:
+                        b.add_abstract(abstract, "summary")
 
                     # keep bill ID around
                     self._bill_id_by_type[
@@ -309,7 +305,12 @@ class RIBillScraper(Scraper):
     def scrape(self, chamber=None, session=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
 
-        subjects = self.get_subject_bill_dict(session)
+        # NOTE: disabled by showerst 2024-01-04
+        # this is making 350 POST requests because there are almost no subjects
+        # assigned yet, but the 2023 subjects are still posted.
+        # possibly restore this later.
+        # subjects = self.get_subject_bill_dict(session)
+        subjects = {}
 
         for chamber in chambers:
             yield from self.scrape_bills(chamber, session, subjects)

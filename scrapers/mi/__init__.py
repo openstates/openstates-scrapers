@@ -40,7 +40,7 @@ class Michigan(State):
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-11",
-            "end_date": "2018-12-31",
+            "end_date": "2018-12-28",
         },
         {
             "_scraped_name": "2019-2020",
@@ -56,11 +56,21 @@ class Michigan(State):
             "identifier": "2021-2022",
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-13",
-            "end_date": "2022-12-31",
+            "end_date": "2022-12-22",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023-2024",
+            "classification": "primary",
+            "identifier": "2023-2024",
+            "name": "2023-2024 Regular Session",
+            "start_date": "2023-01-11",
+            "end_date": "2024-12-22",
             "active": True,
         },
     ]
     ignored_scraped_sessions = [
+        "All",
         "2009-2010",
         "2007-2008",
         "2005-2006",
@@ -78,7 +88,7 @@ class Michigan(State):
         return [
             s.strip()
             for s in url_xpath(
-                "http://www.legislature.mi.gov/mileg.aspx?page=LegBasicSearch",
+                "https://www.legislature.mi.gov/Search/LegDocSearch",
                 "//option/text()",
             )
             if s.strip()

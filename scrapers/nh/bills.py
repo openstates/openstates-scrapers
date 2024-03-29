@@ -6,6 +6,7 @@ import pytz
 import lxml.html
 
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
+from .actions import Categorizer
 
 from .legacyBills import NHLegacyBillScraper
 
@@ -21,27 +22,9 @@ bill_type_map = {
     "SSSB": "bill",
     "SSHB": "bill",
 }
-action_classifiers = [
-    ("Minority Committee Report", None),  # avoid calling these passage
-    ("Ought to Pass", ["passage"]),
-    ("Passed by Third Reading", ["reading-3", "passage"]),
-    (".*Ought to Pass", ["committee-passage-favorable"]),
-    (".*Introduced(.*) and (R|r)eferred", ["introduction", "referral-committee"]),
-    ("Proposed(.*) Amendment", "amendment-introduction"),
-    ("Amendment .* Adopted", "amendment-passage"),
-    ("Amendment .* Failed", "amendment-failure"),
-    ("Signed", "executive-signature"),
-    ("Vetoed", "executive-veto"),
-]
-VERSION_URL = "http://www.gencourt.state.nh.us/legislation/%s/%s.html"
-AMENDMENT_URL = "http://www.gencourt.state.nh.us/legislation/amendments/%s.html"
 
-
-def classify_action(action):
-    for regex, classification in action_classifiers:
-        if re.match(regex, action):
-            return classification
-    return None
+VERSION_URL = "https://www.gencourt.state.nh.us/legislation/%s/%s.html"
+AMENDMENT_URL = "https://www.gencourt.state.nh.us/legislation/amendments/%s.html"
 
 
 def extract_amendment_id(action):
@@ -52,6 +35,7 @@ def extract_amendment_id(action):
 
 class NHBillScraper(Scraper):
     cachebreaker = dt.datetime.now().strftime("%Y%d%d%H%I%s")
+    categorizer = Categorizer()
 
     def scrape(self, chamber=None, session=None):
         est = pytz.timezone("America/New_York")
@@ -86,7 +70,7 @@ class NHBillScraper(Scraper):
         last_line = []
         for line in (
             self.get(
-                f"http://www.gencourt.state.nh.us/dynamicdatadump/LSRs.txt?x={self.cachebreaker}"
+                f"https://www.gencourt.state.nh.us/dynamicdatadump/LSRs.txt?x={self.cachebreaker}"
             )
             .content.decode("utf-8")
             .split("\n")
@@ -148,7 +132,7 @@ class NHBillScraper(Scraper):
                 if re.match(r"^.R\d+", bill_id):
                     # ex: HR 1 is lsr=847 but version id=838
                     resolution_url = (
-                        "http://www.gencourt.state.nh.us/bill_status/legacy/bs2016/bill_status.aspx?"
+                        "https://www.gencourt.state.nh.us/bill_status/legacy/bs2016/bill_status.aspx?"
                         + "lsr={}&sy={}&txtsessionyear={}".format(lsr, session, session)
                     )
                     resolution_page = self.get(
@@ -169,14 +153,14 @@ class NHBillScraper(Scraper):
                 if lsr in self.versions_by_lsr:
                     version_id = self.versions_by_lsr[lsr]
                     version_url = (
-                        "http://www.gencourt.state.nh.us/bill_status/legacy/bs2016/"
+                        "https://www.gencourt.state.nh.us/bill_status/legacy/bs2016/"
                         "billText.aspx?sy={}&id={}&txtFormat=html".format(
                             session, version_id
                         )
                     )
 
                     pdf_version_url = (
-                        "http://www.gencourt.state.nh.us/bill_status/legacy/bs2016/"
+                        "https://www.gencourt.state.nh.us/bill_status/legacy/bs2016/"
                         "billText.aspx?sy={}&id={}&txtFormat=pdf&v=current".format(
                             session, version_id
                         )
@@ -197,7 +181,7 @@ class NHBillScraper(Scraper):
                 if lsr in self.amendments_by_lsr:
                     amendment_id = self.amendments_by_lsr[lsr]
                     amendment_url = (
-                        "http://www.gencourt.state.nh.us/bill_status/legacy/bs2016/"
+                        "https://www.gencourt.state.nh.us/bill_status/legacy/bs2016/"
                         "billText.aspx?sy={}&id={}&txtFormat=amend".format(
                             session, amendment_id
                         )
@@ -216,7 +200,7 @@ class NHBillScraper(Scraper):
         self.legislators = {}
         for line in (
             self.get(
-                "http://www.gencourt.state.nh.us/dynamicdatadump/legislators.txt?x={}".format(
+                "https://www.gencourt.state.nh.us/dynamicdatadump/legislators.txt?x={}".format(
                     self.cachebreaker
                 )
             )
@@ -241,7 +225,7 @@ class NHBillScraper(Scraper):
         # sponsors
         for line in (
             self.get(
-                f"http://www.gencourt.state.nh.us/dynamicdatadump/LsrSponsors.txt?x={self.cachebreaker}"
+                f"https://www.gencourt.state.nh.us/dynamicdatadump/LsrSponsors.txt?x={self.cachebreaker}"
             )
             .content.decode("utf-8")
             .split("\n")
@@ -272,7 +256,7 @@ class NHBillScraper(Scraper):
         # actions
         for line in (
             self.get(
-                f"http://www.gencourt.state.nh.us/dynamicdatadump/Docket.txt?x={self.cachebreaker}"
+                f"https://www.gencourt.state.nh.us/dynamicdatadump/Docket.txt?x={self.cachebreaker}"
             )
             .content.decode("utf-8")
             .split("\n")
@@ -289,12 +273,14 @@ class NHBillScraper(Scraper):
                 actor = "lower" if body == "H" else "upper"
                 time = dt.datetime.strptime(timestamp, "%m/%d/%Y %H:%M:%S %p")
                 action = action.strip()
-                atype = classify_action(action)
+                action_attr = self.categorizer.categorize(action)
+                classification = action_attr["classification"]
+
                 self.bills[lsr].add_action(
                     chamber=actor,
                     description=action,
                     date=time.strftime("%Y-%m-%d"),
-                    classification=atype,
+                    classification=classification,
                 )
                 amendment_id = extract_amendment_id(action)
                 if amendment_id:
@@ -314,7 +300,7 @@ class NHBillScraper(Scraper):
 
     def add_source(self, bill, lsr, session):
         bill_url = (
-            "http://www.gencourt.state.nh.us/bill_status/legacy/bs2016/bill_status.aspx?"
+            "https://www.gencourt.state.nh.us/bill_status/legacy/bs2016/bill_status.aspx?"
             + "lsr={}&sy={}&sortoption=&txtsessionyear={}".format(lsr, session, session)
         )
         bill.add_source(bill_url)
@@ -323,7 +309,7 @@ class NHBillScraper(Scraper):
 
         for line in (
             self.get(
-                "http://www.gencourt.state.nh.us/dynamicdatadump/LsrsOnly.txt?x={}".format(
+                "https://www.gencourt.state.nh.us/dynamicdatadump/LsrsOnly.txt?x={}".format(
                     self.cachebreaker
                 )
             )
@@ -345,7 +331,7 @@ class NHBillScraper(Scraper):
     def scrape_amendments(self):
         for line in (
             self.get(
-                "http://www.gencourt.state.nh.us/dynamicdatadump/Docket.txt?x={}".format(
+                "https://www.gencourt.state.nh.us/dynamicdatadump/Docket.txt?x={}".format(
                     self.cachebreaker
                 )
             )
@@ -370,7 +356,7 @@ class NHBillScraper(Scraper):
         votes = {}
         other_counts = defaultdict(int)
         last_line = []
-        vote_url = f"http://www.gencourt.state.nh.us/dynamicdatadump/RollCallSummary.txt?x={self.cachebreaker}"
+        vote_url = f"https://www.gencourt.state.nh.us/dynamicdatadump/RollCallSummary.txt?x={self.cachebreaker}"
         lines = self.get(vote_url).content.decode("utf-8").splitlines()
 
         for line in lines:
@@ -422,7 +408,7 @@ class NHBillScraper(Scraper):
 
         for line in (
             self.get(
-                f"http://www.gencourt.state.nh.us/dynamicdatadump/RollCallHistory.txt?x={self.cachebreaker}"
+                f"https://www.gencourt.state.nh.us/dynamicdatadump/RollCallHistory.txt?x={self.cachebreaker}"
             )
             .content.decode("utf-8")
             .splitlines()

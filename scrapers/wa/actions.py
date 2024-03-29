@@ -69,7 +69,7 @@ _categorizer_rules = (
     Rule(r"(?i)chapter (((\d+),?)+) \d+ laws.( .+)?", ""),  # XXX: Thom: Code stuff?
     Rule(r"(?i)effective date \d{1,2}/\d{1,2}/\d{4}.*", ""),
     Rule(
-        r"(?i)(?P<committees>\w+) - majority; do pass with amendment\(s\) \
+        r"(?i)(?P<committees>\w+) - [Mm]ajority; do pass with amendment\(s\) \
          (but without amendments\(s\))?.*\.",
         "committee-passage-favorable",
         "committee-passage",
@@ -80,13 +80,14 @@ _categorizer_rules = (
         "",
     ),
     Rule(
-        r"(?i)(?P<committees>\w+) \- Majority; do pass .* \(Majority Report\)",
-        "passage",
+        r"(?i)(?P<committees>\w+) \- [Mm]ajority; do pass .* \(Majority Report\)",
+        "committee-passage-favorable",
     ),
     Rule(r"(?i)Conference committee appointed.", ""),
     Rule(r"(?i)Conference committee report;", ""),
     Rule(
-        r"(?i).+ - Majority; \d+.+ substitute bill be substituted, do pass", "passage"
+        r"(?i).+ - Majority; \d+.+ substitute bill be substituted, do pass",
+        "substitution",
     ),
     Rule(r"President signed", "passage"),
     Rule(r"Speaker signed", "passage"),
@@ -107,6 +108,14 @@ _categorizer_rules = (
     Rule(r"(?i)Failed final passage;", "failure"),
     Rule(r"Effective date", "became-law"),
     Rule(r"Chapter .* Laws", "became-law"),
+    Rule(r"Minority; do not pass.", "committee-passage-unfavorable"),
+    Rule(r"Placed on [Ss]econd [Rr]eading", "reading-2"),
+    Rule(r"Placed on [Tt]hird [Rr]eading", "reading-3"),
+    Rule(r"amendment/(s/) adopted", "amendment-passage"),
+    Rule(r"Referred to", "referral-committee"),
+    Rule(r"Majority; do pass.", "committee-passage-favorable"),
+    Rule(r"Minority; without recommendation.", "committee-passage-unfavorable"),
+    Rule(r"Delivered to Governor.", "executive-receipt"),
 )
 
 

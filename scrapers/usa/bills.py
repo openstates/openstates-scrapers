@@ -5,7 +5,8 @@ import re
 import scrapelib
 import xml.etree.ElementTree as ET
 
-from openstates.scrape import Bill, Scraper
+from openstates.scrape import Bill, Scraper, VoteEvent
+
 
 # NOTE: This is a US federal bill scraper designed to output bills in the
 # openstates format, for compatibility with systems that already ingest the pupa format.
@@ -31,6 +32,51 @@ class USBillScraper(Scraper):
 
     chambers = {"House": "lower", "Joint": "joint", "Senate": "upper"}
     chamber_map = {"upper": "s", "lower": "h"}
+    chamber_code = {"S": "upper", "H": "lower", "J": "legislature"}
+    vote_codes = {
+        "Aye": "yes",
+        "Yea": "yes",
+        "Yes": "yes",
+        "Nay": "no",
+        "No": "no",
+        "Not Voting": "not voting",
+        "Present": "other",
+        "Present, Giving Live Pair": "other",
+    }
+    senate_statuses = {
+        "Agreed to": "pass",
+        "Amendment Agreed to": "pass",
+        "Bill Passed": "pass",
+        "Confirmed": "pass",
+        "Rejected": "fail",
+        "Passed": "pass",
+        "Nomination Confirmed": "pass",
+        "Cloture Motion Agreed to": "pass",
+        "Cloture Motion Rejected": "fail",
+        "Cloture on the Motion to Proceed Rejected": "fail",
+        "Cloture on the Motion to Proceed Agreed to": "pass",
+        "Conference Report Agreed to": "pass",
+        "Amendment Rejected": "fail",
+        "Decision of Chair Sustained": "pass",
+        "Motion Agreed to": "pass",
+        "Motion for Attendance Agreed to": "pass",
+        "Motion to Discharge Agreed to": "pass",
+        "Motion to Discharge Rejected": "fail",
+        "Motion to Reconsider Agreed to": "pass",
+        "Motion to Table Failed": "fail",
+        "Motion to Table Agreed to": "pass",
+        "Motion to Table Motion to Recommit Agreed to": "pass",
+        "Motion to Proceed Agreed to": "pass",
+        "Motion to Proceed Rejected": "fail",
+        "Motion Rejected": "fail",
+        "Motion to Refer Rejected": "fail",
+        "Bill Defeated": "fail",
+        "Joint Resolution Passed": "pass",
+        "Joint Resolution Defeated": "fail",
+        "Resolution Agreed to": "pass",
+        "Resolution of Ratification Agreed to": "pass",
+        "Veto Sustained": "fail",
+    }
 
     classifications = {
         "HRES": "resolution",
@@ -79,13 +125,10 @@ class USBillScraper(Scraper):
             )
 
             if date > start:
-                self.info(
-                    "{} > {}, scraping".format(
-                        datetime.datetime.strftime(date, "%c"),
-                        datetime.datetime.strftime(start, "%c"),
-                    )
-                )
                 bill_url = self.get_xpath(row, "us:loc")
+                self.debug(
+                    f"{datetime.datetime.strftime(date, '%c')} > {datetime.datetime.strftime(start, '%c')}, scraping {bill_url}"
+                )
                 yield from self.parse_bill(bill_url)
 
     def parse_bill(self, url):
@@ -93,9 +136,14 @@ class USBillScraper(Scraper):
         xml = ET.fromstring(xml)
 
         bill_num = self.get_xpath(xml, "bill/billNumber")
-        bill_type = self.get_xpath(xml, "bill/billType")
+        if not bill_num:
+            bill_num = self.get_xpath(xml, "bill/number")
 
-        bill_id = "{} {}".format(bill_type, bill_num)
+        bill_type = self.get_xpath(xml, "bill/billType")
+        if not bill_type:
+            bill_type = self.get_xpath(xml, "bill/type")
+
+        bill_id = f"{bill_type} {bill_num}"
 
         chamber_name = self.get_xpath(xml, "bill/originChamber")
         chamber = self.chambers[chamber_name]
@@ -127,21 +175,17 @@ class USBillScraper(Scraper):
         self.scrape_titles(bill, xml)
         self.scrape_versions(bill, xml)
 
-        xml_url = "https://www.govinfo.gov/bulkdata/BILLSTATUS/{congress}/{type}/BILLSTATUS-{congress}{type}{num}.xml"
-        bill.add_source(
-            xml_url.format(congress=session, type=bill_type.lower(), num=bill_num)
-        )
+        for vote in self.scrape_votes(bill, xml):
+            yield vote
+
+        xml_url = f"https://www.govinfo.gov/bulkdata/BILLSTATUS/{session}/{bill_type.lower()}/BILLSTATUS-{session}{bill_type.lower()}{bill_num}.xml"
+        bill.add_source(xml_url)
         # need to get Congress.gov URL for source & additional versions
         # https://www.congress.gov/bill/116th-congress/house-bill/1
-        cg_url = (
-            "https://congress.gov/bill/{congress}th-congress/{chamber}-{type}/{num}"
-        )
-        cg_url = cg_url.format(
-            congress=session,
-            chamber=chamber_name.lower(),
-            type=classification.lower(),
-            num=bill_num,
-        )
+        if "J" in bill_type:
+            cg_url = f"https://congress.gov/bill/{session}th-congress/{chamber_name.lower()}-joint-{classification.lower()}/{bill_num}"
+        else:
+            cg_url = f"https://congress.gov/bill/{session}th-congress/{chamber_name.lower()}-{classification.lower()}/{bill_num}"
         bill.add_source(cg_url)
 
         # use cg_url to get additional version for public law
@@ -243,6 +287,11 @@ class USBillScraper(Scraper):
             action_text = self.get_xpath(row, "text")
             if action_text not in actions:
                 source = self.get_xpath(row, "sourceSystem/name")
+
+                if source is None:
+                    self.warning(f"Skipping action with no source: {action_text}")
+                    continue
+
                 action_type = self.get_xpath(row, "type")
 
                 actor = "lower"
@@ -264,10 +313,7 @@ class USBillScraper(Scraper):
 
                 # house actions give a time, senate just a date
                 if row.findall("actionTime"):
-                    action_date = "{} {}".format(
-                        self.get_xpath(row, "actionDate"),
-                        self.get_xpath(row, "actionTime"),
-                    )
+                    action_date = f"{self.get_xpath(row, 'actionDate')} {self.get_xpath(row, 'actionTime')}"
                     action_date = datetime.datetime.strptime(
                         action_date, "%Y-%m-%d %H:%M:%S"
                     )
@@ -298,10 +344,6 @@ class USBillScraper(Scraper):
             "HAMDT": "house-amendment",
             "SAMDT": "senate-amendment",
         }
-        amdt_url = (
-            "https://www.congress.gov/amendment/{session}th-congress/{slug}/{num}"
-        )
-        amdt_name = "{type} {num}"
 
         for row in xml.findall("bill/amendments/amendment"):
             session = self.get_xpath(row, "congress")
@@ -313,20 +355,15 @@ class USBillScraper(Scraper):
                 self.warning("Check amendment url ordinals")
 
             bill.add_document_link(
-                note=amdt_name.format(
-                    type=self.get_xpath(row, "type"),
-                    num=num,
-                ),
-                url=amdt_url.format(
-                    session=session, slug=slugs[self.get_xpath(row, "type")], num=num
-                ),
+                note=f"{self.get_xpath(row, 'type')} {num}",
+                url=f"https://www.congress.gov/amendment/{session}th-congress/{slugs[self.get_xpath(row, 'type')]}/{num}",
                 media_type="text/html",
             )
 
         # ex: https://rules.house.gov/bill/116/hr-3884
         if chamber == "lower":
-            rules_url = "https://rules.house.gov/bill/{}/{}".format(
-                session, bill_id.replace(" ", "-")
+            rules_url = (
+                f"https://rules.house.gov/bill/{session}/{bill_id.replace(' ', '-')}"
             )
             try:
                 page = lxml.html.fromstring(self.get(rules_url).content)
@@ -337,9 +374,7 @@ class USBillScraper(Scraper):
                     if row.xpath("td[3]/a"):
                         amdt_num = row.xpath("td[1]/text()")[0].strip()
                         amdt_sponsor = row.xpath("td[3]/a/text()")[0].strip()
-                        amdt_name = "House Rules Committee Amendment {} - {}".format(
-                            amdt_num, amdt_sponsor
-                        )
+                        amdt_name = f"House Rules Committee Amendment {amdt_num} - {amdt_sponsor}"
                         self.info(amdt_name)
                         amdt_url = row.xpath("td[3]/a/@href")[0].strip()
                         if not amdt_url.startswith("http"):
@@ -357,25 +392,20 @@ class USBillScraper(Scraper):
     def scrape_cbo(self, bill, xml):
         for row in xml.findall("bill/cboCostEstimates/item"):
             bill.add_document_link(
-                note="CBO: {}".format(self.get_xpath(row, "title")),
+                note=f"CBO: {self.get_xpath(row, 'title')}",
                 url=self.get_xpath(row, "url"),
                 media_type="text/html",
             )
 
     # ex: https://www.govinfo.gov/bulkdata/BILLSTATUS/116/hr/BILLSTATUS-116hr1218.xml
     def scrape_committee_reports(self, bill, xml):
-        crpt_url = "https://www.congress.gov/{session}/crpt/{chamber}rpt{num}/CRPT-{session}{chamber}rpt{num}.pdf"
         regex = r"(?P<chamber>[H|S|J])\.\s+Rept\.\s+(?P<session>\d+)-(?P<num>\d+)"
 
         for row in xml.findall("bill/committeeReports/committeeReport"):
             report = self.get_xpath(row, "citation")
             match = re.search(regex, report)
 
-            url = crpt_url.format(
-                session=match.group("session"),
-                chamber=match.group("chamber").lower(),
-                num=match.group("num"),
-            )
+            url = f"https://www.congress.gov/{match.group('session')}/crpt/{match.group('chamber').lower()}rpt{match.group('num')}/CRPT-{match.group('session')}{match.group('chamber').lower()}rpt{match.group('num')}.pdf"
 
             bill.add_document_link(note=report, url=url, media_type="application/pdf")
 
@@ -402,12 +432,8 @@ class USBillScraper(Scraper):
 
             url_slug = "pvtl" if law_type == "Private Law" else "publ"
 
-            law_url_pattern = "https://www.congress.gov/{congress}/plaws/{url_slug}{num}/PLAW-{congress}{url_slug}{num}.pdf"
-
             congress, plaw = law_ref.split("-")
-            law_url = law_url_pattern.format(
-                congress=congress, num=plaw, url_slug=url_slug
-            )
+            law_url = f"https://www.congress.gov/{congress}/plaws/{url_slug}{plaw}/PLAW-{congress}{url_slug}{plaw}.pdf"
 
             bill.add_citation(
                 f"US {law_type}", law_ref, citation_type="final", url=law_url
@@ -415,8 +441,8 @@ class USBillScraper(Scraper):
 
     def scrape_related_bills(self, bill, xml):
         for row in xml.findall("bill/relatedBills/item"):
-            identifier = "{type} {num}".format(
-                type=self.get_xpath(row, "type"), num=self.get_xpath(row, "number")
+            identifier = (
+                f"{self.get_xpath(row, 'type')} {self.get_xpath(row, 'number')}"
             )
 
             bill.add_related_bill(
@@ -517,3 +543,174 @@ class USBillScraper(Scraper):
                 media_type="application/pdf",
                 date=date,
             )
+
+    def scrape_votes(self, bill, xml):
+        vote_urls = []
+        for row in xml.findall("bill/actions/item/recordedVotes/recordedVote"):
+            url = self.get_xpath(row, "url")
+            chamber = self.get_xpath(row, "chamber")
+            if url not in vote_urls:
+                vote_urls.append((url, chamber))
+
+        for url, chamber in vote_urls:
+            try:
+                content = self.get(url).content
+                vote_xml = lxml.html.fromstring(content)
+                if chamber.lower() == "senate":
+                    vote = self.scrape_senate_votes(bill, vote_xml, url)
+                elif chamber.lower() == "house":
+                    vote = self.scrape_house_votes(bill, vote_xml, url)
+                yield vote
+            except scrapelib.HTTPError:
+                self.info(f"Error fetching {url}, skipping")
+                return
+
+    def scrape_senate_votes(self, bill, page, url):
+        vote_date = page.xpath("//roll_call_vote/vote_date/text()")[0].strip()
+        when = self._TZ.localize(
+            datetime.datetime.strptime(vote_date, "%B %d, %Y, %H:%M %p")
+        )
+
+        session = page.xpath("//roll_call_vote/congress/text()")[0]
+
+        roll_call = page.xpath("//roll_call_vote/vote_number/text()")[0]
+        vote_id = "us-{}-upper-{}".format(when.year, roll_call)
+
+        # note: not everything the senate votes on is a bill, this is OK
+        # non bills include nominations and impeachments
+        doc_type = page.xpath("//roll_call_vote/document/document_type/text()")[0]
+
+        if page.xpath("//roll_call_vote/amendment/amendment_to_document_number/text()"):
+            bill_id = page.xpath(
+                "//roll_call_vote/amendment/amendment_to_document_number/text()"
+            )[0].replace(".", "")
+        else:
+            bill_id = page.xpath("//roll_call_vote/document/document_name/text()")[
+                0
+            ].replace(".", "")
+
+        if re.match(r"PN\d*", bill_id):
+            return
+
+        motion = page.xpath("//roll_call_vote/vote_question_text/text()")[0]
+
+        result_text = page.xpath("//roll_call_vote/vote_result/text()")[0]
+
+        result = self.senate_statuses[result_text]
+
+        vote = VoteEvent(
+            start_date=when,
+            bill_chamber="lower" if doc_type[0] == "H" else "upper",
+            motion_text=motion,
+            classification="passage",  # TODO
+            result=result,
+            legislative_session=session,
+            identifier=vote_id,
+            bill=bill_id,
+            chamber="upper",
+        )
+
+        vote.add_source(url)
+
+        vote.extras["senate-rollcall-num"] = roll_call
+
+        yeas = page.xpath("//roll_call_vote/count/yeas/text()")[0]
+        nays = page.xpath("//roll_call_vote/count/nays/text()")[0]
+
+        if page.xpath("//roll_call_vote/count/absent/text()"):
+            absents = page.xpath("//roll_call_vote/count/absent/text()")[0]
+        else:
+            absents = 0
+
+        if page.xpath("//roll_call_vote/count/present/text()"):
+            presents = page.xpath("//roll_call_vote/count/present/text()")[0]
+        else:
+            presents = 0
+
+        vote.set_count("yes", int(yeas))
+        vote.set_count("no", int(nays))
+        vote.set_count("absent", int(absents))
+        vote.set_count("abstain", int(presents))
+
+        for row in page.xpath("//roll_call_vote/members/member"):
+            lis_id = row.xpath("lis_member_id/text()")[0]
+            name = row.xpath("member_full/text()")[0]
+            choice = row.xpath("vote_cast/text()")[0]
+
+            vote.vote(self.vote_codes[choice], name, note=lis_id)
+
+        yield vote
+
+    def scrape_house_votes(self, bill, page, url):
+        vote_date = page.xpath("//rollcall-vote/vote-metadata/action-date/text()")[0]
+        vote_time = page.xpath("//rollcall-vote/vote-metadata/action-time/@time-etz")[0]
+
+        when = self._TZ.localize(
+            datetime.datetime.strptime(
+                "{} {}".format(vote_date, vote_time), "%d-%b-%Y %H:%M"
+            )
+        )
+
+        motion = page.xpath("//rollcall-vote/vote-metadata/vote-question/text()")[0]
+        result = page.xpath("//rollcall-vote/vote-metadata/vote-result/text()")[0]
+        if result == "Passed":
+            result = "pass"
+        else:
+            result = "fail"
+
+        session = page.xpath("//rollcall-vote/vote-metadata/congress/text()")[0]
+
+        if not page.xpath("//rollcall-vote/vote-metadata/legis-num/text()"):
+            self.warning(f"No bill id for {url}, skipping")
+            return
+
+        bill_id = page.xpath("//rollcall-vote/vote-metadata/legis-num/text()")[0]
+        # for some reason these are "H R 123" which nobody uses, so fix to "HR 123"
+        bill_id = re.sub(r"([A-Z])\s([A-Z])", r"\1\2", bill_id)
+
+        roll_call = page.xpath("//rollcall-vote/vote-metadata/rollcall-num/text()")[0]
+
+        vote_id = "us-{}-lower-{}".format(when.year, roll_call)
+
+        vote = VoteEvent(
+            start_date=when,
+            bill_chamber="lower" if bill_id[0] == "H" else "upper",
+            motion_text=motion,
+            classification="passage",  # TODO
+            result=result,
+            legislative_session=session,
+            identifier=vote_id,
+            bill=bill_id,
+            chamber="lower",
+        )
+        vote.add_source(url)
+
+        vote.extras["house-rollcall-num"] = roll_call
+
+        yeas = page.xpath(
+            "//rollcall-vote/vote-metadata/vote-totals/totals-by-vote/yea-total/text()"
+        )[0]
+        nays = page.xpath(
+            "//rollcall-vote/vote-metadata/vote-totals/totals-by-vote/nay-total/text()"
+        )[0]
+        nvs = page.xpath(
+            "//rollcall-vote/vote-metadata/vote-totals/totals-by-vote/not-voting-total/text()"
+        )[0]
+        presents = page.xpath(
+            "//rollcall-vote/vote-metadata/vote-totals/totals-by-vote/present-total/text()"
+        )[0]
+
+        vote.set_count("yes", int(yeas))
+        vote.set_count("no", int(nays))
+        vote.set_count("not voting", int(nvs))
+        vote.set_count("abstain", int(presents))
+
+        # vote.yes vote.no vote.vote
+        for row in page.xpath("//rollcall-vote/vote-data/recorded-vote"):
+            bioguide = row.xpath("legislator/@name-id")[0]
+            name = row.xpath("legislator/@sort-field")[0]
+            choice = row.xpath("vote/text()")[0]
+
+            vote.vote(self.vote_codes[choice], name, note=bioguide)
+
+        return vote

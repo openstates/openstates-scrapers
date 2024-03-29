@@ -14,6 +14,7 @@ class MDEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Eastern")
     chambers = {"upper": "Senate", "lower": ""}
     date_format = "%m%d%Y"
+    bill_hear_re = re.compile(r"(.+)( - Bill Hearing)")
 
     def scrape(self, session=None, start=None, end=None):
         if start is None:
@@ -41,11 +42,12 @@ class MDEventScraper(Scraper, LXMLMixin):
         page = self.lxmlize(url)
 
         # if both "<house banner> No Hearings Message" and "<senate banner> No Hearings Message"
-        empty_chamber = "//div[contains(., 'No hearings')]/preceding-sibling::div[contains(.,'{chamber}')]"
+        empty_chamber = "//div[div/div[contains(@class,'{chamber}')]]/following-sibling::text()[contains(.,'No hearings')]"
         if page.xpath(empty_chamber.format(chamber="Senate")) and page.xpath(
             empty_chamber.format(chamber="House")
         ):
             raise EmptyScrape
+        event_count = 0
 
         for row in page.xpath('//div[@id="divAllHearings"]/hr'):
             banner = row.xpath(
@@ -100,6 +102,10 @@ class MDEventScraper(Scraper, LXMLMixin):
             if com_row == "":
                 continue
 
+            bill_hearing_format = self.bill_hear_re.search(com_row)
+            if bill_hearing_format:
+                com_row = bill_hearing_format.groups()[0]
+
             # remove end dates
             when = re.sub(r"to \d+:\d+\s*\w+", "", f"{when} {time}").strip()
             when = dateutil.parser.parse(when)
@@ -111,6 +117,10 @@ class MDEventScraper(Scraper, LXMLMixin):
                 start_date=when,
                 classification="committee-meeting",
             )
+
+            com_name = re.sub(r"[\s\-]*Work Session", "", com_row)
+            if com_name:
+                event.add_participant(name=com_name, type="committee", note="host")
 
             event.add_source("https://mgaleg.maryland.gov/mgawebsite/Meetings/Week/")
 
@@ -130,5 +140,8 @@ class MDEventScraper(Scraper, LXMLMixin):
                     agenda = event.add_agenda_item(
                         agenda_row.xpath("div[1]")[0].text_content().strip()
                     )
-
+            event_count += 1
             yield event
+
+        if event_count < 1:
+            raise EmptyScrape

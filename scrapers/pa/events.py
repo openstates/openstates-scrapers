@@ -11,6 +11,7 @@ from . import utils
 
 class PAEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
+    chamber_names = {"upper": "Senate", "lower": "House"}
 
     def scrape(self, chamber=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
@@ -85,15 +86,21 @@ class PAEventScraper(Scraper):
                     for bill in bills:
                         parsed = urllib.parse.urlparse(bill.get("href"))
                         qs = urllib.parse.parse_qs(parsed.query)
+                        print(qs)
                         item.add_bill(
-                            "{}{} {}".format(qs["body"], qs["type"], qs["bn"])
+                            "{}{} {}".format(qs["body"][0], qs["type"][0], qs["bn"][0])
                         )
                     for committee in committees:
                         parsed = urllib.parse.urlparse(committee.get("href"))
                         qs = urllib.parse.parse_qs(parsed.query)
+                        com_name = re.sub(r" \([S|H]\)$", "", committee.text)
+                        if "joint" not in com_name.lower():
+                            chamber_name = self.chamber_names[chamber].upper()
+                            com_name = f"{chamber_name} {com_name}"
                         item.add_committee(
-                            re.sub(r" \([S|H]\)$", "", committee.text),
+                            com_name,
                             id=qs.get("Code"),
                         )
+                        event.add_committee(com_name)
 
                 yield event

@@ -153,7 +153,7 @@ class AZBillScraper(Scraper):
 
         for action in utils.action_map:
             if page[action] and utils.action_map[action]["name"] != "":
-                # sometimes intead of a date they placeholder with True
+                # sometimes instead of a date they placeholder with True
                 # see 2021 SB1308
                 if page[action] is True:
                     continue

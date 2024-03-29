@@ -1,9 +1,9 @@
-import re
 import pytz
 import datetime
 import json
 
 from openstates.scrape import Scraper, Bill, VoteEvent
+from .actions import Categorizer
 import scrapelib
 
 from utils import LXMLMixin
@@ -12,30 +12,8 @@ from utils import LXMLMixin
 TIMEZONE = pytz.timezone("US/Mountain")
 
 
-def categorize_action(action):
-    categorizers = (
-        ("Introduced and Referred", ("introduction", "referral-committee")),
-        ("Rerefer to", "referral-committee"),
-        ("Do Pass Failed", "committee-failure"),
-        ("2nd Reading:Passed", "reading-2"),
-        ("3rd Reading:Passed", ("reading-3", "passage")),
-        ("Failed 3rd Reading", ("reading-3", "failure")),
-        ("Did Not Adopt", "amendment-failure"),
-        ("Withdrawn by Sponsor", "withdrawal"),
-        ("Line Item Veto", "executive-veto-line-item"),
-        ("Governor Signed", "executive-signature"),
-        ("Recommend (Amend and )?Do Pass", "committee-passage-favorable"),
-        ("Recommend (Amend and )?Do Not Pass", "committee-passage-unfavorable"),
-        ("Received for Introduction", "filing"),
-    )
-
-    for pattern, types in categorizers:
-        if re.findall(pattern, action):
-            return types
-    return None
-
-
 class WYBillScraper(Scraper, LXMLMixin):
+    categorizer = Categorizer()
     chamber_abbrev_map = {"H": "lower", "S": "upper"}
     is_special = False
 
@@ -127,11 +105,14 @@ class WYBillScraper(Scraper, LXMLMixin):
             if action_json["location"] and action_json["location"] in chamber_map:
                 actor = chamber_map[action_json["location"]]
 
+            attrs = self.categorizer.categorize(action_json["statusMessage"].lower())
+            action_type = attrs["classification"]
+
             action = bill.add_action(
                 chamber=actor,
                 description=action_json["statusMessage"],
                 date=utc_action_date,
-                classification=categorize_action(action_json["statusMessage"]),
+                classification=action_type,
             )
 
             action.extras = {"billInformationID": action_json["billInformationID"]}

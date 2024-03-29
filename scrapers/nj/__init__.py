@@ -52,8 +52,8 @@ class NewJersey(State):
             "_scraped_name": "2018-2019 Session",
             "identifier": "218",
             "name": "2018-2019 Regular Session",
-            "start_date": "2018-01-08",
-            "end_date": "2020-01-09",
+            "start_date": "2018-01-09",
+            "end_date": "2020-01-14",
         },
         {
             "_scraped_name": "2020-2021 Session",
@@ -68,7 +68,15 @@ class NewJersey(State):
             "identifier": "220",
             "name": "2022-2023 Regular Session",
             "start_date": "2022-01-11",
-            "end_date": "2022-12-31",
+            "end_date": "2023-12-31",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2024-2025 Session",
+            "identifier": "221",
+            "name": "2024-2025 Regular Session",
+            "start_date": "2024-01-09",
+            "end_date": "2025-12-31",
             "active": True,
         },
     ]

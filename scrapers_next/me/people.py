@@ -31,7 +31,6 @@ _party_map = {
 
 class RepDetail(HtmlPage):
     input_type = PartialPerson
-    district_re = re.compile(r"(\d+)\s+-")
 
     def process_page(self):
         district = (
@@ -42,7 +41,7 @@ class RepDetail(HtmlPage):
         district = XPath("text()").match(district)[0].strip()
         # https://legislature.maine.gov/house/house/MemberProfiles/Details/1193 has no district
         if district != "":
-            district = self.district_re.search(district).groups()[0]
+            district = district
         else:
             raise SkipItem("non-voting member")
 
@@ -61,8 +60,11 @@ class RepDetail(HtmlPage):
         img = CSS("img.drop-shadow").match_one(self.root).get("src")
         p.image = img
 
-        email = CSS("div#main-info p a").match(self.root)[0].text_content().strip()
-        p.email = email
+        try:
+            email = CSS("div#main-info p a").match(self.root)[0].text_content().strip()
+            p.email = email
+        except SelectorError:
+            return
 
         distr_addr = CSS("div#main-info p br").match(self.root)[0].tail.strip()
         p.district_office.address = distr_addr
@@ -234,7 +236,7 @@ class SenDetail(HtmlPage):
 
 class Senate(ExcelListPage):
     source = URL(
-        "https://legislature.maine.gov/uploads/visual_edit/130th-senate-contact-information-as-of-31221.xlsx"
+        "https://legislature.maine.gov/uploads/visual_edit/131-senator-contact-information-2.xlsx"
     )
 
     def process_item(self, item):
@@ -242,11 +244,12 @@ class Senate(ExcelListPage):
         if item[0] == "Dist" or item[0] is None:
             self.skip()
 
-        first_name = item[3].strip()
-        last_name = item[4].strip()
+        first_name = item[2].strip()
+        last_name = item[3].strip()
         name = first_name + " " + last_name
         district = item[0]
-        party = item[2].strip()
+        party = item[1].strip()
+        print(f"name: {name} district: {district} party: {party}")
 
         if not district:
             # non voting members ignored for now
@@ -263,17 +266,17 @@ class Senate(ExcelListPage):
         p.given_name = first_name
         p.family_name = last_name
 
-        detail_link = URL(f"https://legislature.maine.gov/District-{district}")
+        detail_link = URL(f"https://legislature.maine.gov/District{district}")
         p.add_source(self.source.url)
         p.add_source(detail_link.url)
         p.add_link(detail_link.url, note="homepage")
 
-        county = item[1].strip()
-        p.extras["county represented"] = county
+        # county = item[1].strip()
+        # p.extras["county represented"] = county
 
-        mailing_address = item[5].strip()
-        zipcode = item[8].strip()
-        city = item[6].strip()
+        mailing_address = item[4].strip()
+        zipcode = item[7].strip()
+        city = item[5].strip()
         address = f"{mailing_address}, {city}, ME {zipcode}"
         if re.search(r"St(\s|,)", address):
             address = re.sub(r"St\s", "Street ", address)
@@ -286,15 +289,15 @@ class Senate(ExcelListPage):
             address = re.sub(r"N\.", "North", address)
         p.district_office.address = address
 
-        phone = item[9].strip()
-        phone = "(207) " + phone
-        p.district_office.voice = phone
+        # phone = item[9].strip()
+        # phone = "(207) " + phone
+        # p.district_office.voice = phone
 
-        alternate = item[10]
-        if alternate is not None:
-            p.extras["alternate phone"] = alternate.strip()
+        # alternate = item[10]
+        # if alternate is not None:
+        #     p.extras["alternate phone"] = alternate.strip()
 
-        email = item[11].strip()
+        email = item[8].strip()
         p.email = email
 
         return SenDetail(p, source=detail_link)

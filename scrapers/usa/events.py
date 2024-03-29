@@ -1,11 +1,14 @@
 import pytz
 import lxml
 import datetime
+import dateutil
 import re
 import requests
 
 from utils import LXMLMixin
+from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape, ScrapeValueError
 
 
 class USEventScraper(Scraper, LXMLMixin):
@@ -19,6 +22,7 @@ class USEventScraper(Scraper, LXMLMixin):
 
     hearing_document_types = {
         "HW": "Witness List",
+        "HM": "Meeting Roster",
         "HC": "Hearing Notice",
         "SD": "Instructions for Submitting a Request to Testify",
         "BR": "Bill Text",
@@ -42,17 +46,52 @@ class USEventScraper(Scraper, LXMLMixin):
         "First Street Southeast, Washington, DC 20004",
     }
 
+    # Senate XML uses non-standard bill prefixes
+    senate_prefix_mapping = {
+        "SN": "S",
+        "SC": "SCONRES",
+        "SE": "SRES",
+        # TODO WHEN WE SEE ONE: SJRes
+    }
+
     # date_filter argument can give you just one day;
     # format is "2/28/2019" per AK's site
     def scrape(self, chamber=None, session=None, date_filter=None):
-        # todo: yield from
+        event_count = 0
+        events = set()
         if chamber is None:
-            yield from self.scrape_house()
-            yield from self.scrape_senate()
+            for event in self.scrape_house():
+                if event.dedupe_key in events:
+                    self.warning(f"Duplicate event {event.dedupe_key}")
+                    continue
+                events.add(event.dedupe_key)
+                event_count += 1
+                yield event
+            for event in self.scrape_senate():
+                if event.dedupe_key in events:
+                    self.warning(f"Duplicate event {event.dedupe_key}")
+                    continue
+                events.add(event.dedupe_key)
+                event_count += 1
+                yield event
         elif chamber == "lower":
-            yield from self.scrape_house()
+            for event in self.scrape_house():
+                if event.dedupe_key in events:
+                    self.warning(f"Duplicate event {event.dedupe_key}")
+                    continue
+                events.add(event.dedupe_key)
+                event_count += 1
+                yield event
         elif chamber == "upper":
-            yield from self.scrape_senate()
+            for event in self.scrape_senate():
+                if event.dedupe_key in events:
+                    self.warning(f"Duplicate event {event.dedupe_key}")
+                    continue
+                events.add(event.dedupe_key)
+                event_count += 1
+                yield event
+        if event_count < 1:
+            raise EmptyScrape
 
     def scrape_senate(self):
         url = "https://www.senate.gov/general/committee_schedules/hearings.xml"
@@ -68,49 +107,60 @@ class USEventScraper(Scraper, LXMLMixin):
             if com == "":
                 continue
 
-            com = "Senate {}".format(com)
+            com = f"Senate {com}"
 
             address = row.xpath("string(room)")
             parts = address.split("-")
             building_code = parts[0]
 
             if self.buildings.get(building_code):
-                address = "{}, Room {}".format(
-                    self.buildings.get(building_code), parts[1]
-                )
+                address = f"{building_code}, Room {parts[1]}"
 
             agenda = row.xpath("string(matter)")
 
-            try:
-                event_date = datetime.datetime.strptime(
-                    row.xpath("string(date)"), "%d-%b-%Y %H:%M %p"
-                )
-            except ValueError:
-                event_date = datetime.datetime.strptime(
-                    row.xpath("string(date)"), "%d-%b-%Y"
-                )
+            event_date = dateutil.parser.parse(row.xpath("string(date)"))
 
             event_date = self._TZ.localize(event_date)
-
-            event = Event(start_date=event_date, name=com, location_name=address)
-
+            event_name = f"{com[:100]}#{address}#{event_date}"
+            title = re.sub(r"\s+", " ", com[:290])
+            event = Event(
+                start_date=event_date,
+                name=title,
+                location_name=address,
+                classification="committee-meeting",
+                description=com,
+            )
+            event.dedupe_key = event_name
             agenda_item = event.add_agenda_item(description=agenda)
 
-            # ex: Business meeting to consider S.785, to improve mental...
-            matches = re.findall(r"\s(\w+)\.(\d+),", agenda)
+            for doc in row.xpath("//Documents/AssociatedDocument"):
+                doc_congress = doc.xpath("@congress")[0]
+                doc_title = doc.xpath("@document_description")[0]
+                doc_num = doc.xpath("@document_num")[0]
+                doc_prefix = doc.xpath("@document_prefix")[0]
+                doc_type = "nomination" if doc_prefix == "PN" else "bill"
+                if doc_prefix in self.senate_prefix_mapping:
+                    doc_prefix = self.senate_prefix_mapping[doc_prefix]
+                doc_id = f"{doc_congress}-{doc_prefix}-{doc_num}"
 
-            if matches:
-                match = matches[0]
-                bill_type = match[0]
-                bill_number = match[1]
-                bill_name = "{} {}".format(bill_type, bill_number)
-                agenda_item.add_bill(bill_name)
+                bill_id = f"{doc_prefix} {doc_num}"
+                try:
+                    agenda_item.add_entity(
+                        name=bill_id, entity_type=doc_type, id=doc_id, note=doc_title
+                    )
+                except ScrapeValueError:
+                    self.warning(f"Skipping agenda item {bill_id} of type {doc_type}")
+                    pass
 
             event.add_participant(
                 com,
                 type="committee",
                 note="host",
             )
+
+            self.geocode(event)
+
+            event.extras["US_SENATE_EVENT_ID"] = row.xpath("string(identifier)")
 
             event.add_source("https://www.senate.gov/committees/hearings_meetings.htm")
 
@@ -147,8 +197,8 @@ class USEventScraper(Scraper, LXMLMixin):
                     "__EVENTARGUMENT": "",
                 }
 
-                self.info("Fetching {} via POST".format(row.get("href")))
-                xml = self.asp_post(row.get("href"), page, params)
+                self.info(f"Fetching {row.get('href')} via POST")
+                xml = self.asp_post(row.get("href"), params)
 
                 try:
                     xml = lxml.etree.fromstring(xml)
@@ -160,24 +210,20 @@ class USEventScraper(Scraper, LXMLMixin):
 
     def house_meeting(self, xml, source_url):
 
-        title = xml.xpath("string(//meeting-details/meeting-title)")
+        meeting_title = xml.xpath("string(//meeting-details/meeting-title)")
 
         meeting_date = xml.xpath("string(//meeting-date/calendar-date)")
         start_time = xml.xpath("string(//meeting-date/start-time)")
         end_time = xml.xpath("string(//meeting-date/end-time)")
 
-        start_dt = datetime.datetime.strptime(
-            "{} {}".format(meeting_date, start_time), "%Y-%m-%d %H:%M:%S"
-        )
+        start_dt = dateutil.parser.parse(f"{meeting_date} {start_time}")
 
         start_dt = self._TZ.localize(start_dt)
 
         end_dt = None
 
         if end_time != "":
-            end_dt = datetime.datetime.strptime(
-                "{} {}".format(meeting_date, end_time), "%Y-%m-%d %H:%M:%S"
-            )
+            end_dt = dateutil.parser.parse(f"{meeting_date} {end_time}")
             end_dt = self._TZ.localize(end_dt)
 
         building = xml.xpath(
@@ -192,16 +238,28 @@ class USEventScraper(Scraper, LXMLMixin):
             room = xml.xpath(
                 "string(//meeting-details/meeting-location/capitol-complex/room)"
             )
-            address = "{}, Room {}".format(building, room)
-
-        event = Event(start_date=start_dt, name=title, location_name=address)
-
+            address = f"{building}, Room {room}"
+        event_name = f"{meeting_title[:100]}#{address}#{start_dt}"
+        title = re.sub(r"\s+", " ", meeting_title[:290])
+        event = Event(
+            start_date=start_dt,
+            name=title,
+            location_name=address,
+            classification="committee-meeting",
+            description=meeting_title,
+        )
+        event.dedupe_key = event_name
         event.add_source(source_url)
 
         coms = xml.xpath("//committees/committee-name | //subcommittees/committee-name")
         for com in coms:
-            com_name = com.xpath("string(.)")
-            com_name = "House {}".format(com_name)
+            if com.xpath("@parent-name"):
+                com_name = "{} {}".format(
+                    com.xpath("@parent-name")[0], com.xpath("string(.)")
+                )
+            else:
+                com_name = com.xpath("string(.)")
+            com_name = f"House {com_name}"
             event.add_participant(
                 com_name,
                 type="committee",
@@ -216,7 +274,9 @@ class USEventScraper(Scraper, LXMLMixin):
                 media_type = self.media_types[doc_file.get("doc-type")]
                 url = doc_file.get("doc-url")
 
-                if doc.get("type") in ["BR", "AM", "CA"]:
+                # list of types from:
+                # https://github.com/unitedstates/congress/blob/main/congress/tasks/committee_meetings.py#L384
+                if doc.get("type") in ["BR", "AM", "CA", "FA"]:
                     if doc_name == "":
                         doc_name = doc.xpath("string(legis-num)").strip()
                     matches = re.findall(r"([\w|\.]+)\s+(\d+)", doc_name)
@@ -225,7 +285,7 @@ class USEventScraper(Scraper, LXMLMixin):
                         match = matches[0]
                         bill_type = match[0].replace(".", "")
                         bill_number = match[1]
-                        bill_name = "{} {}".format(bill_type, bill_number)
+                        bill_name = f"{bill_type} {bill_number}"
                         agenda = event.add_agenda_item(description=bill_name)
                         agenda.add_bill(bill_name)
 
@@ -233,17 +293,18 @@ class USEventScraper(Scraper, LXMLMixin):
                     try:
                         doc_name = self.hearing_document_types[doc.get("type")]
                     except KeyError:
-                        self.warning(
-                            "Unable to find document type: {}".format(doc.get("type"))
-                        )
+                        self.warning(f"Unable to find document type: {doc.get('type')}")
 
                 event.add_document(
                     doc_name, url, media_type=media_type, on_duplicate="ignore"
                 )
 
+        self.geocode(event)
+        event.extras["US_HOUSE_EVENT_ID"] = xml.xpath("//committee-meeting/@meeting-id")
+
         yield event
 
-    def asp_post(self, url, page, params):
+    def asp_post(self, url, params):
         page = self.s.get(url)
         page = lxml.html.fromstring(page.content)
         (viewstate,) = page.xpath('//input[@id="__VIEWSTATE"]/@value')
@@ -263,3 +324,20 @@ class USEventScraper(Scraper, LXMLMixin):
         form = {**form, **params}
         xml = self.s.post(url, form).content
         return xml
+
+    def geocode(self, event: Event) -> None:
+        match_coordinates(
+            event,
+            {
+                "Russell Senate Office Building": (38.89248, -77.00686),
+                "Dirksen Senate Office Building": (38.89298, -77.00515),
+                "Hart Senate Office Building": (38.89230, -77.00444),
+                "Cannon House Office Building": (38.88700, -77.00635),
+                "Longworth House Office Building": (38.88733, -77.00857),
+                "Rayburn House Office Building": (38.88729, -77.010453),
+                "Ford House Office Building": (38.88469, -77.013837),
+                # so capitol doesn't match visitors center
+                "25 Independence Ave SE": (38.889965, -77.00908),
+                "US Capitol Visitor's Center": (38.88989, -77.00862),
+            },
+        )

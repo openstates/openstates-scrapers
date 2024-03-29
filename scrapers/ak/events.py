@@ -15,6 +15,8 @@ class AKEventScraper(Scraper, LXMLMixin):
     CHAMBERS = {"S": "upper", "H": "lower", "J": "joint"}
     COMMITTEES = {"upper": {}, "lower": {}, "joint": {}}
     COMMITTEES_PRETTY = {"upper": "SENATE", "lower": "HOUSE", "joint": "JOINT"}
+    tsbldg_room_re = re.compile(r"(.*?\d+).*$")
+    anch_lio_room_re = re.compile(r"^ANCH LIO (.*) Rm$")
 
     # date_filter argument can give you just one day;
     # format is "2/28/2019" per AK's site
@@ -34,34 +36,34 @@ class AKEventScraper(Scraper, LXMLMixin):
 
         events_xml = page.xpath("//Meeting")
 
+        events = set()
         for row in events_xml:
-            # Their spelling, not a typo
-            if row.get("Canceled") == "true":
-                continue
-
             row_chamber = row.xpath("string(chamber)")
             if chamber and self.CHAMBERS[row_chamber] != chamber:
                 continue
 
-            yield from self.parse_event(row, self.CHAMBERS[row_chamber])
+            for event, name in self.parse_event(row, self.CHAMBERS[row_chamber]):
+                if name in events:
+                    self.warning(f"Duplicate event: {name}")
+                    continue
+                events.add(name)
+                yield event
 
     def parse_event(self, row, chamber):
+        status = "tentative"
+        # Their spelling, not a typo
+        if row.get("Canceled") == "true":
+            status = "cancelled"
+
         # sample event available at http://www.akleg.gov/apptester.html
         committee_code = row.xpath("string(Sponsor)").strip()
 
         if committee_code in self.COMMITTEES[chamber]:
-            committee_name = "{} {}".format(
-                self.COMMITTEES_PRETTY[chamber],
-                self.COMMITTEES[chamber][committee_code]["name"],
-            )
+            committee_name = f"{self.COMMITTEES_PRETTY[chamber]} {self.COMMITTEES[chamber][committee_code]['name']}"
         else:
-            committee_name = "{} {}".format(
-                self.COMMITTEES_PRETTY[chamber], "MISCELLANEOUS"
-            )
+            committee_name = f"{self.COMMITTEES_PRETTY[chamber]} MISCELLANEOUS"
 
-        name = "{} {}".format(
-            self.COMMITTEES_PRETTY[chamber], row.xpath("string(Title)").strip()
-        )
+        name = f"{self.COMMITTEES_PRETTY[chamber]} {row.xpath('string(Title)').strip()}"
 
         # If name is missing, make it "<CHAMBER> <COMMITTEE NAME>"
         if name == "":
@@ -70,24 +72,40 @@ class AKEventScraper(Scraper, LXMLMixin):
         location = row.xpath("string(Location)").strip()
 
         # events with no location all seem to be committee hearings
-        if location == "" or re.match(r"^\w+\s\d+$", location):
-            location = "Alaska State Capitol, 120 4th St, Juneau, AK 99801"
-        elif re.match(r"^\w+\s\d+$", location) or re.match(
-            r"(HOUSE|SENATE)\s\w+(\s\d+)?", location
-        ):
-            location = f"{location}, Alaska State Capitol, 120 4th St, Juneau, AK 99801"
-        elif "anch lio" in location.lower():
-            location = re.sub(
-                r"anch lio",
-                "Anchorage Legislative Information Office, 1500 W Benson Blvd, Anchorage, AK 99503",
-                location,
-                flags=re.IGNORECASE,
-            )
+
+        # Determine full address from location field
+        building = None
+        room_name = None
+        if "(TSBldg)" in location:
+            # TSBldg rooms have a name and number
+            building = "Thomas B. Stewart Legislative Office Building, 206 4th St, Juneau, AK 99801"
+            room_name = self.tsbldg_room_re.match(location).group(1).title()
+        elif "ANCH LIO" in location:
+            # Anch lio rooms only have a name
+            building = "Anchorage Legislative Information Office, 1500 W Benson Blvd, Anchorage, AK 99503"
+            room_name = self.anch_lio_room_re.match(location).group(1).title()
+            room_name = f"{room_name} Room"
+
+        else:
+            # Default to capitol building, even when there is no location
+            # The entire location string is the room name, with or without a room number
+            building = "Alaska State Capitol, 120 4th St, Juneau, AK 99801"
+            room_name = location
+
+        if room_name:
+            # Combine room name with building address for full address
+            location = f"{room_name.upper()}, {building}"
+        else:
+            # No room name, so just use building address
+            location = building
 
         start_date = dateutil.parser.parse(row.xpath("string(Schedule)"))
         # todo: do i need to self._TZ.localize() ?
-
-        event = Event(start_date=start_date, name=name, location_name=location)
+        event_name = f"{name}#{location}#{start_date}"
+        event = Event(
+            start_date=start_date, name=name, location_name=location, status=status
+        )
+        event.dedupe_key = event_name
 
         event.add_source("http://w3.akleg.gov/index.php#tab4")
 
@@ -115,7 +133,7 @@ class AKEventScraper(Scraper, LXMLMixin):
                     bill_id = re.sub(r"\s+", " ", bill_id)
                     agenda_item.add_bill(bill_id)
 
-        yield event
+        yield event, event_name
 
     def scrape_committees(self, session):
         listing_url = "/committees"

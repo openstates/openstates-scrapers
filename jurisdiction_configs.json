@@ -2,7 +2,7 @@
   {
     "name": "ak",
     "people": [
-      "scrapers_next.ak.people.Legislators"
+      "scrapers_next.ak.people.LegList"
     ]
   },
   {
@@ -149,8 +149,8 @@
   {
     "name": "mi",
     "people": [
-      "scrapers_next.mi.people.Senators",
-      "scrapers_next.mi.people.Representatives"
+      "scrapers_next.mi.people.Senate",
+      "scrapers_next.mi.people.House"
     ]
   },
   {

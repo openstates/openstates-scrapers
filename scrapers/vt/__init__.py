@@ -74,7 +74,7 @@ class Vermont(State):
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
             "start_date": "2019-01-09",
-            "end_date": "2020-05-08",
+            "end_date": "2020-09-25",
         },
         {
             "_scraped_name": "2021-2022 Session",
@@ -82,8 +82,8 @@ class Vermont(State):
             "identifier": "2021-2022",
             "name": "2021-2022 Regular Session",
             "start_date": "2021-01-06",
-            "end_date": "2021-05-15",
-            "active": True,
+            "end_date": "2021-05-12",
+            "active": False,
         },
         {
             "_scraped_name": "2021 Special Session",
@@ -91,8 +91,17 @@ class Vermont(State):
             "identifier": "2021S1",
             "name": "2021 Special Session",
             "start_date": "2021-11-22",
-            "end_date": "2021-11-26",
+            "end_date": "2021-11-22",
             "active": False,
+        },
+        {
+            "_scraped_name": "2023-2024 Session",
+            "classification": "primary",
+            "identifier": "2023-2024",
+            "name": "2023-2024 Regular Session",
+            "start_date": "2023-01-04",
+            "end_date": "2025-05-09",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

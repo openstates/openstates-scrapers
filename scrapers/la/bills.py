@@ -9,8 +9,13 @@ from openstates.utils import convert_pdf
 from openstates.exceptions import EmptyScrape
 from utils import LXMLMixin
 
+# from . import actions
+from .actions import Categorizer
+
 
 class LABillScraper(Scraper, LXMLMixin):
+    categorizer = Categorizer()
+
     _chambers = {"S": "upper", "H": "lower", "J": "legislature"}
 
     _bill_types = {
@@ -37,7 +42,14 @@ class LABillScraper(Scraper, LXMLMixin):
         "2022": "22RS",
         "2022s1": "221ES",
         "2022s2": "222ES",
+        "2023": "23RS",
+        "2023s1": "231ES",
+        "2024": "24RS",
+        "2024s1": "241ES",
+        "2024s2": "242ES",
     }
+
+    _start_year = ""
 
     def pdf_to_lxml(self, filename, type="html"):
         text = convert_pdf(filename, type)
@@ -45,7 +57,8 @@ class LABillScraper(Scraper, LXMLMixin):
 
     def _get_bill_abbreviations(self, session_id):
         page = self.lxmlize(
-            "http://www.legis.la.gov/legis/BillSearch.aspx?" "sid={}".format(session_id)
+            "https://www.legis.la.gov/legis/BillSearch.aspx?"
+            "sid={}".format(session_id)
         )
 
         if page.xpath("//span[contains(@id,'PageContent_labelNoBills')]"):
@@ -111,6 +124,12 @@ class LABillScraper(Scraper, LXMLMixin):
             return []
 
     def scrape(self, chamber=None, session=None):
+        # LA doesn't provide the year in action dates,
+        # so assume it's the year of the active session
+        for i in self.jurisdiction.legislative_sessions:
+            if i["identifier"] == session:
+                self.start_year = i["start_date"][0:4]
+
         chambers = [chamber] if chamber else ["upper", "lower"]
         session_id = self._session_ids[session]
         # Scan bill abbreviation list if necessary.
@@ -119,7 +138,7 @@ class LABillScraper(Scraper, LXMLMixin):
         seen_bill_urls = set()
         for chamber in chambers:
             for bill_abbreviation in self._bill_abbreviations[chamber]:
-                bill_list_url = "http://www.legis.la.gov/Legis/BillSearchListQ.aspx?s={}&r={}1*".format(
+                bill_list_url = "https://www.legis.la.gov/Legis/BillSearchListQ.aspx?s={}&r={}1*".format(
                     session_id, bill_abbreviation
                 )
                 bills_found = False
@@ -267,7 +286,7 @@ class LABillScraper(Scraper, LXMLMixin):
 
         title = page.xpath("//span[@id='ctl00_PageBody_LabelShortTitle']/text()")[0]
         title = title.replace("\u00a0\u00a0", " ")
-        actions = page.xpath(
+        these_actions = page.xpath(
             "//div[@id='ctl00_PageBody_PanelBillInfo']/"
             "/table[@style='font-size:small']/tr"
         )
@@ -315,18 +334,6 @@ class LABillScraper(Scraper, LXMLMixin):
                     media_type="application/pdf",
                 )
 
-        flags = {
-            "prefiled": ["filing"],
-            "referred to the committee": ["referral-committee"],
-            "sent to the house": ["passage"],
-            "ordered returned to the house": ["passage"],
-            "ordered to the senate": ["passage"],
-            "signed by the governor": ["executive-signature"],
-            "sent to the governor": ["executive-receipt"],
-            "becomes Act": ["became-law"],
-            "vetoed by the governor": ["executive-veto"],
-        }
-
         try:
             votes_link = page.xpath("//a[text() = 'Votes']")[0]
             yield from self.scrape_votes(bill, votes_link.attrib["href"])
@@ -334,25 +341,21 @@ class LABillScraper(Scraper, LXMLMixin):
             # Some bills don't have any votes
             pass
 
-        for action in actions:
+        for action in these_actions:
             date, chamber, page, text = [x.text for x in action.xpath(".//td")]
-            session_year = self.jurisdiction.legislative_sessions[-1]["start_date"][0:4]
             # Session is April -> June. Prefiles look like they're in
             # January at earliest.
-            date += "/{}".format(session_year)
+            date += "/{}".format(self.start_year)
             date = dt.datetime.strptime(date, "%m/%d/%Y")
             chamber = self._chambers[chamber]
 
-            cat = []
-            for flag in flags:
-                if flag in text.lower():
-                    cat += flags[flag]
+            attrs = self.categorizer.categorize(text)
 
             bill.add_action(
                 description=text,
                 date=date.strftime("%Y-%m-%d"),
                 chamber=chamber,
-                classification=cat,
+                classification=attrs["classification"],
             )
 
         yield bill

@@ -3,6 +3,7 @@ import dateutil.parser
 import lxml
 import re
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 class NMEventScraper(Scraper):
@@ -11,12 +12,19 @@ class NMEventScraper(Scraper):
     agenda_urls = {"upper": {}, "lower": {}}
 
     def scrape(self, chamber=None):
+        event_count = 0
         if chamber:
-            yield from self.scrape_chamber(chamber)
+            for event in self.scrape_chamber(chamber):
+                event_count += 1
+                yield event
         else:
             chambers = ["upper", "lower"]
             for chamber in chambers:
-                yield from self.scrape_chamber(chamber)
+                for event in self.scrape_chamber(chamber):
+                    event_count += 1
+                    yield event
+        if event_count < 1:
+            raise EmptyScrape
 
     def scrape_chamber(self, chamber):
         url = "https://www.nmlegis.gov/Calendar/Session"
@@ -49,6 +57,7 @@ class NMEventScraper(Scraper):
         page = self.get(url).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
+        events = set()
 
         for i in range(101):
             if page.xpath(
@@ -91,13 +100,18 @@ class NMEventScraper(Scraper):
                             when = dateutil.parser.parse(date)
 
                         when = self._tz.localize(when)
-
+                        event_name = f"{com}#{where}#{when}"
+                        if event_name in events:
+                            self.warning(f"Duplicate event: {event_name}")
+                            continue
+                        events.add(event_name)
                         event = Event(
                             name=com,
                             location_name=where,
                             start_date=when,
                             classification="committee-meeting",
                         )
+                        event.dedupe_key = event_name
 
                         host = (
                             host.replace(", CHAIRMAN", "")
@@ -115,6 +129,9 @@ class NMEventScraper(Scraper):
                             bill_id = bill_id.replace("*", "")
                             bill_id = re.sub(r"\s+", " ", bill_id)
                             bill_title = row.xpath("td[2]")[0].text_content().strip()
+                            if not bill_id or not bill_title:
+                                self.warning("Empty bill data, skipping")
+                                continue
                             agenda = event.add_agenda_item(bill_title)
                             agenda.add_bill(bill_id)
 
@@ -127,6 +144,7 @@ class NMEventScraper(Scraper):
                         if (
                             lookup_com in self.agenda_urls[chamber]
                             and lookup_date in self.agenda_urls[chamber][lookup_com]
+                            and self.agenda_urls[chamber][lookup_com][lookup_date]
                         ):
                             event.add_document(
                                 "Agenda",

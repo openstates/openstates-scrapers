@@ -13,7 +13,15 @@ url = "http://www.leg.state.mn.us/calendarday.aspx?jday=all"
 
 
 def get_bill_ids(text):
-    return re.findall(r"[H|S]F \d+", text)
+    """
+    Valid formats we've seen:
+    H.F. 463
+    HF 463
+    HF463
+    """
+    bills = re.findall(r"[H|S]\.?F\.?\s?\d+", text)
+    bills = [b.replace(".", "") for b in bills]
+    return bills
 
 
 class MNEventScraper(Scraper, LXMLMixin):
@@ -33,8 +41,6 @@ class MNEventScraper(Scraper, LXMLMixin):
         page = self.lxmlize(url)
 
         for row in page.xpath('//div[contains(@class,"my-2 d-print-block")]'):
-            # print(row.text_content())
-
             # skip floor sessions and unlinked events
             if not row.xpath(
                 'div[contains(@class,"card-header")]/h3/a[contains(@class,"text-white")]/b'
@@ -87,8 +93,14 @@ class MNEventScraper(Scraper, LXMLMixin):
 
             event.add_source(com_link)
 
+            bills = set()
             for bill in get_bill_ids(desc):
                 event.add_bill(bill)
+                bills.add(bill)
+
+            self.info(
+                f"Associated {len(bills)} bills with {com}#{where}#{when}: {bills}"
+            )
 
             if row.xpath(
                 ".//a[contains(@href,'/bills/bill.php') and contains(@class,'pull-left')]"
@@ -111,17 +123,24 @@ class MNEventScraper(Scraper, LXMLMixin):
                 # they always 404.
                 if doc_url.endswith(".msg"):
                     continue
-                media_type = get_media_type(doc_url)
+                media_type = get_media_type(doc_url, default="docx")
                 event.add_document(
                     doc_name, doc_url, media_type=media_type, on_duplicate="ignore"
                 )
 
-            for committee in row.xpath(
-                'div[contains(@class,"card-header")]/h3/a[contains(@class,"text-white")]/b/text()'
+            for committee_url in row.xpath(
+                'div[contains(@class,"card-header")]/h3/a[contains(@class,"text-white")]/@href'
             ):
-                event.add_participant(committee, type="committee", note="host")
+                self.scrape_committee(committee_url, event)
 
             yield event
+
+    def scrape_committee(self, url, event):
+        page = self.lxmlize(url)
+        committee = page.xpath("string(//h1)").strip()
+        name = f"House {committee}" if committee != "House" else committee
+
+        event.add_participant(name, type="committee", note="host")
 
     def scrape_upper(self):
         url = "https://www.senate.mn/api/schedule/upcoming"
@@ -155,6 +174,8 @@ class MNEventScraper(Scraper, LXMLMixin):
                 classification="committee-meeting",
                 description=description,
             )
+            com_name = f"Senate {com}" if com != "Senate" else com
+            event.add_participant(com_name, type="committee", note="host")
 
             for bill in get_bill_ids(description):
                 event.add_bill(bill)
@@ -169,11 +190,11 @@ class MNEventScraper(Scraper, LXMLMixin):
                         event.add_source(f"http://{row['committee']['link']}")
                     else:
                         event.add_source(
-                            f"https://www.senate.mn/{row['committee']['link']}"
+                            f"https://www.senate.mn/committees/{row['committee']['link']}"
                         )
                 elif "senate_chair_link" in row["committee"]:
                     event.add_source(
-                        f"https://www.senate.mn/{row['committee']['senate_chair_link']}"
+                        f"https://www.senate.mn/members/{row['committee']['senate_chair_link']}"
                     )
 
             if "agenda" in row:

@@ -137,22 +137,24 @@ class VTBillScraper(Scraper, LXMLMixin):
                         primary=(sponsor_type == "primary"),
                     )
 
-            # Capture bill text versions
-            # Warning: There's a TODO in VT's source code saying 'move this to where it used to be'
-            # so leave in the old and new positions
-            versions = doc.xpath(
-                '//dl[@class="summary-table"]/dt[text()="Bill/Resolution Text"]/'
-                "following-sibling::dd[1]/ul/li/a |"
-                '//ul[@class="bill-path"]//a'
-            )
+            version_links = doc.xpath("//ul[contains(@class,'bill-path')]/li/div/a")
 
-            for version in versions:
-                if version.xpath("text()"):
-                    bill.add_version_link(
-                        note=version.xpath("text()")[0],
-                        url=version.xpath("@href")[0].replace(" ", "%20"),
-                        media_type="application/pdf",
-                    )
+            for link in version_links:
+                version_name = link.text_content().strip()
+
+                # links are either directly to the item ("As Introduced")
+                # or a div with the version name "As Introduced" followed by
+                # multiple links named "Official" and "Unofficial"
+                if "official" in version_name.lower():
+                    printing_name = link.xpath("parent::div/text()")[0].strip()
+                    version_name = f"{printing_name} ({version_name})"
+
+                version_url = link.xpath("@href")[0]
+                bill.add_version_link(
+                    note=version_name,
+                    url=version_url,
+                    media_type="application/pdf",
+                )
 
             # Identify the internal bill ID, used for actions and votes
             # If there is no internal bill ID, then it has no extra information

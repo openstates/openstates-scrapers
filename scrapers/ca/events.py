@@ -4,6 +4,7 @@ import pytz
 from collections import defaultdict
 
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
@@ -39,8 +40,13 @@ class CAEventScraper(Scraper):
 
     def scrape(self, chamber=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
+        event_count = 0
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber)
+            for event in self.scrape_chamber(chamber):
+                event_count += 1
+                yield event
+        if event_count < 1:
+            raise EmptyScrape
 
     def scrape_chamber(self, chamber):
         grouped_hearings = defaultdict(list)
@@ -78,7 +84,12 @@ class CAEventScraper(Scraper):
             committee_name = _committee_nr[hearings.pop().committee_nr]
 
             desc = "Committee Meeting: " + committee_name
-            event = Event(name=desc, start_date=date, location_name=committee_name)
+            event = Event(
+                name=desc,
+                start_date=date,
+                location_name=committee_name,
+            )
+            event.add_committee(committee_name, note="host")
             for bill_id in bills:
                 if "B" in bill_id:
                     type_ = "bill"
@@ -97,6 +108,10 @@ class CAEventScraper(Scraper):
 # (probably) represent, based on direct correlation they bore
 # to hearing locations that resemble committee names in
 # the location_code_tbl in the db dump.
+#
+# if you hit a key error here, enter the mysql db and do
+# SELECT * FROM location_code_tbl WHERE location_code LIKE '%82';
+# replacing 82 with your missing index.
 _committee_nr = {
     1: "Assembly Agriculture",
     2: "Assembly Accountability and Administrative Review",
@@ -160,4 +175,6 @@ _committee_nr = {
     75: "Senate Housing",
     80: "Senate Insurance, Banking and Financial Institutions",
     81: "Assembly Emergency Management",
+    82: "Senate Local Government",
+    83: "Sen Revenue and Taxation",
 }

@@ -53,6 +53,7 @@ class CABill(Base):
         "CAVoteSummary",
         backref=backref("bill"),
         order_by="CAVoteSummary.vote_date_time",
+        overlaps="bill,detail_votes",
     )
 
     analyses = relation(
@@ -246,8 +247,8 @@ class CAVoteSummary(Base):
     trans_uid = Column(String(30))
     trans_update = Column(DateTime, primary_key=True)
 
-    motion = relation(CAMotion)
-    location = relation(CALocation)
+    motion = relation(CAMotion, overlaps="bill,detail_votes")
+    location = relation(CALocation, overlaps="bill,detail_votes")
 
     @property
     def threshold(self):
@@ -303,6 +304,7 @@ class CAVoteDetail(Base):
             CAVoteSummary.motion_id == motion_id,
         ),
         backref=backref("votes"),
+        overlaps="bill,detail_votes",
     )
 
 

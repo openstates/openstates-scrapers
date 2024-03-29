@@ -135,7 +135,7 @@ class Florida(State):
             "identifier": "2021",
             "classification": "primary",
             "start_date": "2021-03-02",
-            "end_date": "2021-05-01",
+            "end_date": "2021-04-30",
             "active": False,
         },
         {
@@ -143,7 +143,7 @@ class Florida(State):
             "identifier": "2021A",
             "classification": "primary",
             "start_date": "2021-05-12",
-            "end_date": "2021-05-21",
+            "end_date": "2021-05-17",
         },
         {
             "name": "2021 Special Session B",
@@ -158,7 +158,7 @@ class Florida(State):
             "identifier": "2022",
             "classification": "primary",
             "start_date": "2022-01-11",
-            "end_date": "2022-03-11",
+            "end_date": "2022-03-14",
             "active": False,
         },
         {
@@ -174,7 +174,17 @@ class Florida(State):
             "identifier": "2022D",
             "classification": "special",
             "start_date": "2022-05-23",
-            "end_date": "2022-05-30",
+            "end_date": "2022-05-27",
+            "active": False,
+        },
+        # Yes, 2022 Special Session A
+        # occurred after B,C, and D
+        {
+            "name": "2022 Special Session A",
+            "identifier": "2022A",
+            "classification": "special",
+            "start_date": "2022-12-12",
+            "end_date": "2022-12-16",
             "active": False,
         },
         {
@@ -183,11 +193,37 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2023-03-07",
             "end_date": "2023-05-05",
+            "active": False,
+        },
+        {
+            "name": "2023 Special Session B",
+            "identifier": "2023B",
+            "classification": "special",
+            "start_date": "2023-02-06",
+            "end_date": "2023-02-10",
+            "active": False,
+        },
+        {
+            "name": "2023 Special Session C",
+            "identifier": "2023C",
+            "classification": "special",
+            "start_date": "2023-11-06",
+            "end_date": "2023-11-09",
+            "active": False,
+        },
+        {
+            "name": "2024 Regular Session",
+            "identifier": "2024",
+            "classification": "primary",
+            "start_date": "2024-01-09",
+            "end_date": "2024-03-08",
             "active": True,
         },
     ]
     ignored_scraped_sessions = [
         *(str(each) for each in range(1997, 2010)),
+        "2025",
+        "2024 Org.",
         "2022 Org.",
         "2020 Org.",
         "2019 I",  # Empty, maybe informational session

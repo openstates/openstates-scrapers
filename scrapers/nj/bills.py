@@ -74,7 +74,9 @@ class NJBillScraper(Scraper, MDBMixin):
         "SUB FOR": ("Substituted for", None),
         "SUB BY": ("Substituted by", None),
         "PA": ("Passed Assembly", "passage"),
+        "PA FILE": ("Passed Assembly", "passage"),
         "PS": ("Passed Senate", "passage"),
+        "PS FILE": ("Passed Senate", "passage"),
         "PA PBH": ("Passed Assembly (Passed Both Houses)", "passage"),
         "PS PBH": ("Passed Senate (Passed Both Houses)", "passage"),
         "APP": ("Approved", "executive-signature"),
@@ -121,6 +123,10 @@ class NJBillScraper(Scraper, MDBMixin):
             "Referred to Senate Budget and Appropriations Committee",
             "referral-committee",
         ),
+        "REF SMV": (
+            "Referred to Military and Veterans' Affairs Committee",
+            "referral-committee",
+        ),
         "RSND/V": ("Rescind Vote", None),
         "RSND/ACT OF": ("Rescind Action", None),
         "RCON/V": ("Reconsidered Vote", None),
@@ -161,6 +167,8 @@ class NJBillScraper(Scraper, MDBMixin):
         "R/A REF": ("Received in the Assembly, Referred to", "referral-committee"),
         "TRANS": ("Transferred to", "referral-committee"),
         "RCM": ("Recommitted to", "referral-committee"),
+        "NOT REP/ACA": ("Not reported out of Assembly Committee with amendment", None),
+        "NOT REP/ACS": ("Not reported out of Assembly Committee with substitute", None),
         "REP/ACA REF": (
             "Reported out of Assembly Committee with Amendments and Referred to",
             "referral-committee",
@@ -197,6 +205,7 @@ class NJBillScraper(Scraper, MDBMixin):
     _doctypes = {
         "FE": "Legislative Fiscal Estimate",
         "I": "Introduced Version",
+        "RI": "Reprint of Introduced",
         "S": "Statement",
         "V": "Veto",
         "FN": "Fiscal Note",

@@ -172,7 +172,7 @@ class Mississippi(State):
             "identifier": "20171E",
             "name": "2017 First Extraordinary Session",
             "start_date": "2017-06-05",
-            "end_date": "2017-06-23",
+            "end_date": "2017-06-05",
         },
         {
             "_scraped_name": "2018 Regular Session",
@@ -180,7 +180,7 @@ class Mississippi(State):
             "identifier": "2018",
             "name": "2018 Regular Session",
             "start_date": "2018-01-02",
-            "end_date": "2018-04-01",
+            "end_date": "2018-03-28",
         },
         {
             "_scraped_name": "2018 First Extraordinary Session",
@@ -196,7 +196,7 @@ class Mississippi(State):
             "identifier": "2019",
             "name": "2019 Regular Session",
             "start_date": "2019-01-08",
-            "end_date": "2019-03-05",
+            "end_date": "2019-03-29",
         },
         {
             "_scraped_name": "2020 Regular Session",
@@ -204,7 +204,7 @@ class Mississippi(State):
             "identifier": "2020",
             "name": "2020 Regular Session",
             "start_date": "2020-01-07",
-            "end_date": "2020-05-10",
+            "end_date": "2020-10-10",
         },
         {
             "_scraped_name": "2021 Regular Session",
@@ -212,7 +212,7 @@ class Mississippi(State):
             "identifier": "2021",
             "name": "2021 Regular Session",
             "start_date": "2021-01-05",
-            "end_date": "2021-03-15",
+            "end_date": "2021-04-01",
             "active": False,
         },
         {
@@ -221,7 +221,7 @@ class Mississippi(State):
             "identifier": "2022",
             "name": "2022 Regular Session",
             "start_date": "2022-01-04",
-            "end_date": "2022-03-15",
+            "end_date": "2022-04-05",
             "active": False,
         },
         {
@@ -231,21 +231,49 @@ class Mississippi(State):
             "name": "2022 First Extraordinary Session",
             "start_date": "2022-11-02",
             "end_date": "2022-11-04",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023 Regular Session",
+            "classification": "primary",
+            "identifier": "2023",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-03",
+            "end_date": "2023-04-02",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2024 Regular Session",
+            "classification": "primary",
+            "identifier": "2024",
+            "name": "2024 Regular Session",
+            "start_date": "2024-01-02",
+            "end_date": "2024-05-05",
             "active": True,
         },
-        # {
-        #     "_scraped_name": "2023 Regular Session",
-        #     "classification": "primary",
-        #     "identifier": "2023",
-        #     "name": "2023 Regular Session",
-        #     # TODO: update dates
-        #     "start_date": "2023-01-04",
-        #     "end_date": "2023-03-15",
-        #     "active": True,
-        # },
+        {
+            "_scraped_name": "2024 First Extraordinary Session",
+            "classification": "special",
+            "identifier": "20241E",
+            "name": "2024 First Extraordinary Session",
+            "start_date": "2024-01-19",
+            # TODO: real end date
+            "end_date": "2024-01-26",
+            "active": True,
+        },
+        {
+            "_scraped_name": "2024 Second Extraordinary Session",
+            "classification": "special",
+            "identifier": "20242E",
+            "name": "2024 Second Extraordinary Session",
+            "start_date": "2024-02-01",
+            # TODO: real end date
+            "end_date": "2024-02-02",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
-        "2023 Regular Session",
+        "2022 Extraordinary Session",
         "2008 First Extraordinary Session",
         "2007 Regular Session",
         "2007 First Extraordinary Session",

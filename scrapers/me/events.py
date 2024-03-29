@@ -2,7 +2,9 @@ import pytz
 import dateutil.parser
 import datetime
 import json
+import re
 from utils import LXMLMixin
+from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 
@@ -71,7 +73,7 @@ class MEEventScraper(Scraper, LXMLMixin):
 
         if len(page) == 0:
             raise EmptyScrape
-
+        events = set()
         for row in page:
             if row["Cancelled"] is True or row["Postponed"] is True:
                 continue
@@ -93,19 +95,45 @@ class MEEventScraper(Scraper, LXMLMixin):
             address = address.replace(
                 "State House", "Maine State House, 210 State St, Augusta, ME 04330"
             )
-
+            event_name = f"{name}#{address}#{start_date}#{end_date}"
+            if event_name in events:
+                self.warning(f"Duplicate event: {event_name}")
+                continue
+            events.add(event_name)
             event = Event(
                 start_date=start_date,
                 end_date=end_date,
                 name=name,
                 location_name=address,
+                classification="committee-meeting",
             )
+            event.dedupe_key = event_name
+
+            if not name.strip():
+                self.warning(f"Skipping meeting with no name, ID# {row['Id']}")
+                continue
+
+            event.add_participant(name=name, type="committee", note="host")
 
             event.add_source(
                 "http://legislature.maine.gov/committee/#Committees/{}".format(
                     row["CommitteeCode"]
                 )
             )
+
+            if row["AudioEvent"] is True or row["VideoEvent"] is True:
+
+                stream_type = "Video" if row["VideoEvent"] is True else "Audio"
+
+                room = re.search(r"Room (\d+)|$", row["Location"]).group(1)
+                event_id = row["Id"]
+                start = row["FromDateTime"].replace(".000", "")
+
+                if room:
+                    stream_url = f"https://legislature.maine.gov/audio/#{room}?event={event_id}&startDate={start}-05:00"
+                    event.add_media_link(
+                        f"{stream_type} Stream", stream_url, media_type="text/html"
+                    )
 
             if bills_by_event.get(row["Id"]):
                 for bill in bills_by_event[row["Id"]]:
@@ -140,4 +168,12 @@ class MEEventScraper(Scraper, LXMLMixin):
                             event.add_document(
                                 note=title, url=test_url, media_type=media_type
                             )
+
+            match_coordinates(
+                event,
+                {
+                    "State House": (44.30764, -69.782159),
+                    "Cross Office": (44.30771, -69.78289),
+                },
+            )
             yield event

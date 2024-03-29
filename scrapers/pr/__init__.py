@@ -1,8 +1,10 @@
+import requests
+import lxml.html
 from openstates.scrape import State
 from .bills import PRBillScraper
 from .votes import PRVoteScraper
 
-settings = dict(SCRAPELIB_TIMEOUT=300)
+settings = dict(SCRAPELIB_TIMEOUT=600)
 
 
 class PuertoRico(State):
@@ -29,25 +31,44 @@ class PuertoRico(State):
             "_scraped_name": "2017-2020",
             "identifier": "2017-2020",
             "name": "2017-2020 Session",
-            "start_date": "2017-01-02",
-            "end_date": "2021-01-01",
+            "start_date": "2017-01-09",
+            "end_date": "2020-12-31",
         },
         {
             "_scraped_name": "2021-2024",
             "identifier": "2021-2024",
             "name": "2021-2024 Session",
-            "start_date": "2021-01-01",
-            "end_date": "2025-01-01",
+            "start_date": "2021-01-11",
+            "end_date": "2024-12-31",
             "active": True,
         },
     ]
-    ignored_scraped_sessions = ["2005-2008", "2001-2004", "1997-2000", "1993-1996"]
+    ignored_scraped_sessions = [
+        "2005-2008",
+        "2001-2004",
+        "1997-2000",
+        "1993-1996",
+        "1989-1992",
+        "1985-1988",
+    ]
 
     def get_session_list(self):
-        from utils import url_xpath
-
+        s = requests.Session()
         # this URL should work even for future sessions
-        return url_xpath(
-            "https://sutra.oslpr.org/osl/esutra/",
-            '//select[@id="ctl00_CPHBody_Tramites_lovCuatrienio"]/option/text()',
+        url = "https://sutra.oslpr.org/osl/esutra/"
+
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/79.0.3945.117 Safari/537.36",
+            "referer": url,
+            "origin": "https://sutra.oslpr.org",
+            "authority": "sutra.oslpr.org",
+        }
+
+        data = s.get(url, headers=headers, verify=False)
+
+        doc = lxml.html.fromstring(data.text)
+        sessions = doc.xpath(
+            "//select[@id='ctl00_CPHBody_Tramites_lovCuatrienio']/option/text()"
         )
+        return sessions

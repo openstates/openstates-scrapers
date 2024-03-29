@@ -29,3 +29,31 @@ def get_with_increasing_timeout(scraper, link, fail=False, kwargs={}):
         scraper.logger.warning(
             "Link failed after waiting over a minute, giving up and moving on."
         )
+
+
+def add_space(text):
+    """
+    Add a space between the bill number and the bill name
+
+    Parameters
+    ----------
+    text : str
+        The bill number and name, e.g. HB 1001
+
+    Examples
+    --------
+    >>> add_space("HB1001")
+    """
+    index = 0
+    for i, char in enumerate(text):
+        if not char.isalpha():
+            index = i
+            break
+
+    # Slice the string to get the number and text parts
+    alpha = text[:index]
+    number = text[index:]
+
+    new_string = f"{alpha} {number}"
+
+    return new_string

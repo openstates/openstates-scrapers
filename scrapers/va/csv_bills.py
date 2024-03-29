@@ -2,45 +2,13 @@ import csv
 import re
 import pytz
 import datetime
-from paramiko.client import SSHClient, AutoAddPolicy
-import paramiko
 from openstates.scrape import Scraper, Bill, VoteEvent
 from collections import defaultdict
-import time
 
-from .common import SESSION_SITE_IDS, COMBINED_SESSIONS
+from .common import SESSION_SITE_IDS
+from .actions import Categorizer
 
 tz = pytz.timezone("America/New_York")
-SKIP = "~~~SKIP~~~"
-ACTION_CLASSIFIERS = (
-    ("Enacted, Chapter", "became-law"),
-    ("Approved by Governor", "executive-signature"),
-    ("Vetoed by Governor", "executive-veto"),
-    ("(House|Senate) sustained Governor's veto", "veto-override-failure"),
-    (r"\s*Amendment(s)? .+ agreed", "amendment-passage"),
-    (r"\s*Amendment(s)? .+ withdrawn", "amendment-withdrawal"),
-    (r"\s*Amendment(s)? .+ rejected", "amendment-failure"),
-    ("Subject matter referred", "referral-committee"),
-    ("Rereferred to", "referral-committee"),
-    ("Referred to", "referral-committee"),
-    ("Assigned ", "referral-committee"),
-    ("Reported from", "committee-passage"),
-    ("Read third time and passed", ["passage", "reading-3"]),
-    ("Read third time and agreed", ["passage", "reading-3"]),
-    ("Passed (Senate|House)", "passage"),
-    ("passed (Senate|House)", "passage"),
-    ("Read third time and defeated", "failure"),
-    ("Presented", "introduction"),
-    ("Prefiled and ordered printed", "introduction"),
-    ("Read first time", "reading-1"),
-    ("Read second time", "reading-2"),
-    ("Read third time", "reading-3"),
-    ("Senators: ", SKIP),
-    ("Delegates: ", SKIP),
-    ("Committee substitute printed", "substitution"),
-    ("Bill text as passed", SKIP),
-    ("Acts of Assembly", SKIP),
-)
 
 
 class VaCSVBillScraper(Scraper):
@@ -54,51 +22,14 @@ class VaCSVBillScraper(Scraper):
     _bills = defaultdict(list)
     _summaries = defaultdict(list)
 
-    def _init_sftp(self, session_id):
-        client = SSHClient()
-        client.set_missing_host_key_policy(AutoAddPolicy)
-        connected = False
-        attempts = 0
-        while not connected:
-            try:
-                client.connect(
-                    "sftp.dlas.virginia.gov",
-                    username="rjohnson",
-                    password="E8Tmg%9Dn!e6dp",
-                    compress=True,
-                )
-            except paramiko.ssh_exception.AuthenticationException:
-                attempts += 1
-                self.logger.warning(
-                    f"Auth failure...sleeping {attempts * 30} seconds and retrying"
-                )
-                # hacky backoff!
-                time.sleep(attempts * 30)
-            else:
-                connected = True
-            # importantly, we shouldn't try forever
-            if attempts > 3:
-                break
-        if not connected:
-            raise paramiko.ssh_exception.AuthenticationException
-        self.sftp = client.open_sftp()
-        """
-        Set working directory for sftp client based on session
-        """
-        for k, sessions in COMBINED_SESSIONS.items():
-            if session_id in sessions:
-                self.sftp.chdir(f"/CSV{k}/csv{session_id}")
-                break
-        else:
-            """
-            for -> else blocks only work when you've gone through
-            every step in a for loop without breaking
-            so this is kinda like setting a default
-            """
-            self.sftp.chdir(f"/CSV{session_id}/csv{session_id}")
+    _session_id: int
+    categorizer = Categorizer()
 
     def get_file(self, filename):
-        return self.sftp.open(filename).read().decode(errors="ignore")
+        # keeping old filenames in case we ever need to go back to sftp
+        filename = filename.lower().capitalize()
+        url = f"https://lis.virginia.gov/SiteInformation/csv/{self._session_id}/{filename}"
+        return self.get(url).text
 
     # Load members of legislative
     def load_members(self):
@@ -270,7 +201,7 @@ class VaCSVBillScraper(Scraper):
             is_special = True
 
         session_id = SESSION_SITE_IDS[session]
-        self._init_sftp(session_id)
+        self._session_id = session_id
         bill_url_base = "https://lis.virginia.gov/cgi-bin/"
 
         if not is_special:
@@ -377,13 +308,10 @@ class VaCSVBillScraper(Scraper):
                     doc_actions[action_date].append(cleaned_action)
 
                 # categorize actions
-                for pattern, atype in ACTION_CLASSIFIERS:
-                    if re.match(pattern, cleaned_action):
-                        break
-                else:
-                    atype = None
+                attrs = self.categorizer.categorize(cleaned_action)
+                atype = attrs["classification"]
 
-                if atype != SKIP:
+                if cleaned_action.strip() != "":
                     b.add_action(
                         cleaned_action, date, chamber=chamber, classification=atype
                     )
@@ -460,4 +388,3 @@ class VaCSVBillScraper(Scraper):
                     )
 
             yield b
-        self.sftp.close()

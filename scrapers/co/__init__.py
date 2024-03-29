@@ -80,7 +80,7 @@ class Colorado(State):
             "identifier": "2017B",
             "name": "2017 First Extraordinary Session",
             "start_date": "2017-10-02",
-            "end_date": "2017-10-06",
+            "end_date": "2017-10-04",
         },
         {
             "_scraped_name": "2018 Regular Session",
@@ -88,7 +88,7 @@ class Colorado(State):
             "identifier": "2018A",
             "name": "2018 Regular Session",
             "start_date": "2018-01-10",
-            "end_date": "2018-03-11",
+            "end_date": "2018-05-09",
         },
         {
             "_scraped_name": "2019 Regular Session",
@@ -104,7 +104,7 @@ class Colorado(State):
             "identifier": "2020A",
             "name": "2020 Regular Session",
             "start_date": "2020-01-08",
-            "end_date": "2020-05-06",
+            "end_date": "2020-06-15",
         },
         {
             "_scraped_name": "2020 First Extraordinary Session",
@@ -112,8 +112,7 @@ class Colorado(State):
             "identifier": "2020B",
             "name": "2020 First Extraordinary Session",
             "start_date": "2020-11-30",
-            # TODO: Real end date after session ends
-            "end_date": "2020-12-04",
+            "end_date": "2020-12-02",
         },
         {
             "_scraped_name": "2021 Regular Session",
@@ -121,7 +120,7 @@ class Colorado(State):
             "identifier": "2021A",
             "name": "2021 Regular Session",
             "start_date": "2021-01-13",
-            "end_date": "2022-05-06",
+            "end_date": "2022-06-08",
             "active": False,
         },
         {
@@ -130,7 +129,34 @@ class Colorado(State):
             "identifier": "2022A",
             "name": "2022 Regular Session",
             "start_date": "2022-01-12",
-            "end_date": "2022-05-06",
+            "end_date": "2022-05-11",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023 Regular Session",
+            "classification": "primary",
+            "identifier": "2023A",
+            "name": "2023 Regular Session",
+            "start_date": "2023-01-09",
+            "end_date": "2023-05-06",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2023 Extraordinary Session",
+            "classification": "special",
+            "identifier": "2023B",
+            "name": "2023 First Extraordinary Session",
+            "start_date": "2023-11-18",
+            "end_date": "2023-11-14",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2024 Regular Session",
+            "classification": "primary",
+            "identifier": "2024A",
+            "name": "2024 Regular Session",
+            "start_date": "2024-01-10",
+            "end_date": "2024-05-08",
             "active": True,
         },
     ]

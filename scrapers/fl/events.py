@@ -7,8 +7,14 @@ from openstates.scrape import Scraper, Event
 
 class FlEventScraper(Scraper):
     tz = pytz.timezone("US/Eastern")
-
+    # https://www.myfloridahouse.gov/Sections/Documents/publications.aspx
+    # select#ddlSession
     session_ids = {
+        "2024": "103",
+        "2023C": "104",
+        "2023B": "102",
+        "2022A": "101",
+        "2023": "99",
         "2022D": "96",
         "2022C": "95",
         "2022B": "94",
@@ -112,6 +118,8 @@ class FlEventScraper(Scraper):
             event = Event(
                 name=com, start_date=start, location_name=location, description=summary
             )
+
+        event.add_committee(com)
         event.add_source(url)
 
         for h5 in page.xpath('//div[contains(@class,"meeting-actions-bills")]/h5'):
@@ -173,6 +181,8 @@ class FlEventScraper(Scraper):
                 continue
 
             event = Event(name=com, start_date=date, location_name=location)
+
+            event.add_committee(com)
 
             agenda_classes = [
                 "mtgrecord_notice",

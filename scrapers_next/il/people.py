@@ -152,10 +152,10 @@ class LegList(HtmlListPage):
 
 
 class House(LegList):
-    source = "https://ilga.gov/house/default.asp?GA=102"
+    source = "https://ilga.gov/house/default.asp?GA=103"
     chamber = "lower"
 
 
 class Senate(LegList):
-    source = "https://ilga.gov/senate/default.asp?GA=102"
+    source = "https://ilga.gov/senate/default.asp?GA=103"
     chamber = "upper"

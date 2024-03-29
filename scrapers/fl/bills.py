@@ -6,6 +6,7 @@ from collections import defaultdict
 from openstates.scrape import Bill, VoteEvent, Scraper
 from openstates.utils import format_datetime
 from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage, URL
+from .actions import Categorizer
 
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
 import requests
@@ -56,7 +57,7 @@ class SubjectPDF(PdfPage):
 
 
 class BillList(HtmlListPage):
-    selector = XPath("//a[contains(@href, '/Session/Bill/')]")
+    selector = XPath("//th/a[contains(@href, '/Session/Bill/')]")
     next_page_selector = XPath("//a[@class='next']/@href")
     dependencies = {"subjects": SubjectPDF}
 
@@ -98,7 +99,7 @@ class BillList(HtmlListPage):
         elif bill_id.startswith(("SM ", "HM ")):
             bill_type = "memorial"
         else:
-            raise ValueError("Failed to identify bill type.")
+            raise ValueError(f"Failed to identify bill type for {bill_id}")
 
         bill = Bill(
             bill_id,
@@ -117,6 +118,8 @@ class BillList(HtmlListPage):
 
 
 class BillDetail(HtmlPage):
+    categorizer = Categorizer()
+
     input_type = Bill
     example_input = Bill(
         "HB 1", "2021", "title", chamber="upper", classification="bill"
@@ -134,6 +137,7 @@ class BillDetail(HtmlPage):
             self.process_analysis()
             self.process_amendments()
             self.process_summary()
+            self.process_citations()
         yield self.input  # the bill, now augmented
         yield HouseSearchPage(self.input)
         yield from self.process_votes()
@@ -274,6 +278,39 @@ class BillDetail(HtmlPage):
                 "No analysis table for {}".format(self.input.identifier)
             )
 
+    def process_citations(self):
+        try:
+            cites_table = self.root.xpath(
+                "//div[@id = 'tabBodyCitations']/table[thead/tr/th[contains(.,'Citation')]]"
+            )[0]
+            for tr in cites_table.xpath("tbody/tr"):
+                cite = tr.xpath("string(td[1])").strip()
+                url = tr.xpath("td[1]/a/@href")[0]
+
+                self.input.add_citation(
+                    "Florida Statues", cite, citation_type="proposed", url=url
+                )
+        except IndexError:
+            self.logger.warning(
+                "No citations table for {}".format(self.input.identifier)
+            )
+
+        try:
+            chapter_table = self.root.xpath(
+                "//div[@id = 'tabBodyCitations']/table[thead/tr/th[contains(.,'Chapter Law')]]"
+            )[0]
+            for tr in chapter_table.xpath("tbody/tr"):
+                cite = tr.xpath("string(td[1])").strip()
+                url = tr.xpath("td[1]/a/@href")[0]
+
+                self.input.add_citation(
+                    "Florida Chapter Law", cite, citation_type="chapter", url=url
+                )
+        except IndexError:
+            self.logger.warning(
+                "No chapter law table for {}".format(self.input.identifier)
+            )
+
     def process_history(self):
         hist_table = self.root.xpath("//div[@id = 'tabBodyBillHistory']//table")[0]
 
@@ -296,35 +333,8 @@ class BillDetail(HtmlPage):
 
                 action = re.sub(r"-(H|S)J\s+(\d+)$", "", action)
 
-                atype = []
-                if action.startswith("Referred to"):
-                    atype.append("referral-committee")
-                elif action.startswith("Favorable by"):
-                    atype.append("committee-passage-favorable")
-                elif action == "Filed":
-                    atype.append("filing")
-                elif action.startswith("Withdrawn"):
-                    atype.append("withdrawal")
-                elif action.startswith("Died"):
-                    atype.append("failure")
-                elif action.startswith("Introduced"):
-                    atype.append("introduction")
-                elif action.startswith("Read 2nd time"):
-                    atype.append("reading-2")
-                elif action.startswith("Read 3rd time"):
-                    atype.append("reading-3")
-                elif action.startswith("Passed;"):
-                    atype.append("passage")
-                elif action.startswith("Passed as amended"):
-                    atype.append("passage")
-                elif action.startswith("Adopted"):
-                    atype.append("passage")
-                elif action.startswith("CS passed"):
-                    atype.append("passage")
-                elif action == "Approved by Governor":
-                    atype.append("executive-signature")
-                elif action == "Vetoed by Governor":
-                    atype.append("executive-veto")
+                action_attr = self.categorizer.categorize(action)
+                atype = action_attr["classification"]
 
                 self.input.add_action(
                     action,
@@ -486,6 +496,10 @@ class UpperComVote(PdfPage):
 
     def process_page(self):
         lines = self.text.splitlines()
+        if len(lines) < 5:
+            self.warning(f"Couldn't split {self.text}, skipping")
+            return
+
         (_, motion) = lines[5].split("FINAL ACTION:")
         motion = motion.strip()
         if not motion:
@@ -529,7 +543,7 @@ class UpperComVote(PdfPage):
                         votes["no"].append(member)
                     else:
                         raise ValueError(
-                            "Unparseable vote found for {} in {}:\n{}".format(
+                            "Unparsable vote found for {} in {}:\n{}".format(
                                 member, self.source.url, line
                             )
                         )
@@ -598,6 +612,10 @@ class HouseSearchPage(HtmlListPage):
         # Keep the digits and all following characters in the bill's ID
         bill_number = re.search(r"^\w+\s(\d+\w*)$", self.input.identifier).group(1)
         session_number = {
+            "2024": "103",
+            "2023C": "104",
+            "2023B": "102",
+            "2022A": "101",
             "2023": "99",
             "2022D": "96",
             "2022C": "95",

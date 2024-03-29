@@ -11,8 +11,11 @@ class USVoteScraper(Scraper):
 
     chamber_code = {"S": "upper", "H": "lower", "J": "legislature"}
     vote_codes = {
+        "Aye": "yes",
         "Yea": "yes",
+        "Yes": "yes",
         "Nay": "no",
+        "No": "no",
         "Not Voting": "not voting",
         "Present": "other",
         "Present, Giving Live Pair": "other",
@@ -30,11 +33,14 @@ class USVoteScraper(Scraper):
         "Cloture Motion Rejected": "fail",
         "Cloture on the Motion to Proceed Rejected": "fail",
         "Cloture on the Motion to Proceed Agreed to": "pass",
+        "Conference Report Agreed to": "pass",
         "Amendment Rejected": "fail",
         "Decision of Chair Sustained": "pass",
         "Motion Agreed to": "pass",
+        "Motion for Attendance Agreed to": "pass",
         "Motion to Discharge Agreed to": "pass",
         "Motion to Discharge Rejected": "fail",
+        "Motion to Reconsider Agreed to": "pass",
         "Motion to Table Failed": "fail",
         "Motion to Table Agreed to": "pass",
         "Motion to Table Motion to Recommit Agreed to": "pass",
@@ -44,6 +50,9 @@ class USVoteScraper(Scraper):
         "Bill Defeated": "fail",
         "Joint Resolution Passed": "pass",
         "Joint Resolution Defeated": "fail",
+        "Resolution Agreed to": "pass",
+        "Resolution of Ratification Agreed to": "pass",
+        "Veto Sustained": "fail",
     }
 
     vote_classifiers = (
@@ -64,6 +73,10 @@ class USVoteScraper(Scraper):
     )
 
     def scrape(self, session=None, chamber=None, year=None, start=None):
+        if year is None:
+            today = datetime.date.today()
+            year = today.year
+
         if start:
             start = datetime.datetime.strptime(start, "%Y-%m-%d %H:%I:%S")
         else:
@@ -144,6 +157,10 @@ class USVoteScraper(Scraper):
             result = "fail"
 
         session = page.xpath("//rollcall-vote/vote-metadata/congress/text()")[0]
+
+        if not page.xpath("//rollcall-vote/vote-metadata/legis-num/text()"):
+            self.warning(f"No bill id for {url}, skipping")
+            return
 
         bill_id = page.xpath("//rollcall-vote/vote-metadata/legis-num/text()")[0]
 
@@ -235,7 +252,7 @@ class USVoteScraper(Scraper):
         roll_call = page.xpath("//roll_call_vote/vote_number/text()")[0]
         vote_id = "us-{}-upper-{}".format(when.year, roll_call)
 
-        # note: not everthing the senate votes on is a bill, this is OK
+        # note: not everything the senate votes on is a bill, this is OK
         # non bills include nominations and impeachments
         doc_type = page.xpath("//roll_call_vote/document/document_type/text()")[0]
 

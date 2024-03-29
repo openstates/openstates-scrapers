@@ -14,6 +14,11 @@ central = pytz.timezone("US/Central")
 
 
 session_details = {
+    "103rd": {
+        "speaker": "Welch",
+        "president": "Harmon",
+        "params": {"GA": "103", "SessionId": "112"},
+    },
     "102nd": {
         "speaker": "Welch",
         "president": "Harmon",
@@ -124,7 +129,6 @@ _action_classifiers = (
     (re.compile(r"Arrived? in"), ["introduction"]),
     (re.compile(r"First Reading"), ["reading-1"]),
     (re.compile(r"(Recalled to )?Second Reading"), ["reading-2"]),
-    (re.compile(r"(Re-r|R)eferred to"), ["referral-committee"]),
     (re.compile(r"(Re-a|A)ssigned to"), ["referral-committee"]),
     (re.compile(r"Sent to the Governor"), ["executive-receipt"]),
     (re.compile(r"Governor Approved"), ["executive-signature"]),
@@ -145,7 +149,7 @@ _action_classifiers = (
     (re.compile(r".*Be Adopted(?: as Amended)?"), ["committee-passage-favorable"]),
     (re.compile(r"Third Reading .+? Passed"), ["reading-3", "passage"]),
     (re.compile(r"Third Reading .+? Lost"), ["reading-3", "failure"]),
-    (re.compile(r"Third Reading"), ["reading-3"]),
+    (re.compile(r"Third Reading ((?!Deadline).)"), ["reading-3"]),
     (re.compile(r"Resolution Adopted"), ["passage"]),
     (re.compile(r"Resolution Lost"), ["failure"]),
     (re.compile(r"Session Sine Die"), ["failure"]),
@@ -500,7 +504,7 @@ class IlBillScraper(Scraper):
         sponsor_list = build_sponsor_list(doc.xpath('//a[contains(@class, "content")]'))
         # don't add just yet; we can make them better using action data
 
-        committee_actors = {}
+        # committee_actors = {}
 
         # actions
         action_tds = doc.xpath('//a[@name="actions"]/following-sibling::table[1]/td')
@@ -555,8 +559,9 @@ class IlBillScraper(Scraper):
         self.scrape_documents(bill, version_url)
         yield bill
 
-        votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
-        yield from self.scrape_votes(session, bill, votes_url, committee_actors)
+        # temporarily remove vote processing due to pdf issues
+        # votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
+        # yield from self.scrape_votes(session, bill, votes_url, committee_actors)
 
     def scrape_documents(self, bill, version_url):
         html = self.get(version_url).text

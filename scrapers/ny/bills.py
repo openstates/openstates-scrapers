@@ -121,36 +121,57 @@ class NYBillScraper(Scraper):
 
         vote_rolls = vote_data["memberVotes"]["items"]
 
-        yes_count, no_count, other_count = 0, 0, 0
+        yes_count, no_count, exc_count, abs_count, other_count = [0] * 5
 
         # Count all yea votes.
         if "items" in vote_rolls.get("AYE", {}):
             for legislator in vote_rolls["AYE"]["items"]:
-                vote.yes(legislator["fullName"])
+                vote.yes(legislator.get("fullName") or legislator.get("shortName"))
                 yes_count += 1
 
         if "items" in vote_rolls.get("AYEWR", {}):
             for legislator in vote_rolls["AYEWR"]["items"]:
-                vote.yes(legislator["fullName"])
+                vote.yes(legislator.get("fullName") or legislator.get("shortName"))
                 yes_count += 1
 
         # Count all nay votes.
         if "items" in vote_rolls.get("NAY", {}):
             for legislator in vote_rolls["NAY"]["items"]:
-                vote.no(legislator["fullName"])
+                vote.no(legislator.get("fullName") or legislator.get("shortName"))
                 no_count += 1
 
+        # Count all exc votes.
+        if "items" in vote_rolls.get("EXC", {}):
+            for legislator in vote_rolls["EXC"]["items"]:
+                vote.vote(
+                    "excused", legislator.get("fullName") or legislator.get("shortName")
+                )
+                exc_count += 1
+
+        # Count all abs votes.
+        if "items" in vote_rolls.get("ABS", {}):
+            for legislator in vote_rolls["ABS"]["items"]:
+                vote.vote(
+                    "absent", legislator.get("fullName") or legislator.get("shortName")
+                )
+                abs_count += 1
+
         # Count all other types of votes.
-        other_vote_types = ("EXC", "ABS", "ABD")
-        for vote_type in other_vote_types:
-            if vote_rolls.get(vote_type, []):
-                for legislator in vote_rolls[vote_type]["items"]:
-                    vote.vote("other", legislator["fullName"])
-                    other_count += 1
+        for vote_type in vote_rolls.keys():
+            if vote_type in ["AYE", "AYEWR", "NAY", "EXC", "ABS"]:
+                continue
+            for legislator in vote_rolls[vote_type]["items"]:
+                vote.vote(
+                    "other",
+                    legislator.get("fullName") or legislator.get("shortName"),
+                )
+                other_count += 1
 
         vote.result = "pass" if yes_count > no_count else "fail"
         vote.set_count("yes", yes_count)
         vote.set_count("no", no_count)
+        vote.set_count("excused", exc_count)
+        vote.set_count("absent", abs_count)
         vote.set_count("other", other_count)
 
         return vote
@@ -254,6 +275,10 @@ class NYBillScraper(Scraper):
             )
             return
 
+        second_year = str(bill_data["session"] + 1)
+        first_year = str(bill_data["session"])
+        session = f"{first_year}-{second_year}"
+
         bill = Bill(
             bill_id,
             legislative_session=session,
@@ -269,8 +294,12 @@ class NYBillScraper(Scraper):
 
         if active_version != "":
             bill_active_version = bill_data["amendments"]["items"][active_version]
+        elif "" in bill_data["amendments"]["items"]:
+            # by default ny puts a blank key in the items object with our data
+            self.warning(f"No active version for {bill_id}, assuming first")
+            bill_active_version = bill_data["amendments"]["items"][""]
         else:
-            self.warning("No active version for {}".format(bill_id))
+            self.warning(f"No active version for {bill_id}")
 
         # Parse sponsors.
         if bill_data["sponsor"] is not None:
@@ -281,26 +310,40 @@ class NYBillScraper(Scraper):
                     classification="primary",
                     primary=True,
                 )
-            elif not bill_data["sponsor"]["budget"]:
+            elif bill_data["sponsor"]["budget"] is True:
+                bill.add_sponsorship(
+                    "Budget Committee",
+                    entity_type="organization",
+                    classification="primary",
+                    primary=True,
+                )
+            elif bill_data["sponsor"]["redistricting"] is True:
+                bill.add_sponsorship(
+                    "Redistricting Committee",
+                    entity_type="organization",
+                    classification="primary",
+                    primary=True,
+                )
+            else:
                 primary_sponsor = bill_data["sponsor"]["member"]
                 if primary_sponsor is not None:
                     bill.add_sponsorship(
-                        primary_sponsor["shortName"],
+                        primary_sponsor["fullName"],
                         entity_type="person",
                         classification="primary",
                         primary=True,
                     )
 
-                if bill_active_version:
-                    # There *shouldn't* be cosponsors if there is no sponsor.
-                    cosponsors = bill_active_version["coSponsors"]["items"]
-                    for cosponsor in cosponsors:
-                        bill.add_sponsorship(
-                            cosponsor["shortName"],
-                            entity_type="person",
-                            classification="cosponsor",
-                            primary=False,
-                        )
+        if bill_active_version:
+            # There *shouldn't* be cosponsors if there is no sponsor.
+            cosponsors = bill_active_version["coSponsors"]["items"]
+            for cosponsor in cosponsors:
+                bill.add_sponsorship(
+                    cosponsor["fullName"],
+                    entity_type="person",
+                    classification="cosponsor",
+                    primary=False,
+                )
 
         if bill_active_version:
             # List companion bill.
@@ -356,6 +399,7 @@ class NYBillScraper(Scraper):
         # Chamber-specific processing.
         for vote_data in bill_data["votes"]["items"]:
             yield self._parse_senate_votes(vote_data, bill, api_url)
+
         yield from self.scrape_assembly_votes(session, bill, assembly_url, bill_id)
 
         # A little strange the way it works out, but the Assembly
@@ -378,6 +422,44 @@ class NYBillScraper(Scraper):
             )
             bill.add_version_link(
                 version, pdf_url, on_duplicate="ignore", media_type="application/pdf"
+            )
+
+            for key, container in amendment["relatedLaws"]["items"].items():
+                for cite in container["items"]:
+                    law = cite[0:3]
+                    rest = cite[3:]
+
+                    if "generally" in cite.lower():
+                        formatted_cite = f"{law}"
+                    else:
+                        formatted_cite = f"{law} § {rest}"
+                        rest = ""
+
+                    bill.add_citation(
+                        "New York Laws",
+                        formatted_cite,
+                        citation_type="proposed",
+                        url=f"https://www.nysenate.gov/legislation/laws/{law}/{rest}",
+                    )
+
+            for item in amendment["sameAs"]["items"]:
+                companion_bill_id = item["basePrintNo"]
+                # Build companion bill session.
+                start_year = item["session"]
+                end_year = start_year + 1
+                companion_bill_session = "-".join([str(start_year), str(end_year)])
+                bill.add_related_bill(
+                    companion_bill_id, companion_bill_session, relation_type="companion"
+                )
+
+        for item in bill_data["previousVersions"]["items"]:
+            companion_bill_id = item["basePrintNo"]
+            # Build companion bill session.
+            start_year = item["session"]
+            end_year = start_year + 1
+            companion_bill_session = "-".join([str(start_year), str(end_year)])
+            bill.add_related_bill(
+                companion_bill_id, companion_bill_session, relation_type="prior-session"
             )
 
         yield bill
@@ -428,12 +510,22 @@ class NYBillScraper(Scraper):
                 vote.set_count("no", no_count)
                 absent_count = 0
                 excused_count = 0
-                tds = table.xpath("tr/td/text()")
-                votes = [tds[i : i + 2] for i in range(0, len(tds), 2)]
+                nv_count = 0
+                other_count = 0
+
+                votes = [
+                    (
+                        div.xpath('string(div[@class="vote"])')
+                        .replace("‡", "")
+                        .strip(),
+                        div.xpath('string(div[@class="name"])').strip(),
+                    )
+                    for div in table.xpath('//div[@class="vote-name"]')
+                ]
 
                 vote_dictionary = {
-                    "Y": "yes",
-                    "NO": "no",
+                    "Yes": "yes",
+                    "No": "no",
                     "ER": "excused",
                     "AB": "absent",
                     "NV": "not voting",
@@ -441,16 +533,23 @@ class NYBillScraper(Scraper):
                 }
 
                 for vote_pair in votes:
-                    name, vote_val = vote_pair
+                    vote_val, name = vote_pair
                     vote.vote(vote_dictionary[vote_val], name)
                     if vote_val == "AB":
                         absent_count += 1
                     elif vote_val == "ER":
                         excused_count += 1
+                    elif vote_val == "NV":
+                        nv_count += 1
+                    elif vote_val not in ["Yes", "No"]:
+                        other_count += 1
 
                 vote.set_count("absent", absent_count)
                 vote.set_count("excused", excused_count)
+                vote.set_count("not voting", nv_count)
+                vote.set_count("other", other_count)
                 vote.add_source(url)
+
                 vote.dedupe_key = url + motion + spanText[1]
 
                 yield vote
@@ -464,7 +563,7 @@ class NYBillScraper(Scraper):
             return
         parts = parts.groupdict()
         time_params = {}
-        for (name, param) in parts.items():
+        for name, param in parts.items():
             if param:
                 time_params[name] = int(param)
         return datetime.timedelta(**time_params)

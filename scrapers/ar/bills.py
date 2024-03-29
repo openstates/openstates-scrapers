@@ -2,6 +2,7 @@ import re
 import csv
 import urllib
 import datetime
+import os
 import pytz
 import os
 from openstates.scrape import Scraper, Bill, VoteEvent
@@ -48,25 +49,20 @@ class FTPSHandler(urllib.request.FTPHandler):
         return FTPSWrapper(*args, persistent=False)
 
 
-def get_utf_16_ftp_content(url):
-    # Rough to do this within Scrapelib, as it doesn't allow custom decoding
-    print("trying")
-    urllib.request.install_opener(urllib.request.build_opener(FTPSHandler))
-    print("made opener")
-    response = urllib.request.urlopen(url)
-    print("got file")
-    raw = response.read().decode("utf-16")
-    # Also, legislature may use `NUL` bytes when a cell is empty
-    print("made it")
-    NULL_BYTE_CODE = "\x00"
-    text = raw.replace(NULL_BYTE_CODE, "")
-    text = text.replace("\r", "")
-    print("got it all")
-    return text
-
-
 class ARBillScraper(Scraper):
+    ftp_user = ""
+    ftp_pass = ""
+    bills = {}
+
     def scrape(self, chamber=None, session=None):
+
+        self.ftp_user = os.environ.get("AR_FTP_USER", None)
+        self.ftp_pass = os.environ.get("AR_FTP_PASSWORD", None)
+
+        if not self.ftp_user or not self.ftp_pass:
+            self.error("AR_FTP_USER and AR_FTP_PASSWORD env variables are required.")
+            raise EmptyScrape
+
         self.slug = get_slug_for_session(session)
 
         for i in self.jurisdiction.legislative_sessions:
@@ -74,20 +70,22 @@ class ARBillScraper(Scraper):
                 self.session_name = i["name"]
                 self.biennium = get_biennium_year(self.session_name)
 
-        chambers = [chamber] if chamber else ["upper", "lower"]
-        self.bills = {}
+        leg_chambers = [chamber] if chamber else ["upper", "lower"]
 
-        for Chamber in chambers:
-            yield from self.scrape_bill(Chamber, session)
+        for leg_chamber in leg_chambers:
+            self.scrape_bill(leg_chamber, session)
+
         self.scrape_actions()
+
         if not self.bills:
             raise EmptyScrape
+
         for bill_id, bill in self.bills.items():
             yield bill
 
     def scrape_bill(self, chamber, session):
         url = "ftp://www.arkleg.state.ar.us/SessionInformation/LegislativeMeasures.txt"
-        page = csv.reader(get_utf_16_ftp_content(url).splitlines(), delimiter="|")
+        page = csv.reader(self.get_utf_16_ftp_content(url).splitlines(), delimiter="|")
 
         for row in page:
             bill_chamber = {"H": "lower", "S": "upper"}[row[0]]
@@ -107,6 +105,9 @@ class ARBillScraper(Scraper):
             }[type_spec]
 
             if row[-1] != self.slug:
+                self.warning(
+                    f"Skipping row in session {row[-1]} because it does not match {self.slug}"
+                )
                 continue
 
             bill = Bill(
@@ -130,7 +131,7 @@ class ARBillScraper(Scraper):
                     primary=True,
                 )
 
-            # need year before if its a fiscal or special session beyond first
+            # need year before if it's a fiscal or special session beyond first
             year = session[0:4]
             if len(session) > 4 and session[-1] != "1":
                 year = int(year) - 1
@@ -144,13 +145,13 @@ class ARBillScraper(Scraper):
                 version_url = f"https://www.arkleg.state.ar.us/assembly/{year}/{self.slug}/Bills/{bill_url}.pdf"
             bill.add_version_link(bill_id, version_url, media_type="application/pdf")
 
-            yield from self.scrape_bill_page(bill)
+            self.scrape_bill_page(bill)
 
             self.bills[bill_id] = bill
 
     def scrape_actions(self):
         url = "ftp://www.arkleg.state.ar.us/SessionInformation/ChamberActions.txt"
-        page = csv.reader(get_utf_16_ftp_content(url).splitlines(), delimiter="|")
+        page = csv.reader(self.get_utf_16_ftp_content(url).splitlines(), delimiter="|")
 
         for row in page:
             bill_id = "%s%s %s" % (row[1], row[2], row[3])
@@ -325,7 +326,10 @@ class ARBillScraper(Scraper):
             div = list(row)
             FI_number = div[0].text_content().replace("FI Number:", "").strip()
             for a in div[3]:
+                if isinstance(a, lxml.html.HtmlComment):
+                    continue
                 FI_url = a.attrib["href"].strip()
+
             FI_date = div[2].text_content().replace("Date Issued:", "").strip()
             date = TIMEZONE.localize(datetime.datetime.strptime(FI_date, "%m/%d/%Y"))
             date = "{:%Y-%m-%d}".format(date)
@@ -360,16 +364,18 @@ class ARBillScraper(Scraper):
                 media_type="application/pdf",
             )
 
-        for link in page.xpath(
-            "//div[@role=\"grid\"]/../..//a[contains(@href, '/Bills/Votes?id=')]"
-        ):
-            date = link.xpath("normalize-space(string(../../div[2]))")
-            date = TIMEZONE.localize(
-                datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
-            )
-
-            motion = link.xpath("string(../../div[3])")
-            yield from self.scrape_vote(bill, date, motion, link.attrib["href"])
+        # TODO: reincorporate below code block for vote processing
+        #  (commented out due to scraper having vote event processing issue)
+        # for link in page.xpath(
+        #     "//div[@role=\"grid\"]/../..//a[contains(@href, '/Bills/Votes?id=')]"
+        # ):
+        #     date = link.xpath("normalize-space(string(../../div[2]))")
+        #     date = TIMEZONE.localize(
+        #         datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
+        #     )
+        #
+        #     motion = link.xpath("string(../../div[3])")
+        #     yield from self.scrape_vote(bill, date, motion, link.attrib["href"])
 
     def scrape_vote(self, bill, date, motion, url):
         page = self.get(url).text
@@ -454,3 +460,16 @@ class ARBillScraper(Scraper):
     def scrape_cosponsors(self, bill, url):
         page = self.get(url).text
         page = lxml.html.fromstring(page)
+
+    def get_utf_16_ftp_content(self, url):
+        # hacky code alert:
+        # inserting the credentials inline plays nice with urllib.urlretrieve
+        # when other methods do not
+        url = url.replace("ftp://", f"ftp://{self.ftp_user}:{self.ftp_pass}@")
+        local_file, headers = urllib.request.urlretrieve(url)
+        raw = open(local_file, "rb")
+        raw = raw.read().decode("utf-16")
+        # Also, legislature may use `NUL` bytes when a cell is empty
+        NULL_BYTE_CODE = "\x00"
+        text = raw.replace(NULL_BYTE_CODE, "")
+        return text

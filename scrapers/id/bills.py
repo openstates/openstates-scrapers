@@ -2,8 +2,11 @@ from openstates.scrape import Scraper
 from openstates.scrape import Bill, VoteEvent
 import re
 import datetime
+import dateutil
 from collections import defaultdict
 import lxml.html
+from .actions import Categorizer
+
 
 BILLS_URL = "https://legislature.idaho.gov/sessioninfo/%s/legislation/minidata/"
 BILL_URL = "https://legislature.idaho.gov/sessioninfo/%s/legislation/%s/"
@@ -49,83 +52,6 @@ _COMMITTEES = {
     },
 }
 
-# a full list of the abbreviations and definitions can be found at:
-# http://legislature.idaho.gov/sessioninfo/glossary.htm
-# background on bill to law can be found at:
-# http://legislature.idaho.gov/about/jointrules.htm
-_ACTIONS = (
-    (r"^Introduced", "introduction"),
-    # reading-1
-    (
-        r"(\w+) intro - (\d)\w+ rdg - to (\w+/?\s?\w+\s?\w+)",
-        lambda mch, ch: ["introduction", "reading-1", "referral-committee"]
-        if mch.groups()[2] in _COMMITTEES[ch]
-        else ["introduction", "reading-1"],
-    ),
-    # committee actions
-    (
-        r"rpt prt - to\s(\w+/?\s?\w+)",
-        lambda mch, ch: ["referral-committee"]
-        if mch.groups()[0] in _COMMITTEES[ch]
-        else "other",
-    ),
-    # it is difficult to figure out which committee passed/reported out a bill
-    # but i guess we at least know that only committees report out
-    (r"rpt out - rec d/p", "committee-passage-favorable"),
-    (r"^rpt out", "committee-passage"),
-    (r"^rpt out", "committee-passage"),
-    (
-        r"Reported out of Committee with Do Pass Recommendation",
-        "committee-passage-favorable",
-    ),
-    (r"Reported out of Committee without Recommendation", "committee-passage"),
-    (r"^Reported Signed by Governor", "executive-signature"),
-    (r"^Signed by Governor", "executive-signature"),
-    (r"Became law without Governor.s signature", "became-law"),
-    # I dont recall seeing a 2nd rdg by itself
-    (r"^1st rdg - to 2nd rdg", "reading-2"),
-    # second to third will count as a third read if there is no
-    # explicit third reading action
-    (r"2nd rdg - to 3rd rdg", "reading-3"),
-    (r"^3rd rdg$", "reading-3"),
-    (r".*Third Time.*PASSED.*", ["reading-3", "passage"]),
-    # reading-3, passage
-    (r"^3rd rdg as amen - (ADOPTED|PASSED)", ["reading-3", "passage"]),
-    (r"^3rd rdg - (ADOPTED|PASSED)", ["reading-3", "passage"]),
-    (r"^Read Third Time in Full .* (ADOPTED|PASSED).*", ["reading-3", "passage"]),
-    (r"^.*read three times - (ADOPTED|PASSED).*", ["reading-3", "passage"]),
-    (r"^.*Read in full .* (ADOPTED|PASSED).*", ["reading-3", "passage"]),
-    # reading-3, failure
-    (r"^3rd rdg as amen - (FAILED)", ["reading-3", "failure"]),
-    (r"^3rd rdg - (FAILED)", ["reading-3", "failure"]),
-    # rules suspended
-    (
-        r"^Rls susp - (ADOPTED|PASSED|FAILED)",
-        lambda mch, ch: {
-            "ADOPTED": "passage",
-            "PASSED": "passage",
-            "FAILED": "failure",
-        }[mch.groups()[0]],
-    ),
-    (r"^to governor", "executive-receipt"),
-    (r"^Governor signed", "executive-signature"),
-    (r"^Returned from Governor vetoed", "executive-veto"),
-)
-
-
-def get_action(actor, text):
-    # the biggest issue with actions is that some lines seem to indicate more
-    # than one action
-
-    for pattern, action in _ACTIONS:
-        match = re.match(pattern, text, re.I)
-        if match:
-            if callable(action):
-                return action(match, actor)
-            else:
-                return action
-    return None
-
 
 def get_bill_type(bill_id):
     suffix = bill_id.split(" ")[0]
@@ -136,6 +62,7 @@ def get_bill_type(bill_id):
 
 
 class IDBillScraper(Scraper):
+    categorizer = Categorizer()
 
     # the following are only used for parsing legislation from 2008 and earlier
     vote = None
@@ -276,9 +203,10 @@ class IDBillScraper(Scraper):
                 last_date = date
             else:
                 date = last_date
-            date = datetime.datetime.strptime(
+            action_dt = datetime.datetime.strptime(
                 date + "/" + session[0:4], "%m/%d/%Y"
-            ).strftime("%Y-%m-%d")
+            )
+            date = action_dt.strftime("%Y-%m-%d")
             if action.startswith("House"):
                 actor = "lower"
             elif action.startswith("Senate"):
@@ -290,11 +218,12 @@ class IDBillScraper(Scraper):
                     actor, date, row[2], session, bill_id, chamber, url
                 )
                 # bill.add_vote_event(vote)
-            # some td's text is seperated by br elements
+            # some td's text is separated by br elements
             if len(row[2]):
                 action = "".join(row[2].itertext())
             action = action.replace("\xa0", " ").strip()
-            atype = get_action(actor, action)
+            attrs = self.categorizer.categorize(action)
+            atype = attrs["classification"]
             if atype and "passage" in atype:
                 has_moved_chambers = True
 
@@ -308,6 +237,32 @@ class IDBillScraper(Scraper):
                 actor = "lower"
             elif "to Senate" in action:
                 actor = "upper"
+
+            if "Session Law" in action:
+                law = re.search(
+                    r"Session Law (.*) Effective: (.*)",
+                    action,
+                    flags=re.MULTILINE | re.IGNORECASE,
+                )
+                if law and law.groups(0) and law.groups(1):
+                    bill_year = action_dt.strftime("%Y")
+                    chapter = law.groups()[0].strip()
+                    effective = law.groups()[1].strip()
+
+                    try:
+                        effective = dateutil.parser.parse(effective).date()
+                        bill.add_citation(
+                            f"Idaho Session Laws {bill_year}",
+                            chapter,
+                            "chapter",
+                            effective=effective,
+                        )
+                    except ValueError:
+                        bill.add_citation(
+                            f"Idaho Session Laws {bill_year}",
+                            chapter,
+                            "chapter",
+                        )
         yield bill
 
     def get_names(self, name_text):

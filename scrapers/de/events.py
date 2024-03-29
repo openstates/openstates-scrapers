@@ -42,7 +42,7 @@ class DEEventScraper(Scraper, LXMLMixin):
 
         page_data = []
         try:
-            page_data = self.post(page_url).json()["Data"]
+            page_data = self.post(page_url, verify=False).json()["Data"]
         except json.decoder.JSONDecodeError:
             # No agenda items
             self.info(f"POST returned nothing on {page_url}")
@@ -50,7 +50,11 @@ class DEEventScraper(Scraper, LXMLMixin):
         for item in page_data:
             a = event.add_agenda_item(description=str(item["ItemDescription"]))
             if item["LegislationDisplayText"] is not None:
-                a.add_bill(item["LegislationDisplayText"])
+                bill_id = item["LegislationDisplayText"]
+                # e.g. HS 2 for HB 13
+                if "for" in bill_id:
+                    bill_id = bill_id.split(" for ")[1].strip()
+                a.add_bill(bill_id)
 
             event.add_person(
                 name=str(item["PrimarySponsorShortName"]),
@@ -62,7 +66,7 @@ class DEEventScraper(Scraper, LXMLMixin):
 
     def scrape(self):
         url = "https://legis.delaware.gov/json/CommitteeMeetings/GetUpcomingCommitteeMeetings"
-        resp = self.post(url)
+        resp = self.post(url, verify=False)
 
         if resp.text == "":
             raise EmptyScrape
