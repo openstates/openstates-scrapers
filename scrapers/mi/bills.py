@@ -1,12 +1,9 @@
 import dateutil
-import pytz
 import re
+from utils.media import get_media_type
 
 import lxml.html
 from openstates.scrape import Scraper, Bill
-
-BASE_URL = "http://www.legislature.mi.gov"
-TIMEZONE = pytz.timezone("US/Eastern")
 
 _categorizers = {
     "approved by governor with line item(s) vetoed": "executive-veto-line-item",
@@ -36,9 +33,10 @@ def categorize_action(action: str) -> str:
 
 
 class MIBillScraper(Scraper):
-    # TODO
-    def make_bill_url(self, redirect_url: str) -> str:
-        pass
+    # convert from MI's redirector to a bill permalink
+    def make_bill_url(self, url: str) -> str:
+        match = re.search(r"objectName=(.*)&", url)
+        return f"https://legislature.mi.gov/Bills/Bill?ObjectName={match.group(1)}"
 
     def scrape(self, session):
         search_url = "https://legislature.mi.gov/Search/ExecuteSearch?chamber=&docTypesList=HB%2CSB&docTypesList=HR%2CSR&docTypesList=HCR%2CSCR&docTypesList=HJR%2CSJR&sessions=2023-2024&sponsor=&number=&dateFrom=&dateTo=&contentFullText="
@@ -49,7 +47,7 @@ class MIBillScraper(Scraper):
         for link in page.xpath(
             "//div[contains(@class,'tableScrollWrapper')]/table[1]/tbody/tr/td[1]/a"
         ):
-            bill_url = link.xpath("@href")[0]
+            bill_url = self.make_bill_url(link.xpath("@href")[0])
             bill_id = link.xpath("text()")[0].split(" of ")[0]
             yield from self.scrape_bill(session, bill_id, bill_url)
 
@@ -86,9 +84,10 @@ class MIBillScraper(Scraper):
 
         yield bill
 
-    # TODO: legal code https://legislature.mi.gov/Bills/Bill?ObjectName=2023-SB-0002
-
     def scrape_actions(self, bill: Bill, page: lxml.html.HtmlElement):
+        # there can be multiple substitute printings with the same name,
+        # but different text
+        seen_subs = {}
         for row in page.xpath("//div[@id='History']/table/tbody/tr"):
             when = row.xpath("td[1]/text()")[0]
             when = dateutil.parser.parse(when).date()
@@ -106,6 +105,23 @@ class MIBillScraper(Scraper):
                 action, when, chamber=actor, classification=categorize_action(action)
             )
 
+            if "substitute" in action.lower() and row.xpath("td[3]/a/@href"):
+                version_url = row.xpath("td[3]/a/@href")[0]
+                sub = re.search(r"\(.*?\)", action)
+                version_name = f"Substitute {sub.group(0)}"
+                if version_name in seen_subs:
+                    seen_subs[version_name] += 1
+                    version_name = f"{version_name} - {seen_subs[version_name]}"
+                else:
+                    seen_subs[version_name] = 1
+                self.info(f"Found Substitute {version_name}, {version_url}")
+                bill.add_version_link(
+                    version_name,
+                    version_url,
+                    media_type=get_media_type(version_url, default="text/html"),
+                    on_duplicate="ignore",
+                )
+
             # chapter law
             if "assigned pa" in action.lower():
                 match = re.search(r"(\d{4})'(\d+)", action)
@@ -116,7 +132,6 @@ class MIBillScraper(Scraper):
                     f"Public Act {act_num} of {act_year}",
                     citation_type="chapter",
                 )
-            # TODO: classification
 
     def scrape_legal(self, bill: Bill, page: lxml.html.HtmlElement):
         for row in page.xpath(
@@ -125,13 +140,6 @@ class MIBillScraper(Scraper):
             bill.add_citation(
                 "Michigan Compiled Laws", f"MCL {row.strip()}", citation_type="proposed"
             )
-
-    def scrape_subjects(self, bill: Bill, page: lxml.html.HtmlElement):
-        # union with the second expression is just in case they fix the typo
-        for row in page.xpath(
-            "//div[@id='CateogryList']/a|//div[@id='CategoryList']/a"
-        ):
-            bill.add_subject(row.xpath("text()")[0].strip())
 
     def scrape_sponsors(self, bill: Bill, page: lxml.html.HtmlElement):
         for row in page.xpath(
@@ -149,6 +157,13 @@ class MIBillScraper(Scraper):
             bill.add_sponsorship(
                 sponsor, classification="cosponsor", entity_type="person", primary=False
             )
+
+    def scrape_subjects(self, bill: Bill, page: lxml.html.HtmlElement):
+        # union with the second expression is just in case they fix the typo
+        for row in page.xpath(
+            "//div[@id='CateogryList']/a|//div[@id='CategoryList']/a"
+        ):
+            bill.add_subject(row.xpath("text()")[0].strip())
 
     def scrape_versions(self, bill: Bill, page: lxml.html.HtmlElement):
         for row in page.xpath("//div[@class='billDocuments']/div[@class='billDocRow']"):
@@ -187,107 +202,7 @@ class MIBillScraper(Scraper):
                     on_duplicate="ignore",
                 )
 
-    # def scrape_bill(self, chamber, session, bill_id):
-    #     # try and get bill for the first year of the session biennium
-    #     url = "http://legislature.mi.gov/doc.aspx?%s-%s" % (
-    #         session[:4],
-    #         bill_id.replace(" ", "-"),
-    #     )
-    #     html = self.get(url).text
-    #     # Otherwise, try second year of the session biennium
-    #     if (
-    #         "Page Not Found" in html
-    #         or "The bill you are looking for is not available yet" in html
-    #     ):
-    #         url = "http://legislature.mi.gov/doc.aspx?%s-%s" % (
-    #             session[-4:],
-    #             bill_id.replace(" ", "-"),
-    #         )
-    #         html = self.get(url).text
-    #         if (
-    #             "Page Not Found" in html
-    #             or "The bill you are looking for is not available yet" in html
-    #         ):
-    #             self.warning("Cannot open bill page for {}; skipping".format(bill_id))
-    #             return
-
-    #     doc = lxml.html.fromstring(html)
-    #     doc.make_links_absolute("http://legislature.mi.gov")
-
-    #     title = doc.xpath('//span[@id="frg_billstatus_ObjectSubject"]')[
-    #         0
-    #     ].text_content()
-
-    #     # get B/R/JR/CR part and look up bill type
-    #     bill_type = bill_types[bill_id.split(" ")[0][1:]]
-
-    #     bill = Bill(bill_id, session, title, chamber=chamber, classification=bill_type)
-    #     bill.add_source(url)
-
-    #     # sponsors
-    #     sponsors = doc.xpath('//span[@id="frg_billstatus_SponsorList"]/a')
-    #     for sponsor in sponsors:
-    #         name = sponsor.text.replace("\xa0", " ")
-    #         # sometimes district gets added as a link
-    #         if name.isnumeric():
-    #             continue
-
-    #         if len(sponsors) > 1:
-    #             classification = (
-    #                 "primary"
-    #                 if sponsor.tail and "district" in sponsor.tail
-    #                 else "cosponsor"
-    #             )
-    #         else:
-    #             classification = "primary"
-    #         bill.add_sponsorship(
-    #             name=name.strip(),
-    #             chamber=chamber,
-    #             entity_type="person",
-    #             primary=classification == "primary",
-    #             classification=classification,
-    #         )
-
-    #     bill.subject = doc.xpath('//span[@id="frg_billstatus_CategoryList"]/a/text()')
-
-    #     # actions (skip header)
-    #     for row in doc.xpath('//table[@id="frg_billstatus_HistoriesGridView"]/tr')[1:]:
-    #         tds = row.xpath("td")  # date, journal link, action
-    #         date = tds[0].text_content()
-    #         journal = tds[1].text_content()
-    #         action = tds[2].text_content()
-    #         try:
-    #             date = TIMEZONE.localize(datetime.datetime.strptime(date, "%m/%d/%y"))
-    #         except ValueError:
-    #             try:
-    #                 date = TIMEZONE.localize(
-    #                     datetime.datetime.strptime(date, "%m/%d/%Y")
-    #                 )
-    #             except ValueError:
-    #                 self.warning(
-    #                     "{} has action with invalid date. Skipping Action".format(
-    #                         bill_id
-    #                     )
-    #                 )
-    #                 continue
-    #         # use journal for actor
-    #         # then fall back to upper/lower case
-    #         # Journal entries are often posted with 'Expected Soon' as the cite,
-    #         # then changed to the journal entry.
-    #         if "SJ" in journal.upper():
-    #             actor = "upper"
-    #         elif "HJ" in journal.upper():
-    #             actor = "lower"
-    #         elif action.split()[0].islower():
-    #             actor = "lower"
-    #         elif action.split()[0].isupper():
-    #             actor = "upper"
-    #         else:
-    #             actor = "legislature"
-
-    #         classification = categorize_action(action)
-    #         bill.add_action(action, date, chamber=actor, classification=classification)
-
+    # TODO: VOTES
     #         # check if action mentions a sub
     #         submatch = re.search(
     #             r"WITH SUBSTITUTE\s+([\w\-\d]+)", action, re.IGNORECASE
@@ -364,69 +279,6 @@ class MIBillScraper(Scraper):
     #                     yield vote
     #             else:
     #                 self.warning("missing journal link for %s %s" % (bill_id, journal))
-
-    #     # versions
-    #     for row in doc.xpath('//table[@id="frg_billstatus_DocumentGridTable"]/tr'):
-    #         parsed = self.parse_doc_row(row)
-    #         if parsed:
-    #             name, url = parsed
-    #             # create 2 versions per url of bill version
-    #             if url.endswith(".pdf"):
-    #                 bill.add_version_link(name, url, media_type="application/pdf")
-    #                 html_url = re.sub("pdf", "htm", url)
-    #                 bill.add_version_link(name, html_url, media_type="text/html")
-    #             elif url.endswith(".htm"):
-    #                 bill.add_version_link(name, url, media_type="text/html")
-    #                 pdf_url = re.sub("htm", "pdf", url)
-    #                 bill.add_version_link(name, pdf_url, media_type="application/pdf")
-
-    #     # documents
-    #     for row in doc.xpath('//table[@id="frg_billstatus_HlaTable"]/tr'):
-    #         document = self.parse_doc_row(row)
-    #         if document:
-    #             name, url = document
-    #             bill.add_document_link(name, url)
-    #     for row in doc.xpath('//table[@id="frg_billstatus_SfaTable"]/tr'):
-    #         document = self.parse_doc_row(row)
-    #         if document:
-    #             name, url = document
-    #             bill.add_document_link(name, url)
-
-    #     yield bill
-
-    # def scrape(self, chamber=None, session=None):
-    #     if session is None:
-    #         session = self.jurisdiction.legislative_sessions[-1]["identifier"]
-    #         self.info("no session specified, using %s", session)
-
-    #     chambers = [chamber] if chamber is not None else ["upper", "lower"]
-    #     for chamber in chambers:
-    #         for abbr, start_num in bill_chamber_types[chamber]:
-    #             n = start_num
-    #             # keep trying bills until scrape_bill returns None
-    #             while True:
-    #                 if "JR" in abbr:
-    #                     bill_id = "%s %s" % (abbr, jres_id(n))
-    #                 else:
-    #                     bill_id = "%s %04d" % (abbr, n)
-    #                 bills = list(self.scrape_bill(chamber, session, bill_id))
-    #                 if not bills:
-    #                     break
-    #                 for bill in bills:
-    #                     yield bill
-    #                 n += 1
-
-    # def parse_doc_row(self, row):
-    #     # first anchor in the row is HTML if present, otherwise PDF
-    #     a = row.xpath(".//a")
-    #     if a:
-    #         name = row.xpath(".//b/text()")
-    #         if name:
-    #             name = name[0]
-    #         else:
-    #             name = row.text_content().strip()
-    #         url = a[0].get("href")
-    #         return name, url
 
     # def parse_roll_call(self, url, rc_num, session):
     #     try:
