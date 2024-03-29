@@ -137,7 +137,7 @@ class HIBillScraper(Scraper):
                 vote.set_count("yes", int(yays or 0))
                 vote.set_count("no", int(nays or 0))
                 vote.set_count("not voting", int(v["n_excused"] or 0))
-                vote.dedupe_key = f"{date}#{bill_id}#yes{yays}#no{nays}"
+                vote.dedupe_key = f"{date}#{bill_id}#{real_committees}#yes{yays}#no{nays}"
                 for voter in split_specific_votes(v["yes"]):
                     voter = self.clean_voter_name(voter)
                     vote.yes(voter)
