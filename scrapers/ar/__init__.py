@@ -223,7 +223,7 @@ class Arkansas(State):
             "name": "2023 First Extraordinary Session",
             "start_date": "2023-08-08",
             "end_date": "2023-08-15",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "Fiscal Session, 2024",
@@ -232,7 +232,7 @@ class Arkansas(State):
             "name": "2024 Fiscal Session",
             "start_date": "2024-04-10",
             "end_date": "2024-05-09",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
