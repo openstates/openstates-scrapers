@@ -1,4 +1,6 @@
+import dateutil
 import pytz
+import re
 
 import lxml.html
 from openstates.scrape import Scraper, Bill
@@ -110,10 +112,58 @@ class MIBillScraper(Scraper):
 
         bill.add_source(url)
 
+        self.scrape_actions(bill, page)
+        self.scrape_legal(bill, page)
         self.scrape_sponsors(bill, page)
+        self.scrape_subjects(bill, page)
         self.scrape_versions(bill, page)
 
         yield bill
+
+    # TODO: legal code https://legislature.mi.gov/Bills/Bill?ObjectName=2023-SB-0002
+
+    def scrape_actions(self, bill: Bill, page: lxml.html.HtmlElement):
+        for row in page.xpath("//div[@id='History']/table/tbody/tr"):
+            when = row.xpath("td[1]/text()")[0]
+            when = dateutil.parser.parse(when).date()
+
+            action = row.xpath("string(td[3])").strip()
+
+            journal = row.xpath("string(td[2])").strip()
+
+            if "HJ" in journal:
+                actor = "lower"
+            elif "SJ" in journal:
+                actor = "upper"
+
+            bill.add_action(action, when, chamber=actor, classification=[])
+
+            # chapter law
+            if "assigned pa" in action.lower():
+                match = re.search(r"(\d{4})'(\d+)", action)
+                act_num = match.group(1).lstrip("0")
+                act_year = f"20{match.group(2)}"
+                bill.add_citation(
+                    "Michigan Public Acts",
+                    f"Public Act {act_num} of {act_year}",
+                    citation_type="chapter",
+                )
+            # TODO: classification
+
+    def scrape_legal(self, bill: Bill, page: lxml.html.HtmlElement):
+        for row in page.xpath(
+            "//div[@id='ObjectSubject']/a[contains(@href,'?sectionNumbers')]/text()"
+        ):
+            bill.add_citation(
+                "Michigan Compiled Laws", f"MCL {row.strip()}", citation_type="proposed"
+            )
+
+    def scrape_subjects(self, bill: Bill, page: lxml.html.HtmlElement):
+        # union with the second expression is just in case they fix the typo
+        for row in page.xpath(
+            "//div[@id='CateogryList']/a|//div[@id='CategoryList']/a"
+        ):
+            bill.add_subject(row.xpath("text()")[0].strip())
 
     def scrape_sponsors(self, bill: Bill, page: lxml.html.HtmlElement):
         for row in page.xpath(
@@ -151,7 +201,7 @@ class MIBillScraper(Scraper):
                 )
 
         for row in page.xpath(
-            "//div[@class='HFAAnalysisSection']/div[@class='billDocRow']|//div[@class='SFAAnalysisSection']/div[@class='billDocRow']"
+            "//div[@id='HFAAnalysisSection']/div/div[@class='billDocRow']|//div[@id='SFAAnalysisSection']/div/div[@class='billDocRow']"
         ):
             name = row.xpath(".//div[@class='text']/span/strong/text()")[0]
             if row.xpath(".//div[@class='pdf']/a/@href"):
