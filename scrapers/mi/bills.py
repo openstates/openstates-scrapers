@@ -8,41 +8,6 @@ from openstates.scrape import Scraper, Bill
 BASE_URL = "http://www.legislature.mi.gov"
 TIMEZONE = pytz.timezone("US/Eastern")
 
-
-def jres_id(n):
-    """
-    Joint Resolution ids go from A-Z, AA-ZZ
-    Some example IDs would be HJR Z, HJR AA, HJR G, HJR EE
-
-    Example: n = 27, we go to the else clause and 27 mod 26 equals 1 so AA is returned
-    """
-
-    # This if clause accounts for Joint Resolution IDs from HJR A to HJR Z
-    if n <= 26:
-        return chr(ord("@") + n)
-    # This else clause accounts for Joint Resolution IDs from HJR AA to HJR ZZ
-    else:
-        # Using Mod here because we want values over 26 to evaluate to 1-26 to correspond to the letter in alphabet
-        offset = n % 26
-        # Because 26 mod 26 equals 0 we are setting the offset to 26 in this case to return ZZ
-        if offset == 0:
-            offset = 26
-        # The JR IDs increment from AA -> BB -> CC, etc. We are adding the two strings together
-        return chr(ord("@") + offset) + chr(ord("@") + offset)
-
-
-bill_types = {
-    "B": "bill",
-    "R": "resolution",
-    "CR": "concurrent resolution",
-    "JR": "joint resolution",
-}
-
-bill_chamber_types = {
-    "upper": [("SB", 1), ("SR", 1), ("SCR", 1), ("SJR", 1)],
-    "lower": [("HB", 4001), ("HR", 1), ("HCR", 1), ("HJR", 1)],
-}
-
 _categorizers = {
     "approved by governor with line item(s) vetoed": "executive-veto-line-item",
     "read a first time": "reading-1",
@@ -64,7 +29,7 @@ _categorizers = {
 }
 
 
-def categorize_action(action):
+def categorize_action(action: str) -> str:
     for prefix, atype in _categorizers.items():
         if action.lower().startswith(prefix):
             return atype
@@ -72,7 +37,7 @@ def categorize_action(action):
 
 class MIBillScraper(Scraper):
     # TODO
-    def make_bill_url(self, redirect_url: str):
+    def make_bill_url(self, redirect_url: str) -> str:
         pass
 
     def scrape(self, session):
@@ -105,8 +70,9 @@ class MIBillScraper(Scraper):
             chamber = "joint"
 
         bill_type = "bill"
-        if "resolution" in heading:
-            bill_type = "resolution"
+        for key in ["concurrent resolution", "joint resolution", "resolution"]:
+            if key in heading:
+                bill_type = key
 
         bill = Bill(bill_id, session, title, chamber=chamber, classification=bill_type)
 
@@ -136,7 +102,9 @@ class MIBillScraper(Scraper):
             elif "SJ" in journal:
                 actor = "upper"
 
-            bill.add_action(action, when, chamber=actor, classification=[])
+            bill.add_action(
+                action, when, chamber=actor, classification=categorize_action(action)
+            )
 
             # chapter law
             if "assigned pa" in action.lower():
