@@ -88,7 +88,7 @@ class Michigan(State):
         return [
             s.strip()
             for s in url_xpath(
-                "http://www.legislature.mi.gov/mileg.aspx?page=LegBasicSearch",
+                "https://www.legislature.mi.gov/Search/LegDocSearch",
                 "//option/text()",
             )
             if s.strip()

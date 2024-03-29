@@ -39,7 +39,7 @@ class MIBillScraper(Scraper):
         return f"https://legislature.mi.gov/Bills/Bill?ObjectName={match.group(1)}"
 
     def scrape(self, session):
-        search_url = "https://legislature.mi.gov/Search/ExecuteSearch?chamber=&docTypesList=HB%2CSB&docTypesList=HR%2CSR&docTypesList=HCR%2CSCR&docTypesList=HJR%2CSJR&sessions=2023-2024&sponsor=&number=&dateFrom=&dateTo=&contentFullText="
+        search_url = f"https://legislature.mi.gov/Search/ExecuteSearch?chamber=&docTypesList=HB%2CSB&docTypesList=HR%2CSR&docTypesList=HCR%2CSCR&docTypesList=HJR%2CSJR&sessions={session}&sponsor=&number=&dateFrom=&dateTo=&contentFullText="
         page = self.get(search_url).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(search_url)
