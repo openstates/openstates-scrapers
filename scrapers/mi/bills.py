@@ -124,7 +124,7 @@ class MIBillScraper(Scraper):
 
             # chapter law
             if "assigned pa" in action.lower():
-                match = re.search(r"(\d{4})'(\d+)", action)
+                match = re.search(r"(\d+)'(\d+)", action)
                 act_num = match.group(1).lstrip("0")
                 act_year = f"20{match.group(2)}"
                 bill.add_citation(
