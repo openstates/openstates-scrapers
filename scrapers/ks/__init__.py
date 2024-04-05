@@ -2,6 +2,7 @@ from utils import url_xpath
 from openstates.scrape import State
 from .bills import KSBillScraper
 from .events import KSEventScraper
+from .votes import KSVoteScraper
 
 
 # Kansas API's 429 error response includes:
@@ -15,6 +16,7 @@ class Kansas(State):
     scrapers = {
         "bills": KSBillScraper,
         "events": KSEventScraper,
+        "votes": KSVoteScraper,
     }
     legislative_sessions = [
         {
