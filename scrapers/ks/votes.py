@@ -4,7 +4,7 @@ import requests
 import feedparser
 
 import lxml.html
-from openstates.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape import Scraper, VoteEvent
 
 
 class KSVoteScraper(Scraper):
