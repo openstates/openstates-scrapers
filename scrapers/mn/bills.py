@@ -581,7 +581,9 @@ class MNBillScraper(Scraper, LXMLMixin):
         #  "Current bill text:"
         if not version_rows:
             try:
-                current = doc.xpath("//div[contains(text(), 'Current bill text')]/a[1]")[0]
+                current = doc.xpath(
+                    "//div[contains(text(), 'Current bill text')]/a[1]"
+                )[0]
                 current_html_url = current.xpath("@href")[0]
                 current_response = requests.get(current_html_url, verify=False)
                 current_content = lxml.html.fromstring(current_response.content)
@@ -604,7 +606,9 @@ class MNBillScraper(Scraper, LXMLMixin):
                         continue
                     raw_title, raw_date = title_date_match.groups()
                     vers_title = (
-                        "Introduction" if "introduced" in raw_title.lower() else raw_title
+                        "Introduction"
+                        if "introduced" in raw_title.lower()
+                        else raw_title
                     )
                     vers_day = datetime.datetime.strptime(raw_date, "%B %d, %Y").date()
 
