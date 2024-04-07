@@ -621,7 +621,9 @@ class MNBillScraper(Scraper, LXMLMixin):
                         vers_html_url = format_version_url(vers_html_url)
                         vers_response = requests.get(vers_html_url, verify=False)
                         vers_content = lxml.html.fromstring(vers_response.content)
-                        vers_pdf_url = vers_content.xpath(pdf_xpath)[0].xpath("@href")[0]
+                        vers_pdf_url = vers_content.xpath(pdf_xpath)[0].xpath("@href")[
+                            0
+                        ]
                         vers_pdf_url = format_version_url(vers_pdf_url)
 
                     # If parent element does not have href, it is current version
