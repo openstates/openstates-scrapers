@@ -203,6 +203,7 @@ class Oklahoma(State):
         "1998 Regular Session",
         "1997 Regular Session",
         "1996 Regular Session",
+        "1995 Regular Session (web)",
         "1995 Regular Session",
         "1994 Second Special Session",
         "1994 First Special Session",
