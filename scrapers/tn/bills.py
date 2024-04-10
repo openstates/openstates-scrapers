@@ -270,31 +270,6 @@ class TNBillScraper(Scraper):
         atable = page.xpath("//table[@id='gvBillActionHistory']")[0]
         actions_from_table(bill, atable)
 
-        # if there is a matching bill
-        if secondary_bill_id:
-            # secondary sponsor
-            secondary_sponsor = (
-                page.xpath("//span[@id='lblCompPrimeSponsor']")[0]
-                .text_content()
-                .split("by")[-1]
-            )
-            secondary_sponsor = (
-                secondary_sponsor.replace("*", "").replace(")", "").strip()
-            )
-            # Skip black-name sponsors.
-            if secondary_sponsor:
-                bill.add_sponsorship(
-                    secondary_sponsor,
-                    classification="primary",
-                    entity_type="person",
-                    primary=True,
-                )
-
-            # secondary actions
-            if page.xpath("//table[@id='gvCoActionHistory']"):
-                cotable = page.xpath("//table[@id='gvCoActionHistory']")[0]
-                actions_from_table(bill, cotable)
-
         # votes
         yield from self.scrape_vote_events(bill, page, bill_url)
 
