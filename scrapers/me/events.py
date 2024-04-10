@@ -25,7 +25,7 @@ class MEEventScraper(Scraper, LXMLMixin):
         # PresentedDate,FileSize,Topic
 
         testimony_url_base = (
-            "http://legislature.maine.gov/backend/"
+            "https://legislature.maine.gov/backend/"
             "breeze/data/CommitteeTestimony?"
             "$filter=(Request%2FPaperNumber%20eq%20%27{}%27)%20and"
             "%20(Request%2FLegislature%20eq%20{})"
@@ -52,7 +52,7 @@ class MEEventScraper(Scraper, LXMLMixin):
         bills_by_event = {}
 
         bills_url = (
-            "http://legislature.maine.gov/backend/breeze/data/"
+            "https://legislature.maine.gov/backend/breeze/data/"
             "getCalendarEventsBills?startDate={}&endDate={}"
         )
         bills_url = bills_url.format(start_date, end_date)
@@ -62,9 +62,9 @@ class MEEventScraper(Scraper, LXMLMixin):
             bills_by_event.setdefault(row["EventId"], [])
             bills_by_event[row["EventId"]].append(row)
 
-        # http://legislature.maine.gov/backend/breeze/data/getCalendarEventsRaw?startDate=2019-03-01T05%3A00%3A00.000Z&endDate=2019-04-01T03%3A59%3A59.999Z&OnlyPHWS=false
+        # https://legislature.maine.gov/backend/breeze/data/getCalendarEventsRaw?startDate=2019-03-01T05%3A00%3A00.000Z&endDate=2019-04-01T03%3A59%3A59.999Z&OnlyPHWS=false
         url = (
-            "http://legislature.maine.gov/backend/breeze/data/"
+            "https://legislature.maine.gov/backend/breeze/data/"
             "getCalendarEventsRaw?startDate={}&endDate={}&OnlyPHWS=true"
         )
         url = url.format(start_date, end_date)
@@ -109,14 +109,14 @@ class MEEventScraper(Scraper, LXMLMixin):
             )
             event.dedupe_key = event_name
 
-            if not name.strip():
+            if not name:
                 self.warning(f"Skipping meeting with no name, ID# {row['Id']}")
                 continue
 
             event.add_participant(name=name, type="committee", note="host")
 
             event.add_source(
-                "http://legislature.maine.gov/committee/#Committees/{}".format(
+                "https://legislature.maine.gov/committee/#Committees/{}".format(
                     row["CommitteeCode"]
                 )
             )
@@ -156,7 +156,7 @@ class MEEventScraper(Scraper, LXMLMixin):
                                 title = "{} {}".format(test["NamePrefix"], title)
 
                             test_url = (
-                                "http://legislature.maine.gov/backend/app/services"
+                                "https://legislature.maine.gov/backend/app/services"
                                 "/getDocument.aspx?doctype=test&documentId={}".format(
                                     test["Id"]
                                 )
