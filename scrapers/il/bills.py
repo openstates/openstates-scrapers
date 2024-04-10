@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from ._utils import canonicalize_url
 import re
 import os
 import datetime
@@ -9,8 +10,6 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 
 central = pytz.timezone("US/Central")
-
-from ._utils import canonicalize_url
 
 
 session_details = {
