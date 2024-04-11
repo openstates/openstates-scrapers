@@ -271,20 +271,18 @@ class TNBillScraper(Scraper):
         actions_from_table(bill, atable)
 
         # votes
-        yield from self.scrape_vote_events(bill, page, bill_url)
+        yield from self.scrape_vote_events(bill, page, bill_url, primary_chamber)
 
         bill.actions.sort(key=lambda a: a["date"])
         yield bill
 
-    def scrape_vote_events(self, bill, page, link):
-        chamber_labels = (("lower", "lblHouseVoteData"), ("upper", "lblSenateVoteData"))
-        for chamber, element_id in chamber_labels:
-            raw_vote_data = page.xpath("//*[@id='{}']".format(element_id))[
-                0
-            ].text_content()
-            votes = self.scrape_votes_for_chamber(chamber, raw_vote_data, bill, link)
-            for vote in votes:
-                yield vote
+    def scrape_vote_events(self, bill, page, link, chamber):
+        chamber_labels = {"lower": "lblHouseVoteData", "upper": "lblSenateVoteData"}
+        element_id = chamber_labels[chamber]
+        raw_vote_data = page.xpath(f"//*[@id='{element_id}']")[0].text_content()
+        votes = self.scrape_votes_for_chamber(chamber, raw_vote_data, bill, link)
+        for vote in votes:
+            yield vote
 
     def scrape_votes_for_chamber(self, chamber, vote_data, bill, link):
         raw_vote_data = re.split(r"\w+? by [\w ]+?\s+-", vote_data.strip())[1:]
