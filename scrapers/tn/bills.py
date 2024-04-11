@@ -332,7 +332,7 @@ class TNBillScraper(Scraper):
                     elif v.startswith("Noes...") and vote_regex.search(v):
                         no_count = int(vote_regex.search(v).group())
                     elif v.startswith(
-                            "Present and not voting..."
+                        "Present and not voting..."
                     ) and vote_regex.search(v):
                         not_voting_count += int(vote_regex.search(v).group())
                     elif aye_regex.search(v):
