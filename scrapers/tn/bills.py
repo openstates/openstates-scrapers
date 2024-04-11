@@ -291,7 +291,9 @@ class TNBillScraper(Scraper):
         motion_count = 1
 
         for bill_name, raw_vote in bill_to_motion:
-            bill_parts = re.match(r"(?P<prefix>[A-Z]+)(?P<number>\d+)", bill_name).groupdict()
+            bill_parts = re.match(
+                r"(?P<prefix>[A-Z]+)(?P<number>\d+)", bill_name
+            ).groupdict()
             bill_id = f'{bill_parts["prefix"]} {bill_parts["number"]}'
             if bill_id == bill.identifier:
                 raw_vote = raw_vote.split("\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0")
@@ -302,7 +304,9 @@ class TNBillScraper(Scraper):
 
                 vote_date = re.search(r"(\d+/\d+/\d+)", motion)
                 if vote_date:
-                    vote_date = datetime.datetime.strptime(vote_date.group(), "%m/%d/%Y")
+                    vote_date = datetime.datetime.strptime(
+                        vote_date.group(), "%m/%d/%Y"
+                    )
 
                 passed = (
                     "Passed" in motion
@@ -327,7 +331,9 @@ class TNBillScraper(Scraper):
                         yes_count = int(vote_regex.search(v).group())
                     elif v.startswith("Noes...") and vote_regex.search(v):
                         no_count = int(vote_regex.search(v).group())
-                    elif v.startswith("Present and not voting...") and vote_regex.search(v):
+                    elif v.startswith(
+                            "Present and not voting..."
+                    ) and vote_regex.search(v):
                         not_voting_count += int(vote_regex.search(v).group())
                     elif aye_regex.search(v):
                         ayes = aye_regex.search(v).groups()[0].split(", ")
