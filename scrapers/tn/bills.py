@@ -271,102 +271,106 @@ class TNBillScraper(Scraper):
         actions_from_table(bill, atable)
 
         # votes
-        yield from self.scrape_vote_events(bill, page, bill_url, primary_chamber)
+        yield from self.scrape_vote_events(bill, page, bill_url)
 
         bill.actions.sort(key=lambda a: a["date"])
         yield bill
 
-    def scrape_vote_events(self, bill, page, link, chamber):
-        chamber_labels = {"lower": "lblHouseVoteData", "upper": "lblSenateVoteData"}
-        element_id = chamber_labels[chamber]
-        raw_vote_data = page.xpath(f"//*[@id='{element_id}']")[0].text_content()
-        votes = self.scrape_votes_for_chamber(chamber, raw_vote_data, bill, link)
-        for vote in votes:
-            yield vote
+    def scrape_vote_events(self, bill, page, link):
+        chamber_labels = (("lower", "lblHouseVoteData"), ("upper", "lblSenateVoteData"))
+        for chamber, element_id in chamber_labels:
+            raw_vote_data = page.xpath(f"//*[@id='{element_id}']")[0].text_content()
+            votes = self.scrape_votes_for_chamber(chamber, raw_vote_data, bill, link)
+            for vote in votes:
+                yield vote
 
     def scrape_votes_for_chamber(self, chamber, vote_data, bill, link):
-        raw_vote_data = re.split(r"\w+? by [\w ]+?\s+-", vote_data.strip())[1:]
+        raw_vote_data = re.split(r"(\w+?) by [\w ]+?\s+-", vote_data.strip())[1:]
+        bill_to_motion = zip(raw_vote_data[::2], raw_vote_data[1::2])
 
         motion_count = 1
 
-        for raw_vote in raw_vote_data:
-            raw_vote = raw_vote.split("\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0")
-            motion = raw_vote[0]
+        for bill_name, raw_vote in bill_to_motion:
+            bill_parts = re.match(r"(?P<prefix>[A-Z]+)(?P<number>\d+)", bill_name).groupdict()
+            bill_id = f'{bill_parts["prefix"]} {bill_parts["number"]}'
+            if bill_id == bill.identifier:
+                raw_vote = raw_vote.split("\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0")
+                motion = raw_vote[0]
 
-            if len(raw_vote) < 2:
-                continue
-
-            vote_date = re.search(r"(\d+/\d+/\d+)", motion)
-            if vote_date:
-                vote_date = datetime.datetime.strptime(vote_date.group(), "%m/%d/%Y")
-
-            passed = (
-                "Passed" in motion
-                or "Recommended for passage" in motion
-                or "Rec. for pass" in motion
-                or "Adopted" in raw_vote[1]
-            )
-            vote_regex = re.compile(r"\d+$")
-            aye_regex = re.compile(r"^.+voting aye were: (.+) -")
-            no_regex = re.compile(r"^.+voting no were: (.+) -")
-            not_voting_regex = re.compile(r"^.+present and not voting were: (.+) -")
-            yes_count = 0
-            no_count = 0
-            not_voting_count = 0
-            ayes = []
-            nos = []
-            not_voting = []
-
-            for v in raw_vote[1:]:
-                v = v.strip()
-                if v.startswith("Ayes...") and vote_regex.search(v):
-                    yes_count = int(vote_regex.search(v).group())
-                elif v.startswith("Noes...") and vote_regex.search(v):
-                    no_count = int(vote_regex.search(v).group())
-                elif v.startswith("Present and not voting...") and vote_regex.search(v):
-                    not_voting_count += int(vote_regex.search(v).group())
-                elif aye_regex.search(v):
-                    ayes = aye_regex.search(v).groups()[0].split(", ")
-                elif no_regex.search(v):
-                    nos = no_regex.search(v).groups()[0].split(", ")
-                elif not_voting_regex.search(v):
-                    not_voting += not_voting_regex.search(v).groups()[0].split(", ")
-
-            motion = motion.strip()
-            motion = motion.replace("&AMP;", "&")  # un-escape ampersands
-            if motion in self._seen_votes:
-                motion = "{} ({})".format(motion, motion_count)
-                motion_count += 1
-            self._seen_votes.add(motion)
-
-            vote = VoteEvent(
-                motion_text=motion,
-                start_date=vote_date.strftime("%Y-%m-%d") if vote_date else None,
-                classification="passage",
-                result="pass" if passed else "fail",
-                chamber=chamber,
-                bill=bill,
-            )
-            vote.set_count("yes", yes_count)
-            vote.set_count("no", no_count)
-            vote.set_count("not voting", not_voting_count)
-            vote.add_source(link)
-
-            seen = set()
-            for a in ayes:
-                if a in seen:
+                if len(raw_vote) < 2:
                     continue
-                vote.yes(a)
-                seen.add(a)
-            for n in nos:
-                if n in seen:
-                    continue
-                vote.no(n)
-                seen.add(n)
-            for n in not_voting:
-                if n in seen:
-                    continue
-                vote.vote("not voting", n)
-                seen.add(n)
 
-            yield vote
+                vote_date = re.search(r"(\d+/\d+/\d+)", motion)
+                if vote_date:
+                    vote_date = datetime.datetime.strptime(vote_date.group(), "%m/%d/%Y")
+
+                passed = (
+                    "Passed" in motion
+                    or "Recommended for passage" in motion
+                    or "Rec. for pass" in motion
+                    or "Adopted" in raw_vote[1]
+                )
+                vote_regex = re.compile(r"\d+$")
+                aye_regex = re.compile(r"^.+voting aye were: (.+) -")
+                no_regex = re.compile(r"^.+voting no were: (.+) -")
+                not_voting_regex = re.compile(r"^.+present and not voting were: (.+) -")
+                yes_count = 0
+                no_count = 0
+                not_voting_count = 0
+                ayes = []
+                nos = []
+                not_voting = []
+
+                for v in raw_vote[1:]:
+                    v = v.strip()
+                    if v.startswith("Ayes...") and vote_regex.search(v):
+                        yes_count = int(vote_regex.search(v).group())
+                    elif v.startswith("Noes...") and vote_regex.search(v):
+                        no_count = int(vote_regex.search(v).group())
+                    elif v.startswith("Present and not voting...") and vote_regex.search(v):
+                        not_voting_count += int(vote_regex.search(v).group())
+                    elif aye_regex.search(v):
+                        ayes = aye_regex.search(v).groups()[0].split(", ")
+                    elif no_regex.search(v):
+                        nos = no_regex.search(v).groups()[0].split(", ")
+                    elif not_voting_regex.search(v):
+                        not_voting += not_voting_regex.search(v).groups()[0].split(", ")
+
+                motion = motion.strip()
+                motion = motion.replace("&AMP;", "&")  # un-escape ampersands
+                if motion in self._seen_votes:
+                    motion = "{} ({})".format(motion, motion_count)
+                    motion_count += 1
+                self._seen_votes.add(motion)
+
+                vote = VoteEvent(
+                    motion_text=motion,
+                    start_date=vote_date.strftime("%Y-%m-%d") if vote_date else None,
+                    classification="passage",
+                    result="pass" if passed else "fail",
+                    chamber=chamber,
+                    bill=bill,
+                )
+                vote.set_count("yes", yes_count)
+                vote.set_count("no", no_count)
+                vote.set_count("not voting", not_voting_count)
+                vote.add_source(link)
+
+                seen = set()
+                for a in ayes:
+                    if a in seen:
+                        continue
+                    vote.yes(a)
+                    seen.add(a)
+                for n in nos:
+                    if n in seen:
+                        continue
+                    vote.no(n)
+                    seen.add(n)
+                for n in not_voting:
+                    if n in seen:
+                        continue
+                    vote.vote("not voting", n)
+                    seen.add(n)
+
+                yield vote
