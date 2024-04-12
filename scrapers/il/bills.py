@@ -7,10 +7,9 @@ import scrapelib
 import lxml.html
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
+from ._utils import canonicalize_url
 
 central = pytz.timezone("US/Central")
-
-# from ._utils import canonicalize_url
 
 
 session_details = {
@@ -504,7 +503,7 @@ class IlBillScraper(Scraper):
         sponsor_list = build_sponsor_list(doc.xpath('//a[contains(@class, "content")]'))
         # don't add just yet; we can make them better using action data
 
-        # committee_actors = {}
+        committee_actors = {}
 
         # actions
         action_tds = doc.xpath('//a[@name="actions"]/following-sibling::table[1]/td')
@@ -520,15 +519,18 @@ class IlBillScraper(Scraper):
             action = action_elem.text_content()
             classification, related_orgs = _categorize_action(action)
 
-            # if related_orgs and any(c.startswith("committee") for c in classification):
-            #     ((name, source),) = [
-            #         (a.text, a.get("href"))
-            #         for a in action_elem.xpath("a")
-            #         if "committee" in a.get("href")
-            #     ]
-            #     source = canonicalize_url(source)
-            #     actor_id = {"sources__url": source, "classification": "committee"}
-            #     committee_actors[source] = name
+            if related_orgs and any(c.startswith("committee") for c in classification):
+                try:
+                    ((name, source),) = [
+                        (a.text, a.get("href"))
+                        for a in action_elem.xpath("a")
+                        if "committee" in a.get("href")
+                    ]
+                    source = canonicalize_url(source)
+                    actor_id = {"sources__url": source, "classification": "committee"}
+                    committee_actors[source] = name
+                except ValueError:
+                    self.warning("Can't resolve voting body for %s" % classification)
 
             bill.add_action(
                 action,
@@ -560,8 +562,8 @@ class IlBillScraper(Scraper):
         yield bill
 
         # temporarily remove vote processing due to pdf issues
-        # votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
-        # yield from self.scrape_votes(session, bill, votes_url, committee_actors)
+        votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
+        yield from self.scrape_votes(session, bill, votes_url, committee_actors)
 
     def scrape_documents(self, bill, version_url):
         html = self.get(version_url).text
@@ -633,7 +635,6 @@ class IlBillScraper(Scraper):
         doc.make_links_absolute(votes_url)
 
         for link in doc.xpath('//a[contains(@href, "votehistory")]'):
-
             if link.get("href") in DUPE_VOTES:
                 continue
 
@@ -747,6 +748,7 @@ class IlBillScraper(Scraper):
         passed = None
         counts_found = False
         vote_lines = []
+
         for line in pdflines:
             # consider pass/fail as a document property instead of a result of the vote count
             # extract the vote count from the document instead of just using counts of names
@@ -897,46 +899,26 @@ class IlBillScraper(Scraper):
 
 
 def find_columns_and_parse(vote_lines):
-    columns = find_columns(vote_lines)
     votes = {}
+
     for line in vote_lines:
-        for idx in reversed(columns):
-            bit = line[idx:]
-            line = line[:idx]
-            if bit:
-                vote, name = bit.split(" ", 1)
-                votes[name.strip()] = vote
+        for name, vote in correct_line(line.strip()):
+            votes[name] = vote
+
     return votes
 
 
-def _is_potential_column(line, i):
-    for val in VOTE_VALUES:
-        if re.search(r"^%s\s{2,10}(\w.).*" % val, line[i:]):
-            return True
-    return False
+def correct_line(line):
+    data = []
 
-
-def find_columns(vote_lines):
-    potential_columns = []
-
-    for line in vote_lines:
-        pcols = set()
-        for i, x in enumerate(line):
-            if _is_potential_column(line, i):
-                pcols.add(i)
-        potential_columns.append(pcols)
-
-    starter = potential_columns[0]
-    for pc in potential_columns[1:-1]:
-        starter.intersection_update(pc)
-    last_row_cols = potential_columns[-1]
-    if not last_row_cols.issubset(starter):
-        raise Exception(
-            "Row's columns [%s] don't align with candidate final columns [%s]: %s"
-            % (last_row_cols, starter, line)
-        )
-    # we should now only have values that appeared in every line
-    return sorted(starter)
+    name = ""
+    for word in reversed(line.split()):
+        if name and word in VOTE_VALUES:
+            data.append((name, word))
+            name = ""
+            continue
+        name = " ".join([word, name]).strip()
+    return data
 
 
 def build_sponsor_list(sponsor_atags):
