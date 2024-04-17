@@ -98,7 +98,9 @@ class NEBillScraper(Scraper, LXMLMixin):
             # bill_link = bill_resp.url
             # bill_page = bill_resp.text
 
-            yield from self.bill_info(bill_link, session, main_url)
+            # LB 9 is causing a 500 error in 108 session, remove with new session start
+            if bill_link != 'https://nebraskalegislature.gov/bills/view_bill.php?DocumentID=50214':
+                yield from self.bill_info(bill_link, session, main_url)
 
     def bill_info(self, bill_link, session, main_url):
         bill_page = self.lxmlize(bill_link)
