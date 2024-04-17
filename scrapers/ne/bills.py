@@ -12,6 +12,13 @@ TIMEZONE = pytz.timezone("US/Central")
 
 class NEBillScraper(Scraper, LXMLMixin):
     priority_bills = {}
+    bad_links = [
+        "https://nebraskalegislature.gov/bills/view_bill.php?DocumentID=50214",
+        "https://nebraskalegislature.gov/bills/view_bill.php?DocumentID=49892",
+        "https://nebraskalegislature.gov/bills/view_bill.php?DocumentID=50764",
+        "https://nebraskalegislature.gov/bills/view_bill.php?DocumentID=50501",
+        "https://nebraskalegislature.gov/bills/view_bill.php?DocumentID=50756",
+    ]
 
     def scrape(self, session=None):
         if session is None:
@@ -98,8 +105,8 @@ class NEBillScraper(Scraper, LXMLMixin):
             # bill_link = bill_resp.url
             # bill_page = bill_resp.text
 
-            # LB 9 is causing a 500 error in 108 session, remove with new session start
-            if bill_link != 'https://nebraskalegislature.gov/bills/view_bill.php?DocumentID=50214':
+            # a few bill detail pages are causing a 500 error in 108 session, remove with new session start
+            if bill_link not in self.bad_links:
                 yield from self.bill_info(bill_link, session, main_url)
 
     def bill_info(self, bill_link, session, main_url):
