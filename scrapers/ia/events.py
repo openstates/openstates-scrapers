@@ -28,7 +28,7 @@ class IAEventScraper(Scraper):
             chamber_abbrev = "H"
 
         url = (
-            "http://www.legis.iowa.gov/committees/meetings/meetingsList"
+            "https://www.legis.iowa.gov/committees/meetings/meetingsList"
             "Chamber?chamber=%s&bDate=%02d/%02d/"
             "%d&eDate=%02d/%02d/%d"
             % (

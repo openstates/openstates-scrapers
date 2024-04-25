@@ -80,6 +80,7 @@ class NorthDakota(State):
         },
     ]
     ignored_scraped_sessions = [
+        "69th Legislative Assembly (2025-26)",
         "61st Legislative Assembly (2009-10)",
         "60th Legislative Assembly (2007-08)",
         "59th Legislative Assembly (2005-06)",

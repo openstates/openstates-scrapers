@@ -216,6 +216,16 @@ class Virginia(State):
             "end_date": "2024-03-09",
             "active": True,
         },
+        {
+            "_scraped_name": "2024 Special Session I",
+            "classification": "special",
+            "identifier": "2024S1",
+            "name": "2024, 1st Special Session",
+            "start_date": "2024-05-13",
+            # TODO: update actual end date
+            "end_date": "2024-05-20",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2021 Special Session I",

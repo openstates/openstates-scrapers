@@ -360,6 +360,8 @@ class NEBillScraper(Scraper, LXMLMixin):
             action_type = "failure"
         elif "Bill withdrawn" in action:
             action_type = "withdrawal"
+        elif "Became law without Governor's signature" in action:
+            action_type = "became-law"
         else:
             action_type = None
         return action_type
