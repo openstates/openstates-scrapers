@@ -1,168 +1,139 @@
 import logging
 import re
-import requests
-import lxml.html
-import datetime as dt
-from .actions import NDCategorizer
+from dateutil import parser
 from openstates.scrape import Scraper, Bill
-from spatula import HtmlListPage, HtmlPage, XPath, CSS
+from spatula import JsonPage
+from .actions import NDCategorizer
 
 
-def get_committee_names(session):
-    source = f"https://www.ndlegis.gov/assembly/{session}/committees"
-    response = requests.get(source)
-    content = lxml.html.fromstring(response.content)
-    committee_names = set()
-    committees = content.xpath(".//div[@class='grouping-wrapper']//a/text()")
-    for committee in committees:
-        committee_names.add(committee.strip())
-    return committee_names
+class BillList(JsonPage):
+    categorizer = NDCategorizer()
+    member_name_re = re.compile(r"^(Sen\.|Rep\.)\s*(.+),\s(.+)")
+    comm_name_re = re.compile(r"^(House|Senate)\s*(.+)")
+    version_name_re = re.compile(r"introduced|engrossment|enrollment")
 
+    def __init__(self, input_data):
+        super().__init__()
+        self.input = input_data
+        self.source = self.create_source_url()
 
-class BillList(HtmlListPage):
-    url_session = "68-2023"
-    session_components = url_session.split("-")
-    source = f"https://www.ndlegis.gov/assembly/{url_session}/bill-index.html"
-    selector = XPath(".//div[@class='col bill']")
-    committees = get_committee_names(url_session)
+    def create_source_url(self):
+        """
+        Retrieves year for specified session.
 
-    def process_item(self, item):
-        bill_id_elem = CSS(".bill-name").match(item)[0]
-        bill_id = bill_id_elem.text_content().strip()
-
-        bill_type_abbr = bill_id[0:3].strip()
-        bill_type = "bill"
-        if bill_type_abbr in ("HR", "SR"):
-            bill_type = "resolution"
-        if bill_type_abbr in ("HCR", "SCR"):
-            bill_type = "concurrent resolution"
-        if bill_type_abbr in ("HMR", "SMR"):
-            bill_type = "memorial"
-
-        bill_url = CSS(".card-link").match(item)[0].get("href")
-
-        bill_card = CSS(".card-body").match(item)[0]
-        title = bill_card.xpath(".//p")[0].text_content().strip()
-
-        bill = Bill(
-            bill_id,
-            self.session_components[0],
-            title,
-            chamber="lower" if bill_id[0] == "H" else "upper",
-            classification=bill_type,
+        Returns proper url path to API endpoint.
+        """
+        assembly_session_id = self.input.get("assembly_id")
+        year = self.input.get("session_year")
+        return (
+            f"https://ndlegis.gov/api/assembly/"  # noqa: E231
+            f"{assembly_session_id}-{year}/data/bills.json"
         )
 
-        bill.add_source(bill_url)
-
-        sponsors_div = bill_card.xpath(".//div[@class='sponsors scroll']")[0]
-        sponsors_text = sponsors_div.text_content().split("Introduced by")[1].strip()
-        if ", " in sponsors_text:
-            sponsors_list = sponsors_text.split(", ")
-        else:
-            sponsors_list = [sponsors_text]
-        for sponsor in sponsors_list:
-            if sponsor in self.committees:
-                entity_type = "organization"
-            else:
-                entity_type = "person"
-            bill.add_sponsorship(
-                sponsor,
-                classification="cosponsor",
-                entity_type=entity_type,
-                primary=False,
-            )
-        return BillDetail(bill)
-
-
-class BillDetail(HtmlPage):
-    input_type = Bill
-    example_input = Bill(
-        "HB 1001",
-        "67",
-        "[title]",
-        chamber="lower",
-        classification="bill",
-    )
-
-    def get_source_from_input(self):
-        return self.input.sources[0]["url"]
-
     def process_page(self):
-        self.process_versions()
-        self.process_actions()
-        yield self.input
+        json_response = self.response.json()
+        bills = json_response.get("bills")
+        for bill_key in bills.keys():
+            bill_data = bills[bill_key]
+            bill_id = bill_data["name"]
 
-    def process_versions(self):
-        source = re.sub("overview/bo", "index/bi", self.source.url)
-        response = requests.get(source)
-        content = lxml.html.fromstring(response.content)
+            bill_type_abbr = bill_id[0:3].strip()
+            bill_type = "bill"
+            if bill_type_abbr in ("HR", "SR"):
+                bill_type = "resolution"
+            if bill_type_abbr in ("HCR", "SCR"):
+                bill_type = "concurrent resolution"
+            if bill_type_abbr in ("HMR", "SMR"):
+                bill_type = "memorial"
 
-        version_rows = content.xpath(".//table[@id='version-table']/tbody//tr")
-        for row in version_rows:
-            vers_links = row.xpath("td[1]//a")
-
-            for link in vers_links:
-                name = row.xpath("td[2]/text()")
-                if name:
-                    (name,) = name
-                else:
-                    (name,) = link.xpath("text()")
-
-                type_badge = link.xpath("span[@data-toggle='tooltip']")
-                if type_badge:
-                    (vers_type,) = type_badge[0].xpath("@title")
-                    if vers_type.strip() == "Marked up":
-                        name += " (Marked up)"
-                else:
-                    vers_type = None
-
-                (href,) = link.xpath("@href")
-                url = re.sub("/bill-index.+", href[2:], source)
-
-                if not vers_type or vers_type.strip() == "Engrossment":
-                    self.input.add_version_link(
-                        note=name, url=url, media_type="application/pdf"
-                    )
-                else:
-                    self.input.add_document_link(
-                        note=name, url=url, media_type="application/pdf"
-                    )
-
-    def process_actions(self):
-        categorizer = NDCategorizer()
-        source = re.sub("overview/bo", "actions/ba", self.source.url)
-        response = requests.get(source)
-        content = lxml.html.fromstring(response.content)
-
-        action_rows = content.xpath(".//table[@id='action-table']/tbody//tr")
-        for row in action_rows:
-            (action,) = row.xpath("td[3]/text()")
-
-            actor = "legislature"
-            chambers_dict = {"House": "lower", "Senate": "upper"}
-            chamber = row.xpath("td[2]/text()")
-            if chamber:
-                chamber = chamber[0].strip()
-                if chamber in chambers_dict.keys():
-                    actor = chambers_dict[chamber]
-            if "governor" in action.lower():
-                actor = "executive"
-
-            (date,) = row.xpath("td[1]/b/text()")
-            date += "/2023"
-            date = dt.datetime.strptime(date, "%m/%d/%Y")
-            classifier = categorizer.categorize(action)
-
-            self.input.add_action(
-                action,
-                date.strftime("%Y-%m-%d"),
-                chamber=actor,
-                classification=classifier["classification"],
+            bill = Bill(
+                identifier=bill_id,
+                legislative_session=self.input.get("assembly_id"),
+                title=bill_data["title"],
+                chamber="lower" if bill_data["chamber"] == "House" else "upper",
+                classification=bill_type,
             )
+
+            bill.add_source(bill_data["url"], note="HTML bill detail page")
+            bill.add_source(self.source.url, note="JSON page of session bills")
+
+            if bill_data["summary"]:
+                bill.add_abstract(bill_data["summary"], note="summary")
+
+            chambers = {
+                "House": "lower",
+                "Senate": "upper",
+            }
+
+            sponsors_list = bill_data["sponsors"]
+
+            for sponsor in sponsors_list:
+                primary = True if sponsor["primary"] else False
+                entity_types = {
+                    "legislator": "person",
+                    "committee": "organization",
+                }
+                chamber_val = sponsor["chamber"]
+                sponsor_chamber = (
+                    chambers[chamber_val] if chamber_val else "legislature"
+                )
+                raw_sponsor_name = sponsor["name"]
+                chamber_comm_match = self.comm_name_re.search(raw_sponsor_name)
+                member_match = self.member_name_re.search(raw_sponsor_name)
+                if chamber_comm_match:
+                    sponsor_name = chamber_comm_match.groups()[1]
+                elif member_match:
+                    last, first = member_match.groups()[1:]
+                    sponsor_name = f"{first} {last}"
+                else:
+                    sponsor_name = raw_sponsor_name
+
+                bill.add_sponsorship(
+                    name=sponsor_name,
+                    classification="primary" if primary else "cosponsor",
+                    entity_type=entity_types[sponsor["type"]],
+                    primary=primary,
+                    chamber=sponsor_chamber,
+                )
+
+            action_list = bill_data["actions"]
+            for action in action_list:
+                chamber_val = action["chamber"]
+                actor = chambers[chamber_val] if chamber_val else "legislature"
+                description = action["description"]
+                classifier = self.categorizer.categorize(description)
+                bill.add_action(
+                    description=description,
+                    date=parser.parse(action["date"]).strftime("%Y-%m-%d"),
+                    chamber=actor,
+                    classification=classifier["classification"],
+                )
+
+            version_list = bill_data["versions"]
+            for version in version_list:
+                description = version["description"]
+                version_match = self.version_name_re.search(description.lower())
+                if version_match:
+                    bill.add_version_link(
+                        note=description,
+                        url=version["document_url"],
+                        media_type="application/pdf",
+                    )
+                else:
+                    bill.add_document_link(
+                        note=description,
+                        url=version["document_url"],
+                        media_type="application/pdf",
+                    )
+
+            yield bill
 
 
 class NDBillScraper(Scraper):
     def scrape(self, session=None):
+        for i in self.jurisdiction.legislative_sessions:
+            if i["identifier"] == session:
+                session_year = i["start_date"][:4]
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
-        bill_list = BillList({"session": session})
+        bill_list = BillList({"assembly_id": session, "session_year": session_year})
         yield from bill_list.do_scrape()
