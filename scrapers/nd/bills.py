@@ -7,21 +7,31 @@ from .actions import NDCategorizer
 
 
 class BillList(JsonPage):
-    # TODO: remove this hard-coded {assembly-session_year} below, there must be
-    #  a way to get access to the "start_date" value for the active leg session
-    #  being scraped, so that the year could be pulled from that and this could
-    #  then be assembled in a variable way in the `NDBillScraper()` class.
-    url_session = "68-2023"
-    session_components = url_session.split("-")
-    source = (
-        f"https://ndlegis.gov/api/assembly/{url_session}/data/bills.json"  # noqa: E231
-    )
-
     categorizer = NDCategorizer()
-
     member_name_re = re.compile(r"^(Sen\.|Rep\.)\s*(.+),\s(.+)")
     comm_name_re = re.compile(r"^(House|Senate)\s*(.+)")
     version_name_re = re.compile(r"introduced|engrossment|enrollment")
+
+    def __init__(self, input_data):
+        super().__init__()
+        self.input = input_data
+        self.source = self.create_source_url()
+        # Initialize a logger for this class instance to avoid AttributeError
+        self.logger = logging.getLogger(__name__)
+
+    def create_source_url(self):
+        assembly_session_id = self.input.get("session")
+
+        # Extract numeric-only part of the identifier if necessary
+        assembly_num = int("".join(filter(str.isdigit, str(assembly_session_id))))
+        # This formula reflects assembly number and session year relationship.
+        #  Ex. 67th Assembly (2021): assembly_num = 67 --> session_year = 2021
+        session_year = 2011 + 2 * (assembly_num - 62)
+
+        return (
+            f"https://ndlegis.gov/api/assembly/"  # noqa: E231
+            f"{assembly_num}-{session_year}/data/bills.json"
+        )
 
     def process_page(self):
         json_response = self.response.json()
@@ -41,7 +51,7 @@ class BillList(JsonPage):
 
             bill = Bill(
                 bill_id,
-                self.session_components[0],
+                self.input.get("session"),
                 title=bill_data["title"],
                 chamber="lower" if bill_data["chamber"] == "House" else "upper",
                 classification=bill_type,
