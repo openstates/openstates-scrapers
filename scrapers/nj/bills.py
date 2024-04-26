@@ -391,7 +391,7 @@ class NJBillScraper(Scraper, MDBMixin):
         votes = {}
 
         for filename in vote_info_list:
-            s_vote_url = f"https://www.njleg.state.nj.us/votes/{filename}.zip"
+            s_vote_url = f"https://pub.njleg.state.nj.us/votes/{filename}.zip"
             try:
                 s_vote_zip, resp = self.urlretrieve(s_vote_url)
             except scrapelib.HTTPError:
@@ -488,7 +488,7 @@ class NJBillScraper(Scraper, MDBMixin):
                     # Regular vote.
                     vote.result = "pass" if counts["yes"] > counts["no"] else "fail"
 
-                vote.add_source("http://www.njleg.state.nj.us/downloads.asp")
+                vote.add_source("https://www.njleg.state.nj.us/downloads.asp")
                 yield vote
 
         # Actions
@@ -544,7 +544,7 @@ class NJBillScraper(Scraper, MDBMixin):
                 self.warning("probable phony bill detected %s", bill.identifier)
                 phony_bill_count += 1
             else:
-                bill.add_source("http://www.njleg.state.nj.us/downloads.asp")
+                bill.add_source("https://www.njleg.state.nj.us/downloads.asp")
                 yield bill
 
         if phony_bill_count:
