@@ -20,14 +20,15 @@ class BillList(JsonPage):
         self.logger = logging.getLogger(__name__)
 
     def create_source_url(self):
+        """
+        Dynamically retrieves session_year for proper url path to API endpoint.
+        """
         assembly_session_id = self.input.get("session")
-
         # Extract numeric-only part of the identifier if necessary
         assembly_num = int("".join(filter(str.isdigit, str(assembly_session_id))))
         # This formula reflects assembly number and session year relationship.
         #  Ex. 67th Assembly (2021): assembly_num = 67 --> session_year = 2021
         session_year = 2011 + 2 * (assembly_num - 62)
-
         return (
             f"https://ndlegis.gov/api/assembly/"  # noqa: E231
             f"{assembly_num}-{session_year}/data/bills.json"
