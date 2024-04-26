@@ -16,22 +16,18 @@ class BillList(JsonPage):
         super().__init__()
         self.input = input_data
         self.source = self.create_source_url()
-        # Initialize a logger for this class instance to avoid AttributeError
-        self.logger = logging.getLogger(__name__)
 
     def create_source_url(self):
         """
-        Dynamically retrieves session_year for proper url path to API endpoint.
+        Retrieves year for specified session.
+
+        Returns proper url path to API endpoint.
         """
-        assembly_session_id = self.input.get("session")
-        # Extract numeric-only part of the identifier if necessary
-        assembly_num = int("".join(filter(str.isdigit, str(assembly_session_id))))
-        # This formula reflects assembly number and session year relationship.
-        #  Ex. 67th Assembly (2021): assembly_num = 67 --> session_year = 2021
-        session_year = 2011 + 2 * (assembly_num - 62)
+        assembly_session_id = self.input.get("assembly_id")
+        year = self.input.get("session_year")
         return (
             f"https://ndlegis.gov/api/assembly/"  # noqa: E231
-            f"{assembly_num}-{session_year}/data/bills.json"
+            f"{assembly_session_id}-{year}/data/bills.json"
         )
 
     def process_page(self):
@@ -51,8 +47,8 @@ class BillList(JsonPage):
                 bill_type = "memorial"
 
             bill = Bill(
-                bill_id,
-                self.input.get("session"),
+                identifier=bill_id,
+                legislative_session=self.input.get("assembly_id"),
                 title=bill_data["title"],
                 chamber="lower" if bill_data["chamber"] == "House" else "upper",
                 classification=bill_type,
@@ -135,6 +131,9 @@ class BillList(JsonPage):
 
 class NDBillScraper(Scraper):
     def scrape(self, session=None):
+        for i in self.jurisdiction.legislative_sessions:
+            if i["identifier"] == session:
+                session_year = i["start_date"][:4]
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
-        bill_list = BillList({"session": session})
+        bill_list = BillList({"assembly_id": session, "session_year": session_year})
         yield from bill_list.do_scrape()
