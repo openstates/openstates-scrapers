@@ -353,7 +353,7 @@ class WVBillScraper(Scraper):
             vote.set_count("excused", exc_count)
             vote.set_count("not voting", nv_count)
             vote.add_source(url)
-            vote.dedupe_key = url
+            vote.dedupe_key = f"{bill}#{date.strftime('%Y-%m-%d')}#{url}"
 
             for key, values in votes.items():
                 for value in values:
