@@ -181,10 +181,12 @@ class GABillScraper(Scraper):
                 for listed_vote in vote_listing:
 
                     listed_vote = backoff(self.vservice.GetVote, listed_vote["VoteId"])
+                    date = listed_vote["Date"].strftime("%Y-%m-%d")
+                    text = listed_vote["Caption"] or "Vote on Bill"
 
                     vote = VoteEvent(
-                        start_date=listed_vote["Date"].strftime("%Y-%m-%d"),
-                        motion_text=listed_vote["Caption"] or "Vote on Bill",
+                        start_date=date,
+                        motion_text=text,
                         chamber={"House": "lower", "Senate": "upper"}[
                             listed_vote["Branch"]
                         ],
@@ -201,6 +203,7 @@ class GABillScraper(Scraper):
                     )
 
                     vote.add_source(self.vsource)
+                    vote.dedupe_key = f"{bill}#{date}#{text}"
 
                     methods = {"Yea": "yes", "Nay": "no"}
 
