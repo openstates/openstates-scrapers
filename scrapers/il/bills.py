@@ -562,8 +562,8 @@ class IlBillScraper(Scraper):
         yield bill
 
         # temporarily remove vote processing due to pdf issues
-        # votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
-        # yield from self.scrape_votes(session, bill, votes_url, committee_actors)
+        votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
+        yield from self.scrape_votes(session, bill, votes_url, committee_actors)
 
     def scrape_documents(self, bill, version_url):
         html = self.get(version_url).text
