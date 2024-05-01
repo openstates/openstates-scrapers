@@ -182,7 +182,7 @@ class GABillScraper(Scraper):
 
                     listed_vote = backoff(self.vservice.GetVote, listed_vote["VoteId"])
                     date = listed_vote["Date"].strftime("%Y-%m-%d")
-                    text = listed_vote["Caption"] or "Vote on Bill"
+                    text = listed_vote["Description"] or "Vote on Bill"
 
                     vote = VoteEvent(
                         start_date=date,
