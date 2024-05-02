@@ -28,7 +28,10 @@ class KSVoteScraper(Scraper):
         xml = self.get(list_url).content
         feed = feedparser.parse(xml)
         for item in feed.entries:
-            yield from self.scrape_vote_from_bill(session, item.title, item.guid)
+            bill_re = re.compile(r"(?P<prefix>\D+)(?P<number>\d+)")
+            bill_data = bill_re.search(item.title).groupdict()
+            bill_id = f'{bill_data["prefix"]} {bill_data["number"]}'
+            yield from self.scrape_vote_from_bill(session, bill_id, item.guid)
 
     def scrape_vote_from_bill(self, session, bill, url):
         doc = lxml.html.fromstring(self.get(url, retry_on_404=True).text)
