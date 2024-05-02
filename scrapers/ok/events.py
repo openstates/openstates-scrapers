@@ -51,7 +51,8 @@ class OKEventScraper(Scraper):
         yield from self.scrape_page(start, end)
 
     def scrape_senate(self):
-        url = "https://oksenate.gov/committee-meetings"
+        # url = "https://oksenate.gov/committee-meetings"
+        url = "https://accessible.oksenate.gov/committee-meetings"
         page = lxml.html.fromstring(self.get(url).content)
         page.make_links_absolute(url)
 
