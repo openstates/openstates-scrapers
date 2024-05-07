@@ -50,9 +50,14 @@ class DCEventScraper(Scraper):
             )
             event.add_bill(bill)
 
-        header = page.xpath("//header[contains(@class,'article-header')]/p[1]/text()")[
-            0
-        ]
+        try:
+            header = page.xpath(
+                "//header[contains(@class,'article-header')]/p[1]/text()"
+            )[0]
+        except IndexError:
+            header = page.xpath(
+                "//header[contains(@class,'article-header')]/h1[1]/text()"
+            )[0]
         if "&bullet;" in header:
             com_name = header.split("&bullet;")[1].strip()
             if "whole" not in com_name.lower():
