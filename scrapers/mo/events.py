@@ -20,7 +20,7 @@ class UnknownBillStringPattern(BaseException):
 # Regex pattern for extracting multiple bill ids
 #  ex. "HJRs 33 & 45" or "HBs 882 & 518"
 multi_bills_re = re.compile(
-    r"(SJR|SRB|HCR|HB|HR|SRM|SCR|SB|HRM|HCB|HJR|SM|HRB|HEC|GRP|HC|SR)s\s+(.+)"
+    r"(SJR|SRB|HCR|HB|HR|SRM|SCR|SB|HRM|HCB|HJR|SM|HRB|HEC|GRP|HC|SR)s*\s+(\d+)"
 )
 
 
