@@ -60,7 +60,9 @@ class VaEventScraper(Scraper):
             date_link = row.xpath(".//a[@title='Add to Calendar']/@href")[0]
             parsed = parse.parse_qs(parse.urlparse(date_link).query)
             date_raw = parsed["dt"][0]
-            location = parsed["loc"][0]
+            loc_raw = parsed["loc"][0]
+            # Prevent invalid length of location name
+            location = loc_raw[:198] if len(loc_raw) > 199 else loc_raw
 
             start = dateutil.parser.parse(date_raw, tzinfos=self.tzinfos)
 
@@ -165,7 +167,9 @@ class VaEventScraper(Scraper):
                 description,
             )
             if len(desc_split) > 1:
-                location = desc_split[1].strip()
+                loc_raw = desc_split[1].strip()
+                # Prevent invalid length of location name
+                location = loc_raw[:198] if len(loc_raw) > 199 else loc_raw
             else:
                 location = "Unknown"
 
