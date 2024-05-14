@@ -31,4 +31,4 @@ SESSION_SITE_IDS = {
     "2024S1": "242",
 }
 
-COMBINED_SESSIONS = {"221": ["222", "231", "232"]}
+COMBINED_SESSIONS = {"221": ["222", "231", "232", "241", "242"]}

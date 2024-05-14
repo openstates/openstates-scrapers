@@ -214,7 +214,7 @@ class Virginia(State):
             "name": "2024 Regular Session",
             "start_date": "2024-01-10",
             "end_date": "2024-03-09",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2024 Special Session I",
@@ -224,7 +224,7 @@ class Virginia(State):
             "start_date": "2024-05-13",
             # TODO: update actual end date
             "end_date": "2024-05-20",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
