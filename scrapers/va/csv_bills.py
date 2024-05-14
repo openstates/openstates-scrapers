@@ -2,10 +2,13 @@ import csv
 import re
 import pytz
 import datetime
+from paramiko.client import SSHClient, AutoAddPolicy
+import paramiko
 from openstates.scrape import Scraper, Bill, VoteEvent
 from collections import defaultdict
+import time
 
-from .common import SESSION_SITE_IDS
+from .common import SESSION_SITE_IDS, COMBINED_SESSIONS
 from .actions import Categorizer
 
 tz = pytz.timezone("America/New_York")
@@ -25,11 +28,56 @@ class VaCSVBillScraper(Scraper):
     _session_id: int
     categorizer = Categorizer()
 
+    def _init_sftp(self, session_id):
+        client = SSHClient()
+        client.set_missing_host_key_policy(AutoAddPolicy)
+        connected = False
+        attempts = 0
+        while not connected:
+            try:
+                client.connect(
+                    "sftp.dlas.virginia.gov",
+                    username="rjohnson",
+                    password="E8Tmg%9Dn!e6dp",
+                    compress=True,
+                )
+            except paramiko.ssh_exception.AuthenticationException:
+                attempts += 1
+                self.logger.warning(
+                    f"Auth failure...sleeping {attempts * 30} seconds and retrying"
+                )
+                # hacky backoff!
+                time.sleep(attempts * 30)
+            else:
+                connected = True
+            # importantly, we shouldn't try forever
+            if attempts > 3:
+                break
+        if not connected:
+            raise paramiko.ssh_exception.AuthenticationException
+        self.sftp = client.open_sftp()
+        """
+        Set working directory for sftp client based on session
+        """
+        for k, sessions in COMBINED_SESSIONS.items():
+            if session_id in sessions:
+                self.sftp.chdir(f"/CSV{k}/csv{session_id}")
+                break
+        else:
+            """
+            for -> else blocks only work when you've gone through
+            every step in a for loop without breaking
+            so this is kinda like setting a default
+            """
+            self.sftp.chdir(f"/CSV{session_id}/csv{session_id}")
+
     def get_file(self, filename):
+        # old sftp thing rn
+        return self.sftp.open(filename).read().decode(errors="ignore")
         # keeping old filenames in case we ever need to go back to sftp
-        filename = filename.lower().capitalize()
-        url = f"https://lis.virginia.gov/SiteInformation/csv/{self._session_id}/{filename}"
-        return self.get(url).text
+        # filename = filename.lower().capitalize()
+        # url = f"https://lis.virginia.gov/SiteInformation/csv/{self._session_id}/{filename}"
+        # return self.get(url).text
 
     # Load members of legislative
     def load_members(self):
@@ -201,7 +249,7 @@ class VaCSVBillScraper(Scraper):
             is_special = True
 
         session_id = SESSION_SITE_IDS[session]
-        self._session_id = session_id
+        self._init_sftp(session_id)
         bill_url_base = "https://lis.virginia.gov/cgi-bin/"
 
         if not is_special:
@@ -388,3 +436,4 @@ class VaCSVBillScraper(Scraper):
                     )
 
             yield b
+        self.sftp.close()
