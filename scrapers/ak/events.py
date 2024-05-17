@@ -99,7 +99,12 @@ class AKEventScraper(Scraper, LXMLMixin):
             # No room name, so just use building address
             location = building
 
+        # most dates are of the format 2023-05-15:T12:30:00-09:00
+        # but occasionally we just get 2023-05-15
         start_date = dateutil.parser.parse(row.xpath("string(Schedule)"))
+        if "T" not in row.xpath("string(Schedule)"):
+            start_date = start_date.date()
+
         # todo: do i need to self._TZ.localize() ?
         event_name = f"{name}#{location}#{start_date}"
         event = Event(
