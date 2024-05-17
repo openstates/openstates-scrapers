@@ -149,7 +149,7 @@ class ALBillScraper(Scraper):
 
     # the search JSON contains the act reference, but not the date,
     # which we need to build the action. It's on the act page at the SoS though.
-    def scrape_act(self, bill, link):
+    def scrape_act(self, bill: Bill, link: str):
         act_page = lxml.html.fromstring(link)
         link = act_page.xpath("//a")[0]
         url = link.xpath("@href")[0]
@@ -192,6 +192,10 @@ class ALBillScraper(Scraper):
             )
 
         bill.extras["AL_ACT_NUMBER"] = act_number
+
+        bill.add_citation(
+            "Alabama Chapter Law", act_number, "chapter", url=act_text_url
+        )
 
     def scrape_actions(self, bill, bill_row):
         if bill_row["PrefiledDate"]:
