@@ -38,7 +38,6 @@ class SubjectPDF(PdfPage):
         if a line contains (H|S)(\\d+) that bill gets current subject
         """
         subjects = defaultdict(set)
-
         SUBJ_RE = re.compile("^[A-Z ,()]+$")
         BILL_RE = re.compile(r"[HS]\d+(?:-[A-Z])?")
 
@@ -272,7 +271,12 @@ class BillDetail(HtmlPage):
                 if date:
                     name += " (%s)" % date
                 analysis_url = tr.xpath("td/a")[0].attrib["href"]
-                self.input.add_document_link(name, analysis_url, on_duplicate="ignore")
+                self.input.add_document_link(
+                    name,
+                    analysis_url,
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
         except IndexError:
             self.logger.warning(
                 "No analysis table for {}".format(self.input.identifier)
@@ -639,7 +643,15 @@ class HouseSearchPage(HtmlListPage):
         }[self.input.legislative_session]
 
         form = {"Chamber": "B", "SessionId": session_number, "BillNumber": bill_number}
-        return url + "?" + urlencode(form)
+        return URL(
+            url + "?" + urlencode(form),
+            method="GET",
+            headers={
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                "Host": "www.myfloridahouse.gov",
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            },
+        )
 
     def process_item(self, item):
         return HouseBillPage(self.input, source=item)
