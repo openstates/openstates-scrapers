@@ -33,6 +33,7 @@ _categorizer_rules = (
     Rule("Favorable from", "committee-passage-favorable"),
     # Signature event does not appear to be listed as a specific action
     Rule("Assigned Act No", "executive-signature"),
+    Rule("Enacted", "became-law"),
 )
 
 
