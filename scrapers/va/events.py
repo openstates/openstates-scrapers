@@ -82,6 +82,7 @@ class VaEventScraper(Scraper):
                 classification=event_type,
             )
             event.add_source(source)
+            event.dedupe_key = f"{title}#{location}#{start}"
 
             if chair is not None:
                 event.add_participant(chair, type="person", note="chair")
