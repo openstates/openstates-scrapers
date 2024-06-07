@@ -150,6 +150,7 @@ class Indiana(State):
         },
     ]
     ignored_scraped_sessions = [
+        "First Regular Session 124th General Assembly (2025)",
         "2012 Regular Session",
         "2011 Regular Session",
         "2010 Regular Session",
