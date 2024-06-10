@@ -53,10 +53,17 @@ class OKEventScraper(Scraper):
     def scrape_senate(self):
         # url = "https://oksenate.gov/committee-meetings"
         url = "https://accessible.oksenate.gov/committee-meetings"
-        page = lxml.html.fromstring(self.get(url).content)
+        page = self.get(url).content
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
         for row in page.xpath("//div[contains(@class,'bTiles__items')]/span"):
+
+            if row.xpath(
+                "//p[contains(text(), 'There are currently no live Committee Meetings in progress')]"
+            ):
+                continue
+
             event_link = row.xpath(".//a[contains(@class,'bTiles__title')]")[0]
             event_title = event_link.xpath("string(.)")
             event_url = event_link.xpath("@href")[0]
