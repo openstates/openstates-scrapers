@@ -7,7 +7,8 @@ import scrapelib
 import lxml.html
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
-from ._utils import canonicalize_url
+
+# from ._utils import canonicalize_url
 
 central = pytz.timezone("US/Central")
 
@@ -503,7 +504,7 @@ class IlBillScraper(Scraper):
         sponsor_list = build_sponsor_list(doc.xpath('//a[contains(@class, "content")]'))
         # don't add just yet; we can make them better using action data
 
-        committee_actors = {}
+        # committee_actors = {}
 
         # actions
         action_tds = doc.xpath('//a[@name="actions"]/following-sibling::table[1]/td')
@@ -519,18 +520,19 @@ class IlBillScraper(Scraper):
             action = action_elem.text_content()
             classification, related_orgs = _categorize_action(action)
 
-            if related_orgs and any(c.startswith("committee") for c in classification):
-                try:
-                    ((name, source),) = [
-                        (a.text, a.get("href"))
-                        for a in action_elem.xpath("a")
-                        if "committee" in a.get("href")
-                    ]
-                    source = canonicalize_url(source)
-                    actor_id = {"sources__url": source, "classification": "committee"}
-                    committee_actors[source] = name
-                except ValueError:
-                    self.warning("Can't resolve voting body for %s" % classification)
+            # TODO: add as related_entity not actor
+            # if related_orgs and any(c.startswith("committee") for c in classification):
+            #     try:
+            #         ((name, source),) = [
+            #             (a.text, a.get("href"))
+            #             for a in action_elem.xpath("a")
+            #             if "committee" in a.get("href")
+            #         ]
+            #         source = canonicalize_url(source)
+            #         actor_id = {"sources__url": source, "classification": "committee"}
+            #         committee_actors[source] = name
+            #     except ValueError:
+            #         self.warning("Can't resolve voting body for %s" % classification)
 
             bill.add_action(
                 action,
@@ -562,8 +564,8 @@ class IlBillScraper(Scraper):
         yield bill
 
         # temporarily remove vote processing due to pdf issues
-        votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
-        yield from self.scrape_votes(session, bill, votes_url, committee_actors)
+        # votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
+        # yield from self.scrape_votes(session, bill, votes_url, committee_actors)
 
     def scrape_documents(self, bill, version_url):
         html = self.get(version_url).text
