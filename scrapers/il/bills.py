@@ -8,6 +8,7 @@ import lxml.html
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 
+
 central = pytz.timezone("US/Central")
 
 
@@ -502,23 +503,18 @@ class IlBillScraper(Scraper):
         sponsor_list = build_sponsor_list(doc.xpath('//a[contains(@class, "content")]'))
         # don't add just yet; we can make them better using action data
 
-        # committee_actors = {}
-
         # actions
         action_tds = doc.xpath('//a[@name="actions"]/following-sibling::table[1]/td')
         for date, actor, action_elem in group(action_tds, 3):
             date = datetime.datetime.strptime(date.text_content().strip(), "%m/%d/%Y")
             date = self.localize(date).date()
             actor = actor.text_content()
-            if actor == "House":
-                actor_id = {"classification": "lower"}
-            elif actor == "Senate":
-                actor_id = {"classification": "upper"}
+            actor_id = "upper" if actor == "Senate" else "lower"
 
             action = action_elem.text_content()
             classification, related_orgs = _categorize_action(action)
 
-            # TODO: add as related_entity not actor
+            # TODO: still needs work, related_orgs doesn't seem to be catching committees
             # if related_orgs and any(c.startswith("committee") for c in classification):
             #     try:
             #         ((name, source),) = [
@@ -526,16 +522,14 @@ class IlBillScraper(Scraper):
             #             for a in action_elem.xpath("a")
             #             if "committee" in a.get("href")
             #         ]
-            #         source = canonicalize_url(source)
-            #         actor_id = {"sources__url": source, "classification": "committee"}
-            #         committee_actors[source] = name
+            #         related_entities.append({"type": "committee", "name": name})
             #     except ValueError:
-            #         self.warning("Can't resolve voting body for %s" % classification)
+            #         self.warning("Can't resolve committee for %s" % classification)
 
             bill.add_action(
                 action,
                 date,
-                organization=actor_id,
+                chamber=actor_id,
                 classification=classification,
                 related_entities=related_orgs,
             )
@@ -562,8 +556,8 @@ class IlBillScraper(Scraper):
         yield bill
 
         # temporarily remove vote processing due to pdf issues
-        # votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
-        # yield from self.scrape_votes(session, bill, votes_url, committee_actors)
+        votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
+        yield from self.scrape_votes(session, bill, votes_url)
 
     def scrape_documents(self, bill, version_url):
         html = self.get(version_url).text
@@ -629,7 +623,7 @@ class IlBillScraper(Scraper):
                     self.warning("unknown document type %s - adding as document" % name)
                     bill.add_document_link(name, url)
 
-    def scrape_votes(self, session, bill, votes_url, committee_actors):
+    def scrape_votes(self, session, bill, votes_url):
         html = self.get(votes_url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(votes_url)
@@ -643,19 +637,8 @@ class IlBillScraper(Scraper):
 
             vote_type = link.xpath("../ancestor::table[1]//td[1]/text()")[0]
             if vote_type == "Committee Hearing Votes":
-                name = re.sub(" *Committee *$", "", pieces[1])
-                chamber = link.xpath("../following-sibling::td/text()")[0].lower()
-                first_word = name.split()[0]
-                try:
-                    (source,) = [
-                        url
-                        for url, committee in committee_actors.items()
-                        if committee.startswith(first_word) and chamber in url
-                    ]
-                    actor = {"sources__url": source, "classification": "committee"}
-                except ValueError:
-                    self.warning("Can't resolve voting body for %s" % link.get("href"))
-                    continue
+                chamber = link.xpath("../following-sibling::td/text()")[0]
+                actor = "upper" if chamber == "SENATE" else "lower"
 
                 # depends on bill type
                 motion = "Do Pass"
@@ -675,12 +658,7 @@ class IlBillScraper(Scraper):
                     motion += amendment
 
                 actor = link.xpath("../following-sibling::td/text()")[0]
-                if actor == "HOUSE":
-                    actor = {"classification": "lower"}
-                elif actor == "SENATE":
-                    actor = {"classification": "upper"}
-                else:
-                    self.warning("unknown actor %s" % actor)
+                actor = "upper" if actor == "SENATE" else "lower"
 
             classification, _ = _categorize_action(motion)
 
@@ -815,7 +793,7 @@ class IlBillScraper(Scraper):
                 warned = True
 
         if passed is None:
-            if actor["classification"] == "lower":  # senate doesn't have these lines
+            if actor == "lower":  # senate doesn't have these lines
                 self.warning(
                     "No pass/fail word found; fall back to comparing yes and no vote."
                 )
@@ -827,7 +805,7 @@ class IlBillScraper(Scraper):
             legislative_session=session,
             motion_text=motion,
             classification=classification,
-            organization=actor,
+            chamber=actor,
             start_date=date,
             result=passed,
         )
