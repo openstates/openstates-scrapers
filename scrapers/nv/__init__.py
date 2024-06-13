@@ -156,9 +156,18 @@ class Nevada(State):
             "identifier": "2023Special35",
             "name": "35th (2023) Special Session",
             "start_date": "2023-06-07",
-            # TODO: change end_date
-            "end_date": "2023-06-30",
+            "end_date": "2023-06-14",
             "active": True,
+        },
+        {
+            "_scraped_name": "83rd (2025) Session",
+            "classification": "primary",
+            "identifier": "83",
+            "name": "2025 Regular Session",
+            # TODO: update dates
+            "start_date": "2025-02-01",
+            "end_date": "2025-06-01",
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [
