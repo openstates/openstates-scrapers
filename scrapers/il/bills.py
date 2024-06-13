@@ -8,7 +8,6 @@ import lxml.html
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 
-# from ._utils import canonicalize_url
 
 central = pytz.timezone("US/Central")
 
