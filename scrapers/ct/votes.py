@@ -95,6 +95,7 @@ class CTVoteScraper(Scraper):
         vote.set_count("no", no_count)
         vote.set_count("absent", other_count)
         vote.add_source(url)
+        vote.dedupe_key = url
 
         for voter in voters:
             name = string.capwords(voter["name"])

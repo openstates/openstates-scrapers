@@ -268,7 +268,7 @@ def get_contents():
     for row in rows[2:]:
         date = row.xpath("string(td[3])").strip()
         if date:
-            date = datetime.strptime(date, "%d-%b-%Y %H:%M")
+            date = datetime.strptime(date, "%Y-%m-%d %H:%M")
             filename = row.xpath("string(td[2]/a[1]/@href)")
             resp[filename] = date
     return resp

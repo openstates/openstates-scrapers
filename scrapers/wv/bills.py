@@ -51,6 +51,7 @@ class WVBillScraper(Scraper):
         "20223S": "3X",
         "20224S": "4X",
         "20231S": "1X",
+        "20241S": "1X",
     }
 
     bill_types = {
@@ -271,6 +272,7 @@ class WVBillScraper(Scraper):
             self.warning("missing vote file %s" % url)
             return
         text = convert_pdf(filename, "text")
+
         os.remove(filename)
 
         lines = text.splitlines()
@@ -281,28 +283,30 @@ class WVBillScraper(Scraper):
 
         for idx, line in enumerate(lines):
             line = line.rstrip().decode("utf-8")
-            match = re.search(r"(\d+)/(\d+)/(\d{4,4})$", line)
+            match = re.search(r"(\d{1,2})/(\d{1,2})/(\d{4,4})\b", line)
             if match:
                 date = datetime.datetime.strptime(match.group(0), "%m/%d/%Y")
                 continue
 
-            match = re.match(r"\s+YEAS: (\d+)\s+NAYS: (\d+)\s+NOT VOTING: (\d+)", line)
+            match = re.match(
+                r"\s+Yeas:\s+(\d+)\s+Nays:\s+(\d+)\s+Absent:\s+(\d+)\b", line
+            )
             if match:
                 motion = (lines[idx - 2].strip()).decode("utf-8")
                 if not motion:
                     self.warning("No motion text found for vote")
                     motion = "PASSAGE"
-                yes_count, no_count, other_count = [int(g) for g in match.groups()]
+                yes_count, no_count, nv_count = [int(g) for g in match.groups()]
+                exc_count = 0
 
-                exc_match = re.search(r"EXCUSED: (\d+)", line)
+                exc_match = re.search(r"Exc:\s+(\d+)", line)
                 if exc_match:
-                    other_count += int(exc_match.group(1))
+                    exc_count = int(exc_match.group(1))
 
                 if line.endswith("ADOPTED") or line.endswith("PASSED"):
                     passed = True
                 else:
                     passed = False
-
                 continue
 
             match = re.match(
@@ -312,8 +316,8 @@ class WVBillScraper(Scraper):
                 vote_type = {
                     "YEAS": "yes",
                     "NAYS": "no",
-                    "NOT VOTING": "other",
-                    "EXCUSED": "other",
+                    "NOT VOTING": "not voting",
+                    "EXCUSED": "excused",
                     "PAIRED": "paired",
                 }[match.group(1)]
                 continue
@@ -347,9 +351,10 @@ class WVBillScraper(Scraper):
 
             vote.set_count("yes", yes_count)
             vote.set_count("no", no_count)
-            vote.set_count("other", other_count)
+            vote.set_count("excused", exc_count)
+            vote.set_count("not voting", nv_count)
             vote.add_source(url)
-            vote.dedupe_key = url
+            vote.dedupe_key = f"{bill}#{date.strftime('%Y-%m-%d')}#{url}"
 
             for key, values in votes.items():
                 for value in values:
@@ -389,11 +394,12 @@ class WVBillScraper(Scraper):
             yield from self.scrape_senate_vote_3col(bill, vote, text, url, date)
             return
 
-        data = re.split(r"(Yea|Nay|Absent)s?:", text)[::-1]
+        data = re.split(r"(Yea|Nay|Absent|Excused)s?:", text)[::-1]
         data = list(filter(None, data))
         keymap = dict(yea="yes", nay="no")
         actual_vote = collections.defaultdict(int)
-        vote_count = {"yes": 0, "no": 0, "other": 0}
+        vote_count = {"yes": 0, "no": 0, "not voting": 0, "excused": 0}
+
         while True:
             if not data:
                 break
@@ -418,7 +424,8 @@ class WVBillScraper(Scraper):
         # updating result with actual value
         vote.result = (
             "pass"
-            if vote_count["yes"] > (vote_count["no"] + vote_count["other"])
+            if vote_count["yes"]
+            > (vote_count["no"] + vote_count["not voting"] + vote_count["excused"])
             else "fail"
         )
 
@@ -460,7 +467,7 @@ class WVBillScraper(Scraper):
                     actual_vote[vote_val] += 1
         vote.set_count("yes", yes_count)
         vote.set_count("no", no_count)
-        vote.set_count("other", other_count)
+        vote.set_count("not voting", other_count)
         # updating result with actual value
         vote.result = "pass" if yes_count > (no_count + other_count) else "fail"
 

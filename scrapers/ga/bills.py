@@ -177,28 +177,38 @@ class GABillScraper(Scraper):
             bill.extras = {"guid": guid}
 
             if instrument["Votes"]:
-                for vote_ in instrument["Votes"]:
-                    _, vote_ = vote_
-                    vote_ = backoff(self.vservice.GetVote, vote_[0]["VoteId"])
+                vote_listing = instrument["Votes"]["VoteListing"]
+                for listed_vote in vote_listing:
+
+                    listed_vote = backoff(self.vservice.GetVote, listed_vote["VoteId"])
+                    date = listed_vote["Date"].strftime("%Y-%m-%d")
+                    text = listed_vote["Description"] or "Vote on Bill"
 
                     vote = VoteEvent(
-                        start_date=vote_["Date"].strftime("%Y-%m-%d"),
-                        motion_text=vote_["Caption"] or "Vote on Bill",
-                        chamber={"House": "lower", "Senate": "upper"}[vote_["Branch"]],
-                        result="pass" if vote_["Yeas"] > vote_["Nays"] else "fail",
+                        start_date=date,
+                        motion_text=text,
+                        chamber={"House": "lower", "Senate": "upper"}[
+                            listed_vote["Branch"]
+                        ],
+                        result="pass"
+                        if listed_vote["Yeas"] > listed_vote["Nays"]
+                        else "fail",
                         classification="passage",
                         bill=bill,
                     )
-                    vote.set_count("yes", vote_["Yeas"])
-                    vote.set_count("no", vote_["Nays"])
-                    vote.set_count("other", vote_["Excused"] + vote_["NotVoting"])
+                    vote.set_count("yes", listed_vote["Yeas"])
+                    vote.set_count("no", listed_vote["Nays"])
+                    vote.set_count(
+                        "other", listed_vote["Excused"] + listed_vote["NotVoting"]
+                    )
 
                     vote.add_source(self.vsource)
+                    vote.dedupe_key = f"{bill}#{date}#{text}"
 
                     methods = {"Yea": "yes", "Nay": "no"}
 
-                    if vote_["Votes"] is not None:
-                        for vdetail in vote_["Votes"][0]:
+                    if listed_vote["Votes"] is not None:
+                        for vdetail in listed_vote["Votes"][0]:
                             whom = vdetail["Member"]
                             how = vdetail["MemberVoted"]
                             if whom["Name"] == "VACANT":

@@ -580,65 +580,74 @@ class MNBillScraper(Scraper, LXMLMixin):
         #  this gets versions from link on page that follows the label
         #  "Current bill text:"
         if not version_rows:
-            current = doc.xpath("//div[contains(text(), 'Current bill text')]/a[1]")[0]
+            try:
+                current = doc.xpath(
+                    "//div[contains(text(), 'Current bill text')]/a[1]"
+                )[0]
+                current_html_url = current.xpath("@href")[0]
+                current_response = requests.get(current_html_url, verify=False)
+                current_content = lxml.html.fromstring(current_response.content)
 
-            current_html_url = current.xpath("@href")[0]
-            current_response = requests.get(current_html_url, verify=False)
-            current_content = lxml.html.fromstring(current_response.content)
+                pdf_xpath = ".//a[contains(text(), 'Authors and Status')]/../following-sibling::td/a"
 
-            pdf_xpath = ".//a[contains(text(), 'Authors and Status')]/../following-sibling::td/a"
+                current_pdf_url = current_content.xpath(pdf_xpath)[0].xpath("@href")[0]
+                current_pdf_url = format_version_url(current_pdf_url)
 
-            current_pdf_url = current_content.xpath(pdf_xpath)[0].xpath("@href")[0]
-            current_pdf_url = format_version_url(current_pdf_url)
+                vers_list = [
+                    x
+                    for x in current_content.xpath(".//b")
+                    if "Posted on" in x.getparent().text_content()
+                ]
 
-            vers_list = [
-                x
-                for x in current_content.xpath(".//b")
-                if "Posted on" in x.getparent().text_content()
-            ]
+                for vers in vers_list:
+                    vers_descriptor = vers.getparent().text_content().strip()
+                    title_date_match = version_re.search(vers_descriptor)
+                    if not title_date_match:
+                        continue
+                    raw_title, raw_date = title_date_match.groups()
+                    vers_title = (
+                        "Introduction"
+                        if "introduced" in raw_title.lower()
+                        else raw_title
+                    )
+                    vers_day = datetime.datetime.strptime(raw_date, "%B %d, %Y").date()
 
-            for vers in vers_list:
-                vers_descriptor = vers.getparent().text_content().strip()
-                title_date_match = version_re.search(vers_descriptor)
-                if not title_date_match:
-                    continue
-                raw_title, raw_date = title_date_match.groups()
-                vers_title = (
-                    "Introduction" if "introduced" in raw_title.lower() else raw_title
-                )
-                vers_day = datetime.datetime.strptime(raw_date, "%B %d, %Y").date()
+                    href = vers.getparent().xpath("@href")
+                    # If parent element has href, that means it is a link
+                    # to an additional version, and the below conditional block
+                    # gets the html and pdf urls for that version
+                    if href:
+                        vers_html_url = href[0]
+                        vers_html_url = format_version_url(vers_html_url)
+                        vers_response = requests.get(vers_html_url, verify=False)
+                        vers_content = lxml.html.fromstring(vers_response.content)
+                        vers_pdf_url = vers_content.xpath(pdf_xpath)[0].xpath("@href")[
+                            0
+                        ]
+                        vers_pdf_url = format_version_url(vers_pdf_url)
 
-                href = vers.getparent().xpath("@href")
-                # If parent element has href, that means it is a link
-                # to an additional version, and the below conditional block
-                # gets the html and pdf urls for that version
-                if href:
-                    vers_html_url = href[0]
-                    vers_html_url = format_version_url(vers_html_url)
-                    vers_response = requests.get(vers_html_url, verify=False)
-                    vers_content = lxml.html.fromstring(vers_response.content)
-                    vers_pdf_url = vers_content.xpath(pdf_xpath)[0].xpath("@href")[0]
-                    vers_pdf_url = format_version_url(vers_pdf_url)
+                    # If parent element does not have href, it is current version
+                    else:
+                        vers_html_url = current_html_url
+                        vers_pdf_url = current_pdf_url
 
-                # If parent element does not have href, it is current version
-                else:
-                    vers_html_url = current_html_url
-                    vers_pdf_url = current_pdf_url
+                    bill.add_version_link(
+                        vers_title,
+                        vers_html_url,
+                        date=vers_day,
+                        media_type="text/html",
+                        on_duplicate="ignore",
+                    )
+                    bill.add_version_link(
+                        vers_title,
+                        vers_pdf_url,
+                        date=vers_day,
+                        media_type="application/pdf",
+                        on_duplicate="ignore",
+                    )
 
-                bill.add_version_link(
-                    vers_title,
-                    vers_html_url,
-                    date=vers_day,
-                    media_type="text/html",
-                    on_duplicate="ignore",
-                )
-                bill.add_version_link(
-                    vers_title,
-                    vers_pdf_url,
-                    date=vers_day,
-                    media_type="application/pdf",
-                    on_duplicate="ignore",
-                )
+            except IndexError:
+                self.warning(f"No versions were found for {bill.identifier}")
 
         # Otherwise if there IS a 'Version List' to show versions table
         for row in version_rows:

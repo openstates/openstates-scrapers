@@ -63,6 +63,7 @@ class VTAgendaOfWeek(HtmlPage):
                 location_name="{0}, {1}".format(building_name, room_number),
             )
             event.add_source(self.source.url)
+            event.dedupe_key = f"{start_date}#{committe_name}#{self.source.url}"
             event.add_committee(name=committe_name, note="host")
             for member in members:
                 event.add_person(member[0], note=member[1])

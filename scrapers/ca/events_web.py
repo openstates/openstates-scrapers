@@ -214,7 +214,9 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                     './/div[@class="attribute time-location"]'
                 )[0].xpath("string()")
 
-                hearing_time, hearing_location = time_loc.split(" - ")
+                time_loc = time_loc.split(" - ")
+                hearing_time = time_loc[0]
+                hearing_location = " - ".join(time_loc[1:])
                 hearing_time = (
                     hearing_time.replace(".", "").strip(strip_chars)
                     if ".m." in hearing_time

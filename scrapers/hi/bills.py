@@ -80,7 +80,7 @@ class HIBillScraper(Scraper):
         # vote types that have been reconsidered since last vote of that type
         reconsiderations = set()
 
-        for action in action_table.xpath("*")[1:]:
+        for index, action in enumerate(action_table.xpath("*")[1:]):
             date = action[0].text_content()
             date = dt.datetime.strptime(date, "%m/%d/%Y").strftime("%Y-%m-%d")
             actor_code = action[1].text_content().upper()
@@ -137,9 +137,7 @@ class HIBillScraper(Scraper):
                 vote.set_count("yes", int(yays or 0))
                 vote.set_count("no", int(nays or 0))
                 vote.set_count("not voting", int(v["n_excused"] or 0))
-                vote.dedupe_key = (
-                    f"{date}#{bill_id}#{real_committees}#yes{yays}#no{nays}"
-                )
+                vote.dedupe_key = f"{index}#{bill_id}#{date}#{string[:300]}"
                 for voter in split_specific_votes(v["yes"]):
                     voter = self.clean_voter_name(voter)
                     vote.yes(voter)

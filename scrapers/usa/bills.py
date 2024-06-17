@@ -5,7 +5,7 @@ import re
 import scrapelib
 import xml.etree.ElementTree as ET
 
-from openstates.scrape import Bill, Scraper, VoteEvent
+from openstates.scrape import Bill, Scraper, VoteEvent, Event
 
 
 # NOTE: This is a US federal bill scraper designed to output bills in the
@@ -191,6 +191,8 @@ class USBillScraper(Scraper):
         # use cg_url to get additional version for public law
         # disabled 9/2021 - congress.gov was giving 503s
         # self.scrape_public_law_version(bill, cg_url)
+        for event in self.scrape_hearing_by(bill, xml, xml_url):
+            yield event
 
         yield bill
 
@@ -292,25 +294,6 @@ class USBillScraper(Scraper):
                     self.warning(f"Skipping action with no source: {action_text}")
                     continue
 
-                action_type = self.get_xpath(row, "type")
-
-                actor = "lower"
-                if "Senate" in source:
-                    actor = "upper"
-                elif "House" in source:
-                    actor = "lower"
-                elif action_type == "BecameLaw" or action_type == "President":
-                    actor = "executive"
-
-                # LOC doesn't make the actor clear, but you can back into it
-                # from the actions
-                if source == "Library of Congress":
-                    possible_actor = self.classify_actor_by_code(
-                        self.get_xpath(row, "actionCode")
-                    )
-                    if possible_actor is not None:
-                        actor = possible_actor
-
                 # house actions give a time, senate just a date
                 if row.findall("actionTime"):
                     action_date = f"{self.get_xpath(row, 'actionDate')} {self.get_xpath(row, 'actionTime')}"
@@ -331,6 +314,25 @@ class USBillScraper(Scraper):
                 if classification is None:
                     classification = self.classify_action_by_name(action_text)
 
+                action_type = self.get_xpath(row, "type")
+                actor = "lower"
+                if "Senate" in source:
+                    actor = "upper"
+                elif "House" in source:
+                    actor = "lower"
+                elif action_type == "BecameLaw" or action_type == "President":
+                    actor = "executive"
+                elif action_type == "Committee":
+                    continue
+                # LOC doesn't make the actor clear, but you can back into it
+                # from the actions
+                if source == "Library of Congress":
+                    possible_actor = self.classify_actor_by_code(
+                        self.get_xpath(row, "actionCode")
+                    )
+                    if possible_actor is not None:
+                        actor = possible_actor
+
                 bill.add_action(
                     action_text,
                     action_date,
@@ -338,6 +340,43 @@ class USBillScraper(Scraper):
                     classification=classification,
                 )
                 actions.append(action_text)
+
+    # Hearing By
+    def scrape_hearing_by(self, bill, xml, url):
+        actions = []
+
+        for row in xml.findall("bill/actions/item"):
+            action_text = self.get_xpath(row, "text")
+            if "hearings held" not in action_text.lower():
+                continue
+            committee_name = self.get_xpath(row, "committees/item/name")
+            if action_text in actions:
+                continue
+            # house actions give a time, senate just a date
+            if row.findall("actionTime"):
+                action_date = f"{self.get_xpath(row, 'actionDate')} {self.get_xpath(row, 'actionTime')}"
+                action_date = datetime.datetime.strptime(
+                    action_date, "%Y-%m-%d %H:%M:%S"
+                )
+            else:
+                action_date = datetime.datetime.strptime(
+                    self.get_xpath(row, "actionDate"), "%Y-%m-%d"
+                )
+            action_date = self._TZ.localize(action_date)
+            location = "Washington, DC 20004"
+            event = Event(
+                action_text,
+                action_date,
+                location_name=location,
+            )
+            if committee_name:
+                event.add_committee(committee_name)
+            event.add_bill(bill=bill.identifier)
+
+            actions.append(action_text)
+            event.add_source(url)
+
+            yield event
 
     def scrape_amendments(self, bill, xml, session, chamber, bill_id):
         slugs = {

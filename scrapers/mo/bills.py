@@ -368,7 +368,10 @@ class MOBillScraper(Scraper, LXMLMixin):
 
     def parse_house_bill(self, response, bill_id, bill_year, bill_code, session):
         official_title = response.xpath("//BillInformation/CurrentBillString/text()")[0]
-        bill_desc = response.xpath("//BillInformation/Title/LongTitle/text()")[0]
+        try:
+            bill_desc = response.xpath("//BillInformation/Title/LongTitle/text()")[0]
+        except IndexError:
+            bill_desc = "No title provided by the state website"
         bill_type = "bill"
         triplet = bill_id[:3]
         if triplet in bill_types:
