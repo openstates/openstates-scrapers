@@ -296,7 +296,7 @@ class USEventScraper(Scraper, LXMLMixin):
                         self.warning(f"Unable to find document type: {doc.get('type')}")
 
                 event.add_document(
-                    doc_name, url, media_type=media_type, on_duplicate="ignore"
+                    doc_name[:300], url, media_type=media_type, on_duplicate="ignore"
                 )
 
         self.geocode(event)
