@@ -2,7 +2,6 @@ import re
 import csv
 import urllib
 import datetime
-import os
 import pytz
 import os
 from openstates.scrape import Scraper, Bill, VoteEvent
@@ -13,40 +12,6 @@ import lxml.html
 from .common import get_slug_for_session, get_biennium_year
 
 TIMEZONE = pytz.timezone("US/Central")
-user = os.environ["ARKANSAS_FTP_USER"]
-password = os.environ["ARKANSAS_FTP_PASSWORD"]
-
-
-class FTPSWrapper(urllib.request.ftpwrapper):
-    """
-    Like urllib.request.ftpwrapper, but enforces FTPS.
-    """
-
-    def init(self):
-        # This code was copied and modified from the standard library.
-        # https://github.com/python/cpython/blob/f14ced6062ecdd3c654f3c558f79e1edf4f10cc8/Lib/urllib/request.py#L2412-L2419
-        import ftplib
-
-        self.busy = 0
-        # Specify FTPS here
-        self.ftp = ftplib.FTP_TLS()
-        self.ftp.debug(2)
-        self.ftp.connect(self.host, self.port, self.timeout)
-        self.ftp.login(user, passwd=password)
-        # Set up a secure data connection
-        self.ftp.prot_p()
-        _target = "/".join(self.dirs)
-        self.ftp.cwd(_target)
-
-
-class FTPSHandler(urllib.request.FTPHandler):
-    """
-    Like urllib.request.FTPHandler, but enforces FTPS.
-    """
-
-    def connect_ftp(self, *args):
-        # Use the subclass we defined above.
-        return FTPSWrapper(*args, persistent=False)
 
 
 class ARBillScraper(Scraper):
@@ -227,7 +192,7 @@ class ARBillScraper(Scraper):
         odd_year = session_year if session_year % 2 else session_year - 1
         measureno = bill.identifier.replace(" ", "")
         url = (
-            "http://www.arkleg.state.ar.us/assembly/%s/%s/"
+            "https://www.arkleg.state.ar.us/assembly/%s/%s/"
             "Pages/BillInformation.aspx?measureno=%s" % (odd_year, self.slug, measureno)
         )
         page = self.get(url).text
@@ -364,18 +329,16 @@ class ARBillScraper(Scraper):
                 media_type="application/pdf",
             )
 
-        # TODO: reincorporate below code block for vote processing
-        #  (commented out due to scraper having vote event processing issue)
-        # for link in page.xpath(
-        #     "//div[@role=\"grid\"]/../..//a[contains(@href, '/Bills/Votes?id=')]"
-        # ):
-        #     date = link.xpath("normalize-space(string(../../div[2]))")
-        #     date = TIMEZONE.localize(
-        #         datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
-        #     )
-        #
-        #     motion = link.xpath("string(../../div[3])")
-        #     yield from self.scrape_vote(bill, date, motion, link.attrib["href"])
+        for link in page.xpath(
+            "//*[@id='tableDataWrapper']/div/div[4]/a[contains(@href, '/Bills/Votes?id=')]"
+        ):
+            date = link.xpath("normalize-space(string(../../div[2]))")
+            date = TIMEZONE.localize(
+                datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
+            )
+
+            motion = link.xpath("string(../../div[3])")
+            yield from self.scrape_vote(bill, date, motion, link.attrib["href"])
 
     def scrape_vote(self, bill, date, motion, url):
         page = self.get(url).text
