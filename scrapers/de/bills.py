@@ -219,7 +219,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             else:
                 code_url = None
 
-            if "N/A" in eff_date or eff_date == "":
+            if "N/A" in eff_date or eff_date == "" or len(eff_date) > 9:
                 eff_date = None
 
             if "N/A" in exp_date or exp_date == "":
