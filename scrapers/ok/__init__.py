@@ -180,7 +180,7 @@ class Oklahoma(State):
             "start_date": "2024-06-12",
             # TODO: update end date
             "end_date": "2024-06-21",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
