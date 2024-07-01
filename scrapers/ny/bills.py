@@ -469,7 +469,7 @@ class NYBillScraper(Scraper):
         # parse the bill data page, finding the latest html text
         url = assembly_url + "&Floor%26nbspVotes=Y"
 
-        data = self.get(url).text
+        data = self.get(url, verify=False).text
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(url)
 
