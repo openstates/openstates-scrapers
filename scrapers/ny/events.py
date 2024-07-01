@@ -64,7 +64,7 @@ class NYEventScraper(Scraper):
 
     def scrape_lower(self):
         url = "https://nyassembly.gov/leg/?sh=agen"
-        page = self.get(url).content
+        page = self.get(url, verify=False).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
