@@ -219,7 +219,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             else:
                 code_url = None
 
-            if "N/A" in eff_date or eff_date == "":
+            if "N/A" in eff_date or eff_date == "" or len(eff_date) > 9:
                 eff_date = None
 
             if "N/A" in exp_date or exp_date == "":
@@ -322,7 +322,9 @@ class DEBillScraper(Scraper, LXMLMixin):
             # Vote URL is just a generic search URL with POSTed data,
             # so provide a different link
             vote.add_source(vote_pdf_url)
-            vote.dedupe_key = vote_pdf_url
+            vote.dedupe_key = (
+                f"{bill}#{vote_id}#{vote_motion}#{vote_chamber}#{vote_date}"
+            )
             vote.set_count("yes", roll["YesVoteCount"])
             vote.set_count("no", roll["NoVoteCount"])
             vote.set_count("other", other_count)
