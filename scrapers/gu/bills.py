@@ -209,7 +209,11 @@ class GUBillScraper(Scraper):
             title="See Resolution Introduced Link",
             classification="resolution",
         )
+        if not self.res_desc_match_re.search(bill):
+            self.warning(f"Skipping resolution {bill}")
+            return
         description = self.res_desc_match_re.search(bill).group(1).strip()
+
         if len(description) > 0:
             bill_obj.title = description
         bill_obj.add_source(root_url, note="Resolution Index")
