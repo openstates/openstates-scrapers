@@ -50,6 +50,7 @@ class USVoteScraper(Scraper):
         "Bill Defeated": "fail",
         "Joint Resolution Passed": "pass",
         "Joint Resolution Defeated": "fail",
+        "Point of Order Well Taken": "pass",
         "Resolution Agreed to": "pass",
         "Resolution of Ratification Agreed to": "pass",
         "Veto Sustained": "fail",
