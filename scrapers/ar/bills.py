@@ -18,11 +18,6 @@ from .common import get_slug_for_session, get_biennium_year
 TIMEZONE = pytz.timezone("US/Central")
 
 
-def audit(event, args):
-    if event == "ftplib.connect":
-        print(f"audit: {event} with args={args}")
-
-
 # Needed because they're using a port python doesn't expect
 # https://stackoverflow.com/questions/12164470/python-ftp-implicit-tls-connection-issue
 class ImplicitFTP_TLS(ftplib.FTP_TLS):
