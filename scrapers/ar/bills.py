@@ -52,8 +52,8 @@ class ARBillScraper(Scraper):
 
     def scrape(self, chamber=None, session=None):
 
-        self.ftp_user = os.environ.get("AR_FTP_USER", "")
-        self.ftp_pass = os.environ.get("AR_FTP_PASSWORD", "")
+        self.ftp_user = os.environ.get("AR_FTP_USER")
+        self.ftp_pass = os.environ.get("AR_FTP_PASSWORD")
 
         if not self.ftp_user or not self.ftp_pass:
             self.error("AR_FTP_USER and AR_FTP_PASSWORD env variables are required.")
@@ -113,7 +113,9 @@ class ARBillScraper(Scraper):
                 title=row[3],
                 classification=bill_type,
             )
-            bill.add_source(url)
+            bill.add_source(
+                f"https://www.arkleg.state.ar.us/Bills/FTPDocument/?path=%2fSessionInformation%2{url}"
+            )
 
             primary = row[11]
             if not primary:
@@ -154,6 +156,10 @@ class ARBillScraper(Scraper):
 
             if bill_id not in self.bills:
                 continue
+
+            if len(row) < 10:
+                continue
+
             # different term
             if row[10] != self.slug:
                 continue
