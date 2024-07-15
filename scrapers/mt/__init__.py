@@ -61,6 +61,7 @@ class Montana(State):
             "start_date": "2023-01-04",
             "end_date": "2023-04-25",
             "active": True,
+            "extras": {"legislatureOrdinal": 68},
         },
     ]
     ignored_scraped_sessions = [

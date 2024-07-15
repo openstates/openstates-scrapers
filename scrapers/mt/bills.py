@@ -39,6 +39,9 @@ vote_ambiguous_indicators = [
 class MTBillScraper(Scraper):
     results_per_page = 100
 
+    session_ord = None
+    mt_session_id = None
+
     bill_chambers = {
         "H": "lower",
         "S": "upper",
@@ -48,6 +51,12 @@ class MTBillScraper(Scraper):
     bill_types = {"B": "bill", "J": "joint resolution", "R": "resolution", "C": "bill"}
 
     def scrape(self, session=None):
+
+        for i in self.jurisdiction.legislative_sessions:
+            if i["identifier"] == session:
+                self.session_ord = i["extras"]["legislatureOrdinal"]
+                self.mt_session_id = i["_scraped_name"]
+
         yield from self.scrape_list_page(session, 0)
 
     def scrape_list_page(self, session, page_num: int):
@@ -79,4 +88,23 @@ class MTBillScraper(Scraper):
                 classification=self.bill_types[bill_id[1]],
             )
             bill.add_source("https://google.com")
+
+            self.scrape_versions(bill, row)
+
             yield bill
+
+    def scrape_versions(self, bill: Bill, row: dict):
+        url = f"https://api.legmt.gov/docs/v1/documents/getBillVersions?legislatureOrdinal={self.session_ord}&sessionOrdinal={self.mt_session_id}&billType={row['billType']}&billNumber={row['billNumber']}"
+        page = self.get(url).json()
+
+        # TODO: this url returns binary data without the correct content type header,
+        # we could POST to https://api.legmt.gov/docs/v1/documents/shortPdfUrl?documentId=2710 and get back a better
+        # GET url, but is that worth 5x the requests?
+        for row in page:
+            doc_url = f"https://api.legmt.gov/docs/v1/documents/getContent?documentId={str(row['id'])}"
+            bill.add_version_link(
+                row["fileName"],
+                doc_url,
+                media_type="application/pdf",
+                on_duplicate="ignore",
+            )
