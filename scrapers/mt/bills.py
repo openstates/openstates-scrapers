@@ -1,5 +1,6 @@
 from openstates.scrape import Scraper, Bill
 import requests
+import scrapelib
 
 actor_map = {
     "(S)": "upper",
@@ -91,19 +92,44 @@ class MTBillScraper(Scraper):
 
             self.scrape_versions(bill, row)
 
+            if row["hasFiscalNote"]:
+                self.scrape_fiscal_note(bill, row)
+
             yield bill
 
     def scrape_versions(self, bill: Bill, row: dict):
-        url = f"https://api.legmt.gov/docs/v1/documents/getBillVersions?legislatureOrdinal={self.session_ord}&sessionOrdinal={self.mt_session_id}&billType={row['billType']}&billNumber={row['billNumber']}"
-        page = self.get(url).json()
+        for endpoint in ["Versions", "Amendments", "Other"]:
+            url = f"https://api.legmt.gov/docs/v1/documents/getBill{endpoint}?legislatureOrdinal={self.session_ord}&sessionOrdinal={self.mt_session_id}&billType={row['billType']}&billNumber={row['billNumber']}"
+            try:
+                page = self.get(url).json()
+            except scrapelib.HTTPError:
+                # no data = 404 instead of empty json
+                continue
 
-        # TODO: this url returns binary data without the correct content type header,
-        # we could POST to https://api.legmt.gov/docs/v1/documents/shortPdfUrl?documentId=2710 and get back a better
-        # GET url, but is that worth 5x the requests?
-        for row in page:
-            doc_url = f"https://api.legmt.gov/docs/v1/documents/getContent?documentId={str(row['id'])}"
-            bill.add_version_link(
-                row["fileName"],
+            # TODO: this url returns binary data without the correct content type header,
+            # we could POST to https://api.legmt.gov/docs/v1/documents/shortPdfUrl?documentId=2710 and get back a better
+            # GET url, but is that worth 5x the requests?
+            for doc_row in page:
+                doc_url = f"https://api.legmt.gov/docs/v1/documents/getContent?documentId={str(doc_row['id'])}"
+                bill.add_version_link(
+                    doc_row["fileName"],
+                    doc_url,
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
+
+    def scrape_fiscal_note(self, bill: Bill, row: dict):
+        url = f"https://api.legmt.gov/docs/v1/documents/getBillFiscalNotes?legislatureOrdinal={self.session_ord}&sessionOrdinal={self.mt_session_id}&billType={row['billType']}&billNumber={row['billNumber']}"
+        try:
+            page = self.get(url).json()
+        except scrapelib.HTTPError:
+            # no data = 404 instead of empty json
+            return
+
+        for doc_row in page:
+            doc_url = f"https://api.legmt.gov/docs/v1/documents/getContent?documentId={str(doc_row['id'])}"
+            bill.add_document_link(
+                f"Fiscal Note: {doc_row['fileName']}",
                 doc_url,
                 media_type="application/pdf",
                 on_duplicate="ignore",
