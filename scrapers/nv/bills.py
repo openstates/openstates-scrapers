@@ -162,6 +162,9 @@ class BillList(HtmlListPage):
         link = item.get("href")
         identifier = item.text
 
+        if link is None:
+            return
+
         return BillTabDetail(
             BillStub(
                 link,
