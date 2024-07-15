@@ -1,9 +1,13 @@
 import re
 import csv
-import urllib
 import datetime
 import pytz
 import os
+import ssl
+import ftplib
+import tempfile
+
+
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.exceptions import EmptyScrape
 
@@ -14,6 +18,33 @@ from .common import get_slug_for_session, get_biennium_year
 TIMEZONE = pytz.timezone("US/Central")
 
 
+def audit(event, args):
+    if event == "ftplib.connect":
+        print(f"audit: {event} with args={args}")
+
+
+# Needed because they're using a port python doesn't expect
+# https://stackoverflow.com/questions/12164470/python-ftp-implicit-tls-connection-issue
+class ImplicitFTP_TLS(ftplib.FTP_TLS):
+    """FTP_TLS subclass that automatically wraps sockets in SSL to support implicit FTPS."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._sock = None
+
+    @property
+    def sock(self):
+        """Return the socket."""
+        return self._sock
+
+    @sock.setter
+    def sock(self, value):
+        """When modifying the socket, ensure that it is ssl wrapped."""
+        if value is not None and not isinstance(value, ssl.SSLSocket):
+            value = self.context.wrap_socket(value)
+        self._sock = value
+
+
 class ARBillScraper(Scraper):
     ftp_user = ""
     ftp_pass = ""
@@ -21,8 +52,8 @@ class ARBillScraper(Scraper):
 
     def scrape(self, chamber=None, session=None):
 
-        self.ftp_user = os.environ.get("AR_FTP_USER", None)
-        self.ftp_pass = os.environ.get("AR_FTP_PASSWORD", None)
+        self.ftp_user = os.environ.get("AR_FTP_USER", "")
+        self.ftp_pass = os.environ.get("AR_FTP_PASSWORD", "")
 
         if not self.ftp_user or not self.ftp_pass:
             self.error("AR_FTP_USER and AR_FTP_PASSWORD env variables are required.")
@@ -49,7 +80,7 @@ class ARBillScraper(Scraper):
             yield bill
 
     def scrape_bill(self, chamber, session):
-        url = "ftp://www.arkleg.state.ar.us/SessionInformation/LegislativeMeasures.txt"
+        url = "LegislativeMeasures.txt"
         page = csv.reader(self.get_utf_16_ftp_content(url).splitlines(), delimiter="|")
 
         for row in page:
@@ -115,7 +146,7 @@ class ARBillScraper(Scraper):
             self.bills[bill_id] = bill
 
     def scrape_actions(self):
-        url = "ftp://www.arkleg.state.ar.us/SessionInformation/ChamberActions.txt"
+        url = "ChamberActions.txt"
         page = csv.reader(self.get_utf_16_ftp_content(url).splitlines(), delimiter="|")
 
         for row in page:
@@ -424,15 +455,24 @@ class ARBillScraper(Scraper):
         page = self.get(url).text
         page = lxml.html.fromstring(page)
 
-    def get_utf_16_ftp_content(self, url):
-        # hacky code alert:
-        # inserting the credentials inline plays nice with urllib.urlretrieve
-        # when other methods do not
-        url = url.replace("ftp://", f"ftp://{self.ftp_user}:{self.ftp_pass}@")
-        local_file, headers = urllib.request.urlretrieve(url)
-        raw = open(local_file, "rb")
-        raw = raw.read().decode("utf-16")
-        # Also, legislature may use `NUL` bytes when a cell is empty
-        NULL_BYTE_CODE = "\x00"
-        text = raw.replace(NULL_BYTE_CODE, "")
-        return text
+    # the data is utf-16, with null bytes for empty cells.
+    def decode_ar_utf16(self, data) -> str:
+        data = data.decode("utf-16", errors="ignore")
+        data = data.replace("\x00", "")
+        return data
+
+    def get_utf_16_ftp_content(self, filename):
+        self.info(f"GET from ftp: {filename}")
+        ftp_client = ImplicitFTP_TLS()
+        ftp_client.connect(host="secureftp.arkleg.state.ar.us", port=990)
+        ftp_client.login(user=self.ftp_user, passwd=self.ftp_pass)
+        ftp_client.prot_p()
+        ftp_client.cwd("SessionInformation")
+        raw = tempfile.NamedTemporaryFile()
+
+        with open(raw.name, "wb") as f:
+            ftp_client.retrbinary("RETR " + filename, raw.write)
+
+        with open(raw.name, "rb") as f:
+            text = self.decode_ar_utf16(f.read())
+            return text
