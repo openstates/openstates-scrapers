@@ -1,7 +1,7 @@
-from utils import url_xpath
 from openstates.scrape import State
 from .bills import MTBillScraper
 from .events import MTEventScraper
+import requests
 
 
 class Montana(State):
@@ -76,7 +76,9 @@ class Montana(State):
     ]
 
     def get_session_list(self):
-        return url_xpath(
-            "http://laws.leg.mt.gov/legprd/LAW0200W$.Startup",
-            '//select[@name="P_SESS"]/option/@value',
-        )
+        url = "https://api.legmt.gov/archive/v1/sessions"
+        sessions = []
+        page = requests.get(url).json()
+        for row in page:
+            sessions.append(str(row["sessionId"]))
+        return sessions
