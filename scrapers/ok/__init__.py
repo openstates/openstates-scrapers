@@ -176,7 +176,7 @@ class Oklahoma(State):
         {
             "_scraped_name": "2024 Fourth Special Session",
             "identifier": "2024S4",
-            "name": "2024 Third Fourth Session",
+            "name": "2024 Fourth Special Session",
             "start_date": "2024-06-12",
             # TODO: update end date
             "end_date": "2024-06-21",
