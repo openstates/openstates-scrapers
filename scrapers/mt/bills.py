@@ -1,8 +1,10 @@
 from openstates.scrape import Scraper, Bill
 
-# from .actions import categorize_actions
+from .actions import categorize_actions
 import requests
 import scrapelib
+import dateutil
+import pytz
 
 actor_map = {
     "(S)": "upper",
@@ -40,6 +42,7 @@ vote_ambiguous_indicators = [
 
 
 class MTBillScraper(Scraper):
+    TIMEZONE = pytz.timezone("America/Denver")
     results_per_page = 100
 
     session_ord = None
@@ -90,8 +93,11 @@ class MTBillScraper(Scraper):
                 title=title,
                 classification=self.bill_types[bill_id[1]],
             )
-            bill.add_source("https://google.com")
+            bill.add_source(
+                f"https://bills.legmt.gov/#/bill/{self.mt_session_id}/{row['id']['billDraftNumber']}"
+            )
 
+            self.scrape_actions(bill, row)
             self.scrape_versions(bill, row)
 
             if row["hasFiscalNote"]:
@@ -107,10 +113,46 @@ class MTBillScraper(Scraper):
                     sponsor_name,
                     classification="primary",
                     entity_type="person",
-                    primary="True",
+                    primary=True,
                 )
 
             yield bill
+
+    def scrape_actions(self, bill: Bill, row: dict):
+        for action in row["billActions"]:
+            name = action["actionType"]["description"]
+            when = dateutil.parser.parse(action["date"])
+            when = self.TIMEZONE.localize(when)
+            if "(H)" in name:
+                chamber = "lower"
+            elif "(S)" in name:
+                chamber = "upper"
+            else:
+                chamber = "legislature"
+            bill.add_action(
+                name,
+                date=when,
+                chamber=chamber,
+                classification=categorize_actions(name),
+            )
+            # TODO: votes here
+
+    def scrape_fiscal_note(self, bill: Bill, row: dict):
+        url = f"https://api.legmt.gov/docs/v1/documents/getBillFiscalNotes?legislatureOrdinal={self.session_ord}&sessionOrdinal={self.mt_session_id}&billType={row['billType']}&billNumber={row['billNumber']}"
+        try:
+            page = self.get(url).json()
+        except scrapelib.HTTPError:
+            # no data = 404 instead of empty json
+            return
+
+        for doc_row in page:
+            doc_url = f"https://api.legmt.gov/docs/v1/documents/getContent?documentId={str(doc_row['id'])}"
+            bill.add_document_link(
+                f"Fiscal Note: {doc_row['fileName']}",
+                doc_url,
+                media_type="application/pdf",
+                on_duplicate="ignore",
+            )
 
     def scrape_versions(self, bill: Bill, row: dict):
         for endpoint in ["Versions", "Amendments", "Other"]:
@@ -132,20 +174,3 @@ class MTBillScraper(Scraper):
                     media_type="application/pdf",
                     on_duplicate="ignore",
                 )
-
-    def scrape_fiscal_note(self, bill: Bill, row: dict):
-        url = f"https://api.legmt.gov/docs/v1/documents/getBillFiscalNotes?legislatureOrdinal={self.session_ord}&sessionOrdinal={self.mt_session_id}&billType={row['billType']}&billNumber={row['billNumber']}"
-        try:
-            page = self.get(url).json()
-        except scrapelib.HTTPError:
-            # no data = 404 instead of empty json
-            return
-
-        for doc_row in page:
-            doc_url = f"https://api.legmt.gov/docs/v1/documents/getContent?documentId={str(doc_row['id'])}"
-            bill.add_document_link(
-                f"Fiscal Note: {doc_row['fileName']}",
-                doc_url,
-                media_type="application/pdf",
-                on_duplicate="ignore",
-            )
