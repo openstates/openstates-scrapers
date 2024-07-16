@@ -62,6 +62,7 @@ class MTBillScraper(Scraper):
             if i["identifier"] == session:
                 self.session_ord = i["extras"]["legislatureOrdinal"]
                 self.mt_session_id = i["_scraped_name"]
+                self.session_year = i["start_date"][0:4]
 
         yield from self.scrape_list_page(session, 0)
 
@@ -98,6 +99,8 @@ class MTBillScraper(Scraper):
             )
 
             self.scrape_actions(bill, row)
+            self.scrape_extras(bill, row)
+            self.scrape_subjects(bill, row)
             self.scrape_versions(bill, row)
 
             if row["hasFiscalNote"]:
@@ -105,7 +108,7 @@ class MTBillScraper(Scraper):
 
             if row["coSponsor"]:
                 print(row["coSponsor"])
-                raise Exception("COSPONSOR HERE")
+                raise Exception("COSPONSOR HERE WRITE THE CODE")
 
             for sponsor in row["primarySponsorBillRoles"]:
                 sponsor_name = f"{sponsor['lawEntity']['firstName']} {sponsor['lawEntity']['lastName']}"
@@ -137,6 +140,22 @@ class MTBillScraper(Scraper):
             )
             # TODO: votes here
 
+    def scrape_extras(self, bill: Bill, row: dict):
+        bill.extras["bill_draft_number:"] = row["id"]["billDraftNumber"]
+
+        # this is a for loop but there's only ever one entity
+        for requester in row["requestOf"]:
+            if requester["lawEntity"]:
+                bill.extras["by_request_of"] = requester["lawEntity"]["lastName"]
+            elif requester["legislator"]:
+                bill.extras[
+                    "by_request_of"
+                ] = f"{requester['legislator']['firstName']} {requester['legislator']['lastName']}"
+
+        if row["sessionLawChapterNumber"]:
+            cite = f"{self.session_year} Chapter {row['sessionLawChapterNumber']}, {bill.identifier}"
+            bill.add_citation("Montanta Chapter Laws", cite, "chapter")
+
     def scrape_fiscal_note(self, bill: Bill, row: dict):
         url = f"https://api.legmt.gov/docs/v1/documents/getBillFiscalNotes?legislatureOrdinal={self.session_ord}&sessionOrdinal={self.mt_session_id}&billType={row['billType']}&billNumber={row['billNumber']}"
         try:
@@ -153,6 +172,10 @@ class MTBillScraper(Scraper):
                 media_type="application/pdf",
                 on_duplicate="ignore",
             )
+
+    def scrape_subjects(self, bill: Bill, row: dict):
+        for subject in row["subjects"]:
+            bill.add_subject(subject["subject"]["description"])
 
     def scrape_versions(self, bill: Bill, row: dict):
         for endpoint in ["Versions", "Amendments", "Other"]:
