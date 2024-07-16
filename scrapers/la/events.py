@@ -62,7 +62,12 @@ class LAEventScraper(Scraper, LXMLMixin):
         # when = self._tz.localize(when)
 
         description = "Meeting on %s of the %s" % (date, title)
-        chambers = {"house": "lower", "senate": "upper", "joint": "legislature"}
+        chambers = {
+            "house": "lower",
+            "senate": "upper",
+            "joint": "legislature",
+            "louisiana": "legislature",
+        }
 
         for chamber_ in chambers:
             if chamber_ in title.lower():
