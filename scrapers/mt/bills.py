@@ -1,4 +1,4 @@
-from openstates.scrape import Scraper, Bill
+from openstates.scrape import Scraper, Bill, VoteEvent
 
 from .actions import categorize_actions
 import requests
@@ -98,7 +98,7 @@ class MTBillScraper(Scraper):
                 f"https://bills.legmt.gov/#/bill/{self.mt_session_id}/{row['id']['billDraftNumber']}"
             )
 
-            self.scrape_actions(bill, row)
+            yield from self.scrape_actions(bill, row)
             self.scrape_extras(bill, row)
             self.scrape_subjects(bill, row)
             self.scrape_versions(bill, row)
@@ -132,13 +132,30 @@ class MTBillScraper(Scraper):
                 chamber = "upper"
             else:
                 chamber = "legislature"
+
             bill.add_action(
                 name,
                 date=when,
                 chamber=chamber,
                 classification=categorize_actions(name),
             )
-            # TODO: votes here
+
+            if action["yesVotes"] or action["noVotes"]:
+                passed = int(action["yesVotes"]) > int(action["noVotes"])
+                vote = VoteEvent(
+                    start_date=when,
+                    motion_text=name,
+                    bill_action=name,
+                    result="pass" if passed else "fail",
+                    chamber=chamber,
+                    bill=bill,
+                    classification=[],
+                )
+
+                vote.set_count("yes", int(action["yesVotes"]))
+                vote.set_count("no", int(action["noVotes"]))
+                vote.add_source(bill.sources[0]["url"])
+                yield vote
 
     def scrape_extras(self, bill: Bill, row: dict):
         bill.extras["bill_draft_number:"] = row["id"]["billDraftNumber"]
