@@ -1,4 +1,6 @@
 from openstates.scrape import Scraper, Bill
+
+# from .actions import categorize_actions
 import requests
 import scrapelib
 
@@ -94,6 +96,19 @@ class MTBillScraper(Scraper):
 
             if row["hasFiscalNote"]:
                 self.scrape_fiscal_note(bill, row)
+
+            if row["coSponsor"]:
+                print(row["coSponsor"])
+                raise Exception("COSPONSOR HERE")
+
+            for sponsor in row["primarySponsorBillRoles"]:
+                sponsor_name = f"{sponsor['lawEntity']['firstName']} {sponsor['lawEntity']['lastName']}"
+                bill.add_sponsorship(
+                    sponsor_name,
+                    classification="primary",
+                    entity_type="person",
+                    primary="True",
+                )
 
             yield bill
 
