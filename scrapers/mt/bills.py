@@ -158,7 +158,7 @@ class MTBillScraper(Scraper):
                 yield vote
 
     def scrape_extras(self, bill: Bill, row: dict):
-        bill.extras["bill_draft_number:"] = row["id"]["billDraftNumber"]
+        bill.extras["bill_draft_number"] = row["id"]["billDraftNumber"]
 
         # this is a for loop but there's only ever one entity
         for requester in row["requestOf"]:
