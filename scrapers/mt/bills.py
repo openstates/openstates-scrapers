@@ -67,6 +67,7 @@ class MTBillScraper(Scraper):
         yield from self.scrape_list_page(session, 0)
 
     def scrape_list_page(self, session, page_num: int):
+        self.info(f"Scraping page {str(page_num)}")
         params = {
             "limit": str(self.results_per_page),
             "offset": str(page_num),
@@ -108,7 +109,7 @@ class MTBillScraper(Scraper):
 
             if row["coSponsor"]:
                 print(row["coSponsor"])
-                raise Exception("COSPONSOR HERE WRITE THE CODE")
+                raise Exception("COSPONSOR HERE WRITE THE CODE BASED ON RETVAL")
 
             for sponsor in row["primarySponsorBillRoles"]:
                 sponsor_name = f"{sponsor['lawEntity']['firstName']} {sponsor['lawEntity']['lastName']}"
@@ -120,6 +121,9 @@ class MTBillScraper(Scraper):
                 )
 
             yield bill
+
+        if page["bills"]["totalPages"] > page_num:
+            yield from self.scrape_list_page(session, page_num + 1)
 
     def scrape_actions(self, bill: Bill, row: dict):
         for action in row["billActions"]:
