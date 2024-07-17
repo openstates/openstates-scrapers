@@ -1,4 +1,5 @@
 from openstates.scrape import Scraper, Event
+from utils.events import match_coordinates
 import dateutil
 import json
 import lxml.html
@@ -27,6 +28,9 @@ class MTEventScraper(Scraper):
         title = page.xpath("//span[@class='headerTitle']")[0].text_content()
         location = page.xpath("//span[@id='location']")[0].text_content()
 
+        if location.lower()[0:4] == "room":
+            location = f"{location}, 1301 E 6th Ave, Helena, MT 59601"
+
         when_date = page.xpath("//div[@id='scheduleddate']")[0].text_content()
         when_time = page.xpath("//span[@id='scheduledStarttime']")[0].text_content()
 
@@ -41,13 +45,22 @@ class MTEventScraper(Scraper):
         )
 
         self.scrape_versions(event, html)
+        self.scrape_media(event, html)
 
         event.add_source(url)
 
+        match_coordinates(
+            event,
+            {
+                "1301 E 6th Ave, Helena": ("46.5857", "-112.0184"),
+            },
+        )
+
         yield event
 
+    # versions and media are in the 'dataModel' js variable on the page
     def scrape_versions(self, event: Event, html: str):
-        matches = re.search(r"Handouts: (.*),", html)
+        matches = re.search(r"Handouts:\s?(.*),", html)
         versions = json.loads(matches.group(1))
         for v in versions:
             event.add_document(
@@ -56,3 +69,16 @@ class MTEventScraper(Scraper):
                 media_type="application/pdf",
                 on_duplicate="ignore",
             )
+
+    def scrape_media(self, event: Event, html: str):
+        matches = re.search(r"Media:\s?(.*),", html)
+        media = json.loads(matches.group(1))
+        print(media)
+        if "children" in media and media["children"] is not None:
+            for m in media["children"]:
+                print(m)
+                event.add_media_link(
+                    m["textTags"]["DESCRIPTION"]["text"],
+                    m["textTags"]["URL"]["text"],
+                    media_type="application/vnd",
+                )
