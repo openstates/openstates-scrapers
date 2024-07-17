@@ -85,7 +85,13 @@ class MTBillScraper(Scraper):
         ).json()
 
         for row in page["bills"]["content"]:
-            bill_id = f"{row['billType']} {row['billNumber']}"
+            is_draft = False
+            if row["billNumber"]:
+                bill_id = f"{row['billType']} {row['billNumber']}"
+            else:
+                bill_id = row["id"]["billDraftNumber"]
+                is_draft = True
+
             chamber = self.bill_chambers[bill_id[0]]
             title = row["shortTitle"]
             bill = Bill(
@@ -102,14 +108,16 @@ class MTBillScraper(Scraper):
             yield from self.scrape_actions(bill, row)
             self.scrape_extras(bill, row)
             self.scrape_subjects(bill, row)
-            self.scrape_versions(bill, row)
+
+            if not is_draft:
+                self.scrape_versions(bill, row)
 
             if row["hasFiscalNote"]:
                 self.scrape_fiscal_note(bill, row)
 
             if row["coSponsor"]:
                 print(row["coSponsor"])
-                raise Exception("COSPONSOR HERE WRITE THE CODE BASED ON RETVAL")
+                raise Exception("COSPONSOR HERE WRITE THE CODE BASED ON JSON VALUE")
 
             for sponsor in row["primarySponsorBillRoles"]:
                 sponsor_name = f"{sponsor['lawEntity']['firstName']} {sponsor['lawEntity']['lastName']}"
