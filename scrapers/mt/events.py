@@ -49,6 +49,9 @@ class MTEventScraper(Scraper):
 
         event.add_source(url)
 
+        if "HB" not in title.lower() and "SB" not in title.lower():
+            event.add_committee(title)
+
         match_coordinates(
             event,
             {
@@ -73,7 +76,6 @@ class MTEventScraper(Scraper):
     def scrape_media(self, event: Event, html: str):
         matches = re.search(r"Media:\s?(.*),", html)
         media = json.loads(matches.group(1))
-        print(media)
         if "children" in media and media["children"] is not None:
             for m in media["children"]:
                 print(m)
