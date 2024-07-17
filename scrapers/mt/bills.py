@@ -6,40 +6,6 @@ import scrapelib
 import dateutil
 import pytz
 
-actor_map = {
-    "(S)": "upper",
-    "(H)": "lower",
-    "(C)": "legislature",  # TODO: add clerk role?
-}
-
-sponsor_map = {"Primary Sponsor": "primary"}
-
-vote_passage_indicators = [
-    "Adopted",
-    "Appointed",
-    "Carried",
-    "Concurred",
-    "Dissolved",
-    "Passed",
-    "Rereferred to Committee",
-    "Transmitted to",
-    "Veto Overidden",
-    "Veto Overridden",
-]
-vote_failure_indicators = ["Failed", "Rejected"]
-vote_ambiguous_indicators = [
-    "Indefinitely Postponed",
-    "On Motion Rules Suspended",
-    "Pass Consideration",
-    "Reconsidered Previous",
-    "Rules Suspended",
-    "Segregated from Committee",
-    "Special Action",
-    "Sponsor List Modified",
-    "Tabled",
-    "Taken from",
-]
-
 
 class MTBillScraper(Scraper):
     TIMEZONE = pytz.timezone("America/Denver")
@@ -74,8 +40,8 @@ class MTBillScraper(Scraper):
         }
 
         json_data = {
-            "sessionId": 20231,
-            "sortBy": "billNumber",
+            "sessionId": self.mt_session_id,
+            # "sortBy": "billNumber", # it appears that giving no sort defaults to revcron
         }
 
         page = requests.post(
