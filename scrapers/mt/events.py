@@ -1,5 +1,6 @@
 from openstates.scrape import Scraper, Event
 from utils.events import match_coordinates
+import datetime
 import dateutil
 import json
 import lxml.html
@@ -10,7 +11,18 @@ import re
 class MTEventScraper(Scraper):
     _tz = pytz.timezone("America/Denver")
 
-    def scrape(self, start=None, end=None):
+    def scrape(self):
+
+        yield from self.scrape_upcoming()
+
+        # scrape events from this month, and last month
+        today = datetime.date.today()
+        yield from self.scrape_cal_month(today)
+        yield from self.scrape_cal_month(
+            today + dateutil.relativedelta.relativedelta(months=-1)
+        )
+
+    def scrape_upcoming(self):
         url = "https://sg001-harmony.sliq.net/00309/Harmony/en/View/UpcomingEvents"
 
         page = self.get(url).content
@@ -19,6 +31,19 @@ class MTEventScraper(Scraper):
 
         for link in page.xpath("//div[@class='divEvent']/a[1]"):
             yield from self.scrape_event(link.xpath("@href")[0])
+
+    def scrape_cal_month(self, when: datetime.datetime.date):
+        date_str = when.strftime("%Y%m01")
+        self.info(f"Scraping month {date_str}")
+        #  https://sg001-harmony.sliq.net/00309/Harmony/en/View/Month/20240717/-1
+        url = f"https://sg001-harmony.sliq.net/00309/Harmony/en/api/Data/GetContentEntityByMonth/{date_str}/-1?lastModifiedTime=20000201050000000"
+        page = self.get(url).json()
+        for row in page["ContentEntityDatas"]:
+            when = dateutil.parser.parse(row["ScheduledStart"])
+            if when.date() < datetime.datetime.today().date():
+                event_id = str(row["Id"])
+                event_url = f"https://sg001-harmony.sliq.net/00309/Harmony/en/PowerBrowser/PowerBrowserV2/1/-1/{event_id}"
+                yield from self.scrape_event(event_url)
 
     def scrape_event(self, url: str):
         html = self.get(url).text
@@ -78,7 +103,6 @@ class MTEventScraper(Scraper):
         media = json.loads(matches.group(1))
         if "children" in media and media["children"] is not None:
             for m in media["children"]:
-                print(m)
                 event.add_media_link(
                     m["textTags"]["DESCRIPTION"]["text"],
                     m["textTags"]["URL"]["text"],
