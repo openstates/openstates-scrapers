@@ -91,6 +91,7 @@ class Nebraska(State):
         "101st Legislature 1st Special Session",
         "100th Legislature 1st and 2nd Sessions",
         "100th Leg. First Special Session",
+        "All Legislative Sessions",
     ]
 
     def get_session_list(self):
