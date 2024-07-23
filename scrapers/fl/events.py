@@ -204,8 +204,8 @@ class FlEventScraper(Scraper):
                 )
             for bill_id, description in bill_ids:
                 if description:
-                    a = event.add_agenda_item(description=description)
-                    event.add_bill(bill_id)
+                    item = event.add_agenda_item(description=description)
+                    item.add_bill(bill_id)
 
             event.add_committee(com)
 
