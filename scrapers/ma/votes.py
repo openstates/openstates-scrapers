@@ -106,7 +106,7 @@ class SenateJournal(PdfPage):
         r"approving.+plan": "passage",
     }
 
-    date_time_re = re.compile(r"sj(\d{8})_(?:\d{3,4}(?:AM|PM))\.pdf")
+    date_time_re = re.compile(r"sj(\d{8})_")
 
     journal_date = None
 
@@ -120,7 +120,7 @@ class SenateJournal(PdfPage):
 
         if datetime_match:
             date_str = datetime_match.group(1)
-            vote_date = dt.datetime.strptime(date_str, "%Y%m%d")
+            vote_date = dt.datetime.strptime(date_str, "%m%d%Y")
             formatted_date = vote_date.strftime("%Y-%m-%d")
 
             print("Formatted date:", formatted_date)
