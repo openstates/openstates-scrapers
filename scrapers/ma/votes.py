@@ -98,13 +98,10 @@ class SenateJournal(PdfPage):
     bill_id_re = re.compile(bill_id, re.DOTALL)
 
     motion_classification = {
-        r"passing.+engross": "engrossment",
-        r"adoption.+amendment": "amendment-adoption",
-        r"acceptance.+report": "report-acceptance",
+        r"passing.+engross": "passage",
+        r"adoption.+amendment": "amendment",
         r"passing.+enacted": "passage",
         r"approving.+plan": "passage",
-        r"suspension.+Rule": "rule-suspension",
-        r"adoption.+motion": "motion-adoption",
     }
 
     date_time_re = re.compile(r"sj(\d{8})_")
@@ -216,7 +213,7 @@ class SenateJournal(PdfPage):
                 break
 
         if not vote_classification:
-            raise Exception(
+            self.logger.warn(
                 f"""
                 No vote_classification from {single_line_motion}" in journal at {self.source.url}
                 """
