@@ -178,8 +178,6 @@ class FlEventScraper(Scraper):
                 row.xpath("td[3]/a/@href")[0] if row.xpath("td[3]/a/@href") else ""
             )
 
-            location = "See Agenda"  # it's in the PDFs but not the web page
-
             date = dateutil.parser.parse(f"{day} {time}")
             date = self.tz.localize(date)
 
