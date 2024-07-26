@@ -321,10 +321,6 @@ class SenateJournal(PdfPage):
 
         return names
 
-    def get_bill_id(self, motion_text):
-
-
-
 
 class HouseVoteRecordParser:
     tz = pytz.timezone("US/Eastern")
