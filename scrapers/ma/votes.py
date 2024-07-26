@@ -106,7 +106,7 @@ class SenateJournal(PdfPage):
         r"approving.+plan": "passage",
     }
 
-    date_time_re = re.compile(r"sj(\d{8})_(?:\d{3,4}[AM|PM])\.pdf")
+    date_time_re = re.compile(r"sj(\d{8})_(?:\d{3,4}(?:AM|PM))\.pdf")
 
     journal_date = None
 
