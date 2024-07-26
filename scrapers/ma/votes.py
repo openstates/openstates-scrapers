@@ -90,7 +90,6 @@ class SenateJournal(PdfPage):
                              r"|Provincetown,-wastewater"
                              r")"
                              )
-    text = None
 
     precise_motion = r"question on\s+(.+)\s+was determined"
     precise_motion_re = re.compile(precise_motion, re.DOTALL)
@@ -108,7 +107,9 @@ class SenateJournal(PdfPage):
 
     date_time_re = re.compile(r"sj(\d{8})_")
 
+    text = None
     journal_date = None
+    bill_id = None
 
     def __init__(self, source, votes_list):
         super().__init__(source=source)
@@ -320,6 +321,10 @@ class SenateJournal(PdfPage):
 
         return names
 
+    def get_bill_id(self, motion_text):
+
+
+
 
 class HouseVoteRecordParser:
     tz = pytz.timezone("US/Eastern")
@@ -363,7 +368,7 @@ class HouseVoteRecordParser:
 
         # Check for time
         elif ":" in line:
-            when = datetime.datetime.strptime(line, "%m/%d/%Y %I:%M %p")
+            when = dt.datetime.strptime(line, "%m/%d/%Y %I:%M %p")
             when = self.tz.localize(when)
             self.time = when
 
