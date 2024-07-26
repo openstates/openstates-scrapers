@@ -99,10 +99,12 @@ class SenateJournal(PdfPage):
 
     motion_classification = {
         r"passing.+engross": "engrossment",
-        r"adoption.+amendment": "amendment-passage",
+        r"adoption.+amendment": "amendment-adoption",
         r"acceptance.+report": "report-acceptance",
         r"passing.+enacted": "passage",
         r"approving.+plan": "passage",
+        r"suspension.+Rule": "rule-suspension",
+        r"adoption.+motion": "motion-adoption",
     }
 
     date_time_re = re.compile(r"sj(\d{8})_")
@@ -110,6 +112,7 @@ class SenateJournal(PdfPage):
     text = None
     journal_date = None
     bill_id = None
+    vote_date = None
 
     def __init__(self, source, votes_list):
         super().__init__(source=source)
@@ -124,7 +127,6 @@ class SenateJournal(PdfPage):
             vote_date = dt.datetime.strptime(date_str, "%m%d%Y")
             formatted_date = vote_date.strftime("%Y-%m-%d")
 
-            print("Formatted date:", formatted_date)
             return formatted_date
 
         else:
@@ -132,7 +134,7 @@ class SenateJournal(PdfPage):
                             f"{self.source.url}")
 
     def process_page(self):
-        vote_date = self.process_date()
+        self.vote_date = self.process_date()
 
         # Remove special characters that look like the - character
         self.text = self.text.replace("–", "-").replace("−", "-").replace("—", "-")
@@ -149,17 +151,26 @@ class SenateJournal(PdfPage):
                              f"{self.source.url}\n"
                              f"len(votes_mt):{len(votes_mt)}\n"
                              f"len(votes_s):{len(votes_s)}\n"
-                             f"len(votes_id):{len(votes_id)}\n"
-                             f"{self.text}")
+                             f"len(votes_id):{len(votes_id)}\n")
         else:
             # Run full regex search.
-            votes = self.total_vote_re.finditer(self.text)
-            votes = [self.parse_match(v) for v in votes]
-            # yield from
-            print("\n\n".join([str(x) for x in votes]))
-            # print(self.source.url)
+            vote_matches = self.total_vote_re.finditer(self.text)
+            votes_data_list = []
 
-    def parse_match(self, match):
+            i = 0
+            for v_match in vote_matches:
+                vote = self.parse_match(v_match, i)
+                votes_data_list.append(vote)
+                i += 1
+                yield vote
+
+            print("\n\n".join([str(x) for x in votes_data_list]))
+
+    def parse_match(self, match, index):
+        bill_id = self.get_bill_id(index)
+        if not bill_id:
+            self.logger.warn(f"No valid bill id found preceding vote lines in {self.source.url}")
+            return {}
 
         # TODO: to get bill_id, it needs to treat each vote separately
         #  and be able to search backwards in the text for most proximal
@@ -191,17 +202,12 @@ class SenateJournal(PdfPage):
         the vote lines is the bill that is being voted upon, in every case I have found.
         """
         raw_motion_text = match.group("rawmotion")
-        bill_id_match = self.bill_id_re.search(raw_motion_text)
-        if not bill_id_match:
-            # raise Exception(f"no bill id in {raw_motion_text} at {self.source.url}")
-            self.logger.warn(f"Could not find bill_id at {self.source.url}")
-        else:
-            print("\n\n\n" + bill_id_match.group(2) + "\n\n\n")
 
         motion_text = self.precise_motion_re.search(raw_motion_text).group(1)
         single_line_motion = motion_text.replace("\n", " ")
 
         normalized_motion = single_line_motion.capitalize()
+        print(normalized_motion)
 
         vote_classification = None
         for pattern, classification in self.motion_classification.items():
@@ -247,71 +253,76 @@ class SenateJournal(PdfPage):
             possible_nv_voters = ""
         nv_voters = self.find_names(possible_nv_voters)
 
-        data = dict(
-            total_yea=total_yea,
-            total_nay=total_nay,
-            yea_voters=yea_voters,
-            nay_voters=nay_voters,
-            nv_voters=nv_voters,
-            vote_number=vote_number,
-            bill_id_match=bill_id_match.group(2) if bill_id_match else None,
-            normalized_motion=normalized_motion,
-        )
-        self.votes_list.append(data)
-        print(self.votes_list)
+        # # To help flag certain high priority console logging during debugging
+        # red_color = '\033[91m'
+        # reset_color = '\033[0m'
 
-        # TODO: there are a few regex kinks leading to possible miscounts in the vote
-        #  tallies (not more than 3 votes off) which could be a problem when trying to
-        #  use these counts to determine whether a vote passed/failed.
-        #  But given the typical large vote margins between yeas and nays, even the current
-        #  occassional miscounts would rarely lead to a false determination of the vote result.
+        first_margin = first_total_yea - first_total_nay
+        final_margin = total_yea - total_nay
+        abs_first, abs_final = abs(first_margin), abs(final_margin)
+        if abs_first < abs_final:
+            determinative_margin = abs_first
+            vote_passed = True if first_margin > 0 else False
+        else:
+            determinative_margin = abs_final
+            vote_passed = True if final_margin > 0 else False
+
         yea_mismatch = first_total_yea != total_yea
         nay_mismatch = first_total_nay != total_nay
         if yea_mismatch or nay_mismatch:
-            print(self.text)
-            print(self.source.url)
-            print(f"""
-            first_total_yea = {first_total_yea}
-            total_yea = {total_yea}
-            first_total_nay = {first_total_nay}
-            total_nay = {total_nay}
-            yea_mismatch = {yea_mismatch}
-            nay_mismatch = {nay_mismatch}
-            {data}
-            """)
-            raise Exception("ynmismatch")
-
-        # Check that total voters and total votes match up
+            self.logger.warn(f"Cannot accurately parse to determine margins for vote {index + 1} in {self.source.url}")
+            return {}
+            # print(self.source.url)
+            # print(f"""
+            # first_total_yea = {first_total_yea}
+            # total_yea = {total_yea}
+            # first_total_nay = {first_total_nay}
+            # total_nay = {total_nay}
+            # yea_mismatch = {yea_mismatch}
+            # nay_mismatch = {nay_mismatch}
+            # {data}
+            # """)
+            #
+            # if yea_mismatch:
+            #     if abs(first_total_yea - total_yea) > determinative_margin:
+            #         print(f"{red_color}YEA MISMATCH GREATER THAN DETERMINATIVE MARGIN{reset_color}")
+            # if nay_mismatch:
+            #     if abs(first_total_nay - total_nay) > determinative_margin:
+            #         print(f"{red_color}NAY MISMATCH GREATER THAN DETERMINATIVE MARGIN{reset_color}")
+        #
+        # # Check that total voters and total votes match up
         yea_matches_miscount = len(yea_voters) - total_yea
         nay_matches_miscount = len(nay_voters) - total_nay
         for miscount in yea_matches_miscount, nay_matches_miscount:
             # Allows for minor miscount in cases of PDF formatting issues
-            if abs(miscount) > 1:
-                print(self.text)
-                print(self.source.url)
-                print(f"""
-                            yea_voters = {len(yea_voters)}
-                            total_yea = {total_yea}
-                            nay_voters = {len(nay_voters)}
-                            total_nay = {total_nay}
-                            yea_matches_miscount = {yea_matches_miscount}
-                            nay_matches_miscount = {nay_matches_miscount}
-                            {data}
-                            """)
-                raise Exception("recorded vote totals differ from logs")
+            if abs(miscount) > determinative_margin:
+                self.logger.warn(
+                    f"Cannot accurately parse to determine margins for vote {index + 1} in {self.source.url}")
+                return {}
+                # print(f"""{red_color}
+                #             MISCOUNT (i.e. total voters and total votes don't match in big way!)
+                #             yea_voters = {len(yea_voters)}
+                #             total_yea = {total_yea}
+                #             nay_voters = {len(nay_voters)}
+                #             total_nay = {total_nay}
+                #             yea_matches_miscount = {yea_matches_miscount}
+                #             nay_matches_miscount = {nay_matches_miscount}
+                #             {data}
+                #             {reset_color}""")
 
-        # TODO: comment back in when bill_id and result handling is complete
-        # vote = VoteEvent(
-        #     chamber="upper",
-        #     legislative_session="193",
-        #     # start_date=vote_date,
-        #     # motion_text=self.motion,
-        #     bill=bill_id,
-        #     result="pass" if vote_passed else "fail",
-        #     classification="passage",
-        # )
+        vote_event = VoteEvent(
+            chamber="upper",
+            legislative_session="193",
+            start_date=self.vote_date,
+            motion_text=normalized_motion,
+            bill=bill_id,
+            result="pass" if vote_passed else "fail",
+            classification=vote_classification,
+        )
 
-        return data
+        vote_event.add_source(self.source.url)
+
+        return vote_event
 
     # Finds names in text, ignoring some common phrases and empty lines
     def find_names(self, text):
@@ -320,6 +331,19 @@ class SenateJournal(PdfPage):
         names = [x for x in text if not self.not_name_re.match(x) and "," in x]
 
         return names
+
+    def get_bill_id(self, index):
+        pre_vote_sections = self.text.split("(yeas")[:-1]
+        relevant_section = pre_vote_sections[index]
+        bill_id_match = re.findall(self.bill_id_re, relevant_section)
+        if bill_id_match:
+            chamber, number = bill_id_match[-1]
+            self.bill_id = f"{chamber[0]} {number}"
+        if self.bill_id:
+            print(f"BILL ID MATCH: {self.bill_id}")
+        else:
+            self.logger.warn(f"No preceding bill id for vote {index + 1} in {self.source.url}")
+        return self.bill_id
 
 
 class HouseVoteRecordParser:
