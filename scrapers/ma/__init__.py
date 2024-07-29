@@ -11,7 +11,7 @@ class Massachusetts(State):
     scrapers = {
         "bills": MABillScraper,
         "events": MAEventScraper,
-        "votes": MAVoteScraper
+        "votes": MAVoteScraper,
     }
     legislative_sessions = [
         {

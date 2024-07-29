@@ -47,8 +47,7 @@ class SenateJournalDirectory(HtmlListPage):
         month_links = XPath("//a[@aria-controls='journalList']/@href").match(self.root)
         for month_link in month_links:
             vote_events = SenateJournalMonth(
-                source=URL(month_link, verify=False),
-                votes_list=self.votes_list
+                source=URL(month_link, verify=False), votes_list=self.votes_list
             ).do_scrape()
             for vote_event in vote_events:
                 # vote_event.add_source(self.source.url, note="Senate jouenal listing")
@@ -56,7 +55,6 @@ class SenateJournalDirectory(HtmlListPage):
 
 
 class SenateJournalMonth(HtmlListPage):
-
     def __init__(self, source, votes_list):
         super().__init__(source=source)
         self.votes_list = votes_list
@@ -68,9 +66,9 @@ class SenateJournalMonth(HtmlListPage):
             #     "https://malegislature.gov/Journal/Senate/193/806/sj03302023_1100AM.pdf",
             #     "https://malegislature.gov/Journal/Senate/193/768/sj03232023_0100PM.pdf",
             # ):
-            yield SenateJournal(source=URL(journal_pdf_link, verify=False),
-                                votes_list=self.votes_list
-                                )
+            yield SenateJournal(
+                source=URL(journal_pdf_link, verify=False), votes_list=self.votes_list
+            )
 
 
 class SenateJournal(PdfPage):
@@ -82,14 +80,17 @@ class SenateJournal(PdfPage):
     vote_id_re = re.compile(vote_id, re.DOTALL)
     vote_section_re = re.compile(vote_section, re.DOTALL)
 
-    total_vote_re = re.compile(f"{motion_and_vote_total}.*?{vote_id}.*?{vote_section}", re.DOTALL)
+    total_vote_re = re.compile(
+        f"{motion_and_vote_total}.*?{vote_id}.*?{vote_section}", re.DOTALL
+    )
 
-    not_name_re = re.compile(r"^(\d|UNCORRECTED|Joint Rules|\.|Real ID,-- homeless"
-                             r"|Pharmacists,-- PrEP\."
-                             r"|Brewster,-- land\."
-                             r"|Provincetown,-wastewater"
-                             r")"
-                             )
+    not_name_re = re.compile(
+        r"^(\d|UNCORRECTED|Joint Rules|\.|Real ID,-- homeless"
+        r"|Pharmacists,-- PrEP\."
+        r"|Brewster,-- land\."
+        r"|Provincetown,-wastewater"
+        r")"
+    )
 
     precise_motion = r"question on\s+(.+)\s+was determined"
     precise_motion_re = re.compile(precise_motion, re.DOTALL)
@@ -127,8 +128,9 @@ class SenateJournal(PdfPage):
             return formatted_date
 
         else:
-            raise Exception(f"Datetime with known format not in pdf url: "
-                            f"{self.source.url}")
+            raise Exception(
+                f"Datetime with known format not in pdf url: {self.source.url}"
+            )
 
     def process_page(self):
         self.vote_date = self.process_date()
@@ -144,11 +146,13 @@ class SenateJournal(PdfPage):
         # If they disagree on number of matches, the scraper will not get
         # the data correctly so emit a warning and skip this pdf.
         if not (len(votes_mt) == len(votes_s) == len(votes_id)):
-            self.logger.warn(f"\nCould not accurately parse votes for "
-                             f"{self.source.url}\n"
-                             f"len(votes_mt):{len(votes_mt)}\n"
-                             f"len(votes_s):{len(votes_s)}\n"
-                             f"len(votes_id):{len(votes_id)}\n")
+            self.logger.warn(
+                f"\nCould not accurately parse votes for "
+                f"{self.source.url}\n"
+                f"len(votes_mt):{len(votes_mt)}\n"
+                f"len(votes_s):{len(votes_s)}\n"
+                f"len(votes_id):{len(votes_id)}\n"
+            )
         else:
             # Run full regex search.
             vote_matches = self.total_vote_re.finditer(self.text)
@@ -164,7 +168,9 @@ class SenateJournal(PdfPage):
     def parse_match(self, match, index):
         bill_id = self.get_bill_id(index)
         if not bill_id:
-            self.logger.warn(f"No valid bill id found preceding vote lines in {self.source.url}")
+            self.logger.warn(
+                f"No valid bill id found preceding vote lines in {self.source.url}"
+            )
             return {}
 
         # TODO: to get bill_id, it needs to treat each vote separately
@@ -264,7 +270,9 @@ class SenateJournal(PdfPage):
         yea_mismatch = first_total_yea != total_yea
         nay_mismatch = first_total_nay != total_nay
         if yea_mismatch or nay_mismatch:
-            self.logger.warn(f"Cannot accurately parse to determine margins for vote {index + 1} in {self.source.url}")
+            self.logger.warn(
+                f"Cannot accurately parse to determine margins for vote {index + 1} in {self.source.url}"
+            )
             return {}
 
         # # Check that total voters and total votes match up
@@ -274,7 +282,8 @@ class SenateJournal(PdfPage):
             # Allows for minor miscount in cases of PDF formatting issues
             if abs(miscount) > determinative_margin:
                 self.logger.warn(
-                    f"Cannot accurately parse to determine margins for vote {index + 1} in {self.source.url}")
+                    f"Cannot accurately parse to determine margins for vote {index + 1} in {self.source.url}"
+                )
                 return {}
 
         vote_event = VoteEvent(
@@ -307,7 +316,9 @@ class SenateJournal(PdfPage):
             chamber, number = bill_id_match[-1]
             self.bill_id = f"{chamber[0]} {number}"
         if not self.bill_id:
-            self.logger.warn(f"No preceding bill id for vote {index + 1} in {self.source.url}")
+            self.logger.warn(
+                f"No preceding bill id for vote {index + 1} in {self.source.url}"
+            )
         return self.bill_id
 
 
@@ -456,8 +467,3 @@ class HouseRollCall(PdfPage):
                 vote_event = vote_parser.createVoteEvent()
                 vote_event.add_source(self.source.url, note="Vote record pdf")
                 yield vote_event
-
-
-"""
-
-"""
