@@ -1,6 +1,7 @@
 import pytz
 import urllib
 from datetime import datetime
+import dateutil
 
 from openstates.scrape import Scraper, Bill, VoteEvent
 
@@ -28,7 +29,8 @@ class NEBillScraper(Scraper, LXMLMixin):
             )
 
         if session["classification"] == "special":
-            yield from self.scrape_special(session["identifier"], session["start_date"])
+            start = dateutil.parser.parse(session["start_date"])
+            yield from self.scrape_special(session["identifier"], start)
         else:
             self.scrape_priorities()
             start_year = datetime.strptime(session["start_date"], "%Y-%m-%d").year
@@ -53,10 +55,10 @@ class NEBillScraper(Scraper, LXMLMixin):
 
     # NE Specials are lumped in with regular data, just duped bill numbers.
     # Scrape by intro date, instead of by year.
-    def scrape_special(self, session, start_date):
+    def scrape_special(self, session: str, start_date: datetime):
         main_url = (
             "https://nebraskalegislature.gov/bills/search_by_date.php?"
-            "SessionDay={}".format(start_date)
+            "SessionDay={}&special=1".format(start_date.strftime("%Y"))
         )
         page = self.lxmlize(main_url)
 
@@ -69,7 +71,10 @@ class NEBillScraper(Scraper, LXMLMixin):
         for document_link in document_links:
             # bill_number = document_link.text
             bill_link = document_link.attrib["href"]
-
+            main_url = (
+                "https://nebraskalegislature.gov/bills/search_by_date.php?"
+                "SessionDay={}&special=1".format(start_date.strftime("%Y-%m-%d"))
+            )
             yield from self.bill_info(bill_link, session, main_url)
 
     def scrape_year(self, session, year):
