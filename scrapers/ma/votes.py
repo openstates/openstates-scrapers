@@ -161,8 +161,6 @@ class SenateJournal(PdfPage):
                 i += 1
                 yield vote
 
-            print("\n\n".join([str(x) for x in votes_data_list]))
-
     def parse_match(self, match, index):
         bill_id = self.get_bill_id(index)
         if not bill_id:
@@ -204,7 +202,6 @@ class SenateJournal(PdfPage):
         single_line_motion = motion_text.replace("\n", " ")
 
         normalized_motion = single_line_motion.capitalize()
-        print(normalized_motion)
 
         vote_classification = None
         for pattern, classification in self.motion_classification.items():
@@ -231,7 +228,7 @@ class SenateJournal(PdfPage):
         #     possible_total_nv = "0"
         # total_nv = int(possible_total_nv)
 
-        vote_number = match.group("votenumber")
+        # vote_number = match.group("votenumber")
 
         # Get list of voter names for each section
         yea_voters = self.find_names(match.group("yealines"))
@@ -244,11 +241,11 @@ class SenateJournal(PdfPage):
             possible_extra_nay_voters = ""
         nay_voters.extend(self.find_names(possible_extra_nay_voters))
 
-        # non-voting voter name section may be missing
-        possible_nv_voters = match.group("nvlines")
-        if possible_nv_voters is None:
-            possible_nv_voters = ""
-        nv_voters = self.find_names(possible_nv_voters)
+        # # non-voting voter name section may be missing
+        # possible_nv_voters = match.group("nvlines")
+        # if possible_nv_voters is None:
+        #     possible_nv_voters = ""
+        # nv_voters = self.find_names(possible_nv_voters)
 
         # # To help flag certain high priority console logging during debugging
         # red_color = '\033[91m'
@@ -269,24 +266,7 @@ class SenateJournal(PdfPage):
         if yea_mismatch or nay_mismatch:
             self.logger.warn(f"Cannot accurately parse to determine margins for vote {index + 1} in {self.source.url}")
             return {}
-            # print(self.source.url)
-            # print(f"""
-            # first_total_yea = {first_total_yea}
-            # total_yea = {total_yea}
-            # first_total_nay = {first_total_nay}
-            # total_nay = {total_nay}
-            # yea_mismatch = {yea_mismatch}
-            # nay_mismatch = {nay_mismatch}
-            # {data}
-            # """)
-            #
-            # if yea_mismatch:
-            #     if abs(first_total_yea - total_yea) > determinative_margin:
-            #         print(f"{red_color}YEA MISMATCH GREATER THAN DETERMINATIVE MARGIN{reset_color}")
-            # if nay_mismatch:
-            #     if abs(first_total_nay - total_nay) > determinative_margin:
-            #         print(f"{red_color}NAY MISMATCH GREATER THAN DETERMINATIVE MARGIN{reset_color}")
-        #
+
         # # Check that total voters and total votes match up
         yea_matches_miscount = len(yea_voters) - total_yea
         nay_matches_miscount = len(nay_voters) - total_nay
@@ -296,16 +276,6 @@ class SenateJournal(PdfPage):
                 self.logger.warn(
                     f"Cannot accurately parse to determine margins for vote {index + 1} in {self.source.url}")
                 return {}
-                # print(f"""{red_color}
-                #             MISCOUNT (i.e. total voters and total votes don't match in big way!)
-                #             yea_voters = {len(yea_voters)}
-                #             total_yea = {total_yea}
-                #             nay_voters = {len(nay_voters)}
-                #             total_nay = {total_nay}
-                #             yea_matches_miscount = {yea_matches_miscount}
-                #             nay_matches_miscount = {nay_matches_miscount}
-                #             {data}
-                #             {reset_color}""")
 
         vote_event = VoteEvent(
             chamber="upper",
@@ -336,9 +306,7 @@ class SenateJournal(PdfPage):
         if bill_id_match:
             chamber, number = bill_id_match[-1]
             self.bill_id = f"{chamber[0]} {number}"
-        if self.bill_id:
-            print(f"BILL ID MATCH: {self.bill_id}")
-        else:
+        if not self.bill_id:
             self.logger.warn(f"No preceding bill id for vote {index + 1} in {self.source.url}")
         return self.bill_id
 
