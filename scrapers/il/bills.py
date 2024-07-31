@@ -534,8 +534,8 @@ class IlBillScraper(Scraper):
                 related_entities=related_orgs,
             )
 
-            if action.lower().find("sponsor") != -1:
-                self.refine_sponsor_list(actor, action, sponsor_list, bill_id)
+            # if action.lower().find("sponsor") != -1:
+            #     self.refine_sponsor_list(actor, action, sponsor_list, bill_id)
 
         # now add sponsors
         for spontype, sponsor, chamber, official_type in sponsor_list:
