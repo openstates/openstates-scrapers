@@ -189,7 +189,7 @@ class SDEventScraper(Scraper):
 
         base_loc = "500 E Capitol Ave, Pierre, SD 57501"
         if location and re.match(r"Room \d+", location):
-            location = base_loc + ", " + location
+            location = location + ", " + base_loc
 
         location = location or base_loc
 
