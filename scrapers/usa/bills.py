@@ -104,7 +104,7 @@ class USBillScraper(Scraper):
         root = ET.fromstring(sitemaps)
 
         # if you want to test a bill:
-        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/116/hr/BILLSTATUS-116hr3884.xml')
+        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/118/s/BILLSTATUS-118s4869.xml')
 
         for link in root.findall("us:sitemap/us:loc", self.ns):
             # split by /, then check that "116s" matches the chamber
@@ -213,6 +213,8 @@ class USBillScraper(Scraper):
             return "lower"
         elif action_code[0:1] == "E":
             return "executive"
+        elif action_code[0:1] == "S":
+            return "upper"
 
         if action_code.isdigit():
             code = int(action_code)
@@ -256,6 +258,9 @@ class USBillScraper(Scraper):
             # https://www.govinfo.gov/bulkdata/BILLSTATUS/116/hr/BILLSTATUS-116hr8337.xml
             "H37300": "passage",
             "Intro-H": "introduction",
+            # new one for senate
+            # https://www.govinfo.gov/bulkdata/BILLSTATUS/118/s/BILLSTATUS-118s4869.xml
+            "Intro-S": "introduction",
         }
 
         return codes.get(action)
@@ -263,6 +268,7 @@ class USBillScraper(Scraper):
     def classify_action_by_name(self, action):
         action_classifiers = [
             ("Read the second time", ["reading-2"]),
+            ("referred to", ["referral-committee"]),
             (
                 "Received in the Senate. Read the first time",
                 ["introduction", "reading-1"],
@@ -334,6 +340,9 @@ class USBillScraper(Scraper):
                     if possible_actor is not None:
                         actor = possible_actor
 
+                if not action_text:
+                    action_text = "No action text provided by the source"
+
                 bill.add_action(
                     action_text,
                     action_date,
@@ -347,7 +356,9 @@ class USBillScraper(Scraper):
         actions = []
 
         for row in xml.findall("bill/actions/item"):
-            action_text = self.get_xpath(row, "text")
+            action_text = (
+                self.get_xpath(row, "text") if self.get_xpath(row, "text") else ""
+            )
             if "hearings held" not in action_text.lower():
                 continue
             committee_name = self.get_xpath(row, "committees/item/name")
