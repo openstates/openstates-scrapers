@@ -204,7 +204,14 @@ class SenateJournal(PdfPage):
         """
         raw_motion_text = match.group("rawmotion")
 
-        motion_text = self.precise_motion_re.search(raw_motion_text).group(1)
+        motion_text = self.precise_motion_re.search(raw_motion_text)
+        if motion_text:
+            motion_text = motion_text.group(1)
+        else:
+            self.logger.warn(
+                f"No valid motion text found preceding vote lines in {self.source}"
+            )
+            return
         single_line_motion = motion_text.replace("\n", " ")
 
         normalized_motion = single_line_motion.capitalize()
