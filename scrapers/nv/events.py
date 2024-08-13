@@ -4,6 +4,7 @@ import datetime
 from utils import LXMLMixin
 from utils.media import get_media_type
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 from spatula import HtmlPage, PdfPage, URL, XPath, SelectorError
 import re
 
@@ -96,7 +97,7 @@ class CurrentMeetings(HtmlPage):
                     meetings.append(cur_row)
                 # Reset cur_row so leftover elements don't get mixed in with next set of divs
                 cur_row = []
-
+        event_count = 0
         for i in meetings:
             # First element contains: the title and date
             title = XPath(".//h3/a[1]/text()").match_one(i[0])
@@ -210,6 +211,9 @@ class CurrentMeetings(HtmlPage):
                 event.add_bill(bill)
 
             yield event
+            event_count += 1
+        if event_count < 1:
+            raise EmptyScrape
 
 
 class NVEventScraper(Scraper, LXMLMixin):
