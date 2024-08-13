@@ -272,7 +272,6 @@ class DEBillScraper(Scraper, LXMLMixin):
         }
 
         self.info("Fetching legislators")
-        print(self.session.cookies.get_dict())
         page = self.session.post(
             url=search_form_url,
             data=form,
@@ -280,7 +279,6 @@ class DEBillScraper(Scraper, LXMLMixin):
             verify=False,
             headers=self.headers,
         ).content
-        print(page)
 
         page = json.loads(page)
         assert page["Data"], "Cound not fetch legislators!"
