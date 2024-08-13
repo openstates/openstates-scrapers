@@ -1,4 +1,5 @@
-from utils import url_xpath
+import requests
+import lxml
 from openstates.scrape import State
 from .bills import DEBillScraper
 from .events import DEEventScraper
@@ -137,9 +138,14 @@ class Delaware(State):
     ]
 
     def get_session_list(self):
+        ua = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+        headers = {"User-Agent": ua}
+
         url = "https://legis.delaware.gov/"
-        sessions = url_xpath(
-            url, '//select[@id="billSearchGARefiner"]/option/text()', verify=False
-        )
+
+        page = requests.get(url, headers=headers, verify=False).content
+        page = lxml.html.fromstring(page)
+
+        sessions = page.xpath('//select[@id="billSearchGARefiner"]/option/text()')
         sessions = [session.strip() for session in sessions if session.strip()]
         return sessions
