@@ -1,127 +1,110 @@
 from openstates.scrape import Scraper, Event
-from openstates.exceptions import EmptyScrape
-from dateutil import parser, relativedelta
+from utils.events import match_coordinates
 import datetime
-import lxml
+import dateutil
+import json
+import lxml.html
 import pytz
+import re
 
 
 class MTEventScraper(Scraper):
     _tz = pytz.timezone("America/Denver")
-    base_url = "http://laws.leg.mt.gov/"
 
-    # the state lists out by bill, we want to cluster by event
-    events = {}
+    def scrape(self):
 
-    def scrape(self, session=None, start=None, end=None):
-        for i in self.jurisdiction.legislative_sessions:
-            if i["identifier"] == session:
-                session_slug = i["_scraped_name"]
+        yield from self.scrape_upcoming()
 
-        url = (
-            "http://laws.leg.mt.gov/legprd/LAW0240W$CMTE.ActionQuery?P_SESS={session_slug}"
-            "&P_COM_NM=&P_ACTN_DTM={start}&U_ACTN_DTM={end}&Z_ACTION2=Find"
+        # scrape events from this month, and last month
+        today = datetime.date.today()
+        yield from self.scrape_cal_month(today)
+        yield from self.scrape_cal_month(
+            today + dateutil.relativedelta.relativedelta(months=-1)
         )
 
-        if start is None:
-            start = datetime.datetime.today()
-        else:
-            start = parser.parse(start)
-
-        if end is None:
-            end = start + relativedelta.relativedelta(months=+2)
-        else:
-            end = parser.parse(end)
-
-        url = url.format(
-            session_slug=session_slug,
-            start=start.strftime("%m/01/%Y"),
-            end=end.strftime("%m/%d/%Y"),
-        )
+    def scrape_upcoming(self):
+        url = "https://sg001-harmony.sliq.net/00309/Harmony/en/View/UpcomingEvents"
 
         page = self.get(url).content
         page = lxml.html.fromstring(page)
-        if len(page.xpath("//p[contains(text(), 'No Records')]")) == 2:
-            raise EmptyScrape
         page.make_links_absolute(url)
 
-        for row in page.xpath("//table[@border]/tr"):
-            # skip table headers
-            if not row.xpath("td[1]/a"):
-                continue
-            com = row.xpath("td[1]/a[1]/text()")[0].strip()
-            com = com.replace("(H)", "House").replace("(S)", "Senate")
-            day = row.xpath("td[2]/text()")[0].strip()
-            try:
-                time = row.xpath("td[3]/text()")[0].strip()
-            except Exception:
-                time = None
-            room = row.xpath("td[4]")[0].text_content().strip()
-            if not room:
-                room = "See Agenda"
-            bill = row.xpath("td[5]/a[1]/text()")[0].strip()
-            bill_title = row.xpath("td[6]/text()")[0].strip()
+        for link in page.xpath("//div[@class='divEvent']/a[1]"):
+            yield from self.scrape_event(link.xpath("@href")[0])
 
-            if time:
-                when = parser.parse(f"{day} {time}")
-            else:
-                when = parser.parse(day)
-            when = self._tz.localize(when)
+    def scrape_cal_month(self, when: datetime.datetime.date):
+        date_str = when.strftime("%Y%m01")
+        self.info(f"Scraping month {date_str}")
+        #  https://sg001-harmony.sliq.net/00309/Harmony/en/View/Month/20240717/-1
+        url = f"https://sg001-harmony.sliq.net/00309/Harmony/en/api/Data/GetContentEntityByMonth/{date_str}/-1?lastModifiedTime=20000201050000000"
+        page = self.get(url).json()
+        for row in page["ContentEntityDatas"]:
+            when = dateutil.parser.parse(row["ScheduledStart"])
+            if when.date() < datetime.datetime.today().date():
+                event_id = str(row["Id"])
+                event_url = f"https://sg001-harmony.sliq.net/00309/Harmony/en/PowerBrowser/PowerBrowserV2/1/-1/{event_id}"
+                yield from self.scrape_event(event_url)
 
-            when_slug = when.strftime("%Y%m%d%H%I")
-            if com not in self.events:
-                self.events[com] = {}
+    def scrape_event(self, url: str):
+        html = self.get(url).text
+        page = lxml.html.fromstring(html)
+        page.make_links_absolute(url)
 
-            if when_slug not in self.events[com]:
-                event = Event(
-                    name=com,
-                    location_name=room,
-                    start_date=when,
-                    classification="committee-meeting",
-                )
-                event.add_source(row.xpath("td[1]/a[1]/@href")[0])
-            else:
-                event = self.events[com][when_slug]
+        title = page.xpath("//span[@class='headerTitle']")[0].text_content()
+        location = page.xpath("//span[@id='location']")[0].text_content()
 
-            event.add_committee(com)
+        if location.lower()[0:4] == "room":
+            location = f"{location}, 1301 E 6th Ave, Helena, MT 59601"
 
-            agenda = event.add_agenda_item(bill_title)
-            agenda.add_bill(bill)
+        when_date = page.xpath("//div[@id='scheduleddate']")[0].text_content()
+        when_time = page.xpath("//span[@id='scheduledStarttime']")[0].text_content()
 
-            if row.xpath('.//a[contains(@href,"/billhtml/")]'):
-                bill_url = row.xpath('.//a[contains(@href,"/billhtml/")]/@href')[0]
-                event.add_document(
-                    bill_title, bill_url, media_type="text/html", on_duplicate="ignore"
-                )
-            if row.xpath('.//a[contains(@href,"/billpdf/")]'):
-                bill_url = row.xpath('.//a[contains(@href,"/billpdf/")]/@href')[0]
-                event.add_document(
-                    bill_title,
-                    bill_url,
-                    media_type="application/pdf",
-                    on_duplicate="ignore",
-                )
+        when = dateutil.parser.parse(f"{when_date} {when_time}")
+        when = self._tz.localize(when)
 
-            # both media links are incorrectly labelled "audio", but the first
-            # seems to always be video, and if there's only one it's video
-            media_links = row.xpath('.//a[contains(@href, "sliq.net")]/@href')
-            if len(media_links) > 0:
+        event = Event(
+            name=title,
+            location_name=location,
+            start_date=when,
+            classification="committee-meeting",
+        )
+
+        self.scrape_versions(event, html)
+        self.scrape_media(event, html)
+
+        event.add_source(url)
+
+        if "HB" not in title.lower() and "SB" not in title.lower():
+            event.add_committee(title)
+
+        match_coordinates(
+            event,
+            {
+                "1301 E 6th Ave, Helena": ("46.5857", "-112.0184"),
+            },
+        )
+
+        yield event
+
+    # versions and media are in the 'dataModel' js variable on the page
+    def scrape_versions(self, event: Event, html: str):
+        matches = re.search(r"Handouts:\s?(.*),", html)
+        versions = json.loads(matches.group(1))
+        for v in versions:
+            event.add_document(
+                v["Name"],
+                v["HandoutFileUrl"],
+                media_type="application/pdf",
+                on_duplicate="ignore",
+            )
+
+    def scrape_media(self, event: Event, html: str):
+        matches = re.search(r"Media:\s?(.*),", html)
+        media = json.loads(matches.group(1))
+        if "children" in media and media["children"] is not None:
+            for m in media["children"]:
                 event.add_media_link(
-                    "Video",
-                    media_links[0],
-                    media_type="text/html",
-                    on_duplicate="ignore",
+                    m["textTags"]["DESCRIPTION"]["text"],
+                    m["textTags"]["URL"]["text"],
+                    media_type="application/vnd",
                 )
-            if len(media_links) == 2:
-                event.add_media_link(
-                    "Audio",
-                    media_links[1],
-                    media_type="text/html",
-                    on_duplicate="ignore",
-                )
-
-            self.events[com][when_slug] = event
-
-        for com in self.events:
-            for date in self.events[com]:
-                yield self.events[com][date]

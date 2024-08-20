@@ -57,4 +57,6 @@ RUN poetry install \
 
 ENV OPENSSL_CONF=/opt/openstates/openstates/openssl.cnf
 
-ENTRYPOINT ["poetry", "run", "os-update"]
+# Entrypoint enables proper support of Google Application Credentials as env variable
+COPY docker_entrypoint.sh /opt/openstates/entrypoint.sh
+ENTRYPOINT ["/bin/bash", "/opt/openstates/entrypoint.sh"]

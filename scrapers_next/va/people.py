@@ -69,7 +69,9 @@ class PartialMember:
 
 
 class MemberList(HtmlListPage):
-    session_id = "241"  # 2024
+    # Can comment back in to re-run 2024 session
+    # session_id = "241"  # 2024
+    session_id = "251"  # 2025
     source = f"https://lis.virginia.gov/{session_id}/mbr/MBR.HTM"
 
     def process_item(self, item):
@@ -125,21 +127,27 @@ class MemberDetail(HtmlPage):
                     else:
                         address.append(text.strip())
 
+                    # Remove empty ones that only contain punctuation i.e ","
+                    address = [x for x in address if len(x.strip()) > 2]
+
                     # the first contact block is capital
                     if i == 1:
                         office_obj = person.capitol_office
+                        if phone:
+                            office_obj.voice = phone
+                        if address:
+                            office_obj.address = "; ".join(address)
 
                     else:
                         office_obj = person.district_office
+                        if phone:
+                            if phone == person.capitol_office.voice:
+                                office_obj.voice = ""
+                            else:
+                                office_obj.voice = phone
+                        if address:
+                            office_obj.address = "; ".join(address)
 
-                office_obj.address = "; ".join(address)
-                if phone:
-                    # making sure we don't add the same phone number for district and capitol offices
-                    if i != 1:
-                        office_obj.voice = phone
-                    else:
-                        if phone == person.capitol_office.voice:
-                            office_obj.voice = ""
                 if email:
                     person.email = email
 

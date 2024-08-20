@@ -83,6 +83,15 @@ class Nebraska(State):
             "start_date": "2023-01-04",
             "end_date": "2024-04-19",
             "classification": "primary",
+            "active": False,
+        },
+        {
+            "_scraped_name": "108th Legislature 1st Special Session",
+            "identifier": "108S1",
+            "name": "108th Legislature First Special Session",
+            "start_date": "2024-07-25",
+            "end_date": "2024-07-31",
+            "classification": "special",
             "active": True,
         },
     ]
@@ -91,6 +100,7 @@ class Nebraska(State):
         "101st Legislature 1st Special Session",
         "100th Legislature 1st and 2nd Sessions",
         "100th Leg. First Special Session",
+        "All Legislative Sessions",
     ]
 
     def get_session_list(self):

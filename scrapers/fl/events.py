@@ -3,6 +3,8 @@ import dateutil.parser
 import lxml
 import re
 from openstates.scrape import Scraper, Event
+from io import BytesIO
+import fitz
 
 
 class FlEventScraper(Scraper):
@@ -172,7 +174,9 @@ class FlEventScraper(Scraper):
             day = row.xpath("td[1]")[0].text_content().strip()
             time = row.xpath("td[2]")[0].text_content().strip()
             notice = row.xpath("td[3]")[0].text_content().strip()
-            location = "See Agenda"  # it's in the PDFs but not the web page
+            pdf_url = (
+                row.xpath("td[3]/a/@href")[0] if row.xpath("td[3]/a/@href") else ""
+            )
 
             date = dateutil.parser.parse(f"{day} {time}")
             date = self.tz.localize(date)
@@ -180,7 +184,26 @@ class FlEventScraper(Scraper):
             if notice.lower() == "not meeting" or "cancelled" in notice.lower():
                 continue
 
-            event = Event(name=com, start_date=date, location_name=location)
+            chair, vice_chair, members, place, bill_ids = self.scrape_pdf(pdf_url)
+
+            event = Event(name=com, start_date=date, location_name=place)
+            event.add_person(
+                name=chair,
+                note="Chair",
+            )
+            event.add_person(
+                name=vice_chair,
+                note="Vice Chair",
+            )
+            for member in members:
+                event.add_person(
+                    name=member,
+                    note="Member",
+                )
+            for bill_id, description in bill_ids:
+                if description:
+                    item = event.add_agenda_item(description=description)
+                    item.add_bill(bill_id)
 
             event.add_committee(com)
 
@@ -211,4 +234,58 @@ class FlEventScraper(Scraper):
                 event.add_media_link(doc_name, url, "text/html")
 
             event.add_source(url)
+
             yield event
+
+    def scrape_pdf(self, url):
+        try:
+            response = self.get(url, verify=False)
+        except Exception as e:
+            self.error(f"Failed request in {url} - {e}")
+            return
+        pdf_content = BytesIO(response.content)
+        doc = fitz.open("pdf", pdf_content)
+
+        pdf_text = doc[0].get_text()
+
+        # date_re = re.compile(r"MEETING DATE: (?P<meeting_date>[A-Z,0-9 ]+) +", re.I)
+        # meeting_date = date_re.search(pdf_text).groupdict().get("meeting_date")
+        # time_re = re.compile(r"TIME: (?P<meeting_time>[A-Z0-9\.\—\: ]+) +", re.I)
+        # meeting_time = time_re.search(pdf_text).groupdict().get("meeting_time")
+        place_re = re.compile(r"PLACE: (?P<place>[A-Z0-9\.\—\: ]+) +", re.I)
+        place = place_re.search(pdf_text).groupdict().get("place")
+
+        members_re = re.compile(
+            r"MEMBERS: (?P<members>[A-Z\.\;\, ]+(\n[A-Z\.\;\, ]+)?)", re.I
+        )
+        all_members = members_re.search(pdf_text).groupdict().get("members")
+        all_members = " ".join(
+            all_members.replace("Senators", "")
+            .replace("Senator", "")
+            .replace("and", "")
+            .split()
+        )
+        chair = vice_chair = ""
+        members = []
+        for member in all_members.split(";"):
+            if "Vice Chair" in member:
+                vice_chair = member.replace("Vice Chair", "").strip(" ,")
+            elif "Chair" in member:
+                chair = member.replace("Chair", "").strip(" ,")
+            else:
+                members.append(member.strip())
+
+        bill_ids_re = re.compile(
+            r"(?P<bill>(?:SB|SCR|SPB|SJR|SM|SR|HB|HCR|HPB|HJR|HM|HR)\s+\d+\s+[^\n]+)\n",
+            re.I | re.S,
+        )
+        bill_ids = [
+            (
+                sentence.split("—")[0].split("by")[0].strip(),
+                sentence.split("—")[1].strip(),
+            )
+            for sentence in bill_ids_re.findall(pdf_text)
+            if "—" in sentence
+        ]
+
+        return chair, vice_chair, members, place, bill_ids

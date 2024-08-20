@@ -1,8 +1,10 @@
-from openstates.scrape import Scraper, Event
+import re
 import pytz
 import lxml
 import scrapelib
 import dateutil.parser
+
+from openstates.scrape import Scraper, Event
 
 
 class SDEventScraper(Scraper):
@@ -26,7 +28,8 @@ class SDEventScraper(Scraper):
                 com_name = row["InterimYearCommitteeName"]
 
             com = {"FullName": com_name}
-            event = self.create_event(com, row)
+            location = row["Room"]
+            event = self.create_event(com, row, location)
 
             self.scrape_agendas_and_bills(event, row["DocumentId"])
 
@@ -179,12 +182,16 @@ class SDEventScraper(Scraper):
             for key in events_by_date:
                 yield events_by_date[key]
 
-    def create_event(self, committee, agenda_document):
+    def create_event(self, committee, agenda_document, location=""):
         name = committee["FullName"]
 
         start_date = dateutil.parser.parse(agenda_document["DocumentDate"])
 
-        location = "500 E Capitol Ave, Pierre, SD 57501"
+        base_loc = "500 E Capitol Ave, Pierre, SD 57501"
+        if location and re.match(r"Room \d+", location):
+            location = location + ", " + base_loc
+
+        location = location or base_loc
 
         event = Event(
             name=name,

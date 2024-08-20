@@ -219,6 +219,16 @@ class Minnesota(State):
             "end_date": "2024-05-20",
             "active": True,
         },
+        {
+            "_scraped_name": "94th Legislature, 2025-2026",
+            "classification": "primary",
+            "identifier": "2025-2026",
+            "name": "2025-2026 Regular Session",
+            "start_date": "2025-01-14",
+            # TODO: update end_date
+            "end_date": "2026-05-20",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "85th Legislature, 2007-2008",

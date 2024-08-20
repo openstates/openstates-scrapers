@@ -1,6 +1,6 @@
 import datetime as dt
 import json
-
+import requests
 from openstates.scrape import Scraper, Bill, VoteEvent
 from utils import LXMLMixin
 from .actions import Categorizer
@@ -14,6 +14,9 @@ class DEBillScraper(Scraper, LXMLMixin):
     legislators = {}
     legislators_by_short = {}
     legislators_by_district = {}
+
+    session = requests.Session()
+
     """
     DE has caucus-specific sites that it now
     uses to identify bill sponsors...sometimes.
@@ -28,9 +31,28 @@ class DEBillScraper(Scraper, LXMLMixin):
     }
 
     def scrape(self, session=None):
+
+        self.headers = {
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "accept-language": "en-US,en;q=0.9",
+            "dnt": "1",
+            "priority": "u=0, i",
+            "sec-ch-ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Linux"',
+            "sec-fetch-dest": "document",
+            "sec-fetch-mode": "navigate",
+            "sec-fetch-site": "none",
+            "sec-fetch-user": "?1",
+            "upgrade-insecure-requests": "1",
+            "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        }
+
         self.retry_attempts = 10
         self.retry_wait_seconds = 30
         self.timeout = 130
+        self.init_asp()
+        self.headers["x-requested-with"] = "XMLHttpRequest"
         # Cache the legislators, we'll need them for sponsors and votes
         self.scrape_legislators(session)
 
@@ -250,12 +272,15 @@ class DEBillScraper(Scraper, LXMLMixin):
         }
 
         self.info("Fetching legislators")
-        page = self.post(
+        page = self.session.post(
             url=search_form_url,
             data=form,
             allow_redirects=True,
             verify=False,
-        ).json()
+            headers=self.headers,
+        ).content
+
+        page = json.loads(page)
         assert page["Data"], "Cound not fetch legislators!"
         for row in page["Data"]:
             self.legislators[str(row["PersonId"])] = row
@@ -272,7 +297,9 @@ class DEBillScraper(Scraper, LXMLMixin):
         )
         form = {"legislationId": legislation_id, "sort": "", "group": "", "filter": ""}
         self.info(f"Searching for votes for {bill.identifier}")
-        response = self.post(url=votes_url, data=form, allow_redirects=True)
+        response = self.session.post(
+            url=votes_url, data=form, allow_redirects=True, headers=self.headers
+        )
         if response.content:
             page = json.loads(response.content.decode("utf-8"))
             if page["Total"] > 0:
@@ -286,7 +313,9 @@ class DEBillScraper(Scraper, LXMLMixin):
         form = {"rollCallId": vote_id, "sort": "", "group": "", "filter": ""}
 
         self.info(f"Fetching vote {vote_id} for {bill.identifier}")
-        page = self.post(url=vote_url, data=form, allow_redirects=True).json()
+        page = self.session.post(
+            url=vote_url, data=form, allow_redirects=True, headers=self.headers
+        ).json()
         if page:
             roll = page["Model"]
             vote_chamber = self.chamber_map[roll["ChamberName"]]
@@ -381,7 +410,9 @@ class DEBillScraper(Scraper, LXMLMixin):
         )
         form = {"legislationId": legislation_id, "sort": "", "group": "", "filter": ""}
         self.info(f"Fetching actions for {bill.identifier}")
-        page = self.post(url=actions_url, data=form, allow_redirects=True).json()
+        page = self.session.post(
+            url=actions_url, data=form, allow_redirects=True, headers=self.headers
+        ).json()
         for row in page["Data"]:
             action_name = row["ActionDescription"]
             action_date = dt.datetime.strptime(
@@ -423,7 +454,9 @@ class DEBillScraper(Scraper, LXMLMixin):
         )
         form = {"sort": "", "group": "", "filter": ""}
         self.info(f"Fetching amendments for {bill.identifier}")
-        page = self.post(url=amds_url, data=form, allow_redirects=True)
+        page = self.session.post(
+            url=amds_url, data=form, allow_redirects=True, headers=self.headers
+        )
         if page.content == b"":
             return
         else:
@@ -500,11 +533,12 @@ class DEBillScraper(Scraper, LXMLMixin):
             "toIntroDate": "",
         }
 
-        page = self.post(
+        page = self.session.post(
             url=search_form_url,
             data=form,
             allow_redirects=True,
             verify=False,
+            headers=self.headers,
         ).json()
 
         return page
@@ -518,3 +552,8 @@ class DEBillScraper(Scraper, LXMLMixin):
             return "application/msword"
         else:
             return ""
+
+    # set up our asp session and fetch cookies
+    def init_asp(self):
+        self.session.get("https://legis.delaware.gov/", headers=self.headers).content
+        return

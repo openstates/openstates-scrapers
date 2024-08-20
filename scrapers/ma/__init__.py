@@ -4,12 +4,14 @@ import lxml.html
 from openstates.scrape import State
 from .bills import MABillScraper
 from .events import MAEventScraper
+from .votes import MAVoteScraper
 
 
 class Massachusetts(State):
     scrapers = {
         "bills": MABillScraper,
         "events": MAEventScraper,
+        "votes": MAVoteScraper,
     }
     legislative_sessions = [
         {

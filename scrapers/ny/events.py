@@ -78,7 +78,7 @@ class NYEventScraper(Scraper):
                 yield event
 
     def scrape_lower_event(self, url):
-        page = self.get(url).content
+        page = self.get(url, verify=False).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 

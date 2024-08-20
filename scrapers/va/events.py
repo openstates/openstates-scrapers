@@ -170,7 +170,10 @@ class VaEventScraper(Scraper):
             if len(desc_split) > 1:
                 loc_raw = desc_split[1].strip()
                 # Prevent invalid length of location name
-                location = loc_raw[:198] if len(loc_raw) > 199 else loc_raw
+                if len(loc_raw) > 1:
+                    location = loc_raw[:198] if len(loc_raw) > 199 else loc_raw
+                else:
+                    location = "Unknown"
             else:
                 location = "Unknown"
 

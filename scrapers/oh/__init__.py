@@ -49,7 +49,18 @@ class Ohio(State):
             "active": True,
         },
     ]
-    ignored_scraped_sessions = []
+    ignored_scraped_sessions = [
+        "130th (2013-2014)",
+        "129th (2011-2012)",
+        "128th (2009-2010)",
+        "127th (2007-2008)",
+        "126th (2005-2006)",
+        "125th - Special Session (2004)",
+        "125th (2003-2004)",
+        "124th (2001-2002)",
+        "123rd (1999-2000)",
+        "122nd (1997-1998)",
+    ]
 
     def get_session_list(self):
         sessions = url_xpath(

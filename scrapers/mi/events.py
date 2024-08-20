@@ -5,6 +5,7 @@ import lxml
 from utils.events import match_coordinates
 from collections.abc import Generator
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import EmptyScrape
 
 
 class MIEventScraper(Scraper):
@@ -16,6 +17,11 @@ class MIEventScraper(Scraper):
         page = self.get(url).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
+
+        if not page.xpath(
+            "//table[contains(@class,'calendar')]//a[contains(@href,'/Committees/Meeting')]/@href"
+        ):
+            raise EmptyScrape
 
         for link in page.xpath(
             "//table[contains(@class,'calendar')]//a[contains(@href,'/Committees/Meeting')]/@href"

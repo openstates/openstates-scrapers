@@ -39,8 +39,14 @@ class WAEventScraper(Scraper, LXMLMixin):
             end = datetime.datetime.strptime(end, "%Y-%m-%d").strftime(print_format)
 
         chambers = [chamber] if chamber else ["upper", "lower", "joint"]
+
+        event_count = 0
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber, session, start, end)
+            for event in self.scrape_chamber(chamber, session, start, end):
+                event_count += 1
+                yield event
+        if event_count < 1:
+            raise EmptyScrape
 
     # Only need to fetch the XML once for both chambers
     def get_xml(self, start, end):
