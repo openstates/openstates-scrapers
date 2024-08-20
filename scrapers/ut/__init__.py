@@ -365,7 +365,7 @@ class Utah(State):
             "start_date": "2024-08-21",
             # TODO: update end_date
             "end_date": "2024-08-30",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
