@@ -70,7 +70,7 @@ class GAEventScraper(Scraper):
                 event.add_document(
                     "Agenda", row["agendaUri"], media_type="application/pdf"
                 )
-                event.dedupe_key = row["agendaUri"]
+                event.dedupe_key = f'{row["agendaUri"]}#{start}'
                 # Scrape bill ids from agenda pdf
                 try:
                     for bill_id in Agenda(source=URL(row["agendaUri"])).do_scrape():
