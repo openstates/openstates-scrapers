@@ -157,6 +157,16 @@ class Colorado(State):
             "name": "2024 Regular Session",
             "start_date": "2024-01-10",
             "end_date": "2024-05-08",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2024 Extraordinary Session",
+            "classification": "special",
+            "identifier": "2024B",
+            "name": "2024 First Extraordinary Session",
+            "start_date": "2024-08-26",
+            # TODO
+            "end_date": "2024-08-30",
             "active": True,
         },
     ]
