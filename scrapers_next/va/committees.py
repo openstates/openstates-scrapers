@@ -1,124 +1,90 @@
-from spatula import URL, CSS, HtmlListPage, HtmlPage, SelectorError, SkipItem
+from spatula import URL, CSS, HtmlListPage, HtmlPage, SkipItem, MissingSourceError
 from openstates.models import ScrapeCommittee
+import requests
+from lxml import html
 import time
-
-"""
-The data that resulted from this scraper is a little weak (some subcommittee information is missing).
-
-The source that was used for this scraper isn't the best, which is why the code has to sleep so much.
-Going forward, we should try and find a more stable source for VA committee data.
-"""
-
-# VA lists the full names of committee members on individual separate pages
-# MemberDetail grabs a member's full name from their specific page
+import re
+import logging
 
 
-class MemberDetail(HtmlPage):
+class CommitteeDetail:
+    def __init__(self, committee, source):
+        self.com = committee
+        self.source = source
+
     def process_page(self):
-        if len(self.input) > 2:
-            raise ValueError("please provide only committee object and role")
+        response = requests.get(self.source, timeout=120)
+        logging.log(logging.INFO, f" fetching {self.com.name} details from {self.source}")
+        if response.status_code != 200:
+            raise SkipItem(f"Cannot access {self.com.name} committee details")
 
-        com = self.input[0]
-        role = self.input[1]
-        try:
-            mem_name = CSS("#mainC > h3").match(self.root)
-        except SelectorError:
-            return com
+        tree = html.fromstring(response.content)
 
-        if "Delegate" in mem_name[0].text:
-            cleaned_name = mem_name[0].text.split("Delegate")[1].strip()
-        elif "Senator" in mem_name[0].text:
-            cleaned_name = mem_name[0].text.split("Senator")[1].strip()
-        else:
-            cleaned_name = mem_name[0].text.strip()
-
-        if cleaned_name:
-            com.add_member(cleaned_name, role)
-
-        return com
-
-
-# grabs committee details (other than members' full name)
-class CommitteeDetail(HtmlListPage):
-    def process_page(self):
-        com = self.input
-        try:
-            member_items = CSS("p a").match(self.root)
-        except SelectorError:
-            com_name = list(com)[0][1]
-            print_str = "cannot access " + com_name + " committee details"
-            raise SkipItem(print_str)
-
-        members = [i.text for i in member_items]
+        # Extract member details
+        member_items = tree.cssselect("p a")
+        members = [i.text_content() for i in member_items]
 
         for i in range(len(members)):
+            member_text = members[i].strip()
             if (
-                "Agendas" in members[i]
-                or "Committee" in members[i]
-                or "Comments" in members[i]
+                "Agendas" in member_text
+                or "Committee" in member_text
+                or "Comments" in member_text
             ):
                 continue
 
-            if "(Chair)" in members[i]:
+            if "(Chair)" in member_text:
                 role = "Chair"
-
-            elif "(Co-Chair)" in members[i]:
+            elif "(Co-Chair)" in member_text:
                 role = "Co-Chair"
-
-            elif "(Vice Chair)" in members[i]:
+            elif "(Vice Chair)" in member_text:
                 role = "Vice Chair"
-
             else:
                 role = "Member"
 
-            time.sleep(40)
             detail_link = member_items[i].get("href")
-            # .do_scrape() allows us to get information from MemberDetail without
-            # returning/writing a com object to disk
-            com = [
-                i
-                for i in MemberDetail(
-                    [com, role], source=URL(detail_link, timeout=120)
-                ).do_scrape()
-            ][0]
+            # Fetch and process member details
+            partial_name = member_items[i].text_content().replace(",", "").strip()
+            if detail_link:
+                self.process_member(partial_name, detail_link, role)
 
-        return com
+        return self.com
 
+    def process_member(self, partial_name, member_url, role):
+        member_pattern = re.compile(r"(?:Delegate |Senator )(.+)")  # Regex pattern to match and extract the name
 
-class FindSubCommittees(HtmlListPage):
-    try:
-        selector = CSS("#mainC > ul:nth-child(12) > li a")
-    except SelectorError:
-        raise SkipItem("cannot access subcommittees")
+        # Filter out non-HTTP/HTTPS URLs
+        if not member_url.startswith("http"):
+            # Convert relative URLs to absolute
+            if member_url.startswith("/"):
+                member_url = f"https://lis.virginia.gov{member_url}"
+            else:
+                # Skip non-HTTP URLs like 'mailto:'
+                return
 
-    def process_item(self, item):
-        try:
-            comm_name = item.text
-        except SelectorError:
-            raise SkipItem("no subcommittees")
+        time.sleep(2)  # Adding delay to avoid overloading the server
+        response = requests.get(member_url, timeout=120)
+        logging.log(logging.INFO, f"Fetching details on {partial_name} from {self.source}")
+        if response.status_code != 200:
+            return
 
-        chamber_text = item.getparent().getparent().getparent().getchildren()[1].text
-        if "house" in chamber_text.lower():
-            chamber = "lower"
-            parent_comm = chamber_text.split("House")[1].strip()
+        tree = html.fromstring(response.content)
+        mem_name_element = tree.cssselect("#mainC > h3")
+
+        if not mem_name_element:
+            logging.warning(f"No member name element found at {member_url}")
+            return
+
+        mem_name = mem_name_element[0].text_content().strip()
+
+        # Use the regex pattern to extract the clean name
+        match = member_pattern.match(mem_name)
+        if match:
+            cleaned_name = match.group(1).strip()  # Extract the name without the title
         else:
-            chamber = "upper"
-            parent_comm = chamber_text.split("Senate")[1].strip()
+            cleaned_name = mem_name  # Fallback to the original name if no match
 
-        com = ScrapeCommittee(
-            name=comm_name,
-            classification="subcommittee",
-            chamber=chamber,
-            parent=parent_comm,
-        )
-
-        detail_link = item.get("href")
-        com.add_source(self.source.url, note="homepage")
-        com.add_source(detail_link)
-
-        time.sleep(40)
-
-        return CommitteeDetail(com, source=URL(detail_link, timeout=120))
+        self.com.add_member(cleaned_name, role)
 
 
 class CommitteeList(HtmlListPage):
@@ -141,29 +107,78 @@ class CommitteeList(HtmlListPage):
         )
 
         detail_link = item.get("href")
-        com.add_source(self.source.url, note="homepage")
-        com.add_source(detail_link)
+        if not detail_link:
+            raise SkipItem("No link found for committee.")
 
-        time.sleep(40)
+        com.add_source(self.source.url, note="Committee List Page")
+        com.add_source(detail_link, note="Committee Detail Page")
 
-        return CommitteeDetail(com, source=URL(detail_link, timeout=120, retries=3))
+        try:
+            detail_page = CommitteeDetail(com, source=detail_link)
+            return detail_page.process_page()
+        except MissingSourceError:
+            raise SkipItem("No link found for committee.")
 
 
-class SubCommitteeList(HtmlListPage):
+class SubcommitteeList(HtmlPage):
+    def __init__(self, source, parent, chamber):
+        self.source = source
+        self.parent = parent
+        self.chamber = chamber
+
+    def process_page(self):
+        response = requests.get(self.source, timeout=120)
+        if response.status_code != 200:
+            raise SkipItem(f"Cannot access parent committee details")
+        tree = html.fromstring(response.content)
+        # Check for subcommittees
+        link_list = tree.cssselect(".linkSect")
+        if len(link_list) > 2:
+            try:
+                sub_com_list = link_list[2].cssselect("li a")
+                # [x.get("href") for x in sub_com_list]
+                for link in sub_com_list:
+                    detail_link = f"https://lis.virginia.gov{link.get('href')}"
+                    sub_com_name = link.text_content().strip()
+                    if "Subcommittee" in sub_com_name:
+                        sub_com_name = f"{self.parent} {sub_com_name}"
+                    sub_com = ScrapeCommittee(
+                        name=sub_com_name,
+                        classification="subcommittee",
+                        chamber=self.chamber,
+                        parent=self.parent
+                    )
+                    sub_com.add_source(self.source, note="Committee List Page")
+                    sub_com.add_source(detail_link, note="Committee Detail Page")
+                    try:
+                        detail_page = CommitteeDetail(sub_com, source=detail_link)
+                        return detail_page.process_page()
+                    except MissingSourceError:
+                        raise SkipItem("No link found for committee.")
+
+            except IndexError:
+                raise SkipItem(f"Committees has no subcommittees.")
+
+
+class FindSubcommittees(HtmlListPage):
     source = "https://lis.virginia.gov/241/com/COM.HTM"
     selector = CSS(".linkSect a")
 
     def process_item(self, item):
+        parent_name = item.text
+        # both senate and house committees are listed on one page, so this isolates which is which
         chamber_text = item.getparent().getparent().getparent().getchildren()[0].text
-        comm_name = item.text
-
-        # this is hacky but I couldn't figure out another way to ignore a lack of subcommittees
-        if "SENATE" in chamber_text:
-            if comm_name == "Transportation":
-                raise SkipItem("no subcommittees")
-            if comm_name == "Rules":
-                raise SkipItem("no subcommittees")
+        if "HOUSE" in chamber_text:
+            chamber = "lower"
+        else:
+            chamber = "upper"
 
         detail_link = item.get("href")
-        time.sleep(40)
-        return FindSubCommittees(source=URL(detail_link, timeout=120))
+        if not detail_link:
+            raise SkipItem("No link found for committee.")
+
+        try:
+            detail_page = SubcommitteeList(source=detail_link, parent=parent_name, chamber=chamber)
+            return detail_page.process_page()
+        except MissingSourceError:
+            raise SkipItem("No link found for committee.")
