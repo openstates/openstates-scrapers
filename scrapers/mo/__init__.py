@@ -107,7 +107,6 @@ class Missouri(State):
         },
     ]
     ignored_scraped_sessions = [
-        "2022 1st Extraordinary Session",
         "2018 Regular Session",
         "2018 Special Session",
         "2018 1st Extraordinary Session",
