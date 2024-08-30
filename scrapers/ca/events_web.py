@@ -228,7 +228,7 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                     " ".join([hearing_date, hearing_time])
                     .split("or")[0]
                     .split("and")[0]
-                    .split("to")[0]
+                    .split(" to ")[0]
                     .strip()
                 )
                 when = dateutil.parser.parse(when)
