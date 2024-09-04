@@ -15,7 +15,7 @@ from .actions import Categorizer
 
 settings = dict(SCRAPELIB_TIMEOUT=600)
 
-PROXY_BASE_URL = "http://in-proxy.openstates.org"
+PROXY_BASE_URL = "https://in-proxy.openstates.org/"
 SCRAPE_WEB_VERSIONS = "INDIANA_SCRAPE_WEB_VERSIONS" in os.environ
 
 
@@ -53,7 +53,7 @@ class INBillScraper(Scraper):
     def _get_bill_url(self, session, bill_id):
         bill_prefix, bill_number = self._get_bill_id_components(bill_id)
 
-        url_template = "http://iga.in.gov/legislative/{}/{}/{}"
+        url_template = "https://iga.in.gov/legislative/{}/{}/{}"
 
         try:
             url_segment = self._bill_prefix_map[bill_prefix]["url_segment"]
@@ -253,8 +253,8 @@ class INBillScraper(Scraper):
 
     def scrape_web_versions(self, session, bill, bill_id):
         # found via web inspector of the requests to
-        # http://iga.in.gov/documents/{doc_id}
-        # the web url for downloading a doc is http://iga.in.gov/documents/{doc_id}/download
+        # https://iga.in.gov/documents/{doc_id}
+        # the web url for downloading a doc is https://iga.in.gov/documents/{doc_id}/download
         # where doc_id is the data-myiga-actiondata attribute of the link
         # this id isn't available in the API, so we have to scrape it
 
@@ -277,7 +277,7 @@ class INBillScraper(Scraper):
                 version_name = link.xpath("@title")[0]
                 # found via web inspector of the requests to
                 # http://iga.in.gov/documents/{doc_id}
-                download_link = f"http://iga.in.gov/documents/{doc_id}/download"
+                download_link = f"https://iga.in.gov/documents/{doc_id}/download"
                 bill.add_version_link(
                     version_name,
                     download_link,
@@ -292,7 +292,7 @@ class INBillScraper(Scraper):
                 doc_id = link.xpath("@data-myiga-actiondata")[0]
                 document_title = link.xpath("div[1]/text()")[0].strip()
                 document_name = "{} {}".format(version_name, document_title)
-                download_link = f"http://iga.in.gov/documents/{doc_id}/download"
+                download_link = f"https://iga.in.gov/documents/{doc_id}/download"
                 bill.add_document_link(
                     document_name,
                     download_link,
@@ -307,7 +307,7 @@ class INBillScraper(Scraper):
                 doc_id = link.xpath("@data-myiga-actiondata")[0]
                 document_title = link.xpath("div[1]/text()")[0].strip()
                 document_name = "{} {}".format(version_name, document_title)
-                download_link = f"http://iga.in.gov/documents/{doc_id}/download"
+                download_link = f"https://iga.in.gov/documents/{doc_id}/download"
                 # If an amendment has passed, add it as a version, otherwise as a document
                 if "passed" in document_title.lower():
                     bill.add_version_link(
@@ -512,6 +512,11 @@ class INBillScraper(Scraper):
             # subjects
             subjects = [s["entry"] for s in bill_json["latestVersion"]["subjects"]]
             for subject in subjects:
+                subject = (
+                    subject
+                    if not subject.startswith("PENSIONS AND RETIREMENT BENEFITS")
+                    else "PENSIONS AND RETIREMENT BENEFITS; Public Retirement System (INPRS)"
+                )
                 bill.add_subject(subject)
 
             # Abstract
