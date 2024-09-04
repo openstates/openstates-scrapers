@@ -512,6 +512,11 @@ class INBillScraper(Scraper):
             # subjects
             subjects = [s["entry"] for s in bill_json["latestVersion"]["subjects"]]
             for subject in subjects:
+                subject = (
+                    subject
+                    if not subject.startswith("PENSIONS AND RETIREMENT BENEFITS")
+                    else "PENSIONS AND RETIREMENT BENEFITS; Public Retirement System (INPRS)"
+                )
                 bill.add_subject(subject)
 
             # Abstract
