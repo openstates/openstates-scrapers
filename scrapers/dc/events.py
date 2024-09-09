@@ -10,8 +10,6 @@ from utils.media import get_media_type
 class DCEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
 
-    bill_prefixes = {"bill": "B", "resolution": "R"}
-
     def scrape(self):
         # use ical to get the full feed and start dates, which aren't cleanly in the html
         ical_url = (
@@ -41,13 +39,11 @@ class DCEventScraper(Scraper):
             end_date=str(e.end),
         )
 
-        bill_regex = r"(?P<type>Bill|Resolution) (?P<session>\d+)-(?P<billnumber>\d+)"
+        bill_regex = r"(?P<type>B|PR|CER)\s*(?P<session>\d+)-(?P<billnumber>\d+)"
         matches = re.findall(bill_regex, description, flags=re.IGNORECASE)
 
         for match in matches:
-            bill = (
-                f"{self.bill_prefixes[match[0].lower()]} {match[1]}-{match[2].zfill(4)}"
-            )
+            bill = f"{match[0].lower()} {match[1]}-{match[2].zfill(4)}"
             event.add_bill(bill)
 
         try:
