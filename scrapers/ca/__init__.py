@@ -423,7 +423,7 @@ class California(State):
             # TODO: update dates
             "start_date": "2024-09-01",
             "end_date": "2024-12-05",
-            "active": True,
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [
