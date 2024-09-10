@@ -1,3 +1,10 @@
+import datetime
+import itertools
+import operator
+
+from dateutil.relativedelta import relativedelta
+
+
 # the current function to set coordinates requires a
 # valid URL and Note, which we often don't have.
 # so this will add just coordinates
@@ -26,3 +33,18 @@ def match_coordinates(event, locations):
         if location.lower() in event.location.get("name").lower():
             set_coordinates(event, coords[0], coords[1])
             return
+
+
+def month_range(
+    start: datetime.date,
+    end: datetime.date,
+):
+    """Yields the 1st day of each month in the given date range."""
+    yield from itertools.takewhile(
+        lambda date: date < end,
+        itertools.accumulate(
+            itertools.repeat(relativedelta(months=1)),
+            operator.add,
+            initial=start,
+        ),
+    )
