@@ -55,17 +55,31 @@ class DCEventScraper(Scraper):
         )
         return response.json()
 
-    def parse_event(self, data):
-        when = parser.parse(data["hearingDateTime"])
+    def parse_event(self, row):
+        when = parser.parse(row["hearingDateTime"])
         when = self._tz.localize(when)
 
-        e = Event(
-            data["hearingTitle"], when, data["address"], upstream_id=data["hearingId"]
-        )
+        where = f"{row['locationAddress']} {row['location']}".strip()
 
-        e.add_source(
-            f"https://lims.dccouncil.gov/Hearings/hearings/{data['hearingId']}"
-        )
+        e = Event(row["hearingTitle"], when, where, upstream_id=str(row["hearingId"]))
+
+        e.add_source(f"https://lims.dccouncil.gov/Hearings/hearings/{row['hearingId']}")
+
+        e.add_committee(row["hearingTitle"])
+
+        for topic in row["topics"]:
+            agenda_row = e.add_agenda_item(topic["topic"])
+
+            if topic["legislationNumber"]:
+                agenda_row.add_bill(topic["legislationNumber"])
+
+        if row["witnessListAttachment"]:
+            list_url = f"https://lims.dccouncil.gov/Hearings/API/Public/DownloadAttachment/{row['witnessListAttachment']['attachmentGuid']}"
+            e.add_document(
+                row["witnessListAttachment"]["attachmentName"],
+                list_url,
+                media_type="application/pdf",
+            )
 
         yield e
 
