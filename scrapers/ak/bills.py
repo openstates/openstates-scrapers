@@ -138,7 +138,7 @@ class AKBillScraper(Scraper):
                 if spons_str:
                     bill.add_sponsorship(
                         spons_str,
-                        entity_type="person",
+                        entity_type="organization",
                         classification="primary",
                         primary=True,
                     )
