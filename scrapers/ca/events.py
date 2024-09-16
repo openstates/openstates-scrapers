@@ -176,5 +176,6 @@ _committee_nr = {
     80: "Senate Insurance, Banking and Financial Institutions",
     81: "Assembly Emergency Management",
     82: "Senate Local Government",
-    83: "Sen Revenue and Taxation",
+    83: "Senate Revenue and Taxation",
+    84: "Assembly Utilities and Energy",
 }
