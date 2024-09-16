@@ -209,6 +209,7 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                     .split(", Chair")[0]
                     .split("AND")
                 ]
+                members = [item for sublist in members for item in sublist.split(", ")]
 
                 time_loc = content_xpath.xpath(
                     './/div[@class="attribute time-location"]'
