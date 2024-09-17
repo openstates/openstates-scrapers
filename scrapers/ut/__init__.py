@@ -357,6 +357,16 @@ class Utah(State):
             "end_date": "2024-06-20",
             "active": True,
         },
+        {
+            "_scraped_name": "2024 4th Special Session",
+            "classification": "special",
+            "identifier": "2024S4",
+            "name": "2024 4th Special Session",
+            "start_date": "2024-08-21",
+            # TODO: update end_date
+            "end_date": "2024-08-30",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "2025 General Session",

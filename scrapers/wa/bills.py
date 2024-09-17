@@ -309,6 +309,10 @@ class WABillScraper(Scraper, LXMLMixin):
 
         title = xpath(page, "string(wa:LongDescription)")
 
+        if "TEST BILL FOR" in title.upper():
+            self.info("Skipping test bill.")
+            return
+
         bill_type = xpath(
             page, "string(wa:ShortLegislationType/wa:LongLegislationType)"
         )

@@ -114,6 +114,9 @@ class MAEventScraper(Scraper, LXMLMixin):
         )
         location = " ".join(location.split())
 
+        if location.strip() == "":
+            location = "See Agenda"
+
         description = (
             page.xpath(
                 'string(//dt[contains(., "Event Description")]/following-sibling::dd[1])'

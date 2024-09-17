@@ -411,9 +411,18 @@ class California(State):
         {
             "classification": "special",
             "identifier": "20232024 Special Session 1",
-            "name": "2023-2024 Special Sesssion 1",
+            "name": "2023-2024, Special Session 1",
             "start_date": "2022-12-05",
             "end_date": "2023-01-04",
+            "active": False,
+        },
+        {
+            "classification": "special",
+            "identifier": "20232024 Special Session 2",
+            "name": "2023-2024, Special Session 2",
+            # TODO: update dates
+            "start_date": "2024-09-01",
+            "end_date": "2024-12-05",
             "active": False,
         },
     ]

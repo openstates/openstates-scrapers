@@ -209,6 +209,7 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                     .split(", Chair")[0]
                     .split("AND")
                 ]
+                members = [item for sublist in members for item in sublist.split(", ")]
 
                 time_loc = content_xpath.xpath(
                     './/div[@class="attribute time-location"]'
@@ -228,7 +229,7 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                     " ".join([hearing_date, hearing_time])
                     .split("or")[0]
                     .split("and")[0]
-                    .split("to")[0]
+                    .split(" to ")[0]
                     .strip()
                 )
                 when = dateutil.parser.parse(when)

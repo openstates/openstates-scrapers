@@ -1,5 +1,3 @@
-import requests
-import re
 from openstates.scrape import State
 from .bills import WYBillScraper
 from .events import WYEventScraper
@@ -158,15 +156,4 @@ class Wyoming(State):
     ]
 
     def get_session_list(self):
-        # the sessions list is a JS object buried in a massive file
-        # it looks like:
-        # .constant("YEAR_VALUES",[{year:2001,title:"General Session",isActive:!0}, ...
-        session = requests.Session()
-        js = session.get("http://wyoleg.gov/js/site.min.js").content.decode("utf-8")
-        # seriously, there must be a better way to do this
-        sessions_regex = r"constant\(\"YEAR_VALUES\",\[(.*)\)}\(\),function\(w"
-        sessions_string = re.search(sessions_regex, js, re.DOTALL)
-        # once we have the big string, pull out year:2001, etc
-        year_regex = r"year\:(\d+)"
-        years = re.findall(year_regex, sessions_string.groups(0)[0])
-        return years
+        return [str(x) for x in range(2011, 2025)]
