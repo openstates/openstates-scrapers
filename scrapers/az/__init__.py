@@ -288,6 +288,15 @@ class Arizona(State):
             "end_date": "2024-04-20",
             "active": True,
         },
+        {
+            "_scraped_name": "2025 - Fifty-seventh Legislature - First Regular Session",
+            "classification": "primary",
+            "identifier": "57th-1st-regular",
+            "name": "57th Legislature - First Regular Session",
+            "start_date": "2025-01-13",
+            "end_date": "2025-04-26",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2008 - Forty-eighth Legislature - Second Regular Session",
