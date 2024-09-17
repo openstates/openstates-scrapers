@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Push to ECR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v1
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+      
+      - name: Build and push to Amazon ECR
+        env:
+          DOCKER_IMAGE: ${{ secrets.DOCKER_IMAGE }}
+        run: |
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          docker build --platform linux/amd64 -t $DOCKER_IMAGE:$COMMIT_HASH -f Dockerfile .
+          docker tag $DOCKER_IMAGE:$COMMIT_HASH $DOCKER_IMAGE:latest
+          docker push $DOCKER_IMAGE:$COMMIT_HASH
+          docker push $DOCKER_IMAGE:latest
+
+  sync_dags:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    name: Sync DAG with New Image Tag
+    runs-on: ubuntu-latest
+  
+    steps:
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      
+      - name: Install gha-token
+        run: python3.11 -m pip install "git+https://github.com/hypothesis/gha-token.git"
+      
+      - name: Get GitHub token
+        id: github_token
+        run: echo GITHUB_TOKEN=$(gha-token --app-id "$APP_ID" --installation-id "$INSTALL_ID" --private-key "$PRIVATE_KEY") >> $GITHUB_OUTPUT
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          APP_ID: ${{ secrets.APP_ID }}
+          INSTALL_ID: ${{ secrets.INSTALL_ID }}
+      
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          repository: "washabstract/artemis"
+          token: ${{ steps.github_token.outputs.GITHUB_TOKEN }}
+      
+      - name: Update .env file
+        run: echo "IMAGE_TAG=${GITHUB_SHA}" > aws/.env
+      
+      - name: Configure git
+        run: |
+          git config --global user.name "send-pr.yml workflow"
+          git config --global user.email "<>"
+      
+      - name: Checkout new branch
+        run: git checkout -b update-image-tag-${GITHUB_SHA}
+      
+      - name: Commit the changes
+        run: git commit aws/.env -m "Update IMAGE_TAG to ${GITHUB_SHA}"
+      
+      - name: Push branch
+        run: git push --force origin update-image-tag-${GITHUB_SHA}:update-image-tag-${GITHUB_SHA}
+      
+      - name: Open PR
+        uses: jwalton/gh-find-current-pr@v1
+        id: findPr
+        with:
+          state: all
+      
+      - name: Echo PR
+        run: |
+          gh pr create --body "Changes from PR https://github.com/washabstract/cyclades-openstates-scrapers/pull/${PR}" --title "Update IMAGE_TAG to ${GITHUB_SHA}"
+        if: success() && steps.findPr.outputs.number
+        env:
+          PR: ${{ steps.findPr.outputs.pr }}
+          GITHUB_TOKEN: ${{ steps.github_token.outputs.GITHUB_TOKEN }}
