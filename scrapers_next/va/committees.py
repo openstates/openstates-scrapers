@@ -1,4 +1,4 @@
-from spatula import URL, CSS, HtmlListPage, HtmlPage, SkipItem, MissingSourceError
+from spatula import CSS, HtmlListPage, HtmlPage, SkipItem, MissingSourceError
 from openstates.models import ScrapeCommittee
 import requests
 from lxml import html
@@ -14,7 +14,7 @@ class CommitteeDetail:
 
     def process_page(self):
         response = requests.get(self.source, timeout=120)
-        logging.log(logging.INFO, f" fetching {self.com.name} details from {self.source}")
+        logging.log(logging.INFO, f"fetching {self.com.name} details from {self.source}")
         if response.status_code != 200:
             raise SkipItem(f"Cannot access {self.com.name} committee details")
 
@@ -129,7 +129,7 @@ class SubcommitteeList(HtmlPage):
     def process_page(self):
         response = requests.get(self.source, timeout=120)
         if response.status_code != 200:
-            raise SkipItem(f"Cannot access parent committee details")
+            raise SkipItem("Cannot access parent committee details")
         tree = html.fromstring(response.content)
         # Check for subcommittees
         link_list = tree.cssselect(".linkSect")
@@ -157,7 +157,7 @@ class SubcommitteeList(HtmlPage):
                         raise SkipItem("No link found for committee.")
 
             except IndexError:
-                raise SkipItem(f"Committees has no subcommittees.")
+                raise SkipItem("Committees has no subcommittees.")
 
 
 class FindSubcommittees(HtmlListPage):
