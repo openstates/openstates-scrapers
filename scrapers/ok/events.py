@@ -174,7 +174,12 @@ class OKEventScraper(Scraper):
                 event.add_document(
                     link["label"], link["route"], media_type="application/pdf"
                 )
-
+                # Event link currently failing with a 404.
+                if (
+                    link["route"]
+                    == "http://webserver1.lsb.state.ok.us/2023-24HB/CMN-AGRI-20241207-01000000.pdf"
+                ):
+                    continue
                 for bill in Agenda(source=URL(link["route"])).do_scrape():
                     event.add_bill(bill)
 
