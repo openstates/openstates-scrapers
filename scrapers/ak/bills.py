@@ -104,7 +104,7 @@ class AKBillScraper(Scraper):
         # Checks if there is a Sponsor string before matching
         if spons_str:
             sponsors_matches = re.finditer(
-                "(?P<sponsor_type>REPRESENTATIVE|SENATOR)S?\s+(?P<sponsors>.*)",
+                r"(?P<sponsor_type>REPRESENTATIVE|SENATOR)S?\s+(?P<sponsors>.*)",
                 spons_str,
             )
             if sponsors_matches:
