@@ -6,6 +6,11 @@ import lxml.html
 from openstates.scrape import Scraper, Bill, VoteEvent
 from . import actions
 
+SPONSOR_CHAMBER_MAP = {
+    "REPRESENTATIVE": "lower",
+    "SENATOR": "upper",
+}
+
 
 class AKBillScraper(Scraper):
     def scrape(self, chamber=None, session=None):
@@ -24,7 +29,7 @@ class AKBillScraper(Scraper):
         doc.make_links_absolute(bill_list_url)
 
         conference_committee_list_url = (
-            "https://www.akleg.gov/basis/Committee/List/{session}#tabCom5"
+            f"https://www.akleg.gov/basis/Committee/List/{session}#tabCom5"
         )
         conference_committee_doc = lxml.html.fromstring(
             self.get(conference_committee_list_url).text
@@ -98,33 +103,42 @@ class AKBillScraper(Scraper):
         ).strip()
         # Checks if there is a Sponsor string before matching
         if spons_str:
-            sponsors_match = re.match(r"(SENATOR|REPRESENTATIVE)S?", spons_str)
-            if sponsors_match:
-                sponsors = spons_str.split(",")
-                sponsor = sponsors[0].strip()
+            sponsors_matches = re.finditer(
+                "(?P<sponsor_type>REPRESENTATIVE|SENATOR)S?\s+(?P<sponsors>.*)",
+                spons_str,
+            )
+            if sponsors_matches:
+                for sponsors_match in sponsors_matches:
+                    sponsors_data = sponsors_match.groupdict()
+                    sponsor_type = sponsors_data["sponsor_type"]
+                    sponsors = sponsors_data["sponsors"].split(",")
+                    sponsor = sponsors[0].strip()
 
-                if sponsor:
-                    bill.add_sponsorship(
-                        sponsors[0].split()[1],
-                        entity_type="person",
-                        classification="primary",
-                        primary=True,
-                    )
-
-                for sponsor in sponsors[1:]:
-                    sponsor = sponsor.strip()
-                    # occasional AK site error prints some code here
-                    if "Model.Sponsors." in sponsor:
-                        continue
+                    sponsor_chamber = SPONSOR_CHAMBER_MAP.get(sponsor_type, "")
 
                     if sponsor:
                         bill.add_sponsorship(
                             sponsor,
                             entity_type="person",
-                            classification="cosponsor",
-                            primary=False,
+                            chamber=sponsor_chamber,
+                            classification="primary",
+                            primary=True,
                         )
 
+                    for sponsor in sponsors[1:]:
+                        sponsor = sponsor.strip()
+                        # occasional AK site error prints some code here
+                        if "Model.Sponsors." in sponsor:
+                            continue
+
+                        if sponsor:
+                            bill.add_sponsorship(
+                                sponsor,
+                                chamber=sponsor_chamber,
+                                entity_type="person",
+                                classification="cosponsor",
+                                primary=False,
+                            )
             else:
                 # Committee sponsorship
                 spons_str = spons_str.strip()
