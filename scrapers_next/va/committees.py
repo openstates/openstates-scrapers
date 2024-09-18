@@ -14,7 +14,9 @@ class CommitteeDetail:
 
     def process_page(self):
         response = requests.get(self.source, timeout=120)
-        logging.log(logging.INFO, f"fetching {self.com.name} details from {self.source}")
+        logging.log(
+            logging.INFO, f"fetching {self.com.name} details from {self.source}"
+        )
         if response.status_code != 200:
             raise SkipItem(f"Cannot access {self.com.name} committee details")
 
@@ -51,7 +53,9 @@ class CommitteeDetail:
         return self.com
 
     def process_member(self, partial_name, member_url, role):
-        member_pattern = re.compile(r"(?:Delegate |Senator )(.+)")  # Regex pattern to match and extract the name
+        member_pattern = re.compile(
+            r"(?:Delegate |Senator )(.+)"
+        )  # Regex pattern to match and extract the name
 
         # Filter out non-HTTP/HTTPS URLs
         if not member_url.startswith("http"):
@@ -64,7 +68,9 @@ class CommitteeDetail:
 
         time.sleep(2)  # Adding delay to avoid overloading the server
         response = requests.get(member_url, timeout=120)
-        logging.log(logging.INFO, f"Fetching details on {partial_name} from {self.source}")
+        logging.log(
+            logging.INFO, f"Fetching details on {partial_name} from {self.source}"
+        )
         if response.status_code != 200:
             return
 
@@ -146,7 +152,7 @@ class SubcommitteeList(HtmlPage):
                         name=sub_com_name,
                         classification="subcommittee",
                         chamber=self.chamber,
-                        parent=self.parent
+                        parent=self.parent,
                     )
                     sub_com.add_source(self.source, note="Committee List Page")
                     sub_com.add_source(detail_link, note="Committee Detail Page")
@@ -178,7 +184,9 @@ class FindSubcommittees(HtmlListPage):
             raise SkipItem("No link found for committee.")
 
         try:
-            detail_page = SubcommitteeList(source=detail_link, parent=parent_name, chamber=chamber)
+            detail_page = SubcommitteeList(
+                source=detail_link, parent=parent_name, chamber=chamber
+            )
             return detail_page.process_page()
         except MissingSourceError:
             raise SkipItem("No link found for committee.")
