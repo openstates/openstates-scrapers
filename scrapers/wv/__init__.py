@@ -266,4 +266,5 @@ class WestVirginia(State):
         return url_xpath(
             "https://www.wvlegislature.gov/Bill_Status/Bill_Status.cfm",
             '//select[@name="year"]/option/text()',
+            verify=False,
         )
