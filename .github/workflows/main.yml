@@ -60,6 +60,7 @@ jobs:
         with:
           repository: "washabstract/artemis"
           token: ${{ steps.app-token.outputs.token }}
+          ref: main
 
       - name: Update .env file
         run: sed -i '/^CYCLADES_IMAGE_TAG=/d' aws/.env && echo "CYCLADES_IMAGE_TAG=${GITHUB_SHA}" >> aws/.env
