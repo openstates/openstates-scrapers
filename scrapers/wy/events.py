@@ -15,7 +15,7 @@ class WYEventScraper(Scraper):
     def scrape(self):
         today = datetime.datetime.today()
 
-        url = "https://web.wyoleg.gov/LsoService/api/Calendar/Events/{}{}01"
+        url = "https://lsoservice.wyoleg.gov/api/Calendar/Events/{}{}01"
         event_count = 0
 
         # this month and the next 2 months
