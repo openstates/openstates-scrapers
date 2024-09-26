@@ -22,6 +22,10 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
+      
+      - name: Ensure OpenStates-Core Dependency References Abstract Core Fork
+        run: |
+          sed -i 's|^openstates =.*|openstates = {git = "https://github.com/washabstract/cyclades-openstates-core.git"}|' pyproject.toml
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
@@ -56,7 +60,7 @@ jobs:
           private-key: ${{ secrets.PRIVATE_KEY }}
       
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: "washabstract/artemis"
           token: ${{ steps.app-token.outputs.token }}
