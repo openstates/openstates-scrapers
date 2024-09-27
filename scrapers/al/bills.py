@@ -42,19 +42,13 @@ class ALBillScraper(Scraper):
 
     def scrape_bill_type(self, session: str, bill_type: str, offset: int, limit: int):
         self.info(f"Scraping offset {offset} limit {limit}")
-        # max of 10 pages in case something goes way wrong
-        # json_data = {
-        #     "query": f'{{allInstrumentOverviews(instrumentType:"{bill_type}", instrumentNbr:"", body:"", sessionYear:"{self.session_year}", sessionType:"{self.session_type}", assignedCommittee:"", status:"", currentStatus:"", subject:"", instrumentSponsor:"", companionInstrumentNbr:"", effectiveDateCertain:"", effectiveDateOther:"", firstReadSecondBody:"", secondReadSecondBody:"", direction:"ASC"orderBy:"InstrumentNbr"limit:{limit} offset:{offset}  search:"" customFilters: {{}}companionReport:"", ){{ ID,SessionYear,InstrumentNbr,InstrumentUrl, InstrumentSponsor,SessionType,Body,Subject,ShortTitle,AssignedCommittee,PrefiledDate,FirstRead,CurrentStatus,LastAction,ActSummary,ViewEnacted,CompanionInstrumentNbr,EffectiveDateCertain,EffectiveDateOther,InstrumentType,IntroducedUrl,EngrossedUrl,EnrolledUrl }}}}',
-        #     "operationName": "",
-        #     "variables": [],
-        # }
 
         json_data = {
-            "query": "query bills($googleId: String, $category: String, $sessionYear: String, $sessionType: String, $direction: String, $orderBy: String, $offset: Int, $limit: Int, $filters: InstrumentOverviewInput! = {}, $search: String, $instrumentType: String) {\n  allInstrumentOverviews(\n    googleId: $googleId\n    category: $category\n    instrumentType: $instrumentType\n    sessionYear: $sessionYear\n    sessionType: $sessionType\n    direction: $direction\n    orderBy: $orderBy\n    limit: $limit\n    offset: $offset\n    customFilters: $filters\n    search: $search\n  ) {\n    ID\n    SessionYear\n    InstrumentNbr\n    InstrumentSponsor\n    SessionType\n    Body\n    Subject\n    ShortTitle\n    AssignedCommittee\n    PrefiledDate\n    FirstRead\n    CurrentStatus\n    LastAction\n    ActSummary\n    ViewEnacted\n    CompanionInstrumentNbr\n    EffectiveDateCertain\n    EffectiveDateOther\n    InstrumentType\n InstrumentUrl\n IntroducedUrl\n EngrossedUrl\n EnrolledUrl\n  }\n  allInstrumentOverviewsCount(\n    googleId: $googleId\n    category: $category\n    instrumentType: $instrumentType\n    sessionYear: $sessionYear\n    sessionType: $sessionType\n    customFilters: $filters\n    search: $search\n  )\n}",
+            "query": "query bills($googleId: String, $category: String, $sessionYear: String, $sessionType: String, $direction: String, $orderBy: String, $offset: Int, $limit: Int, $filters: InstrumentOverviewInput! = {}, $search: String, $instrumentType: String) {\n  allInstrumentOverviews(\n    googleId: $googleId\n    category: $category\n    instrumentType: $instrumentType\n    sessionYear: $sessionYear\n    sessionType: $sessionType\n    direction: $direction\n    orderBy: $orderBy\n    limit: $limit\n    offset: $offset\n    customFilters: $filters\n    search: $search\n  ) {\n    ID\n    SessionYear\n    InstrumentNbr\n    InstrumentSponsor\n    SessionType\n    Body\n    Subject\n    ShortTitle\n    AssignedCommittee\n    PrefiledDate\n    FirstRead\n    CurrentStatus\n    LastAction\n LastActionDate\n   ActSummary\n    ViewEnacted\n    CompanionInstrumentNbr\n    EffectiveDateCertain\n    EffectiveDateOther\n    InstrumentType\n InstrumentUrl\n IntroducedUrl\n EngrossedUrl\n EnrolledUrl\n  }\n  allInstrumentOverviewsCount(\n    googleId: $googleId\n    category: $category\n    instrumentType: $instrumentType\n    sessionYear: $sessionYear\n    sessionType: $sessionType\n    customFilters: $filters\n    search: $search\n  )\n}",
             "variables": {
                 "sessionType": "2025 Regular Session",
                 "instrumentType": bill_type,
-                "orderBy": "SessionYear",
+                "orderBy": "LastActionDate",
                 "direction": "DESC",
                 "offset": offset,
                 "limit": limit,
@@ -105,8 +99,8 @@ class ALBillScraper(Scraper):
                 primary=True,
             )
 
-            # self.scrape_versions(bill, row)
-            # self.scrape_fiscal_notes(bill)
+            self.scrape_versions(bill, row)
+            self.scrape_fiscal_notes(bill)
             # yield from self.scrape_actions(bill, row)
 
             bill.add_source("https://alison.legislature.state.al.us/bill-search")
@@ -279,18 +273,18 @@ class ALBillScraper(Scraper):
 
     def scrape_fiscal_notes(self, bill):
         bill_id = bill.identifier.replace(" ", "")
-        bill_type = "B" if "B" in bill_id else "R"
 
-        # {fiscalNotesBySessionYearInstrumentNbr(sessionType:\"2023 Regular Session\", sessionYear:\"2023\", instrumentNbr:\"HB246\", instrumentType:\"B\", ){ FiscalNoteDescription, FiscalNoteUrl, OidFiscalNote, SortOrder }}
         json_data = {
-            "query": f'{{fiscalNotesBySessionYearInstrumentNbr(instrumentType:"{bill_type}", instrumentNbr:"{bill_id}", sessionYear:"{self.session_year}", sessionType:"{self.session_type}"){{ FiscalNoteDescription, FiscalNoteUrl, OidFiscalNote, SortOrder }}}}',
-            "operationName": "",
-            "variables": [],
+            "query": "query fiscalNotesBySessionYearInstrumentNbr($instrumentNbr: String, $sessionType: String, $sessionYear: String){fiscalNotesBySessionYearInstrumentNbr(instrumentNbr:$instrumentNbr, sessionType:$sessionType, sessionYear: $sessionYear, ){ FiscalNoteDescription,FiscalNoteUrl,SortOrder }}",
+            "variables": {
+                "instrumentNbr": bill_id,
+                "sessionType": self.session_type,
+                "sessionYear": self.session_year,
+            },
         }
 
-        page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
+        page = requests.post(self.gql_url, headers=self.gql_headers, json=json_data)
         page = json.loads(page.content)
-
         for row in page["data"]["fiscalNotesBySessionYearInstrumentNbr"]:
             bill.add_document_link(
                 f"Fiscal Note: {row['FiscalNoteDescription']}",
