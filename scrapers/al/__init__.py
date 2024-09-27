@@ -50,8 +50,8 @@ class Alabama(State):
             "classification": "primary",
             "identifier": "2025rs",
             "name": "2025 Regular Session",
-            "start_date": "2025-02-06",
-            "end_date": "2025-05-24",
+            "start_date": "2025-02-04",
+            "end_date": "2025-05-15",
             "active": True,
         },
     ]
