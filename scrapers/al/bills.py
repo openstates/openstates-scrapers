@@ -17,7 +17,7 @@ class ALBillScraper(Scraper):
     vote_types = {"P": "not voting", "A": "abstain", "Y": "yes", "N": "no"}
     tz = pytz.timezone("US/Eastern")
     chamber_map_short = {"S": "upper", "H": "lower"}
-    gql_url = "https://gql.api.alison.legislature.state.al.us/graphql"
+    gql_url = "https://alison.legislature.state.al.us/graphql"
     session_year = ""
     session_type = ""
     bill_ids = set()
@@ -38,94 +38,96 @@ class ALBillScraper(Scraper):
         self.session_type = scraper_ids["session_type"]
 
         for bill_type in ["B", "R"]:
-            yield from self.scrape_bill_type(session, bill_type)
+            yield from self.scrape_bill_type(session, bill_type, 0, 50)
 
-    def scrape_bill_type(self, session, bill_type):
+    def scrape_bill_type(self, session: str, bill_type: str, offset: int, limit: int):
+        self.info(f"Scraping offset {offset} limit {limit}")
 
-        offset = 0
-        limit = 10000
-        # max of 10 pages in case something goes way wrong
-        while offset < 100000:
-            json_data = {
-                "query": f'{{allInstrumentOverviews(instrumentType:"{bill_type}", instrumentNbr:"", body:"", sessionYear:"{self.session_year}", sessionType:"{self.session_type}", assignedCommittee:"", status:"", currentStatus:"", subject:"", instrumentSponsor:"", companionInstrumentNbr:"", effectiveDateCertain:"", effectiveDateOther:"", firstReadSecondBody:"", secondReadSecondBody:"", direction:"ASC"orderBy:"InstrumentNbr"limit:{limit} offset:{offset}  search:"" customFilters: {{}}companionReport:"", ){{ ID,SessionYear,InstrumentNbr,InstrumentUrl, InstrumentSponsor,SessionType,Body,Subject,ShortTitle,AssignedCommittee,PrefiledDate,FirstRead,CurrentStatus,LastAction,ActSummary,ViewEnacted,CompanionInstrumentNbr,EffectiveDateCertain,EffectiveDateOther,InstrumentType,IntroducedUrl,EngrossedUrl,EnrolledUrl }}}}',
-                "operationName": "",
-                "variables": [],
-            }
+        json_data = {
+            "query": "query bills($googleId: String, $category: String, $sessionYear: String, $sessionType: String, $direction: String, $orderBy: String, $offset: Int, $limit: Int, $filters: InstrumentOverviewInput! = {}, $search: String, $instrumentType: String) {\n  allInstrumentOverviews(\n    googleId: $googleId\n    category: $category\n    instrumentType: $instrumentType\n    sessionYear: $sessionYear\n    sessionType: $sessionType\n    direction: $direction\n    orderBy: $orderBy\n    limit: $limit\n    offset: $offset\n    customFilters: $filters\n    search: $search\n  ) {\n    ID\n    SessionYear\n    InstrumentNbr\n    InstrumentSponsor\n    SessionType\n    Body\n    Subject\n    ShortTitle\n    AssignedCommittee\n    PrefiledDate\n    FirstRead\n    CurrentStatus\n    LastAction\n LastActionDate\n   ActSummary\n    ViewEnacted\n    CompanionInstrumentNbr\n    EffectiveDateCertain\n    EffectiveDateOther\n    InstrumentType\n InstrumentUrl\n IntroducedUrl\n EngrossedUrl\n EnrolledUrl\n  }\n  allInstrumentOverviewsCount(\n    googleId: $googleId\n    category: $category\n    instrumentType: $instrumentType\n    sessionYear: $sessionYear\n    sessionType: $sessionType\n    customFilters: $filters\n    search: $search\n  )\n}",
+            "variables": {
+                "sessionType": "2025 Regular Session",
+                "instrumentType": bill_type,
+                "orderBy": "LastActionDate",
+                "direction": "DESC",
+                "offset": offset,
+                "limit": limit,
+                "filters": {},
+            },
+        }
 
-            page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
-            page = json.loads(page.content)
-            if len(page["data"]["allInstrumentOverviews"]) < 1 and offset == 0:
-                # TODO: this fails if one chamber is empty and the other isn't
-                # raise EmptyScrape
-                return
+        page = requests.post(self.gql_url, headers=self.gql_headers, json=json_data)
+        page = json.loads(page.content)
+        if len(page["data"]["allInstrumentOverviews"]) < 1 and offset == 0:
+            # TODO: this fails if one chamber is empty and the other isn't
+            # raise EmptyScrape
+            return
 
-            for row in page["data"]["allInstrumentOverviews"]:
-                chamber = self.chamber_map[row["Body"]]
-                title = row["ShortTitle"].strip()
+        for row in page["data"]["allInstrumentOverviews"]:
+            chamber = self.chamber_map[row["Body"]]
+            title = row["ShortTitle"].strip()
 
-                # some recently filed bills have no title, but a good subject which is close
-                if title == "":
-                    title = row["Subject"]
+            # some recently filed bills have no title, but a good subject which is close
+            if title == "":
+                title = row["Subject"]
 
-                # prevent duplicates
-                bill_id = row["InstrumentNbr"]
-                if bill_id in self.bill_ids:
-                    continue
-                else:
-                    self.bill_ids.add(bill_id)
+            # prevent duplicates
+            bill_id = row["InstrumentNbr"]
+            if bill_id in self.bill_ids:
+                continue
+            else:
+                self.bill_ids.add(bill_id)
 
-                bill = Bill(
-                    identifier=bill_id,
-                    legislative_session=session,
-                    title=title,
-                    chamber=chamber,
-                    classification=self.bill_types[row["InstrumentType"]],
-                )
-                sponsor = row["InstrumentSponsor"]
-                if sponsor == "":
-                    self.warning("No sponsors")
-                    continue
+            bill = Bill(
+                identifier=bill_id,
+                legislative_session=session,
+                title=title,
+                chamber=chamber,
+                classification=self.bill_types[row["InstrumentType"]],
+            )
+            sponsor = row["InstrumentSponsor"]
+            if sponsor == "":
+                self.warning("No sponsors")
+                continue
 
-                bill.add_sponsorship(
-                    name=sponsor,
-                    entity_type="person",
-                    classification="primary",
-                    primary=True,
-                )
+            bill.add_sponsorship(
+                name=sponsor,
+                entity_type="person",
+                classification="primary",
+                primary=True,
+            )
 
-                self.scrape_versions(bill, row)
-                self.scrape_fiscal_notes(bill)
-                yield from self.scrape_actions(bill, row)
+            self.scrape_versions(bill, row)
+            self.scrape_fiscal_notes(bill)
+            yield from self.scrape_actions(bill, row)
 
-                bill.add_source("https://alison.legislature.state.al.us/bill-search")
-                if row["InstrumentUrl"]:
-                    bill.add_source(row["InstrumentUrl"])
+            bill.add_source("https://alison.legislature.state.al.us/bill-search")
+            if row["InstrumentUrl"]:
+                bill.add_source(row["InstrumentUrl"])
 
-                # some subjects are super long & more like abstracts, but it looks like whatever is before a comma or
-                # semicolon is a clear enough subject. Adds the full given Subject as an Abstract & splits to add that
-                # first real subject as one
-                if row["Subject"]:
-                    full_subject = row["Subject"].strip()
-                    bill.add_abstract(full_subject, note="full subject")
-                    first_sub = re.split(",|;", full_subject)
-                    bill.add_subject(first_sub[0])
+            # some subjects are super long & more like abstracts, but it looks like whatever is before a comma or
+            # semicolon is a clear enough subject. Adds the full given Subject as an Abstract & splits to add that
+            # first real subject as one
+            if row["Subject"]:
+                full_subject = row["Subject"].strip()
+                bill.add_abstract(full_subject, note="full subject")
+                first_sub = re.split(",|;", full_subject)
+                bill.add_subject(first_sub[0])
 
-                if row["CompanionInstrumentNbr"] != "":
-                    self.warning("AL Companion found. Code it up.")
+            if row["CompanionInstrumentNbr"] != "":
+                self.warning("AL Companion found. Code it up.")
 
-                # TODO: EffectiveDateCertain, EffectiveDateOther
+            # TODO: EffectiveDateCertain, EffectiveDateOther
 
-                # TODO: Fiscal notes, BUDGET ISOLATION RESOLUTION
+            # TODO: Fiscal notes, BUDGET ISOLATION RESOLUTION
 
-                bill.extras["AL_BILL_ID"] = row["ID"]
+            bill.extras["AL_BILL_ID"] = row["ID"]
 
-                yield bill
+            yield bill
 
-            # no need to paginate again if we max the last page
-            if len(page["data"]["allInstrumentOverviews"]) < limit:
-                return
-
-            offset += limit
+        # no need to paginate again if we max the last page
+        if page["data"]["allInstrumentOverviewsCount"] > offset:
+            yield from self.scrape_bill_type(session, bill_type, offset + 50, limit)
 
     def scrape_versions(self, bill, row):
         if row["IntroducedUrl"]:
@@ -198,6 +200,7 @@ class ALBillScraper(Scraper):
         )
 
     def scrape_actions(self, bill, bill_row):
+        bill_id = bill.identifier.replace(" ", "")
         if bill_row["PrefiledDate"]:
             action_date = datetime.datetime.strptime(
                 bill_row["PrefiledDate"], "%m/%d/%Y"
@@ -210,11 +213,13 @@ class ALBillScraper(Scraper):
                 classification="filing",
             )
 
-        # Can this be ANDED together with the other graphql query?
         json_data = {
-            "query": f'{{instrumentHistoryBySessionYearInstNbr(sessionType:"{self.session_type}", sessionYear:"{self.session_year}", instrumentNbr:"{bill_row["InstrumentNbr"]}", ){{ InstrumentNbr,SessionYear,SessionType,CalendarDate,Body,AmdSubUrl,Matter,Committee,Nay,Yea,Vote,VoteNbr }}}}',
-            "operationName": "",
-            "variables": [],
+            "query": "query instrumentHistoryBySessionYearInstNbr($instrumentNbr: String, $sessionType: String, $sessionYear: String){instrumentHistoryBySessionYearInstNbr(instrumentNbr:$instrumentNbr, sessionType:$sessionType, sessionYear: $sessionYear, ){ InstrumentNbr,SessionYear,SessionType,CalendarDate,Body,Matter,AmdSubUrl,Committee,Nay,Yea,Vote,VoteNbr }}",
+            "variables": {
+                "instrumentNbr": bill_id,
+                "sessionType": self.session_type,
+                "sessionYear": self.session_year,
+            },
         }
 
         page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
@@ -269,18 +274,18 @@ class ALBillScraper(Scraper):
 
     def scrape_fiscal_notes(self, bill):
         bill_id = bill.identifier.replace(" ", "")
-        bill_type = "B" if "B" in bill_id else "R"
 
-        # {fiscalNotesBySessionYearInstrumentNbr(sessionType:\"2023 Regular Session\", sessionYear:\"2023\", instrumentNbr:\"HB246\", instrumentType:\"B\", ){ FiscalNoteDescription, FiscalNoteUrl, OidFiscalNote, SortOrder }}
         json_data = {
-            "query": f'{{fiscalNotesBySessionYearInstrumentNbr(instrumentType:"{bill_type}", instrumentNbr:"{bill_id}", sessionYear:"{self.session_year}", sessionType:"{self.session_type}"){{ FiscalNoteDescription, FiscalNoteUrl, OidFiscalNote, SortOrder }}}}',
-            "operationName": "",
-            "variables": [],
+            "query": "query fiscalNotesBySessionYearInstrumentNbr($instrumentNbr: String, $sessionType: String, $sessionYear: String){fiscalNotesBySessionYearInstrumentNbr(instrumentNbr:$instrumentNbr, sessionType:$sessionType, sessionYear: $sessionYear, ){ FiscalNoteDescription,FiscalNoteUrl,SortOrder }}",
+            "variables": {
+                "instrumentNbr": bill_id,
+                "sessionType": self.session_type,
+                "sessionYear": self.session_year,
+            },
         }
 
-        page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
+        page = requests.post(self.gql_url, headers=self.gql_headers, json=json_data)
         page = json.loads(page.content)
-
         for row in page["data"]["fiscalNotesBySessionYearInstrumentNbr"]:
             bill.add_document_link(
                 f"Fiscal Note: {row['FiscalNoteDescription']}",
@@ -292,11 +297,11 @@ class ALBillScraper(Scraper):
     def scrape_vote(self, bill, action_row):
         cal_date = self.transform_date(action_row["CalendarDate"])
         json_data = {
-            "query": f'{{rollCallVotesByRollNbr( instrumentNbr:"{action_row["InstrumentNbr"]}", sessionYear:"{self.session_year}", sessionType:"{self.session_type}", calendarDate:"{cal_date}", rollNumber:"{action_row["VoteNbr"]}"){{ FullName,Vote,Yeas,Nays,Abstains,Pass }}}}',
-            "operationName": "",
-            "variables": [],
+            "query": f'{{\nrollCallVotesByRollNbr(\ninstrumentNbr: "{action_row["InstrumentNbr"]}"\nsessionYear: "{self.session_year}"\nsessionType: "{self.session_type}"\ncalendarDate:"{cal_date}"\nrollNumber:"{action_row["VoteNbr"]}"\n) {{\nFullName\nVote\nYeas\nNays\nAbstains\nPass\n}}\n}}',
+            "variables": {},
         }
-        page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
+
+        page = requests.post(self.gql_url, headers=self.gql_headers, json=json_data)
         page = json.loads(page.content)
 
         # occasionally there's a vote number, but no data for it.
