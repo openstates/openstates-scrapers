@@ -127,8 +127,9 @@ class ARBillScraper(Scraper):
                 version_url = f"https://www.arkleg.state.ar.us/assembly/{year}/{self.slug}/Bills/{bill_url}.pdf"
             bill.add_version_link(bill_id, version_url, media_type="application/pdf")
 
-            for bill_page in self.scrape_bill_page(bill):
-                bill_page
+            # scrape_bill_page: this function is a generator so can't run this generator by simple call.
+            for scraped_bill in self.scrape_bill_page(bill):
+                scraped_bill()
 
             self.bills[bill_id] = bill
 
@@ -206,10 +207,9 @@ class ARBillScraper(Scraper):
             )
 
     def get_entity_name(self, link):
+        entity_type = "person"
         if "Committees" in link:
             entity_type = "organization"
-        elif "Legislators" in link:
-            entity_type = "person"
         return entity_type
 
     def get_chamber(self, name):
@@ -286,14 +286,6 @@ class ARBillScraper(Scraper):
                 primary=False,
                 chamber=chamber,
             )
-
-        try:
-            cosponsor_link = page.xpath("//a[contains(@href, 'CoSponsors')]")[0]
-
-            self.scrape_cosponsors(bill, cosponsor_link.attrib["href"])
-        except IndexError:
-            # No cosponsor link is OK
-            pass
 
         amendment_path = page.xpath(
             "//h3[text()[contains(.,'Amendments')]]/../../.."
