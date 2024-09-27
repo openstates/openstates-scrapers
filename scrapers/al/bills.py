@@ -101,7 +101,7 @@ class ALBillScraper(Scraper):
 
             self.scrape_versions(bill, row)
             self.scrape_fiscal_notes(bill)
-            # yield from self.scrape_actions(bill, row)
+            yield from self.scrape_actions(bill, row)
 
             bill.add_source("https://alison.legislature.state.al.us/bill-search")
             if row["InstrumentUrl"]:
@@ -202,6 +202,7 @@ class ALBillScraper(Scraper):
         )
 
     def scrape_actions(self, bill, bill_row):
+        bill_id = bill.identifier.replace(" ", "")
         if bill_row["PrefiledDate"]:
             action_date = datetime.datetime.strptime(
                 bill_row["PrefiledDate"], "%m/%d/%Y"
@@ -214,11 +215,13 @@ class ALBillScraper(Scraper):
                 classification="filing",
             )
 
-        # Can this be ANDED together with the other graphql query?
         json_data = {
-            "query": f'{{instrumentHistoryBySessionYearInstNbr(sessionType:"{self.session_type}", sessionYear:"{self.session_year}", instrumentNbr:"{bill_row["InstrumentNbr"]}", ){{ InstrumentNbr,SessionYear,SessionType,CalendarDate,Body,AmdSubUrl,Matter,Committee,Nay,Yea,Vote,VoteNbr }}}}',
-            "operationName": "",
-            "variables": [],
+            "query": "query instrumentHistoryBySessionYearInstNbr($instrumentNbr: String, $sessionType: String, $sessionYear: String){instrumentHistoryBySessionYearInstNbr(instrumentNbr:$instrumentNbr, sessionType:$sessionType, sessionYear: $sessionYear, ){ InstrumentNbr,SessionYear,SessionType,CalendarDate,Body,Matter,AmdSubUrl,Committee,Nay,Yea,Vote,VoteNbr }}",
+            "variables": {
+                "instrumentNbr": bill_id,
+                "sessionType": self.session_type,
+                "sessionYear": self.session_year,
+            },
         }
 
         page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
@@ -266,7 +269,8 @@ class ALBillScraper(Scraper):
                 )
 
             if int(row["VoteNbr"]) > 0:
-                yield from self.scrape_vote(bill, row)
+                yield {}
+                # yield from self.scrape_vote(bill, row)
 
         if bill_row["ViewEnacted"]:
             self.scrape_act(bill, bill_row["ViewEnacted"])
