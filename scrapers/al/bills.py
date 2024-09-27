@@ -57,9 +57,7 @@ class ALBillScraper(Scraper):
         }
 
         page = requests.post(self.gql_url, headers=self.gql_headers, json=json_data)
-        print(page.status_code)
         page = json.loads(page.content)
-        print(page)
         if len(page["data"]["allInstrumentOverviews"]) < 1 and offset == 0:
             # TODO: this fails if one chamber is empty and the other isn't
             # raise EmptyScrape
@@ -269,8 +267,7 @@ class ALBillScraper(Scraper):
                 )
 
             if int(row["VoteNbr"]) > 0:
-                yield {}
-                # yield from self.scrape_vote(bill, row)
+                yield from self.scrape_vote(bill, row)
 
         if bill_row["ViewEnacted"]:
             self.scrape_act(bill, bill_row["ViewEnacted"])
@@ -300,11 +297,11 @@ class ALBillScraper(Scraper):
     def scrape_vote(self, bill, action_row):
         cal_date = self.transform_date(action_row["CalendarDate"])
         json_data = {
-            "query": f'{{rollCallVotesByRollNbr( instrumentNbr:"{action_row["InstrumentNbr"]}", sessionYear:"{self.session_year}", sessionType:"{self.session_type}", calendarDate:"{cal_date}", rollNumber:"{action_row["VoteNbr"]}"){{ FullName,Vote,Yeas,Nays,Abstains,Pass }}}}',
-            "operationName": "",
-            "variables": [],
+            "query": f'{{\nrollCallVotesByRollNbr(\ninstrumentNbr: "{action_row["InstrumentNbr"]}"\nsessionYear: "{self.session_year}"\nsessionType: "{self.session_type}"\ncalendarDate:"{cal_date}"\nrollNumber:"{action_row["VoteNbr"]}"\n) {{\nFullName\nVote\nYeas\nNays\nAbstains\nPass\n}}\n}}',
+            "variables": {},
         }
-        page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
+
+        page = requests.post(self.gql_url, headers=self.gql_headers, json=json_data)
         page = json.loads(page.content)
 
         # occasionally there's a vote number, but no data for it.

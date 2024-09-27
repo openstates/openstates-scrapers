@@ -43,16 +43,26 @@ class Alabama(State):
             "name": "2024 Regular Session",
             "start_date": "2024-02-06",
             "end_date": "2024-05-24",
+            "active": False,
+        },
+        {
+            "_scraped_name": "Regular Session 2025",
+            "classification": "primary",
+            "identifier": "2025rs",
+            "name": "2025 Regular Session",
+            "start_date": "2025-02-06",
+            "end_date": "2025-05-24",
             "active": True,
         },
     ]
     ignored_scraped_sessions = []
 
     def get_session_list(self):
-        return ["Regular Session 2023", "Regular Session 2024"]
+        return ["Regular Session 2023", "Regular Session 2024", "Regular Session 2025"]
 
     def get_scraper_ids(self, session):
         ids = {
+            "2025rs": {"session_year": "2025", "session_type": "2025 Regular Session"},
             "2024rs": {"session_year": "2024", "session_type": "2024 Regular Session"},
             "2023rs": {"session_year": "2023", "session_type": "2023 Regular Session"},
             "2023s1": {
