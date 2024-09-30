@@ -31,7 +31,7 @@ class PartyAugmentation(HtmlPage):
             # party is indicated by just a red or blue cell in the table
             # get the last 6 characters off the background-color to see which color it is
             party_style = tds[1].get("style")[-6:]
-            party = "Democrat" if party_style == "3333FF" else "Republican"
+            party = "Democrat" if party_style == "B0CEFF" else "Republican"
             mapping[dist] = (name, party)
         return mapping
 
@@ -94,43 +94,16 @@ def parse_address_lines(text):
 
 
 def senate_address_phone(address_block):
-    city_zip = [i.text for i in address_block.getchildren()[0]]
-    city_zip = city_zip[2:5]
-    try:
-        city_zip = [i.strip() for i in city_zip]
-    except AttributeError:
-        try:
-            phone = address_block.getchildren()[0][1].text_content()
-            return ["", phone]
-        except AttributeError:
-            return ["", ""]
-
-    street = [i.text for i in address_block.getchildren()[0][1].getchildren()][
-        -1
-    ].strip()
-
-    try:
-        phone = address_block.getchildren()[0][5].text_content()
-    except AttributeError:
+    text = address_block.getchildren()[0].text_content()
+    details = parse_address_lines(text)
+    phone = details["phone"]
+    if phone == None:
         phone = ""
+    address = details["address"]
+    if address == None:
+        address = ""
 
-    try:
-        address_string = (
-            street
-            + "; "
-            + city_zip[0].strip()
-            + city_zip[1].strip()
-            + " "
-            + city_zip[2].strip()
-        )
-    except AttributeError:
-        address_string = ""
-    if "Phone:" in phone:
-        phone = phone.split(": ")[1]
-    else:
-        phone = ""
-
-    return [address_string, phone]
+    return [address, phone]
 
 
 class Assembly(HtmlListPage):
@@ -204,6 +177,7 @@ class SenateDetail(HtmlPage):
     def process_page(self):
         p = self.input
         parent_block = CSS(".field-content").match(self.root)[0].getchildren()
+        email_block = CSS(".c-block--senator-email").match(self.root)[0].getchildren()
 
         for i in range(len(parent_block)):
             address_block = parent_block[i]
@@ -235,7 +209,8 @@ class SenateDetail(HtmlPage):
             elif mode == "capitol":
                 p.capitol_office.voice = phone
                 p.capitol_office.address = address
-
+        if len(email_block) == 2:
+            p.email = email_block[1].text_content()
         return p
 
 
