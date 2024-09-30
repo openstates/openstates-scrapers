@@ -23,10 +23,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
       
-      - name: Ensure OpenStates-Core Dependency References Abstract Core Fork
-        run: |
-          sed -i 's|^openstates =.*|openstates = {git = "https://github.com/washabstract/cyclades-openstates-core.git"}|' pyproject.toml
-
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
