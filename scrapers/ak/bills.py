@@ -130,7 +130,7 @@ class AKBillScraper(Scraper):
                             sponsor,
                             chamber=sponsor_chamber,
                             entity_type="person",
-                            classification="cosponsor",
+                            classification="primary" if primary else "cosponsor",
                             primary=primary,
                         )
 
