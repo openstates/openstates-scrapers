@@ -140,9 +140,9 @@ class AKBillScraper(Scraper):
 
                 if spons_str:
                     sponsor_chamber = ""
-                    if "SENATE" in spons_str.upper():
+                    if "Senate" in spons_str:
                         sponsor_chamber = "upper"
-                    elif "HOUSE" in spons_str.upper():
+                    elif "House" in spons_str:
                         sponsor_chamber = "lower"
 
                     bill.add_sponsorship(
