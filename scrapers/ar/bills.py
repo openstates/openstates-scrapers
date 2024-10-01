@@ -44,6 +44,7 @@ class ARBillScraper(Scraper):
     ftp_user = ""
     ftp_pass = ""
     bills = {}
+    members_cache = {}
 
     def scrape(self, chamber=None, session=None):
 
@@ -128,8 +129,8 @@ class ARBillScraper(Scraper):
             bill.add_version_link(bill_id, version_url, media_type="application/pdf")
 
             # scrape_bill_page: this function is a generator so can't run this generator by simple call.
-            for scraped_bill in self.scrape_bill_page(bill):
-                scraped_bill()
+            for _ in self.scrape_bill_page(bill):
+                pass
 
             self.bills[bill_id] = bill
 
@@ -214,9 +215,9 @@ class ARBillScraper(Scraper):
 
     def get_chamber(self, name):
         chamber = ""
-        if "senator" in name.lower():
+        if "senator" in name.lower() or "senate" in name.lower():
             chamber = "upper"
-        elif "representative" in name.lower():
+        elif "representative" in name.lower() or "house" in name.lower():
             chamber = "lower"
         elif "joint" in name.lower():
             chamber = "legislature"
@@ -242,10 +243,10 @@ class ARBillScraper(Scraper):
         primary_sponsors_path = page.xpath(
             "//div[text()[contains(.,'Lead Sponsor:')]]/../div[2]/a"
         )
-        for a in primary_sponsors_path:
-            primary_sponsors = a.text_content().strip()
-            primary_sponsors_link = a.attrib["href"]
-            chamber = self.scrape_chamber(bill, primary_sponsors_link)
+        for sponsor_path in primary_sponsors_path:
+            primary_sponsors = sponsor_path.text_content().strip()
+            primary_sponsors_link = sponsor_path.attrib["href"]
+            chamber = self.scrape_chamber(primary_sponsors_link)
 
             bill.add_sponsorship(
                 primary_sponsors,
@@ -258,10 +259,10 @@ class ARBillScraper(Scraper):
         other_primary_sponsors_path = page.xpath(
             "//div[text()[contains(.,'Other Primary Sponsor:')]]/../div[2]/a"
         )
-        for a in other_primary_sponsors_path:
-            other_primary_sponsors = a.text_content().strip()
-            other_primary_sponsors_link = a.attrib["href"]
-            chamber = self.scrape_chamber(bill, other_primary_sponsors_link)
+        for sponsor_path in other_primary_sponsors_path:
+            other_primary_sponsors = sponsor_path.text_content().strip()
+            other_primary_sponsors_link = sponsor_path.attrib["href"]
+            chamber = self.scrape_chamber(other_primary_sponsors_link)
 
             bill.add_sponsorship(
                 other_primary_sponsors,
@@ -274,10 +275,10 @@ class ARBillScraper(Scraper):
         cosponsor_path = page.xpath(
             "//div[text()[contains(.,'CoSponsors:')]]/../div[2]/a"
         )
-        for a in cosponsor_path:
-            cosponsor = a.text_content().strip()
-            cosponsor_link = a.attrib["href"]
-            chamber = self.scrape_chamber(bill, cosponsor_link)
+        for sponsor_path in cosponsor_path:
+            cosponsor = sponsor_path.text_content().strip()
+            cosponsor_link = sponsor_path.attrib["href"]
+            chamber = self.scrape_chamber(cosponsor_link)
 
             bill.add_sponsorship(
                 cosponsor,
@@ -476,11 +477,17 @@ class ARBillScraper(Scraper):
                         vote.vote(voteval, name)
             yield vote
 
-    def scrape_chamber(self, bill, url):
+    def scrape_chamber(self, url):
+        if url in self.members_cache:
+            return self.members_cache[url]
+
         page = self.get(url).text
         page = lxml.html.fromstring(page)
         title = page.xpath("//h1")[0].text_content().strip()
-        return self.get_chamber(title)
+        chamber = self.get_chamber(title)
+        self.members_cache[url] = chamber
+
+        return chamber
 
     # the data is utf-16, with null bytes for empty cells.
     def decode_ar_utf16(self, data) -> str:
