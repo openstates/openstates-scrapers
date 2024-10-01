@@ -148,7 +148,16 @@ _action_classifiers = (
     (re.compile(r".*Be Adopted(?: as Amended)?"), ["committee-passage-favorable"]),
     (re.compile(r"(Third|3rd) Reading .+? Passed"), ["reading-3", "passage"]),
     (re.compile(r"(Third|3rd) Reading .+? Lost"), ["reading-3", "failure"]),
-    (re.compile(r"(Third|3rd) Reading ((?!Deadline).)"), ["reading-3"]),
+    # Lookbehind and lookahead used to avoid lots of examples where 3rd reading is SCHEDULED but didn't HAPPEN
+    # eg Placed on Calendar Order of 3rd Reading April 11, 2024
+    # or Committee/3rd Reading Deadline Extended-Rule May 24, 2024
+    # or Third Reading - Consideration Postponed
+    (
+        re.compile(
+            r"(?<!Placed on Calendar Order of )(Third|3rd) Reading ((?!Deadline|- Consideration Postponed).)"
+        ),
+        ["reading-3"],
+    ),
     (re.compile(r"Resolution Adopted"), ["passage"]),
     (re.compile(r"Resolution Lost"), ["failure"]),
     (re.compile(r"Session Sine Die"), ["failure"]),
