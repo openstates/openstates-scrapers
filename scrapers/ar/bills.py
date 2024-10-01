@@ -44,7 +44,7 @@ class ARBillScraper(Scraper):
     ftp_user = ""
     ftp_pass = ""
     bills = {}
-    members_cache = {}
+    sponsors_chamber_cache = {}
 
     def scrape(self, chamber=None, session=None):
 
@@ -478,14 +478,14 @@ class ARBillScraper(Scraper):
             yield vote
 
     def scrape_chamber(self, url):
-        if url in self.members_cache:
-            return self.members_cache[url]
+        if url in self.sponsors_chamber_cache:
+            return self.sponsors_chamber_cache[url]
 
         page = self.get(url).text
         page = lxml.html.fromstring(page)
         title = page.xpath("//h1")[0].text_content().strip()
         chamber = self.get_chamber(title)
-        self.members_cache[url] = chamber
+        self.sponsors_chamber_cache[url] = chamber
 
         return chamber
 
