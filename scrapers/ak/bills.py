@@ -115,48 +115,39 @@ class AKBillScraper(Scraper):
                 sponsors_data = sponsors_match.groupdict()
 
                 sponsor_type = sponsors_data["sponsor_type"]
-                sponsors = (
-                    sponsors_data["sponsors"].replace("BY REQUEST", "").split(",")
-                )
-                sponsor = sponsors[0].strip()
+                sponsors = sponsors_data["sponsors"].split(",")
 
                 sponsor_chamber = SPONSOR_CHAMBER_MAP.get(sponsor_type, "")
 
-                if sponsor:
-                    bill.add_sponsorship(
-                        sponsor,
-                        entity_type="person",
-                        chamber=sponsor_chamber,
-                        classification="primary",
-                        primary=True,
-                    )
-
-                for sponsor in sponsors[1:]:
-                    sponsor = sponsor.strip()
+                for sponsor in sponsors:
+                    primary = sponsor == sponsor.upper()
+                    sponsor = sponsor.upper().split("BY REQUEST")[0].title().strip()
                     # occasional AK site error prints some code here
                     if "Model.Sponsors." in sponsor:
                         continue
-
                     if sponsor:
                         bill.add_sponsorship(
                             sponsor,
                             chamber=sponsor_chamber,
                             entity_type="person",
                             classification="cosponsor",
-                            primary=False,
+                            primary=primary,
                         )
 
             if sponsors_cnt == 0:
                 # Committee sponsorship
-                spons_str = spons_str.strip()
-                if re.match(r" BY REQUEST OF THE GOVERNOR$", spons_str):
-                    spons_str = re.sub(
-                        r" BY REQUEST OF THE GOVERNOR$", "", spons_str
-                    ).title()
-                    spons_str = spons_str + " Committee (by request of the governor)"
+                spons_str = spons_str.upper().split("BY REQUEST")[0].title().strip()
+
                 if spons_str:
+                    sponsor_chamber = ""
+                    if "SENATE" in spons_str.upper():
+                        sponsor_chamber = "upper"
+                    elif "HOUSE" in spons_str.upper():
+                        sponsor_chamber = "lower"
+
                     bill.add_sponsorship(
                         spons_str,
+                        chamber=sponsor_chamber,
                         entity_type="organization",
                         classification="primary",
                         primary=True,
