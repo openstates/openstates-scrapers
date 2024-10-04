@@ -44,6 +44,7 @@ class ARBillScraper(Scraper):
     ftp_user = ""
     ftp_pass = ""
     bills = {}
+    sponsors_chamber_cache = {}
 
     def scrape(self, chamber=None, session=None):
 
@@ -76,6 +77,7 @@ class ARBillScraper(Scraper):
 
     def scrape_bill(self, chamber, session):
         url = "LegislativeMeasures.txt"
+
         page = csv.reader(self.get_utf_16_ftp_content(url).splitlines(), delimiter="|")
 
         for row in page:
@@ -112,18 +114,6 @@ class ARBillScraper(Scraper):
                 f"https://www.arkleg.state.ar.us/Bills/FTPDocument/?path=%2fSessionInformation%2{url}"
             )
 
-            primary = row[11]
-            if not primary:
-                primary = row[12]
-
-            if primary:
-                bill.add_sponsorship(
-                    primary,
-                    classification="primary",
-                    entity_type="person",
-                    primary=True,
-                )
-
             # need year before if it's a fiscal or special session beyond first
             year = session[0:4]
             if len(session) > 4 and session[-1] != "1":
@@ -138,7 +128,9 @@ class ARBillScraper(Scraper):
                 version_url = f"https://www.arkleg.state.ar.us/assembly/{year}/{self.slug}/Bills/{bill_url}.pdf"
             bill.add_version_link(bill_id, version_url, media_type="application/pdf")
 
-            self.scrape_bill_page(bill)
+            # scrape_bill_page: this function is a generator so can't run this generator by simple call.
+            for _ in self.scrape_bill_page(bill):
+                pass
 
             self.bills[bill_id] = bill
 
@@ -215,6 +207,22 @@ class ARBillScraper(Scraper):
                 action, date, chamber=actor, classification=action_type
             )
 
+    def get_entity_name(self, link):
+        entity_type = "person"
+        if "Committees" in link:
+            entity_type = "organization"
+        return entity_type
+
+    def get_chamber(self, name):
+        chamber = ""
+        if "senator" in name.lower() or "senate" in name.lower():
+            chamber = "upper"
+        elif "representative" in name.lower() or "house" in name.lower():
+            chamber = "lower"
+        elif "joint" in name.lower():
+            chamber = "legislature"
+        return chamber
+
     def scrape_bill_page(self, bill):
         # We need to scrape each bill page in order to grab associated votes.
         # It's still more efficient to get the rest of the data we're
@@ -232,36 +240,53 @@ class ARBillScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
+        primary_sponsors_path = page.xpath(
+            "//div[text()[contains(.,'Lead Sponsor:')]]/../div[2]/a"
+        )
+        for sponsor_path in primary_sponsors_path:
+            primary_sponsors = sponsor_path.text_content().strip()
+            primary_sponsors_link = sponsor_path.attrib["href"]
+            chamber = self.scrape_chamber(primary_sponsors_link)
+
+            bill.add_sponsorship(
+                primary_sponsors,
+                classification="primary",
+                entity_type=self.get_entity_name(primary_sponsors_link),
+                primary=True,
+                chamber=chamber,
+            )
+
         other_primary_sponsors_path = page.xpath(
             "//div[text()[contains(.,'Other Primary Sponsor:')]]/../div[2]/a"
         )
-        for a in other_primary_sponsors_path:
-            other_primary_sponsors = a.text_content().strip()
+        for sponsor_path in other_primary_sponsors_path:
+            other_primary_sponsors = sponsor_path.text_content().strip()
+            other_primary_sponsors_link = sponsor_path.attrib["href"]
+            chamber = self.scrape_chamber(other_primary_sponsors_link)
+
             bill.add_sponsorship(
                 other_primary_sponsors,
                 classification="primary",
-                entity_type="person",
+                entity_type=self.get_entity_name(other_primary_sponsors_link),
                 primary=True,
+                chamber=chamber,
             )
 
         cosponsor_path = page.xpath(
             "//div[text()[contains(.,'CoSponsors:')]]/../div[2]/a"
         )
-        for a in cosponsor_path:
-            cosponsor = a.text_content().strip()
+        for sponsor_path in cosponsor_path:
+            cosponsor = sponsor_path.text_content().strip()
+            cosponsor_link = sponsor_path.attrib["href"]
+            chamber = self.scrape_chamber(cosponsor_link)
+
             bill.add_sponsorship(
                 cosponsor,
                 classification="cosponsor",
-                entity_type="person",
+                entity_type=self.get_entity_name(cosponsor_link),
                 primary=False,
+                chamber=chamber,
             )
-
-        try:
-            cosponsor_link = page.xpath("//a[contains(@href, 'CoSponsors')]")[0]
-            self.scrape_cosponsors(bill, cosponsor_link.attrib["href"])
-        except IndexError:
-            # No cosponsor link is OK
-            pass
 
         amendment_path = page.xpath(
             "//h3[text()[contains(.,'Amendments')]]/../../.."
@@ -440,7 +465,7 @@ class ARBillScraper(Scraper):
 
             divs = page.xpath(xpath)
 
-            for (voteval, div) in zip(votevals, divs):
+            for voteval, div in zip(votevals, divs):
                 for a in div.xpath(".//a"):
                     name_path = a.attrib["href"].strip()
                     first_split = name_path.split("=")[1]
@@ -452,9 +477,17 @@ class ARBillScraper(Scraper):
                         vote.vote(voteval, name)
             yield vote
 
-    def scrape_cosponsors(self, bill, url):
+    def scrape_chamber(self, url):
+        if url in self.sponsors_chamber_cache:
+            return self.sponsors_chamber_cache[url]
+
         page = self.get(url).text
         page = lxml.html.fromstring(page)
+        title = page.xpath("//h1")[0].text_content().strip()
+        chamber = self.get_chamber(title)
+        self.sponsors_chamber_cache[url] = chamber
+
+        return chamber
 
     # the data is utf-16, with null bytes for empty cells.
     def decode_ar_utf16(self, data) -> str:
