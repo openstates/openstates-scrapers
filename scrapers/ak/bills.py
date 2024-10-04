@@ -6,6 +6,11 @@ import lxml.html
 from openstates.scrape import Scraper, Bill, VoteEvent
 from . import actions
 
+SPONSOR_CHAMBER_MAP = {
+    "REPRESENTATIVE": "lower",
+    "SENATOR": "upper",
+}
+
 
 class AKBillScraper(Scraper):
     def scrape(self, chamber=None, session=None):
@@ -24,7 +29,7 @@ class AKBillScraper(Scraper):
         doc.make_links_absolute(bill_list_url)
 
         conference_committee_list_url = (
-            "https://www.akleg.gov/basis/Committee/List/{session}#tabCom5"
+            f"https://www.akleg.gov/basis/Committee/List/{session}#tabCom5"
         )
         conference_committee_doc = lxml.html.fromstring(
             self.get(conference_committee_list_url).text
@@ -93,51 +98,56 @@ class AKBillScraper(Scraper):
         bill.add_source(url)
 
         # Get sponsors
-        spons_str = (
-            doc.xpath('//span[contains(text(), "Sponsor(S)")]')[0].getparent()[1].text
+        spons_str = "".join(
+            doc.xpath('//span[contains(text(), "Sponsor(S)")]/../strong//text()')
         ).strip()
         # Checks if there is a Sponsor string before matching
         if spons_str:
-            sponsors_match = re.match(r"(SENATOR|REPRESENTATIVE)S?", spons_str)
-            if sponsors_match:
-                sponsors = spons_str.split(",")
-                sponsor = sponsors[0].strip()
+            sponsors_matches = re.finditer(
+                r"(?P<sponsor_type>REPRESENTATIVE|SENATOR)S?\s+(?P<sponsors>.*)",
+                spons_str,
+            )
 
-                if sponsor:
-                    bill.add_sponsorship(
-                        sponsors[0].split()[1],
-                        entity_type="person",
-                        classification="primary",
-                        primary=True,
-                    )
+            sponsors_cnt = 0
 
-                for sponsor in sponsors[1:]:
-                    sponsor = sponsor.strip()
+            for sponsors_match in sponsors_matches:
+                sponsors_cnt += 1
+                sponsors_data = sponsors_match.groupdict()
+
+                sponsor_type = sponsors_data["sponsor_type"]
+                sponsors = sponsors_data["sponsors"].split(",")
+
+                sponsor_chamber = SPONSOR_CHAMBER_MAP.get(sponsor_type, "")
+
+                for sponsor in sponsors:
+                    primary = sponsor == sponsor.upper()
+                    sponsor = sponsor.upper().split("BY REQUEST")[0].title().strip()
                     # occasional AK site error prints some code here
                     if "Model.Sponsors." in sponsor:
                         continue
-
                     if sponsor:
                         bill.add_sponsorship(
                             sponsor,
+                            chamber=sponsor_chamber,
                             entity_type="person",
-                            classification="cosponsor",
-                            primary=False,
+                            classification="primary" if primary else "cosponsor",
+                            primary=primary,
                         )
 
-            else:
+            if sponsors_cnt == 0:
                 # Committee sponsorship
-                spons_str = spons_str.strip()
-
-                if re.match(r" BY REQUEST OF THE GOVERNOR$", spons_str):
-                    spons_str = re.sub(
-                        r" BY REQUEST OF THE GOVERNOR$", "", spons_str
-                    ).title()
-                    spons_str = spons_str + " Committee (by request of the governor)"
+                spons_str = spons_str.upper().split("BY REQUEST")[0].title().strip()
 
                 if spons_str:
+                    sponsor_chamber = ""
+                    if "Senate" in spons_str:
+                        sponsor_chamber = "upper"
+                    elif "House" in spons_str:
+                        sponsor_chamber = "lower"
+
                     bill.add_sponsorship(
                         spons_str,
+                        chamber=sponsor_chamber,
                         entity_type="organization",
                         classification="primary",
                         primary=True,
@@ -278,91 +288,3 @@ class AKBillScraper(Scraper):
         vote.add_source(url)
 
         yield vote
-
-        # print(action)
-
-        # Dan attempt at pulling out the vote information
-        # Xpath to grab journal entry information
-        # xpath_search = "//b[text()[contains(.,'%s')]]" % journal_entry_number
-        # xpath_search = "//body//pre[1]"
-        # vote_counts = doc.xpath(xpath_search)
-        # print(vote_counts[0].text_content().split("\n"))
-        # vote_counts = doc.xpath('//body//b[contains(text(), "YEAS")]')
-        # for votes in vote_counts:
-        #     print(votes.text_content())
-
-        # yield vote
-
-        # old code
-        # re_vote_text = re.compile(r'The question (?:being|to be '
-        #   'reconsidered):\s*"(.*?\?)"', re.S)
-        # re_header = re.compile(r'\d{2}-\d{2}-\d{4}\s{10,}\w{,20} Journal\s{10,}\d{,6}\s{,4}')
-
-        # if len(doc.xpath('//pre')) < 2:
-        #     return
-
-        # Find all chunks of text representing voting reports.
-        # votes_text = doc.xpath('//pre')[1].text_content()
-        # votes_text = re_vote_text.split(votes_text)
-        # votes_data = zip(votes_text[1::2], votes_text[2::2])
-        # votes_data = []
-
-        # iVoteOnPage = 0
-
-        # # Process each.
-        # votes_data = []
-        # for motion, text in votes_data:
-
-        #     iVoteOnPage += 1
-        #     yes = no = other = 0
-
-        #     tally = re.findall(r'\b([YNEA])[A-Z]+:\s{,3}(\d{,3})', text)
-        #     for vtype, vcount in tally:
-        #         vcount = int(vcount) if vcount != '-' else 0
-        #         if vtype == 'Y':
-        #             yes = vcount
-        #         elif vtype == 'N':
-        #             no = vcount
-        #         else:
-        #             other += vcount
-
-        #     vote = VoteEvent(
-        #         bill=bill,
-        #         start_date=act_date.strftime('%Y-%m-%d'),
-        #         chamber=act_chamber,
-        #         motion_text=motion,
-        #         result='pass' if yes > no else 'fail',
-        #         classification='passage',
-        #     )
-        #     vote.set_count('yes', yes)
-        #     vote.set_count('no', no)
-        #     vote.set_count('other', other)
-        #     print("Yes votes:", yes, "No votes", no, "Other", other)
-
-        #     vote.dedupe_key = (url + ' ' + str(iVoteOnPage)) if iVoteOnPage > 1 else url
-
-        #     # In lengthy documents, the "header" can be repeated in the middle
-        #     # of content. This regex gets rid of it.
-        #     vote_lines = re_header.sub('', text)
-        #     vote_lines = vote_lines.split('\r\n')
-
-        #     vote_type = None
-        #     for vote_list in vote_lines:
-        #         if vote_list.startswith('Yeas: '):
-        #             vote_list, vote_type = vote_list[6:], 'yes'
-        #         elif vote_list.startswith('Nays: '):
-        #             vote_list, vote_type = vote_list[6:], 'no'
-        #         elif vote_list.startswith('Excused: '):
-        #             vote_list, vote_type = vote_list[9:], 'other'
-        #         elif vote_list.startswith('Absent: '):
-        #             vote_list, vote_type = vote_list[9:], 'other'
-        #         elif vote_list.strip() == '':
-        #             vote_type = None
-        #         if vote_type:
-        #             for name in vote_list.split(','):
-        #                 name = name.strip()
-        #                 if name:
-        #                     vote.vote(vote_type, name)
-
-        #     vote.add_source(url)
-        # yield vote
