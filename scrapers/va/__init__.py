@@ -270,6 +270,7 @@ class Virginia(State):
 
     def get_session_list(self):
         sessions = url_xpath(
-            "http://lis.virginia.gov/", "//div[@id='sLink']//select/option/text()"
+            "https://legacylis.virginia.gov/",
+            "//div[@id='sLink']//select/option/text()",
         )
         return [s.strip() for s in sessions if "Session" in s]
