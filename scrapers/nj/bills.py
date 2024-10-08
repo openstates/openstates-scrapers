@@ -537,16 +537,8 @@ class NJBillScraper(Scraper, MDBMixin):
             else:
                 self.warning("invalid bill id in BillSubj: %s" % bill_id)
 
-        phony_bill_count = 0
         # save all bills at the end
         for bill in bill_dict.values():
             # add sources
-            if not bill.actions and not bill.versions:
-                self.warning("probable phony bill detected %s", bill.identifier)
-                phony_bill_count += 1
-            else:
-                bill.add_source("https://www.njleg.state.nj.us/downloads.asp")
-                yield bill
-
-        if phony_bill_count:
-            self.warning("%s total phony bills detected", phony_bill_count)
+            bill.add_source("https://pub.njleg.state.nj.us/leg-databases/")
+            yield bill
