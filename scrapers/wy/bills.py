@@ -35,14 +35,14 @@ class WYBillScraper(Scraper, LXMLMixin):
         if session_details["classification"] == "special":
             self.is_special = True
             bill_json_url = (
-                "http://wyoleg.gov/LsoService/api/BillInformation?"
+                "https://lsoservice.wyoleg.gov/api/BillInformation?"
                 "$filter=Year%20eq%20{}%20and%20SpecialSessionValue%20ne%20null&$orderby=BillNum".format(
                     session[0:4]
                 )
             )
         else:
             bill_json_url = (
-                "http://wyoleg.gov/LsoService/api/BillInformation?"
+                "https://lsoservice.wyoleg.gov/api/BillInformation?"
                 "$filter=Year%20eq%20{}&$orderby=BillNum".format(session)
             )
 
@@ -57,13 +57,13 @@ class WYBillScraper(Scraper, LXMLMixin):
         chamber_map = {"House": "lower", "Senate": "upper", "LSO": "executive"}
         # Sample with all keys: https://gist.github.com/showerst/d6cd03eff3e8b12ab01dbb219876db45
         bill_json_url = (
-            "http://wyoleg.gov/LsoService/api/BillInformation/{}/"
+            "https://lsoservice.wyoleg.gov/api/BillInformation/{}/"
             "{}?calendarDate=".format(session, bill_num)
         )
 
         if self.is_special:
             bill_json_url = (
-                "http://wyoleg.gov/LsoService/api/BillInformation/{}/"
+                "https://lsoservice.wyoleg.gov/api/BillInformation/{}/"
                 "{}?specialSessionValue=1&calendarDate=".format(session[0:4], bill_num)
             )
 

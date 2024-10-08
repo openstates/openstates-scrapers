@@ -6,14 +6,14 @@ from openstates.scrape import Scraper, Organization
 class WYCommitteeScraper(Scraper):
     def scrape(self, session=None):
         # com_types = ['J', 'SE', 'O']
-        # base_url = 'https://wyoleg.gov/LsoService/api/committeeList/2018/J'
-        url = "https://wyoleg.gov/LsoService/api/committees/{}".format(session)
+        # base_url = 'https://lsoservice.wyoleg.gov/api/committeeList/2018/J'
+        url = "https://lsoservice.wyoleg.gov/api/committees/{}".format(session)
 
         response = self.get(url)
         coms_json = json.loads(response.content.decode("utf-8"))
 
         for row in coms_json:
-            com_url = "https://wyoleg.gov/LsoService/api/committeeDetail/{}/{}".format(
+            com_url = "https://lsoservice.wyoleg.gov/api/committeeDetail/{}/{}".format(
                 session, row["ownerID"]
             )
             com_response = self.get(com_url)

@@ -252,6 +252,16 @@ class WestVirginia(State):
             "start_date": "2024-05-21",
             # TODO: placeholder
             "end_date": "2024-05-31",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2024",
+            "classification": "special",
+            "identifier": "20242S",
+            "name": "2024 Second Special Session",
+            "start_date": "2024-09-30",
+            # TODO: placeholder
+            "end_date": "2024-10-31",
             "active": True,
         },
     ]
@@ -266,4 +276,5 @@ class WestVirginia(State):
         return url_xpath(
             "https://www.wvlegislature.gov/Bill_Status/Bill_Status.cfm",
             '//select[@name="year"]/option/text()',
+            verify=False,
         )
