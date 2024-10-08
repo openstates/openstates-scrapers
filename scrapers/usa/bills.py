@@ -376,8 +376,12 @@ class USBillScraper(Scraper):
                 )
             action_date = self._TZ.localize(action_date)
             location = "Washington, DC 20004"
+            if committee_name:
+                event_name = f"{action_text} - {bill.identifier} - {committee_name}"
+            else:
+                event_name = f"{action_text} - {bill.identifier}"
             event = Event(
-                action_text,
+                event_name,
                 action_date,
                 location_name=location,
             )
