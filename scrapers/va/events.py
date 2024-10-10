@@ -1,4 +1,5 @@
 from openstates.scrape import Scraper, Event
+import datetime
 import dateutil
 import json
 import pytz
@@ -8,19 +9,29 @@ import re
 class VaEventScraper(Scraper):
     _tz = pytz.timezone("America/New_York")
 
-    def scrape(self):
+    def scrape(self, start_date=None):
         # TODO: what's the deal with this WebAPIKey, will it expire?
         headers = {
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
             "WebAPIKey": "FCE351B6-9BD8-46E0-B18F-5572F4CCA5B9",
         }
 
-        url = "https://lis.virginia.gov/Schedule/api/GetScheduleListAsync?startDate=10/10/2024%2000:00:00"
+        # e.g. 10/10/2024
+        if start_date:
+            start_date = dateutil.parser.parse(start_date).strftime("%m/%d/%Y")
+        else:
+            start_date = datetime.datetime.today().strftime("%m/%d/%Y")
+
+        url = f"https://lis.virginia.gov/Schedule/api/GetScheduleListAsync?startDate={start_date}%2000:00:00"
         page = self.get(url, verify=False, headers=headers)
         page = json.loads(page.content)
         for row in page["Schedules"]:
+            print(row)
             status = "tentative"
             name = row["OwnerName"].strip()
+
+            if name == "":
+                name = row["Description"].split(";")[0].strip()
 
             # them seem to set all the dates to noon then
             # add the actual time to a seperate field.
@@ -51,17 +62,19 @@ class VaEventScraper(Scraper):
             )
             event.add_source("https://lis.virginia.gov/schedule")
 
-            if row["ScheduleFiles"]:
-                if len(row["ScheduleFiles"]) > 1:
-                    self.warning(
-                        "Multiple agenda attachments found, code for this case."
+            for ct, attach in enumerate(row["ScheduleFiles"]):
+                if ct == 0:
+                    event.add_document(
+                        "Agenda",
+                        attach["FileURL"],
+                        media_type="application/pdf",
                     )
-
-                event.add_document(
-                    "Agenda",
-                    row["ScheduleFiles"][0]["FileURL"],
-                    media_type="application/pdf",
-                )
+                else:
+                    event.add_document(
+                        f"Attachment {ct}",
+                        attach["FileURL"],
+                        media_type="application/pdf",
+                    )
 
             if "press conference" not in name.lower():
                 if "joint meeting of" in name.lower():
