@@ -31,57 +31,41 @@ class ALEventScraper(Scraper, LXMLMixin):
             start = datetime.datetime.today().replace(day=1).strftime("%Y-%m-%d")
 
         query = (
-            '{hearingsMeetings(eventType:"meeting", body:"", keyword:"", toDate:"3000-12-31", '
-            f'fromDate:"{start}", sortTime:"", direction:"ASC", orderBy:"SortTime", )'
-            "{ EventDt,EventTm,Location,EventTitle,EventDesc,Body,DeadlineDt,PublicHearing,"
-            "Committee,AgendaUrl,SortTime,OidMeeting,LiveStream }}"
+            'query meetings($body: OrganizationBody, $managedInLinx: Boolean, $autoScroll: Boolean!) {\n  meetings(\n    where: {body: {eq: $body}, startDate: {gte: "'
+            + start
+            + '"}, managedInLinx: {eq: $managedInLinx}}\n  ) {\n    data {\n      id\n      startDate\n      startTime\n      location\n      title\n      description\n      body\n      hasPublicHearing\n      hasLiveStream\n      committee\n      agendaUrl\n      agendaItems @skip(if: $autoScroll) {\n        id\n        sessionType\n        sessionYear\n        instrumentNumber\n        shortTitle\n        matter\n        recommendation\n        hasPublicHearing\n        sponsor\n        __typename\n      }\n      __typename\n    }\n    count\n    __typename\n  }\n}'
         )
 
         json_data = {
             "query": query,
-            "operationName": "",
-            "variables": [],
+            "operationName": "meetings",
+            "variables": {
+                "autoScroll": False,
+            },
         }
 
         page = self.post(gql_url, headers=headers, json=json_data)
         page = json.loads(page.content)
 
+        print(page)
+
+        return
+
         if len(page["data"]["hearingsMeetings"]) == 0:
             raise EmptyScrape
 
-        query = (
-            '{hearingsMeetingsDetails(eventType:"meeting", body:"", keyword:"", toDate:"3000-12-31", '
-            f'fromDate:"{start}", sortTime:"", direction:"ASC", orderBy:"SortTime", )'
-            "{EventDt,EventTm,Location,EventTitle,EventDesc,Body,DeadlineDt,PublicHearing,"
-            "LiveStream,Committee,AgendaUrl,SortTime,OidMeeting, Sponsor, InstrumentNbr, ShortTitle, "
-            "OidInstrument, SessionType, SessionYear}}"
-        )
-        json_data = {
-            "query": query,
-            "operationName": "",
-            "variables": [],
-        }
-        details = self.post(gql_url, headers=headers, json=json_data)
-        details = json.loads(details.content)
-
-        bills = {}
-        for row in details["data"]["hearingsMeetingsDetails"]:
-            if row["OidMeeting"] not in bills:
-                bills[row["OidMeeting"]] = []
-            bills[row["OidMeeting"]].append(row["InstrumentNbr"])
-
         event_keys = set()
 
-        for row in page["data"]["hearingsMeetings"]:
-            event_date = self._TZ.localize(dateutil.parser.parse(row["SortTime"]))
-            event_title = row["EventTitle"]
-            event_location = row["Location"]
+        for row in page["data"]["meetings"]:
+            event_date = self._TZ.localize(dateutil.parser.parse(row["startDate"]))
+            event_title = row["title"]
+            event_location = row["location"]
 
             if event_location.startswith("Room"):
                 event_location = (
                     f"11 South Union St, Montgomery, AL 36130. {event_location}"
                 )
-            event_desc = row["EventDesc"]
+            event_desc = row["description"]
 
             event_key = f"{event_title}#{event_location}#{event_date}"
 
@@ -110,8 +94,8 @@ class ALEventScraper(Scraper, LXMLMixin):
                 event, {"11 south union": (32.37707594063977, -86.29919861850152)}
             )
 
-            for bill in bills.get(row["OidMeeting"], []):
-                event.add_bill(bill)
+            # for bill in bills.get(row["OidMeeting"], []):
+            #     event.add_bill(bill)
 
             if row["AgendaUrl"]:
                 mime = get_media_type(row["AgendaUrl"], default="text/html")
