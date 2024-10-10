@@ -1,7 +1,6 @@
 import datetime
 import dateutil.parser
 import json
-import pytz
 
 from utils import LXMLMixin
 from utils.events import match_coordinates
@@ -11,9 +10,6 @@ from openstates.scrape import Scraper, Event
 
 
 class ALEventScraper(Scraper, LXMLMixin):
-    _TZ = pytz.timezone("US/Eastern")
-    _DATETIME_FORMAT = "%m/%d/%Y %I:%M %p"
-
     def scrape(self, start=None):
         gql_url = "https://alison.legislature.state.al.us/graphql/"
 
@@ -47,17 +43,13 @@ class ALEventScraper(Scraper, LXMLMixin):
         page = self.post(gql_url, headers=headers, json=json_data)
         page = json.loads(page.content)
 
-        print(page)
-
-        return
-
-        if len(page["data"]["hearingsMeetings"]) == 0:
+        if len(page["data"]["meetings"]["data"]) == 0:
             raise EmptyScrape
 
         event_keys = set()
 
-        for row in page["data"]["meetings"]:
-            event_date = self._TZ.localize(dateutil.parser.parse(row["startDate"]))
+        for row in page["data"]["meetings"]["data"]:
+            event_date = dateutil.parser.parse(row["startDate"])
             event_title = row["title"]
             event_location = row["location"]
 
@@ -65,7 +57,7 @@ class ALEventScraper(Scraper, LXMLMixin):
                 event_location = (
                     f"11 South Union St, Montgomery, AL 36130. {event_location}"
                 )
-            event_desc = row["description"]
+            event_desc = row["description"] or ""
 
             event_key = f"{event_title}#{event_location}#{event_date}"
 
@@ -88,28 +80,35 @@ class ALEventScraper(Scraper, LXMLMixin):
             )
             event.dedupe_key = event_key
 
-            # TODO: When they add committees, agendas, and video streams
-
             match_coordinates(
                 event, {"11 south union": (32.37707594063977, -86.29919861850152)}
             )
 
-            # for bill in bills.get(row["OidMeeting"], []):
-            #     event.add_bill(bill)
+            for agenda in row["agendaItems"]:
+                event.add_bill(agenda["instrumentNumber"])
 
-            if row["AgendaUrl"]:
-                mime = get_media_type(row["AgendaUrl"], default="text/html")
+            if row["agendaUrl"]:
+                mime = get_media_type(row["agendaUrl"], default="text/html")
                 event.add_document(
-                    "Agenda", row["AgendaUrl"], media_type=mime, on_duplicate="ignore"
+                    "Agenda", row["agendaUrl"], media_type=mime, on_duplicate="ignore"
                 )
 
-            com = row["Committee"]
+            com = row["committee"]
             if com:
-                com = f"{row['Body']} {com}"
-                com = com.replace("- House", "").replace("- Senate", "")
+                com = f"{row['body']} {com}"
+                com = (
+                    com.replace("- House", "")
+                    .replace("- Senate", "")
+                    .replace("(House)", "")
+                    .replace("(Senate)", "")
+                )
                 event.add_committee(com)
 
-            # TODO, looks like we can generate a source link from the room and OID,
-            # does this stick after the event has ended?
+            # TODO: these break after the event passes. Is there any permalink?
+            if row["hasLiveStream"]:
+                # https://alison.legislature.state.al.us/live-stream?location=Room+200&meeting=%2223735%22
+                event_url = f"https://alison.legislature.state.al.us/live-stream?location={row['location']}&meeting=%22{row['id']}%22"
+                event.add_source(event_url)
+
             event.add_source("https://alison.legislature.state.al.us/todays-schedule")
             yield event
