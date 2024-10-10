@@ -1,7 +1,6 @@
 import datetime
 import dateutil.parser
 import json
-import pytz
 
 from utils import LXMLMixin
 from utils.events import match_coordinates
@@ -11,9 +10,6 @@ from openstates.scrape import Scraper, Event
 
 
 class ALEventScraper(Scraper, LXMLMixin):
-    _TZ = pytz.timezone("US/Eastern")
-    _DATETIME_FORMAT = "%m/%d/%Y %I:%M %p"
-
     def scrape(self, start=None):
         gql_url = "https://alison.legislature.state.al.us/graphql/"
 
@@ -31,57 +27,37 @@ class ALEventScraper(Scraper, LXMLMixin):
             start = datetime.datetime.today().replace(day=1).strftime("%Y-%m-%d")
 
         query = (
-            '{hearingsMeetings(eventType:"meeting", body:"", keyword:"", toDate:"3000-12-31", '
-            f'fromDate:"{start}", sortTime:"", direction:"ASC", orderBy:"SortTime", )'
-            "{ EventDt,EventTm,Location,EventTitle,EventDesc,Body,DeadlineDt,PublicHearing,"
-            "Committee,AgendaUrl,SortTime,OidMeeting,LiveStream }}"
+            'query meetings($body: OrganizationBody, $managedInLinx: Boolean, $autoScroll: Boolean!) {\n  meetings(\n    where: {body: {eq: $body}, startDate: {gte: "'
+            + start
+            + '"}, managedInLinx: {eq: $managedInLinx}}\n  ) {\n    data {\n      id\n      startDate\n      startTime\n      location\n      title\n      description\n      body\n      hasPublicHearing\n      hasLiveStream\n      committee\n      agendaUrl\n      agendaItems @skip(if: $autoScroll) {\n        id\n        sessionType\n        sessionYear\n        instrumentNumber\n        shortTitle\n        matter\n        recommendation\n        hasPublicHearing\n        sponsor\n        __typename\n      }\n      __typename\n    }\n    count\n    __typename\n  }\n}'
         )
 
         json_data = {
             "query": query,
-            "operationName": "",
-            "variables": [],
+            "operationName": "meetings",
+            "variables": {
+                "autoScroll": False,
+            },
         }
 
         page = self.post(gql_url, headers=headers, json=json_data)
         page = json.loads(page.content)
 
-        if len(page["data"]["hearingsMeetings"]) == 0:
+        if len(page["data"]["meetings"]["data"]) == 0:
             raise EmptyScrape
-
-        query = (
-            '{hearingsMeetingsDetails(eventType:"meeting", body:"", keyword:"", toDate:"3000-12-31", '
-            f'fromDate:"{start}", sortTime:"", direction:"ASC", orderBy:"SortTime", )'
-            "{EventDt,EventTm,Location,EventTitle,EventDesc,Body,DeadlineDt,PublicHearing,"
-            "LiveStream,Committee,AgendaUrl,SortTime,OidMeeting, Sponsor, InstrumentNbr, ShortTitle, "
-            "OidInstrument, SessionType, SessionYear}}"
-        )
-        json_data = {
-            "query": query,
-            "operationName": "",
-            "variables": [],
-        }
-        details = self.post(gql_url, headers=headers, json=json_data)
-        details = json.loads(details.content)
-
-        bills = {}
-        for row in details["data"]["hearingsMeetingsDetails"]:
-            if row["OidMeeting"] not in bills:
-                bills[row["OidMeeting"]] = []
-            bills[row["OidMeeting"]].append(row["InstrumentNbr"])
 
         event_keys = set()
 
-        for row in page["data"]["hearingsMeetings"]:
-            event_date = self._TZ.localize(dateutil.parser.parse(row["SortTime"]))
-            event_title = row["EventTitle"]
-            event_location = row["Location"]
+        for row in page["data"]["meetings"]["data"]:
+            event_date = dateutil.parser.parse(row["startDate"])
+            event_title = row["title"]
+            event_location = row["location"]
 
             if event_location.startswith("Room"):
                 event_location = (
                     f"11 South Union St, Montgomery, AL 36130. {event_location}"
                 )
-            event_desc = row["EventDesc"]
+            event_desc = row["description"] or ""
 
             event_key = f"{event_title}#{event_location}#{event_date}"
 
@@ -104,28 +80,35 @@ class ALEventScraper(Scraper, LXMLMixin):
             )
             event.dedupe_key = event_key
 
-            # TODO: When they add committees, agendas, and video streams
-
             match_coordinates(
                 event, {"11 south union": (32.37707594063977, -86.29919861850152)}
             )
 
-            for bill in bills.get(row["OidMeeting"], []):
-                event.add_bill(bill)
+            for agenda in row["agendaItems"]:
+                event.add_bill(agenda["instrumentNumber"])
 
-            if row["AgendaUrl"]:
-                mime = get_media_type(row["AgendaUrl"], default="text/html")
+            if row["agendaUrl"]:
+                mime = get_media_type(row["agendaUrl"], default="text/html")
                 event.add_document(
-                    "Agenda", row["AgendaUrl"], media_type=mime, on_duplicate="ignore"
+                    "Agenda", row["agendaUrl"], media_type=mime, on_duplicate="ignore"
                 )
 
-            com = row["Committee"]
+            com = row["committee"]
             if com:
-                com = f"{row['Body']} {com}"
-                com = com.replace("- House", "").replace("- Senate", "")
+                com = f"{row['body']} {com}"
+                com = (
+                    com.replace("- House", "")
+                    .replace("- Senate", "")
+                    .replace("(House)", "")
+                    .replace("(Senate)", "")
+                )
                 event.add_committee(com)
 
-            # TODO, looks like we can generate a source link from the room and OID,
-            # does this stick after the event has ended?
+            # TODO: these break after the event passes. Is there any permalink?
+            if row["hasLiveStream"]:
+                # https://alison.legislature.state.al.us/live-stream?location=Room+200&meeting=%2223735%22
+                event_url = f"https://alison.legislature.state.al.us/live-stream?location={row['location']}&meeting=%22{row['id']}%22"
+                event.add_source(event_url)
+
             event.add_source("https://alison.legislature.state.al.us/todays-schedule")
             yield event
