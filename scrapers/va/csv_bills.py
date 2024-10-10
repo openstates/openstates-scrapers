@@ -363,9 +363,6 @@ class VaCSVBillScraper(Scraper):
                         vote.vote(v["vote_result"], v["member_id"])
                     yield vote
 
-            if bill_id == "HB328":
-                print(bill["text_docs"])
-
             # Versions
             for version in bill["text_docs"]:
                 # Checks if abbr is blank as not every bill has multiple versions
