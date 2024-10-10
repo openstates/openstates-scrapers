@@ -223,6 +223,14 @@ class Virginia(State):
             "start_date": "2024-05-13",
             # TODO: update actual end date
             "end_date": "2024-05-20",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2025 Session",
+            "identifier": "2025",
+            "name": "2025 Regular Session",
+            "start_date": "2025-01-08",
+            "end_date": "2025-02-22",
             "active": True,
         },
     ]
