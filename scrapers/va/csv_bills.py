@@ -1,15 +1,13 @@
 import csv
 import re
 import pytz
-import datetime
-from paramiko.client import SSHClient, AutoAddPolicy
-import paramiko
 from openstates.scrape import Scraper, Bill, VoteEvent
 from collections import defaultdict
-import time
+import dateutil
 
-from .common import SESSION_SITE_IDS, COMBINED_SESSIONS
+from .common import SESSION_SITE_IDS
 from .actions import Categorizer
+from scrapelib import HTTPError
 
 tz = pytz.timezone("America/New_York")
 
@@ -28,56 +26,16 @@ class VaCSVBillScraper(Scraper):
     _session_id: int
     categorizer = Categorizer()
 
-    def _init_sftp(self, session_id):
-        client = SSHClient()
-        client.set_missing_host_key_policy(AutoAddPolicy)
-        connected = False
-        attempts = 0
-        while not connected:
-            try:
-                client.connect(
-                    "sftp.dlas.virginia.gov",
-                    username="rjohnson",
-                    password="E8Tmg%9Dn!e6dp",
-                    compress=True,
-                )
-            except paramiko.ssh_exception.AuthenticationException:
-                attempts += 1
-                self.logger.warning(
-                    f"Auth failure...sleeping {attempts * 30} seconds and retrying"
-                )
-                # hacky backoff!
-                time.sleep(attempts * 30)
-            else:
-                connected = True
-            # importantly, we shouldn't try forever
-            if attempts > 3:
-                break
-        if not connected:
-            raise paramiko.ssh_exception.AuthenticationException
-        self.sftp = client.open_sftp()
-        """
-        Set working directory for sftp client based on session
-        """
-        for k, sessions in COMBINED_SESSIONS.items():
-            if session_id in sessions:
-                self.sftp.chdir(f"/CSV{k}/csv{session_id}")
-                break
-        else:
-            """
-            for -> else blocks only work when you've gone through
-            every step in a for loop without breaking
-            so this is kinda like setting a default
-            """
-            self.sftp.chdir(f"/CSV{session_id}/csv{session_id}")
-
     def get_file(self, filename):
-        # old sftp thing rn
-        return self.sftp.open(filename).read().decode(errors="ignore")
-        # keeping old filenames in case we ever need to go back to sftp
-        # filename = filename.lower().capitalize()
-        # url = f"https://lis.virginia.gov/SiteInformation/csv/{self._session_id}/{filename}"
-        # return self.get(url).text
+        # see https://lis.virginia.gov/data-files
+        # note: the url pattern given in the notes on that page is wrong,
+        # use the links at the bottom
+        try:
+            url = f"https://lis.blob.core.windows.net/lisfiles/{self._session_id}/{filename}"
+            return self.get(url).text
+        except HTTPError:
+            self.info(f"HTTP error on {url}, skipping")
+            return ""
 
     # Load members of legislative
     def load_members(self):
@@ -249,7 +207,8 @@ class VaCSVBillScraper(Scraper):
             is_special = True
 
         session_id = SESSION_SITE_IDS[session]
-        self._init_sftp(session_id)
+        self._session_id = "20251"
+        # self._init_sftp(session_id)
         bill_url_base = "https://lis.virginia.gov/cgi-bin/"
 
         if not is_special:
@@ -279,7 +238,9 @@ class VaCSVBillScraper(Scraper):
                 chamber=chamber,
                 classification=bill_type,
             )
-            bill_url = bill_url_base + f"legp604.exe?{session_id}+sum+{bill_id}"
+            bill_url = (
+                f"https://lis.virginia.gov/bill-details/{self._session_id}/{bill_id}"
+            )
             b.add_source(bill_url)
 
             # Long Bill ID needs to have 6 characters to work with vote urls, sponsors, and summaries.
@@ -325,11 +286,12 @@ class VaCSVBillScraper(Scraper):
             # Amendment docs
             amendments = self._amendments[bill_id]
             for amend in amendments:
-                doc_link = (
-                    bill_url_base + f"legp604.exe?{session_id}+amd+{amend['txt_docid']}"
-                )
+                version_url = f"https://lis.virginia.gov/bill-details/{self._session_id}/{bill_id}/text/{amend['txt_docid'].strip()}"
+
                 b.add_document_link(
-                    "Amendment: " + amend["txt_docid"], doc_link, media_type="text/html"
+                    "Amendment: " + amend["txt_docid"],
+                    version_url,
+                    media_type="text/html",
                 )
 
             # fiscal notes
@@ -347,7 +309,7 @@ class VaCSVBillScraper(Scraper):
             for hist in self._history[bill_id]:
                 action = hist["history_description"]
                 action_date = hist["history_date"]
-                date = datetime.datetime.strptime(action_date, "%m/%d/%y").date()
+                date = dateutil.parser.parse(action_date).date()
                 chamber = chamber_types[action[0]]
                 vote_id = hist["history_refid"]
                 cleaned_action = action[2:]
@@ -401,19 +363,15 @@ class VaCSVBillScraper(Scraper):
                         vote.vote(v["vote_result"], v["member_id"])
                     yield vote
 
+            if bill_id == "HB328":
+                print(bill["text_docs"])
+
             # Versions
             for version in bill["text_docs"]:
                 # Checks if abbr is blank as not every bill has multiple versions
                 if version["doc_abbr"]:
-                    version_url = (
-                        bill_url_base
-                        + f"legp604.exe?{session_id}+ful+{version['doc_abbr']}"
-                    )
-                    pdf_url = version_url + "+pdf"
-
-                    version_date = datetime.datetime.strptime(
-                        version["doc_date"], "%m/%d/%y"
-                    ).date()
+                    version_url = f"https://lis.virginia.gov/bill-details/{self._session_id}/{bill_id}/text/{version['doc_abbr'].strip()}"
+                    version_date = dateutil.parser.parse(version["doc_date"]).date()
                     # version text will default to abbreviation provided in CSV
                     # but if there is an unambiguous action from that date with
                     # a version, we'll use that as the document title
@@ -427,13 +385,5 @@ class VaCSVBillScraper(Scraper):
                         media_type="text/html",
                         on_duplicate="ignore",
                     )
-                    b.add_version_link(
-                        version_text,
-                        pdf_url,
-                        date=version_date,
-                        media_type="application/pdf",
-                        on_duplicate="ignore",
-                    )
 
             yield b
-        self.sftp.close()
