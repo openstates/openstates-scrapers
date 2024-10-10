@@ -229,8 +229,8 @@ class Virginia(State):
             "_scraped_name": "2025 Session",
             "identifier": "2025",
             "name": "2025 Regular Session",
-            "start_date": "2025-01-10",
-            "end_date": "2025-03-09",
+            "start_date": "2025-01-08",
+            "end_date": "2025-02-22",
             "active": True,
         },
     ]
