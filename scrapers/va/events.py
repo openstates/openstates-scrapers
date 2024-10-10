@@ -78,6 +78,8 @@ class VaEventScraper(Scraper):
             if "press conference" not in name.lower():
                 if "joint meeting of" in name.lower():
                     coms = name.replace("Joint Meeting of", "")
+                    # "joint meeting of com 1, com2 and com3"
+                    # becomes ['com 1', 'com2', 'com3']
                     for com in re.split(r",|and", coms, flags=re.I):
                         # the rstrip here catches some trailing dashes
                         com = com.strip().rstrip("- ")
