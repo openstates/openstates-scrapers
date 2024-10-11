@@ -295,7 +295,7 @@ class SenateJournal(PdfPage):
 
         vote_event = VoteEvent(
             chamber="upper",
-            legislative_session="193",
+            legislative_session="193rd",
             start_date=self.vote_date,
             motion_text=normalized_motion,
             bill=bill_id,
@@ -433,7 +433,7 @@ class HouseVoteRecordParser:
 
         vote = VoteEvent(
             chamber="lower",
-            legislative_session="193",
+            legislative_session="193rd",
             start_date=self.time,
             motion_text=self.motion,
             bill=bill_id,
