@@ -1,21 +1,15 @@
-# import csv
-# import re
-import pytz
-from openstates.scrape import Scraper, Bill  # , VoteEvent
-
-# from collections import defaultdict
 import dateutil
-import os
-import requests
-import lxml
 import json
+import lxml
+import os
+import pytz
+import requests
+import urllib3
 
-# import sys
-
-# from .common import SESSION_SITE_IDS
+from openstates.scrape import Scraper, Bill  # , VoteEvent
 from .actions import Categorizer
 
-# from scrapelib import HTTPError
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class VaBillScraper(Scraper):
@@ -34,8 +28,9 @@ class VaBillScraper(Scraper):
 
     def scrape(self, session=None):
 
-        # TODO:
-        self.session_code = "20251"
+        for i in self.jurisdiction.legislative_sessions:
+            if i["identifier"] == session:
+                self.session_code = i["extras"]["session_code"]
 
         if not os.getenv("VA_API_KEY"):
             self.error(
@@ -48,12 +43,6 @@ class VaBillScraper(Scraper):
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
-
-        # sessions = requests.get(
-        #     "https://lis.virginia.gov/Session/api/getsessionlistasync?year=2025",
-        #     headers=self.headers,
-        #     verify=False,
-        # ).json()
 
         body = {"SessionCode": self.session_code}
 
@@ -150,32 +139,35 @@ class VaBillScraper(Scraper):
         ).json()
 
         for row in page["TextsList"]:
-
-            if len(row["PDFFile"]) > 1 or len(row["PDFFile"]) > 1:
+            # print(json.dumps(row))
+            if (row["PDFFile"] and len(row["PDFFile"]) > 1) or (
+                row["HTMLFile"] and len(row["HTMLFile"]) > 1
+            ):
                 self.error(json.dumps(row))
-                self.error("Add code for multiple files to VA Scraper")
+                self.error("Add code to handle multiple files to VA Scraper")
                 raise Exception
 
-            if len(row["PDFFile"]) > 0:
+            if row["PDFFile"] and len(row["PDFFile"]) > 0:
                 bill.add_version_link(
                     row["Description"],
                     row["PDFFile"][0]["FileURL"],
                     media_type="application/pdf",
                 )
 
-            if len(row["HTMLFile"]) > 0:
+            if row["HTMLFile"] and len(row["HTMLFile"]) > 0:
                 bill.add_version_link(
                     row["Description"],
                     row["HTMLFile"][0]["FileURL"],
                     media_type="text/html",
                 )
 
-            for impact in row["ImpactFile"]:
-                # map 241HB9F122 => HB9F122
-                action = self.ref_num_map[impact["ReferenceNumber"][3:]]
-                bill.add_document_link(
-                    action, impact["FileURL"], media_type="application/pdf"
-                )
+            if row["ImpactFile"]:
+                for impact in row["ImpactFile"]:
+                    # map 241HB9F122 => HB9F122
+                    action = self.ref_num_map[impact["ReferenceNumber"][3:]]
+                    bill.add_document_link(
+                        action, impact["FileURL"], media_type="application/pdf"
+                    )
 
     def classify_bill(self, row: dict):
         btype = "bill"
@@ -185,6 +177,9 @@ class VaBillScraper(Scraper):
 
         return btype
 
+    # TODO: we can get the subject list,
+    # then do a search API call for each individual subject,
+    # but is there a faster way?
     # def get_subjects(self):
     #     body = {
     #         "sessionCode": self.session_code,

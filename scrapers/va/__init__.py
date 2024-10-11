@@ -234,6 +234,7 @@ class Virginia(State):
             "start_date": "2025-01-08",
             "end_date": "2025-02-22",
             "active": True,
+            "extras": {"session_code": "20251"},
         },
     ]
     ignored_scraped_sessions = [
