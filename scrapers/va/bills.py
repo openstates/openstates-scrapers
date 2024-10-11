@@ -10,6 +10,8 @@ import requests
 import lxml
 import json
 
+# import sys
+
 # from .common import SESSION_SITE_IDS
 # from .actions import Categorizer
 # from scrapelib import HTTPError
@@ -50,7 +52,6 @@ class VaBillScraper(Scraper):
         ).json()
         print(sessions)
 
-        # note that sessioncode requires an integer in the endpoint, but session codes are strings in their system...
         body = {"SessionCode": self.session_code}
 
         page = requests.post(
@@ -80,6 +81,7 @@ class VaBillScraper(Scraper):
                 classification="bill",
             )
 
+            self.add_versions(bill, row["LegislationID"])
             self.add_sponsors(bill, row["Patrons"])
             bill.add_abstract(subtitle, note="title")
             bill.add_abstract(description, row["SummaryVersion"])
@@ -100,6 +102,40 @@ class VaBillScraper(Scraper):
                 classification="primary" if primary else "cosponsor",
                 primary=primary,
             )
+
+    def add_versions(self, bill, legislation_id):
+        body = {
+            "sessionCode": self.session_code,
+            "legislationID": legislation_id,
+        }
+
+        page = requests.get(
+            f"{self.base_url}/LegislationText/api/getlegislationtextlistasync",
+            params=body,
+            headers=self.headers,
+            verify=False,
+        ).json()
+
+        for row in page["LegislationTextList"]:
+            print(json.dumps(row))
+
+            if len(row["PDFFile"]) > 1 or len(row["PDFFile"]) > 1:
+                self.error("Code for this case")
+                raise Exception
+
+            if len(row["PDFFile"]) > 0:
+                bill.add_version_link(
+                    row["Description"],
+                    row["PDFFile"][0]["FileURL"],
+                    media_type="application/pdf",
+                )
+
+            if len(row["HTMLFile"]) > 0:
+                bill.add_version_link(
+                    row["Description"],
+                    row["HTMLFile"][0]["FileURL"],
+                    media_type="text/html",
+                )
 
     def text_from_html(self, html):
         return lxml.html.fromstring(html).text_content()
