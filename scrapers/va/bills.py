@@ -30,6 +30,8 @@ class VaBillScraper(Scraper):
         "H": "lower",
     }
 
+    ref_num_map: object = {}
+
     def scrape(self, session=None):
 
         # TODO:
@@ -47,12 +49,11 @@ class VaBillScraper(Scraper):
             "Accept": "application/json",
         }
 
-        sessions = requests.get(
-            "https://lis.virginia.gov/Session/api/getsessionlistasync?year=2025",
-            headers=self.headers,
-            verify=False,
-        ).json()
-        print(sessions)
+        # sessions = requests.get(
+        #     "https://lis.virginia.gov/Session/api/getsessionlistasync?year=2025",
+        #     headers=self.headers,
+        #     verify=False,
+        # ).json()
 
         body = {"SessionCode": self.session_code}
 
@@ -64,10 +65,7 @@ class VaBillScraper(Scraper):
         ).json()
 
         for row in page["Legislations"]:
-            print(json.dumps(row))
-
-            # # remove leading zeros from the bill id
-            # bill_parts = re.split(r'(\d+)', row[''])
+            # print(json.dumps(row))
 
             # the short title on the VA site is 'description',
             # LegislationTitle is on top of all the versions
@@ -80,7 +78,7 @@ class VaBillScraper(Scraper):
                 session,
                 title,
                 chamber=self.chamber_map[row["ChamberCode"]],
-                classification="bill",
+                classification=self.classify_bill(row),
             )
 
             self.add_actions(bill, row["LegislationID"])
@@ -88,6 +86,8 @@ class VaBillScraper(Scraper):
             self.add_sponsors(bill, row["Patrons"])
             bill.add_abstract(subtitle, note="title")
             bill.add_abstract(description, row["SummaryVersion"])
+
+            bill.extras["VA_LEG_ID"] = row["LegislationID"]
 
             bill.add_source(
                 f"https://lis.virginia.gov/bill-details/{self.session_code}/{row['LegislationNumber']}"
@@ -120,6 +120,12 @@ class VaBillScraper(Scraper):
                 classification=classification,
             )
 
+            # map reference numbers back to their actions for impact filenames
+            # HB9F122.PDF > { 'HB9F122' => "Impact statement from DPB (HB9)" }
+            if row["ReferenceNumber"]:
+                ref_num = row["ReferenceNumber"].split(".")[0]
+                self.ref_num_map[ref_num] = row["Description"]
+
     def add_sponsors(self, bill: Bill, sponsors: list):
         for row in sponsors:
             primary = True if row["Name"] == "Chief Patron" else False
@@ -136,19 +142,18 @@ class VaBillScraper(Scraper):
             "sessionCode": self.session_code,
             "legislationID": legislation_id,
         }
-        print(legislation_id)
         page = requests.get(
-            f"{self.base_url}/LegislationText/api/getlegislationtextlistasync",
+            f"{self.base_url}/LegislationText/api/getlegislationtextbyidasync",
             params=body,
             headers=self.headers,
             verify=False,
         ).json()
 
-        for row in page["LegislationTextList"]:
-            print(json.dumps(row))
+        for row in page["TextsList"]:
 
             if len(row["PDFFile"]) > 1 or len(row["PDFFile"]) > 1:
-                self.error("Code for this case")
+                self.error(json.dumps(row))
+                self.error("Add code for multiple files to VA Scraper")
                 raise Exception
 
             if len(row["PDFFile"]) > 0:
@@ -165,5 +170,31 @@ class VaBillScraper(Scraper):
                     media_type="text/html",
                 )
 
-    def text_from_html(self, html):
+            for impact in row["ImpactFile"]:
+                # map 241HB9F122 => HB9F122
+                action = self.ref_num_map[impact["ReferenceNumber"][3:]]
+                bill.add_document_link(
+                    action, impact["FileURL"], media_type="application/pdf"
+                )
+
+    def classify_bill(self, row: dict):
+        btype = "bill"
+
+        if "constitutional amendment" in row["Description"].lower():
+            btype = "constitutional amendment"
+
+        return btype
+
+    # def get_subjects(self):
+    #     body = {
+    #         "sessionCode": self.session_code,
+    #     }
+    #     page = requests.get(
+    #         f"{self.base_url}/LegislationSubject/api/getsubjectreferencesasync",
+    #         params=body,
+    #         headers=self.headers,
+    #         verify=False,
+    #     ).json()
+
+    def text_from_html(self, html: str):
         return lxml.html.fromstring(html).text_content()
