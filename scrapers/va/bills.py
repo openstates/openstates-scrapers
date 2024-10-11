@@ -4,7 +4,7 @@ import pytz
 from openstates.scrape import Scraper, Bill  # , VoteEvent
 
 # from collections import defaultdict
-# import dateutil
+import dateutil
 import os
 import requests
 import lxml
@@ -13,15 +13,17 @@ import json
 # import sys
 
 # from .common import SESSION_SITE_IDS
-# from .actions import Categorizer
+from .actions import Categorizer
+
 # from scrapelib import HTTPError
 
 
 class VaBillScraper(Scraper):
     tz = pytz.timezone("America/New_York")
-    headers = {}
-    base_url = "https://lis.virginia.gov"
-    session_code = ""
+    headers: object = {}
+    base_url: str = "https://lis.virginia.gov"
+    session_code: str = ""
+    categorizer = Categorizer()
 
     chamber_map = {
         "S": "upper",
@@ -81,6 +83,7 @@ class VaBillScraper(Scraper):
                 classification="bill",
             )
 
+            self.add_actions(bill, row["LegislationID"])
             self.add_versions(bill, row["LegislationID"])
             self.add_sponsors(bill, row["Patrons"])
             bill.add_abstract(subtitle, note="title")
@@ -92,7 +95,32 @@ class VaBillScraper(Scraper):
 
             yield bill
 
-    def add_sponsors(self, bill, sponsors):
+    def add_actions(self, bill: Bill, legislation_id: str):
+        body = {
+            "sessionCode": self.session_code,
+            "legislationID": legislation_id,
+        }
+
+        page = requests.get(
+            f"{self.base_url}/LegislationEvent/api/getlegislationeventbylegislationidasync",
+            params=body,
+            headers=self.headers,
+            verify=False,
+        ).json()
+
+        for row in page["LegislationEvents"]:
+            when = dateutil.parser.parse(row["EventDate"]).date()
+            action_attr = self.categorizer.categorize(row["Description"])
+            classification = action_attr["classification"]
+
+            bill.add_action(
+                chamber=self.chamber_map[row["ChamberCode"]],
+                description=row["Description"],
+                date=when,
+                classification=classification,
+            )
+
+    def add_sponsors(self, bill: Bill, sponsors: list):
         for row in sponsors:
             primary = True if row["Name"] == "Chief Patron" else False
             bill.add_sponsorship(
@@ -103,12 +131,12 @@ class VaBillScraper(Scraper):
                 primary=primary,
             )
 
-    def add_versions(self, bill, legislation_id):
+    def add_versions(self, bill: Bill, legislation_id: str):
         body = {
             "sessionCode": self.session_code,
             "legislationID": legislation_id,
         }
-
+        print(legislation_id)
         page = requests.get(
             f"{self.base_url}/LegislationText/api/getlegislationtextlistasync",
             params=body,
