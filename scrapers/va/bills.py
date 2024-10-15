@@ -6,7 +6,7 @@ import pytz
 import requests
 import urllib3
 
-from openstates.scrape import Scraper, Bill  # , VoteEvent
+from openstates.scrape import Scraper, Bill, VoteEvent
 from .actions import Categorizer
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -22,6 +22,14 @@ class VaBillScraper(Scraper):
     chamber_map = {
         "S": "upper",
         "H": "lower",
+    }
+
+    vote_map = {
+        "Y": "yes",
+        "N": "no",
+        "X": "not voting",
+        "A": "abstain",
+        "V": "other",
     }
 
     ref_num_map: object = {}
@@ -73,6 +81,7 @@ class VaBillScraper(Scraper):
             self.add_actions(bill, row["LegislationID"])
             self.add_versions(bill, row["LegislationID"])
             self.add_sponsors(bill, row["Patrons"])
+            yield from self.add_votes(bill, row["LegislationID"])
             bill.add_abstract(subtitle, note="title")
             bill.add_abstract(description, row["SummaryVersion"])
 
@@ -168,6 +177,100 @@ class VaBillScraper(Scraper):
                     bill.add_document_link(
                         action, impact["FileURL"], media_type="application/pdf"
                     )
+
+    # This method doesn't work as of 2024-10-15 but leaving this code in,
+    # in case they bring it back
+    # def get_vote_types(self):
+
+    #     page = requests.get(
+    #         f"{self.base_url}/api/getvotetypereferencesasync",
+    #         headers=self.headers,
+    #         verify=False,
+    #     ).content
+
+    #     print(page)
+
+    def add_votes(self, bill: Bill, legislation_id: str):
+        body = {
+            "sessionCode": self.session_code,
+            "legislationID": legislation_id,
+        }
+
+        page = requests.get(
+            f"{self.base_url}/Vote/api/getvotebyidasync",
+            params=body,
+            headers=self.headers,
+            verify=False,
+        ).content
+
+        if not page:
+            return
+
+        page = json.loads(page)
+
+        for row in page["Votes"]:
+            # VA Voice votes don't indicate pass fail,
+            # and right now OS core requires a pass or fail, so we skip them with a notice
+            if row["PassFail"] or row["IsVoice"] is not True:
+                vote_date = dateutil.parser.parse(row["VoteDate"]).date()
+
+                motion_text = row["VoteActionDescription"]
+
+                # the api returns 'Continued to %NextSessionYear% in Finance' so fix that
+                motion_text = motion_text.replace(
+                    "%NextSessionYear%", str(vote_date.year + 1)
+                )
+
+                v = VoteEvent(
+                    start_date=vote_date,
+                    motion_text=motion_text,
+                    bill_action=row["LegislationActionDescription"],
+                    result="fail",  # placeholder for now
+                    chamber=self.chamber_map[row["ChamberCode"]],
+                    bill=bill,
+                    classification=[],
+                )
+
+                v.dedupe_key = row["BatchNumber"]
+
+                tally = {
+                    "Y": 0,
+                    "N": 0,
+                    "X": 0,  # not voting
+                    "A": 0,  # abstain
+                    "V": 0,  # voting
+                }
+
+                for subrow in row["VoteMember"]:
+                    v.vote(
+                        self.vote_map[subrow["ResponseCode"]],
+                        subrow["MemberDisplayName"],
+                    )
+
+                    tally[subrow["ResponseCode"]] += 1
+
+                v.set_count("yes", tally["Y"])
+                v.set_count("no", tally["N"])
+                v.set_count("abstain", tally["A"])
+                v.set_count("not voting", tally["X"])
+                v.set_count("other", tally["V"])
+
+                if tally["Y"] == 0 and tally["N"] == 0 and tally["A"] == 0:
+                    # some voice votes are miscoded so don't contain data
+                    continue
+
+                if tally["Y"] > tally["N"]:
+                    v.result = "pass"
+                else:
+                    v.result = "fail"
+
+                # https://lis.virginia.gov/vote-details/HB88/20251/H1003V0001
+                v.add_source(
+                    f"https://lis.virginia.gov/vote-details/{row['VoteLegislation']}/{self.session_code}/{row['BatchNumber']}"
+                )
+                yield v
+            else:
+                self.info(f"Skipping vote {row['BatchNumber']} with no pass fail")
 
     def classify_bill(self, row: dict):
         btype = "bill"
