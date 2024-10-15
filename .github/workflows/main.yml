@@ -64,7 +64,7 @@ jobs:
           ref: main
 
       - name: Update .env file
-        run: sed -i '/^CYCLADES_IMAGE_TAG=/d' aws/.env && echo "CYCLADES_IMAGE_TAG=${GITHUB_SHA}" >> aws/.env
+        run: sed -i '/^CYCLADES_IMAGE_TAG=/d' artemis/aws/.env && echo "CYCLADES_IMAGE_TAG=${GITHUB_SHA}" >> artemis/aws/.env
       
       - name: Configure git
         run: |
@@ -75,7 +75,7 @@ jobs:
         run: git checkout -b update-image-tag-${GITHUB_SHA}
 
       - name: Commit the changes
-        run: git commit aws/.env -m "Update CYCLADES_IMAGE_TAG to ${GITHUB_SHA}"
+        run: git commit artemis/aws/.env -m "Update CYCLADES_IMAGE_TAG to ${GITHUB_SHA}"
 
       - name: Push branch
         run: git push --force origin update-image-tag-${GITHUB_SHA}:update-image-tag-${GITHUB_SHA}
