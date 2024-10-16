@@ -1,5 +1,6 @@
 import boto3
 import json
+import logging
 
 
 def get_secret(secret_name, region="us-west-2"):
@@ -19,12 +20,12 @@ def get_secret(secret_name, region="us-west-2"):
     try:
         secret_response = client.get_secret_value(SecretId=secret_name)
     except Exception as e:
-        print(f"Error retrieving secret: {e}")
+        logging.warning(f"Error retrieving secret: {e}")
         return None
 
     if "SecretString" in secret_response:
         secret = json.loads(secret_response["SecretString"])[secret_name]
         return secret
     else:
-        print("Secret is binary or unavailable in string format.")
+        logging.warning("Secret is binary or unavailable in string format.")
         return None
