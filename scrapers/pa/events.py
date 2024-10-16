@@ -1,6 +1,5 @@
 import re
 import pytz
-import urllib
 import datetime
 
 import lxml.html
@@ -24,83 +23,73 @@ class PAEventScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for table in page.xpath('//table[@class="CMS-MeetingDetail-CurrMeeting"]'):
-            date_string = table.xpath(
-                'ancestor::div[@class="CMS-MeetingDetail"]/div/a/@name'
+        for div in page.xpath('//div[contains(@class,"meeting-featured-info-alt")]'):
+            date_string = div.xpath(
+                'ancestor::div[contains(@class,"meetings")]/@data-date'
             )[0]
-            for row in table.xpath("tr"):
-                title = (
-                    row.xpath(
-                        './/div[contains(@class,"CMS-MeetingDetail-Agenda-CommitteeName")]'
-                    )[0]
-                    .text_content()
-                    .strip()
-                )
 
-                time_string = (
-                    row.xpath('td[@class="CMS-MeetingDetail-Time"]')[0]
-                    .text_content()
-                    .strip()
-                )
+            rows = div.xpath('div[not(contains(@class,"mb-3"))]')
+            committee_divs = rows[0].xpath('.//a[contains(@class,"committee")]')
+            if len(committee_divs) > 0:
+                committee_href = committee_divs[0].get("href")
+            else:
+                committee_divs = rows[0].xpath("div")
 
-                time_string = time_string.replace("*", "").strip()
+            title = (
+                (committee_divs[0].text_content().strip()).split("-")[0].strip().upper()
+            )
 
-                description = (
-                    row.xpath('td[@class="CMS-MeetingDetail-Agenda"]/div/div')[-1]
-                    .text_content()
-                    .strip()
-                )
-                location = (
-                    row.xpath('td[@class="CMS-MeetingDetail-Location"]')[0]
-                    .text_content()
-                    .strip()
-                )
-                committees = row.xpath(
-                    './/div[@class="CMS-MeetingDetail-Agenda-CommitteeName"]/a'
-                )
-                bills = row.xpath('.//a[contains(@href, "billinfo")]')
+            time_and_location_row = rows[1]
+            [time_div, location_div] = time_and_location_row.xpath("div")
+            time_string = time_div.text_content().strip()
+            location = location_div.text_content().strip()
 
+            description_row = rows[3]
+            description = description_row.xpath("div")[0].text_content().strip()
+
+            try:
+                start_date = datetime.datetime.strptime(
+                    "{} {}".format(date_string, time_string), "%Y-%m-%d %I:%M %p"
+                )
+            except ValueError:
                 try:
-                    start_date = datetime.datetime.strptime(
-                        "{} {}".format(date_string, time_string), "%m/%d/%Y %I:%M %p"
-                    )
+                    start_date = datetime.datetime.strptime(date_string, "%m/%d/%Y")
                 except ValueError:
-                    try:
-                        start_date = datetime.datetime.strptime(date_string, "%m/%d/%Y")
-                    except ValueError:
-                        self.warning(
-                            f"Could not parse date {date_string} {time_string}, skipping"
-                        )
-                        break
+                    self.warning(
+                        f"Could not parse date {date_string} {time_string}, skipping"
+                    )
+                    continue
 
-                event = Event(
-                    name=title,
-                    description=description,
-                    start_date=self._tz.localize(start_date),
-                    location_name=location,
-                )
-                event.add_source(url)
+            event = Event(
+                name=title,
+                description=description,
+                start_date=self._tz.localize(start_date),
+                location_name=location,
+            )
+            event.add_source(url)
 
-                if bills or committees:
-                    item = event.add_agenda_item(description)
-                    for bill in bills:
-                        parsed = urllib.parse.urlparse(bill.get("href"))
-                        qs = urllib.parse.parse_qs(parsed.query)
-                        print(qs)
+            bills = description_row.xpath('.//a[contains(@href, "/legislation/bills")]')
+            if bills or committee_href:
+                item = event.add_agenda_item(description)
+                for bill in bills:
+                    match = re.search(
+                        "/(?P<type>[a-z]+)(?P<bn>[0-9]+)$", bill.get("href")
+                    )
+                    if match:
                         item.add_bill(
-                            "{}{} {}".format(qs["body"][0], qs["type"][0], qs["bn"][0])
+                            "{} {}".format(match["type"].upper(), match["bn"])
                         )
-                    for committee in committees:
-                        parsed = urllib.parse.urlparse(committee.get("href"))
-                        qs = urllib.parse.parse_qs(parsed.query)
-                        com_name = re.sub(r" \([S|H]\)$", "", committee.text)
+                if committee_href:
+                    match = re.search("/committees/(?P<code>[0-9]+)/", committee_href)
+                    if match:
+                        com_name = title
                         if "joint" not in com_name.lower():
                             chamber_name = self.chamber_names[chamber].upper()
                             com_name = f"{chamber_name} {com_name}"
                         item.add_committee(
                             com_name,
-                            id=qs.get("Code"),
+                            id=match["code"],
                         )
                         event.add_committee(com_name)
 
-                yield event
+            yield event

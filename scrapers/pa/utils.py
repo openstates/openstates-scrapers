@@ -2,6 +2,7 @@ import datetime
 
 
 base_url = "http://www.legis.state.pa.us"
+new_base_url = "https://www.palegis.us"
 members_url = "{}/cfdocs/legis/home/member_information".format(base_url)
 urls = {
     "people": {
@@ -13,8 +14,8 @@ urls = {
         "lower": "{}/representatives_ca.cfm".format(members_url),
     },
     "events": {
-        "upper": "{}/cfdocs/legis/cms/index.cfm?chamber=S".format(base_url),
-        "lower": "{}/cfdocs/legis/cms/index.cfm?chamber=H".format(base_url),
+        "upper": "{}/senate/committees/meeting-schedule".format(new_base_url),
+        "lower": "{}/house/committees/meeting-schedule".format(new_base_url),
     },
     "contacts": {
         "upper": "{}/contact.cfm?body=S".format(members_url),
