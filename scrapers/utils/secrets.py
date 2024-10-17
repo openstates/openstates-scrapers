@@ -3,6 +3,20 @@ import json
 import logging
 
 
+class SecretRetrievalError(Exception):
+    def __init__(self, message, secret_name=None, original_exception=None):
+        full_message = (
+            f"{message}. Secret: {secret_name}. Details: {original_exception}"
+            if original_exception
+            else message
+        )
+        super().__init__(full_message)
+
+        logging.error(full_message)
+        self.secret_name = secret_name
+        self.original_exception = original_exception
+
+
 def get_secret(secret_name, region="us-west-2"):
     """
     Retrieves secret value from a secret in AWS Secrets Manager.
@@ -13,9 +27,6 @@ def get_secret(secret_name, region="us-west-2"):
 
     Returns:
     - The value associated with the specified key.
-
-    Raises:
-    - Exception: If the secret cannot be retrieved or is not available.
     """
 
     client = boto3.client(service_name="secretsmanager", region_name=region)
@@ -23,12 +34,17 @@ def get_secret(secret_name, region="us-west-2"):
     try:
         secret_response = client.get_secret_value(SecretId=secret_name)
     except Exception as e:
-        logging.error(f"Failed to retrieve secret: {secret_name}. Error details: {e}")
-        raise Exception(f"Failed to retrieve secret: {secret_name}. Error details: {e}")
+        raise SecretRetrievalError("Error retrieving secret", secret_name, e)
 
     if "SecretString" in secret_response:
-        secret = json.loads(secret_response["SecretString"])[secret_name]
-        return secret
+        try:
+            secret = json.loads(secret_response["SecretString"])[secret_name]
+            return secret
+        except KeyError as ke:
+            raise SecretRetrievalError(
+                "The key was not found in the secret", secret_name, ke
+            )
     else:
-        logging.error(f"Secret {secret_name} is not available in string format.")
-        raise Exception(f"Secret {secret_name} is not available in string format.")
+        raise SecretRetrievalError(
+            "Secret is binary or unavailable in string format", secret_name
+        )
