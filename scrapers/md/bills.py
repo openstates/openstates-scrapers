@@ -347,6 +347,18 @@ class MDBillScraper(Scraper):
             bill.add_subject(row[0])
 
     def scrape_bill_sponsors(self, bill, page):
+        sponsors_title = "".join(
+            page.xpath(
+                '//dt[contains(text(), "Sponsored by")]/following-sibling::dd[1]/text()'
+            )
+        )
+        if "Delegate" in sponsors_title:
+            chamber = "lower"
+        elif "Senator" in sponsors_title:
+            chamber = "upper"
+        else:
+            chamber = None
+
         sponsors = page.xpath(
             '//dt[contains(text(), "Sponsored by")]/following-sibling::dd[1]/a'
         )
@@ -363,12 +375,21 @@ class MDBillScraper(Scraper):
                 # sponsor the list is done
                 # (e.g. http://mgaleg.maryland.gov/mgawebsite/Legislation/Details/sb0125?ys=2021RS)
                 break
-            bill.add_sponsorship(
-                sponsor,
-                sponsor_type,
-                primary=sponsor_type == "primary",
-                entity_type=entity_type,
-            )
+            if chamber:
+                bill.add_sponsorship(
+                    sponsor,
+                    sponsor_type,
+                    primary=sponsor_type == "primary",
+                    entity_type=entity_type,
+                    chamber=chamber,
+                )
+            else:
+                bill.add_sponsorship(
+                    sponsor,
+                    sponsor_type,
+                    primary=sponsor_type == "primary",
+                    entity_type=entity_type,
+                )
 
     def scrape_bill(self, chamber, session, url):
         html = self.get(url).content
