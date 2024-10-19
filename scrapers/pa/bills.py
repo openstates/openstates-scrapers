@@ -97,14 +97,14 @@ class PABillScraper(Scraper):
             ):
                 mimetype = self.mimetype_from_class(a)
 
-                href = a.attrib["href"]
-                params = href.split("/")
+                doc_url = a.attrib["href"]
+                params = doc_url.split("/")
 
                 printers_number = params[-1]
 
                 bill.add_version_link(
                     "Printer's No. %s" % printers_number,
-                    href,
+                    doc_url,
                     media_type=mimetype,
                     on_duplicate="ignore",
                 )
@@ -112,39 +112,28 @@ class PABillScraper(Scraper):
             for a in row.xpath(
                 './/div[@class="accordion"]//div[@aria-label="Supporting Documents"]/a'
             ):
-                document_title = a.text_content()
-                # House and Senate Amendments
-                if "Senate Amendments" in document_title:
-                    self.scrape_amendments(bill, a.attrib["href"], "Senate")
-                elif "House Amendments" in document_title:
-                    self.scrape_amendments(bill, a.attrib["href"], "House")
-                elif "House Fiscal Note" in document_title:
-                    # House Fiscal Notes
+                doc_url = a.attrib["href"]
+                doc_title = a.text_content()
+
+                if "Amendments" in doc_title:
+                    # House and Senate Amendments
+                    amend_chamber = doc_title.replace("Amendments", "").strip()
+                    self.scrape_amendments(bill, doc_url, amend_chamber)
+                elif "Fiscal Note" in doc_title:
+                    # Senate & House Fiscal Notes
                     mimetype = self.mimetype_from_class(a)
-                    href = a.attrib["href"]
                     bill.add_document_link(
-                        "House Fiscal Note",
-                        href,
+                        doc_title,
+                        doc_url,
                         media_type=mimetype,
                         on_duplicate="ignore",
                     )
-                elif "Senate Fiscal Note" in document_title:
-                    # Senate Fiscal Notes
-                    mimetype = self.mimetype_from_class(a)
-                    href = a.attrib["href"]
-                    bill.add_document_link(
-                        "Senate Fiscal Note",
-                        href,
-                        media_type=mimetype,
-                        on_duplicate="ignore",
-                    )
-                elif "Actuarial Note" in document_title:
+                elif "Actuarial Note" in doc_title:
                     # Actuarial Notes
                     mimetype = self.mimetype_from_class(a)
-                    href = a.attrib["href"]
                     bill.add_document_link(
                         "Actuarial Note {}".format(printers_number),
-                        href,
+                        doc_url,
                         media_type=mimetype,
                         on_duplicate="ignore",
                     )
@@ -155,9 +144,11 @@ class PABillScraper(Scraper):
         page.make_links_absolute(link)
 
         for row in page.xpath('//div[contains(@class, "card shadow")]'):
-            version_name = row.xpath(
-                './/div[contains(@class, "sponsor-details")]//div[contains(@class, " h5")]/text()'
-            )[0].strip()
+            version_name = "".join(
+                row.xpath(
+                    './/div[contains(@class, "sponsor-details")]//div[contains(@class, " h5")]//text()'
+                )
+            ).strip()
             version_name = "{} Amendment {}".format(chamber_pretty, version_name)
             for a in row.xpath('.//div[contains(@class, "position-md-absolute")]//a'):
                 mimetype = self.mimetype_from_class(a)
