@@ -39,7 +39,7 @@ class GAEventScraper(Scraper):
             if "joint" not in title.lower():
                 if row["chamber"] == 2:
                     title = f"Senate {title}"
-                elif row["chamber"] == 1:
+                elif row["chamber"] == 1 and not title.startswith("House"):
                     title = f"House {title}"
 
             start = dateutil.parser.parse(row["start"])
@@ -54,7 +54,12 @@ class GAEventScraper(Scraper):
                 title = re.sub(r"-?\s*cancell?ed\s*-?\s*", " ", title, flags=re.I)
 
             where = row["location"]
-            where = f"206 Washington St SW, Atlanta, Georgia, {where}"
+            # Check if location already has the state abbr + ZIP code, this indicates that
+            # the location is not at the state capitol
+            if not re.search("GA [0-9]{5}", where):
+                where = (
+                    f"State Capitol, {where}, 206 Washington St SW, Atlanta, GA 30334"
+                )
 
             event = Event(
                 name=title,
@@ -81,7 +86,7 @@ class GAEventScraper(Scraper):
 
             if row["livestreamUrl"]:
                 event.add_media_link(
-                    "Video", row["livestreamUrl"], media_type="text/html"
+                    "Livestream", row["livestreamUrl"], media_type="text/html"
                 )
 
             if "committee" in title.lower():
