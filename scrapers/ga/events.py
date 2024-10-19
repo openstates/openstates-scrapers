@@ -57,6 +57,7 @@ class GAEventScraper(Scraper):
             # Check if location already has the state abbr + ZIP code, this indicates that
             # the location is not at the state capitol
             if not re.search("GA [0-9]{5}", where):
+                # Otherwise, the location is the room/place within the capitol where the event will take place
                 where = (
                     f"State Capitol, {where}, 206 Washington St SW, Atlanta, GA 30334"
                 )
