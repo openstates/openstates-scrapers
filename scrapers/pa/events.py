@@ -22,6 +22,7 @@ class PAEventScraper(Scraper):
         page.make_links_absolute(url)
 
         for div in page.xpath('//div[contains(@class, "meeting-featured-info-alt")]'):
+            all_day = False
             date_string = div.xpath(
                 'ancestor::div[contains(@class, "meetings")]/@data-date'
             )[0]
@@ -31,11 +32,12 @@ class PAEventScraper(Scraper):
                 .replace("- opens in a new tab", "")
                 .strip()
             )
-            time_string = div.xpath('.//i[contains(@class, "fa-clock")]/../text()')[
-                0
-            ].strip()
-            if "Call" in time_string:
+            time_string = "".join(
+                div.xpath('.//i[contains(@class, "fa-clock")]/..//text()')
+            ).strip()
+            if "Call of Chair" in time_string or "Off the Floor" in time_string:
                 time_string = ""
+                all_day = True
             time_string = time_string.replace("*", "").strip()
 
             description = "".join(
@@ -53,36 +55,31 @@ class PAEventScraper(Scraper):
             committees = div.xpath('.//a[contains(@href, "committees")]')
             bills = div.xpath('.//a[contains(@href, "bills")]')
 
-            try:
+            if all_day:
+                start_date = datetime.datetime.strptime(date_string, "%Y-%m-%d")
+            else:
                 start_date = datetime.datetime.strptime(
                     "{} {}".format(date_string, time_string), "%Y-%m-%d %I:%M %p"
                 )
-            except ValueError:
-                try:
-                    start_date = datetime.datetime.strptime(date_string, "%Y-%m-%d")
-                except ValueError:
-                    self.warning(
-                        f"Could not parse date {date_string} {time_string}, skipping"
-                    )
-                    break
 
             event = Event(
                 name=title,
                 description=description,
                 start_date=self._tz.localize(start_date),
                 location_name=location,
+                all_day=all_day,
             )
             event.add_source(url)
             member_name = utils.clean_sponsor_name(
                 "".join(
                     div.xpath(
-                        '//div[./div/i[contains(@class, "fa-certificate")]]/div[2]/a//text()'
+                        './/div[./div/i[contains(@class, "fa-certificate")]]/div[2]/a//text()'
                     )
                 )
             )
             member_type = "".join(
                 div.xpath(
-                    '//div[./div/i[contains(@class, "fa-certificate")]]/div[2]/span//text()'
+                    './/div[./div/i[contains(@class, "fa-certificate")]]/div[2]/span//text()'
                 )
             ).strip()
             if member_name:
