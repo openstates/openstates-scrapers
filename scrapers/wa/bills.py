@@ -124,7 +124,9 @@ class WABillScraper(Scraper, LXMLMixin):
 
                 bill_id = chamber[0] + bill_types[bill_type] + " " + bill_num
 
-                if bill_type != "Passed Legislature":
+                if bill_type == "Passed Legislature":
+                    name = "Passed Legislature"
+                else:
                     name = bill_type[:-1]
 
                 if is_substitute:
@@ -138,6 +140,7 @@ class WABillScraper(Scraper, LXMLMixin):
 
                 if not self.versions.get(bill_id):
                     self.versions[bill_id] = []
+
                 self.versions[bill_id].append(
                     {"note": name, "url": link, "media_type": "text/html"}
                 )
