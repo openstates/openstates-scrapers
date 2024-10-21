@@ -1,9 +1,12 @@
 import logging
 import re
 from dateutil import parser
-from openstates.scrape import Scraper, Bill
+from openstates.scrape import Scraper, Bill, VoteEvent
+import pytz
 from spatula import JsonPage
 from .actions import NDCategorizer
+import lxml.html
+import requests
 
 
 class BillList(JsonPage):
@@ -11,6 +14,7 @@ class BillList(JsonPage):
     member_name_re = re.compile(r"^(Sen\.|Rep\.)\s*(.+),\s(.+)")
     comm_name_re = re.compile(r"^(House|Senate)\s*(.+)")
     version_name_re = re.compile(r"introduced|engrossment|enrollment")
+    _tz = pytz.timezone("US/Central")
 
     def __init__(self, input_data):
         super().__init__()
@@ -127,6 +131,100 @@ class BillList(JsonPage):
                     )
 
             yield bill
+
+            # Get bill-actions url from bill-overview url
+            action_url = (
+                bill_data["url"]
+                .replace("/bo", "/ba")
+                .replace("bill-overview", "bill-actions")
+            )
+
+            html_content = requests.get(action_url).content
+            doc = lxml.html.fromstring(html_content)
+            doc.make_links_absolute(action_url)
+            votes_list = doc.xpath(
+                '//div[@aria-labelledby="vote-modal"]//div[@class="modal-content"]'
+            )
+            for vote_modal in votes_list:
+                motion_text = (
+                    vote_modal.xpath('.//h5[@class="modal-title"]')[0]
+                    .text_content()
+                    .strip()
+                )
+                date = parser.parse(
+                    vote_modal.xpath(
+                        './/div[@class="modal-body"]/span[@class="float-right"]'
+                    )[0]
+                    .text_content()
+                    .strip()
+                )
+                start_date = self._tz.localize(date)
+                status = (
+                    vote_modal.xpath('.//div[@class="modal-body"]/span[@class="bold"]')[
+                        0
+                    ]
+                    .text_content()
+                    .strip()
+                )
+                chamber = "lower" if "house" in status.lower() else "upper"
+                status = "pass" if "passed" in status.lower() else "fail"
+                vote = VoteEvent(
+                    chamber=chamber,
+                    start_date=start_date,
+                    motion_text=f"Motion for {motion_text} on {bill_id}",
+                    result=status,
+                    legislative_session=self.input.get("assembly_id"),
+                    # TODO: get all possible classification types, replace below
+                    classification="passage",
+                    bill=bill_id,
+                    bill_chamber="lower" if bill_id[0] == "H" else "upper",
+                )
+                vote.add_source(action_url)
+                yes_count = (
+                    vote_modal.xpath(
+                        './/div[@class="modal-body"]/div[./h6[contains(., "Yea")]]/h6'
+                    )[0]
+                    .text_content()
+                    .strip()
+                    .split(" ")[0]
+                )
+                no_count = (
+                    vote_modal.xpath(
+                        './/div[@class="modal-body"]/div[./h6[contains(., "Nay")]]/h6'
+                    )[0]
+                    .text_content()
+                    .strip()
+                    .split(" ")[0]
+                )
+                other_count = (
+                    vote_modal.xpath(
+                        './/div[@class="modal-body"]/div[./h6[contains(., "Absent")]]/h6'
+                    )[0]
+                    .text_content()
+                    .strip()
+                    .split(" ")[0]
+                )
+
+                vote.set_count("yes", int(yes_count))
+                vote.set_count("no", int(no_count))
+                vote.set_count("other", int(other_count))
+                for vote_div in vote_modal.xpath(
+                    './/div[@class="modal-body"]/div[./h6[contains(., "Yea")]]//a'
+                ):
+                    voter_name = vote_div.text_content().strip()
+                    vote.yes(voter_name)
+                for vote_div in vote_modal.xpath(
+                    './/div[@class="modal-body"]/div[./h6[contains(., "Nay")]]//a'
+                ):
+                    voter_name = vote_div.text_content().strip()
+                    vote.no(voter_name)
+                for vote_div in vote_modal.xpath(
+                    './/div[@class="modal-body"]/div[./h6[contains(., "Absent")]]//a'
+                ):
+                    voter_name = vote_div.text_content().strip()
+                    vote.vote("other", voter_name)
+
+                yield vote
 
 
 class NDBillScraper(Scraper):
