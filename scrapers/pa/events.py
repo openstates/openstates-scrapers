@@ -57,15 +57,16 @@ class PAEventScraper(Scraper):
 
             if all_day:
                 start_date = datetime.datetime.strptime(date_string, "%Y-%m-%d")
+                start_date = start_date.date()
             else:
-                start_date = datetime.datetime.strptime(
+                start_date = self._tz.localize(datetime.datetime.strptime(
                     "{} {}".format(date_string, time_string), "%Y-%m-%d %I:%M %p"
-                )
+                ))
 
             event = Event(
                 name=title,
                 description=description,
-                start_date=self._tz.localize(start_date),
+                start_date=start_date,
                 location_name=location,
                 all_day=all_day,
             )
