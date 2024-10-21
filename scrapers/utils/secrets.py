@@ -33,18 +33,19 @@ def get_secret(secret_name, region="us-west-2"):
 
     try:
         secret_response = client.get_secret_value(SecretId=secret_name)
+        secret_string = secret_response.get("SecretString")
+        if not secret_string:
+            raise SecretRetrievalError(
+                "Secret is binary or unavailable in string format", secret_name
+            )
+
+        secret = json.loads(secret_string).get(secret_name)
+        if not secret:
+            raise SecretRetrievalError(
+                "The key was not found in the secret", secret_name
+            )
+
+        return secret
+
     except Exception as e:
         raise SecretRetrievalError("Error retrieving secret", secret_name, e)
-
-    if "SecretString" in secret_response:
-        try:
-            secret = json.loads(secret_response["SecretString"])[secret_name]
-            return secret
-        except KeyError as ke:
-            raise SecretRetrievalError(
-                "The key was not found in the secret", secret_name, ke
-            )
-    else:
-        raise SecretRetrievalError(
-            "Secret is binary or unavailable in string format", secret_name
-        )
