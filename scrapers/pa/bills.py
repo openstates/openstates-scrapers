@@ -269,10 +269,15 @@ class PABillScraper(Scraper):
 
     def parse_chamber_votes(self, bill, page, url):
         chamber = "upper" if "Senate" in page.xpath("string(//h1)") else "lower"
-        date_str = page.xpath(
-            'string(//div[contains(text(), "Vote Date")]/following-sibling::a)'
-        ).strip()
-        date = datetime.datetime.strptime(date_str, "%A %b %d, %Y")
+        date_str = (
+            page.xpath(
+                'string(//div[contains(@class, "col-main")]//div[./div[contains(text(), "Vote Date")]])'
+            )
+            .replace("Vote Date", "")
+            .strip()
+        )
+        date_str = re.sub(r"\s+", " ", date_str)
+        date = datetime.datetime.strptime(date_str, "%A %b %d, %Y %I:%M %p")
 
         xpath = 'string(//div[contains(@class,h6)][contains(text(), "Action")]/..)'
         motion = page.xpath(xpath).replace("Action", "").strip()
@@ -333,7 +338,13 @@ class PABillScraper(Scraper):
         for div in page.xpath(
             '//div[contains(@class, "rc-member ")][./div[contains(@class, "rc-member-display ")]]'
         ):
-            name = utils.clean_sponsor_name(div.xpath("string(.//strong)"))
+            name = div.xpath("string(.//strong)") or div.xpath(
+                'string(.//div[contains(@class, "rc-member-print")])'
+            )
+            name = utils.clean_sponsor_name(name)
+            if not name:
+                msg = "voter name is none. Referrer url: %s" % url
+                raise Exception(msg)
             badge = (
                 "".join(div.xpath('.//span[contains(@class, "badge")][@title]/@title'))
                 .replace(" ", "")
