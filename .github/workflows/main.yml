@@ -30,10 +30,9 @@ jobs:
         env:
           DOCKER_IMAGE: ${{ secrets.DOCKER_IMAGE }}
         run: |
-          COMMIT_HASH=$(git rev-parse --short HEAD)
-          docker build --platform linux/amd64 -t $DOCKER_IMAGE:$COMMIT_HASH -f Dockerfile .
-          docker tag $DOCKER_IMAGE:$COMMIT_HASH $DOCKER_IMAGE:latest
-          docker push $DOCKER_IMAGE:$COMMIT_HASH
+          docker build --platform linux/amd64 -t $DOCKER_IMAGE:$GITHUB_SHA -f Dockerfile .
+          docker tag $DOCKER_IMAGE:$GITHUB_SHA $DOCKER_IMAGE:latest
+          docker push $DOCKER_IMAGE:$GITHUB_SHA
           docker push $DOCKER_IMAGE:latest
 
   sync_dags:
