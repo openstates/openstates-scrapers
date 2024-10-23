@@ -34,6 +34,22 @@ class BillList(JsonPage):
             f"{assembly_session_id}-{year}/data/bills.json"
         )
 
+    def get_voter_name_from_url(self, url):
+        name_uri = (
+            url.replace("https://ndlegis.gov/biography/", "")
+            .split("?")[0]
+            .split("/")[0]
+            .strip()
+        )
+
+        name_words = []
+        for w in name_uri.split("-"):
+            if len(w) == 1:
+                name_words.append(f"{w}.".title())
+            else:
+                name_words.append(w.title())
+        return " ".join(name_words)
+
     def process_page(self):
         json_response = self.response.json()
         bills = json_response.get("bills")
@@ -208,20 +224,23 @@ class BillList(JsonPage):
                 vote.set_count("yes", int(yes_count))
                 vote.set_count("no", int(no_count))
                 vote.set_count("other", int(other_count))
-                for vote_div in vote_modal.xpath(
+                for vote_link in vote_modal.xpath(
                     './/div[@class="modal-body"]/div[./h6[contains(., "Yea")]]//a'
                 ):
-                    voter_name = vote_div.text_content().strip()
+                    voter_url = vote_link.attrib["href"]
+                    voter_name = self.get_voter_name_from_url(voter_url)
                     vote.yes(voter_name)
-                for vote_div in vote_modal.xpath(
+                for vote_link in vote_modal.xpath(
                     './/div[@class="modal-body"]/div[./h6[contains(., "Nay")]]//a'
                 ):
-                    voter_name = vote_div.text_content().strip()
+                    voter_url = vote_link.attrib["href"]
+                    voter_name = self.get_voter_name_from_url(voter_url)
                     vote.no(voter_name)
-                for vote_div in vote_modal.xpath(
+                for vote_link in vote_modal.xpath(
                     './/div[@class="modal-body"]/div[./h6[contains(., "Absent")]]//a'
                 ):
-                    voter_name = vote_div.text_content().strip()
+                    voter_url = vote_link.attrib["href"]
+                    voter_name = self.get_voter_name_from_url(voter_url)
                     vote.vote("other", voter_name)
 
                 yield vote
