@@ -202,9 +202,20 @@ class MOBillScraper(Scraper, LXMLMixin):
             sponsor = bill_page.xpath('//span[@id="lSponsor"]')[0]
 
         bill_sponsor = sponsor.text_content()
-        # bill_sponsor_link = sponsor.attrib.get('href')
+
+        bill_sponsor_link = sponsor.attrib.get("href")
+
+        if "Senators" in bill_sponsor_link:
+            chamber = "upper"
+        else:
+            chamber = None
+
         bill.add_sponsorship(
-            bill_sponsor, entity_type="person", classification="primary", primary=True
+            bill_sponsor,
+            entity_type="person",
+            classification="primary",
+            primary=True,
+            chamber=chamber,
         )
 
         # cosponsors show up on their own page, if they exist
