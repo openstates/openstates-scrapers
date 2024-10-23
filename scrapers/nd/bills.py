@@ -34,7 +34,16 @@ class BillList(JsonPage):
             f"{assembly_session_id}-{year}/data/bills.json"
         )
 
-    def get_voter_name_from_url(self, url):
+    def get_voter_name_from_url(self, url: str) -> str:
+        """
+        Description:
+            Get the full name from URL
+
+        Example:
+            - https://ndlegis.gov/biography/liz-conmy -> Liz Conmy
+            - https://ndlegis.gov/biography/randy-a-schobinger -> Randy A. Schobinger
+
+        """
         name_uri = (
             url.replace("https://ndlegis.gov/biography/", "")
             .split("?")[0]
@@ -48,6 +57,7 @@ class BillList(JsonPage):
                 name_words.append(f"{w}.".title())
             else:
                 name_words.append(w.title())
+
         return " ".join(name_words)
 
     def process_page(self):
