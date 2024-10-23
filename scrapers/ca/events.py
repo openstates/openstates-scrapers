@@ -178,4 +178,5 @@ _committee_nr = {
     82: "Senate Local Government",
     83: "Senate Revenue and Taxation",
     84: "Assembly Utilities and Energy",
+    85: "Senate Fuel Supply and Price Spikes",
 }
