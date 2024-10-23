@@ -15,7 +15,7 @@ from .actions import Categorizer
 
 settings = dict(SCRAPELIB_TIMEOUT=600)
 
-PROXY_BASE_URL = "https://in-proxy.openstates.org/"
+PROXY_BASE_URL = "https://in-proxy.openstates.org"
 SCRAPE_WEB_VERSIONS = "INDIANA_SCRAPE_WEB_VERSIONS" in os.environ
 
 
@@ -99,7 +99,6 @@ class INBillScraper(Scraper):
             )
             date_parts = lines[1].strip().split()[-3:]
             date_str = " ".join(date_parts).title() + " " + lines[2].strip()
-
             vote_date = datetime.datetime.strptime(date_str, "%b %d, %Y %I:%M:%S %p")
             vote_date = pytz.timezone("America/Indiana/Indianapolis").localize(
                 vote_date
@@ -116,20 +115,26 @@ class INBillScraper(Scraper):
                     if res in line.upper():
                         passed = val
                         break
-
             if passed is None:
                 raise AssertionError("Missing bill passage type")
 
-            motion = " ".join(lines[4].split()[:-2])
+            motion = " ".join(lines[4].split()[:-2]).strip()
+
+            for line_num in range(4, 8):
+                if "Yea " in lines[line_num]:
+                    break
+            if line_num > 4:
+                motion = " ".join(lines[3].split()).strip()
+            if "Roll Call" in motion:
+                motion = motion.split(":")[-1].strip()
             try:
-                yeas = int(lines[4].split()[-1])
-                nays = int(lines[5].split()[-1])
-                excused = int(lines[6].split()[-1])
-                not_voting = int(lines[7].split()[-1])
+                yeas = int(lines[line_num].split()[-1])
+                nays = int(lines[line_num + 1].split()[-1])
+                excused = int(lines[line_num + 2].split()[-1])
+                not_voting = int(lines[line_num + 3].split()[-1])
             except ValueError:
                 self.logger.warning("Vote format is weird, skipping")
                 continue
-
             vote = VoteEvent(
                 chamber=chamber,
                 legislative_session=session,
@@ -390,7 +395,6 @@ class INBillScraper(Scraper):
         for b in all_pages:
             bill_id = b["billName"]
             disp_bill_id = b["displayName"]
-
             bill_link = b["link"]
             api_source = api_base_url + bill_link
             try:
