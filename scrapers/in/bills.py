@@ -91,6 +91,7 @@ class INBillScraper(Scraper):
                 continue
 
             text = convert_pdf(path, "text").decode("utf-8")
+
             lines = text.split("\n")
             os.remove(path)
 
@@ -118,23 +119,26 @@ class INBillScraper(Scraper):
             if passed is None:
                 raise AssertionError("Missing bill passage type")
 
-            motion = " ".join(lines[4].split()[:-2]).strip()
-
             for line_num in range(4, 8):
                 if "Yea " in lines[line_num]:
                     break
-            if line_num > 4:
-                motion = " ".join(lines[3].split()).strip()
-            if "Roll Call" in motion:
-                motion = motion.split(":")[-1].strip()
-            try:
-                yeas = int(lines[line_num].split()[-1])
-                nays = int(lines[line_num + 1].split()[-1])
-                excused = int(lines[line_num + 2].split()[-1])
-                not_voting = int(lines[line_num + 3].split()[-1])
-            except ValueError:
+            motion = " ".join(lines[line_num].split()[:-2]).strip()
+
+            yeas, nays, excused, not_voting = [""] * 4
+            for line in lines[4:10]:
+                if "Yea " in line:
+                    yeas = int(line.split()[-1])
+                elif "Nay" in line:
+                    nays = int(line.split()[-1])
+                elif "Excused " in line:
+                    excused = int(line.split()[-1])
+                elif "Not Voting " in line:
+                    not_voting = int(line.split()[-1])
+
+            if any(val == "" for val in [yeas, nays, excused, not_voting]):
                 self.logger.warning("Vote format is weird, skipping")
                 continue
+
             vote = VoteEvent(
                 chamber=chamber,
                 legislative_session=session,
