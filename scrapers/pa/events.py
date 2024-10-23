@@ -1,4 +1,3 @@
-import re
 import pytz
 import datetime
 
@@ -10,7 +9,6 @@ from . import utils
 
 class PAEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
-    chamber_names = {"upper": "Senate", "lower": "House"}
 
     def scrape(self, chamber=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
@@ -23,73 +21,94 @@ class PAEventScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for div in page.xpath('//div[contains(@class,"meeting-featured-info-alt")]'):
+        for div in page.xpath('//div[contains(@class, "meeting-featured-info-alt")]'):
+            all_day = False
             date_string = div.xpath(
-                'ancestor::div[contains(@class,"meetings")]/@data-date'
+                'ancestor::div[contains(@class, "meetings")]/@data-date'
             )[0]
 
-            rows = div.xpath('div[not(contains(@class,"mb-3"))]')
-            committee_divs = rows[0].xpath('.//a[contains(@class,"committee")]')
-            if len(committee_divs) > 0:
-                committee_href = committee_divs[0].get("href")
-            else:
-                committee_divs = rows[0].xpath("div")
-
             title = (
-                (committee_divs[0].text_content().strip()).split("-")[0].strip().upper()
+                "".join(div.xpath('.//div[contains(@class, "h5")]//text()'))
+                .replace("- opens in a new tab", "")
+                .strip()
+            )
+            time_string = "".join(
+                div.xpath('.//i[contains(@class, "fa-clock")]/..//text()')
+            ).strip()
+            if "Call of Chair" in time_string or "Off the Floor" in time_string:
+                time_string = ""
+                all_day = True
+            time_string = time_string.replace("*", "").strip()
+
+            description = "".join(
+                div.xpath('.//i[contains(@class, "fa-circle-info")]/..//text()')
+            ).strip()
+
+            location = (
+                "".join(
+                    div.xpath('.//i[contains(@class, "fa-location-pin")]/..//text()')
+                )
+                .replace("\n", "")
+                .strip()
             )
 
-            time_and_location_row = rows[1]
-            [time_div, location_div] = time_and_location_row.xpath("div")
-            time_string = time_div.text_content().strip()
-            location = location_div.text_content().strip()
+            committees = div.xpath('.//a[contains(@href, "committees")]')
+            bills = div.xpath('.//a[contains(@href, "bills")]')
 
-            description_row = rows[3]
-            description = description_row.xpath("div")[0].text_content().strip()
-
-            try:
-                start_date = datetime.datetime.strptime(
-                    "{} {}".format(date_string, time_string), "%Y-%m-%d %I:%M %p"
-                )
-            except ValueError:
-                try:
-                    start_date = datetime.datetime.strptime(date_string, "%m/%d/%Y")
-                except ValueError:
-                    self.warning(
-                        f"Could not parse date {date_string} {time_string}, skipping"
+            if all_day:
+                start_date = datetime.datetime.strptime(date_string, "%Y-%m-%d")
+                start_date = start_date.date()
+            else:
+                start_date = self._tz.localize(
+                    datetime.datetime.strptime(
+                        "{} {}".format(date_string, time_string), "%Y-%m-%d %I:%M %p"
                     )
-                    continue
+                )
 
             event = Event(
                 name=title,
                 description=description,
-                start_date=self._tz.localize(start_date),
+                start_date=start_date,
                 location_name=location,
+                all_day=all_day,
             )
             event.add_source(url)
+            member_name = utils.clean_sponsor_name(
+                "".join(
+                    div.xpath(
+                        './/div[./div/i[contains(@class, "fa-certificate")]]/div[2]/a//text()'
+                    )
+                )
+            )
+            member_type = "".join(
+                div.xpath(
+                    './/div[./div/i[contains(@class, "fa-certificate")]]/div[2]/span//text()'
+                )
+            ).strip()
+            if member_name:
+                event.add_person(member_name, note=member_type)
 
-            bills = description_row.xpath('.//a[contains(@href, "/legislation/bills")]')
-            if bills or committee_href:
+            if bills or committees:
                 item = event.add_agenda_item(description)
                 for bill in bills:
-                    match = re.search(
-                        "/(?P<type>[a-z]+)(?P<bn>[0-9]+)$", bill.get("href")
+                    bill_url = bill.get("href")
+                    bill_num = bill.text_content()
+                    bill_type = (
+                        bill_url.split("/")[-1].upper().replace(bill_num, "").strip()
                     )
-                    if match:
-                        item.add_bill(
-                            "{} {}".format(match["type"].upper(), match["bn"])
-                        )
-                if committee_href:
-                    match = re.search("/committees/(?P<code>[0-9]+)/", committee_href)
-                    if match:
-                        com_name = title
-                        if "joint" not in com_name.lower():
-                            chamber_name = self.chamber_names[chamber].upper()
-                            com_name = f"{chamber_name} {com_name}"
-                        item.add_committee(
-                            com_name,
-                            id=match["code"],
-                        )
-                        event.add_committee(com_name)
+                    bill_id = f"{bill_type} {bill_num}"
+                    item.add_bill(bill_id)
+
+                for committee in committees:
+                    committee_name = committee.text_content()
+                    committee_url = committee.get("href")
+                    chamber_name = "House" if "house" in committee_url else "Senate"
+                    if "joint" not in committee_name.lower():
+                        committee_name = f"{chamber_name} {committee_name}"
+                    item.add_committee(
+                        committee_name,
+                        id=committee_url.split("/")[-2],
+                    )
+                    event.add_committee(committee_name)
 
             yield event
