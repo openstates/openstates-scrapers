@@ -88,6 +88,7 @@ class TXEventScraper(Scraper, LXMLMixin):
         chair = None
         if "CHAIR" in metainfo:
             chair = metainfo["CHAIR"]
+            chair = re.sub(r"(Rep\. |Senator |Representative |Sen\. )", "", chair)
 
         plaintext = re.sub(r"\s+", " ", plaintext).strip()
         bills = bill_re.findall(plaintext)
