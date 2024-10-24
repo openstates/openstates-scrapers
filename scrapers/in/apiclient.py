@@ -5,7 +5,7 @@ import functools
 
 """
 API key must be passed as a header. You need the following headers to get JSON:
-Authorization = your_apikey
+x-api-key = your_apikey
 Accept = "application/json"
 
 If you're trying to hit api links through your browser you
@@ -48,26 +48,29 @@ def check_response(method):
 
 class ApiClient(object):
     """
-    docs: http://docs.api.iga.in.gov/
+    docs: https://docs.beta-api.iga.in.gov
     """
 
-    root = "https://api.iga.in.gov/"
+    root = "https://beta-api.iga.in.gov"
     resources = dict(
-        sessions="/sessions",
+        sessions="/",
         subjects="/{session}/subjects",
         chambers="/{session}/chambers",
         bills="/{session}/bills",
-        bill="/{session}/bills/{bill_id}",
+        bill="{bill_link}",
         chamber_bills="/{session}/chambers/{chamber}/bills",
-        # note that rollcall_id has to be pulled off the URL, it's NOT the rollcall_number
-        rollcalls="/{session}/rollcalls/{rollcall_id}",
-        bill_actions="/{session}/bills/{bill_id}/actions",
+        rollcalls="/{session}/rollcalls",
+        rollcall="{rollcall_link}",
+        meetings="/{session}/meetings",
+        meeting="{meeting_link}",
+        bill_actions="{action_link}",
         committees="/{session}/committees",
-        committee="/{committee_link}",
+        committee="{committee_link}",
         legislators="/{session}/legislators",
-        legislator="/{session}/legislators/{legislator_id}",
+        legislator="{legislator_link}",
         chamber_legislators="/{session}/chambers/{chamber}/legislators",
         bill_version="/{session}/bills/{bill_id}/versions/{version_id}",
+        fiscal_notes="/{session}/fiscal-notes",
     )
 
     def __init__(self, scraper):
@@ -78,7 +81,7 @@ class ApiClient(object):
     @check_response
     def geturl(self, url):
         headers = {}
-        headers["Authorization"] = self.apikey
+        headers["x-api-key"] = self.apikey
         headers["Accept"] = "application/json"
         headers["User-Agent"] = self.user_agent
         self.scraper.info("Api GET next page: %r, %r" % (url, headers))
@@ -87,7 +90,7 @@ class ApiClient(object):
     @check_response
     def get_relurl(self, url):
         headers = {}
-        headers["Authorization"] = self.apikey
+        headers["x-api-key"] = self.apikey
         headers["Accept"] = "application/json"
         headers["User-Agent"] = self.user_agent
         url = urljoin(self.root, url)
@@ -113,7 +116,7 @@ class ApiClient(object):
         requests_args = requests_args or ()
         requests_kwargs = requests_kwargs or {}
         headers = requests_kwargs.get("headers", {})
-        headers["Authorization"] = self.apikey
+        headers["x-api-key"] = self.apikey
         headers["Accept"] = "application/json"
         headers["User-Agent"] = self.user_agent
         requests_kwargs["headers"] = headers

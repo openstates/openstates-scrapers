@@ -1,5 +1,6 @@
 import re
 import datetime
+from urllib.parse import urljoin
 import lxml
 import os
 from collections import OrderedDict
@@ -184,7 +185,7 @@ class INBillScraper(Scraper):
 
             yield vote
 
-    def deal_with_version(self, version, bill, bill_id, chamber, session):
+    def deal_with_latest_version(self, version, bill, api_base_url, session):
         # documents
         docs = OrderedDict()
         docs["Committee Amendment"] = version.get("cmte_amendments", [])
@@ -202,7 +203,7 @@ class INBillScraper(Scraper):
             doc_list = docs[doc_type]
             for doc in doc_list:
                 title = "{doc_type}: {name}".format(doc_type=doc_type, name=doc["name"])
-                link = f"https://iga.in.gov/pdf-documents/{self.session_prefixes[session]}{doc['link']}.pdf"
+                link = f"{api_base_url}{doc['link']}?format=pdf"
                 if link not in urls_seen:
                     urls_seen.append(link)
                     bill.add_document_link(
@@ -228,7 +229,7 @@ class INBillScraper(Scraper):
             if version_chamber != api_name_chamber[1]:
                 versions_match = False
 
-        link = f"https://iga.in.gov/pdf-documents/{self.session_prefixes[session]}{version['link']}.pdf"
+        link = f"{api_base_url}{doc['link']}?format=pdf"
         # if the chambers don't match, swap the chamber on version name
         # ex: Engrossed Senate Bill (S) to Engrossed Senate Bill (H)
         name = (
@@ -259,83 +260,6 @@ class INBillScraper(Scraper):
             bill.add_version_link(
                 note=name, url=link, media_type="application/pdf", date=update_date
             )
-
-    def scrape_web_versions(self, session, bill, bill_id):
-        # found via web inspector of the requests to
-        # https://iga.in.gov/documents/{doc_id}
-        # the web url for downloading a doc is https://iga.in.gov/documents/{doc_id}/download
-        # where doc_id is the data-myiga-actiondata attribute of the link
-        # this id isn't available in the API, so we have to scrape it
-
-        # IN Web requests use cloudflare, which requires a User-Agent to be set
-        headers = {
-            "User-Agent": "openstates.org",
-        }
-
-        bill_url = self._get_bill_url(session, bill_id)
-        page = self.get(bill_url, verify=False, headers=headers).content
-        page = lxml.html.fromstring(page)
-
-        # each printing has its version, fiscalnotes, and amendments in an <li>
-        for version_section in page.xpath('//div[@id="bill-versions"]/div/ul/li'):
-            version_name = ""
-            for link in version_section.xpath(
-                'div/div[1]/a[contains(@data-myiga-action,"pdfviewer.loadpdf") and contains(@class,"accordion-header")]'
-            ):
-                doc_id = link.xpath("@data-myiga-actiondata")[0]
-                version_name = link.xpath("@title")[0]
-                # found via web inspector of the requests to
-                # http://iga.in.gov/documents/{doc_id}
-                download_link = f"https://iga.in.gov/documents/{doc_id}/download"
-                bill.add_version_link(
-                    version_name,
-                    download_link,
-                    media_type="application/pdf",
-                    on_duplicate="ignore",
-                )
-                self.info(f"Version {doc_id} {version_name} {download_link}")
-
-            for link in version_section.xpath(
-                './/li[contains(@class,"fiscalnote-item")]/a[contains(@data-myiga-action,"pdfviewer.loadpdf")][1]'
-            ):
-                doc_id = link.xpath("@data-myiga-actiondata")[0]
-                document_title = link.xpath("div[1]/text()")[0].strip()
-                document_name = "{} {}".format(version_name, document_title)
-                download_link = f"https://iga.in.gov/documents/{doc_id}/download"
-                bill.add_document_link(
-                    document_name,
-                    download_link,
-                    media_type="application/pdf",
-                    on_duplicate="ignore",
-                )
-                self.info(f"Fiscal Note {doc_id} {document_name} {download_link}")
-
-            for link in version_section.xpath(
-                './/li[contains(@class,"amendment-item")]/a[contains(@data-myiga-action,"pdfviewer.loadpdf")][1]'
-            ):
-                doc_id = link.xpath("@data-myiga-actiondata")[0]
-                document_title = link.xpath("div[1]/text()")[0].strip()
-                document_name = "{} {}".format(version_name, document_title)
-                download_link = f"https://iga.in.gov/documents/{doc_id}/download"
-                # If an amendment has passed, add it as a version, otherwise as a document
-                if "passed" in document_title.lower():
-                    bill.add_version_link(
-                        document_name,
-                        download_link,
-                        media_type="application/pdf",
-                        on_duplicate="ignore",
-                    )
-                    self.info(
-                        f"Passed Amendment  {doc_id} {document_name} {download_link}"
-                    )
-                else:
-                    bill.add_document_link(
-                        document_name,
-                        download_link,
-                        media_type="application/pdf",
-                        on_duplicate="ignore",
-                    )
-                    self.info(f"Amendment {doc_id} {document_name} {download_link}")
 
     def scrape(self, session=None):
         self._bill_prefix_map = {
@@ -377,8 +301,6 @@ class INBillScraper(Scraper):
             },
         }
 
-        api_base_url = "https://api.iga.in.gov"
-
         # ah, indiana. it's really, really hard to find
         # pdfs in their web interface. Super easy with
         # the api, but a key needs to be passed
@@ -388,6 +310,8 @@ class INBillScraper(Scraper):
         # using our api key for pdf document access.
 
         client = ApiClient(self)
+        api_base_url = client.root
+
         r = client.get("bills", session=session)
         all_pages = client.unpaginate(r)
 
@@ -400,22 +324,21 @@ class INBillScraper(Scraper):
             bill_id = b["billName"]
             disp_bill_id = b["displayName"]
             bill_link = b["link"]
-            api_source = api_base_url + bill_link
+            api_source = urljoin(api_base_url, bill_link)
+
             try:
-                bill_json = client.get("bill", session=session, bill_id=bill_id.lower())
+                bill_json = client.get("bill", session=session, bill_link=bill_link)
             except scrapelib.HTTPError:
                 self.logger.warning("Bill could not be accessed. Skipping.")
                 continue
-
-            title = bill_json["description"]
-            if title == "NoneNone":
-                title = None
             # sometimes description is blank
             # if that's the case, we can check to see if
             # the latest version has a short description
+            title = bill_json["description"]
+            if "NoneNone" in title:
+                title = None
             if not title:
                 title = bill_json["latestVersion"]["shortDescription"]
-
             # and if that doesn't work, use the bill_id but throw a warning
             if not title:
                 title = bill_id
@@ -450,11 +373,11 @@ class INBillScraper(Scraper):
 
             # actions
             action_link = bill_json["actions"]["link"]
-            api_source = api_base_url + action_link
+            api_source = urljoin(api_base_url, action_link)
 
             try:
                 actions = client.get(
-                    "bill_actions", session=session, bill_id=bill_id.lower()
+                    "bill_actions", session=session, action_link=action_link
                 )
                 actions = client.unpaginate(actions)
             except scrapelib.HTTPError:
@@ -550,21 +473,12 @@ class INBillScraper(Scraper):
                     media_type="application/pdf",
                     on_duplicate="ignore",
                 )
-            # # put this behind a flag 2021-03-18 (openstates/issues#291)
-            # if not SCRAPE_WEB_VERSIONS:
-            #     # versions
-            #     self.deal_with_version(
-            #         bill_json["latestVersion"], bill, bill_id, original_chamber, session
-            #     )
-            #     for version in bill_json["versions"][::-1]:
-            #         self.deal_with_version(
-            #             version,
-            #             bill,
-            #             bill_id,
-            #             original_chamber,
-            #             session,
-            #         )
-            # else:
-            #     self.scrape_web_versions(session, bill, bill_id)
+
+            self.deal_with_latest_version(
+                bill_json["latestVersion"],
+                bill,
+                api_base_url,
+                session,
+            )
 
             yield bill
