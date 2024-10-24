@@ -14,6 +14,8 @@ class BillList(JsonPage):
     member_name_re = re.compile(r"^(Sen\.|Rep\.)\s*(.+),\s(.+)")
     comm_name_re = re.compile(r"^(House|Senate)\s*(.+)")
     version_name_re = re.compile(r"introduced|engrossment|enrollment")
+    members_cache = {}
+
     _tz = pytz.timezone("US/Central")
 
     def __init__(self, input_data):
@@ -50,15 +52,37 @@ class BillList(JsonPage):
             .split("/")[0]
             .strip()
         )
+        name_words = [w.title() for w in name_uri.split("-")]
+        if len(name_words) == 3 and len(name_words[1]) == 1:
+            return "{0} {1}. {2}".format(*name_words)
+        elif len(name_words) == 3 and len(name_words[1]) > 1:
+            return "{0} {1}-{2}".format(*name_words)
+        else:
+            return " ".join(name_words)
 
-        name_words = []
-        for w in name_uri.split("-"):
-            if len(w) == 1:
-                name_words.append(f"{w}.".title())
-            else:
-                name_words.append(w.title())
+    def get_voter_name_from_url_request(self, url: str) -> str:
+        """
+        Description:
+            Get the full name from URL Request
 
-        return " ".join(name_words)
+        Example:
+            - https://ndlegis.gov/biography/liz-conmy -> Liz Conmy
+            - https://ndlegis.gov/biography/randy-a-schobinger -> Randy A. Schobinger
+
+        """
+        if url in self.members_cache:
+            return self.members_cache[url]
+
+        html_content = requests.get(url).content
+        doc = lxml.html.fromstring(html_content)
+        doc.make_links_absolute(url)
+
+        fullname = doc.xpath("string(//h1)").strip()
+        self.members_cache[url] = (
+            fullname.replace("Representative", "").replace("Senator", "").strip()
+        )
+
+        return fullname
 
     def process_page(self):
         json_response = self.response.json()
@@ -238,19 +262,19 @@ class BillList(JsonPage):
                     './/div[@class="modal-body"]/div[./h6[contains(., "Yea")]]//a'
                 ):
                     voter_url = vote_link.attrib["href"]
-                    voter_name = self.get_voter_name_from_url(voter_url)
+                    voter_name = self.get_voter_name_from_url_request(voter_url)
                     vote.yes(voter_name)
                 for vote_link in vote_modal.xpath(
                     './/div[@class="modal-body"]/div[./h6[contains(., "Nay")]]//a'
                 ):
                     voter_url = vote_link.attrib["href"]
-                    voter_name = self.get_voter_name_from_url(voter_url)
+                    voter_name = self.get_voter_name_from_url_request(voter_url)
                     vote.no(voter_name)
                 for vote_link in vote_modal.xpath(
                     './/div[@class="modal-body"]/div[./h6[contains(., "Absent")]]//a'
                 ):
                     voter_url = vote_link.attrib["href"]
-                    voter_name = self.get_voter_name_from_url(voter_url)
+                    voter_name = self.get_voter_name_from_url_request(voter_url)
                     vote.vote("other", voter_name)
 
                 yield vote
