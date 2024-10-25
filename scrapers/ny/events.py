@@ -88,7 +88,7 @@ class NYEventScraper(Scraper):
         # careful, the committee name in the page #committee_div
         # is getting inserted via JS
         # so use the one from the table, and strip the chair name
-        com_name = re.sub(r"\(.*\)", "", meta[0])
+        com_name = re.sub(r"\(.*\)", "", meta[0]).strip()
         com_name = f"Assembly {com_name}"
 
         when = self.clean_date(meta[1])
