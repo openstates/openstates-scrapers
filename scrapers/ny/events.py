@@ -113,7 +113,10 @@ class NYEventScraper(Scraper):
         if table.xpath('.//a[contains(@href, "/leg/")]'):
             agenda = event.add_agenda_item("Bills under Consideration")
             for bill_link in table.xpath('.//a[contains(@href, "/leg/")]'):
-                agenda.add_bill(bill_link.text_content().strip())
+                bill_text = bill_link.text_content().strip()
+                # Remove trailing single character if it exists
+                bill_text = re.sub(r"[a-zA-Z]$", "", bill_text)
+                agenda.add_bill(bill_text)
 
         yield event, event_name
 
