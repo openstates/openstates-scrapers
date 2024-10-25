@@ -117,6 +117,13 @@ class PABillScraper(Scraper):
 
                 if "Amendments" in doc_title:
                     # House and Senate Amendments
+                    if "/amendments/amendment-list?searchby=amendment&" not in doc_url:
+                        self.logger.error(
+                            "Amendments URL is invalid: {} - {}".format(
+                                doc_title, doc_url
+                            )
+                        )
+                        continue
                     amend_chamber = doc_title.replace("Amendments", "").strip()
                     self.scrape_amendments(bill, doc_url, amend_chamber)
                 elif "Fiscal Note" in doc_title:
@@ -248,13 +255,39 @@ class PABillScraper(Scraper):
                 url = self.update_new_url(url)
 
             # remove duplicates of urls
-            if url in vote_urls or "roll-calls" not in url:
+            if "roll-calls" not in url and "roll-call-votes" not in url:
+                if "?committeecode=" in url:
+                    # this is the bug for a committe URL in this website scraping
+                    # like /house/senate/senate/senate?committeecode=64&rollcallid=259
+                    self.logger.warning("Invalid committe vote url: {}".format(url))
+                    rc_chamber = url.replace("https://www.palegis.us/", "").split("/")[
+                        0
+                    ]
+                    url = "https://www.palegis.us/{}/committees/roll-call-votes/vote-summary?{}".format(
+                        rc_chamber, url.split("?")[1]
+                    )
+                    self.logger.warning("is updated to {}".format(url))
+                elif "rcNum" in url:
+                    # like /house/senate/senate/senate?sessYr=2023&sessInd=0&rcNum=1321
+                    self.logger.warning("Invalid floor vote url: {}".format(url))
+                    rc_chamber = url.replace("https://www.palegis.us/", "").split("/")[
+                        0
+                    ]
+                    url = "https://www.palegis.us/{}/roll-calls/summary?{}".format(
+                        rc_chamber, url.split("?")[1]
+                    )
+                    self.logger.warning("is updated to {}".format(url))
+                else:
+                    self.logger.warning("Vote URL is invalid: {}".format(url))
+                    continue
+            if url in vote_urls:
+                self.logger.debug("Vote URL is duplicated: {}".format(url))
                 continue
             vote_urls.append(url)
 
             bill.add_source(url)
-            doc = self.get(url).text
-            doc = lxml.html.fromstring(doc)
+            html = self.get(url).text
+            doc = lxml.html.fromstring(html)
             doc.make_links_absolute(url)
 
             if "/roll-calls/" in url:
@@ -263,8 +296,7 @@ class PABillScraper(Scraper):
                 yield from self.parse_committee_votes(bill, doc, url)
             else:
                 msg = "Unexpected vote url: %r" % url
-                print(msg)
-                # raise Exception(msg)
+                self.logger.warning(msg)
                 continue
 
     def parse_chamber_votes(self, bill, page, url):
@@ -277,7 +309,22 @@ class PABillScraper(Scraper):
             .strip()
         )
         date_str = re.sub(r"\s+", " ", date_str)
-        date = datetime.datetime.strptime(date_str, "%A %b %d, %Y %I:%M %p")
+        if date_str:
+            self.logger.info("URL: {}, Date: {}".format(url, date_str))
+            date = tz.localize(
+                datetime.datetime.strptime(date_str, "%A %b %d, %Y %I:%M %p")
+            )
+        else:
+            date_href = page.xpath(
+                '//div[contains(@class, "col-main")]//div[./div[contains(text(), "Vote Date")]]//a/@href'
+            )
+            if not date_href:
+                self.logger.warning("Vote date format is invalid: {}".format(url))
+                return
+            date_href = date_href[0]
+            date_str = date_href.split("=")[-1].strip()
+            self.logger.info("URL: {}, Date: {}".format(url, date_str))
+            date = tz.localize(datetime.datetime.strptime(date_str, "%Y-%m-d"))
 
         xpath = 'string(//div[contains(@class,h6)][contains(text(), "Action")]/..)'
         motion = page.xpath(xpath).replace("Action", "").strip()
@@ -320,7 +367,7 @@ class PABillScraper(Scraper):
 
         vote = VoteEvent(
             chamber=chamber,
-            start_date=tz.localize(date),
+            start_date=date,
             motion_text=motion,
             classification=type,
             result="pass" if yeas > (nays + other) else "fail",
@@ -374,8 +421,8 @@ class PABillScraper(Scraper):
         date = doc.xpath(
             'string(//div[contains(@class, "detailsLabel")][contains(., "Date")]/following-sibling::div/a)'
         ).strip()
-        date = datetime.datetime.strptime(date, "%B %d, %Y")
-
+        date = tz.localize(datetime.datetime.strptime(date, "%B %d, %Y"))
+        self.logger.info("Committe Vote Date: {}, URL: {}".format(date, url))
         # Motion
         motion = doc.xpath(
             'string(//div[contains(@class, "portlet ")]//div[contains(@class, "h5 ")][contains(., "Motion:")]/span[2])'
@@ -387,7 +434,7 @@ class PABillScraper(Scraper):
 
         vote = VoteEvent(
             chamber=chamber,
-            start_date=tz.localize(date),
+            start_date=date,
             motion_text=motion,
             classification=[],
             result="pass" if rollcall["passed"] else "fail",
