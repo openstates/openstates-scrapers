@@ -237,7 +237,10 @@ class Pennsylvania(State):
             self.ignored_scraped_sessions.append("{} Regular Session".format(i))
             self.ignored_scraped_sessions.append("{} Special Session #1".format(i))
 
-        return url_xpath(
-            "http://www.legis.state.pa.us/cfdocs/legis/home/bills/",
-            '//select[@id="billSessions"]/option/text()',
-        )
+        return [
+            session.strip()
+            for session in url_xpath(
+                "https://www.palegis.us/legislation/bills",
+                '//select[@id="sessionSelect"]/option/text()',
+            )
+        ]
