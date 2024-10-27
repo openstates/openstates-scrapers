@@ -1,7 +1,6 @@
 import re
 import datetime
 from urllib.parse import urljoin
-import lxml
 import os
 from collections import OrderedDict
 
