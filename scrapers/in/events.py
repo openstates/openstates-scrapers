@@ -85,7 +85,7 @@ class INEventScraper(Scraper):
             agenda = event.add_agenda_item("Bills under consideration")
 
             agendas = meeting.get("agenda")
-            if type(agendas) == str:
+            if type(agendas) is str:
                 agendas = json.loads(meeting.get("agenda"))
 
             for agenda_item in agendas:
