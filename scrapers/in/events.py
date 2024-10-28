@@ -52,11 +52,11 @@ class INEventScraper(Scraper):
             if time:
                 time = time.replace(" ", "")
                 when = dateutil.parser.parse(f"{date} {time}")
+                when = self._tz.localize(when)
                 all_day = False
             else:
                 when = dateutil.parser.parse(date).date()
                 all_day = True
-            when = self._tz.localize(when)
 
             location = meeting["location"] or "See Agenda"
 
