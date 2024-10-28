@@ -14,18 +14,18 @@ class INCommitteeScraper(Scraper):
     def process_special_members(self, comm, comm_json, role_name):
         role_dict = {
             "chair": "Chair",
+            "co-chairs": "Chair",
             "viceChair": "Vice Chair",
             "rankingMinMember": "Ranking Minority Member",
         }
-        try:
-            mem = comm_json[role_name]
-        except KeyError:
-            return
-        if mem:
-            person = mem["firstName"] + " " + mem["lastName"]
+
+        members = []
+        for member in comm_json[role_name]:
+            person = member["firstName"] + " " + member["lastName"]
             comm.add_member(person, role=role_dict[role_name])
-            return person
-        return None
+            members.append(person)
+
+        return members
 
     def get_subcommittee_info(self, session):
         # api gives NO way of finding out who owns
@@ -54,7 +54,7 @@ class INCommitteeScraper(Scraper):
     def scrape(self, session):
         subcomms = self.get_subcommittee_info(session)
 
-        api_base_url = "https://api.iga.in.gov"
+        api_base_url = "https://beta-api.iga.in.gov"
         html_base_url = "http://iga.in.gov/legislative/{}/committees/".format(session)
         client = ApiClient(self)
         r = client.get("committees", session=session)
@@ -74,7 +74,7 @@ class INCommitteeScraper(Scraper):
                 continue
             try:
                 chamber = comm_json["chamber"]["name"]
-            except KeyError:
+            except TypeError:
                 chamber = "joint"
             else:
                 if chamber == "Senate":
@@ -109,13 +109,18 @@ class INCommitteeScraper(Scraper):
                     classification="committee",
                 )
 
-            chair = self.process_special_members(comm, comm_json, "chair")
-            vicechair = self.process_special_members(comm, comm_json, "viceChair")
-            ranking = self.process_special_members(comm, comm_json, "rankingMinMember")
+            chairs = self.process_special_members(comm, comm_json, "chair")
+            cochairs = self.process_special_members(comm, comm_json, "co-chairs")
+            vicechairs = self.process_special_members(comm, comm_json, "viceChair")
+            rankingMinMembers = self.process_special_members(
+                comm, comm_json, "rankingMinMember"
+            )
 
             # leadership is also listed in membership
             # so we have to make sure we haven't seen them yet
-            comm_members = [m for m in [chair, vicechair, ranking] if m]
+            comm_members = [
+                m for m in [*chairs, *cochairs, *vicechairs, *rankingMinMembers] if m
+            ]
 
             for mem in comm_json["members"]:
                 mem_name = mem["firstName"] + " " + mem["lastName"]
