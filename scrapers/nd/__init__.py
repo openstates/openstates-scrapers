@@ -1,5 +1,4 @@
 from openstates.scrape import State
-from .votes import NDVoteScraper
 from .bills import NDBillScraper
 from .events import NDEventScraper
 
@@ -13,7 +12,6 @@ settings = {
 
 class NorthDakota(State):
     scrapers = {
-        "votes": NDVoteScraper,
         "bills": NDBillScraper,
         "events": NDEventScraper,
     }
