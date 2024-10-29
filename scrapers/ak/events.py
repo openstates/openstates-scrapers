@@ -2,6 +2,7 @@ import pytz
 import lxml
 import dateutil.parser
 import re
+import requests
 
 from utils import LXMLMixin
 from utils.events import match_coordinates
@@ -112,6 +113,9 @@ class AKEventScraper(Scraper, LXMLMixin):
         )
         event.dedupe_key = event_name
 
+        event.add_source(
+            f"https://www.akleg.gov/basis/Meeting/Detail?Meeting={row.xpath('string(chamber)')}{committee_code}%20{start_date.strftime('%Y-%m-%d%%20%H:00:00')}"
+        )
         event.add_source("http://w3.akleg.gov/index.php#tab4")
 
         if committee_code in self.COMMITTEES[chamber]:
@@ -138,6 +142,16 @@ class AKEventScraper(Scraper, LXMLMixin):
                     bill_id = re.sub(r"\s+", " ", bill_id)
                     agenda_item.add_bill(bill_id)
 
+        # we don't have a way to get the video/audio links from the API, but the url format is predictable.
+        # not every hearing has media though, so do a HEAD request to check for it.
+        com_abbr = f"{row.xpath('string(chamber)')}{committee_code}".lower()
+
+        # https://www.akleg.gov/video/2024/20240511/ssta/ssta_1530.m4v
+        video_url = f"https://www.akleg.gov/video/{start_date.strftime('%Y')}/{start_date.strftime('%Y%m%d')}/{com_abbr}/{com_abbr}_{start_date.strftime('%H%M')}.m4v"
+        r = requests.head(video_url)
+        if r.status_code == 200:
+            event.add_media_link("Video", video_url, media_type="video/mp4")
+
         yield event, event_name
 
     def scrape_committees(self, session):
@@ -162,9 +176,10 @@ class AKEventScraper(Scraper, LXMLMixin):
         # http://www.legis.state.ak.us/publicservice/basis/meetings?minifyresult=false&session=31
         # X-Alaska-Legislature-Basis-Version:1.2
         # X-Alaska-Legislature-Basis-Query:meetings;details
-        headers["X-Alaska-Legislature-Basis-Version"] = "1.2"
+        headers["X-Alaska-Legislature-Basis-Version"] = "1.4"
 
         url = "{}{}".format(self.API_BASE, path)
         page = self.get(url, params=args, headers=headers, verify=False)
+        # print(page.content)
         page = lxml.etree.fromstring(page.content)
         return page
