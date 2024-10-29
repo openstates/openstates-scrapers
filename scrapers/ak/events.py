@@ -174,12 +174,11 @@ class AKEventScraper(Scraper, LXMLMixin):
         # http://www.akleg.gov/basis/BasisPublicServiceAPI.pdf
 
         # http://www.legis.state.ak.us/publicservice/basis/meetings?minifyresult=false&session=31
-        # X-Alaska-Legislature-Basis-Version:1.2
+        # X-Alaska-Legislature-Basis-Version:1.4
         # X-Alaska-Legislature-Basis-Query:meetings;details
         headers["X-Alaska-Legislature-Basis-Version"] = "1.4"
 
         url = "{}{}".format(self.API_BASE, path)
         page = self.get(url, params=args, headers=headers, verify=False)
-        # print(page.content)
         page = lxml.etree.fromstring(page.content)
         return page
