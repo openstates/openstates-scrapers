@@ -26,13 +26,6 @@ class INBillScraper(Scraper):
 
     _tz = pytz.timezone("US/Eastern")
 
-    # prefixes for PDF files for session
-    session_prefixes = {
-        "2024": "123",
-        "2023": "123",
-        "2022": "122",
-    }
-
     def _get_bill_id_components(self, bill_id):
         bill_prefix = "".join([c for c in bill_id if c.isalpha()])
         bill_number = "".join([c for c in bill_id if c.isdigit()]).lstrip("0")
@@ -184,7 +177,12 @@ class INBillScraper(Scraper):
 
             yield vote
 
-    def deal_with_latest_version(self, version, bill, api_base_url, session):
+    def deal_with_latest_version(
+        self,
+        version,
+        bill,
+        api_base_url,
+    ):
         # documents
         docs = OrderedDict()
         docs["Committee Amendment"] = version.get("cmte_amendments", [])
@@ -310,7 +308,7 @@ class INBillScraper(Scraper):
 
         client = ApiClient(self)
         api_base_url = client.root
-
+        self.session_no = client.get_session_no(session)
         r = client.get("bills", session=session)
         all_pages = client.unpaginate(r)
 
@@ -323,12 +321,18 @@ class INBillScraper(Scraper):
             bill_id = b["billName"]
             disp_bill_id = b["displayName"]
             bill_link = b["link"]
+
             api_source = urljoin(api_base_url, bill_link)
 
             try:
                 bill_json = client.get("bill", session=session, bill_link=bill_link)
             except scrapelib.HTTPError:
                 self.logger.warning("Bill could not be accessed. Skipping.")
+                continue
+
+            # vehicle bill
+            if len(list(bill_json.keys())) == 0:
+                self.logger.warning("Vehicle Bill: {}".format(bill_id))
                 continue
             # sometimes description is blank
             # if that's the case, we can check to see if
@@ -465,7 +469,7 @@ class INBillScraper(Scraper):
                 # note there are a number of links in the API response that won't work with just a browser, they need an api key
                 # https://iga.in.gov/pdf-documents/123/2024/house/resolutions/HC0001/HC0001.01.INTR.pdf
                 category = "resolutions" if "resolution" in bill_type else "bills"
-                url = f"https://iga.in.gov/pdf-documents/{self.session_prefixes[session]}/{bill_json['year']}/{bill_json['originChamber']}/{category}/{v['billName']}/{v['printVersionName']}.pdf"
+                url = f"https://iga.in.gov/pdf-documents/{self.session_no}/{bill_json['year']}/{bill_json['originChamber']}/{category}/{v['billName']}/{v['printVersionName']}.pdf"
                 bill.add_version_link(
                     v["stageVerbose"],
                     url,
@@ -477,7 +481,6 @@ class INBillScraper(Scraper):
                 bill_json["latestVersion"],
                 bill,
                 api_base_url,
-                session,
             )
 
             yield bill

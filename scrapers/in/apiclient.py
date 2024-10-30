@@ -1,7 +1,9 @@
 import os
+import re
 import time
 from urllib.parse import urljoin
 import functools
+import requests
 
 """
 API key must be passed as a header. You need the following headers to get JSON:
@@ -54,6 +56,7 @@ class ApiClient(object):
     root = "https://beta-api.iga.in.gov"
     resources = dict(
         sessions="/",
+        session="/{session}",
         subjects="/{session}/subjects",
         chambers="/{session}/chambers",
         bills="/{session}/bills",
@@ -71,12 +74,38 @@ class ApiClient(object):
         chamber_legislators="/{session}/chambers/{chamber}/legislators",
         bill_version="/{session}/bills/{bill_id}/versions/{version_id}",
         fiscal_notes="/{session}/fiscal-notes",
+        document="{doc_link}",
     )
 
     def __init__(self, scraper):
         self.scraper = scraper
         self.apikey = os.environ["INDIANA_API_KEY"]
         self.user_agent = os.getenv("USER_AGENT", "openstates")
+
+    def get_session_no(self, session):
+        session_no = ""
+        headers = {}
+        headers["x-api-key"] = self.apikey
+        headers["Accept"] = "application/json"
+        headers["User-Agent"] = self.user_agent
+        url = urljoin(self.root, f"/{session}")
+        resp = requests.get(url, headers=headers).json()
+        session_no_regex = re.search(r"Session\s+(\d+).+", resp["name"])
+
+        if session_no_regex:
+            session_no = session_no_regex.group(1)
+
+        return session_no
+
+    def get_document_url(self, url):
+        headers = {}
+        headers["x-api-key"] = self.apikey
+        headers["Accept"] = "application/pdf"
+        headers["User-Agent"] = self.user_agent
+        url = urljoin(self.root, url)
+        resp = requests.get(url, headers=headers, allow_redirects=False)
+        if "Location" in resp.headers:
+            return resp.headers["Location"]
 
     @check_response
     def geturl(self, url):
@@ -91,7 +120,7 @@ class ApiClient(object):
     def get_relurl(self, url):
         headers = {}
         headers["x-api-key"] = self.apikey
-        headers["Accept"] = "application/json"
+        headers["Accept"] = "application/pdf"
         headers["User-Agent"] = self.user_agent
         url = urljoin(self.root, url)
         self.scraper.info("Api GET: %r, %r" % (url, headers))

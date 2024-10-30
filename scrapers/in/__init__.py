@@ -3,6 +3,7 @@ import requests
 from openstates.scrape import State
 from .bills import INBillScraper
 from .events import INEventScraper
+from .committees import INCommitteeScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=600)
 

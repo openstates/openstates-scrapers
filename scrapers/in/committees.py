@@ -14,13 +14,13 @@ class INCommitteeScraper(Scraper):
     def process_special_members(self, comm, comm_json, role_name):
         role_dict = {
             "chair": "Chair",
-            "co-chairs": "Chair",
+            "co_chairs": "Chair",
             "viceChair": "Vice Chair",
             "rankingMinMember": "Ranking Minority Member",
         }
 
         members = []
-        for member in comm_json[role_name]:
+        for member in comm_json.get(role_name, []):
             person = member["firstName"] + " " + member["lastName"]
             comm.add_member(person, role=role_dict[role_name])
             members.append(person)
@@ -74,7 +74,7 @@ class INCommitteeScraper(Scraper):
                 continue
             try:
                 chamber = comm_json["chamber"]["name"]
-            except TypeError:
+            except Exception:
                 chamber = "joint"
             else:
                 if chamber == "Senate":
@@ -85,9 +85,11 @@ class INCommitteeScraper(Scraper):
                     raise AssertionError("Unknown committee chamber {}".format(chamber))
 
             name = comm_json["name"]
+            if not name:
+                continue
             try:
                 owning_comm = subcomms[name]
-            except KeyError:
+            except Exception:
                 name = name.replace("Statutory Committee on", "").strip()
                 comm = Organization(
                     name=name, chamber=chamber, classification="committee"
@@ -110,7 +112,7 @@ class INCommitteeScraper(Scraper):
                 )
 
             chairs = self.process_special_members(comm, comm_json, "chair")
-            cochairs = self.process_special_members(comm, comm_json, "co-chairs")
+            cochairs = self.process_special_members(comm, comm_json, "co_chairs")
             vicechairs = self.process_special_members(comm, comm_json, "viceChair")
             rankingMinMembers = self.process_special_members(
                 comm, comm_json, "rankingMinMember"

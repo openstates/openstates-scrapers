@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from datetime import date
 from urllib.parse import urljoin
 
@@ -29,6 +30,7 @@ class INEventScraper(Scraper):
         super().__init__(*args, **kwargs)
 
     def scrape(self):
+        session_no = self.apiclient.get_session_no(self.session)
         response = self.apiclient.get("meetings", session=self.session)
         meetings = response["meetings"]
         if len(meetings["items"]) == 0:
@@ -46,7 +48,20 @@ class INEventScraper(Scraper):
 
             link = urljoin(self.base_url, meeting["link"])
             _id = link.split("/")[-1]
-
+            committee_name = (
+                committee["name"]
+                .replace(",", "")
+                .replace("Committee on", "Committee")
+                .strip()
+            )
+            committee_type = (
+                "conference"
+                if "Conference" in committee["name"]
+                else ("standing" if committee["chamber"] else "interim")
+            )
+            committee_chamber = (
+                committee["chamber"].lower() if committee["chamber"] else "universal"
+            )
             date = meeting["meetingdate"].replace(" ", "")
             time = meeting["starttime"]
             if time:
@@ -63,11 +78,10 @@ class INEventScraper(Scraper):
             video_url = (
                 f"https://iga.in.gov/legislative/{self.session}/meeting/watchlive/{_id}"
             )
-
-            event_name = f"{committee['chamber']}#{committee['name']}#{location}#{when}"
+            event_name = f"{committee['chamber']}#{committee_name}#{location}#{when}"
 
             event = Event(
-                name=committee["name"],
+                name=committee_name,
                 start_date=when,
                 all_day=all_day,
                 location_name=location,
@@ -75,24 +89,53 @@ class INEventScraper(Scraper):
             )
             event.dedupe_key = event_name
             event.add_source(link, note="API details")
-            name_slug = committee["name"].lower().replace(" ", "-")
+            name_slug = committee_name.lower().replace(" ", "-")
+            name_slug = re.sub("[^a-zA-Z0-9]+", "-", committee_name.lower())
+            document_url = f"https://iga.in.gov/pdf-documents/{session_no}/{self.session}/{committee_chamber}/committees/{committee_type}/{name_slug}/{_id}/meeting.pdf"
+
             event.add_source(
-                f"https://iga.in.gov/{self.session}/committees/{committee['chamber'].lower()}/{name_slug}",
+                f"https://iga.in.gov/{self.session}/committees/{committee['chamber'].lower() or 'interim'}/{name_slug}",
                 note="Committee Schedule",
             )
-            event.add_participant(committee["name"], type="committee", note="host")
+            event.add_participant(committee_name, type="committee", note="host")
+            event.add_document(
+                "Meeting Agenda", document_url, media_type="applicaiton/pdf"
+            )
             event.add_media_link("Video of Hearing", video_url, media_type="text/html")
-            agenda = event.add_agenda_item("Bills under consideration")
 
-            agendas = meeting.get("agenda")
+            agendas = meeting["agenda"]
             if type(agendas) is str:
-                agendas = json.loads(meeting.get("agenda"))
+                agendas = json.loads(meeting["agenda"])
+            if agendas:
+                agenda = event.add_agenda_item("Bills under consideration")
 
             for agenda_item in agendas:
-                if not agenda_item.get("bill", None):
-                    continue
-                bill_id = agenda_item["bill"].get("billName")
-                bill_id = add_space(bill_id)
-                agenda.add_bill(bill_id)
+                if agenda_item.get("bill", None):
+                    bill_id = agenda_item["bill"].get("billName")
+                    bill_id = add_space(bill_id)
+                    agenda.add_bill(bill_id)
+                else:
+                    agenda.add_subject(agenda_item["description"])
+
+            for exhibit in meeting.get("exhibits"):
+                exhibit_pdf_url = self.apiclient.get_document_url(
+                    exhibit["pdfDownloadLink"]
+                )
+                self.logger.info(exhibit["pdfDownloadLink"])
+                if exhibit_pdf_url:
+                    event.add_document(
+                        exhibit["description"],
+                        exhibit_pdf_url,
+                        media_type="application/pdf",
+                    )
+
+            for minute in meeting.get("minutes"):
+                if minute["link"]:
+                    minute_pdf_url = f"https://iga.in.gov/pdf-documents/{session_no}/{self.session}/{committee_chamber}/committees/{committee_type}/{name_slug}/{_id}/{_id}_minutes.pdf"
+                    event.add_document(
+                        "Meeting Minutes",
+                        minute_pdf_url,
+                        media_type="application/pdf",
+                    )
 
             yield event
