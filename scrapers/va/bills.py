@@ -1,3 +1,5 @@
+import re
+
 import dateutil
 import json
 import lxml
@@ -10,6 +12,8 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from .actions import Categorizer
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+four_digit_regex = re.compile("[0-9]{4}")
 
 
 class VaBillScraper(Scraper):
@@ -80,6 +84,7 @@ class VaBillScraper(Scraper):
 
             self.add_actions(bill, row["LegislationID"])
             self.add_versions(bill, row["LegislationID"])
+            self.add_carryover_related_bill(bill)
             self.add_sponsors(bill, row["Patrons"])
             yield from self.add_votes(bill, row["LegislationID"])
             bill.add_abstract(subtitle, note="title")
@@ -123,6 +128,25 @@ class VaBillScraper(Scraper):
             if row["ReferenceNumber"]:
                 ref_num = row["ReferenceNumber"].split(".")[0]
                 self.ref_num_map[ref_num] = row["Description"]
+
+    def add_carryover_related_bill(self, bill: Bill):
+        # Many bills are carried from one session to the next
+        # but this does not apply to special sessions
+        if four_digit_regex.fullmatch(bill.legislative_session) is not None:
+            prior_session = int(bill.legislative_session) - 1
+        else:
+            return
+
+        has_carryover_action = False
+        for action in bill.actions:
+            if (
+                f"continued to {bill.legislative_session}"
+                in action["description"].lower()
+            ):
+                has_carryover_action = True
+
+        if has_carryover_action:
+            bill.add_related_bill(bill.identifier, f"{prior_session}", "prior-session")
 
     def add_sponsors(self, bill: Bill, sponsors: list):
         for row in sponsors:
