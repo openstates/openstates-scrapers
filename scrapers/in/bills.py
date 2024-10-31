@@ -207,57 +207,6 @@ class INBillScraper(Scraper):
                         note=title, url=link, media_type="application/pdf"
                     )
 
-        # version which can sometimes have the wrong stageVerbose
-        # add check that last letter of printVersionName matches
-        # ex: stageVerbose being House Bill (H)
-        # and printVersionName being HB1189.03.COMS and the link
-        # being for HB1189.03.COMS which is the Senate bill
-        # some example bills in 2020 are HB1189, SB241, SB269, HC18
-        versions_match = True
-        # get version chamber and api name, check chamber
-        version_chamber = version["printVersionName"][-1]
-        api_version_name = version["stageVerbose"]
-        # check any versions not enrolled or introduced which are correct
-        api_name_chamber = re.search(
-            r"^(?:Engrossed |)(?:House|Senate) (?:Bill|Resolution) \((.)\)",
-            api_version_name,
-        )
-        if api_name_chamber is not None:
-            if version_chamber != api_name_chamber[1]:
-                versions_match = False
-
-        link = f"{api_base_url}{version['link']}?format=pdf"
-        # if the chambers don't match, swap the chamber on version name
-        # ex: Engrossed Senate Bill (S) to Engrossed Senate Bill (H)
-        name = (
-            api_version_name
-            if versions_match
-            else api_version_name[:-2] + version_chamber + api_version_name[-1:]
-        )
-        if link not in urls_seen:
-            urls_seen.append(link)
-            update_date = version["updated"]
-            create_date = version["created"]
-            intro_date = version["introduced"]
-            file_date = version["filed"]
-            for d in [update_date, create_date, intro_date, file_date]:
-                try:
-                    # pupa choked when I passed datetimes, so passing dates only.
-                    # If we figure out how to make pupa not choke, here's the line you want:
-                    # ## #
-                    # self._tz.localize(datetime.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S"))
-                    update_date = datetime.datetime.strptime(
-                        d, "%Y-%m-%dT%H:%M:%S"
-                    ).date()
-                except TypeError:
-                    continue
-                else:
-                    break
-
-            bill.add_version_link(
-                note=name, url=link, media_type="application/pdf", date=update_date
-            )
-
     def scrape(self, session=None):
         self._bill_prefix_map = {
             "HB": {"type": "bill", "url_segment": "bills/house"},
