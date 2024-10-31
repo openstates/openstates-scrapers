@@ -85,7 +85,6 @@ class INEventScraper(Scraper):
             )
             event.dedupe_key = event_name
             event.add_source(link, note="API details")
-            name_slug = committee_name.lower().replace(" ", "-")
             name_slug = re.sub("[^a-zA-Z0-9]+", "-", committee_name.lower())
 
             document_url = f"https://iga.in.gov/pdf-documents/{session_no}/{self.session}/{committee_chamber}/committees/{committee_type}/{name_slug}/{_id}/meeting.pdf"
@@ -96,7 +95,7 @@ class INEventScraper(Scraper):
             )
             event.add_participant(committee_name, type="committee", note="host")
             event.add_document(
-                "Meeting Agenda", document_url, media_type="applicaiton/pdf"
+                "Meeting Agenda", document_url, media_type="application/pdf"
             )
             event.add_media_link("Video of Hearing", video_url, media_type="text/html")
 
@@ -119,7 +118,7 @@ class INEventScraper(Scraper):
                 # exhibit_pdf_url = self.apiclient.get_document_url(
                 #     exhibit["pdfDownloadLink"]
                 # )
-                # Proxy URL
+                # Proxy URL used because URL provided by API is not directly accessible over the web
                 exhibit_pdf_url = urljoin(PROXY_BASE_URL, exhibit["pdfDownloadLink"])
                 self.logger.info(exhibit_pdf_url)
                 if exhibit_pdf_url:
@@ -133,7 +132,7 @@ class INEventScraper(Scraper):
                 if minute["link"]:
                     # Original URL
                     # minute_pdf_url = f"https://iga.in.gov/pdf-documents/{session_no}/{self.session}/{committee_chamber}/committees/{committee_type}/{name_slug}/{_id}/{_id}_minutes.pdf"
-                    # Proxy URL
+                    # Proxy URL used because URL provided by API is not directly accessible over the web
                     minute_pdf_url = urljoin(PROXY_BASE_URL, minute["link"])
                     event.add_document(
                         "Meeting Minutes",
