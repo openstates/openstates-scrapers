@@ -175,10 +175,10 @@ class Indiana(State):
         apikey = os.environ["INDIANA_API_KEY"]
         useragent = os.getenv("USER_AGENT", "openstates")
         headers = {
-            "Authorization": apikey,
+            "x-api-key": apikey,
             "Accept": "application/json",
             "User-Agent": useragent,
         }
-        resp = requests.get("https://api.iga.in.gov/sessions", headers=headers)
+        resp = requests.get("https://beta-api.iga.in.gov", headers=headers)
         resp.raise_for_status()
-        return [session["name"] for session in resp.json()["items"]]
+        return [session["name"] for session in resp.json()["sessions"]]
