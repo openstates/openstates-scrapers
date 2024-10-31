@@ -11,9 +11,6 @@ from .utils import add_space
 from openstates.exceptions import EmptyScrape
 
 
-PROXY_BASE_URL = "https://in-proxy.openstates.org/"
-
-
 class INEventScraper(Scraper):
     _tz = pytz.timezone("America/Indianapolis")
     base_url = "https://beta-api.iga.in.gov"
@@ -26,9 +23,10 @@ class INEventScraper(Scraper):
     def scrape(self):
         session_no = self.apiclient.get_session_no(self.session)
         response = self.apiclient.get("meetings", session=self.session)
+
         meetings = response["meetings"]
-        if len(meetings["items"]) == 0:
-            raise EmptyScrape
+        if not meetings["items"]:
+            raise EmptyScrape("No meetings found in the response.")
 
         for item in meetings["items"]:
             meeting = self.apiclient.get(
@@ -39,9 +37,6 @@ class INEventScraper(Scraper):
                 continue
 
             committee = meeting["committee"]
-
-            link = urljoin(self.base_url, meeting["link"])
-            _id = link.split("/")[-1]
             committee_name = (
                 committee["name"]
                 .replace(",", "")
@@ -56,19 +51,25 @@ class INEventScraper(Scraper):
             committee_chamber = (
                 committee["chamber"].lower() if committee["chamber"] else "universal"
             )
-            date = meeting["meetingdate"].replace(" ", "")
-            time = meeting["starttime"]
-            if time:
-                time = time.replace(" ", "")
-                when = dateutil.parser.parse(f"{date} {time}")
+
+            link = urljoin(self.base_url, meeting["link"])
+            _id = link.split("/")[-1]
+
+            date_str = meeting["meetingdate"].replace(" ", "")
+            time_str = meeting["starttime"]
+            # Determine the 'when' variable based on the presence of time
+            if time_str:
+                time_str = time_str.replace(
+                    " ", ""
+                )  # Clean up any spaces in the time string
+                when = dateutil.parser.parse(f"{date_str} {time_str}")
                 when = self._tz.localize(when)
                 all_day = False
             else:
-                when = dateutil.parser.parse(date).date()
+                when = dateutil.parser.parse(date_str).date()
                 all_day = True
 
             location = meeting["location"] or "See Agenda"
-
             video_url = (
                 f"https://iga.in.gov/legislative/{self.session}/meeting/watchlive/{_id}"
             )
@@ -83,7 +84,7 @@ class INEventScraper(Scraper):
             )
             event.dedupe_key = event_name
             event.add_source(link, note="API details")
-            name_slug = committee_name.lower().replace(" ", "-")
+
             name_slug = re.sub("[^a-zA-Z0-9]+", "-", committee_name.lower())
 
             document_url = f"https://iga.in.gov/pdf-documents/{session_no}/{self.session}/{committee_chamber}/committees/{committee_type}/{name_slug}/{_id}/meeting.pdf"
@@ -99,11 +100,9 @@ class INEventScraper(Scraper):
             event.add_media_link("Video of Hearing", video_url, media_type="text/html")
 
             agendas = meeting["agenda"]
-            if type(agendas) is str:
-                agendas = json.loads(meeting["agenda"])
-            if agendas:
-                agenda = event.add_agenda_item("Bills under consideration")
-
+            if isinstance(agendas, str):
+                agendas = json.loads(agendas)
+            agenda = event.add_agenda_item("Bills under consideration")
             for agenda_item in agendas:
                 if agenda_item.get("bill", None):
                     bill_id = agenda_item["bill"].get("billName")
@@ -114,12 +113,9 @@ class INEventScraper(Scraper):
 
             for exhibit in meeting.get("exhibits"):
                 # Original URL
-                # exhibit_pdf_url = self.apiclient.get_document_url(
-                #     exhibit["pdfDownloadLink"]
-                # )
-                # Proxy URL
-                exhibit_pdf_url = urljoin(PROXY_BASE_URL, exhibit["pdfDownloadLink"])
-                self.logger.info(exhibit_pdf_url)
+                exhibit_pdf_url = self.apiclient.get_document_url(
+                    exhibit["pdfDownloadLink"]
+                )
                 if exhibit_pdf_url:
                     event.add_document(
                         exhibit["description"],
@@ -130,9 +126,7 @@ class INEventScraper(Scraper):
             for minute in meeting.get("minutes"):
                 if minute["link"]:
                     # Original URL
-                    # minute_pdf_url = f"https://iga.in.gov/pdf-documents/{session_no}/{self.session}/{committee_chamber}/committees/{committee_type}/{name_slug}/{_id}/{_id}_minutes.pdf"
-                    # Proxy URL
-                    minute_pdf_url = urljoin(PROXY_BASE_URL, minute["link"])
+                    minute_pdf_url = f"https://iga.in.gov/pdf-documents/{session_no}/{self.session}/{committee_chamber}/committees/{committee_type}/{name_slug}/{_id}/{_id}_minutes.pdf"
                     event.add_document(
                         "Meeting Minutes",
                         minute_pdf_url,
