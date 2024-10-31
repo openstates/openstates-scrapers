@@ -1,5 +1,4 @@
 import json
-import logging
 import re
 from datetime import date
 from urllib.parse import urljoin
@@ -12,7 +11,6 @@ from .utils import add_space
 from openstates.exceptions import EmptyScrape
 
 
-log = logging.getLogger(__name__)
 PROXY_BASE_URL = "https://in-proxy.openstates.org/"
 
 
@@ -96,7 +94,7 @@ class INEventScraper(Scraper):
             )
             event.add_participant(committee_name, type="committee", note="host")
             event.add_document(
-                "Meeting Agenda", document_url, media_type="applicaiton/pdf"
+                "Meeting Agenda", document_url, media_type="application/pdf"
             )
             event.add_media_link("Video of Hearing", video_url, media_type="text/html")
 
