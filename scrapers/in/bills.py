@@ -226,7 +226,7 @@ class INBillScraper(Scraper):
             if version_chamber != api_name_chamber[1]:
                 versions_match = False
 
-        link = f"{api_base_url}{doc['link']}?format=pdf"
+        link = f"{api_base_url}{version['link']}?format=pdf"
         # if the chambers don't match, swap the chamber on version name
         # ex: Engrossed Senate Bill (S) to Engrossed Senate Bill (H)
         name = (
@@ -385,7 +385,7 @@ class INBillScraper(Scraper):
                 actions = client.unpaginate(actions)
             except scrapelib.HTTPError:
                 self.logger.warning("Could not find bill actions page")
-                actions = {"items": []}
+                actions = []
 
             for a in actions:
                 action_desc = a["description"]
