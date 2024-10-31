@@ -13,15 +13,11 @@ from openstates.exceptions import EmptyScrape
 
 
 log = logging.getLogger(__name__)
+PROXY_BASE_URL = "https://in-proxy.openstates.org/"
 
 
 class INEventScraper(Scraper):
     _tz = pytz.timezone("America/Indianapolis")
-    # avoid cloudflare blocks for no UA
-    cf_headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/108.0.0.0 Safari/537.36"  # noqa
-    }
     base_url = "https://beta-api.iga.in.gov"
     session = date.today().year
 
@@ -91,6 +87,7 @@ class INEventScraper(Scraper):
             event.add_source(link, note="API details")
             name_slug = committee_name.lower().replace(" ", "-")
             name_slug = re.sub("[^a-zA-Z0-9]+", "-", committee_name.lower())
+
             document_url = f"https://iga.in.gov/pdf-documents/{session_no}/{self.session}/{committee_chamber}/committees/{committee_type}/{name_slug}/{_id}/meeting.pdf"
 
             event.add_source(
@@ -118,10 +115,13 @@ class INEventScraper(Scraper):
                     agenda.add_subject(agenda_item["description"])
 
             for exhibit in meeting.get("exhibits"):
-                exhibit_pdf_url = self.apiclient.get_document_url(
-                    exhibit["pdfDownloadLink"]
-                )
-                self.logger.info(exhibit["pdfDownloadLink"])
+                # Original URL
+                # exhibit_pdf_url = self.apiclient.get_document_url(
+                #     exhibit["pdfDownloadLink"]
+                # )
+                # Proxy URL
+                exhibit_pdf_url = urljoin(PROXY_BASE_URL, exhibit["pdfDownloadLink"])
+                self.logger.info(exhibit_pdf_url)
                 if exhibit_pdf_url:
                     event.add_document(
                         exhibit["description"],
@@ -131,7 +131,10 @@ class INEventScraper(Scraper):
 
             for minute in meeting.get("minutes"):
                 if minute["link"]:
-                    minute_pdf_url = f"https://iga.in.gov/pdf-documents/{session_no}/{self.session}/{committee_chamber}/committees/{committee_type}/{name_slug}/{_id}/{_id}_minutes.pdf"
+                    # Original URL
+                    # minute_pdf_url = f"https://iga.in.gov/pdf-documents/{session_no}/{self.session}/{committee_chamber}/committees/{committee_type}/{name_slug}/{_id}/{_id}_minutes.pdf"
+                    # Proxy URL
+                    minute_pdf_url = urljoin(PROXY_BASE_URL, minute["link"])
                     event.add_document(
                         "Meeting Minutes",
                         minute_pdf_url,

@@ -311,7 +311,7 @@ class INBillScraper(Scraper):
             )
 
             bill.add_source(self._get_bill_url(session, bill_id))
-            bill.add_source(api_source)
+            bill.add_source(api_source, note="API details")
 
             # sponsors
             for s in bill_json["authors"]:
@@ -419,6 +419,8 @@ class INBillScraper(Scraper):
                 # https://iga.in.gov/pdf-documents/123/2024/house/resolutions/HC0001/HC0001.01.INTR.pdf
                 category = "resolutions" if "resolution" in bill_type else "bills"
                 url = f"https://iga.in.gov/pdf-documents/{self.session_no}/{bill_json['year']}/{bill_json['originChamber']}/{category}/{v['billName']}/{v['printVersionName']}.pdf"
+                # PROXY URL
+                # url = urljoin(PROXY_BASE_URL, v['link'])
                 bill.add_version_link(
                     v["stageVerbose"],
                     url,
