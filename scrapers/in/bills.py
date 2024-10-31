@@ -73,7 +73,7 @@ class INBillScraper(Scraper):
             proxy_link = PROXY_BASE_URL + r["link"]
             try:
                 path, _ = self.urlretrieve(proxy_link)
-            except scrapelib.HTTPError as e:
+            except scrapelib.HTTPError:
                 self.logger.warning(
                     "Unable to contact openstates proxy, skipping vote {}".format(
                         proxy_link
