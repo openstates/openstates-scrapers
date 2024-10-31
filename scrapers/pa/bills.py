@@ -28,13 +28,28 @@ class PABillScraper(Scraper):
 
     def scrape_session(self, chamber, session, special=0):
         url = utils.bill_list_url(chamber, session, special)
+        page = self.get_page(url)
 
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-
+        RETRY_TIMES = 5
         for link in page.xpath('//a[@class="bill"]'):
-            yield from self.parse_bill(chamber, session, special, link)
+            is_parsed = False
+            for retry_time in range(0, RETRY_TIMES):
+                try:
+                    yield from self.parse_bill(chamber, session, special, link)
+                    is_parsed = True
+                    break
+                except Exception as e:
+                    self.logger.warning(
+                        "There was an error in scraping {}: Retry {}: Error: {}".format(
+                            link.attrib["href"], retry_time + 1, e
+                        )
+                    )
+            if not is_parsed:
+                self.logger.error(
+                    "Bill {} did not scrape due to the page scraping error. Skip".format(
+                        link.text.strip()
+                    )
+                )
 
     def parse_bill(self, chamber, session, special, link):
         bill_id = link.text.strip()
@@ -46,9 +61,7 @@ class PABillScraper(Scraper):
             btype = ["resolution"]
 
         url = utils.info_url(session, special, bill_id)
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
+        page = self.get_page(url)
 
         xpath = (
             '//div[contains(@class, "header ")]/following-sibling::*[1]'
@@ -139,9 +152,7 @@ class PABillScraper(Scraper):
                     )
 
     def scrape_amendments(self, bill, link, chamber_pretty):
-        html = self.get(link).text
-        page = lxml.html.fromstring(html)
-        page.make_links_absolute(link)
+        page = self.get_page(link)
 
         for row in page.xpath('//div[contains(@class, "card shadow")]'):
             version_name = "".join(
@@ -242,32 +253,34 @@ class PABillScraper(Scraper):
         for url in page.xpath(
             '//div[contains(text(), "Votes")]/following-sibling::div[1]//a/@href'
         ):
-            # the floor rc urls are old now. we need to update the new urls
-            url = url.strip()
+            # Floor RC urls have old domain in the website
+            # We need to update the new urls
             if url.startswith(utils.old_base_url):
-                url = self.update_new_url(url)
-
-            # remove duplicates of urls
-            if url in vote_urls or "roll-calls" not in url:
+                url = self.fix_url_domain(url)
+            # Skip the duplicated URLs
+            if url in vote_urls:
+                self.logger.debug("Vote URL is duplicated: {}".format(url))
                 continue
             vote_urls.append(url)
 
             bill.add_source(url)
-            doc = self.get(url).text
-            doc = lxml.html.fromstring(doc)
-            doc.make_links_absolute(url)
-
             if "/roll-calls/" in url:
-                yield from self.parse_chamber_votes(bill, doc, url)
+                yield from self.parse_chamber_votes(bill, url)
             elif "/roll-call-votes/" in url:
-                yield from self.parse_committee_votes(bill, doc, url)
+                yield from self.parse_committee_votes(bill, url)
             else:
                 msg = "Unexpected vote url: %r" % url
-                print(msg)
-                # raise Exception(msg)
-                continue
+                raise Exception(msg)
 
-    def parse_chamber_votes(self, bill, page, url):
+    def get_page(self, url):
+        html = self.get(url).text
+        page = lxml.html.fromstring(html)
+        page.make_links_absolute(url)
+        return page
+
+    def parse_chamber_votes(self, bill, url):
+        page = self.get_page(url)
+
         chamber = "upper" if "Senate" in page.xpath("string(//h1)") else "lower"
         date_str = (
             page.xpath(
@@ -277,7 +290,9 @@ class PABillScraper(Scraper):
             .strip()
         )
         date_str = re.sub(r"\s+", " ", date_str)
-        date = datetime.datetime.strptime(date_str, "%A %b %d, %Y %I:%M %p")
+        date = tz.localize(
+            datetime.datetime.strptime(date_str, "%A %b %d, %Y %I:%M %p")
+        )
 
         xpath = 'string(//div[contains(@class,h6)][contains(text(), "Action")]/..)'
         motion = page.xpath(xpath).replace("Action", "").strip()
@@ -320,7 +335,7 @@ class PABillScraper(Scraper):
 
         vote = VoteEvent(
             chamber=chamber,
-            start_date=tz.localize(date),
+            start_date=date,
             motion_text=motion,
             classification=type,
             result="pass" if yeas > (nays + other) else "fail",
@@ -365,7 +380,9 @@ class PABillScraper(Scraper):
 
         yield vote
 
-    def parse_committee_votes(self, bill, doc, url):
+    def parse_committee_votes(self, bill, url):
+        doc = self.get_page(url)
+
         chamber = "upper" if "Senate" in doc.xpath("string(//h1)") else "lower"
         committee = doc.xpath(
             'string(//div[contains(@class, "detailsLabel")][contains(., "Committe")]/following-sibling::div/a)'
@@ -374,26 +391,26 @@ class PABillScraper(Scraper):
         date = doc.xpath(
             'string(//div[contains(@class, "detailsLabel")][contains(., "Date")]/following-sibling::div/a)'
         ).strip()
-        date = datetime.datetime.strptime(date, "%B %d, %Y")
-
+        date = tz.localize(datetime.datetime.strptime(date, "%B %d, %Y"))
+        self.logger.info("Committe Vote Date: {}, URL: {}".format(date, url))
         # Motion
         motion = doc.xpath(
-            'string(//div[contains(@class, "portlet ")]//div[contains(@class, "h5 ")][contains(., "Motion:")]/span[2])'
+            'string(//div[contains(text(), "Type of Motion")]/following-sibling::div[1])'
         ).strip()
         motion = "Committee vote (%s): %s" % (committee, motion)
 
         # Roll call
-        rollcall = self.parse_upper_committee_vote_rollcall(bill, doc)
+        rollcall = self.parse_upper_committee_vote_rollcall(doc)
 
         vote = VoteEvent(
             chamber=chamber,
-            start_date=tz.localize(date),
+            start_date=date,
             motion_text=motion,
             classification=[],
             result="pass" if rollcall["passed"] else "fail",
             bill=bill,
         )
-        vote.dedupe_key = url
+        vote.dedupe_key = url + "#" + bill.identifier
         vote.set_count("yes", rollcall["yes_count"])
         vote.set_count("no", rollcall["no_count"])
         vote.set_count("other", rollcall["other_count"])
@@ -403,9 +420,10 @@ class PABillScraper(Scraper):
                 vote.vote(voteval, name)
 
         vote.add_source(url)
+
         yield vote
 
-    def parse_upper_committee_vote_rollcall(self, bill, doc):
+    def parse_upper_committee_vote_rollcall(self, doc):
         rollcall = collections.defaultdict(list)
 
         for div in doc.xpath(
@@ -431,11 +449,11 @@ class PABillScraper(Scraper):
             rollcall[voteval + "_votes"].append(name)
 
         for voteval, xpath in (
-            ("yes", '//ul/li//span[contains(@class, "badge ")][@aria-label="Yea"]'),
-            ("no", '//ul/li//span[contains(@class, "badge ")][@aria-label="Nay"]'),
+            ("yes", '//ul/li//span[contains(@class, "badge")][@title="Yea"]'),
+            ("no", '//ul/li//span[contains(@class, "badge")][@title="Nay"]'),
             (
                 "other",
-                '//ul/li//span[contains(@class, "badge ")][@aria-label="No Vote"]',
+                '//ul/li//span[contains(@class, "badge")][@title="No Vote"]',
             ),
         ):
             count = len(doc.xpath(xpath))
@@ -451,7 +469,6 @@ class PABillScraper(Scraper):
             "fa-file-pdf": "application/pdf",
             "fa-file-word": "application/msword",
         }
-
         try:
             span = link[0]
         except IndexError:
@@ -461,7 +478,10 @@ class PABillScraper(Scraper):
                 mimetype = mimetypes[cls]
                 return mimetype
 
-    def update_new_url(self, url):
+    def fix_url_domain(self, url):
+        # Some vote urls have the old domain in the new website
+        # https://www.legis.state.pa.us/cfdocs/legis/RC/Public/rc_view_action2.cfm
+        # ?sess_yr=2023&sess_ind=1&rc_body=H&rc_nbr=17
         url_query = url.split("?")[1]
         url_query_obj = urllib.parse.parse_qs(url_query)
         chamber = "house" if url_query_obj["rc_body"][0] == "H" else "senate"

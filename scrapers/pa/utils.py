@@ -1,7 +1,6 @@
 import datetime
 from typing import Literal
 
-
 old_base_url = "https://www.legis.state.pa.us"
 base_url = "https://www.palegis.us"
 urls = {
