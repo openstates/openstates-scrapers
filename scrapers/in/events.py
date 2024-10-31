@@ -84,7 +84,6 @@ class INEventScraper(Scraper):
             )
             event.dedupe_key = event_name
             event.add_source(link, note="API details")
-
             name_slug = re.sub("[^a-zA-Z0-9]+", "-", committee_name.lower())
 
             document_url = f"https://iga.in.gov/pdf-documents/{session_no}/{self.session}/{committee_chamber}/committees/{committee_type}/{name_slug}/{_id}/meeting.pdf"
@@ -112,8 +111,9 @@ class INEventScraper(Scraper):
                     agenda.add_subject(agenda_item["description"])
 
             for exhibit in meeting.get("exhibits"):
-                # Original URL
-
+                exhibit_pdf_url = self.apiclient.get_document_url(
+                    exhibit["pdfDownloadLink"]
+                )
                 if exhibit_pdf_url:
                     event.add_document(
                         exhibit["description"],
@@ -123,8 +123,7 @@ class INEventScraper(Scraper):
 
             for minute in meeting.get("minutes"):
                 if minute["link"]:
-                    # Original URL
-
+                    minute_pdf_url = f"https://iga.in.gov/pdf-documents/{session_no}/{self.session}/{committee_chamber}/committees/{committee_type}/{name_slug}/{_id}/{_id}_minutes.pdf"
                     event.add_document(
                         "Meeting Minutes",
                         minute_pdf_url,
