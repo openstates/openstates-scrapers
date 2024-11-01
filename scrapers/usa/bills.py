@@ -208,12 +208,13 @@ class USBillScraper(Scraper):
     def classify_actor_by_code(self, action_code: str):
         if action_code is None:
             return False
-
-        if action_code[0:1] == "H":
+        # There is a new action code(Intro-H) that is not documented above.
+        # Also adding (Intro-S) to mitigate against any surprise in Senate
+        if action_code[0:1] == "H" or action_code == "Intro-H":
             return "lower"
         elif action_code[0:1] == "E":
             return "executive"
-        elif action_code[0:1] == "S":
+        elif action_code[0:1] == "S" or action_code == "Intro-S":
             return "upper"
 
         if action_code.isdigit():
