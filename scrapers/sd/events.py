@@ -27,6 +27,10 @@ class SDEventScraper(Scraper):
             if com_name is None or com_name == "":
                 com_name = row["InterimYearCommitteeName"]
 
+            # Some events, like the Governor's Budget Address have no com
+            if com_name is None or com_name == "":
+                com_name = row["Title"]
+
             com = {"FullName": com_name}
             location = row["Room"]
             event = self.create_event(com, row, location)
