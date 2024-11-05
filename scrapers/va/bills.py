@@ -238,8 +238,9 @@ class VaBillScraper(Scraper):
             # and right now OS core requires a pass or fail, so we skip them with a notice
             # also skip rows that correspond to a bill action that does not indicate a vote by presence of ##-Y / ##-N
             #   if we don't skip on that last criteria, we get duplicate vote events
-            if ((row["PassFail"] or row["IsVoice"] is not True)
-                    and vote_shorthand_regex.search(row["LegislationActionDescription"])):
+            if (
+                row["PassFail"] or row["IsVoice"] is not True
+            ) and vote_shorthand_regex.search(row["LegislationActionDescription"]):
                 vote_date = dateutil.parser.parse(row["VoteDate"]).date()
 
                 motion_text = row["VoteActionDescription"]
@@ -261,8 +262,10 @@ class VaBillScraper(Scraper):
 
                 # BatchNumber is not unique to an individual Vote Event, so we need to add context
                 # in order to avoid duplicate dedupe keys
-                v.dedupe_key = (f"{row['BatchNumber'].strip()}-{bill.identifier.strip()}-"
-                                f"{row['LegislationActionDescription'].strip()}`")[:500]
+                v.dedupe_key = (
+                    f"{row['BatchNumber'].strip()}-{bill.identifier.strip()}-"
+                    f"{row['LegislationActionDescription'].strip()}`"
+                )[:500]
 
                 tally = {
                     "Y": 0,
