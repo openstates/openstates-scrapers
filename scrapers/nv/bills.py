@@ -72,7 +72,7 @@ def extract_bdr(title):
     the number is in the title but it's useful as a structured extra
     """
     bdr = False
-    bdr_regex = re.search(r"\(BDR (\w+-\w+)\)", title)
+    bdr_regex = re.search(r"\(BDR\u00a0(\w+-\w+)\)", title)
     if bdr_regex:
         bdr = bdr_regex.group(1)
     return bdr
