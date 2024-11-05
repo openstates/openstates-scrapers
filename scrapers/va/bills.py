@@ -14,6 +14,7 @@ from .actions import Categorizer
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 four_digit_regex = re.compile("[0-9]{4}")
+vote_shorthand_regex = re.compile("[0-9]+-[YN]")
 
 
 class VaBillScraper(Scraper):
@@ -235,7 +236,11 @@ class VaBillScraper(Scraper):
         for row in page["Votes"]:
             # VA Voice votes don't indicate pass fail,
             # and right now OS core requires a pass or fail, so we skip them with a notice
-            if row["PassFail"] or row["IsVoice"] is not True:
+            # also skip rows that correspond to a bill action that does not indicate a vote by presence of ##-Y / ##-N
+            #   if we don't skip on that last criteria, we get duplicate vote events
+            if (
+                row["PassFail"] or row["IsVoice"] is not True
+            ) and vote_shorthand_regex.search(row["LegislationActionDescription"]):
                 vote_date = dateutil.parser.parse(row["VoteDate"]).date()
 
                 motion_text = row["VoteActionDescription"]
@@ -255,7 +260,12 @@ class VaBillScraper(Scraper):
                     classification=[],
                 )
 
-                v.dedupe_key = row["BatchNumber"]
+                # BatchNumber is not unique to an individual Vote Event, so we need to add context
+                # in order to avoid duplicate dedupe keys
+                v.dedupe_key = (
+                    f"{row['BatchNumber'].strip()}-{bill.identifier.strip()}-"
+                    f"{row['LegislationActionDescription'].strip()}`"
+                )[:500]
 
                 tally = {
                     "Y": 0,
@@ -290,7 +300,9 @@ class VaBillScraper(Scraper):
 
                 # https://lis.virginia.gov/vote-details/HB88/20251/H1003V0001
                 v.add_source(
-                    f"https://lis.virginia.gov/vote-details/{row['VoteLegislation']}/{self.session_code}/{row['BatchNumber']}"
+                    f"https://lis.virginia.gov/vote-details/"
+                    f"{row['VoteLegislation'][0].get('LegislationNumber', 'NOT_FOUND')}/"
+                    f"{self.session_code}/{row['BatchNumber']}"
                 )
                 yield v
             else:
