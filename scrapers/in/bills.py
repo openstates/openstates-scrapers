@@ -71,14 +71,12 @@ class INBillScraper(Scraper):
 
         for r in rollcalls:
             proxy_link = PROXY_BASE_URL + r["link"]
-
             try:
-                (path, resp) = self.urlretrieve(proxy_link)
-            except scrapelib.HTTPError as e:
-                self.warning(e)
-                self.warning(
+                path, _ = self.urlretrieve(proxy_link)
+            except scrapelib.HTTPError:
+                self.logger.warning(
                     "Unable to contact openstates proxy, skipping vote {}".format(
-                        r["link"]
+                        proxy_link
                     )
                 )
                 continue
@@ -275,23 +273,22 @@ class INBillScraper(Scraper):
 
             try:
                 bill_json = client.get("bill", session=session, bill_link=bill_link)
+                # vehicle bill
+                if not bill_json:
+                    self.logger.warning("Vehicle Bill: {}".format(bill_id))
+                    continue
             except scrapelib.HTTPError:
                 self.logger.warning("Bill could not be accessed. Skipping.")
                 continue
 
-            # vehicle bill
-            if len(list(bill_json.keys())) == 0:
-                self.logger.warning("Vehicle Bill: {}".format(bill_id))
-                continue
-            # sometimes description is blank
-            # if that's the case, we can check to see if
-            # the latest version has a short description
             title = bill_json["description"]
+            # Check if the title is "NoneNone" (indicating a placeholder) and set it to None
             if "NoneNone" in title:
                 title = None
+            # If the title is still empty or None, try to get the short description from the latest version
             if not title:
-                title = bill_json["latestVersion"]["shortDescription"]
-            # and if that doesn't work, use the bill_id but throw a warning
+                title = bill_json["latestVersion"].get("shortDescription")
+            # If the title is still not available, use the bill ID and log a warning
             if not title:
                 title = bill_id
                 self.logger.warning("Bill is missing a title, using bill id instead.")
@@ -314,19 +311,15 @@ class INBillScraper(Scraper):
             bill.add_source(api_source, note="API details")
 
             # sponsors
-            for s in bill_json["authors"]:
-                self._add_sponsor_if_not_blank(bill, s, classification="author")
-            for s in bill_json["coauthors"]:
-                self._add_sponsor_if_not_blank(bill, s, classification="coauthor")
-            for s in bill_json["sponsors"]:
-                self._add_sponsor_if_not_blank(bill, s, classification="sponsor")
-            for s in bill_json["cosponsors"]:
-                self._add_sponsor_if_not_blank(bill, s, classification="cosponsor")
+            for category in ["authors", "coauthors", "sponsors", "cosponsors"]:
+                for sponsor in bill_json.get(category, []):
+                    self._add_sponsor_if_not_blank(
+                        bill, sponsor, classification=category[:-1]
+                    )
 
             # actions
             action_link = bill_json["actions"]["link"]
             api_source = urljoin(api_base_url, action_link)
-
             try:
                 actions = client.get(
                     "bill_actions", session=session, action_link=action_link
@@ -336,75 +329,84 @@ class INBillScraper(Scraper):
                 self.logger.warning("Could not find bill actions page")
                 actions = []
 
-            for a in actions:
-                action_desc = a["description"]
+            for action in actions:
+                action_desc = action["description"]
+
+                # Determine action chamber
                 if "governor" in action_desc.lower():
                     action_chamber = "executive"
-                elif a["chamber"]["name"].lower() == "house":
+                elif action["chamber"]["name"].lower() == "house":
                     action_chamber = "lower"
                 else:
                     action_chamber = "upper"
-                date = a["date"]
 
+                # Process action date
+                date = action.get("date")
                 if not date:
                     self.logger.warning("Action has no date, skipping")
                     continue
 
-                # convert time to pupa fuzzy time
-                date = date.replace("T", " ")
-                # TODO: if we update pupa to accept datetimes we can drop this line
-                date = date.split()[0]
+                # Convert date to pupa fuzzy time format
+                date = date.replace("T", " ").split()[0]  # Extract date part only
 
-                d = action_desc.lower()
+                action_desc_lower = action_desc.lower()
                 committee = None
-
                 reading = False
-                attrs = self.categorizer.categorize(action_desc)
-                action_type = attrs["classification"]
+                action_type = self.categorizer.categorize(action_desc)["classification"]
 
-                if "first reading" in d:
+                # Identify reading actions
+                if any(
+                    phase in action_desc_lower
+                    for phase in [
+                        "first reading",
+                        "second reading",
+                        "third reading",
+                        "reread second time",
+                        "reread third time",
+                    ]
+                ):
                     reading = True
+                    if (
+                        "third reading" in action_desc_lower
+                        or "reread third time" in action_desc_lower
+                    ):
+                        action_type.append("reading-3")
 
-                if "second reading" in d or "reread second time" in d:
-                    reading = True
-
-                if "third reading" in d or "reread third time" in d:
-                    action_type.append("reading-3")
-                    reading = True
-
-                if "adopted" in d and reading:
+                # Mark passage if adopted during reading
+                if "adopted" in action_desc_lower and reading:
                     action_type.append("passage")
 
-                if (
-                    "referred" in d
-                    and "committee on" in d
-                    or "reassigned" in d
-                    and "committee on" in d
-                ):
-                    committee = d.split("committee on")[-1].strip()
+                # Identify related committee
+                if "committee on" in action_desc_lower:
+                    committee = action_desc_lower.split("committee on")[-1].strip()
 
-                a = bill.add_action(
+                # Add action to bill
+                action_instance = bill.add_action(
                     chamber=action_chamber,
                     description=action_desc,
                     date=date,
                     classification=action_type,
                 )
-                if committee:
-                    a.add_related_entity(committee, entity_type="organization")
 
-            # subjects
-            subjects = [s["entry"] for s in bill_json["latestVersion"]["subjects"]]
-            for subject in subjects:
-                subject = (
-                    subject
-                    if not subject.startswith("PENSIONS AND RETIREMENT BENEFITS")
-                    else "PENSIONS AND RETIREMENT BENEFITS; Public Retirement System (INPRS)"
-                )
+                # Add committee as related entity if present
+                if committee:
+                    action_instance.add_related_entity(
+                        committee, entity_type="organization"
+                    )
+
+            # Extract subjects from the latest version of the bill
+            latest_subjects = bill_json["latestVersion"]["subjects"]
+            for subject_entry in latest_subjects:
+                subject = subject_entry["entry"]
+                if subject.startswith("PENSIONS AND RETIREMENT BENEFITS"):
+                    subject = "PENSIONS AND RETIREMENT BENEFITS; Public Retirement System (INPRS)"
+                # Add the processed subject to the bill
                 bill.add_subject(subject)
 
             # Abstract
-            if bill_json["latestVersion"]["digest"]:
-                bill.add_abstract(bill_json["latestVersion"]["digest"], note="Digest")
+            digest = bill_json["latestVersion"]["digest"]
+            if digest:
+                bill.add_abstract(digest, note="Digest")
 
             # votes
             yield from self._process_votes(
@@ -415,10 +417,13 @@ class INBillScraper(Scraper):
             )
 
             for v in bill_json["versions"]:
-                # note there are a number of links in the API response that won't work with just a browser, they need an api key
                 # https://iga.in.gov/pdf-documents/123/2024/house/resolutions/HC0001/HC0001.01.INTR.pdf
                 category = "resolutions" if "resolution" in bill_type else "bills"
-                url = f"https://iga.in.gov/pdf-documents/{self.session_no}/{bill_json['year']}/{bill_json['originChamber']}/{category}/{v['billName']}/{v['printVersionName']}.pdf"
+                url = (
+                    f"https://iga.in.gov/pdf-documents/{self.session_no}/"
+                    f"{bill_json['year']}/{bill_json['originChamber']}/"
+                    f"{category}/{v['billName']}/{v['printVersionName']}.pdf"
+                )
                 # PROXY URL
                 # url = urljoin(PROXY_BASE_URL, v['link'])
                 bill.add_version_link(
