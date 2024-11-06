@@ -6,6 +6,9 @@ import pytz
 import re
 
 
+simple_html_tag_regex = re.compile("<.*?>")
+
+
 class VaEventScraper(Scraper):
     _tz = pytz.timezone("America/New_York")
 
@@ -43,7 +46,10 @@ class VaEventScraper(Scraper):
             if "RoomDescription" in row:
                 location = row["RoomDescription"]
             else:
-                location = row["Description"]
+                # the Description property is kinda sloppy, it can have a little overlapping title
+                # and sometimes links to the agenda and livestream
+                # so need to strip: anything in HTML tags (location seems to never be bolded or in link)
+                location = re.sub(simple_html_tag_regex, "", row["Description"])[:200]
 
             if location == "":
                 location = "See Agenda"
