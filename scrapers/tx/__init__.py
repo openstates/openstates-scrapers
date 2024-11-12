@@ -196,7 +196,7 @@ class Texas(State):
             "_scraped_name": "89(R) - 2025",
             "classification": "regular",
             "identifier": "89R",
-            "name": "88th Legislature (2025)",
+            "name": "89th Legislature (2025)",
             "start_date": "2025-01-10",
             "end_date": "2025-06-02",
             "active": True,
