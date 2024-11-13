@@ -267,7 +267,14 @@ class PABillScraper(Scraper):
             if "/roll-calls/" in url:
                 yield from self.parse_chamber_votes(bill, url)
             elif "/roll-call-votes/" in url:
-                yield from self.parse_committee_votes(bill, url)
+                # TODO remove log message and uncomment self.parse_committee_votes()
+                # when committee vote URLs work again, for example:
+                # https://www.palegis.us/house/committees/roll-call-votes/vote-summary?committeecode=59&rollcallid=1
+                self.logger.warning(
+                    "Temporarily disabling committee vote ingestion "
+                    "due to systemic 500 HTTP errors"
+                )
+                # yield from self.parse_committee_votes(bill, url)
             else:
                 msg = "Unexpected vote url: %r" % url
                 raise Exception(msg)
