@@ -71,6 +71,15 @@ class SouthCarolina(State):
             "end_date": "2024-05-09",
             "active": True,
         },
+        {
+            "_scraped_name": "126 - (2025-2026)",
+            "classification": "primary",
+            "identifier": "2025-2026",
+            "name": "2025-2026 Regular Session",
+            "start_date": "2025-01-14",
+            "end_date": "2025-05-08",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "118 - (2009-2010)",
