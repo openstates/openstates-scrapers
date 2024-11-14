@@ -86,6 +86,7 @@ class Pennsylvania(State):
             "start_date": "2023-01-03",
             "end_date": "2024-11-30",
             "active": True,
+            "extras": {"session_year": "2023"},
         },
         {
             "_scraped_name": "2023-2024 Special Session #1 (Victims of Sexual Abuse)",
