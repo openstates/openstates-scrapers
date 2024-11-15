@@ -72,7 +72,7 @@ class PABillScraper(Scraper):
         page = self.get_page(url)
 
         xpath = (
-            '//div[contains(@class, "header ")]/following-sibling::*[1]'
+            '//div[contains(@class, "header")]/following-sibling::*[1]'
             '/div[@class="col-md-9"]/div[1]'
         )
 
