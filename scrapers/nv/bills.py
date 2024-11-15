@@ -447,6 +447,7 @@ class VoteList(HtmlPage):
         date_re = re.compile(r"Date\s+(?P<date>.*)", re.U | re.I)
         index = 0
 
+        date_motion_counts = {}
         for row in CSS(".vote-revision", min_items=0).match(self.root):
             summary = summaries[index]
             index += 1
@@ -471,6 +472,16 @@ class VoteList(HtmlPage):
                 if date_match:
                     start_date = date_match.groupdict()["date"]
                     start_date = parse_date(start_date)
+
+            # sometimes two votes with the same motion happen on the same day
+            # hence we need to make motion text unique otherwise import fails
+            date_motion = f"{start_date.date()}{summary}"
+            if start_date is not None and date_motion in date_motion_counts:
+                num_existing = date_motion_counts[date_motion]
+                summary = f"{summary} ({num_existing + 1})"
+                date_motion_counts[date_motion] += 1
+            else:
+                date_motion_counts[date_motion] = 1
 
             vote = VoteEvent(
                 chamber=chamber,

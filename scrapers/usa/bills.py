@@ -411,7 +411,7 @@ class USBillScraper(Scraper):
                 self.warning("Check amendment url ordinals")
 
             bill.add_document_link(
-                note=f"{self.get_xpath(row, 'type')} {num}",
+                note=f"{self.get_xpath(row, 'type')} {num}"[:300],
                 url=f"https://www.congress.gov/amendment/{session}th-congress/{slugs[self.get_xpath(row, 'type')]}/{num}",
                 media_type="text/html",
             )
