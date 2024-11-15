@@ -198,27 +198,18 @@ class WYBillScraper(Scraper, LXMLMixin):
         for sponsor in bill_json["sponsors"]:
             status = "primary" if sponsor["primarySponsor"] else "cosponsor"
             sponsor_type = "person" if sponsor["sponsorTitle"] else "organization"
-            chamber = (
+            sp_chamber = (
                 "lower"
                 if sponsor["house"] == "H"
                 else ("upper" if sponsor["house"] == "S" else None)
             )
-            if chamber:
-                bill.add_sponsorship(
-                    name=sponsor["name"],
-                    classification=status,
-                    entity_type=sponsor_type,
-                    primary=sponsor["primarySponsor"],
-
-                )
-            else:
-                bill.add_sponsorship(
-                    name=sponsor["name"],
-                    classification=status,
-                    entity_type=sponsor_type,
-                    primary=sponsor["primarySponsor"],
-                    chamber=chamber,
-                )
+            bill.add_sponsorship(
+                name=sponsor["name"],
+                classification=status,
+                entity_type=sponsor_type,
+                primary=sponsor["primarySponsor"],
+                chamber=sp_chamber,
+            )
 
         if bill_json["summary"]:
             bill.add_abstract(note="summary", abstract=bill_json["summary"])
