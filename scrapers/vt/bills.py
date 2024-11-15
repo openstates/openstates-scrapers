@@ -123,18 +123,23 @@ class VTBillScraper(Scraper, LXMLMixin):
                     sponsor_type = "cosponsor"
                     continue
 
-                sponsor_name = (
-                    sponsor.xpath("a/text()")[0]
-                    .replace("Rep.", "")
-                    .replace("Sen.", "")
-                    .strip()
-                )
+                chamber = None
+                sponsor_name = sponsor.xpath("a/text()")[0]
+
+                if sponsor_name.startswith("Rep.") or sponsor_name.startswith("House"):
+                    chamber = "lower"
+                    sponsor_name = sponsor_name.replace("Rep.", "").strip()
+                elif sponsor_name.startswith("Sen.") or sponsor_name.startswith("Senate"):
+                    chamber = "upper"
+                    sponsor_name = sponsor_name.replace("Sen.", "").strip()
+                entity_type = "organization" if "committee" in sponsor_name else "person"
                 if sponsor_name and sponsor_name != "Less…":
                     bill.add_sponsorship(
                         name=sponsor_name,
                         classification=sponsor_type,
-                        entity_type="person",
+                        entity_type=entity_type,
                         primary=(sponsor_type == "primary"),
+                        chamber=chamber,
                     )
 
             version_links = doc.xpath("//ul[contains(@class,'bill-path')]/li/div/a")
