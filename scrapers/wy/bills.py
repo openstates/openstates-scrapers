@@ -209,7 +209,7 @@ class WYBillScraper(Scraper, LXMLMixin):
                     classification=status,
                     entity_type=sponsor_type,
                     primary=sponsor["primarySponsor"],
-                    chamber=chamber,
+
                 )
             else:
                 bill.add_sponsorship(
@@ -217,6 +217,7 @@ class WYBillScraper(Scraper, LXMLMixin):
                     classification=status,
                     entity_type=sponsor_type,
                     primary=sponsor["primarySponsor"],
+                    chamber=chamber,
                 )
 
         if bill_json["summary"]:
