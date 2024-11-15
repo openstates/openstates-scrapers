@@ -210,7 +210,7 @@ class BillTabDetail(HtmlPage):
             # Removes leg position from name
             # Use position to determine chamber
             # Example: Assemblywoman Alexis Hansen
-            # Also check if sponsor is an organization of person
+            # Also check if sponsor is an organization or person
             # Example: "Assembly Committee on Government Affairs" is an organization
             chamber = None
             entity_type = "person"
