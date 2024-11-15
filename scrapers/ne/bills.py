@@ -142,9 +142,12 @@ class NEBillScraper(Scraper, LXMLMixin):
             introduced_by = introduced_by.split("Introduced By:")[1].strip()
 
         introduced_by = introduced_by.strip()
+        entity_type = "person"
+        if "committee" in introduced_by.lower():
+            entity_type = "organization"
         bill.add_sponsorship(
             name=introduced_by,
-            entity_type="person",
+            entity_type=entity_type,
             primary=True,
             classification="primary",
         )
@@ -165,9 +168,12 @@ class NEBillScraper(Scraper, LXMLMixin):
             # NE legislature site does not list cosponsors, so we grab it from action statements
             if "name added" in action:
                 cosponsor_name = action.split("name added")[0].strip()
+                entity_type = "person"
+                if "committee" in cosponsor_name.lower():
+                    entity_type = "organization"
                 bill.add_sponsorship(
                     cosponsor_name,
-                    entity_type="person",
+                    entity_type=entity_type,
                     classification="cosponsor",
                     primary=False,
                 )
