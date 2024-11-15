@@ -178,7 +178,7 @@ class IDBillScraper(Scraper):
                         entity_type="organization",
                         primary=True,
                         classification="primary",
-                        chamber=chamber
+                        chamber=chamber,
                     )
                 else:
                     for person in _split(sponsors):

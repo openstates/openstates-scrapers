@@ -129,10 +129,14 @@ class VTBillScraper(Scraper, LXMLMixin):
                 if sponsor_name.startswith("Rep.") or sponsor_name.startswith("House"):
                     chamber = "lower"
                     sponsor_name = sponsor_name.replace("Rep.", "").strip()
-                elif sponsor_name.startswith("Sen.") or sponsor_name.startswith("Senate"):
+                elif sponsor_name.startswith("Sen.") or sponsor_name.startswith(
+                    "Senate"
+                ):
                     chamber = "upper"
                     sponsor_name = sponsor_name.replace("Sen.", "").strip()
-                entity_type = "organization" if "committee" in sponsor_name else "person"
+                entity_type = (
+                    "organization" if "committee" in sponsor_name else "person"
+                )
                 if sponsor_name and sponsor_name != "Less…":
                     bill.add_sponsorship(
                         name=sponsor_name,

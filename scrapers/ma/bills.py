@@ -191,9 +191,13 @@ class MABillScraper(Scraper):
         )
         # Sponsors always have link that follows pattern <a href="/Legislators/Profile/JNR1/193">Jeffrey N. Roy</a>
         # If this is a person i.e. "legislators" it will show in sponsor_href.
-        sponsor_href = page.xpath('//dt[text()="Sponsor:" or text()="Presenter:"]/following-sibling::dd//a/@href')
+        sponsor_href = page.xpath(
+            '//dt[text()="Sponsor:" or text()="Presenter:"]/following-sibling::dd//a/@href'
+        )
         sponsor_href = sponsor_href[0] if sponsor_href else ""
-        entity_type = "person" if "legislators/" in sponsor_href.lower() else "organization"
+        entity_type = (
+            "person" if "legislators/" in sponsor_href.lower() else "organization"
+        )
 
         if sponsor:
             sponsor = (
