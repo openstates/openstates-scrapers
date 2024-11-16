@@ -441,7 +441,7 @@ class USBillScraper(Scraper):
                         if not amdt_url.startswith("http"):
                             continue
                         bill.add_document_link(
-                            note=amdt_name,
+                            note=amdt_name[:300],
                             url=amdt_url,
                             media_type="application/pdf",
                         )
@@ -453,7 +453,7 @@ class USBillScraper(Scraper):
     def scrape_cbo(self, bill, xml):
         for row in xml.findall("bill/cboCostEstimates/item"):
             bill.add_document_link(
-                note=f"CBO: {self.get_xpath(row, 'title')}",
+                note=f"CBO: {self.get_xpath(row, 'title')}"[:300],
                 url=self.get_xpath(row, "url"),
                 media_type="text/html",
             )
@@ -468,7 +468,7 @@ class USBillScraper(Scraper):
 
             url = f"https://www.congress.gov/{match.group('session')}/crpt/{match.group('chamber').lower()}rpt{match.group('num')}/CRPT-{match.group('session')}{match.group('chamber').lower()}rpt{match.group('num')}.pdf"
 
-            bill.add_document_link(note=report, url=url, media_type="application/pdf")
+            bill.add_document_link(note=report[:300], url=url, media_type="application/pdf")
 
     def scrape_cosponsors(self, bill, xml):
         all_sponsors = []
