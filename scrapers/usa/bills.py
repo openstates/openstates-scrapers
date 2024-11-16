@@ -468,7 +468,9 @@ class USBillScraper(Scraper):
 
             url = f"https://www.congress.gov/{match.group('session')}/crpt/{match.group('chamber').lower()}rpt{match.group('num')}/CRPT-{match.group('session')}{match.group('chamber').lower()}rpt{match.group('num')}.pdf"
 
-            bill.add_document_link(note=report[:300], url=url, media_type="application/pdf")
+            bill.add_document_link(
+                note=report[:300], url=url, media_type="application/pdf"
+            )
 
     def scrape_cosponsors(self, bill, xml):
         all_sponsors = []
