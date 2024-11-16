@@ -16,6 +16,11 @@ import lxml.html
 from .common import get_slug_for_session, get_biennium_year
 
 TIMEZONE = pytz.timezone("US/Central")
+_AR_ORGANIZATION_ENTITY_NAME_KEYWORDS = [
+    "Committee",
+    "House Management",
+    "Senate Efficiency",
+]
 
 
 # Needed because they're using a port python doesn't expect
@@ -209,7 +214,7 @@ class ARBillScraper(Scraper):
 
     def get_entity_name(self, link):
         entity_type = "person"
-        if "Committees" in link:
+        if any(keyword in link for keyword in _AR_ORGANIZATION_ENTITY_NAME_KEYWORDS):
             entity_type = "organization"
         return entity_type
 

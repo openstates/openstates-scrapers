@@ -288,6 +288,7 @@ class WIBillScraper(Scraper):
             elif type == "Cosponsored":
                 sponsor_type = "cosponsor"
 
+            entity_type = "person"
             if title == "Senator":
                 sponsor_chamber = "upper"
             elif title == "Representative":
@@ -298,6 +299,7 @@ class WIBillScraper(Scraper):
             elif title in ("Joint Legislative Council", "Law Revision Committee"):
                 sponsor_chamber = chamber
                 people = title
+                entity_type = "organization"
 
             for r in re.split(r"\sand\s|\,", people):
                 if r.strip():
@@ -306,7 +308,7 @@ class WIBillScraper(Scraper):
                         chamber=sponsor_chamber,
                         classification=sponsor_type,
                         primary=sponsor_type == "primary",
-                        entity_type="person",
+                        entity_type=entity_type,
                     )
 
     def add_vote(self, bill, chamber, date, text, url):

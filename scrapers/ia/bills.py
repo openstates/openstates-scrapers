@@ -6,6 +6,8 @@ import time
 from openstates.scrape import Scraper, Bill
 from .actions import Categorizer
 
+_IA_ORGANIZATION_ENTITY_NAME_KEYWORDS = ["COMMITTEE", "RULES AND ADMINISTRATION"]
+
 
 class IABillScraper(Scraper):
     categorizer = Categorizer()
@@ -237,10 +239,15 @@ class IABillScraper(Scraper):
         sponsor_array = sponsors.replace("and", ",").split(",")
 
         for sponsor in sponsor_array:
+            entity_type = "person"
+            if any(
+                keyword in sponsor for keyword in _IA_ORGANIZATION_ENTITY_NAME_KEYWORDS
+            ):
+                entity_type = "organization"
             bill.add_sponsorship(
                 name=sponsor.strip(),
                 classification="primary",
-                entity_type="organization" if "COMMITTEE ON" in sponsor else "person",
+                entity_type=entity_type,
                 primary=True,
             )
 

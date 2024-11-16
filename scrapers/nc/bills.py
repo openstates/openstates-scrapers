@@ -131,10 +131,14 @@ class NCBillScraper(Scraper):
                     spon_type = "cosponsor"
                 if not name:
                     continue
+                entity_type = "person"
+                if "rules, calendar, and operations of the house" in name.lower():
+                    name = name.replace(")", "")
+                    entity_type = "organization"
                 bill.add_sponsorship(
                     name,
                     classification=spon_type,
-                    entity_type="person",
+                    entity_type=entity_type,
                     primary=(spon_type == "primary"),
                 )
         except IndexError:

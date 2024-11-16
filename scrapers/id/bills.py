@@ -169,6 +169,8 @@ class IDBillScraper(Scraper):
         # sponsors range from a committee to one legislator to a group of legs
         sponsor_lists = bill_tables[0].text_content().split("by")
         if len(sponsor_lists) > 1:
+            # Adding chamber to further filter search results for committee
+            # This is based on the assumption that a House Bill can only be sponsored by a House Committee and so on
             for sponsors in sponsor_lists[1:]:
                 if "COMMITTEE" in sponsors.upper():
                     bill.add_sponsorship(
@@ -176,6 +178,7 @@ class IDBillScraper(Scraper):
                         entity_type="organization",
                         primary=True,
                         classification="primary",
+                        chamber=chamber,
                     )
                 else:
                     for person in _split(sponsors):

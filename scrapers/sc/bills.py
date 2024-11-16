@@ -200,7 +200,7 @@ class SCBillScraper(Scraper):
             try:
                 self.info(url)
                 data = urllib.request.urlopen(url).read()
-            except (http.client.IncompleteRead) as e:
+            except http.client.IncompleteRead as e:
                 self.warning("Client IncompleteRead error on {}".format(url))
                 data = e.partial
 
@@ -394,24 +394,37 @@ class SCBillScraper(Scraper):
 
         subjects = list(self._subjects[bill_id])
 
+        def _get_sponsor_chamber(url):
+            url = url.get("href")
+            return (
+                "upper"
+                if "chamber=S" in url
+                else ("lower" if "chamber=H" in url else None)
+            )
+
         for subject in subjects:
             bill.add_subject(subject)
 
         # sponsors
-        for sponsor in doc.xpath('//a[contains(@href, "member.php")]/text()'):
+        for sponsor in doc.xpath('//a[contains(@href, "member.php")]'):
+            sp_chamber = _get_sponsor_chamber(sponsor)
+            sponsor = sponsor.text.strip()
             bill.add_sponsorship(
                 name=sponsor,
                 classification="primary",
                 primary=True,
                 entity_type="person",
+                chamber=sp_chamber,
             )
-        for sponsor in doc.xpath('//a[contains(@href, "committee.php")]/text()'):
+        for sponsor in doc.xpath('//a[contains(@href, "committee.php")]'):
+            sp_chamber = _get_sponsor_chamber(sponsor)
             sponsor = sponsor.replace("\xa0", " ").strip()
             bill.add_sponsorship(
                 name=sponsor,
                 classification="primary",
                 primary=True,
                 entity_type="organization",
+                chamber=sp_chamber,
             )
 
         # find versions

@@ -208,16 +208,25 @@ class BillTabDetail(HtmlPage):
             if "Sponsors" in name or name == "":
                 continue
             # Removes leg position from name
+            # Use position to determine chamber
             # Example: Assemblywoman Alexis Hansen
+            # Also check if sponsor is an organization or person
+            # Example: "Assembly Committee on Government Affairs" is an organization
+            chamber = None
+            entity_type = "person"
+            if "committee" in name.lower():
+                entity_type = "organization"
             if name.split()[0] in ["Assemblywoman", "Assemblyman", "Senator"]:
+                chamber = "lower" if "Assembly" in name.split()[0] else "upper"
                 name = " ".join(name.split()[1:]).strip()
             if name not in seen:
                 seen.add(name)
                 bill.add_sponsorship(
                     name=name,
                     classification="sponsor" if primary else "cosponsor",
-                    entity_type="person",
+                    entity_type=entity_type,
                     primary=primary,
+                    chamber=chamber,
                 )
 
     def add_actions(self, bill, chamber):
