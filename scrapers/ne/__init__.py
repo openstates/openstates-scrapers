@@ -108,5 +108,5 @@ class Nebraska(State):
         return url_xpath(
             "https://nebraskalegislature.gov/bills/",
             "//select[@name='Legislature']/option/text()",
-            verify=False
+            verify=False,
         )[:-1]
