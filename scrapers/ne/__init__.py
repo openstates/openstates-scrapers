@@ -104,7 +104,9 @@ class Nebraska(State):
     ]
 
     def get_session_list(self):
+        # SSL bad as of 2024-11-18
         return url_xpath(
             "https://nebraskalegislature.gov/bills/",
             "//select[@name='Legislature']/option/text()",
+            verify=False,
         )[:-1]
