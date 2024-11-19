@@ -163,7 +163,7 @@ class Oklahoma(State):
             "name": "2024 Regular Session",
             "start_date": "2024-02-05",
             "end_date": "2024-05-31",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2024 Third Special Session",
@@ -180,7 +180,7 @@ class Oklahoma(State):
             "start_date": "2024-06-12",
             # TODO: update end date
             "end_date": "2024-06-21",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2025 Regular Session",
@@ -188,7 +188,7 @@ class Oklahoma(State):
             "name": "2025 Regular Session",
             "start_date": "2025-02-03",
             "end_date": "2025-05-30",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
