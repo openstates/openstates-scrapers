@@ -7,7 +7,7 @@ import dateutil.parser
 import pytz
 from openstates.scrape import Scraper, Event
 from .apiclient import ApiClient
-from .utils import add_space
+from .utils import add_space, backoff
 from openstates.exceptions import EmptyScrape
 
 
@@ -21,7 +21,7 @@ class INEventScraper(Scraper):
         super().__init__(*args, **kwargs)
 
     def scrape(self):
-        session_no = self.apiclient.get_session_no(self.session)
+        session_no = backoff(self.apiclient.get_session_no, self.session)
         response = self.apiclient.get("meetings", session=self.session)
 
         meetings = response["meetings"]
