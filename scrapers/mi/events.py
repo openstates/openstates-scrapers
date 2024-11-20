@@ -1,4 +1,5 @@
 import re
+from urllib.parse import parse_qs, urlparse
 import pytz
 import dateutil
 import lxml
@@ -40,11 +41,13 @@ class MIEventScraper(Scraper):
         title = self.table_cell("Committee(s)")
 
         chair = self.table_cell("Chair")
+        clerk = self.table_cell("Clerk")
 
         if "sen." in chair.lower():
             chamber = "Senate"
         elif "rep." in chair.lower():
             chamber = "House"
+        chair = chair.split(".")[-1].strip()
 
         where = self.table_cell("Location")
 
@@ -73,6 +76,9 @@ class MIEventScraper(Scraper):
         for com in title.split("joint meeting with"):
             event.add_participant(f"{chamber} {com.strip()}", "organization")
 
+        event.add_participant(chair, "person", note="chair")
+        event.add_participant(clerk, "person", note="clerk")
+
         agenda = self.table_cell("Agenda")
 
         event.add_agenda_item(agenda)
@@ -89,8 +95,8 @@ class MIEventScraper(Scraper):
                 "Capitol Building": ("42.73360", "-84.5554"),
             },
         )
-
-        event.dedupe_key = f"{chamber}#{title}#{where}#{when}#{status}"
+        meeting_id = "".join(parse_qs(urlparse(url).query)["meetingID"])
+        event.dedupe_key = meeting_id
         yield event
 
     def table_cell(self, header: str):
