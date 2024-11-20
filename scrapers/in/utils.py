@@ -1,4 +1,9 @@
 import requests
+import logging
+import time
+
+logging.getLogger("IN").setLevel(logging.WARNING)
+log = logging.getLogger("openstates")
 
 
 def get_with_increasing_timeout(scraper, link, fail=False, kwargs={}):
@@ -57,3 +62,24 @@ def add_space(text):
     new_string = f"{alpha} {number}"
 
     return new_string
+
+
+def backoff(function, *args, **kwargs):
+    retries = 5
+
+    def _():
+        time.sleep(1)
+        return function(*args, **kwargs)
+
+    for attempt in range(retries):
+        try:
+            return _()
+        except Exception as e:
+            backoff = (attempt + 1) * 15
+            log.warning(
+                "[attempt %s]: %s. Backing off for %s seconds."
+                % (attempt, str(e), backoff)
+            )
+            time.sleep(backoff)
+
+    raise Exception("INDIANA API returns still None. Please confirm API status.")

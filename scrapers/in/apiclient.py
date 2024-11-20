@@ -90,15 +90,14 @@ class ApiClient(object):
         headers["User-Agent"] = self.user_agent
         url = urljoin(self.root, f"/{session}")
 
-        while not session_no:
-            resp = requests.get(url, headers=headers)
-            resp = resp.json()
-            if "message" in resp:
-                self.scraper.warning(resp["message"])
-                continue
-            session_no_regex = re.search(r"Session\s+(\d+).+", resp["name"])
-            if session_no_regex:
-                session_no = session_no_regex.group(1)
+        resp = requests.get(url, headers=headers).json()
+        if "message" in resp:
+            raise Exception(resp["message"])
+        session_no_regex = re.search(r"Session\s+(\d+).+", resp["name"])
+        if session_no_regex:
+            session_no = session_no_regex.group(1)
+        else:
+            raise Exception("Invalid session")
 
         return session_no
 
