@@ -12,7 +12,7 @@ class NewYork(State):
         "bills": NYBillScraper,
         "events": NYEventScraper,
     }
-    legislative_sessions = [
+    historical_legislative_sessions = [
         {
             "_scraped_name": "2009",
             "identifier": "2009-2010",
