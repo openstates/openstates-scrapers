@@ -45,6 +45,9 @@ RUN poetry install --no-root
 
 ADD . /opt/openstates/openstates/
 
+ARG CRONOS_ENDPOINT
+ENV CRONOS_ENDPOINT=${CRONOS_ENDPOINT}
+
 # the last step cleans out temporarily downloaded artifacts for poetry, shrinking our build
 RUN poetry install \
     && rm -r /root/.cache/pypoetry/cache /root/.cache/pypoetry/artifacts/ \

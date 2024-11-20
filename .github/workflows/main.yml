@@ -22,15 +22,16 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
-      
+
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and push to Amazon ECR
         env:
           DOCKER_IMAGE: ${{ secrets.DOCKER_IMAGE }}
+          CRONOS_ENDPOINT: $ {{ secrets.CRONOS_ENDPOINT }}
         run: |
-          docker build --platform linux/amd64 -t $DOCKER_IMAGE:$GITHUB_SHA -f Dockerfile .
+          docker build --platform linux/amd64 --build-arg CRONOS_ENDPOINT=$CRONOS_ENDPOINT -t $DOCKER_IMAGE:$GITHUB_SHA -f Dockerfile .
           docker tag $DOCKER_IMAGE:$GITHUB_SHA $DOCKER_IMAGE:latest
           docker push $DOCKER_IMAGE:$GITHUB_SHA
           docker push $DOCKER_IMAGE:latest
@@ -40,13 +41,13 @@ jobs:
     needs: build
     name: Sync DAG with New Image Tag
     runs-on: ubuntu-latest
-  
+
     steps:
       - name: Install Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-      
+
       - name: Get GitHub App Token
         uses: actions/create-github-app-token@v1
         id: app-token
@@ -54,7 +55,7 @@ jobs:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           owner: "washabstract"
-      
+
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
@@ -64,7 +65,7 @@ jobs:
 
       - name: Update .env file
         run: sed -i '/^CYCLADES_IMAGE_TAG=/d' artemis/aws/.env && echo "CYCLADES_IMAGE_TAG=${GITHUB_SHA}" >> artemis/aws/.env
-      
+
       - name: Configure git
         run: |
           git config --global user.name "send-pr.yml workflow"
