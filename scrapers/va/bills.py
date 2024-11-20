@@ -67,8 +67,6 @@ class VaBillScraper(Scraper):
         ).json()
 
         for row in page["Legislations"]:
-            # print(json.dumps(row))
-
             # the short title on the VA site is 'description',
             # LegislationTitle is on top of all the versions
             title = row["Description"]
@@ -173,7 +171,6 @@ class VaBillScraper(Scraper):
         ).json()
 
         for row in page["TextsList"]:
-            # print(json.dumps(row))
             if (row["PDFFile"] and len(row["PDFFile"]) > 1) or (
                 row["HTMLFile"] and len(row["HTMLFile"]) > 1
             ):
@@ -202,18 +199,6 @@ class VaBillScraper(Scraper):
                     bill.add_document_link(
                         action, impact["FileURL"], media_type="application/pdf"
                     )
-
-    # This method doesn't work as of 2024-10-15 but leaving this code in,
-    # in case they bring it back
-    # def get_vote_types(self):
-
-    #     page = requests.get(
-    #         f"{self.base_url}/api/getvotetypereferencesasync",
-    #         headers=self.headers,
-    #         verify=False,
-    #     ).content
-
-    #     print(page)
 
     def add_votes(self, bill: Bill, legislation_id: str):
         body = {
@@ -262,9 +247,11 @@ class VaBillScraper(Scraper):
 
                 # BatchNumber is not unique to an individual Vote Event, so we need to add context
                 # in order to avoid duplicate dedupe keys
+                if not row["BatchNumber"]:
+                    continue
                 v.dedupe_key = (
                     f"{row['BatchNumber'].strip()}-{bill.identifier.strip()}-"
-                    f"{row['LegislationActionDescription'].strip()}`"
+                    f"{row['LegislationActionDescription'].strip()}"
                 )[:500]
 
                 tally = {
@@ -315,20 +302,6 @@ class VaBillScraper(Scraper):
             btype = "constitutional amendment"
 
         return btype
-
-    # TODO: we can get the subject list,
-    # then do a search API call for each individual subject,
-    # but is there a faster way?
-    # def get_subjects(self):
-    #     body = {
-    #         "sessionCode": self.session_code,
-    #     }
-    #     page = requests.get(
-    #         f"{self.base_url}/LegislationSubject/api/getsubjectreferencesasync",
-    #         params=body,
-    #         headers=self.headers,
-    #         verify=False,
-    #     ).json()
 
     def text_from_html(self, html: str):
         return lxml.html.fromstring(html).text_content()
