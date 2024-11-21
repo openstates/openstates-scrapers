@@ -69,7 +69,7 @@ class INEventScraper(Scraper):
             else:
                 when = dateutil.parser.parse(date_str).date()
                 all_day = True
-                if "customstart" in meeting and meeting['customstart'] != "":
+                if "customstart" in meeting and meeting["customstart"] != "":
                     custom_start_string = f" - {meeting['customstart']}"
 
             location = meeting["location"] or "See Agenda"
