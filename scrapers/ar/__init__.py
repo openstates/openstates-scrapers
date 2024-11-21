@@ -232,7 +232,7 @@ class Arkansas(State):
             "name": "2024 Fiscal Session",
             "start_date": "2024-04-10",
             "end_date": "2024-05-09",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "Second Extraordinary Session, 2024",
@@ -242,7 +242,7 @@ class Arkansas(State):
             "start_date": "2024-06-17",
             # TODO: update end date
             "end_date": "2024-07-01",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "Regular Session, 2025",
@@ -251,7 +251,7 @@ class Arkansas(State):
             "name": "2025 Regular Session",
             "start_date": "2025-01-13",
             "end_date": "2025-04-11",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
