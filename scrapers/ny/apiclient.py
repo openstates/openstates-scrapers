@@ -1,8 +1,9 @@
 import string
-import os
 import time
 import functools
 from collections import defaultdict
+
+from utils.secrets import get_secret
 
 # from OpenSSL.SSL import SysCallError
 
@@ -92,7 +93,7 @@ class OpenLegislationAPIClient(object):
 
     def __init__(self, scraper):
         self.scraper = scraper
-        self.api_key = os.environ["NEW_YORK_API_KEY"]
+        self.api_key = get_secret("NEW_YORK_API_KEY")
 
     @check_response
     def get(
