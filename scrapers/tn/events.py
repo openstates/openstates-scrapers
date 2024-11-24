@@ -5,6 +5,7 @@ from utils import LXMLMixin, url_xpath
 from utils.events import match_coordinates
 from spatula import HtmlPage, URL, XPath, SelectorError, PdfPage
 
+import dateutil
 import pytz
 import re
 
@@ -54,6 +55,7 @@ class AgendaPdf(PdfPage):
 class TNEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Central")
     _utc = pytz.timezone("UTC")
+    _tzmapping = {"CST": "US/Central"}
 
     def scrape(self, chamber=None):
         if chamber:
@@ -112,8 +114,6 @@ class TNEventScraper(Scraper, LXMLMixin):
                         location = f"{location}, 600 Dr. Martin L King, Jr. Blvd, Nashville, TN 37243"
 
                     description = metainf["type"].text_content()
-                    dtfmt = "%A, %B %d, %Y %I:%M %p"
-                    dtfmt_no_time = "%A, %B %d, %Y"
                     # skipping cancelled here instead of setting a status, because
                     # they clear the time on canceled events so we can't look them up
                     if time == "Cancelled":
@@ -132,12 +132,11 @@ class TNEventScraper(Scraper, LXMLMixin):
                             continue
 
                         datetime_string = datetime_string.strip()
-
-                        try:
-                            when = dt.datetime.strptime(datetime_string, dtfmt)
-                        except ValueError:
-                            when = dt.datetime.strptime(datetime_string, dtfmt_no_time)
-                        when = self._utc.localize(when)
+                        when = dateutil.parser.parse(
+                            datetime_string, tzinfos=self._tzmapping
+                        )
+                        if when.tzinfo is None:
+                            when = self._tz.localize(when)
 
                     event = Event(
                         name=description,
