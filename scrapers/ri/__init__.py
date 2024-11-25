@@ -9,7 +9,7 @@ class RhodeIsland(State):
         "bills": RIBillScraper,
         "events": RIEventScraper,
     }
-    legislative_sessions = [
+    historical_legislative_sessions = [
         {
             "_scraped_name": "2012",
             "classification": "primary",

@@ -13,7 +13,7 @@ class Massachusetts(State):
         "events": MAEventScraper,
         "votes": MAVoteScraper,
     }
-    legislative_sessions = [
+    hisotrical_legislative_sessions = [
         {
             "_scraped_name": "186th",
             "classification": "primary",

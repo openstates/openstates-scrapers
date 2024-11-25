@@ -9,7 +9,7 @@ class Michigan(State):
         "bills": MIBillScraper,
         "events": MIEventScraper,
     }
-    legislative_sessions = [
+    historical_legislative_sessions = [
         {
             "_scraped_name": "2011-2012",
             "classification": "primary",
