@@ -16,6 +16,10 @@ SESSION_IDS = {
     "2023": "68",
     "2024": "69",
 }
+_CHAMBER_MAP = {
+    "H": "lower",
+    "S": "upper",
+}
 
 
 class SDBillScraper(Scraper, LXMLMixin):
@@ -100,15 +104,22 @@ class SDBillScraper(Scraper, LXMLMixin):
                     classification="primary",
                     primary=True,
                     entity_type=sponsor_type,
+                    chamber=_CHAMBER_MAP.get(sponsor["MemberType"], None),
                 )
         else:
             sponsor_type = "organization"
             committee_sponsor = re.search(r">(.*)</a>", page["BillCommitteeSponsor"])[1]
+            csp_chamber = (
+                "upper"
+                if "Senate" in committee_sponsor
+                else ("lower" if "House" in committee_sponsor else None)
+            )
             bill.add_sponsorship(
                 committee_sponsor,
                 classification="primary",
                 primary=True,
                 entity_type=sponsor_type,
+                chamber=csp_chamber or chamber,
             )
 
         for keyword in page["Keywords"]:

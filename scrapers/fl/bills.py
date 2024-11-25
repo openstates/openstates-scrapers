@@ -14,6 +14,25 @@ import requests
 SPONSOR_RE = re.compile(
     r"by\s+(?P<sponsors>[^(]+)(\(CO-INTRODUCERS\)\s+(?P<cosponsors>[\s\S]+))?"
 )
+FL_ORGANIZATION_ENTITY_NAME_KEYWORDS = [
+    "affairs",
+    "agriculture",
+    "appropriations",
+    "banking and insurance",
+    "committee",
+    "commerce and tourism",
+    "criminal justice",
+    "education",
+    "ethics and elections",
+    "environment and natural resources",
+    "fiscal policy",
+    "finance and tax",
+    "governmental oversight",
+    "health policy",
+    "regulated industries",
+    "rules",
+    "transportation",
+]
 
 requests.packages.urllib3.disable_warnings()
 requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
@@ -157,7 +176,12 @@ class BillDetail(HtmlPage):
         for sp in sponsors.split("; "):
             sp = sp.strip()
             if sp:
-                sp_type = "organization" if "committee" in sp.lower() else "person"
+                sp_type = "person"
+                if any(
+                    keyword in sp.lower()
+                    for keyword in FL_ORGANIZATION_ENTITY_NAME_KEYWORDS
+                ):
+                    sp_type = "organization"
                 self.input.add_sponsorship(sp, "primary", sp_type, True)
 
         cosponsors = match.groupdict()["cosponsors"]

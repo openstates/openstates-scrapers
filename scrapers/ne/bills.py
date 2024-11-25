@@ -13,6 +13,8 @@ TIMEZONE = pytz.timezone("US/Central")
 
 class NEBillScraper(Scraper, LXMLMixin):
     priority_bills = {}
+    # SSL bad as of 2024-11-18
+    verify = False
 
     def scrape(self, session=None):
         if session is None:
@@ -41,7 +43,7 @@ class NEBillScraper(Scraper, LXMLMixin):
 
     def scrape_priorities(self):
         priority_url = "https://nebraskalegislature.gov/session/priority.php"
-        page = self.lxmlize(priority_url)
+        page = self.lxmlize(priority_url, verify=False)
 
         for row in page.xpath(
             "//table[@id='committee_bill_results' or @id='senator_bill_results' or @id='speaker_bill_results']/tr"
@@ -60,7 +62,7 @@ class NEBillScraper(Scraper, LXMLMixin):
             "https://nebraskalegislature.gov/bills/search_by_date.php?"
             "SessionDay={}&special=1".format(start_date.strftime("%Y"))
         )
-        page = self.lxmlize(main_url)
+        page = self.lxmlize(main_url, verify=False)
 
         document_links = self.get_nodes(
             page,
@@ -83,7 +85,7 @@ class NEBillScraper(Scraper, LXMLMixin):
             "https://nebraskalegislature.gov/bills/search_by_date.php?"
             "SessionDay={}".format(year)
         )
-        page = self.lxmlize(main_url)
+        page = self.lxmlize(main_url, verify=False)
 
         document_links = self.get_nodes(
             page,
@@ -106,7 +108,7 @@ class NEBillScraper(Scraper, LXMLMixin):
             yield from self.bill_info(bill_link, session, main_url)
 
     def bill_info(self, bill_link, session, main_url):
-        bill_page = self.lxmlize(bill_link)
+        bill_page = self.lxmlize(bill_link, verify=False)
 
         long_title = self.get_node(
             bill_page, '//div[@class="main-content"]//h2'
@@ -142,9 +144,12 @@ class NEBillScraper(Scraper, LXMLMixin):
             introduced_by = introduced_by.split("Introduced By:")[1].strip()
 
         introduced_by = introduced_by.strip()
+        entity_type = "person"
+        if "committee" in introduced_by.lower():
+            entity_type = "organization"
         bill.add_sponsorship(
             name=introduced_by,
-            entity_type="person",
+            entity_type=entity_type,
             primary=True,
             classification="primary",
         )
@@ -165,9 +170,12 @@ class NEBillScraper(Scraper, LXMLMixin):
             # NE legislature site does not list cosponsors, so we grab it from action statements
             if "name added" in action:
                 cosponsor_name = action.split("name added")[0].strip()
+                entity_type = "person"
+                if "committee" in cosponsor_name.lower():
+                    entity_type = "organization"
                 bill.add_sponsorship(
                     cosponsor_name,
-                    entity_type="person",
+                    entity_type=entity_type,
                     classification="cosponsor",
                     primary=False,
                 )
@@ -285,7 +293,7 @@ class NEBillScraper(Scraper, LXMLMixin):
             date_td, motion_td, *_ = vote_link.xpath("ancestor::tr/td")
             date = datetime.strptime(date_td.text, "%b %d, %Y")
             motion_text = motion_td.text_content()
-            vote_page = self.lxmlize(vote_url)
+            vote_page = self.lxmlize(vote_url, verify=False)
             passed = "Passed" in motion_text or "Advanced" in motion_text
 
             vote = VoteEvent(

@@ -1,137 +1,133 @@
-import logging
-import os
+import json
+import re
 from datetime import date
+from urllib.parse import urljoin
 
 import dateutil.parser
-from http import HTTPStatus
 import pytz
-import requests
-import time
 from openstates.scrape import Scraper, Event
+from .apiclient import ApiClient
 from .utils import add_space
 from openstates.exceptions import EmptyScrape
 
 
-log = logging.getLogger(__name__)
-
-
 class INEventScraper(Scraper):
     _tz = pytz.timezone("America/Indianapolis")
-    # avoid cloudflare blocks for no UA
-    cf_headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/108.0.0.0 Safari/537.36"  # noqa
-    }
-    base_url = "https://api.iga.in.gov"
+    base_url = "https://beta-api.iga.in.gov"
     session = date.today().year
-    _session = requests.Session()
-    _retry_codes = (
-        HTTPStatus.TOO_MANY_REQUESTS,
-        HTTPStatus.INTERNAL_SERVER_ERROR,
-        HTTPStatus.BAD_GATEWAY,
-        HTTPStatus.SERVICE_UNAVAILABLE,
-        HTTPStatus.GATEWAY_TIMEOUT,
-    )
 
-    def _in_request(self, url):
-        """
-        Make request to INDIANA API
-        """
-        apikey = os.environ["INDIANA_API_KEY"]
-        useragent = os.getenv("USER_AGENT", self.cf_headers["User-Agent"])
-        headers = {
-            "Authorization": apikey,
-            "Accept": "application/json",
-            "User-Agent": useragent,
-        }
-        res = self._session.get(url, headers=headers)
-        attempts = 0
-        while attempts < 5 and res.status_code in self._retry_codes:
-            log.warning(
-                f"Got rate-limiting error response {res.status_code} for {url}. Retrying..."
-            )
-            attempts += 1
-            time.sleep(15)
-            res = self._session.get(url, headers=headers)
-        if res.status_code == 520:
-            self.logger.warning(f"Got CloudFlare error for {url}. Skipping...")
-            return {}
-        res.raise_for_status()
-        return res
+    def __init__(self, *args, **kwargs):
+        self.apiclient = ApiClient(self)
+        super().__init__(*args, **kwargs)
 
     def scrape(self):
-        res = self._in_request(f"{self.base_url}/{self.session}/standing-committees")
-        if not res:
-            raise EmptyScrape
+        session_no = self.apiclient.get_session_no(self.session)
+        response = self.apiclient.get("meetings", session=self.session)
 
-        for committee in res.json()["items"]:
-            committee_path = committee["link"].replace(
-                "standing-committees", "committees"
+        meetings = response["meetings"]
+        if not meetings["items"]:
+            raise EmptyScrape("No meetings found in the response.")
+
+        for item in meetings["items"]:
+            meeting = self.apiclient.get(
+                "meeting", session=self.session, meeting_link=item["link"]
             )
-            url = f"{self.base_url}{committee_path}/meetings"
-            for event in self.extract_committee_events(url, committee):
-                yield event
 
-    def extract_committee_events(self, url, committee):
-
-        res = self._in_request(url)
-        if not res:
-            return []
-        event_names = set()
-        committee_name = f"{committee['chamber']} {committee['name']}"
-        for meeting in res.json()["items"]:
             if meeting["cancelled"] != "False":
                 continue
 
-            link = meeting["link"]
-            _id = link.split("/")[-1]
-            extra_details = self._in_request(f"{self.base_url}{link}").json()
-
-            date = meeting["meetingdate"].replace(" ", "")
-            time = meeting["starttime"]
-            if time:
-                time = time.replace(" ", "")
-            location = (
-                meeting["location"]
-                or extra_details.get("location", None)
-                or "See Agenda"
+            committee = meeting["committee"]
+            committee_name = (
+                committee["name"]
+                .replace(",", "")
+                .replace("Committee on", "Committee")
+                .strip()
             )
+            committee_type = (
+                "conference"
+                if "Conference" in committee["name"]
+                else ("standing" if committee["chamber"] else "interim")
+            )
+            committee_chamber = (
+                committee["chamber"].lower() if committee["chamber"] else "universal"
+            )
+
+            link = urljoin(self.base_url, meeting["link"])
+            _id = link.split("/")[-1]
+
+            date_str = meeting["meetingdate"].replace(" ", "")
+            time_str = meeting["starttime"]
+            # Determine the 'when' variable based on the presence of time
+            if time_str:
+                time_str = time_str.replace(
+                    " ", ""
+                )  # Clean up any spaces in the time string
+                when = dateutil.parser.parse(f"{date_str} {time_str}")
+                when = self._tz.localize(when)
+                all_day = False
+            else:
+                when = dateutil.parser.parse(date_str).date()
+                all_day = True
+
+            location = meeting["location"] or "See Agenda"
             video_url = (
                 f"https://iga.in.gov/legislative/{self.session}/meeting/watchlive/{_id}"
             )
+            event_name = f"{committee['chamber']}#{committee_name}#{location}#{when}"
 
-            try:
-                when = dateutil.parser.parse(f"{date} {time}")
-            except dateutil.parser.ParserError:
-                log.info(f"Could not parse date: {date} {time}")
-                when = dateutil.parser.parse(date)
-            when = self._tz.localize(when)
-            event_name = f"{committee['chamber']}#{committee['name']}#{location}#{when}"
-            if event_name in event_names:
-                self.warning(f"Duplicate event {event_name}")
-                continue
-            event_names.add(event_name)
             event = Event(
                 name=committee_name,
                 start_date=when,
+                all_day=all_day,
                 location_name=location,
                 classification="committee-meeting",
             )
             event.dedupe_key = event_name
-            event.add_source(url, note="API document")
-            event.add_source(f"{self.base_url}{link}", note="API details")
-            name_slug = committee["name"].lower().replace(" ", "-")
+            event.add_source(link, note="API details")
+            name_slug = re.sub("[^a-zA-Z0-9]+", "-", committee_name.lower())
+
+            document_url = f"https://iga.in.gov/pdf-documents/{session_no}/{self.session}/{committee_chamber}/committees/{committee_type}/{name_slug}/{_id}/meeting.pdf"
+
             event.add_source(
-                f"https://iga.in.gov/{self.session}/committees/{committee['chamber'].lower()}/{name_slug}",
+                f"https://iga.in.gov/{self.session}/committees/{committee['chamber'].lower() or 'interim'}/{name_slug}",
                 note="Committee Schedule",
             )
             event.add_participant(committee_name, type="committee", note="host")
+            event.add_document(
+                "Meeting Agenda", document_url, media_type="application/pdf"
+            )
             event.add_media_link("Video of Hearing", video_url, media_type="text/html")
+
+            agendas = meeting["agenda"]
+            if isinstance(agendas, str):
+                agendas = json.loads(agendas)
             agenda = event.add_agenda_item("Bills under consideration")
-            for item in extra_details.get("agenda", []):
-                if not item.get("bill", None):
-                    continue
-                bill_id = item["bill"].get("billName")
-                bill_id = add_space(bill_id)
-                agenda.add_bill(bill_id)
+            for agenda_item in agendas:
+                if agenda_item.get("bill", None):
+                    bill_id = agenda_item["bill"].get("billName")
+                    bill_id = add_space(bill_id)
+                    agenda.add_bill(bill_id)
+                else:
+                    agenda.add_subject(agenda_item["description"])
+
+            for exhibit in meeting.get("exhibits"):
+                exhibit_pdf_url = self.apiclient.get_document_url(
+                    exhibit["pdfDownloadLink"]
+                )
+                if exhibit_pdf_url:
+                    event.add_document(
+                        exhibit["description"],
+                        exhibit_pdf_url,
+                        media_type="application/pdf",
+                    )
+
+            for minute in meeting.get("minutes"):
+                if minute["link"]:
+                    minute_pdf_url = f"https://iga.in.gov/pdf-documents/{session_no}/{self.session}/{committee_chamber}/committees/{committee_type}/{name_slug}/{_id}/{_id}_minutes.pdf"
+                    event.add_document(
+                        "Meeting Minutes",
+                        minute_pdf_url,
+                        media_type="application/pdf",
+                    )
+
             yield event

@@ -67,7 +67,7 @@ _categorizer_rules = (
     Rule(["Adopted, (see )?(?P<bill_id>[SH]\\S+)"], []),
     Rule(["(?is)Amendment \\(\\d+\\) rejected"], ["amendment-failure"]),
     Rule(["(?P<yes_votes>\\d+) YEAS.+?(?P<no_votes>\\d+) NAYS"], []),
-    Rule(["Passed to be engrossed"], ["passage"]),
+    Rule(["[Pp]assed to be engrossed"], ["passage"]),
     Rule(["Amendment #\\d+ \\((?P<legislator>.+?)\\) adopted"], ["amendment-passage"]),
     Rule(["Amendment #\\S+ \\((?P<legislator>.+?)\\) Rejected"], ["amendment-failure"]),
     Rule(["referred to (?P<committees>.+)"], ["referral-committee"]),

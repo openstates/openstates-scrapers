@@ -47,6 +47,7 @@ class LABillScraper(Scraper, LXMLMixin):
         "2024": "24RS",
         "2024s1": "241ES",
         "2024s2": "242ES",
+        "2024s3": "243ES",  # this is a guess, actual session bills list page not up yet
     }
 
     _start_year = ""

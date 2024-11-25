@@ -71,30 +71,37 @@ class KSBillScraper(Scraper):
 
         bill.add_source(api_url)
         bill.add_source(bill_url)
-
         # An "original sponsor" is the API's expression of "primary sponsor"
         for primary_sponsor in bill_data["ORIGINAL_SPONSOR"]:
-            primary_sponsor = self.clean_sponsor_name(primary_sponsor)
+            primary_sponsor, sponsor_chamber = self.clean_sponsor_name(primary_sponsor)
             if primary_sponsor:
                 bill.add_sponsorship(
                     name=primary_sponsor,
-                    entity_type="organization"
-                    if "committee" in primary_sponsor.lower()
-                    else "person",
+                    entity_type=(
+                        "organization"
+                        if "committee" in primary_sponsor.lower()
+                        else "person"
+                    ),
                     primary=True,
                     classification="primary",
+                    # Using global "chamber" here because we assume
+                    # the primary sponsor i.e. bill_data["ORIGINAL_SPONSOR"]
+                    # will be a committee from the chamber of bill origin
+                    # Not confident enough to do the same for bill_data["SPONSOR_NAMES"].
+                    chamber=sponsor_chamber or chamber,
                 )
         for sponsor in bill_data["SPONSOR_NAMES"]:
             if sponsor in bill_data["ORIGINAL_SPONSOR"]:
                 continue
-            sponsor = self.clean_sponsor_name(sponsor)
+            sponsor, sponsor_chamber = self.clean_sponsor_name(sponsor)
             bill.add_sponsorship(
                 name=sponsor,
-                entity_type="organization"
-                if "committee" in sponsor.lower()
-                else "person",
+                entity_type=(
+                    "organization" if "committee" in sponsor.lower() else "person"
+                ),
                 primary=False,
                 classification="cosponsor",
+                chamber=sponsor_chamber,
             )
 
         # history is backwards
@@ -142,6 +149,8 @@ class KSBillScraper(Scraper):
         return "upper" if (bill_id[0] == "S") else "lower"
 
     def clean_sponsor_name(self, sponsor):
+        sp_chamber = None
         if sponsor and sponsor.split()[0] in ["Representative", "Senator"]:
+            sp_chamber = "upper" if sponsor.split()[0] == "Senator" else "lower"
             sponsor = "".join(sponsor.split()[1:])
-        return sponsor
+        return sponsor, sp_chamber

@@ -52,7 +52,7 @@ def add_space(text):
 
     # Slice the string to get the number and text parts
     alpha = text[:index]
-    number = text[index:]
+    number = text[index:].lstrip("0")
 
     new_string = f"{alpha} {number}"
 

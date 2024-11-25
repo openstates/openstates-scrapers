@@ -10,6 +10,23 @@ from utils import LXMLMixin
 
 
 TIMEZONE = pytz.timezone("US/Mountain")
+_COMMITTEE_NAME_MAPPING = {
+    "Agriculture": "Agriculture, State and Public Lands and Water Resources",
+    "BlockChain/Technology": "Blockchain, Financial Technology and Digital Innovation Technology Select",
+    "Cap Fin & Inv": " Capital Financing and Investments Select",
+    "Corporations": "Corporations, Elections and Political Subdivisions",
+    "Fed Nat Res": "Federal Natural Resource Management Select",
+    "Labor": "Labor, Health and Social Services",
+    "Mgt Audit": "Management Audit",
+    "Mgt Council": "Management Council",
+    "Minerals": "Minerals, Business and Economic Development",
+    "Nat Res Fund": "Natural Resource Funding Select",
+    "Sel Sch Fac": "School Facilities Select",
+    "Transportation": "Transportation, Highways and Military Affairs",
+    "Travel": "Travel, Recreation, Wildlife and Cultural Resource",
+    "Tribal Relations": "Select Committee on Tribal Relations",
+    "Water": " Water Select",
+}
 
 
 class WYBillScraper(Scraper, LXMLMixin):
@@ -198,11 +215,20 @@ class WYBillScraper(Scraper, LXMLMixin):
         for sponsor in bill_json["sponsors"]:
             status = "primary" if sponsor["primarySponsor"] else "cosponsor"
             sponsor_type = "person" if sponsor["sponsorTitle"] else "organization"
+            sp_chamber = (
+                "lower"
+                if sponsor["house"] == "H"
+                else ("upper" if sponsor["house"] == "S" else None)
+            )
+            sponsor_name = sponsor["name"]
+            if sponsor_type == "organization":
+                sponsor_name = _COMMITTEE_NAME_MAPPING.get(sponsor_name, sponsor_name)
             bill.add_sponsorship(
-                name=sponsor["name"],
+                name=sponsor_name,
                 classification=status,
                 entity_type=sponsor_type,
                 primary=sponsor["primarySponsor"],
+                chamber=sp_chamber,
             )
 
         if bill_json["summary"]:

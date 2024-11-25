@@ -1,24 +1,24 @@
 import datetime
+from typing import Literal
 
-
-base_url = "http://www.legis.state.pa.us"
-members_url = "{}/cfdocs/legis/home/member_information".format(base_url)
+old_base_url = "https://www.legis.state.pa.us"
+base_url = "https://www.palegis.us"
 urls = {
     "people": {
-        "upper": "{}/senators_alpha.cfm".format(members_url),
-        "lower": "{}/representatives_alpha.cfm".format(members_url),
+        "upper": "{}/senate/members".format(base_url),
+        "lower": "{}/house/members".format(base_url),
     },
     "committees": {
-        "upper": "{}/senators_ca.cfm".format(members_url),
-        "lower": "{}/representatives_ca.cfm".format(members_url),
+        "upper": "{}/senate/committees/committee-list".format(base_url),
+        "lower": "{}/house/committees/committee-list".format(base_url),
     },
     "events": {
-        "upper": "{}/cfdocs/legis/cms/index.cfm?chamber=S".format(base_url),
-        "lower": "{}/cfdocs/legis/cms/index.cfm?chamber=H".format(base_url),
+        "upper": "{}/senate/committees/meeting-schedule".format(base_url),
+        "lower": "{}/house/committees/meeting-schedule".format(base_url),
     },
     "contacts": {
-        "upper": "{}/contact.cfm?body=S".format(members_url),
-        "lower": "{}/contact.cfm?body=H".format(members_url),
+        "upper": "{}/senate/committees/member-assignments".format(base_url),
+        "lower": "{}/house/committees/member-assignments".format(base_url),
     },
 }
 
@@ -36,33 +36,54 @@ def start_year(session):
 
 def bill_list_url(chamber, session, special):
     return (
-        "http://www.legis.state.pa.us/cfdocs/legis/bi/"
-        "BillIndx.cfm?sYear=%s&sIndex=%i&bod=%s"
+        "https://www.palegis.us/legislation/bills/bill-index?&display=index"
+        "&sessyr=%s&sessind=%s&billbody=%s"
         % (start_year(session), special, bill_abbr(chamber))
     )
 
 
-def history_url(chamber, session, special, type, bill_number):
+def info_url(session, special, bill_number):
+    bill_number = bill_number.replace(" ", "").lower()
+    if special == 0:
+        return "https://www.palegis.us/legislation/bills/%s/%s" % (
+            start_year(session),
+            bill_number,
+        )
+    else:
+        return "https://www.palegis.us/legislation/bills/%s/%s/%s" % (
+            start_year(session),
+            special,
+            bill_number,
+        )
+
+
+def vote_url(chamber, year, special, rc_number):
     return (
-        "http://www.legis.state.pa.us/cfdocs/billinfo/"
-        "bill_history.cfm?syear=%s&sind=%i&body=%s&type=%s&BN=%s"
-        % (start_year(session), special, bill_abbr(chamber), type, bill_number)
+        "https://www.palegis.us/%s/roll-calls/summary?sessYr=%s&sessInd=%s&rcNum=%s"
+        % (
+            chamber,
+            year,
+            special,
+            rc_number,
+        )
     )
 
 
-def info_url(chamber, session, special, type, bill_number):
+def committee_vote_url(
+    chamber, year, special, bill_body, biil_type, bill_num, comm_code
+):
     return (
-        "http://www.legis.state.pa.us/cfdocs/billinfo/"
-        "billinfo.cfm?syear=%s&sind=%i&body=%s&type=%s&BN=%s"
-        % (start_year(session), special, bill_abbr(chamber), type, bill_number)
-    )
-
-
-def vote_url(chamber, session, special, type, bill_number):
-    return (
-        "http://www.legis.state.pa.us/cfdocs/billinfo/"
-        "bill_votes.cfm?syear=%s&sind=%d&body=%s&type=%s&bn=%s"
-        % (start_year(session), special, bill_abbr(chamber), type, bill_number)
+        "https://www.palegis.us/%s/committees/roll-call-votes/vote-list?"
+        "sessYr=%s&sessInd=%s&billBody=%s&billType=%s&billNum=%s&committeeCode=%s"
+        % (
+            chamber,
+            year,
+            special,
+            bill_body,
+            biil_type,
+            bill_num,
+            comm_code,
+        )
     )
 
 
@@ -74,3 +95,24 @@ def parse_action_date(date_str):
         return datetime.datetime.strptime(date_str, "%B %d %Y")
     except ValueError:
         return datetime.datetime.strptime(date_str, "%b %d %Y")
+
+
+def get_sponsor_chamber(name: str) -> Literal["upper", "lower"]:
+    chamber = None
+    if "Sen." in name or "Senator" in name:
+        chamber = "upper"
+    elif "Rep." in name or "Representative" in name:
+        chamber = "lower"
+    return chamber
+
+
+def clean_sponsor_name(name: str) -> str:
+    if name:
+        return (
+            name.replace("Senator", "")
+            .replace("Representative", "")
+            .replace("Sen.", "")
+            .replace("Rep.", "")
+            .strip()
+            .title()
+        )

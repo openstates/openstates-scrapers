@@ -86,6 +86,7 @@ class Pennsylvania(State):
             "start_date": "2023-01-03",
             "end_date": "2024-11-30",
             "active": True,
+            "extras": {"session_year": "2023"},
         },
         {
             "_scraped_name": "2023-2024 Special Session #1 (Victims of Sexual Abuse)",
@@ -237,7 +238,10 @@ class Pennsylvania(State):
             self.ignored_scraped_sessions.append("{} Regular Session".format(i))
             self.ignored_scraped_sessions.append("{} Special Session #1".format(i))
 
-        return url_xpath(
-            "http://www.legis.state.pa.us/cfdocs/legis/home/bills/",
-            '//select[@id="billSessions"]/option/text()',
-        )
+        return [
+            session.strip()
+            for session in url_xpath(
+                "https://www.palegis.us/legislation/bills",
+                '//select[@id="sessionSelect"]/option/text()',
+            )
+        ]

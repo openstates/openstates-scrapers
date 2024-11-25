@@ -180,7 +180,7 @@ class Texas(State):
             "name": "88th Legislature, 3rd Called Session (2023)",
             "start_date": "2023-10-09",
             "end_date": "2023-11-08",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "88(4) - 2023",
@@ -190,6 +190,15 @@ class Texas(State):
             "start_date": "2023-11-08",
             # TODO: correct end date
             "end_date": "2023-11-17",
+            "active": False,
+        },
+        {
+            "_scraped_name": "89(R) - 2025",
+            "classification": "regular",
+            "identifier": "89R",
+            "name": "89th Legislature (2025)",
+            "start_date": "2025-01-10",
+            "end_date": "2025-06-02",
             "active": True,
         },
         # TODO: Re-enable vote scraper when adding next regular session

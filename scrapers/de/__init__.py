@@ -104,6 +104,14 @@ class Delaware(State):
             "end_date": "2024-06-30",
             "active": True,
         },
+        {
+            "_scraped_name": "2024 - 2026 (GA 153)",
+            "identifier": "153",
+            "name": "153rd General Assembly (2025-2026)",
+            "start_date": "2025-01-14",
+            "end_date": "2026-06-30",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "1932 - 1934 (GA 104)",

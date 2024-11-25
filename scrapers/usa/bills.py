@@ -208,12 +208,13 @@ class USBillScraper(Scraper):
     def classify_actor_by_code(self, action_code: str):
         if action_code is None:
             return False
-
-        if action_code[0:1] == "H":
+        # There is a new action code(Intro-H) that is not documented above.
+        # Also adding (Intro-S) to mitigate against any surprise in Senate
+        if action_code[0:1] == "H" or action_code == "Intro-H":
             return "lower"
         elif action_code[0:1] == "E":
             return "executive"
-        elif action_code[0:1] == "S":
+        elif action_code[0:1] == "S" or action_code == "Intro-S":
             return "upper"
 
         if action_code.isdigit():
@@ -376,8 +377,12 @@ class USBillScraper(Scraper):
                 )
             action_date = self._TZ.localize(action_date)
             location = "Washington, DC 20004"
+            if committee_name:
+                event_name = f"{action_text} - {bill.identifier} - {committee_name}"
+            else:
+                event_name = f"{action_text} - {bill.identifier}"
             event = Event(
-                action_text,
+                event_name,
                 action_date,
                 location_name=location,
             )
@@ -406,7 +411,7 @@ class USBillScraper(Scraper):
                 self.warning("Check amendment url ordinals")
 
             bill.add_document_link(
-                note=f"{self.get_xpath(row, 'type')} {num}",
+                note=f"{self.get_xpath(row, 'type')} {num}"[:300],
                 url=f"https://www.congress.gov/amendment/{session}th-congress/{slugs[self.get_xpath(row, 'type')]}/{num}",
                 media_type="text/html",
             )
@@ -416,6 +421,11 @@ class USBillScraper(Scraper):
             rules_url = (
                 f"https://rules.house.gov/bill/{session}/{bill_id.replace(' ', '-')}"
             )
+            # FYI: this request may be inefficient, because many bills do not have a page at the generated URL
+            # so we may be making a lot of requests that just go to 404
+            # @todo consider refactoring into a set of requests to fetch all Rules amendments in one process, earlier
+            # additionally, the server occasionally returns 403, and that triggers a backoff/retry which wastes minutes
+            # @todo consider refactoring to use requests directly to avoid retries (sees wa/bills.py)
             try:
                 page = lxml.html.fromstring(self.get(rules_url).content)
                 page.make_links_absolute(rules_url)
@@ -431,7 +441,7 @@ class USBillScraper(Scraper):
                         if not amdt_url.startswith("http"):
                             continue
                         bill.add_document_link(
-                            note=amdt_name,
+                            note=amdt_name[:300],
                             url=amdt_url,
                             media_type="application/pdf",
                         )
@@ -443,7 +453,7 @@ class USBillScraper(Scraper):
     def scrape_cbo(self, bill, xml):
         for row in xml.findall("bill/cboCostEstimates/item"):
             bill.add_document_link(
-                note=f"CBO: {self.get_xpath(row, 'title')}",
+                note=f"CBO: {self.get_xpath(row, 'title')}"[:300],
                 url=self.get_xpath(row, "url"),
                 media_type="text/html",
             )
@@ -458,7 +468,9 @@ class USBillScraper(Scraper):
 
             url = f"https://www.congress.gov/{match.group('session')}/crpt/{match.group('chamber').lower()}rpt{match.group('num')}/CRPT-{match.group('session')}{match.group('chamber').lower()}rpt{match.group('num')}.pdf"
 
-            bill.add_document_link(note=report, url=url, media_type="application/pdf")
+            bill.add_document_link(
+                note=report[:300], url=url, media_type="application/pdf"
+            )
 
     def scrape_cosponsors(self, bill, xml):
         all_sponsors = []

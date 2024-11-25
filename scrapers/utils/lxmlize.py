@@ -21,7 +21,7 @@ def url_xpath(url, path, verify=True, user_agent=None):
 class LXMLMixin(object):
     """Mixin for adding LXML helper functions to Open States code."""
 
-    def lxmlize(self, url, raise_exceptions=False):
+    def lxmlize(self, url, raise_exceptions=False, verify=True):
         """Parses document into an LXML object and makes links absolute.
 
         Args:
@@ -32,7 +32,7 @@ class LXMLMixin(object):
         try:
             # This class is always mixed into subclasses of `Scraper`,
             # which have a `get` method defined.
-            response = self.get(url)
+            response = self.get(url, verify=verify)
         except requests.exceptions.SSLError:
             self.warning(
                 "`self.lxmlize()` failed due to SSL error, trying "

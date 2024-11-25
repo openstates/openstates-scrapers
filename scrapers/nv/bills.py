@@ -72,7 +72,7 @@ def extract_bdr(title):
     the number is in the title but it's useful as a structured extra
     """
     bdr = False
-    bdr_regex = re.search(r"\(BDR (\w+-\w+)\)", title)
+    bdr_regex = re.search(r"\(BDR\u00a0(\w+-\w+)\)", title)
     if bdr_regex:
         bdr = bdr_regex.group(1)
     return bdr
@@ -208,16 +208,25 @@ class BillTabDetail(HtmlPage):
             if "Sponsors" in name or name == "":
                 continue
             # Removes leg position from name
+            # Use position to determine chamber
             # Example: Assemblywoman Alexis Hansen
+            # Also check if sponsor is an organization or person
+            # Example: "Assembly Committee on Government Affairs" is an organization
+            chamber = None
+            entity_type = "person"
+            if "committee" in name.lower():
+                entity_type = "organization"
             if name.split()[0] in ["Assemblywoman", "Assemblyman", "Senator"]:
+                chamber = "lower" if "Assembly" in name.split()[0] else "upper"
                 name = " ".join(name.split()[1:]).strip()
             if name not in seen:
                 seen.add(name)
                 bill.add_sponsorship(
                     name=name,
                     classification="sponsor" if primary else "cosponsor",
-                    entity_type="person",
+                    entity_type=entity_type,
                     primary=primary,
+                    chamber=chamber,
                 )
 
     def add_actions(self, bill, chamber):
@@ -447,6 +456,7 @@ class VoteList(HtmlPage):
         date_re = re.compile(r"Date\s+(?P<date>.*)", re.U | re.I)
         index = 0
 
+        date_motion_counts = {}
         for row in CSS(".vote-revision", min_items=0).match(self.root):
             summary = summaries[index]
             index += 1
@@ -471,6 +481,16 @@ class VoteList(HtmlPage):
                 if date_match:
                     start_date = date_match.groupdict()["date"]
                     start_date = parse_date(start_date)
+
+            # sometimes two votes with the same motion happen on the same day
+            # hence we need to make motion text unique otherwise import fails
+            date_motion = f"{start_date.date()}{summary}"
+            if start_date is not None and date_motion in date_motion_counts:
+                num_existing = date_motion_counts[date_motion]
+                summary = f"{summary} ({num_existing + 1})"
+                date_motion_counts[date_motion] += 1
+            else:
+                date_motion_counts[date_motion] = 1
 
             vote = VoteEvent(
                 chamber=chamber,
