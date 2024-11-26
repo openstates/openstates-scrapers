@@ -18,7 +18,7 @@ class Kansas(State):
         "events": KSEventScraper,
         "votes": KSVoteScraper,
     }
-    legislative_sessions = [
+    historical_legislative_sessions = [
         {
             "_scraped_name": "b2011_12",
             "classification": "primary",
