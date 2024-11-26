@@ -3,7 +3,6 @@ import lxml
 import pytz
 import re
 import requests
-import scrapelib
 import xml.etree.ElementTree as ET
 
 from openstates.scrape import Bill, Scraper, VoteEvent, Event
