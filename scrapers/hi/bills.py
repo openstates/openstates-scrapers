@@ -54,7 +54,7 @@ class HIBillScraper(Scraper):
         interceptors = {"Introducer(s)": _sponsor_interceptor}
 
         ret = {}
-        for tr in metainf_table:
+        for tr in metainf_table.cssselect("tr"):
             row = tr.xpath("td")
             key = row[0].text_content().strip()
             value = row[1].text_content().strip()
@@ -161,9 +161,26 @@ class HIBillScraper(Scraper):
             name = name[:-1]
         return name.strip()
 
-    def parse_bill_versions_table(self, bill, versions):
-        if not versions:
-            self.logger.warning("No version table for {}".format(bill.identifier))
+    def parse_bill_versions_table(self, bill, bill_page):
+        no_versions_warnings = bill_page.xpath(
+            "//*[contains(@id, 'MainContent_UpdatePanel2')]"
+            "//span[contains(text(),'You may search in our Document Directories')]"
+        )
+        if len(no_versions_warnings) == 1:
+            # Text on the page indicates there are no versions for this bill, which happens once in a while
+            self.logger.info(
+                "No bill versions posted yet for {}".format(bill.identifier)
+            )
+            return
+        else:
+            versions = bill_page.xpath(
+                "//*[contains(@id, 'MainContent_UpdatePanel2')]//a/img/../.."
+            )
+            if len(versions) == 0:
+                self.logger.warning(
+                    "Failed to select bill versions for {}".format(bill.identifier)
+                )
+                return
 
         for version in versions:
             td = version.xpath("./a")[0]
@@ -248,17 +265,13 @@ class HIBillScraper(Scraper):
 
         qs = dict(urlparse.parse_qsl(urlparse.urlparse(url).query))
         bill_id = "{}{}".format(qs["billtype"], qs["billnumber"])
-        versions = bill_page.xpath(
-            "//*[@id='ctl00_MainContent_UpdatePanel2']/div/div/div"
-        )
 
         try:
             metainf_table = bill_page.xpath(
                 '//div[contains(@id, "itemPlaceholder")]//table[1]'
             )[0]
         except IndexError:
-            self.error("Missing Metainf table")
-            self.error(bill_html)
+            self.error(f"Missing Metainf table on {url}")
             return
 
         action_table = bill_page.xpath(
@@ -332,11 +345,14 @@ class HIBillScraper(Scraper):
         if "gm" in bill_id.lower():
             b.add_sponsorship("governor", "primary", "person", True)
 
-        self.parse_bill_versions_table(b, versions)
+        self.parse_bill_versions_table(b, bill_page)
         self.parse_testimony(b, bill_page)
         self.parse_cmte_reports(b, bill_page)
 
-        if bill_page.xpath("//input[@id='MainContent_ImageButtonPDF']"):
+        if (
+            bill_page.xpath("//input[@id='MainContent_ImageButtonPDF']")
+            and len(b.versions) == 0
+        ):
             self.parse_bill_header_versions(b, bill_id, session, bill_page)
 
         current_referral = meta["Current Referral"].strip()
@@ -355,10 +371,10 @@ class HIBillScraper(Scraper):
 
     # sometimes they link to a version that's only in the header,
     # and works via a form submit, so hardcode it here
+    # jessemortenson: not sure that this condition still occurs
+    #                 couldn't find evidence of it in late 2024 session
     def parse_bill_header_versions(self, bill, bill_id, session, page):
-        pdf_link = (
-            f"https://capitol.hawaii.gov/session{session[0:4]}/bills/{bill_id}_.PDF"
-        )
+        pdf_link = f"https://capitol.hawaii.gov/session/session{session[0:4]}/bills/{bill_id}_.PDF"
         bill.add_version_link(
             bill_id,
             pdf_link,
