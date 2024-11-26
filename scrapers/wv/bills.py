@@ -42,6 +42,9 @@ class WVBillScraper(Scraper):
     }
 
     def get_year_and_stype(self, session):
+        # Get year and session type from the given session
+        # 2024 => year is 2024, session type is RS
+        # 20231S => year is 2023, session type is 1X
         year = session[0:4]
         session_type = session[4:].lower().replace("s", "x")
         if not session_type:
