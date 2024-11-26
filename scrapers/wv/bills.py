@@ -34,27 +34,6 @@ class _Url(object):
 
 class WVBillScraper(Scraper):
     categorizer = Categorizer()
-
-    _special_names = {
-        "20161S": "1X",
-        "2017": "rs",
-        "20171S": "1X",
-        "20172S": "2X",
-        "20181S": "1x",
-        "20182S": "2x",
-        "20191S": "1x",
-        "20211S": "1x",
-        "20212S": "2x",
-        "20213S": "3x",
-        "20221S": "1X",
-        "20222S": "2X",
-        "20223S": "3X",
-        "20224S": "4X",
-        "20231S": "1X",
-        "20241S": "1X",
-        "20242S": "2X",
-    }
-
     bill_types = {
         "B": "bill",
         "R": "resolution",
@@ -62,8 +41,17 @@ class WVBillScraper(Scraper):
         "JR": "joint resolution",
     }
 
-    def scrape(self, chamber=None, session=None):
+    def get_year_and_stype(self, session):
+        # Get year and session type from the given session
+        # 2024 => year is 2024, session type is RS
+        # 20231S => year is 2023, session type is 1X
+        year = session[0:4]
+        session_type = session[4:].upper().replace("S", "X")
+        if not session_type:
+            session_type = "RS"
+        return (year, session_type)
 
+    def scrape(self, chamber=None, session=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
@@ -75,22 +63,16 @@ class WVBillScraper(Scraper):
             orig = "s"
 
         # scrape bills
-        if "special" in self.jurisdiction.legislative_sessions[-1]["name"].lower():
-            url = (
-                "https://www.wvlegislature.gov/Bill_Status/Bills_all_bills.cfm?"
-                "year=%s&sessiontype=%s&btype=bill&orig=%s"
-                % (
-                    self.jurisdiction.legislative_sessions[-1]["_scraped_name"],
-                    self._special_names[session],
-                    orig,
-                )
+        year, session_type = self.get_year_and_stype(session)
+        url = (
+            "https://www.wvlegislature.gov/Bill_Status/Bills_all_bills.cfm?"
+            "year=%s&sessiontype=%s&btype=bill&orig=%s"
+            % (
+                year,
+                session_type,
+                orig,
             )
-        else:
-            url = (
-                "https://www.wvlegislature.gov/Bill_Status/Bills_all_bills.cfm?"
-                "year=%s&sessiontype=RS&btype=bill&orig=%s" % (session, orig)
-            )
-
+        )
         page = lxml.html.fromstring(self.get(url, timeout=80, verify=False).text)
         page.make_links_absolute(url)
 
@@ -114,21 +96,15 @@ class WVBillScraper(Scraper):
             )
 
         # scrape resolutions
-        if "special" in self.jurisdiction.legislative_sessions[-1]["name"].lower():
-            res_url = (
-                "https://www.wvlegislature.gov/Bill_Status/res_list.cfm?year=%s"
-                "&sessiontype=%s&btype=res"
-                % (
-                    self.jurisdiction.legislative_sessions[-1]["_scraped_name"],
-                    self._special_names[session],
-                )
+        year, session_type = self.get_year_and_stype(session)
+        res_url = (
+            "https://www.wvlegislature.gov/Bill_Status/res_list.cfm?year=%s"
+            "&sessiontype=%s&btype=res"
+            % (
+                year,
+                session_type,
             )
-        else:
-            res_url = (
-                "https://www.wvlegislature.gov/Bill_Status/res_list.cfm?year=%s"
-                "&sessiontype=rs&btype=res"
-                % (self.jurisdiction.legislative_sessions[-1]["_scraped_name"])
-            )
+        )
 
         doc = lxml.html.fromstring(self.get(res_url, timeout=80, verify=False).text)
         doc.make_links_absolute(res_url)
