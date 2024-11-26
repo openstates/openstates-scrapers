@@ -162,16 +162,24 @@ class HIBillScraper(Scraper):
         return name.strip()
 
     def parse_bill_versions_table(self, bill, bill_page):
-        no_versions_warnings = bill_page.xpath("//*[contains(@id, 'MainContent_UpdatePanel2')]"
-                                               "//span[contains(text(),'You may search in our Document Directories')]")
+        no_versions_warnings = bill_page.xpath(
+            "//*[contains(@id, 'MainContent_UpdatePanel2')]"
+            "//span[contains(text(),'You may search in our Document Directories')]"
+        )
         if len(no_versions_warnings) == 1:
             # Text on the page indicates there are no versions for this bill, which happens once in a while
-            self.logger.info("No bill versions posted yet for {}".format(bill.identifier))
+            self.logger.info(
+                "No bill versions posted yet for {}".format(bill.identifier)
+            )
             return
         else:
-            versions = bill_page.xpath("//*[contains(@id, 'MainContent_UpdatePanel2')]//a/img/../..")
+            versions = bill_page.xpath(
+                "//*[contains(@id, 'MainContent_UpdatePanel2')]//a/img/../.."
+            )
             if len(versions) == 0:
-                self.logger.warning("Failed to select bill versions for {}".format(bill.identifier))
+                self.logger.warning(
+                    "Failed to select bill versions for {}".format(bill.identifier)
+                )
                 return
 
         for version in versions:
@@ -341,7 +349,10 @@ class HIBillScraper(Scraper):
         self.parse_testimony(b, bill_page)
         self.parse_cmte_reports(b, bill_page)
 
-        if bill_page.xpath("//input[@id='MainContent_ImageButtonPDF']") and len(b.versions) == 0:
+        if (
+            bill_page.xpath("//input[@id='MainContent_ImageButtonPDF']")
+            and len(b.versions) == 0
+        ):
             self.parse_bill_header_versions(b, bill_id, session, bill_page)
 
         current_referral = meta["Current Referral"].strip()
@@ -363,9 +374,7 @@ class HIBillScraper(Scraper):
     # jessemortenson: not sure that this condition still occurs
     #                 couldn't find evidence of it in late 2024 session
     def parse_bill_header_versions(self, bill, bill_id, session, page):
-        pdf_link = (
-            f"https://capitol.hawaii.gov/session/session{session[0:4]}/bills/{bill_id}_.PDF"
-        )
+        pdf_link = f"https://capitol.hawaii.gov/session/session{session[0:4]}/bills/{bill_id}_.PDF"
         bill.add_version_link(
             bill_id,
             pdf_link,
