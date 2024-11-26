@@ -2,7 +2,7 @@ import datetime
 import lxml
 import pytz
 import re
-import scrapelib
+import requests
 import xml.etree.ElementTree as ET
 
 from openstates.scrape import Bill, Scraper, VoteEvent, Event
@@ -411,7 +411,7 @@ class USBillScraper(Scraper):
                 self.warning("Check amendment url ordinals")
 
             bill.add_document_link(
-                note=f"{self.get_xpath(row, 'type')} {num}"[:300],
+                note=f"{self.get_xpath(row, 'type')} {num}",
                 url=f"https://www.congress.gov/amendment/{session}th-congress/{slugs[self.get_xpath(row, 'type')]}/{num}",
                 media_type="text/html",
             )
@@ -423,11 +423,10 @@ class USBillScraper(Scraper):
             )
             # FYI: this request may be inefficient, because many bills do not have a page at the generated URL
             # so we may be making a lot of requests that just go to 404
-            # @todo consider refactoring into a set of requests to fetch all Rules amendments in one process, earlier
             # additionally, the server occasionally returns 403, and that triggers a backoff/retry which wastes minutes
-            # @todo consider refactoring to use requests directly to avoid retries (sees wa/bills.py)
+            # accordingly, we use requests directly and avoid retries
             try:
-                page = lxml.html.fromstring(self.get(rules_url).content)
+                page = lxml.html.fromstring(requests.get(rules_url).content)
                 page.make_links_absolute(rules_url)
                 for row in page.xpath(
                     '//article[contains(@class, "field-name-field-amendment-table")]/div/div/table/tr'
@@ -441,11 +440,11 @@ class USBillScraper(Scraper):
                         if not amdt_url.startswith("http"):
                             continue
                         bill.add_document_link(
-                            note=amdt_name[:300],
+                            note=amdt_name,
                             url=amdt_url,
                             media_type="application/pdf",
                         )
-            except scrapelib.HTTPError:
+            except (requests.exceptions.HTTPError, lxml.etree.XMLSyntaxError):
                 # Not every bill has a rules committee page
                 return
 
@@ -453,7 +452,7 @@ class USBillScraper(Scraper):
     def scrape_cbo(self, bill, xml):
         for row in xml.findall("bill/cboCostEstimates/item"):
             bill.add_document_link(
-                note=f"CBO: {self.get_xpath(row, 'title')}"[:300],
+                note=f"CBO: {self.get_xpath(row, 'title')}",
                 url=self.get_xpath(row, "url"),
                 media_type="text/html",
             )
@@ -468,9 +467,7 @@ class USBillScraper(Scraper):
 
             url = f"https://www.congress.gov/{match.group('session')}/crpt/{match.group('chamber').lower()}rpt{match.group('num')}/CRPT-{match.group('session')}{match.group('chamber').lower()}rpt{match.group('num')}.pdf"
 
-            bill.add_document_link(
-                note=report[:300], url=url, media_type="application/pdf"
-            )
+            bill.add_document_link(note=report, url=url, media_type="application/pdf")
 
     def scrape_cosponsors(self, bill, xml):
         all_sponsors = []
@@ -616,16 +613,19 @@ class USBillScraper(Scraper):
                 vote_urls.append((url, chamber))
 
         for url, chamber in vote_urls:
+            # USA roll call requests sometimes fail for a long time, and the wait on retries
+            # piles up very quickly, causing the whole scrape to be over 24 hours
+            # so, we use requests library directly to avoid long retries cycle
             try:
-                content = self.get(url).content
+                content = requests.get(url).content
                 vote_xml = lxml.html.fromstring(content)
                 if chamber.lower() == "senate":
                     vote = self.scrape_senate_votes(bill, vote_xml, url)
                 elif chamber.lower() == "house":
                     vote = self.scrape_house_votes(bill, vote_xml, url)
                 yield vote
-            except scrapelib.HTTPError:
-                self.info(f"Error fetching {url}, skipping")
+            except (requests.exceptions.HTTPError, lxml.etree.XMLSyntaxError):
+                self.info(f"Error fetching {url}, skipping (used requests, no retries)")
                 return
 
     def scrape_senate_votes(self, bill, page, url):
