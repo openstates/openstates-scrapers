@@ -46,10 +46,9 @@ class WVBillScraper(Scraper):
         # 2024 => year is 2024, session type is RS
         # 20231S => year is 2023, session type is 1X
         year = session[0:4]
-        session_type = session[4:].lower().replace("s", "x")
+        session_type = session[4:].upper().replace("S", "X")
         if not session_type:
-            session_type = "rs"
-        session_type = session_type.upper()
+            session_type = "RS"
         return (year, session_type)
 
     def scrape(self, chamber=None, session=None):
