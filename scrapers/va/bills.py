@@ -124,8 +124,8 @@ class VaBillScraper(Scraper):
 
             # map reference numbers back to their actions for impact filenames
             # HB9F122.PDF > { 'HB9F122' => "Impact statement from DPB (HB9)" }
-            if row["ReferenceNumber"]:
-                ref_num = row["ReferenceNumber"].split(".")[0]
+            if row["ReferenceNumber"] and row["ReferenceNumber"].strip() != "":
+                ref_num = row["ReferenceNumber"].split(".")[0].strip()
                 self.ref_num_map[ref_num] = row["Description"]
 
     def add_carryover_related_bill(self, bill: Bill):
@@ -195,7 +195,13 @@ class VaBillScraper(Scraper):
             if row["ImpactFile"]:
                 for impact in row["ImpactFile"]:
                     # map 241HB9F122 => HB9F122
-                    action = self.ref_num_map[impact["ReferenceNumber"][3:]]
+                    # however somtimes ReferenceNumber does NOT have a weird prefix
+                    if impact["ReferenceNumber"][3:] in self.ref_num_map:
+                        action = self.ref_num_map[impact["ReferenceNumber"][3:]]
+                    elif impact["ReferenceNumber"] in self.ref_num_map:
+                        action = self.ref_num_map[impact["ReferenceNumber"]]
+                    else:
+                        action = "Unknown"
                     bill.add_document_link(
                         action, impact["FileURL"], media_type="application/pdf"
                     )
@@ -229,6 +235,8 @@ class VaBillScraper(Scraper):
                 vote_date = dateutil.parser.parse(row["VoteDate"]).date()
 
                 motion_text = row["VoteActionDescription"]
+                if motion_text is None:
+                    motion_text = row["LegislationActionDescription"]
 
                 # the api returns 'Continued to %NextSessionYear% in Finance' so fix that
                 motion_text = motion_text.replace(
