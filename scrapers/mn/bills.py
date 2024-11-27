@@ -67,7 +67,7 @@ SITE_IDS = {
 version_re = re.compile(r".+,\s+(.+):.+Session.+\)\s+Posted on\s+(.+)")
 
 
-def format_version_url(url):
+def ensure_url_fully_qualified(url):
     if "http" not in url:
         url = "https://www.senate.mn" + url
     return url
@@ -77,7 +77,7 @@ class MNBillScraper(Scraper, LXMLMixin):
     # For testing purposes, this will do a lite version of things.  If
     # testing_bills is set, only these bills will be scraped.  Use SF0077
     testing = False
-    testing_bills = ["SF2934"]
+    testing_bills = ["SC9", "SR102"]
 
     # Regular expressions to match category of actions
     _categorizers = (
@@ -573,6 +573,35 @@ class MNBillScraper(Scraper, LXMLMixin):
 
         return bill
 
+    # Senate Resolution text server is throwing weird HTTP errors at urls like:
+    # https://www.revisor.mn.gov/bills/text.php?number=SC9&version=latest&session=ls93&session_year=2024&session_number=0
+    # that url normally just does a redirect to another url, anyway
+    # so this func rewrites to the final URL that a normal browser arrives at
+    def rewrite_senate_resolution_url(self, url):
+        parsed = urllib.parse.urlparse(url)
+        params = urllib.parse.parse_qs(parsed.query)
+        # check that we have expected params in the incoming URL
+        if not all(
+            k in params for k in ("session", "number", "session_number", "session_year")
+        ):
+            self.logger.error(
+                f"Tried to rewrite senate URL but missing expected params in {url}"
+            )
+            return url
+
+        bill_num_parts = re.search(r"([A-Z]+)([0-9]+)", params["number"][0])
+        new_url_base = "https://www.senate.mn/resolutions/display_resolution.html?"
+        new_params = {
+            "ls": params["session"][0].replace("ls", ""),
+            "bill_type": bill_num_parts[1],
+            "bill_number": bill_num_parts[2],
+            "ss_number": params["session_number"][0],
+            "ss_year": params["session_year"][0],
+        }
+        new_query = "&".join([f"{key}={new_params[key]}" for key in new_params])
+        new_url = f"{new_url_base}{new_query}"
+        return new_url
+
     def extract_versions(self, bill, doc):
         # Get all versions of the bill.
         version_rows = doc.xpath("//div[@id='versions']/table/tr[td]")
@@ -586,13 +615,24 @@ class MNBillScraper(Scraper, LXMLMixin):
                     "//div[contains(text(), 'Current bill text')]/a[1]"
                 )[0]
                 current_html_url = current.xpath("@href")[0]
+                # if senate resolution, rewrite URL to avoid weird HTTP server errros
+                if (
+                    "https://www.revisor.mn.gov/bills/text.php" in current_html_url
+                    and (
+                        "sc" in bill.identifier.lower()
+                        or "sr" in bill.identifier.lower()
+                    )
+                ):
+                    current_html_url = self.rewrite_senate_resolution_url(
+                        current_html_url
+                    )
                 current_response = requests.get(current_html_url, verify=False)
                 current_content = lxml.html.fromstring(current_response.content)
 
                 pdf_xpath = ".//a[contains(text(), 'Authors and Status')]/../following-sibling::td/a"
 
                 current_pdf_url = current_content.xpath(pdf_xpath)[0].xpath("@href")[0]
-                current_pdf_url = format_version_url(current_pdf_url)
+                current_pdf_url = ensure_url_fully_qualified(current_pdf_url)
 
                 vers_list = [
                     x
@@ -619,13 +659,13 @@ class MNBillScraper(Scraper, LXMLMixin):
                     # gets the html and pdf urls for that version
                     if href:
                         vers_html_url = href[0]
-                        vers_html_url = format_version_url(vers_html_url)
+                        vers_html_url = ensure_url_fully_qualified(vers_html_url)
                         vers_response = requests.get(vers_html_url, verify=False)
                         vers_content = lxml.html.fromstring(vers_response.content)
                         vers_pdf_url = vers_content.xpath(pdf_xpath)[0].xpath("@href")[
                             0
                         ]
-                        vers_pdf_url = format_version_url(vers_pdf_url)
+                        vers_pdf_url = ensure_url_fully_qualified(vers_pdf_url)
 
                     # If parent element does not have href, it is current version
                     else:
