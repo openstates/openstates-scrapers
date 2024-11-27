@@ -71,6 +71,15 @@ class Washington(State):
             "end_date": "2024-03-07",
             "active": True,
         },
+        {
+            "_scraped_name": "2025-26",
+            "classification": "primary",
+            "identifier": "2025-2026",
+            "name": "2025-2026 Regular Session",
+            "start_date": "2025-01-13",
+            "end_date": "2026-03-06",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2007-08",
@@ -92,6 +101,6 @@ class Washington(State):
 
         return url_xpath(
             "https://apps.leg.wa.gov/billinfo/",
-            '//select[@id="biennia"]/option/@value',
+            '//select[@id="biennium"]/option/text()',
             verify=False,
         )
