@@ -10,6 +10,7 @@ from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 
 from utils.events import match_coordinates
+from scrapelib import HTTPError
 from spatula import PdfPage, URL
 
 bills_re = re.compile(
@@ -18,6 +19,13 @@ bills_re = re.compile(
 
 
 class Agenda(PdfPage):
+    def process_error_response(self, exception):
+        # OK has some known 404s for PDFs, so swallow those exceptions
+        if isinstance(exception, HTTPError):
+            self.logger.warning(f"Skipped PDF download due to to HTTPError {exception}")
+        else:
+            raise exception
+
     def process_page(self):
         # Find all bill ids
         bills = bills_re.findall(self.text)
