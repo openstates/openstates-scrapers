@@ -278,7 +278,7 @@ class PABillScraper(Scraper):
                 # As of Nov 2024, this URL in the new site is broken
                 # but works if we add a query param
                 if "sessyr" not in url.lower():
-                    url = f"{url}&sessyr={self.session_year}"
+                    url = f"{url}&sessYr={self.session_year}"
                 yield from self.parse_committee_votes(bill, url)
             else:
                 msg = "Unexpected vote url: %r" % url
