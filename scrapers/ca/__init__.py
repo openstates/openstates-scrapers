@@ -406,7 +406,7 @@ class California(State):
             "name": "2023-2024 Regular Session",
             "start_date": "2022-12-05",
             "end_date": "2024-10-01",
-            "active": True,
+            "active": False,
         },
         {
             "classification": "special",
@@ -424,6 +424,15 @@ class California(State):
             "start_date": "2024-09-01",
             "end_date": "2024-12-05",
             "active": False,
+        },
+        {
+            "_scraped_name": "2025-2026",
+            "classification": "primary",
+            "identifier": "20252026",
+            "name": "2025-2026 Regular Session",
+            "start_date": "2024-12-02",
+            "end_date": "2026-11-30",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
