@@ -434,6 +434,14 @@ class California(State):
             "end_date": "2026-11-30",
             "active": True,
         },
+        {
+            "classification": "special",
+            "identifier": "20252026 Special Session 1",
+            "name": "2025-2026, Special Session 1",
+            "start_date": "2024-12-02",
+            "end_date": "2024-12-02",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "2013-2014",
