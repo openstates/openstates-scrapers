@@ -52,6 +52,7 @@ def backoff(function, *args, **kwargs):
 # available via the session dropdown on
 # http://www.legis.ga.gov/Legislation/en-US/Search.aspx
 SESSION_SITE_IDS = {
+    "2025_26": 1033,
     "2023_ss": 1032,
     "2023_24": 1031,
     "2021_ss": 1030,
