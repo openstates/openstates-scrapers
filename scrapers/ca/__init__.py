@@ -440,7 +440,7 @@ class California(State):
             "name": "2025-2026, Special Session 1",
             "start_date": "2024-12-02",
             "end_date": "2024-12-02",
-            "active": True,
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [
