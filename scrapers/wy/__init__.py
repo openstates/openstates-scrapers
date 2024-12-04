@@ -138,7 +138,16 @@ class Wyoming(State):
             "identifier": "2024",
             "name": "2024 Regular Session",
             "start_date": "2024-02-12",
-            "end_date": "2023-04-08",
+            "end_date": "2024-04-08",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2025",
+            "classification": "primary",
+            "identifier": "2025",
+            "name": "2025 Regular Session",
+            "start_date": "2025-01-14",
+            "end_date": "2025-03-15",
             "active": True,
         },
     ]
@@ -156,4 +165,4 @@ class Wyoming(State):
     ]
 
     def get_session_list(self):
-        return [str(x) for x in range(2011, 2025)]
+        return [str(x) for x in range(2011, 2026)]
