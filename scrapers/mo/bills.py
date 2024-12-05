@@ -371,7 +371,13 @@ class MOBillScraper(Scraper, LXMLMixin):
             bill_id = f"{bill_type} {bill_num}"
 
             bill_content = self.get(bill_url)
-            ib_response = lxml.etree.fromstring(bill_content.content)
+            try:
+                ib_response = lxml.etree.fromstring(bill_content.content)
+            except lxml.etree.XMLSyntaxError:
+                self.logger.error(
+                    f"Error parsing XML for bill {bill_num} at {bill_url}"
+                )
+                continue
 
             yield from self.parse_house_bill(
                 ib_response, bill_id, bill_year, bill_code, session
