@@ -10,6 +10,9 @@ import pytz
 
 HI_URL_BASE = "https://www.capitol.hawaii.gov"
 SHORT_CODES = f"{HI_URL_BASE}/legislature/committees.aspx?chamber=all"
+# Set this flag to true to run scrape for just one bill
+TEST_SINGLE_BILL = False
+TEST_SINGLE_BILL_NUMBER = "572"  # set to bill num you want to test
 repeated_action = ["Excused: none", "Representative(s) Eli"]
 
 
@@ -80,11 +83,16 @@ class HIBillScraper(Scraper):
         # vote types that have been reconsidered since last vote of that type
         reconsiderations = set()
 
-        for index, action in enumerate(action_table.xpath("*")[1:]):
-            date = action[0].text_content()
+        for index, action_row in enumerate(action_table.cssselect("tr")[1:]):
+            cells = action_row.cssselect("td")
+            date_cell = cells[0]
+            actor_cell = cells[1]
+            desc_cell = cells[2]
+
+            date = date_cell.text_content()
             date = dt.datetime.strptime(date, "%m/%d/%Y").strftime("%Y-%m-%d")
-            actor_code = action[1].text_content().upper()
-            string = action[2].text_content()
+            actor_code = actor_cell.text_content().upper()
+            string = desc_cell.text_content()
             actor = self._vote_type_map[actor_code]
             committees = find_committee(string)
 
@@ -416,7 +424,11 @@ class HIBillScraper(Scraper):
             bill_url = bill_url.attrib["href"].replace("www.", "")
             if not bill_url.startswith("http"):
                 bill_url = f"{HI_URL_BASE}{bill_url}"
-            yield from self.scrape_bill(session, chamber, billtype_map, bill_url)
+            if (
+                TEST_SINGLE_BILL is False
+                or f"billnumber={TEST_SINGLE_BILL_NUMBER}" in bill_url
+            ):
+                yield from self.scrape_bill(session, chamber, billtype_map, bill_url)
 
     def scrape(self, chamber=None, session=None, scrape_since=None):
         get_short_codes(self)
