@@ -75,7 +75,7 @@ class Iowa(State):
             "name": "2025-2026 Regular Session",
             "start_date": "2023-01-09",
             "end_date": "2024-04-16",
-            "active": True,
+            "active": False,
             "extras": {"ordinal": 91},
         },
     ]
