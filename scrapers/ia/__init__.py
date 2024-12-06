@@ -68,6 +68,16 @@ class Iowa(State):
             "end_date": "2024-04-16",
             "active": True,
         },
+        {
+            "_scraped_name": "General Assembly: 91",
+            "classification": "primary",
+            "identifier": "2025-2026",
+            "name": "2025-2026 Regular Session",
+            "start_date": "2025-01-13",
+            "end_date": "2025-04-22",
+            "active": False,
+            "extras": {"ordinal": 91},
+        },
     ]
     ignored_scraped_sessions = [
         "Legislative Assembly: 86",
