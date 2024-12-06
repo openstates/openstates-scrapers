@@ -22,6 +22,9 @@ class IABillScraper(Scraper):
         # so we'll continue scraping both
         yield from self.scrape_prefiles(session)
 
+        if prefiles == "True":
+            return
+
         session_id = self.get_session_id(session)
         url = f"https://www.legis.iowa.gov/legislation/findLegislation/allbills?ga={session_id}"
         page = lxml.html.fromstring(req_session.get(url).text)
@@ -359,6 +362,11 @@ class IABillScraper(Scraper):
     def get_session_id(self, session):
         # https://www.legis.iowa.gov/legislation/BillBook
         # select[@name="gaList"]
+        for i in self.jurisdiction.legislative_sessions:
+            if i["identifier"] == session:
+                if "extras" in i and "ordinal" in i["extras"]:
+                    return i["extras"]["ordinal"]
+
         return {
             "2011-2012": "84",
             "2013-2014": "85",
