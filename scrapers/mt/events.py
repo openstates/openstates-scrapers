@@ -1,7 +1,6 @@
 from typing import Union
 
 from openstates.scrape import Scraper, Event
-from openstates.exceptions import ScrapeValueError
 from utils.events import match_coordinates
 import datetime
 import dateutil
