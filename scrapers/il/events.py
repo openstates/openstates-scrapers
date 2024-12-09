@@ -1,6 +1,4 @@
-from calendar import month
 import datetime as dt
-import json
 import lxml
 import re
 

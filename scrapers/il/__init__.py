@@ -1,7 +1,5 @@
 # encoding=utf-8
-from urllib import response
 import requests
-from utils import url_xpath
 from openstates.scrape import State
 from .bills import IlBillScraper
 from .events import IlEventScraper
