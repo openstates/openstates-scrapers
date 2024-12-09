@@ -56,8 +56,17 @@ class MTEventScraper(Scraper):
         page = lxml.html.fromstring(html)
         page.make_links_absolute(url)
 
-        title = page.xpath("//span[@class='headerTitle']")[0].text_content()
-        location = page.xpath("//span[@id='location']")[0].text_content()
+        title = page.xpath("//span[@class='headerTitle']")[0].text_content().strip()
+        location = page.xpath("//span[@id='location']")[0].text_content().strip()
+
+        # handle edge case where event is named simply "Other"
+        # append the location name to force it into not being a duplicate
+        if title.lower() == "other":
+            title = f"{title} - {location}"
+
+        # handle edge case of "test" event, just ignore that
+        if title.lower() == "test":
+            return
 
         if location.lower()[0:4] == "room":
             location = f"{location}, 1301 E 6th Ave, Helena, MT 59601"
@@ -128,6 +137,9 @@ class MTEventScraper(Scraper):
             )
 
     def scrape_media(self, event: Event, html: str):
+        # MT has livestream archives available as m3u8 files
+        # these can be played only by certain players, for example:
+        # https://livepush.io/hlsplayer/index.html
         matches = re.search(r"Media:\s?(.*),", html)
         media = json.loads(matches.group(1))
         if "children" in media and media["children"] is not None:
