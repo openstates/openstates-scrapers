@@ -1,4 +1,7 @@
+from typing import Union
+
 from openstates.scrape import Scraper, Event
+from openstates.exceptions import ScrapeValueError
 from utils.events import match_coordinates
 import datetime
 import dateutil
@@ -10,17 +13,23 @@ import re
 
 class MTEventScraper(Scraper):
     _tz = pytz.timezone("America/Denver")
+    # the same MT event can be listed more than once at the source URLs
+    # where each listing is an alternate media stream (video vs. audio)
+    # so we need to do some data combining before yielding
+    _events = []
 
     def scrape(self):
 
-        yield from self.scrape_upcoming()
+        self.scrape_upcoming()
 
         # scrape events from this month, and last month
         today = datetime.date.today()
-        yield from self.scrape_cal_month(today)
-        yield from self.scrape_cal_month(
+        self.scrape_cal_month(today)
+        self.scrape_cal_month(
             today + dateutil.relativedelta.relativedelta(months=-1)
         )
+        for event in self._events:
+            yield event
 
     def scrape_upcoming(self):
         url = "https://sg001-harmony.sliq.net/00309/Harmony/en/View/UpcomingEvents"
@@ -30,7 +39,7 @@ class MTEventScraper(Scraper):
         page.make_links_absolute(url)
 
         for link in page.xpath("//div[@class='divEvent']/a[1]"):
-            yield from self.scrape_event(link.xpath("@href")[0])
+            self.scrape_event(link.xpath("@href")[0])
 
     def scrape_cal_month(self, when: datetime.datetime.date):
         date_str = when.strftime("%Y%m01")
@@ -43,7 +52,7 @@ class MTEventScraper(Scraper):
             if when.date() < datetime.datetime.today().date():
                 event_id = str(row["Id"])
                 event_url = f"https://sg001-harmony.sliq.net/00309/Harmony/en/PowerBrowser/PowerBrowserV2/1/-1/{event_id}"
-                yield from self.scrape_event(event_url)
+                self.scrape_event(event_url)
 
     def scrape_event(self, url: str):
         html = self.get(url).text
@@ -62,17 +71,25 @@ class MTEventScraper(Scraper):
         when = dateutil.parser.parse(f"{when_date} {when_time}")
         when = self._tz.localize(when)
 
-        event = Event(
-            name=title,
-            location_name=location,
-            start_date=when,
-            classification="committee-meeting",
-        )
+        # Check if event already exists in the self._events list
+        # and if so, add data to that instead of creating duplicate
+        existing_event = self.check_for_existing_event(title, location, when)
+        if existing_event is None:
+            # No existing event found, create one
+            event = Event(
+                name=title,
+                location_name=location,
+                start_date=when,
+                classification="committee-meeting",
+            )
+        else:
+            event = existing_event
 
         self.scrape_versions(event, html)
         self.scrape_media(event, html)
 
-        event.add_source(url)
+        if existing_event is None:
+            event.add_source(url)
 
         if "HB" not in title.lower() and "SB" not in title.lower():
             event.add_committee(title)
@@ -84,7 +101,16 @@ class MTEventScraper(Scraper):
             },
         )
 
-        yield event
+        # Make sure we add any new event to the list
+        if existing_event is None:
+            self._events.append(event)
+
+    def check_for_existing_event(self, title: str, location_name: str, start_date: datetime.datetime.date) -> Union[Event, None]:
+        for event in self._events:
+            if event.name == title and event.location["name"] == location_name and event.start_date == start_date:
+                return event
+
+        return None
 
     # versions and media are in the 'dataModel' js variable on the page
     def scrape_versions(self, event: Event, html: str):
@@ -107,4 +133,5 @@ class MTEventScraper(Scraper):
                     m["textTags"]["DESCRIPTION"]["text"],
                     m["textTags"]["URL"]["text"],
                     media_type="application/vnd",
+                    on_duplicate="ignore"  # we are combining links from duplicate "event" listings into one
                 )
