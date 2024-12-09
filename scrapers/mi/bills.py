@@ -108,7 +108,12 @@ class MIBillScraper(Scraper):
             if "substitute" in action.lower() and row.xpath("td[3]/a/@href"):
                 version_url = row.xpath("td[3]/a/@href")[0]
                 sub = re.search(r"\(.*?\)", action)
-                version_name = f"Substitute {sub.group(0)}"
+
+                if sub:
+                    version_name = f"Substitute {sub.group(0)}"
+                elif "committee of the whole" in action.lower():
+                    version_name = "Substitute, reported by Committee of the Whole"
+
                 if version_name in seen_subs:
                     seen_subs[version_name] += 1
                     version_name = f"{version_name} - {seen_subs[version_name]}"
