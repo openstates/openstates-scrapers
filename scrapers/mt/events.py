@@ -25,9 +25,7 @@ class MTEventScraper(Scraper):
         # scrape events from this month, and last month
         today = datetime.date.today()
         self.scrape_cal_month(today)
-        self.scrape_cal_month(
-            today + dateutil.relativedelta.relativedelta(months=-1)
-        )
+        self.scrape_cal_month(today + dateutil.relativedelta.relativedelta(months=-1))
         for event in self._events:
             yield event
 
@@ -105,9 +103,15 @@ class MTEventScraper(Scraper):
         if existing_event is None:
             self._events.append(event)
 
-    def check_for_existing_event(self, title: str, location_name: str, start_date: datetime.datetime.date) -> Union[Event, None]:
+    def check_for_existing_event(
+        self, title: str, location_name: str, start_date: datetime.datetime.date
+    ) -> Union[Event, None]:
         for event in self._events:
-            if event.name == title and event.location["name"] == location_name and event.start_date == start_date:
+            if (
+                event.name == title
+                and event.location["name"] == location_name
+                and event.start_date == start_date
+            ):
                 return event
 
         return None
@@ -133,5 +137,5 @@ class MTEventScraper(Scraper):
                     m["textTags"]["DESCRIPTION"]["text"],
                     m["textTags"]["URL"]["text"],
                     media_type="application/vnd",
-                    on_duplicate="ignore"  # we are combining links from duplicate "event" listings into one
+                    on_duplicate="ignore",  # we are combining links from duplicate "event" listings into one
                 )
