@@ -79,7 +79,7 @@ class MTEventScraper(Scraper):
 
         # Check if event already exists in the self._events list
         # and if so, add data to that instead of creating duplicate
-        existing_event = self.check_for_existing_event(title, location, when)
+        existing_event = self.check_for_existing_event(title, when)
         if existing_event is None:
             # No existing event found, create one
             event = Event(
@@ -112,12 +112,11 @@ class MTEventScraper(Scraper):
             self._events.append(event)
 
     def check_for_existing_event(
-        self, title: str, location_name: str, start_date: datetime.datetime.date
+        self, title: str, start_date: datetime.datetime.date
     ) -> Union[Event, None]:
         for event in self._events:
             if (
                 event.name == title
-                and event.location["name"] == location_name
                 and event.start_date == start_date
             ):
                 return event
