@@ -115,10 +115,7 @@ class MTEventScraper(Scraper):
         self, title: str, start_date: datetime.datetime.date
     ) -> Union[Event, None]:
         for event in self._events:
-            if (
-                event.name == title
-                and event.start_date == start_date
-            ):
+            if event.name == title and event.start_date == start_date:
                 return event
 
         return None
