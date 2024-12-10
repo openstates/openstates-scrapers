@@ -9,6 +9,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 
 
+BASE_URL = "https://beta.ilga.gov"
 central = pytz.timezone("US/Central")
 
 
@@ -239,7 +240,7 @@ COMMITTEE_CORRECTIONS = {
 }
 
 DUPE_VOTES = {
-    "https://ilga.gov/legislation/votehistory/100/house/committeevotes/"
+    f"{BASE_URL}/legislation/votehistory/100/house/committeevotes/"
     "10000HB2457_16401.pdf"
 }
 
@@ -279,12 +280,13 @@ def chamber_slug(chamber):
 
 
 class IlBillScraper(Scraper):
-    LEGISLATION_URL = "https://beta.ilga.gov/Legislation/"
+    LEGISLATION_URL = f"{BASE_URL}/Legislation/"
     localize = pytz.timezone("America/Chicago").localize
 
     def get_bill_urls(self, chamber, session, doc_type):
         params = session_details[session]["params"]
-        url = "https://beta.ilga.gov/Legislation/RegularSession/{}?SessionId={}".format(
+        url = "{}/Legislation/RegularSession/{}?SessionId={}".format(
+            BASE_URL,
             doc_type,
             params["SessionId"],
         )
@@ -293,7 +295,7 @@ class IlBillScraper(Scraper):
         doc.make_links_absolute(url)
 
         for bill_url in doc.xpath(
-            '//div[@id="div_0001"]//table//td[1]/a[contains(@href, "DocNum=")]/@href'
+            '//div[contains(@id,"div_")]//table//td[1]/a[contains(@href, "DocNum=")]/@href'
         ):
             yield bill_url
 
@@ -326,7 +328,7 @@ class IlBillScraper(Scraper):
 
     def scrape_archive_bills(self, session):
         session_abr = session[0:2]
-        url = f"https://beta.ilga.gov/documents/legislation/legisnet{session_abr}/{session_abr}gatoc.html"
+        url = f"{BASE_URL}/documents/legislation/legisnet{session_abr}/{session_abr}gatoc.html"
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
@@ -616,7 +618,7 @@ class IlBillScraper(Scraper):
                         )
                     )
                     # if it's html, extract the pdf link too while we're here.
-                    pdf_url = f"https://beta.ilga.gov/documents/legislation/{session_number}/{doctype}/PDF/{version_id}.pdf"
+                    pdf_url = f"{BASE_URL}/documents/legislation/{session_number}/{doctype}/PDF/{version_id}.pdf"
                     bill.add_version_link(name, pdf_url, media_type="application/pdf")
 
                 bill.add_version_link(name, url, media_type=mimetype)

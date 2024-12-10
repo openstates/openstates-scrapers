@@ -7,9 +7,10 @@ from openstates.exceptions import EmptyScrape
 
 import pytz
 
+BASE_URL = "https://beta.ilga.gov"
 urls = {
-    "upper": "https://beta.ilga.gov/Senate/Schedules",
-    "lower": "https://beta.ilga.gov/House/Schedules",
+    "upper": f"{BASE_URL}/Senate/Schedules",
+    "lower": f"{BASE_URL}/House/Schedules",
 }
 
 chamber_names = {
@@ -72,7 +73,6 @@ class IlEventScraper(Scraper):
         repl = {"AM": " AM", "PM": " PM"}  # Space shim.
         for r in repl:
             datetime = datetime.replace(r, repl[r])
-        # datetime = self.localize(dt.datetime.strptime(datetime, "%b %d, %Y %I:%M %p"))
         datetime = self.localize(dt.datetime.strptime(datetime, "%m/%d/%Y %I:%M %p"))
 
         event_name = f"{description}#{where}#{datetime}"
@@ -125,9 +125,9 @@ class IlEventScraper(Scraper):
             for table in tables:
                 meetings = table.xpath(".//button")
                 for meeting in meetings:
-                    meeting_url = "https://beta.ilga.gov" + meeting.attrib[
-                        "onclick"
-                    ].replace("location.href=", "").strip("'. ")
+                    meeting_url = BASE_URL + meeting.attrib["onclick"].replace(
+                        "location.href=", ""
+                    ).strip("'. ")
                     event, name = self.scrape_page(meeting_url, chamber_names[chamber])
                     if event and name:
                         if name in events:
