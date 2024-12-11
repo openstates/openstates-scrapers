@@ -2,7 +2,6 @@ import pytz
 import json
 import lxml
 import re
-import datetime
 import dateutil
 import requests
 from openstates.scrape import Scraper, Bill, VoteEvent
@@ -94,6 +93,9 @@ class ALBillScraper(Scraper):
             instrumentType
             instrumentSponsor
             instrumentUrl
+            introducedUrl
+            engrossedUrl
+            enrolledUrl
             companionInstrumentNbr
             sessionType
             sessionYear
@@ -114,11 +116,11 @@ class ALBillScraper(Scraper):
             },
         }
 
-        print(json_data)
+        # print(json_data)
         page = requests.post(self.gql_url, headers=self.gql_headers, json=json_data)
         page = json.loads(page.content)
 
-        print(page)
+        # print(page)
 
         if page["data"]["instrumentOverviews"]["count"] < 1:
             return
@@ -191,22 +193,22 @@ class ALBillScraper(Scraper):
             yield from self.scrape_bill_type(session, bill_type, offset + 50, limit)
 
     def scrape_versions(self, bill, row):
-        if row["IntroducedUrl"]:
+        if row["introducedUrl"]:
             bill.add_version_link(
                 "Introduced",
-                url=row["IntroducedUrl"],
+                url=row["introducedUrl"],
                 media_type="application/pdf",
             )
-        if row["EngrossedUrl"]:
+        if row["engrossedUrl"]:
             bill.add_version_link(
                 "Engrossed",
-                url=row["EngrossedUrl"],
+                url=row["engrossedUrl"],
                 media_type="application/pdf",
             )
-        if row["EnrolledUrl"]:
+        if row["enrolledUrl"]:
             bill.add_version_link(
                 "Enrolled",
-                url=row["EnrolledUrl"],
+                url=row["enrolledUrl"],
                 media_type="application/pdf",
             )
 
@@ -257,13 +259,11 @@ class ALBillScraper(Scraper):
     def scrape_actions(self, bill, bill_row):
         bill_id = bill.identifier.replace(" ", "")
 
-        if bill_row["PrefiledDate"]:
-            action_date = datetime.datetime.strptime(
-                bill_row["PrefiledDate"], "%m/%d/%Y"
-            )
+        if bill_row["prefiledDate"]:
+            action_date = dateutil.parser.parse(bill_row["prefiledDate"])
             action_date = self.tz.localize(action_date)
             bill.add_action(
-                chamber=self.chamber_map[bill_row["Body"]],
+                chamber=self.chamber_map[bill_row["body"]],
                 description="Filed",
                 date=action_date,
                 classification="filing",
@@ -326,21 +326,40 @@ class ALBillScraper(Scraper):
     def scrape_fiscal_notes(self, bill):
         bill_id = bill.identifier.replace(" ", "")
 
+        print(self.session_type, self.session_year)
+
         json_data = {
-            "query": "query fiscalNotes($instrumentNbr: String, $sessionType: String, $sessionYear: String){fiscalNotes(instrumentNbr:$instrumentNbr, sessionType:$sessionType, sessionYear: $sessionYear, ){ FiscalNoteDescription,FiscalNoteUrl,SortOrder }}",
+            "query": """
+                query {
+                    fiscalNotes(
+                        where: {sessionType: {eq: "2024 Regular Session"}, sessionYear: {eq: 2024}, instrumentNbr: {eq: "HB1"}}
+                    )
+                    {
+                        data {
+                        description
+                        url
+                        sortOrder
+                        __typename
+                        }
+                    }
+                }
+            """,
             "variables": {
                 "instrumentNbr": bill_id,
                 "sessionType": self.session_type,
-                "sessionYear": self.session_year,
+                "sessionYear": self.session_year + " Regular Session",
             },
         }
 
+        print(json_data)
         page = requests.post(self.gql_url, headers=self.gql_headers, json=json_data)
+
+        print(page.content)
         page = json.loads(page.content)
-        for row in page["data"]["fiscalNotes"]:
+        for row in page["data"]["fiscalNotes"]["data"]:
             bill.add_document_link(
-                f"Fiscal Note: {row['FiscalNoteDescription']}",
-                row["FiscalNoteUrl"],
+                f"Fiscal Note: {row['description']}",
+                row["url"],
                 media_type="application/pdf",
                 on_duplicate="ignore",
             )
