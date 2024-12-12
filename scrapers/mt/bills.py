@@ -165,6 +165,7 @@ class MTBillScraper(Scraper):
                     self.scrape_fiscal_note(
                         bill, row["billType"]["code"], row["billNumber"]
                     )
+            self.scrape_lc_versions(bill, row["draft"]["draftNumber"])
 
             if row["sponsorId"]:
                 for legislator in self.legislators:
@@ -398,3 +399,23 @@ class MTBillScraper(Scraper):
                     media_type="application/pdf",
                     on_duplicate="ignore",
                 )
+
+    def scrape_lc_versions(self, bill: Bill, lc_number: str):
+        lc_docs_url = f"https://api.legmt.gov/docs/v1/documents/getBillLcs?legislatureOrdinal={self.session_ord}&sessionOrdinal={self.mt_session_id}&lcnumber={lc_number}"
+        try:
+            response = self.get(lc_docs_url).json()
+        except scrapelib.HTTPError:
+            # no data = 404 instead of empty json
+            return
+
+        # TODO: this url returns binary data without the correct content type header,
+        # we could POST to https://api.legmt.gov/docs/v1/documents/shortPdfUrl?documentId=2710 and get back a better
+        # GET url, but is that worth 5x the requests?
+        for doc_row in response:
+            doc_url = f"https://api.legmt.gov/docs/v1/documents/getContent?documentId={str(doc_row['id'])}"
+            bill.add_version_link(
+                doc_row["fileName"],
+                doc_url,
+                media_type="application/pdf",
+                on_duplicate="ignore",
+            )
