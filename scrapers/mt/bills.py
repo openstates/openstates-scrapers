@@ -162,12 +162,16 @@ class MTBillScraper(Scraper):
             if not is_draft:
                 self.scrape_versions(bill, row["billType"]["code"], row["billNumber"])
                 if row["draft"]["fiscalNote"]:
-                    self.scrape_fiscal_note(bill, row["billType"]["code"], row["billNumber"])
+                    self.scrape_fiscal_note(
+                        bill, row["billType"]["code"], row["billNumber"]
+                    )
 
             if row["sponsorId"]:
                 for legislator in self.legislators:
                     if row["sponsorId"] == legislator["id"]:
-                        sponsor_name = f"{legislator['first_name']} {legislator['last_name']}"
+                        sponsor_name = (
+                            f"{legislator['first_name']} {legislator['last_name']}"
+                        )
                         bill.add_sponsorship(
                             sponsor_name,
                             classification="primary",
@@ -234,7 +238,6 @@ class MTBillScraper(Scraper):
         for subject in row["draft"]["subjects"]:
             bill.add_subject(subject["subjectCode"]["description"])
 
-
     def scrape_archive_list_page(self, session, page_num: int):
         self.info(f"Scraping page {str(page_num)}")
         params = {
@@ -279,10 +282,10 @@ class MTBillScraper(Scraper):
             self.scrape_archive_subjects(bill, row)
 
             if not is_draft:
-                self.scrape_versions(bill, row['billType'], row['billNumber'])
+                self.scrape_versions(bill, row["billType"], row["billNumber"])
 
             if row["hasFiscalNote"]:
-                self.scrape_fiscal_note(bill, row['billType'], row['billNumber'])
+                self.scrape_fiscal_note(bill, row["billType"], row["billNumber"])
 
             if row["coSponsor"]:
                 print(row["coSponsor"])
