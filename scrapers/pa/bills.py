@@ -38,13 +38,20 @@ class PABillScraper(Scraper):
         url = utils.bill_list_url(chamber, session, special)
         page = self.get_page(url)
 
+        # PA website repeats some bills on the listing page
+        # ex: resolutions that are also concurrent resolutions
+        bill_urls_seen = []
+
         RETRY_TIMES = 5
         for link in page.xpath('//a[@class="bill"]'):
             is_parsed = False
             for retry_time in range(0, RETRY_TIMES):
                 try:
-                    yield from self.parse_bill(chamber, session, special, link)
+                    if link.attrib["href"] not in bill_urls_seen:
+                        bill_urls_seen.append(link.attrib["href"])
+                        yield from self.parse_bill(chamber, session, special, link)
                     is_parsed = True
+
                     break
                 except Exception as e:
                     self.logger.warning(
