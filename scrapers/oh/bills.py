@@ -12,7 +12,9 @@ requests.packages.urllib3.disable_warnings()
 
 
 class OHBillScraper(Scraper):
+    short_base_url = "https://search-prod.lis.state.oh.us"
     base_url = ""
+    session_url_slug = ""
     _tz = pytz.timezone("US/Eastern")
 
     # Vote Motion Dictionary was created by comparing vote codes to
@@ -52,10 +54,12 @@ class OHBillScraper(Scraper):
         ] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36"
 
         session_id = session
+        session_url_slug = session
         for i in self.jurisdiction.legislative_sessions:
             if i["identifier"] == session:
                 if "extras" in i and "session_id" in i["extras"]:
                     session_id = i["extras"]["session_id"]
+                    session_url_slug = i["extras"]["session_url_slug"]
 
         self.base_url = f"https://search-prod.lis.state.oh.us/solarapi/v1/general_assembly_{session_id}/"
 
@@ -156,7 +160,7 @@ class OHBillScraper(Scraper):
                 classification=classification,
             )
             bill.add_source(
-                f"https://www.legislature.ohio.gov/legislation/{session}/{bill_number}"
+                f"https://www.legislature.ohio.gov/legislation/{session_url_slug}/{bill_number}"
             )
 
             if (session, bill_id) in BAD_BILLS:
@@ -189,7 +193,7 @@ class OHBillScraper(Scraper):
             # this stuff is version-specific
             for version in data["items"]:
                 version_name = version["version"]
-                version_link = self.base_url + version["pdfDownloadLink"]
+                version_link = self.short_base_url + version["pdfDownloadLink"]
                 bill.add_version_link(
                     version_name, version_link, media_type="application/pdf"
                 )
@@ -234,7 +238,7 @@ class OHBillScraper(Scraper):
 
             try:
                 action_doc = self.get(
-                    self.base_url + bill_version["action"][0]["link"],
+                    self.short_base_url + bill_version["action"][0]["link"],
                     verify=False,
                 )
             except scrapelib.HTTPError:
@@ -278,10 +282,8 @@ class OHBillScraper(Scraper):
             self.add_document(all_synopsis, bill_id, "synopsis", bill, self.base_url)
             self.add_document(all_analysis, bill_id, "analysis", bill, self.base_url)
 
-            short_base_url = "https://search-prod.lis.state.oh.us"
-
             # votes
-            vote_url = short_base_url + bill_version["votes"][0]["link"]
+            vote_url = self.short_base_url + bill_version["votes"][0]["link"]
             try:
                 vote_doc = self.get(vote_url)
             except scrapelib.HTTPError:
@@ -299,7 +301,7 @@ class OHBillScraper(Scraper):
                 vote_results,
             )
 
-            vote_url = short_base_url + bill_version["cmtevotes"][0]["link"]
+            vote_url = self.short_base_url + bill_version["cmtevotes"][0]["link"]
             try:
                 vote_doc = self.get(vote_url)
             except scrapelib.HTTPError:
@@ -338,7 +340,7 @@ class OHBillScraper(Scraper):
             # so we'll check and throw an error if we find one
             # life is fragile. so are our scrapers.
             if "veto" in bill_version:
-                veto_url = short_base_url + bill_version["veto"][0]["link"]
+                veto_url = self.short_base_url + bill_version["veto"][0]["link"]
                 veto_json = self.get(veto_url).json()
                 if len(veto_json["items"]) > 0:
                     raise AssertionError(
@@ -349,7 +351,9 @@ class OHBillScraper(Scraper):
                     )
 
             if "disapprove" in bill_version:
-                disapprove_url = short_base_url + bill_version["disapprove"][0]["link"]
+                disapprove_url = (
+                    self.short_base_url + bill_version["disapprove"][0]["link"]
+                )
                 disapprove_json = self.get(disapprove_url).json()
                 if len(disapprove_json["items"]) > 0:
                     raise AssertionError(
@@ -374,7 +378,7 @@ class OHBillScraper(Scraper):
         # The /resolutions endpoint has included duplicate bills in its output, so use a set to filter duplicates
         bill_numbers_seen = set()
         total_bills = []
-        bills_url = f"{self.base_url}/bills"
+        bills_url = f"{self.base_url}bills"
         bill_data = self.get(bills_url, verify=False).json()
         if len(bill_data["items"]) == 0:
             self.logger.warning("No bills")
@@ -387,7 +391,7 @@ class OHBillScraper(Scraper):
                     f"Duplicate bill found in bills API response: {bill['number']}"
                 )
 
-        res_url = f"{self.base_url}/resolutions"
+        res_url = f"{self.base_url}resolutions"
         res_data = self.get(res_url, verify=False).json()
         if len(res_data["items"]) == 0:
             self.logger.warning("No resolutions")

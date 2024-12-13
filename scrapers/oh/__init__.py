@@ -48,7 +48,7 @@ class Ohio(State):
             "start_date": "2024-05-28",
             "end_date": "2024-06-12",
             "active": True,
-            "extras": {"session_id": "135_special_1"},
+            "extras": {"session_id": "135_special_1", "session_url_slug": "135-s1"},
         },
         {
             "_scraped_name": "135th (2023-2024)",
