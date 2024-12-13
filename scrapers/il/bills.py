@@ -504,7 +504,8 @@ class IlBillScraper(Scraper):
             chamber=chamber,
         )
 
-        bill.add_abstract(summary, note="")
+        if summary:
+            bill.add_abstract(summary, note="")
 
         bill.add_source(url)
         # sponsors
