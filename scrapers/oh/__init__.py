@@ -41,6 +41,16 @@ class Ohio(State):
             "active": False,
         },
         {
+            "_scraped_name": "135th - Special Session (2023)",
+            "classification": "special",
+            "identifier": "135S1",
+            "name": "135th Legislature, First Special Session",
+            "start_date": "2024-05-28",
+            "end_date": "2024-06-12",
+            "active": True,
+            "extras": {"session_id": "135_special_1", "session_url_slug": "135-s1"},
+        },
+        {
             "_scraped_name": "135th (2023-2024)",
             "identifier": "135",
             "name": "135th Legislature (2023-2024)",
