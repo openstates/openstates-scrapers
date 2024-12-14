@@ -345,7 +345,7 @@ class Utah(State):
             "name": "2024 General Session",
             "start_date": "2024-01-16",
             "end_date": "2024-03-01",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2024 3rd Special Session",
@@ -355,7 +355,7 @@ class Utah(State):
             "start_date": "2024-06-19",
             # TODO: update end_date
             "end_date": "2024-06-20",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2024 4th Special Session",
@@ -365,11 +365,19 @@ class Utah(State):
             "start_date": "2024-08-21",
             # TODO: update end_date
             "end_date": "2024-08-30",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2025 General Session",
+            "classification": "primary",
+            "identifier": "2025",
+            "name": "2025 General Session",
+            "start_date": "2025-01-21",
+            "end_date": "2025-03-17",
             "active": True,
         },
     ]
     ignored_scraped_sessions = [
-        "2025 General Session",
         "2023 1st House Extraordinary Session",
         "2013 1st House Session",
         "2011 Veto Override Session",
