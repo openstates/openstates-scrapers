@@ -60,7 +60,7 @@ class UTBillScraper(Scraper, LXMLMixin):
         # in order to get the IDs of the actual bill lists
         bill_list_ids = []
         show_hide_elems = doc.cssselect("a.mitem")
-        js_id_getter = re.compile("javascript:toggleObj\('([^']+)'\)")
+        js_id_getter = re.compile(r"javascript:toggleObj\('([^']+)'\)")
         for elem in show_hide_elems:
             list_id_match = js_id_getter.match(elem.get("href"))
             if list_id_match:
