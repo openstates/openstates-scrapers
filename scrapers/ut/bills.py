@@ -130,7 +130,9 @@ class UTBillScraper(Scraper, LXMLMixin):
             # TODO vote processing - need to see what data looks like
             self.scrape_bill_details_from_api(bill, url, session_slug)
         else:
-            yield from self.parse_bill_details_from_html(bill, bill_id, chamber, page, primary_info)
+            yield from self.parse_bill_details_from_html(
+                bill, bill_id, chamber, page, primary_info
+            )
 
         yield bill
 
@@ -182,8 +184,8 @@ class UTBillScraper(Scraper, LXMLMixin):
                 media_type="application/pdf",
             )
         for related in page.xpath(
-                '//b[text()="Related Documents "]/following-sibling::ul/li/'
-                'a[contains(@class,"nlink")]'
+            '//b[text()="Related Documents "]/following-sibling::ul/li/'
+            'a[contains(@class,"nlink")]'
         ):
             href = related.xpath("@href")[0]
             if ".fn.pdf" in href:
@@ -226,7 +228,9 @@ class UTBillScraper(Scraper, LXMLMixin):
         )
         if data["floorSponsor"]:
             floor_sponsor_name = data["floorSponsorName"]
-            floor_sponsor_name = floor_sponsor_name.replace("Sen. ", "").replace("Rep. ", "")
+            floor_sponsor_name = floor_sponsor_name.replace("Sen. ", "").replace(
+                "Rep. ", ""
+            )
             floor_sponsor_chamber = SPONSOR_HOUSE_TO_CHAMBER[data["floorSponsorHouse"]]
             bill.add_sponsorship(
                 floor_sponsor_name,
@@ -263,13 +267,13 @@ class UTBillScraper(Scraper, LXMLMixin):
                 bill.add_version_link(
                     doc_data["shortDesc"],
                     f"https://le.utah.gov{doc_data['url']}",
-                    media_type="text/xml"
+                    media_type="text/xml",
                 )
-                pdf_filepath = doc_data['url'].replace(".xml", ".pdf")
+                pdf_filepath = doc_data["url"].replace(".xml", ".pdf")
                 bill.add_version_link(
                     doc_data["shortDesc"],
                     f"https://le.utah.gov{pdf_filepath}",
-                    media_type="application/pdf"
+                    media_type="application/pdf",
                 )
 
         for subject in subjects:
@@ -288,9 +292,13 @@ class UTBillScraper(Scraper, LXMLMixin):
             elif "governor" in action_data["owner"].lower():
                 actor = "executive"
             else:
-                self.error(f"Found unexpected actor {action_data['owner']} at {api_url}")
+                self.error(
+                    f"Found unexpected actor {action_data['owner']} at {api_url}"
+                )
 
-            date = datetime.datetime.strptime(action_data["actionDate"], "%m/%d/%Y").date()
+            date = datetime.datetime.strptime(
+                action_data["actionDate"], "%m/%d/%Y"
+            ).date()
             date = date.strftime("%Y-%m-%d")
 
             bill.add_action(
