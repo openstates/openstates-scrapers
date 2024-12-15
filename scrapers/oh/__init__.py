@@ -41,7 +41,7 @@ class Ohio(State):
             "active": False,
         },
         {
-            "_scraped_name": "135th - Special Session (2023)",
+            "_scraped_name": "135th - Special Session (2024)",
             "classification": "special",
             "identifier": "135S1",
             "name": "135th Legislature, First Special Session",
