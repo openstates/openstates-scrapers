@@ -103,6 +103,15 @@ class Vermont(State):
             "end_date": "2025-05-09",
             "active": True,
         },
+        {
+            "_scraped_name": "2025-2026 Session",
+            "classification": "primary",
+            "identifier": "2025-2026",
+            "name": "2025-2026 Regular Session",
+            "start_date": "2025-01-08",
+            "end_date": "2025-05-08",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2020 Training Session",
