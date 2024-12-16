@@ -11,7 +11,7 @@ from urllib import parse as urlparse
 import xml.etree.cElementTree as etree
 import fitz
 
-from openstates.scrape import Scraper, Bill
+from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.scrape.base import ScrapeError
 from utils import LXMLMixin
 from .actions import Categorizer
@@ -86,13 +86,13 @@ class TXBillScraper(Scraper, LXMLMixin):
 
         session_code = self._format_session(session)
 
-        # self.witnesses = []
-        # witness_files = self._get_ftp_files(
-        #     "bills/{}/witlistbill/html".format(session_code)
-        # )
-        # for item in witness_files:
-        #     bill_id = self._get_bill_id_from_file_path(item)
-        #     self.witnesses.append((bill_id, item))
+        self.witnesses = []
+        witness_files = self._get_ftp_files(
+            "bills/{}/witlistbill/html".format(session_code)
+        )
+        for item in witness_files:
+            bill_id = self._get_bill_id_from_file_path(item)
+            self.witnesses.append((bill_id, item))
 
         history_files = self._get_ftp_files("bills/{}/billhistory".format(session_code))
         for bill_url in history_files:
@@ -182,13 +182,13 @@ class TXBillScraper(Scraper, LXMLMixin):
                 media_type="text/html",
             )
 
-        # witnesses = [x for x in self.witnesses if x[0] == bill_id]
-        # for witness in witnesses:
-        #     bill.add_document_link(
-        #         note="Witness List ({})".format(self.NAME_SLUGS[witness[1][-5]]),
-        #         url=witness[1],
-        #         media_type="text/html",
-        #     )
+        witnesses = [x for x in self.witnesses if x[0] == bill_id]
+        for witness in witnesses:
+            bill.add_document_link(
+                note="Witness List ({})".format(self.NAME_SLUGS[witness[1][-5]]),
+                url=witness[1],
+                media_type="text/html",
+            )
 
         for action in root.findall("actions/action"):
             act_date = datetime.datetime.strptime(
@@ -255,11 +255,7 @@ class TXBillScraper(Scraper, LXMLMixin):
             self._get_companion(bill)
 
         # Parse Votes
-        # yield from self.scrape_vote(bill_id, bill_history_url)
-        yield from self.scrape_vote(
-            "SB 2429",
-            "https://capitol.texas.gov/BillLookup/History.aspx?LegSess=88R&Bill=SB2429",
-        )
+        yield from self.scrape_vote(bill_id, bill_history_url)
 
         yield bill
 
@@ -463,7 +459,7 @@ class TXBillScraper(Scraper, LXMLMixin):
                             "voters": {
                                 "yes": yea_voters,
                                 "no": nay_voters,
-                                "not voting": present_not_voting_voters,
+                                "other": present_not_voting_voters,
                                 # "absent": absent_voters,
                                 # "excused": absent_excused_voters,
                             },
@@ -480,17 +476,33 @@ class TXBillScraper(Scraper, LXMLMixin):
                             "voters": {
                                 "yes": yea_voters,
                                 "no": nay_voters,
-                                "not voting": present_not_voting_voters,
+                                "other": present_not_voting_voters,
                                 # "absent": absent_voters,
                                 # "excused": absent_excused_voters,
                             },
                         }
                     )
 
-        print(pdf_text)
-        print(results)
-        print(may_results)
-        yield {}
+        if len(results) == 0 and len(may_results) > 0:
+            results = may_results[0:1]
+
+        chamber = "upper" if "senate" in url else "lower"
+        for result in results:
+            passed = result["yes"] > result["no"]
+            v = VoteEvent(
+                chamber=chamber,
+                start_date=None,
+                motion_text="passage" if passed else "other",
+                result="pass" if passed else "fail",
+                classification="passage" if passed else None,
+                legislative_session=bill_id,
+            )
+
+            v.set_count("yes", result["voters"]["yes"])
+            v.set_count("no", result["voters"]["no"])
+            v.set_count("other", result["voters"]["other"])
+
+            yield v
 
     # Extract voter names
     def clear_pdf_text(self, text):
