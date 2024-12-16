@@ -3,7 +3,6 @@ import ftplib
 import re
 import time
 import urllib3
-import itertools
 
 from io import BytesIO
 from urllib import parse as urlparse
@@ -537,7 +536,7 @@ class TXBillScraper(Scraper, LXMLMixin):
 
         pdf_text = [
             line.replace("\n", " ")
-            for line in re.split("\.\n", "\n".join(pdf_text.split("\n")[0:ignore_cnt]))
+            for line in re.split(r"\.\n", "\n".join(pdf_text.split("\n")[0:ignore_cnt]))
         ]
 
         return pdf_text
