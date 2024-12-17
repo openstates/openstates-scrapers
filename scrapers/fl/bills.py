@@ -145,7 +145,7 @@ class BillDetail(HtmlPage):
     example_source = "https://flsenate.gov/Session/Bill/2021/1"
 
     def get_source_from_input(self):
-        return self.input.sources[0]["url"]
+        return URL(self.input.sources[0]["url"], verify=False)
 
     def process_page(self):
         if self.root.xpath("//div[@id = 'tabBodyBillHistory']//table"):
