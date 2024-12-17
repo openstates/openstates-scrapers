@@ -50,10 +50,10 @@ def check_response(method):
 
 class ApiClient(object):
     """
-    docs: https://docs.beta-api.iga.in.gov
+    docs: https://docs.api.iga.in.gov/
     """
 
-    root = "https://beta-api.iga.in.gov"
+    root = "https://api.iga.in.gov"
     resources = dict(
         sessions="/",
         session="/{session}",
@@ -129,6 +129,22 @@ class ApiClient(object):
         url = urljoin(self.root, url)
         self.scraper.info("Api GET: %r, %r" % (url, headers))
         return self.scraper.get(url, headers=headers)
+
+    # fetch an API url where we expect a redirect
+    # return the new redirect URL (do not fetch it yet)
+    def identify_redirect_url(self, url):
+        if self.root not in url:
+            url = urljoin(self.root, url)
+        headers = {}
+        headers["x-api-key"] = self.apikey
+        headers["Accept"] = "application/json"
+        headers["User-Agent"] = self.user_agent
+        response = requests.get(url, headers=headers, allow_redirects=False)
+        if response.status_code in (301, 302):
+            return response.headers["Location"]
+        else:
+            self.scraper.error(f"Failed to get expected redirect URL from {url}")
+            return None
 
     def make_url(self, resource_name, **url_format_args):
         # Build up the url.
