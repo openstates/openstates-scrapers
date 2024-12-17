@@ -425,7 +425,9 @@ class INBillScraper(Scraper):
                     action_type.append("passage")
 
                 # Identify related committee
-                committee_matches = re.search(committee_name_match_regex, action_desc, re.IGNORECASE)
+                committee_matches = re.search(
+                    committee_name_match_regex, action_desc, re.IGNORECASE
+                )
                 if committee_matches:
                     committee = committee_matches[1].strip()
 
