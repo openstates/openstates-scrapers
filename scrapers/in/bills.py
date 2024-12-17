@@ -376,6 +376,7 @@ class INBillScraper(Scraper):
                 self.logger.warning("Could not find bill actions page")
                 actions = []
 
+            committee_name_match_regex = r"committee on (.*?)( pursuant to|$)"
             for action in actions:
                 action_desc = action["description"]
 
@@ -424,8 +425,9 @@ class INBillScraper(Scraper):
                     action_type.append("passage")
 
                 # Identify related committee
-                if "committee on" in action_desc_lower:
-                    committee = action_desc_lower.split("committee on")[-1].strip()
+                committee_matches = re.search(committee_name_match_regex, action_desc, re.IGNORECASE)
+                if committee_matches:
+                    committee = committee_matches[1].strip()
 
                 # Add action to bill
                 action_instance = bill.add_action(
