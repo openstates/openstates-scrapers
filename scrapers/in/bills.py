@@ -98,9 +98,7 @@ class INBillScraper(Scraper):
                 path, ret_response = self.urlretrieve(vote_url, headers=headers)
             except scrapelib.HTTPError:
                 self.logger.warning(
-                    "HTTP error fetching vote URL, skipping vote {}".format(
-                        vote_url
-                    )
+                    "HTTP error fetching vote URL, skipping vote {}".format(vote_url)
                 )
                 continue
 
@@ -108,8 +106,10 @@ class INBillScraper(Scraper):
             # instead of server returning a proper 404
             # so sanity check to see if content appears to be HTML instead of PDF
             if ret_response.headers["Content-Type"] != "application/pdf":
-                self.logger.warning(f"Got unexpected response type {ret_response.headers.get('Content-Type')},"
-                                    f" skipping {vote_url}")
+                self.logger.warning(
+                    f"Got unexpected response type {ret_response.headers.get('Content-Type')},"
+                    f" skipping {vote_url}"
+                )
                 continue
 
             text = convert_pdf(path, "text").decode("utf-8")
@@ -177,12 +177,16 @@ class INBillScraper(Scraper):
             api_yea = int(r["results"]["yea"])
             api_nay = int(r["results"]["nay"])
             if yeas != api_yea:
-                self.warning(f"API yea count {api_yea} does not match PDF parse {yeas} "
-                             f"at API {r['link']}, PDF {vote_url}")
+                self.warning(
+                    f"API yea count {api_yea} does not match PDF parse {yeas} "
+                    f"at API {r['link']}, PDF {vote_url}"
+                )
                 yeas = api_yea
             if nays != api_nay:
-                self.warning(f"API nay count {api_nay} does not match PDF parse {nays} "
-                             f"at API {r['link']}, PDF {vote_url}")
+                self.warning(
+                    f"API nay count {api_nay} does not match PDF parse {nays} "
+                    f"at API {r['link']}, PDF {vote_url}"
+                )
                 nays = api_nay
             vote.set_count("yes", yeas)
             vote.set_count("no", nays)
