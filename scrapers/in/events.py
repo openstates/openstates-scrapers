@@ -13,7 +13,7 @@ from openstates.exceptions import EmptyScrape
 
 class INEventScraper(Scraper):
     _tz = pytz.timezone("America/Indianapolis")
-    base_url = "https://beta-api.iga.in.gov"
+    base_url = "https://api.iga.in.gov"
     session = date.today().year
 
     def __init__(self, *args, **kwargs):

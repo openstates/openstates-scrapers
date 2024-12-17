@@ -54,7 +54,7 @@ class INCommitteeScraper(Scraper):
     def scrape(self, session):
         subcomms = self.get_subcommittee_info(session)
 
-        api_base_url = "https://beta-api.iga.in.gov"
+        api_base_url = "https://api.iga.in.gov"
         html_base_url = "http://iga.in.gov/legislative/{}/committees/".format(session)
         client = ApiClient(self)
         r = client.get("committees", session=session)
