@@ -8,6 +8,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.exceptions import EmptyScrape
 from utils.media import get_media_type
 from .actions import Categorizer
+import pprint
 
 
 class ALBillScraper(Scraper):
@@ -126,6 +127,10 @@ class ALBillScraper(Scraper):
             return
 
         for row in page["data"]["instrumentOverviews"]["data"]:
+
+            self.scrape_rest(None, row)
+            assert False
+
             chamber = self.chamber_map[row["body"]]
             title = row["shortTitle"].strip()
 
@@ -191,6 +196,132 @@ class ALBillScraper(Scraper):
         # no need to paginate again if we max the last page
         if page["data"]["allInstrumentOverviewsCount"] > offset:
             yield from self.scrape_bill_type(session, bill_type, offset + 50, limit)
+
+    def scrape_rest(self, bill, row):
+
+        pprint.pprint(row)
+
+        json_data = {
+            "query": """query billModal(
+            $sessionType: String
+            $sessionYear: Int
+            $instrumentNbr: String
+            $instrumentType: InstrumentType
+            ) {
+            instrument: instrumentOverview(
+                where: {
+                sessionType: { eq: $sessionType }
+                sessionYear: { eq: $sessionYear }
+                instrumentNbr: { eq: $instrumentNbr }
+                instrumentType: { eq: $instrumentType }
+                }
+            ) {
+                id
+                instrumentNbr
+                sessionType
+                currentStatus
+                shortTitle
+                introducedUrl
+                engrossedUrl
+                enrolledUrl
+                viewEnacted
+                viewEnacted
+                actNbr
+                __typename
+            }
+            fiscalNotes(
+                where: {
+                sessionType: { eq: $sessionType }
+                sessionYear: { eq: $sessionYear }
+                instrumentNbr: { eq: $instrumentNbr }
+                }
+            ) {
+                data {
+                description
+                url
+                sortOrder
+                __typename
+                }
+                __typename
+            }
+
+                histories: instrumentHistories(
+                where: {
+                    sessionType: { eq: $sessionType }
+                    sessionYear: { eq: $sessionYear }
+                    instrumentNbr: { eq: $instrumentNbr }
+                }
+                ) {
+                data {
+                    instrumentNbr
+                    sessionYear
+                    sessionType
+                    calendarDate
+                    body
+                    matter
+                    amdSubUrl
+                    committee
+                    nays
+                    yeas
+                    vote
+                    voteNbr
+                    amdSub
+                    ...rollVoteModalInstrumentHistoryFragment
+                    __typename
+                }
+                __typename
+                }
+                birs(
+                where: {
+                    sessionType: { eq: $sessionType }
+                    instrumentNbr: { eq: $instrumentNbr }
+                }
+                ) {
+                data {
+                    instrumentNbr
+                    sessionYear
+                    sessionType
+                    bir
+                    calendarDate
+                    matter
+                    roll
+                    ...rollVoteModalBirFragment
+                    __typename
+                }
+                __typename
+                }
+                __typename
+
+            }
+            fragment rollVoteModalInstrumentHistoryFragment on InstrumentHistory {
+            __typename
+            instrumentNbr
+            sessionType
+            calendarDate
+            body
+            voteNbr
+            }
+            fragment rollVoteModalBirFragment on BudgetIsolationResolution {
+            __typename
+            instrumentNbr
+            bir
+            calendarDate
+            roll
+            }
+            """,
+            "variables": {
+                "__typename": "InstrumentOverview",
+                "id": row["id"],
+                "instrumentNbr": row["instrumentNbr"],
+                "sessionType": row["sessionType"],
+                "sessionYear": row["sessionYear"],
+            },
+        }
+
+        page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
+        print(page.content)
+        page = json.loads(page.content)
+        pprint.pprint(page)
 
     def scrape_versions(self, bill, row):
         if row["introducedUrl"]:
