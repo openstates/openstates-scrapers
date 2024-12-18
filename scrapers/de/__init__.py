@@ -102,7 +102,7 @@ class Delaware(State):
             "name": "152nd General Assembly (2023-2024)",
             "start_date": "2022-01-10",
             "end_date": "2024-06-30",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2024 - 2026 (GA 153)",
@@ -110,7 +110,7 @@ class Delaware(State):
             "name": "153rd General Assembly (2025-2026)",
             "start_date": "2025-01-14",
             "end_date": "2026-06-30",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
