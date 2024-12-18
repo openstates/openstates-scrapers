@@ -60,8 +60,17 @@ class Montana(State):
             # TODO: update dates
             "start_date": "2023-01-04",
             "end_date": "2023-04-25",
+            "active": False,
+            "extras": {"legislatureOrdinal": 68, "newAPIIdentifier": None},
+        },
+        {
+            "_scraped_name": "20251",
+            "identifier": "2025",
+            "name": "2025 Regular Session",
+            "start_date": "2023-01-06",
+            "end_date": "2023-05-05",
             "active": True,
-            "extras": {"legislatureOrdinal": 68},
+            "extras": {"legislatureOrdinal": 69, "newAPIIdentifier": 2},
         },
     ]
     ignored_scraped_sessions = [
@@ -77,9 +86,20 @@ class Montana(State):
     ]
 
     def get_session_list(self):
+        # archive of sessions
         url = "https://api.legmt.gov/archive/v1/sessions"
         sessions = []
         page = requests.get(url).json()
         for row in page:
             sessions.append(str(row["sessionId"]))
+
+        # incoming session can be found in another endpoint
+        legislators_sessions_url = "https://api.legmt.gov/legislators/v1/sessions"
+        page = requests.get(legislators_sessions_url).json()
+        for row in page:
+            # skip if this session was already found above
+            if row["ordinals"] in sessions:
+                continue
+            sessions.append(row["ordinals"])
+
         return sessions

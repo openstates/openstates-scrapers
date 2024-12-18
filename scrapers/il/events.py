@@ -7,9 +7,10 @@ from openstates.exceptions import EmptyScrape
 
 import pytz
 
+BASE_URL = "https://beta.ilga.gov"
 urls = {
-    "upper": "https://www.ilga.gov/senate/schedules/weeklyhearings.asp",
-    "lower": "https://www.ilga.gov/house/schedules/weeklyhearings.asp",
+    "upper": f"{BASE_URL}/Senate/Schedules",
+    "lower": f"{BASE_URL}/House/Schedules",
 }
 
 chamber_names = {
@@ -34,12 +35,16 @@ class IlEventScraper(Scraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        ctty_name = doc.xpath("//span[@class='heading']")[0].text_content()
+        ctty_name = doc.xpath('//*[@id="main-content"]/section[2]//h2')[
+            0
+        ].text_content()
 
         # Remove prefixes from the name like "Hearing notice for"
         ctty_name = ctty_name_re.match(ctty_name).group(4)
 
-        tables = doc.xpath("//table[@cellpadding='3']")
+        tables = doc.xpath(
+            '//div[contains(@class, "card")][.//h4[contains(., "Hearing Details")]]//table'
+        )
         if not tables:
             self.warning(f"Empty hearing data for {url}")
             return False, False
@@ -47,12 +52,11 @@ class IlEventScraper(Scraper):
         rows = info.xpath(".//tr")
         metainf = {}
         for row in rows:
-            tds = row.xpath(".//td")
-            key = tds[0].text_content().strip()
-            value = tds[1].text_content().strip()
+            tds = "".join(row.xpath(".//td//text()")).split(":")
+            key = tds[0].strip()
+            value = ":".join(tds[1:]).strip()
             metainf[key] = value
-
-        where = metainf["Location:"]
+        where = metainf["Location"]
 
         description = f"{chamber} {ctty_name}"
         # Remove committee suffix from names
@@ -64,12 +68,12 @@ class IlEventScraper(Scraper):
             descr_parts = description.split("-")
             description = " - ".join([x.strip() for x in descr_parts])
 
-        datetime = metainf["Scheduled Date:"]
+        datetime = metainf["Date"]
         datetime = re.sub(r"\s+", " ", datetime)
         repl = {"AM": " AM", "PM": " PM"}  # Space shim.
         for r in repl:
             datetime = datetime.replace(r, repl[r])
-        datetime = self.localize(dt.datetime.strptime(datetime, "%b %d, %Y %I:%M %p"))
+        datetime = self.localize(dt.datetime.strptime(datetime, "%m/%d/%Y %I:%M %p"))
 
         event_name = f"{description}#{where}#{datetime}"
         event = Event(description, start_date=datetime, location_name=where)
@@ -78,20 +82,24 @@ class IlEventScraper(Scraper):
 
         event.add_participant(ctty_name, "organization")
 
-        bills = tables[1]
-        for bill in bills.xpath(".//tr")[1:]:
-            tds = bill.xpath(".//td")
-            if len(tds) < 4:
-                continue
-            # First, let's get the bill ID:
-            bill_id = tds[0].text_content()
+        bills = doc.xpath(
+            '//div[contains(@class, "card")][.//h4[contains(., "Bills Assigned To Hearing")]]//table'
+        )
+        if bills:
+            bills = bills[0]
+            for bill in bills.xpath(".//tr")[1:]:
+                tds = bill.xpath(".//td")
+                if len(tds) < 4:
+                    continue
+                # First, let's get the bill ID:
+                bill_id = tds[0].text_content()
 
-            # Apply correct spacing to bill id
-            (alpha, num) = bill_re.match(bill_id).groups()
-            bill_id = f"{alpha} {num}"
+                # Apply correct spacing to bill id
+                (alpha, num) = bill_re.match(bill_id).groups()
+                bill_id = f"{alpha} {num}"
 
-            agenda_item = event.add_agenda_item(bill_id)
-            agenda_item.add_bill(bill_id)
+                agenda_item = event.add_agenda_item(bill_id)
+                agenda_item.add_bill(bill_id)
 
         return event, event_name
 
@@ -112,14 +120,15 @@ class IlEventScraper(Scraper):
                 no_scheduled_ct += 1
                 continue
 
-            tables = doc.xpath("//table[@width='550']")
+            tables = doc.xpath('//*[@id="pane-Week"]//table//tr')
             events = set()
             for table in tables:
-                meetings = table.xpath(".//a")
+                meetings = table.xpath(".//button")
                 for meeting in meetings:
-                    event, name = self.scrape_page(
-                        meeting.attrib["href"], chamber_names[chamber]
-                    )
+                    meeting_url = BASE_URL + meeting.attrib["onclick"].replace(
+                        "location.href=", ""
+                    ).strip("'. ")
+                    event, name = self.scrape_page(meeting_url, chamber_names[chamber])
                     if event and name:
                         if name in events:
                             self.warning(f"Duplicate event {name}")

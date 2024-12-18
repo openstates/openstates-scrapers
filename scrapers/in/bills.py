@@ -57,7 +57,7 @@ class INBillScraper(Scraper):
 
         return url_template.format(session, url_segment, bill_number)
 
-    def _process_votes(self, rollcalls, bill_id, original_chamber, session):
+    def _process_votes(self, rollcalls, bill_id, original_chamber, session, client):
         result_types = {
             "FAILED": False,
             "DEFEATED": False,
@@ -70,19 +70,49 @@ class INBillScraper(Scraper):
         }
 
         for r in rollcalls:
-            proxy_link = PROXY_BASE_URL + r["link"]
+            # each value in rollcalls is an API metadata object describing the rollcall:
+            # it does not include the PDF link explicitly (this can be requested from the "link" url)
+            # but you can add ?format=pdf to the end of the "link" url to synthesize it
+            # {
+            # 	"target": "HB1001.03.COMH",
+            # 	"chamber": {
+            # 		"link": "/2024/chambers/house",
+            # 		"name": "House"
+            # 	},
+            # 	"rollcall_number": "26",
+            # 	"results": {
+            # 		"yea": 80,
+            # 		"nay": 17
+            # 	},
+            # 	"link": "/2024/rollcalls/{ID_GOES_HERE}}",
+            # 	"type": "BILL"
+            # }
+            # however the PDF url does not return the PDF content immediately
+            # it returns a 302 redirect to the actual PDF url
+            # AND the actual PDF url is sensitive to the incoming User Agent header
+            vote_url = client.identify_redirect_url(r["link"] + "?format=pdf")
             try:
-                path, _ = self.urlretrieve(proxy_link)
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/118.0"
+                }
+                path, ret_response = self.urlretrieve(vote_url, headers=headers)
             except scrapelib.HTTPError:
                 self.logger.warning(
-                    "Unable to contact openstates proxy, skipping vote {}".format(
-                        proxy_link
-                    )
+                    "HTTP error fetching vote URL, skipping vote {}".format(vote_url)
+                )
+                continue
+
+            # Looks like a missing PDF file ends up being displayed as "404" content in HTML
+            # instead of server returning a proper 404
+            # so sanity check to see if content appears to be HTML instead of PDF
+            if ret_response.headers["Content-Type"] != "application/pdf":
+                self.logger.warning(
+                    f"Got unexpected response type {ret_response.headers.get('Content-Type')},"
+                    f" skipping {vote_url}"
                 )
                 continue
 
             text = convert_pdf(path, "text").decode("utf-8")
-
             lines = text.split("\n")
             os.remove(path)
 
@@ -141,11 +171,28 @@ class INBillScraper(Scraper):
                 classification="passage",
             )
 
+            # Historically we've counted yeas/nays/excused/NV from parsing the PDF
+            # but now the API response provides yea and nay counts
+            # let's prefer those counts and log if a difference is found
+            api_yea = int(r["results"]["yea"])
+            api_nay = int(r["results"]["nay"])
+            if yeas != api_yea:
+                self.warning(
+                    f"API yea count {api_yea} does not match PDF parse {yeas} "
+                    f"at API {r['link']}, PDF {vote_url}"
+                )
+                yeas = api_yea
+            if nays != api_nay:
+                self.warning(
+                    f"API nay count {api_nay} does not match PDF parse {nays} "
+                    f"at API {r['link']}, PDF {vote_url}"
+                )
+                nays = api_nay
             vote.set_count("yes", yeas)
             vote.set_count("no", nays)
             vote.set_count("excused", excused)
             vote.set_count("not voting", not_voting)
-            vote.add_source(proxy_link)
+            vote.add_source(vote_url)
 
             currently_counting = ""
 
@@ -329,6 +376,7 @@ class INBillScraper(Scraper):
                 self.logger.warning("Could not find bill actions page")
                 actions = []
 
+            committee_name_match_regex = r"committee on (.*?)( pursuant to|$)"
             for action in actions:
                 action_desc = action["description"]
 
@@ -377,8 +425,11 @@ class INBillScraper(Scraper):
                     action_type.append("passage")
 
                 # Identify related committee
-                if "committee on" in action_desc_lower:
-                    committee = action_desc_lower.split("committee on")[-1].strip()
+                committee_matches = re.search(
+                    committee_name_match_regex, action_desc, re.IGNORECASE
+                )
+                if committee_matches:
+                    committee = committee_matches[1].strip()
 
                 # Add action to bill
                 action_instance = bill.add_action(
@@ -414,6 +465,7 @@ class INBillScraper(Scraper):
                 disp_bill_id,
                 original_chamber,
                 session,
+                client,
             )
 
             for v in bill_json["versions"]:

@@ -63,4 +63,4 @@ RUN poetry install --extras "california" \
 
 ENV OPENSSL_CONF=/opt/openstates/openstates/openssl.cnf
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/ca-entrypoint.sh"]

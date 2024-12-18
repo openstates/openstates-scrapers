@@ -9,6 +9,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 
 
+BASE_URL = "https://beta.ilga.gov"
 central = pytz.timezone("US/Central")
 
 
@@ -239,7 +240,7 @@ COMMITTEE_CORRECTIONS = {
 }
 
 DUPE_VOTES = {
-    "https://ilga.gov/legislation/votehistory/100/house/committeevotes/"
+    f"{BASE_URL}/legislation/votehistory/100/house/committeevotes/"
     "10000HB2457_16401.pdf"
 }
 
@@ -279,19 +280,23 @@ def chamber_slug(chamber):
 
 
 class IlBillScraper(Scraper):
-    LEGISLATION_URL = "https://ilga.gov/legislation/grplist.asp"
+    LEGISLATION_URL = f"{BASE_URL}/Legislation/"
     localize = pytz.timezone("America/Chicago").localize
 
     def get_bill_urls(self, chamber, session, doc_type):
         params = session_details[session]["params"]
-        params["num1"] = "1"
-        params["num2"] = "10000"
-        params["DocTypeID"] = doc_type
-        html = self.get(self.LEGISLATION_URL, params=params).text
+        url = "{}/Legislation/RegularSession/{}?SessionId={}".format(
+            BASE_URL,
+            doc_type,
+            params["SessionId"],
+        )
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(self.LEGISLATION_URL)
+        doc.make_links_absolute(url)
 
-        for bill_url in doc.xpath("//li/a/@href"):
+        for bill_url in doc.xpath(
+            '//div[contains(@id,"div_")]//table//td[1]/a[contains(@href, "DocNum=")]/@href'
+        ):
             yield bill_url
 
     def scrape(self, session=None):
@@ -321,16 +326,9 @@ class IlBillScraper(Scraper):
                     chamber, session_id, "AM", bill_url, "appointment"
                 )
 
-            # TODO: get joint session resolution added to python-opencivicdata
-            # for bill_url in self.get_bill_urls(chamber, session_id, 'JSR'):
-            #     bill, votes = self.scrape_bill(chamber, session_id, 'JSR', bill_url,
-            #                                    'joint session resolution')
-            #     yield bill
-            #     yield from votes
-
     def scrape_archive_bills(self, session):
         session_abr = session[0:2]
-        url = f"https://www.ilga.gov/legislation/legisnet{session_abr}/{session_abr}gatoc.html"
+        url = f"{BASE_URL}/documents/legislation/legisnet{session_abr}/{session_abr}gatoc.html"
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
@@ -338,6 +336,7 @@ class IlBillScraper(Scraper):
 
         # Contains multiple bills
         for bill_numbers_section_url in bill_numbers_sections:
+            bill_numbers_section_url = clean_archivebill_url(bill_numbers_section_url)
             bill_section_html = self.get(bill_numbers_section_url).text
             bill_section_doc = lxml.html.fromstring(bill_section_html)
             bill_section_doc.make_links_absolute(bill_numbers_section_url)
@@ -351,6 +350,7 @@ class IlBillScraper(Scraper):
 
             # Actual Bill Pages
             for bill_url in bills_urls:
+                bill_url = clean_archivebill_url(bill_url)
 
                 bill_html = self.get(bill_url).text
                 bill_doc = lxml.html.fromstring(bill_html)
@@ -377,6 +377,7 @@ class IlBillScraper(Scraper):
                     summary_page_url = bill_doc.xpath(
                         '//a[contains (., "Bill Summary")]/@href'
                     )[0]
+                    summary_page_url = clean_archivebill_url(summary_page_url)
                     summary_page_html = self.get(summary_page_url).text
                     summary_page_doc = lxml.html.fromstring(summary_page_html)
                     summary_page_doc.make_links_absolute(summary_page_url)
@@ -387,6 +388,7 @@ class IlBillScraper(Scraper):
                     bill_url = bill_doc.xpath('//a[contains (., "Bill Status")]/@href')[
                         0
                     ]
+                    bill_url = clean_archivebill_url(bill_url)
                     bill_html = self.get(bill_url).text
                     bill_doc = lxml.html.fromstring(bill_html)
                     bill_doc.make_links_absolute(bill_url)
@@ -421,6 +423,7 @@ class IlBillScraper(Scraper):
 
                 # Bill version
                 version_url = bill_doc.xpath('//a[contains (., "Full Text")]/@href')[0]
+                version_url = clean_archivebill_url(version_url)
                 bill.add_version_link(bill_id, version_url, media_type="text/html")
 
                 # Actions
@@ -483,19 +486,15 @@ class IlBillScraper(Scraper):
         bill_type = bill_type or DOC_TYPES[doc_type[1:]]
         bill_id = doc_type + bill_num
 
-        title = doc.xpath(
-            '//span[text()="Short Description:"]/following-sibling::span[1]/' "text()"
-        )[0].strip()
+        title = doc.xpath('//div[@id="content"]/div[1]/div/h5/text()')[0].strip()
         # 1. Find the heading with "Synopsis As Introduced" for text.
         # 2. Go to the next heading.
         # 3. Backtrack and grab everything to, but not including, #1.
         # 4. Grab text of all, including nested, nodes.
-        summary_nodes = doc.xpath(
-            '//span[text()="Synopsis As Introduced"]/following-sibling::span[contains(@class, "heading2")]/'
-            'preceding-sibling::*[preceding-sibling::span[text()="Synopsis As Introduced"]]//'
+        summary = doc.xpath(
+            '//h5[text()="Synopsis As Introduced"]/../div[@class="list-group"]/span/'
             "text()"
-        )
-        summary = "\n".join([node.strip() for node in summary_nodes])
+        )[0].strip()
 
         bill = Bill(
             identifier=bill_id,
@@ -505,18 +504,20 @@ class IlBillScraper(Scraper):
             chamber=chamber,
         )
 
-        bill.add_abstract(summary, note="")
+        if summary:
+            bill.add_abstract(summary, note="")
 
         bill.add_source(url)
         # sponsors
-        sponsor_list = build_sponsor_list(doc.xpath('//a[contains(@class, "content")]'))
+        sponsor_list = build_sponsor_list(
+            doc.xpath('//div[@id="sponsorDiv"]//a[@class="notranslate"]')
+        )
         # don't add just yet; we can make them better using action data
-
         # actions
-        action_tds = doc.xpath('//a[@name="actions"]/following-sibling::table[1]/td')
+        action_tds = doc.xpath('//h5[text()="Actions"]/../table//td')
         for date, actor, action_elem in group(action_tds, 3):
             date = datetime.datetime.strptime(date.text_content().strip(), "%m/%d/%Y")
-            date = self.localize(date).date()
+            date = date.date()
             actor = actor.text_content()
             actor_id = "upper" if actor == "Senate" else "lower"
 
@@ -581,56 +582,54 @@ class IlBillScraper(Scraper):
         if "HTML full text does not exist for this appropriations document" in html:
             pdf_only = True
 
-        for link in doc.xpath('//a[contains(@href, "fulltext")]'):
-            name = link.text
+        for link in doc.xpath(
+            '//div[@id="content"]/div[contains(@class, "row")]//a[contains(@class, "content")]'
+        ):
+            name = link.text_content().strip()
             url = link.get("href")
-
             # Ignore the "Printer-friendly version" link
             # That link is a "latest version" alias for an actual, distinct version
-            if "print=true" not in url:
-                if name in VERSION_TYPES or "amendment" in name.lower():
-                    if pdf_only:
-                        # eed to visit the version's page, and get PDF link from there
-                        # otherwise get a faulty "latest version"/"LV" alias/duplicate
-                        version_page_html = self.get(url).text
-                        version_page_doc = lxml.html.fromstring(version_page_html)
-                        version_page_doc.make_links_absolute(url)
-                        pdf_link = version_page_doc.xpath('//a[text()="PDF"]')[0]
-                        url = pdf_link.get("href")
-                        mimetype = "application/pdf"
-                    else:
-                        url = "{}&print=true".format(url)
-                        mimetype = "text/html"
-
-                        version_id = re.search(
-                            r"DocName=(.*?)&", url, flags=re.IGNORECASE
-                        ).group(1)
-                        doctype = re.search(
-                            r"DocTypeId=(.*?)&", url, flags=re.IGNORECASE
-                        ).group(1)
-                        # numeric component of the session id
-                        session_number = int(
-                            "".join(
-                                char
-                                for char in bill.legislative_session
-                                if char.isdigit()
-                            )
-                        )
-
-                        # if it's html, extract the pdf link too while we're here.
-                        pdf_url = f"https://ilga.gov/legislation/{session_number}/{doctype}/PDF/{version_id}.pdf"
-                        bill.add_version_link(
-                            name, pdf_url, media_type="application/pdf"
-                        )
-
-                    bill.add_version_link(name, url, media_type=mimetype)
-                elif name in FULLTEXT_DOCUMENT_TYPES:
-                    bill.add_document_link(name, url)
-                elif "Printer-Friendly" in name:
-                    pass
+            if name in VERSION_TYPES or "amendment" in name.lower():
+                if pdf_only:
+                    # eed to visit the version's page, and get PDF link from there
+                    # otherwise get a faulty "latest version"/"LV" alias/duplicate
+                    url = "{}&Print=1".format(url)
+                    version_page_html = self.get(url).text
+                    version_page_doc = lxml.html.fromstring(version_page_html)
+                    version_page_doc.make_links_absolute(url)
+                    pdf_link = version_page_doc.xpath('//a[contains(@href, "PDF")]')
+                    if not pdf_link:
+                        continue
+                    pdf_link = pdf_link[0]
+                    url = pdf_link.get("href")
+                    mimetype = "application/pdf"
                 else:
-                    self.warning("unknown document type %s - adding as document" % name)
-                    bill.add_document_link(name, url)
+                    url = "{}&Print=1".format(url)
+                    mimetype = "text/html"
+                    version_id = re.search(
+                        r"DocName=(.*?)&", url, flags=re.IGNORECASE
+                    ).group(1)
+                    doctype = re.search(
+                        r"DocTypeId=(.*?)&", url, flags=re.IGNORECASE
+                    ).group(1)
+                    # numeric component of the session id
+                    session_number = int(
+                        "".join(
+                            char for char in bill.legislative_session if char.isdigit()
+                        )
+                    )
+                    # if it's html, extract the pdf link too while we're here.
+                    pdf_url = f"{BASE_URL}/documents/legislation/{session_number}/{doctype}/PDF/{version_id}.pdf"
+                    bill.add_version_link(name, pdf_url, media_type="application/pdf")
+
+                bill.add_version_link(name, url, media_type=mimetype)
+            elif name in FULLTEXT_DOCUMENT_TYPES:
+                bill.add_document_link(name, url)
+            elif "Printer-Friendly" in name:
+                pass
+            else:
+                self.warning("unknown document type %s - adding as document" % name)
+                bill.add_document_link(name, url)
 
     def scrape_votes(self, session, bill, votes_url):
         html = self.get(votes_url).text
@@ -644,7 +643,7 @@ class IlBillScraper(Scraper):
             pieces = link.text.split(" - ")
             date = pieces[-1]
 
-            vote_type = link.xpath("../ancestor::table[1]//td[1]/text()")[0]
+            vote_type = link.xpath("../a/text()")[0]
             if vote_type == "Committee Hearing Votes":
                 chamber = link.xpath("../following-sibling::td/text()")[0]
                 actor = "upper" if chamber == "SENATE" else "lower"
@@ -915,9 +914,9 @@ def build_sponsor_list(sponsor_atags):
     spontype = "cosponsor"
     for atag in sponsor_atags:
         sponsor = atag.text
-        if "house" in atag.attrib["href"].split("/"):
+        if "house" in atag.attrib["href"].lower().split("/"):
             chamber = "lower"
-        elif "senate" in atag.attrib["href"].split("/"):
+        elif "senate" in atag.attrib["href"].lower().split("/"):
             chamber = "upper"
         else:
             chamber = None
@@ -934,3 +933,9 @@ def build_sponsor_list(sponsor_atags):
             official_spontype = "cosponsor"  # until replaced
         sponsors.append((spontype, sponsor, chamber, official_spontype))
     return sponsors
+
+
+def clean_archivebill_url(url):
+    if "https://beta.ilga.gov/documents/" not in url:
+        url = url.replace("https://beta.ilga.gov/", "https://beta.ilga.gov/documents/")
+    return url

@@ -5,7 +5,10 @@ from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 from .actions import Categorizer
 from utils import LXMLMixin
 
+import json
 import lxml.html
+from lxml.etree import ParserError
+import pytz
 import scrapelib
 
 SUB_BLACKLIST = [
@@ -22,9 +25,15 @@ SUB_BLACKLIST = [
 
 SPECIAL_SLUGS = {"2021S1H": "2021Y1", "2021S1S": "2021X1"}
 
+SPONSOR_HOUSE_TO_CHAMBER = {
+    "H": "lower",
+    "S": "upper",
+}
+
 
 class UTBillScraper(Scraper, LXMLMixin):
     categorizer = Categorizer()
+    _TZ = pytz.timezone("America/Denver")
 
     def scrape(self, session=None, chamber=None):
         # if you need to test on an individual bill...
@@ -42,47 +51,50 @@ class UTBillScraper(Scraper, LXMLMixin):
         else:
             session_slug = "{}GS".format(session)
 
-        session_url = "https://le.utah.gov/DynaBill/BillList?session={}".format(
-            session_slug
-        )
+        session_url = "https://le.utah.gov/billlist.jsp?session={}".format(session_slug)
 
         # For some sessions the link doesn't go straight to the bill list
         doc = self.lxmlize(session_url)
-        replacement_session_url = doc.xpath(
-            '//a[text()="Numbered Bills" and contains'
-            '(@href, "DynaBill/BillList")]/@href'
-        )
-        if replacement_session_url:
-            (session_url,) = replacement_session_url
 
-        # Identify all the bill lists linked from a given session's page
-        bill_indices = [
-            re.sub(r"^r", "", x)
-            for x in self.lxmlize(session_url).xpath('//div[contains(@id, "0")]/@id')
-        ]
-
-        # Capture the bills from each of the bill lists
-        for bill_index in bill_indices:
-            if bill_index.startswith("H"):
-                chamber = "lower"
-            elif bill_index.startswith("S"):
-                chamber = "upper"
+        # Get all of the show/hide bill list elements
+        # in order to get the IDs of the actual bill lists
+        bill_list_ids = []
+        show_hide_elems = doc.cssselect("a.mitem")
+        js_id_getter = re.compile(r"javascript:toggleObj\('([^']+)'\)")
+        for elem in show_hide_elems:
+            list_id_match = js_id_getter.match(elem.get("href"))
+            if list_id_match:
+                bill_list_ids.append(list_id_match.group(1))
             else:
-                raise AssertionError("Unknown bill type found: {}".format(bill_index))
-
-            bill_index = self.lxmlize(session_url + "&bills=" + bill_index)
-            bills = bill_index.xpath('//a[contains(@href, "/bills/static/")]')
-
-            for bill in bills:
-                yield from self.scrape_bill(
-                    chamber=chamber,
-                    session=session,
-                    bill_id=bill.xpath("text()")[0],
-                    url=bill.xpath("@href")[0],
+                self.logger.error(
+                    "Failed to find bill list ID out of JS show/hide elem"
                 )
 
-    def scrape_bill(self, chamber, session, bill_id, url):
+        # Capture the bills from each of the bill lists
+        for list_id in bill_list_ids:
+            bill_link_containers = doc.cssselect(f"#{list_id}")
+            for container in bill_link_containers:
+                for bill_link in container.cssselect("a"):
+                    if bill_link.text.startswith("H"):
+                        chamber = "lower"
+                    elif bill_link.text.startswith("S"):
+                        chamber = "upper"
+                    else:
+                        raise AssertionError(
+                            "Unknown bill type found: {}".format(bill_link.text)
+                        )
+
+                    yield from self.scrape_bill(
+                        chamber=chamber,
+                        session=session,
+                        url=bill_link.get("href"),
+                        session_slug=session_slug,
+                    )
+
+    def scrape_bill(self, chamber, session, url, session_slug):
         page = self.lxmlize(url)
+
+        bill_id = page.cssselect("#breadcrumb li")[-1].text
 
         (header,) = page.xpath('//h3[@class="heading"]/text()')
         title = header.replace(bill_id, "").strip()
@@ -111,6 +123,20 @@ class UTBillScraper(Scraper, LXMLMixin):
         bill.add_source(url)
 
         primary_info = page.xpath('//div[@id="billsponsordiv"]')
+        if len(primary_info) == 0:
+            # starting 2025 seems UT is rendering bill data from an API/JSON
+            # but prior years seem to have static-ish HTML
+            # so we have two logic branches here
+            # TODO vote processing - need to see what data looks like
+            self.scrape_bill_details_from_api(bill, url, session_slug)
+        else:
+            yield from self.parse_bill_details_from_html(
+                bill, bill_id, chamber, page, primary_info
+            )
+
+        yield bill
+
+    def parse_bill_details_from_html(self, bill, bill_id, chamber, page, primary_info):
         for info in primary_info:
             try:
                 (title, name) = [
@@ -140,12 +166,10 @@ class UTBillScraper(Scraper, LXMLMixin):
             )
         else:
             self.warning("Unexpected floor sponsor HTML found")
-
         versions = page.xpath(
             '//b[text()="Bill Text"]/following-sibling::ul/li/'
             'a[text() and not(text()=" ")]'
         )
-
         for version in versions:
 
             # sometimes the href is on the following <a> tag and the tag we
@@ -155,9 +179,10 @@ class UTBillScraper(Scraper, LXMLMixin):
                 url = version.xpath("following-sibling::a[1]/@href")[0]
 
             bill.add_version_link(
-                version.xpath("text()")[0].strip(), url, media_type="application/pdf"
+                version.xpath("text()")[0].strip(),
+                url,
+                media_type="application/pdf",
             )
-
         for related in page.xpath(
             '//b[text()="Related Documents "]/following-sibling::ul/li/'
             'a[contains(@class,"nlink")]'
@@ -170,17 +195,118 @@ class UTBillScraper(Scraper, LXMLMixin):
             else:
                 text = related.xpath("text()")[0]
                 bill.add_document_link(text, href, media_type="application/pdf")
-
         subjects = []
         for link in page.xpath("//a[contains(@href, 'RelatedBill')]"):
             subjects.append(link.text.strip())
         bill.subject = subjects
-
         if page.xpath('//div[@id="billStatus"]//table'):
             status_table = page.xpath('//div[@id="billStatus"]//table')[0]
             yield from self.parse_status(bill, status_table, chamber)
 
-        yield bill
+    def scrape_bill_details_from_api(self, bill: Bill, bill_url, session_slug: str):
+        # get bill "filename" from bill_url
+        bill_filename = bill_url.split("/")[-1].split(".")[0]
+        # use datetime to generate a unix epoch timestamp representing now
+        # UT seems to do this in milliseconds
+        now = int(datetime.datetime.now().timestamp() * 1000)
+        api_url = (
+            f"https://le.utah.gov/data/{session_slug}/{bill_filename}.json?_={now}"
+        )
+        response = self.get(api_url)
+        data = json.loads(response.content)
+
+        # Sponsorships
+        sponsor_name = data["primeSponsorName"]
+        sponsor_name = sponsor_name.replace("Sen. ", "").replace("Rep. ", "")
+        sponsor_chamber = SPONSOR_HOUSE_TO_CHAMBER[data["primeSponsorHouse"]]
+        bill.add_sponsorship(
+            sponsor_name,
+            classification="primary",
+            entity_type="person",
+            primary=True,
+            chamber=sponsor_chamber,
+        )
+        if data["floorSponsor"]:
+            floor_sponsor_name = data["floorSponsorName"]
+            floor_sponsor_name = floor_sponsor_name.replace("Sen. ", "").replace(
+                "Rep. ", ""
+            )
+            floor_sponsor_chamber = SPONSOR_HOUSE_TO_CHAMBER[data["floorSponsorHouse"]]
+            bill.add_sponsorship(
+                floor_sponsor_name,
+                classification="cosponsor",
+                entity_type="person",
+                primary=False,
+                chamber=floor_sponsor_chamber,
+            )
+
+        # Versions, subjects, code citations
+        subjects = set()
+        # citations = set()
+        for version_data in data["billVersionList"]:
+            # subjects associated with each version, so dedupe
+            for subject_data in version_data["subjectList"]:
+                subjects.add(subject_data["description"])
+
+            # TODO finish citations work
+            # citations associated with each version, dedupe again
+            # for citation_data in version_data["sectionAffectedList"]:
+            #     citations.add(citation_data["secNo"])
+
+            for doc_data in version_data["billDocs"]:
+                # Not really sure what's going to be in this array
+                # just versions? other documents?
+                # so throw something here if we find surprise
+                # and improve scraper later
+                if doc_data["fileName"] != f"{bill_filename}.xml":
+                    self.error(f"Found unexplored bill version data at {api_url}")
+
+                # There seem to be XML and PDF files on Utah server
+                # the UT bill details page seems to have code to
+                # display the XML as HTML inline
+                bill.add_version_link(
+                    doc_data["shortDesc"],
+                    f"https://le.utah.gov{doc_data['url']}",
+                    media_type="text/xml",
+                )
+                pdf_filepath = doc_data["url"].replace(".xml", ".pdf")
+                bill.add_version_link(
+                    doc_data["shortDesc"],
+                    f"https://le.utah.gov{pdf_filepath}",
+                    media_type="application/pdf",
+                )
+
+        for subject in subjects:
+            bill.add_subject(subject)
+
+        # TODO finish citations work
+        # for citation in citations:
+        #     bill.add_citation(citation)
+
+        # Actions
+        for action_data in data["actionHistoryList"]:
+            categorizer_result = self.categorizer.categorize(action_data["description"])
+            actor = "legislature"
+            if action_data["owner"] == "Legislative Research and General Counsel":
+                actor = "legislature"
+            elif "governor" in action_data["owner"].lower():
+                actor = "executive"
+            else:
+                self.error(
+                    f"Found unexpected actor {action_data['owner']} at {api_url}"
+                )
+
+            date = datetime.datetime.strptime(
+                action_data["actionDate"], "%m/%d/%Y"
+            ).date()
+            date = date.strftime("%Y-%m-%d")
+
+            bill.add_action(
+                date=date,
+                description=action_data["description"],
+                classification=categorizer_result["classification"],
+                chamber=actor,
+            )
 
     def parse_status(self, bill, status_table, chamber):
         page = status_table
@@ -303,7 +429,11 @@ class UTBillScraper(Scraper, LXMLMixin):
         except scrapelib.HTTPError:
             self.warning("A vote page not found for bill {}".format(bill.identifier))
             return
-        page = lxml.html.fromstring(page)
+        try:
+            page = lxml.html.fromstring(page)
+        except ParserError:
+            self.logger.warning(f"Could not parse HTML vote page {url}")
+
         page.make_links_absolute(url)
         descr = page.xpath("//b")[0].text_content()
         if descr == "":
