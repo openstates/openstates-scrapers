@@ -2,13 +2,13 @@ import pytz
 import json
 import lxml
 import re
-import datetime
 import dateutil
 import requests
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.exceptions import EmptyScrape
 from utils.media import get_media_type
 from .actions import Categorizer
+import pprint
 
 
 class ALBillScraper(Scraper):
@@ -49,9 +49,65 @@ class ALBillScraper(Scraper):
         self.info(f"Scraping {bill_type} offset {offset} limit {limit}")
 
         json_data = {
-            "query": "query bills($googleId: String, $category: String, $sessionYear: String, $sessionType: String, $direction: String, $orderBy: String, $offset: Int, $limit: Int, $filters: InstrumentOverviewInput! = {}, $search: String, $instrumentType: String) {\n  allInstrumentOverviews(\n    googleId: $googleId\n    category: $category\n    instrumentType: $instrumentType\n    sessionYear: $sessionYear\n    sessionType: $sessionType\n    direction: $direction\n    orderBy: $orderBy\n    limit: $limit\n    offset: $offset\n    customFilters: $filters\n    search: $search\n  ) {\n    ID\n    SessionYear\n    InstrumentNbr\n    InstrumentSponsor\n    SessionType\n    Body\n    Subject\n    ShortTitle\n    AssignedCommittee\n    PrefiledDate\n    FirstRead\n    CurrentStatus\n    LastAction\n LastActionDate\n   ActSummary\n    ViewEnacted\n    CompanionInstrumentNbr\n    EffectiveDateCertain\n    EffectiveDateOther\n    InstrumentType\n InstrumentUrl\n IntroducedUrl\n EngrossedUrl\n EnrolledUrl\n  }\n  allInstrumentOverviewsCount(\n    googleId: $googleId\n    category: $category\n    instrumentType: $instrumentType\n    sessionYear: $sessionYear\n    sessionType: $sessionType\n    customFilters: $filters\n    search: $search\n  )\n}",
+            "query": """query bills($googleId: ID, $category: String, $instrumentType: InstrumentType, $sessionYear: Int, $sessionType: String, $order: Order = [
+            "sessionYear",
+            "DESC"], $offset: Int, $limit: Int, $where: InstrumentOverviewWhere! = {}, $search: String) {
+            instrumentOverviews(
+                googleId: $googleId
+                category: $category
+                where: [{instrumentType: {eq: $instrumentType}, sessionYear: {eq: $sessionYear}, sessionType: {eq: $sessionType}}, $where]
+                order: $order
+                limit: $limit
+                offset: $offset
+                search: $search
+            ) {
+                data {
+                ...billModalDataFragment
+                id
+                sessionYear
+                instrumentNbr
+                instrumentSponsor
+                sessionType
+                body
+                subject
+                shortTitle
+                assignedCommittee
+                prefiledDate
+                firstRead
+                currentStatus
+                lastAction
+                actSummary
+                viewEnacted
+                companionInstrumentNbr
+                effectiveDateCertain
+                effectiveDateOther
+                instrumentType
+                __typename
+                }
+                count
+                __typename
+            }
+            }
+            fragment billModalDataFragment on InstrumentOverview {
+            id
+            instrumentNbr
+            instrumentType
+            instrumentSponsor
+            instrumentUrl
+            introducedUrl
+            engrossedUrl
+            enrolledUrl
+            companionInstrumentNbr
+            sessionType
+            sessionYear
+            instrumentNbr
+            actSummary
+            effectiveDateCertain
+            effectiveDateOther
+            __typename
+            }""",
             "variables": {
-                "sessionType": self.session_year,
+                "sessionType": "2025 Regular Session",
                 "instrumentType": bill_type,
                 "orderBy": "LastActionDate",
                 "direction": "DESC",
@@ -61,22 +117,29 @@ class ALBillScraper(Scraper):
             },
         }
 
+        # print(json_data)
         page = requests.post(self.gql_url, headers=self.gql_headers, json=json_data)
         page = json.loads(page.content)
 
-        if len(page["data"]["allInstrumentOverviews"]) < 1:
+        # print(page)
+
+        if page["data"]["instrumentOverviews"]["count"] < 1:
             return
 
-        for row in page["data"]["allInstrumentOverviews"]:
-            chamber = self.chamber_map[row["Body"]]
-            title = row["ShortTitle"].strip()
+        for row in page["data"]["instrumentOverviews"]["data"]:
+
+            self.scrape_rest(None, row)
+            assert False
+
+            chamber = self.chamber_map[row["body"]]
+            title = row["shortTitle"].strip()
 
             # some recently filed bills have no title, but a good subject which is close
             if title == "":
                 title = row["Subject"]
 
             # prevent duplicates
-            bill_id = row["InstrumentNbr"]
+            bill_id = row["instrumentNbr"]
             if bill_id in self.bill_ids:
                 continue
             else:
@@ -87,9 +150,9 @@ class ALBillScraper(Scraper):
                 legislative_session=session,
                 title=title,
                 chamber=chamber,
-                classification=self.bill_types[row["InstrumentType"]],
+                classification=self.bill_types[row["instrumentType"]],
             )
-            sponsor = row["InstrumentSponsor"]
+            sponsor = row["instrumentSponsor"]
             if sponsor == "":
                 self.warning("No sponsors")
                 continue
@@ -106,8 +169,8 @@ class ALBillScraper(Scraper):
             yield from self.scrape_actions(bill, row)
 
             bill.add_source("https://alison.legislature.state.al.us/bill-search")
-            if row["InstrumentUrl"]:
-                bill.add_source(row["InstrumentUrl"])
+            if row["instrumentUrl"]:
+                bill.add_source(row["instrumentUrl"])
 
             # some subjects are super long & more like abstracts, but it looks like whatever is before a comma or
             # semicolon is a clear enough subject. Adds the full given Subject as an Abstract & splits to add that
@@ -118,9 +181,9 @@ class ALBillScraper(Scraper):
                 first_sub = re.split(",|;", full_subject)
                 bill.add_subject(first_sub[0])
 
-            if row["CompanionInstrumentNbr"] != "":
+            if row["companionInstrumentNbr"] != "":
                 bill.add_related_bill(
-                    row["CompanionInstrumentNbr"], session, "companion"
+                    row["companionInstrumentNbr"], session, "companion"
                 )
 
             # TODO: BUDGET ISOLATION RESOLUTION
@@ -134,23 +197,149 @@ class ALBillScraper(Scraper):
         if page["data"]["allInstrumentOverviewsCount"] > offset:
             yield from self.scrape_bill_type(session, bill_type, offset + 50, limit)
 
+    def scrape_rest(self, bill, row):
+
+        pprint.pprint(row)
+
+        json_data = {
+            "query": """query billModal(
+            $sessionType: String
+            $sessionYear: Int
+            $instrumentNbr: String
+            $instrumentType: InstrumentType
+            ) {
+            instrument: instrumentOverview(
+                where: {
+                sessionType: { eq: $sessionType }
+                sessionYear: { eq: $sessionYear }
+                instrumentNbr: { eq: $instrumentNbr }
+                instrumentType: { eq: $instrumentType }
+                }
+            ) {
+                id
+                instrumentNbr
+                sessionType
+                currentStatus
+                shortTitle
+                introducedUrl
+                engrossedUrl
+                enrolledUrl
+                viewEnacted
+                viewEnacted
+                actNbr
+                __typename
+            }
+            fiscalNotes(
+                where: {
+                sessionType: { eq: $sessionType }
+                sessionYear: { eq: $sessionYear }
+                instrumentNbr: { eq: $instrumentNbr }
+                }
+            ) {
+                data {
+                description
+                url
+                sortOrder
+                __typename
+                }
+                __typename
+            }
+
+                histories: instrumentHistories(
+                where: {
+                    sessionType: { eq: $sessionType }
+                    sessionYear: { eq: $sessionYear }
+                    instrumentNbr: { eq: $instrumentNbr }
+                }
+                ) {
+                data {
+                    instrumentNbr
+                    sessionYear
+                    sessionType
+                    calendarDate
+                    body
+                    matter
+                    amdSubUrl
+                    committee
+                    nays
+                    yeas
+                    vote
+                    voteNbr
+                    amdSub
+                    ...rollVoteModalInstrumentHistoryFragment
+                    __typename
+                }
+                __typename
+                }
+                birs(
+                where: {
+                    sessionType: { eq: $sessionType }
+                    instrumentNbr: { eq: $instrumentNbr }
+                }
+                ) {
+                data {
+                    instrumentNbr
+                    sessionYear
+                    sessionType
+                    bir
+                    calendarDate
+                    matter
+                    roll
+                    ...rollVoteModalBirFragment
+                    __typename
+                }
+                __typename
+                }
+                __typename
+
+            }
+            fragment rollVoteModalInstrumentHistoryFragment on InstrumentHistory {
+            __typename
+            instrumentNbr
+            sessionType
+            calendarDate
+            body
+            voteNbr
+            }
+            fragment rollVoteModalBirFragment on BudgetIsolationResolution {
+            __typename
+            instrumentNbr
+            bir
+            calendarDate
+            roll
+            }
+            """,
+            "variables": {
+                "__typename": "InstrumentOverview",
+                "id": row["id"],
+                "instrumentNbr": row["instrumentNbr"],
+                "sessionType": row["sessionType"],
+                "sessionYear": row["sessionYear"],
+            },
+        }
+
+        page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
+        print(page.content)
+        page = json.loads(page.content)
+        pprint.pprint(page)
+
     def scrape_versions(self, bill, row):
-        if row["IntroducedUrl"]:
+        if row["introducedUrl"]:
             bill.add_version_link(
                 "Introduced",
-                url=row["IntroducedUrl"],
+                url=row["introducedUrl"],
                 media_type="application/pdf",
             )
-        if row["EngrossedUrl"]:
+        if row["engrossedUrl"]:
             bill.add_version_link(
                 "Engrossed",
-                url=row["EngrossedUrl"],
+                url=row["engrossedUrl"],
                 media_type="application/pdf",
             )
-        if row["EnrolledUrl"]:
+        if row["enrolledUrl"]:
             bill.add_version_link(
                 "Enrolled",
-                url=row["EnrolledUrl"],
+                url=row["enrolledUrl"],
                 media_type="application/pdf",
             )
 
@@ -201,13 +390,11 @@ class ALBillScraper(Scraper):
     def scrape_actions(self, bill, bill_row):
         bill_id = bill.identifier.replace(" ", "")
 
-        if bill_row["PrefiledDate"]:
-            action_date = datetime.datetime.strptime(
-                bill_row["PrefiledDate"], "%m/%d/%Y"
-            )
+        if bill_row["prefiledDate"]:
+            action_date = dateutil.parser.parse(bill_row["prefiledDate"])
             action_date = self.tz.localize(action_date)
             bill.add_action(
-                chamber=self.chamber_map[bill_row["Body"]],
+                chamber=self.chamber_map[bill_row["body"]],
                 description="Filed",
                 date=action_date,
                 classification="filing",
@@ -270,21 +457,40 @@ class ALBillScraper(Scraper):
     def scrape_fiscal_notes(self, bill):
         bill_id = bill.identifier.replace(" ", "")
 
+        print(self.session_type, self.session_year)
+
         json_data = {
-            "query": "query fiscalNotes($instrumentNbr: String, $sessionType: String, $sessionYear: String){fiscalNotes(instrumentNbr:$instrumentNbr, sessionType:$sessionType, sessionYear: $sessionYear, ){ FiscalNoteDescription,FiscalNoteUrl,SortOrder }}",
+            "query": """
+                query {
+                    fiscalNotes(
+                        where: {sessionType: {eq: "2024 Regular Session"}, sessionYear: {eq: 2024}, instrumentNbr: {eq: "HB1"}}
+                    )
+                    {
+                        data {
+                        description
+                        url
+                        sortOrder
+                        __typename
+                        }
+                    }
+                }
+            """,
             "variables": {
                 "instrumentNbr": bill_id,
                 "sessionType": self.session_type,
-                "sessionYear": self.session_year,
+                "sessionYear": self.session_year + " Regular Session",
             },
         }
 
+        print(json_data)
         page = requests.post(self.gql_url, headers=self.gql_headers, json=json_data)
+
+        print(page.content)
         page = json.loads(page.content)
-        for row in page["data"]["fiscalNotes"]:
+        for row in page["data"]["fiscalNotes"]["data"]:
             bill.add_document_link(
-                f"Fiscal Note: {row['FiscalNoteDescription']}",
-                row["FiscalNoteUrl"],
+                f"Fiscal Note: {row['description']}",
+                row["url"],
                 media_type="application/pdf",
                 on_duplicate="ignore",
             )
