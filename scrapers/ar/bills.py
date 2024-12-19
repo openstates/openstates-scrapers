@@ -496,8 +496,8 @@ class ARBillScraper(Scraper):
 
     # the data is utf-16, with null bytes for empty cells.
     def decode_ar_utf16(self, data) -> str:
-        data = data.decode("utf-16", errors="ignore")
-        data = data.replace("\x00", "")
+        # data = data.replace(b"\x004D", b"")
+        data = data.decode("utf-16", errors="strict")
         return data
 
     def get_utf_16_ftp_content(self, filename):
@@ -507,11 +507,29 @@ class ARBillScraper(Scraper):
         ftp_client.login(user=self.ftp_user, passwd=self.ftp_pass)
         ftp_client.prot_p()
         ftp_client.cwd("SessionInformation")
-        raw = tempfile.NamedTemporaryFile()
+        raw = tempfile.NamedTemporaryFile(delete=False)  # delete=False
 
         with open(raw.name, "wb") as f:
             ftp_client.retrbinary("RETR " + filename, raw.write)
 
         with open(raw.name, "rb") as f:
+            # print(f.read())
             text = self.decode_ar_utf16(f.read())
+            # this next line is cut off
+            print(text)
+            print(len(text), f.tell())
+
+            # this bombs out w/ a decoding error
+            # lines = f.readlines()
+            # for i in lines:
+            #     print(i.decode("utf-16"))
+
+            # for me, even cating the file from pythong cuts it off, but
+            # cating it from my terminal looks fine.
+            print(os.system(f"cat {raw.name}"))
+            print(raw.name)
+
+            # just stop the scraper here
+            assert False
+
             return text
