@@ -67,6 +67,8 @@ class VaBillScraper(Scraper):
         ).json()
 
         for row in page["Legislations"]:
+            # print(json.dumps(row))
+
             # the short title on the VA site is 'description',
             # LegislationTitle is on top of all the versions
             title = row["Description"]
@@ -84,7 +86,7 @@ class VaBillScraper(Scraper):
             self.add_actions(bill, row["LegislationID"])
             self.add_versions(bill, row["LegislationID"])
             self.add_carryover_related_bill(bill)
-            self.add_sponsors(bill, row["Patrons"])
+            self.add_sponsors(bill, row["LegislationID"])
             yield from self.add_votes(bill, row["LegislationID"])
             bill.add_abstract(subtitle, note="title")
             bill.add_abstract(description, row["SummaryVersion"])
@@ -147,7 +149,13 @@ class VaBillScraper(Scraper):
         if has_carryover_action:
             bill.add_related_bill(bill.identifier, f"{prior_session}", "prior-session")
 
-    def add_sponsors(self, bill: Bill, sponsors: list):
+    def add_sponsors(self, bill: Bill, legislation_id: str):
+        page = requests.get(
+            f"{self.base_url}/LegislationPatron/api/GetLegislationPatronsByIdAsync/{legislation_id}",
+            headers=self.headers,
+            verify=False,
+        ).json()
+        sponsors = page["Patrons"]
         for row in sponsors:
             primary = True if row["Name"] == "Chief Patron" else False
             bill.add_sponsorship(
@@ -169,8 +177,8 @@ class VaBillScraper(Scraper):
             headers=self.headers,
             verify=False,
         ).json()
-
         for row in page["TextsList"]:
+            # print(json.dumps(row))
             if (row["PDFFile"] and len(row["PDFFile"]) > 1) or (
                 row["HTMLFile"] and len(row["HTMLFile"]) > 1
             ):
@@ -194,7 +202,6 @@ class VaBillScraper(Scraper):
 
             if row["ImpactFile"]:
                 for impact in row["ImpactFile"]:
-                    # map 241HB9F122 => HB9F122
                     # however somtimes ReferenceNumber does NOT have a weird prefix
                     if impact["ReferenceNumber"][3:] in self.ref_num_map:
                         action = self.ref_num_map[impact["ReferenceNumber"][3:]]
@@ -205,6 +212,18 @@ class VaBillScraper(Scraper):
                     bill.add_document_link(
                         action, impact["FileURL"], media_type="application/pdf"
                     )
+
+    # This method doesn't work as of 2024-10-15 but leaving this code in,
+    # in case they bring it back
+    # def get_vote_types(self):
+
+    #     page = requests.get(
+    #         f"{self.base_url}/api/getvotetypereferencesasync",
+    #         headers=self.headers,
+    #         verify=False,
+    #     ).content
+
+    #     print(page)
 
     def add_votes(self, bill: Bill, legislation_id: str):
         body = {
@@ -237,12 +256,13 @@ class VaBillScraper(Scraper):
                 motion_text = row["VoteActionDescription"]
                 if motion_text is None:
                     motion_text = row["LegislationActionDescription"]
-
                 # the api returns 'Continued to %NextSessionYear% in Finance' so fix that
                 motion_text = motion_text.replace(
                     "%NextSessionYear%", str(vote_date.year + 1)
                 )
 
+                if not row["BatchNumber"]:
+                    continue
                 v = VoteEvent(
                     start_date=vote_date,
                     motion_text=motion_text,
@@ -257,9 +277,11 @@ class VaBillScraper(Scraper):
                 # in order to avoid duplicate dedupe keys
                 if not row["BatchNumber"]:
                     continue
+
                 v.dedupe_key = (
                     f"{row['BatchNumber'].strip()}-{bill.identifier.strip()}-"
                     f"{row['LegislationActionDescription'].strip()}"
+                    f"{row['LegislationActionDescription'].strip()}`"
                 )[:500]
 
                 tally = {
@@ -310,6 +332,20 @@ class VaBillScraper(Scraper):
             btype = "constitutional amendment"
 
         return btype
+
+    # TODO: we can get the subject list,
+    # then do a search API call for each individual subject,
+    # but is there a faster way?
+    # def get_subjects(self):
+    #     body = {
+    #         "sessionCode": self.session_code,
+    #     }
+    #     page = requests.get(
+    #         f"{self.base_url}/LegislationSubject/api/getsubjectreferencesasync",
+    #         params=body,
+    #         headers=self.headers,
+    #         verify=False,
+    #     ).json()
 
     def text_from_html(self, html: str):
         return lxml.html.fromstring(html).text_content()
