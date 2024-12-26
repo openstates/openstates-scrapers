@@ -394,7 +394,6 @@ class TXVoteScraper(Scraper):
                         urls_scraped.append(continuing_url)
                         yield from self.scrape_journal(continuing_url, "lower", session)
 
-
             if "upper" in chambers:
                 journal_root = (
                     "https://journals.senate.texas.gov/SJRNL/%s/HTML/" % session
