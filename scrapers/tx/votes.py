@@ -19,19 +19,21 @@ def next_tag(el):
     return el
 
 
-def clean_journal(root):
+def clean_journal(root, logger):
     # Remove page breaks
     for el in root.xpath("//hr[@noshade and @size=1]"):
         parent = el.getparent()
         previous = el.getprevious()
         if previous:
             parent.remove(previous)
+        logger.debug(f"Killed hr: {el.text_content()}")
         parent.remove(el)
 
     # Does lxml not support xpath ends-with?
     for el in root.xpath("//p[contains(text(), 'REGULAR SESSION')]"):
         if el.text.endswith("REGULAR SESSION"):
             parent = el.getparent()
+            logger.debug(f"Killed REGULAR SESSION: {el.text_content()}")
             parent.remove(el)
 
     for el in root.xpath("//p[contains(text(), 'JOURNAL')]"):
@@ -39,18 +41,21 @@ def clean_journal(root):
             "HOUSE JOURNAL" in el.text or "SENATE JOURNAL" in el.text
         ) and "Day" in el.text:
             parent = el.getparent()
+            logger.debug(f"Killed HOUSE/SENATE/JOURNAL: {el.text_content()}")
             parent.remove(el)
 
     # Remove empty paragraphs
     for el in root.xpath("//p[not(node())]"):
         if el.tail and el.tail != "\r\n" and el.getprevious() is not None:
             el.getprevious().tail = el.tail
+        logger.debug(f"Killed empty para: {el.text_content()}")
         el.getparent().remove(el)
 
     # Journal pages sometimes replace spaces with <font color="White">i</font>
     # (or multiple i's for bigger spaces)
     for el in root.xpath('//font[@color="White"]'):
         if el.text:
+            logger.debug("Replaced white text")
             el.text = " " * len(el.text)
 
 
@@ -145,9 +150,11 @@ class BaseVote(object):
     @property
     def chamber(self):
         bill_id = self.bill_id or ""
-        if bill_id.startswith("H") or bill_id.startswith("CSHB"):
+        # bill identifiers can start with CS or CH, and there are several variants
+        # these seem to be committee substitutes/reports on existing bills
+        if bill_id.startswith("H") or bill_id.startswith("CSH"):
             return "lower"
-        if bill_id.startswith("S") or bill_id.startswith("CSSB"):
+        if bill_id.startswith("S") or bill_id.startswith("CSS"):
             return "upper"
 
 
@@ -241,7 +248,9 @@ class MaybeViva(BaseVote):
 
 
 def get_bill(el):
-    b = re.findall(r"[HS][BR] \d+", el.text_content())
+    # allow for bill numbers like HB, SB, HR, SR, HJR, SJR followed by digits
+    # \s space character is used because there are some non-space whitespaces
+    b = re.findall(r"[HS][J]?[BR]\s+\d+", el.text_content())
     if b:
         return b[0]
 
@@ -261,8 +270,10 @@ vote_selectors = [
 
 
 def record_votes(root, session, chamber):
-    for el in root.xpath("//div{}".format("".join(vote_selectors))):
-        mv = MaybeVote(el)
+    vote_elements = root.xpath("//div{}".format("".join(vote_selectors)))
+    maybe_votes = [MaybeVote(el) for el in vote_elements]
+
+    for mv in maybe_votes:
         if not mv.is_valid:
             continue
 
@@ -330,7 +341,7 @@ def viva_voce_votes(root, session, chamber):
 
 
 class TXVoteScraper(Scraper):
-    def scrape(self, session=None, chamber=None):
+    def scrape(self, session=None, chamber=None, url_match=None):
         if session == "821":
             self.warning("no journals for session 821")
             return
@@ -341,11 +352,17 @@ class TXVoteScraper(Scraper):
         chambers = [chamber] if chamber else ["upper", "lower"]
 
         # go through every day this year before today
+        # (or end of the year of the session, if prior year)
         # and see if there were any journals that day
         today = datetime.datetime.today()
+        session_year = self.get_session_year(session)
+        if session_year != today.year:
+            today = today.replace(year=session_year, month=12, day=31)
         today = datetime.datetime(today.year, today.month, today.day)
         journal_day = datetime.datetime(today.year, 1, 1)
         day_num = 1
+        urls_scraped = []
+        urls_failed_on_exception = []
         while journal_day <= today:
             if "lower" in chambers:
                 journal_root = (
@@ -354,12 +371,29 @@ class TXVoteScraper(Scraper):
                 journal_url = (
                     journal_root + session + "DAY" + str(day_num).zfill(2) + "FINAL.HTM"
                 )
-                try:
-                    self.get(journal_url)
-                except scrapelib.HTTPError:
-                    pass
-                else:
-                    yield from self.scrape_journal(journal_url, "lower", session)
+                if url_match is None or url_match in journal_url:
+                    try:
+                        self.get(journal_url)
+                    except scrapelib.HTTPError:
+                        urls_failed_on_exception.append(journal_url)
+                        pass
+                    else:
+                        urls_scraped.append(journal_url)
+                        yield from self.scrape_journal(journal_url, "lower", session)
+
+                # Check if this "legislative day" has a Continuing journal entry
+                # a "Cont" entry can occur the next actual calendar day
+                continuing_url = journal_url.replace("FINAL", "CFINAL")
+                if url_match is None or url_match in continuing_url:
+                    try:
+                        self.get(continuing_url)
+                    except scrapelib.HTTPError:
+                        urls_failed_on_exception.append(continuing_url)
+                        pass
+                    else:
+                        urls_scraped.append(continuing_url)
+                        yield from self.scrape_journal(continuing_url, "lower", session)
+
 
             if "upper" in chambers:
                 journal_root = (
@@ -370,21 +404,31 @@ class TXVoteScraper(Scraper):
                     str(journal_day.month).zfill(2),
                     str(journal_day.day).zfill(2),
                 )
-                try:
-                    self.get(journal_url)
-                except scrapelib.HTTPError:
-                    pass
-                else:
-                    yield from self.scrape_journal(journal_url, "upper", session)
+                if url_match is None or url_match in journal_url:
+                    try:
+                        self.get(journal_url)
+                    except scrapelib.HTTPError:
+                        urls_failed_on_exception.append(journal_url)
+                        pass
+                    else:
+                        urls_scraped.append(journal_url)
+                        yield from self.scrape_journal(journal_url, "upper", session)
 
             journal_day += datetime.timedelta(days=1)
             day_num += 1
+
+        urls_tried = "\n".join(urls_scraped)
+        urls_failed_on_exception = "\n".join(urls_failed_on_exception)
+        # log out URLs that were either scraped or failed out (ignored)
+        # useful if you want to ensure a certain URL is getting tried
+        self.logger.debug(f"Scraped urls: {urls_tried}")
+        self.logger.debug(f"Failed urls: {urls_failed_on_exception}")
 
     def scrape_journal(self, url, chamber, session):
         page = self.get(url).text
 
         root = lxml.html.fromstring(page)
-        clean_journal(root)
+        clean_journal(root, self.logger)
 
         if chamber == "lower":
             div = root.xpath("//div[@class = 'textpara']")[0]
