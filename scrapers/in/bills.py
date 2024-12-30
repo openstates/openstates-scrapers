@@ -26,6 +26,10 @@ def correct_bill_identifier(display_name, bill_type):
         # IN API lists these as HC 1, SC 2, etc.
         # but IN website lists them as HCR 1, SCR 1
         return display_name.replace("C", "CR")
+    elif bill_type == "JRES":
+        # IN API lists these as SJ 2, etc. (presumably HJ 2? but haven't seen yet)
+        # but IN website lists them as SJR 2
+        return display_name.replace("J", "JR")
     else:
         return display_name
 
