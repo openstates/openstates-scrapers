@@ -74,11 +74,18 @@ class NorthDakota(State):
             "name": "68th Legislative Assembly (2023-24)",
             "start_date": "2023-01-03",
             "end_date": "2023-05-10",
+            "active": False,
+        },
+        {
+            "_scraped_name": "69th Legislative Assembly (2025-26)",
+            "identifier": "69",
+            "name": "69th Legislative Assembly (2025-26)",
+            "start_date": "2025-01-07",
+            "end_date": "2025-05-02",
             "active": True,
         },
     ]
     ignored_scraped_sessions = [
-        "69th Legislative Assembly (2025-26)",
         "61st Legislative Assembly (2009-10)",
         "60th Legislative Assembly (2007-08)",
         "59th Legislative Assembly (2005-06)",
