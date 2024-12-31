@@ -65,7 +65,7 @@ class DistrictOfColumbia(State):
         {
             "_scraped_name": "26",
             "identifier": "26",
-            "name": "26th Council Period (2023-2024)",
+            "name": "26th Council Period (2025-2026)",
             "start_date": "2025-01-02",
             "end_date": "2025-12-31",
             "active": True,
