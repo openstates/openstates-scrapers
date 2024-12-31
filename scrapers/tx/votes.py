@@ -111,15 +111,27 @@ def clean_starting_name(name):
 
 
 def votes(root, session, chamber):
-    for vote in record_votes(root, session, chamber):
+    for vote in record_votes_with_yeas(root, session, chamber):
         yield vote
     for vote in viva_voce_votes(root, session, chamber):
+        yield vote
+    for vote in record_votes_with_short_count_notation(root, session, chamber):
         yield vote
 
 
 def first_int(res):
     if res is not None:
         return int(next(group for group in res.groups() if group is not None))
+
+
+def identify_classification(motion_text: str, passed: bool) -> list[str]:
+    classifications = []
+    if passed is True:
+        classifications.append("passage")
+    if "third reading" in motion_text.lower():
+        classifications.append("reading-3")
+
+    return classifications
 
 
 class BaseVote(object):
@@ -172,6 +184,7 @@ class MaybeVote(BaseVote):
     check_prev_pattern = re.compile(r"the (motion|resolution)", re.IGNORECASE)
     votes_pattern = re.compile(r"^(yeas|nays|present|absent)", re.IGNORECASE)
     amendment_pattern = re.compile(r"the amendment to", re.IGNORECASE)
+    motion_text_pattern = re.compile(r"moved that (.+)$", re.IGNORECASE)
 
     @property
     def is_valid(self):
@@ -221,12 +234,23 @@ class MaybeVote(BaseVote):
             el = next_tag(el)
         return votes
 
+    @property
+    def motion_text(self):
+        previous_text = self.previous.text_content()
+        match = self.motion_text_pattern.search(previous_text)
+        if match:
+            return match.groups()[0]
+        else:
+            return None
 
+
+# Some votes are recorded as voice votes
 class MaybeViva(BaseVote):
     amendment_pattern = re.compile(r"the amendment to", re.IGNORECASE)
     floor_amendment_pattern = re.compile(r"floor amendment no", re.IGNORECASE)
-    passed_pattern = re.compile(r"(adopted|passed|prevailed)", re.IGNORECASE)
+    passed_pattern = re.compile(r"(all members are deemed to have voted \"yea\"|adopted|passed|prevailed)", re.IGNORECASE)
     viva_voce_pattern = re.compile(r"viva voce vote", re.IGNORECASE)
+    motion_pattern = re.compile(r"on the (.+) except as follows", re.IGNORECASE)
 
     @property
     def is_valid(self):
@@ -246,6 +270,67 @@ class MaybeViva(BaseVote):
     def passed(self):
         return bool(self.passed_pattern.search(self.text))
 
+    @property
+    def motion_text(self):
+        match = self.motion_pattern.search(self.text)
+        if match:
+            return match.groups()[0]
+        else:
+            return None
+
+
+# Some votes are recorded in a terse vote count notation
+# seems to be the case when the opposite chamber passes a bunch of bills?
+# see record_votes_with_short_count_notation() for examples of ShortCount vote text
+class MaybeShortCount(BaseVote):
+
+    nay_votes_pattern = re.compile("\(([^)]+)\s+-\s+no\)", re.IGNORECASE)
+    nay_vote_request_pattern = re.compile("\(([^)]+)\s+requested to be recorded voting no", re.IGNORECASE)
+
+    @property
+    def is_valid(self):
+        return (
+            super(MaybeShortCount, self).is_valid
+            and self.counts["yeas"] is not None
+            and self.counts["nays"] is not None
+        )
+
+    @property
+    def counts(self):
+        match = short_count_notation_regex.search(self.text)
+        if match:
+            return {
+                "yeas": int(match.groups()[0]),
+                "nays": int(match.groups()[1]),
+                "other": int(match.groups()[2]),
+            }
+        else:
+            return {
+                "yeas": None,
+                "nays": None,
+                "other": None,
+            }
+
+
+    @property
+    def passed(self):
+        return self.counts["yeas"] > self.counts["nays"]
+
+    @property
+    def votes(self):
+        # short notation seems to assume everyone is voting yes
+        # and only makes note of those voting no
+        no_voter_names = []
+        no_match = self.nay_votes_pattern.search(self.text)
+        if no_match:
+            name_list = re.sub(r",?\sand\s", ", ", no_match.groups()[0])
+            no_voter_names.extend(name_list.split(", "))
+        no_requested_later_match = self.nay_vote_request_pattern.search(self.text)
+        if no_requested_later_match:
+            name_list = re.sub(r",?\sand\s", ", ", no_requested_later_match.groups()[0])
+            no_voter_names.extend(name_list.split(", "))
+        return {"nays": no_voter_names}
+
 
 def get_bill(el):
     # allow for bill numbers like HB, SB, HR, SR, HJR, SJR followed by digits
@@ -262,14 +347,71 @@ def clean_bill_id(bill_id):
         bill_id = bill_id.split(" - ")[0]  # clean off things like " - continued"
     return bill_id
 
-
-vote_selectors = [
-    '[@class = "textpara"]',
-    '[contains(translate(., "YEAS", "yeas"), "yeas")]',
-]
+short_count_notation_regex = re.compile(r"\((\d+)\s+-\s+(\d+)\s+-\s+(\d+)\)", re.IGNORECASE)
 
 
-def record_votes(root, session, chamber):
+def record_votes_with_short_count_notation(root, session, chamber):
+    # votes with short vote count notation may look like:
+    # SB 422 (Cook, Patterson, and Thimesch - no) (135 - 3 - 1)
+    # or
+    # SB 2479 (Ashby, Buckley, Bumgarner, Cain, Clardy, Darby, Gates, Gerdes, C.E. Harris, C.J. Harris, Hefner,
+    # Holland, Hull, Lambert, Leach, Metcalf, Patterson, Schatzline, Shaheen, Shine, Slawson, Smith, Tinderholt,
+    # Toth, Troxclair, Vasut, and Wilson - no) (111 - 27 - 1) (Harrison and Isaac requested to be recorded
+    # voting no after the deadline established by Rule 5, Section 52, of the House Rules.)
+
+    # so we catch them by finding the (135 - 3 - 1) notation
+    paragraphs = root.xpath('//div[@class = "textpara"]')
+    vote_elements = []
+    for p in paragraphs:
+        if short_count_notation_regex.search(p.text_content()):
+            vote_elements.append(p)
+
+    maybe_votes = [MaybeShortCount(el) for el in vote_elements]
+
+    for mv in maybe_votes:
+        if not mv.is_valid:
+            continue
+
+        if mv.passed:
+            motion_text = "passage"
+        else:
+            motion_text = "other"
+
+        v = VoteEvent(
+            chamber=chamber,
+            start_date=None,
+            motion_text=motion_text,
+            result="pass" if mv.passed else "fail",
+            classification=identify_classification(motion_text, mv.passed),
+            legislative_session=session[0:2],
+            bill=mv.bill_id,
+            bill_chamber=mv.chamber,
+        )
+
+        v.set_count("yes", mv.counts["yeas"] or 0)
+        v.set_count("no", mv.counts["nays"] or 0)
+        v.set_count("other", mv.counts["other"] or 0)
+
+        # these votes only seem to list explicit voters who vote no
+        for each in mv.votes["nays"]:
+            each = clean_vote_name(each)
+            v.no(each)
+
+        yield v
+
+
+def record_votes_with_yeas(root, session, chamber):
+    # votes with "yeas" may look like:
+    # SB 186 was passed by (Record 2040): 122 Yeas, 17 Nays, 1 Present, not voting.
+    # or
+    # SJR 35 failed of adoption (not receiving the necessary two-thirds vote) by (Record 2041): 88 Yeas, 0 Nays, 54
+    # Present, not voting.
+    # or
+    # Amendment No. 1 failed of adoption by (Record 2044): 48 Yeas, 78 Nays, 1 Present, not voting
+    vote_selectors = [
+        '[@class = "textpara"]',
+        '[contains(translate(., "YEAS", "yeas"), "yeas")]',
+    ]
     vote_elements = root.xpath("//div{}".format("".join(vote_selectors)))
     maybe_votes = [MaybeVote(el) for el in vote_elements]
 
@@ -277,12 +419,19 @@ def record_votes(root, session, chamber):
         if not mv.is_valid:
             continue
 
+        if mv.motion_text:
+            motion_text = mv.motion_text
+        elif mv.passed:
+            motion_text = "passage"
+        else:
+            motion_text = "other"
+
         v = VoteEvent(
             chamber=chamber,
             start_date=None,
-            motion_text="passage" if mv.passed else "other",
+            motion_text=motion_text,
             result="pass" if mv.passed else "fail",
-            classification="passage" if mv.passed else None,
+            classification=identify_classification(motion_text, mv.passed),
             legislative_session=session[0:2],
             bill=mv.bill_id,
             bill_chamber=mv.chamber,
@@ -316,17 +465,26 @@ def clean_vote_name(name):
 
 
 def viva_voce_votes(root, session, chamber):
-    for el in root.xpath('//div[starts-with(., "All Members are deemed")]'):
-        mv = MaybeViva(el)
+    vote_elements = root.xpath('//div[starts-with(., "All Members are deemed")]')
+    maybe_votes = [MaybeViva(el) for el in vote_elements]
+
+    for mv in maybe_votes:
         if not mv.is_valid:
             continue
+
+        if mv.motion_text:
+            motion_text = mv.motion_text
+        elif mv.passed:
+            motion_text = "passage"
+        else:
+            motion_text = "other"
 
         v = VoteEvent(
             chamber=chamber,
             start_date=None,
-            motion_text="passage" if mv.passed else "other",
+            motion_text=motion_text,
             result="pass" if mv.passed else "fail",
-            classification="passage" if mv.passed else None,
+            classification=identify_classification(motion_text, mv.passed),
             legislative_session=session[0:2],
             bill=mv.bill_id,
             bill_chamber=mv.chamber,
@@ -412,6 +570,19 @@ class TXVoteScraper(Scraper):
                     else:
                         urls_scraped.append(journal_url)
                         yield from self.scrape_journal(journal_url, "upper", session)
+
+                # Check if this "legislative day" has a Continuing journal entry
+                # a "Cont" entry can occur the next actual calendar day
+                continuing_url = journal_url.replace("F.", "F1.")
+                if url_match is None or url_match in continuing_url:
+                    try:
+                        self.get(continuing_url)
+                    except scrapelib.HTTPError:
+                        urls_failed_on_exception.append(continuing_url)
+                        pass
+                    else:
+                        urls_scraped.append(continuing_url)
+                        yield from self.scrape_journal(continuing_url, "upper", session)
 
             journal_day += datetime.timedelta(days=1)
             day_num += 1
