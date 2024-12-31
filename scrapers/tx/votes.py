@@ -248,7 +248,10 @@ class MaybeVote(BaseVote):
 class MaybeViva(BaseVote):
     amendment_pattern = re.compile(r"the amendment to", re.IGNORECASE)
     floor_amendment_pattern = re.compile(r"floor amendment no", re.IGNORECASE)
-    passed_pattern = re.compile(r"(all members are deemed to have voted \"yea\"|adopted|passed|prevailed)", re.IGNORECASE)
+    passed_pattern = re.compile(
+        r"(all members are deemed to have voted \"yea\"|adopted|passed|prevailed)",
+        re.IGNORECASE,
+    )
     viva_voce_pattern = re.compile(r"viva voce vote", re.IGNORECASE)
     motion_pattern = re.compile(r"on the (.+) except as follows", re.IGNORECASE)
 
@@ -285,7 +288,9 @@ class MaybeViva(BaseVote):
 class MaybeShortCount(BaseVote):
 
     nay_votes_pattern = re.compile("\(([^)]+)\s+-\s+no\)", re.IGNORECASE)
-    nay_vote_request_pattern = re.compile("\(([^)]+)\s+requested to be recorded voting no", re.IGNORECASE)
+    nay_vote_request_pattern = re.compile(
+        "\(([^)]+)\s+requested to be recorded voting no", re.IGNORECASE
+    )
 
     @property
     def is_valid(self):
@@ -310,7 +315,6 @@ class MaybeShortCount(BaseVote):
                 "nays": None,
                 "other": None,
             }
-
 
     @property
     def passed(self):
@@ -347,7 +351,10 @@ def clean_bill_id(bill_id):
         bill_id = bill_id.split(" - ")[0]  # clean off things like " - continued"
     return bill_id
 
-short_count_notation_regex = re.compile(r"\((\d+)\s+-\s+(\d+)\s+-\s+(\d+)\)", re.IGNORECASE)
+
+short_count_notation_regex = re.compile(
+    r"\((\d+)\s+-\s+(\d+)\s+-\s+(\d+)\)", re.IGNORECASE
+)
 
 
 def record_votes_with_short_count_notation(root, session, chamber):
