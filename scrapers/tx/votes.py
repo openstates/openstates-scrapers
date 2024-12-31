@@ -333,9 +333,9 @@ class MaybeShortCount(BaseVote):
 
 
 def get_bill(el):
-    # allow for bill numbers like HB, SB, HR, SR, HJR, SJR followed by digits
+    # allow for bill numbers like HB, SB, HR, SR, HJR, SJR, SCR followed by digits
     # \s space character is used because there are some non-space whitespaces
-    b = re.findall(r"[HS][J]?[BR]\s+\d+", el.text_content())
+    b = re.findall(r"[HS][JC]?[BR]\s+\d+", el.text_content())
     if b:
         return b[0]
 
