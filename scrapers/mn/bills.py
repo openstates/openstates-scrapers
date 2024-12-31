@@ -158,6 +158,8 @@ class MNBillScraper(Scraper, LXMLMixin):
                         chamber, session, b["bill_url"], b["version_url"]
                     )
 
+    # TODO: this needs pagination
+    # use advanced search -> pick a session -> hit "GO" for the url params
     def get_full_bill_list(self, chamber, session):
         """
         Uses the legislator search to get a full list of bills.  Search page
@@ -165,41 +167,24 @@ class MNBillScraper(Scraper, LXMLMixin):
         """
         search_chamber = self.search_chamber(chamber)
         search_session = self.search_session(session)
-        total_rows = list()
         bills = []
-        stride = 500
-        start = 0
 
-        # If testing, only do a few
-        total = 300 if self.is_testing() else 10000
+        # body: "House" or "Senate"
+        # session: legislative session id
+        url = (
+            f"https://www.revisor.mn.gov/bills/status_result.php?body={search_chamber}&search=advanced&session={search_session}"
+            "&submit_advanced=GO&search_type=andor&keyword_type=all&keyword=&author1%5B%5D=&author%5B%5D=&committee%5B%5D=&action%5B%5D=&fromDate=&toDate="
+        )
 
-        # Get total list of rows
-        for bill_type in ("bill", "concurrent", "resolution"):
-            for start in range(0, total, stride):
-                # body: "House" or "Senate"
-                # session: legislative session id
-                # bill: Range start-end (e.g. 1-10)
-                url = BILL_SEARCH_URL % (
-                    search_chamber,
-                    search_session,
-                    start,
-                    start + stride,
-                    bill_type,
-                )
-                # Parse HTML
-                html = self.get(url, verify=False).text
-                doc = lxml.html.fromstring(html)
+        # Parse HTML
+        html = self.get(url, verify=False).text
+        doc = lxml.html.fromstring(html)
 
-                # get table containing bills
-                rows = doc.xpath('//table[contains(@class,"table")]/tbody/tr')
-                total_rows.extend(rows)
-                # Out of rows
-                if len(rows) == 0:
-                    self.debug("Total Bills Found: %d" % len(total_rows))
-                    break
+        # get table containing bills
+        rows = doc.xpath('//table[contains(@class,"table")]/tbody/tr')
 
         # Go through each row found
-        for row in total_rows:
+        for row in rows:
             bill = {}
 
             # Second column: status link
