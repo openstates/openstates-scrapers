@@ -287,9 +287,9 @@ class MaybeViva(BaseVote):
 # see record_votes_with_short_count_notation() for examples of ShortCount vote text
 class MaybeShortCount(BaseVote):
 
-    nay_votes_pattern = re.compile("\(([^)]+)\s+-\s+no\)", re.IGNORECASE)
+    nay_votes_pattern = re.compile(r"\(([^)]+)\s+-\s+no\)", re.IGNORECASE)
     nay_vote_request_pattern = re.compile(
-        "\(([^)]+)\s+requested to be recorded voting no", re.IGNORECASE
+        r"\(([^)]+)\s+requested to be recorded voting no", re.IGNORECASE
     )
 
     @property
