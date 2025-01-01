@@ -118,6 +118,15 @@ class RhodeIsland(State):
             "end_date": "2024-06-30",
             "active": True,
         },
+        {
+            "_scraped_name": "2025",
+            "classification": "primary",
+            "identifier": "2025",
+            "name": "2025 Regular Session",
+            "start_date": "2025-01-02",
+            "end_date": "2025-06-30",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2015",
