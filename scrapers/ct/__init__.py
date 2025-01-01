@@ -121,8 +121,8 @@ class Connecticut(State):
             "_scraped_name": "2025",
             "identifier": "2025",
             "name": "2025 Regular Session",
-            "start_date": "2025-01-04",
-            "end_date": "2025-05-08",
+            "start_date": "2025-01-08",
+            "end_date": "2025-06-04",
             "active": False,
         },
     ]
