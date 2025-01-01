@@ -19,6 +19,21 @@ PROXY_BASE_URL = "https://in-proxy.openstates.org"
 SCRAPE_WEB_VERSIONS = "INDIANA_SCRAPE_WEB_VERSIONS" in os.environ
 
 
+# IN API differs from IN website in how it displays some bill identifiers
+# This function corrects from API notation to web notation
+def correct_bill_identifier(display_name, bill_type):
+    if bill_type == "CRES":
+        # IN API lists these as HC 1, SC 2, etc.
+        # but IN website lists them as HCR 1, SCR 1
+        return display_name.replace("C", "CR")
+    elif bill_type == "JRES":
+        # IN API lists these as SJ 2, etc. (presumably HJ 2? but haven't seen yet)
+        # but IN website lists them as SJR 2
+        return display_name.replace("J", "JR")
+    else:
+        return display_name
+
+
 class INBillScraper(Scraper):
     categorizer = Categorizer()
 
@@ -313,7 +328,7 @@ class INBillScraper(Scraper):
 
         for b in all_pages:
             bill_id = b["billName"]
-            disp_bill_id = b["displayName"]
+            disp_bill_id = correct_bill_identifier(b["displayName"], b["type"])
             bill_link = b["link"]
 
             api_source = urljoin(api_base_url, bill_link)

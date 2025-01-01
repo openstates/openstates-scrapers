@@ -69,6 +69,14 @@ class NewYork(State):
             "name": "2023 Regular Session",
             "start_date": "2023-01-04",
             "end_date": "2024-06-06",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2025",
+            "identifier": "2025-2026",
+            "name": "2025 Regular Session",
+            "start_date": "2025-01-08",
+            "end_date": "2026-12-31",
             "active": True,
         },
     ]

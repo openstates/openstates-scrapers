@@ -15,6 +15,24 @@ class Massachusetts(State):
     }
     legislative_sessions = [
         {
+            "_scraped_name": "184th",
+            "classification": "primary",
+            "identifier": "184th",
+            "name": "184th Legislature (2007-2008)",
+            "start_date": "2005-01-01",  # est
+            "end_date": "2006-07-31",  # est
+            "active": False,
+        },
+        {
+            "_scraped_name": "185th",
+            "classification": "primary",
+            "identifier": "185th",
+            "name": "185th Legislature (2007-2008)",
+            "start_date": "2007-01-01",  # est
+            "end_date": "2008-07-31",  # est
+            "active": False,
+        },
+        {
             "_scraped_name": "186th",
             "classification": "primary",
             "identifier": "186th",
@@ -81,7 +99,7 @@ class Massachusetts(State):
             "active": True,
         },
     ]
-    ignored_scraped_sessions = []
+    ignored_scraped_sessions = ["185th"]
 
     def get_session_list(self):
         doc = lxml.html.fromstring(

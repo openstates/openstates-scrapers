@@ -636,7 +636,7 @@ class HouseSearchPage(HtmlListPage):
     selector = XPath('//a[contains(@href, "/Bills/billsdetail.aspx?BillId=")]/@href')
 
     def get_source_from_input(self):
-        url = "https://www.myfloridahouse.gov/Sections/Bills/bills.aspx"
+        url = "https://flhouse.gov/Sections/Bills/bills.aspx"
         # Keep the digits and all following characters in the bill's ID
         bill_number = re.search(r"^\w+\s(\d+\w*)$", self.input.identifier).group(1)
         session_number = {
@@ -673,7 +673,7 @@ class HouseSearchPage(HtmlListPage):
             method="GET",
             headers={
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-                "Host": "www.myfloridahouse.gov",
+                "Host": "flhouse.gov",
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
             },
         )

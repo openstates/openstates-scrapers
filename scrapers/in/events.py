@@ -24,11 +24,10 @@ class INEventScraper(Scraper):
         session_no = backoff(self.apiclient.get_session_no, self.session)
         response = self.apiclient.get("meetings", session=self.session)
 
-        meetings = response["meetings"]
-        if not meetings["items"]:
+        if not response["items"]:
             raise EmptyScrape("No meetings found in the response.")
 
-        for item in meetings["items"]:
+        for item in response["items"]:
             meeting = self.apiclient.get(
                 "meeting", session=self.session, meeting_link=item["link"]
             )
