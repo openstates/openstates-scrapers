@@ -8,7 +8,8 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.exceptions import EmptyScrape
 from utils.media import get_media_type
 from .actions import Categorizer
-import pprint
+
+# import pprint
 
 
 class ALBillScraper(Scraper):
@@ -161,12 +162,8 @@ class ALBillScraper(Scraper):
             )
 
             self.scrape_versions(bill, row)
+            # todo: hook up votes to actions and make this whole chain yield
             self.scrape_rest(bill, row)
-
-            assert False
-
-            self.scrape_fiscal_notes(bill)
-            yield from self.scrape_actions(bill, row)
 
             bill.add_source("https://alison.legislature.state.al.us/bill-search")
             if row["instrumentUrl"]:
@@ -175,20 +172,18 @@ class ALBillScraper(Scraper):
             # some subjects are super long & more like abstracts, but it looks like whatever is before a comma or
             # semicolon is a clear enough subject. Adds the full given Subject as an Abstract & splits to add that
             # first real subject as one
-            if row["Subject"]:
-                full_subject = row["Subject"].strip()
+            if row["subject"]:
+                full_subject = row["subject"].strip()
                 bill.add_abstract(full_subject, note="full subject")
                 first_sub = re.split(",|;", full_subject)
                 bill.add_subject(first_sub[0])
 
-            if row["companionInstrumentNbr"] != "":
+            if row["companionInstrumentNbr"]:
                 bill.add_related_bill(
                     row["companionInstrumentNbr"], session, "companion"
                 )
 
-            # TODO: BUDGET ISOLATION RESOLUTION
-
-            bill.extras["AL_BILL_ID"] = row["ID"]
+            bill.extras["AL_BILL_ID"] = row["id"]
 
             self.count += 1
             yield bill
@@ -197,9 +192,10 @@ class ALBillScraper(Scraper):
         if page["data"]["allInstrumentOverviewsCount"] > offset:
             yield from self.scrape_bill_type(session, bill_type, offset + 50, limit)
 
+    # this is one api call to grab the actions, fiscalnote, and budget isolation resolutions
     def scrape_rest(self, bill: Bill, bill_row: dict):
 
-        pprint.pprint(bill_row)
+        # pprint.pprint(bill_row)
 
         json_data = {
             "query": """query billModal(
@@ -319,13 +315,28 @@ class ALBillScraper(Scraper):
         }
 
         page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
-        print(page.content)
         page = json.loads(page.content)
-        pprint.pprint(page)
+        # pprint.pprint(page)
 
         data = page["data"]
         if "data" in data["histories"]:
             self.scrape_actions(bill, data["histories"], bill_row)
+
+        for row in page["data"]["fiscalNotes"]["data"]:
+            bill.add_document_link(
+                f"Fiscal Note: {row['description']}",
+                row["url"],
+                media_type="application/pdf",
+                on_duplicate="ignore",
+            )
+
+        for row in page["data"]["birs"]["data"]:
+            bill.add_document_link(
+                f"Budget Isolation Resolution: {row['description']}",
+                row["url"],
+                media_type="application/pdf",
+                on_duplicate="ignore",
+            )
 
     def scrape_versions(self, bill: Bill, row: dict):
         if row["introducedUrl"]:
@@ -444,47 +455,6 @@ class ALBillScraper(Scraper):
         #     self.scrape_act(
         #         bill, bill_row["ViewEnacted"], bill_row["EffectiveDateCertain"]
         #     )
-
-    def scrape_fiscal_notes(self, bill):
-        bill_id = bill.identifier.replace(" ", "")
-
-        print(self.session_type, self.session_year)
-
-        json_data = {
-            "query": """
-                query {
-                    fiscalNotes(
-                        where: {sessionType: {eq: "2024 Regular Session"}, sessionYear: {eq: 2024}, instrumentNbr: {eq: "HB1"}}
-                    )
-                    {
-                        data {
-                        description
-                        url
-                        sortOrder
-                        __typename
-                        }
-                    }
-                }
-            """,
-            "variables": {
-                "instrumentNbr": bill_id,
-                "sessionType": self.session_type,
-                "sessionYear": self.session_year + " Regular Session",
-            },
-        }
-
-        print(json_data)
-        page = requests.post(self.gql_url, headers=self.gql_headers, json=json_data)
-
-        print(page.content)
-        page = json.loads(page.content)
-        for row in page["data"]["fiscalNotes"]["data"]:
-            bill.add_document_link(
-                f"Fiscal Note: {row['description']}",
-                row["url"],
-                media_type="application/pdf",
-                on_duplicate="ignore",
-            )
 
     def scrape_vote(self, bill, action_row):
         cal_date = self.transform_date(action_row["CalendarDate"])
