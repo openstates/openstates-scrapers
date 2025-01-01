@@ -200,7 +200,13 @@ class MaybeVote(BaseVote):
 
     @property
     def passed(self):
-        return bool(self.passed_pattern.search(self.text))
+        passed_match = self.passed_pattern.search(self.text)
+        if passed_match:
+            return bool(passed_match)
+        elif self.yeas > 0 or self.nays > 0:
+            return self.yeas > self.nays
+        else:
+            return False
 
     @property
     def yeas(self):
@@ -536,7 +542,7 @@ class TXVoteScraper(Scraper):
                 journal_url = (
                     journal_root + session + "DAY" + str(day_num).zfill(2) + "FINAL.HTM"
                 )
-                if url_match is None or url_match in journal_url:
+                if url_match is None or url_match.lower() in journal_url.lower():
                     try:
                         self.get(journal_url)
                     except scrapelib.HTTPError:
@@ -549,7 +555,7 @@ class TXVoteScraper(Scraper):
                 # Check if this "legislative day" has a Continuing journal entry
                 # a "Cont" entry can occur the next actual calendar day
                 continuing_url = journal_url.replace("FINAL", "CFINAL")
-                if url_match is None or url_match in continuing_url:
+                if url_match is None or url_match.lower() in continuing_url.lower():
                     try:
                         self.get(continuing_url)
                     except scrapelib.HTTPError:
@@ -568,7 +574,7 @@ class TXVoteScraper(Scraper):
                     str(journal_day.month).zfill(2),
                     str(journal_day.day).zfill(2),
                 )
-                if url_match is None or url_match in journal_url:
+                if url_match is None or url_match.lower() in journal_url.lower():
                     try:
                         self.get(journal_url)
                     except scrapelib.HTTPError:
@@ -581,7 +587,7 @@ class TXVoteScraper(Scraper):
                 # Check if this "legislative day" has a Continuing journal entry
                 # a "Cont" entry can occur the next actual calendar day
                 continuing_url = journal_url.replace("F.", "F1.")
-                if url_match is None or url_match in continuing_url:
+                if url_match is None or url_match.lower() in continuing_url.lower():
                     try:
                         self.get(continuing_url)
                     except scrapelib.HTTPError:
