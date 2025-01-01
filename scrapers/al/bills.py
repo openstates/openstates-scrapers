@@ -9,8 +9,6 @@ from openstates.exceptions import EmptyScrape
 from utils.media import get_media_type
 from .actions import Categorizer
 
-# import pprint
-
 
 class ALBillScraper(Scraper):
     categorizer = Categorizer()
@@ -118,11 +116,8 @@ class ALBillScraper(Scraper):
             },
         }
 
-        # print(json_data)
         page = requests.post(self.gql_url, headers=self.gql_headers, json=json_data)
         page = json.loads(page.content)
-
-        # print(page)
 
         if page["data"]["instrumentOverviews"]["count"] < 1:
             return
@@ -189,13 +184,11 @@ class ALBillScraper(Scraper):
             yield bill
 
         # no need to paginate again if we max the last page
-        if page["data"]["allInstrumentOverviewsCount"] > offset:
+        if page["data"]["instrumentOverviews"]["count"] > offset:
             yield from self.scrape_bill_type(session, bill_type, offset + 50, limit)
 
     # this is one api call to grab the actions, fiscalnote, and budget isolation resolutions
     def scrape_rest(self, bill: Bill, bill_row: dict):
-
-        # pprint.pprint(bill_row)
 
         json_data = {
             "query": """query billModal(
@@ -316,7 +309,6 @@ class ALBillScraper(Scraper):
 
         page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
         page = json.loads(page.content)
-        # pprint.pprint(page)
 
         data = page["data"]
         if "data" in data["histories"]:
