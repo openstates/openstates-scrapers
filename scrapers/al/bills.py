@@ -108,7 +108,7 @@ class ALBillScraper(Scraper):
             __typename
             }""",
             "variables": {
-                "sessionType": "2025 Regular Session",
+                "sessionType": self.session_type,
                 "instrumentType": bill_type,
                 "orderBy": "LastActionDate",
                 "direction": "DESC",
