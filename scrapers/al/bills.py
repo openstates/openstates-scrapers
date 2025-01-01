@@ -127,10 +127,6 @@ class ALBillScraper(Scraper):
             return
 
         for row in page["data"]["instrumentOverviews"]["data"]:
-
-            self.scrape_rest(None, row)
-            assert False
-
             chamber = self.chamber_map[row["body"]]
             title = row["shortTitle"].strip()
 
@@ -165,6 +161,10 @@ class ALBillScraper(Scraper):
             )
 
             self.scrape_versions(bill, row)
+            self.scrape_rest(bill, row)
+
+            assert False
+
             self.scrape_fiscal_notes(bill)
             yield from self.scrape_actions(bill, row)
 
@@ -197,9 +197,9 @@ class ALBillScraper(Scraper):
         if page["data"]["allInstrumentOverviewsCount"] > offset:
             yield from self.scrape_bill_type(session, bill_type, offset + 50, limit)
 
-    def scrape_rest(self, bill, row):
+    def scrape_rest(self, bill: Bill, bill_row: dict):
 
-        pprint.pprint(row)
+        pprint.pprint(bill_row)
 
         json_data = {
             "query": """query billModal(
@@ -311,10 +311,10 @@ class ALBillScraper(Scraper):
             """,
             "variables": {
                 "__typename": "InstrumentOverview",
-                "id": row["id"],
-                "instrumentNbr": row["instrumentNbr"],
-                "sessionType": row["sessionType"],
-                "sessionYear": row["sessionYear"],
+                "id": bill_row["id"],
+                "instrumentNbr": bill_row["instrumentNbr"],
+                "sessionType": bill_row["sessionType"],
+                "sessionYear": bill_row["sessionYear"],
             },
         }
 
@@ -323,7 +323,11 @@ class ALBillScraper(Scraper):
         page = json.loads(page.content)
         pprint.pprint(page)
 
-    def scrape_versions(self, bill, row):
+        data = page["data"]
+        if "data" in data["histories"]:
+            self.scrape_actions(bill, data["histories"], bill_row)
+
+    def scrape_versions(self, bill: Bill, row: dict):
         if row["introducedUrl"]:
             bill.add_version_link(
                 "Introduced",
@@ -387,8 +391,7 @@ class ALBillScraper(Scraper):
                 "Alabama Chapter Law", act_number, "chapter", url=act_text_url
             )
 
-    def scrape_actions(self, bill, bill_row):
-        bill_id = bill.identifier.replace(" ", "")
+    def scrape_actions(self, bill: Bill, histories: dict, bill_row: dict):
 
         if bill_row["prefiledDate"]:
             action_date = dateutil.parser.parse(bill_row["prefiledDate"])
@@ -400,59 +403,47 @@ class ALBillScraper(Scraper):
                 classification="filing",
             )
 
-        json_data = {
-            "query": "query instrumentHistoryBySessionYearInstNbr($instrumentNbr: String, $sessionType: String, $sessionYear: String){instrumentHistoryBySessionYearInstNbr(instrumentNbr:$instrumentNbr, sessionType:$sessionType, sessionYear: $sessionYear, ){ InstrumentNbr,SessionYear,SessionType,CalendarDate,Body,Matter,AmdSubUrl,Committee,Nay,Yea,Vote,VoteNbr }}",
-            "variables": {
-                "instrumentNbr": bill_id,
-                "sessionType": self.session_type,
-                "sessionYear": self.session_year,
-            },
-        }
-
-        page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
-        page = json.loads(page.content)
-
-        for row in page["data"]["instrumentHistoryBySessionYearInstNbr"]:
-            action_text = row["Matter"]
+        for row in histories["data"]:
+            action_text = row["matter"]
 
             if action_text == "":
                 self.warning(f"Skipping blank action for {bill}")
                 continue
 
-            if row["Committee"]:
-                action_text = f'{row["Matter"]} ({row["Committee"]})'
+            if row["committee"]:
+                action_text = f'{row["matter"]} ({row["committee"]})'
 
-            action_date = dateutil.parser.parse(row["CalendarDate"])
+            action_date = dateutil.parser.parse(row["calendarDate"])
             action_date = self.tz.localize(action_date)
 
-            action_attr = self.categorizer.categorize(row["Matter"])
+            action_attr = self.categorizer.categorize(row["matter"])
             action_class = action_attr["classification"]
-            if row["Body"] == "":
+            if row["body"] == "":
                 self.warning(f"No chamber for {action_text}, skipping")
                 continue
 
             bill.add_action(
-                chamber=self.chamber_map_short[row["Body"]],
+                chamber=self.chamber_map[row["body"]],
                 description=action_text,
                 date=action_date,
                 classification=action_class,
             )
 
-            if row["AmdSubUrl"] != "":
+            if row["amdSubUrl"]:
                 bill.add_version_link(
-                    row["Matter"],
-                    url=row["AmdSubUrl"],
-                    media_type=get_media_type(row["AmdSubUrl"]),
+                    row["matter"],
+                    url=row["amdSubUrl"],
+                    media_type=get_media_type(row["amdSubUrl"]),
                     on_duplicate="ignore",
                 )
 
-            if int(row["VoteNbr"]) > 0:
-                yield from self.scrape_vote(bill, row)
+        #     if int(row["VoteNbr"]) > 0:
+        #         yield from self.scrape_vote(bill, row)
 
-        if bill_row["ViewEnacted"]:
-            self.scrape_act(
-                bill, bill_row["ViewEnacted"], bill_row["EffectiveDateCertain"]
-            )
+        # if bill_row["ViewEnacted"]:
+        #     self.scrape_act(
+        #         bill, bill_row["ViewEnacted"], bill_row["EffectiveDateCertain"]
+        #     )
 
     def scrape_fiscal_notes(self, bill):
         bill_id = bill.identifier.replace(" ", "")
