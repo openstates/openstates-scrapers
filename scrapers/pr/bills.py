@@ -92,7 +92,7 @@ class PRBillScraper(Scraper):
         )
         self.s.cookies.set_cookie(cookie_obj)
 
-        print(url, form)
+        self.info(f"POST {url}")
         xml = self.s.post(url, data=form, headers=headers).text
         return xml
 
