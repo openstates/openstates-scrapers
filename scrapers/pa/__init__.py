@@ -97,6 +97,16 @@ class Pennsylvania(State):
             "end_date": "2024-11-30",
             "active": True,
         },
+        {
+            "_scraped_name": "2025-2026 Regular Session",
+            "classification": "primary",
+            "identifier": "2025-2026",
+            "name": "2025-2026 Regular Session",
+            "start_date": "2025-01-07",
+            "end_date": "2025-11-30",
+            "active": False,
+            "extras": {"session_year": "2025"},
+        },
     ]
     ignored_scraped_sessions = [
         "1965-1966 Special Session #1",
