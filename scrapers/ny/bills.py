@@ -82,9 +82,9 @@ class NYBillScraper(Scraper):
             assembly_bill_id = assembly_bill_id[0] + "0" + assembly_bill_id[-4:]
         else:
             assembly_bill_id = bill_id
-        assembly_url = (
-            "https://nyassembly.gov/leg/?default_fld=&leg_video=&bn={bill_id}&term={term}"
-        ).format(bill_id=assembly_bill_id, term=bill["session"])
+        assembly_url = ("https://nyassembly.gov/leg/?bn={bill_id}&term={term}").format(
+            bill_id=assembly_bill_id, term=bill["session"]
+        )
 
         return (
             senate_url,
@@ -473,7 +473,10 @@ class NYBillScraper(Scraper):
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(url)
 
-        if "Votes:" in doc.text_content():
+        if (
+            "Votes:" in doc.text_content()
+            and "There are no votes for this bill" not in doc.text_content()
+        ):
             vote_motions = []
             additional_votes_on_motion = 2
             for table in doc.xpath("//table"):
