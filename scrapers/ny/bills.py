@@ -475,7 +475,7 @@ class NYBillScraper(Scraper):
 
         if (
             "Votes:" in doc.text_content()
-            and not "There are no votes for this bill" in doc.text_content()
+            and "There are no votes for this bill" not in doc.text_content()
         ):
             vote_motions = []
             additional_votes_on_motion = 2
