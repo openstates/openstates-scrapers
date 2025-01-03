@@ -24,7 +24,12 @@ class INEventScraper(Scraper):
         session_no = backoff(self.apiclient.get_session_no, self.session)
         response = self.apiclient.get("meetings", session=self.session)
 
-        if not response["items"]:
+        # in returns slightly different data depending on the year. See 2024 vs 2025
+        if "meetings" in response:
+            response = response["meetings"]
+
+        if response["itemCount"] == 0:
+            self.info("Item count returned by API is zero.")
             raise EmptyScrape("No meetings found in the response.")
 
         for item in response["items"]:
