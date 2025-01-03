@@ -620,7 +620,7 @@ class USBillScraper(Scraper):
                 content = requests.get(url).content
                 vote_xml = lxml.html.fromstring(content)
                 if chamber.lower() == "senate":
-                    vote = self.scrape_senate_votes(bill, vote_xml, url)
+                    vote = self.scrape_senate_votes(vote_xml, url)
                 elif chamber.lower() == "house":
                     vote = self.scrape_house_votes(bill, vote_xml, url)
                 yield vote
@@ -628,8 +628,13 @@ class USBillScraper(Scraper):
                 self.info(f"Error fetching {url}, skipping (used requests, no retries)")
                 return
 
-    def scrape_senate_votes(self, bill, page, url):
+    def scrape_senate_votes(self, page, url):
+        if not page.xpath("//roll_call_vote/vote_date/text()"):
+            self.error(f"Unable to parse vote date in {url}")
+            return
+
         vote_date = page.xpath("//roll_call_vote/vote_date/text()")[0].strip()
+
         when = self._TZ.localize(
             datetime.datetime.strptime(vote_date, "%B %d, %Y, %H:%M %p")
         )
