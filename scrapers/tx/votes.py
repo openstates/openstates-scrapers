@@ -639,15 +639,11 @@ class TXVoteScraper(Scraper):
             yield vote
 
     def get_session_year(self, session):
-        if "R" in session:
-            session_num = session.strip("R")
-        else:
-            session_num = session
         session_instance = next(
             (
                 s
                 for s in self.jurisdiction.legislative_sessions
-                if s["identifier"] == session_num
+                if s["identifier"] == session or s["identifier"] == session.strip("R")
             ),
             None,
         )
