@@ -171,7 +171,7 @@ class Wisconsin(State):
             "name": "2023-2024 Regular Session",
             "start_date": "2023-01-03",
             "end_date": "2024-05-25",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "September 2023 Special Session",
@@ -181,6 +181,15 @@ class Wisconsin(State):
             "start_date": "2023-09-20",
             "end_date": "2023-09-22",
             "active": False,
+        },
+        {
+            "_scraped_name": "2025 Regular Session",
+            "classification": "primary",
+            "identifier": "2025",
+            "name": "2025-2026 Regular Session",
+            "start_date": "2025-01-06",
+            "end_date": "2026-05-25",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
