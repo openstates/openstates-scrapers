@@ -174,8 +174,8 @@ class Colorado(State):
             "classification": "primary",
             "identifier": "2025A",
             "name": "2025 Regular Session",
-            "start_date": "2025-01-10",
-            "end_date": "2025-05-08",
+            "start_date": "2025-01-08",
+            "end_date": "2025-05-07",
             "active": False,
         },
     ]
