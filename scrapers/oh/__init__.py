@@ -47,7 +47,7 @@ class Ohio(State):
             "name": "135th Legislature, First Special Session",
             "start_date": "2024-05-28",
             "end_date": "2024-06-12",
-            "active": True,
+            "active": False,
             "extras": {"session_id": "135_special_1", "session_url_slug": "135-s1"},
         },
         {
@@ -56,6 +56,14 @@ class Ohio(State):
             "name": "135th Legislature (2023-2024)",
             "start_date": "2023-01-02",
             "end_date": "2024-12-31",
+            "active": False,
+        },
+        {
+            "_scraped_name": "136th (2025-2026)",
+            "identifier": "136",
+            "name": "136th Legislature (2025-2026)",
+            "start_date": "2025-01-06",
+            "end_date": "2026-12-31",
             "active": True,
         },
     ]
