@@ -6,6 +6,7 @@ import dateutil
 from collections import defaultdict
 import lxml.html
 from .actions import Categorizer
+from scrapelib import HTTPError
 
 
 BILLS_URL = "https://legislature.idaho.gov/sessioninfo/%s/legislation/minidata/"
@@ -99,7 +100,11 @@ class IDBillScraper(Scraper):
         if "spcl" in session:
             self._subjects = defaultdict(list)
         else:
-            self.scrape_subjects(session)
+            try:
+                self.scrape_subjects(session)
+            except HTTPError:
+                self.warning("Unable to load subjects.")
+                self._subjects = defaultdict(list)
 
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
