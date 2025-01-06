@@ -21,7 +21,7 @@ jobs:
     - name: install poetry
       run: pip install poetry wheel
     - name: install dependencies
-      run: poetry install --only=dev
+      run: poetry install --only=dev --no-root
     - name: flake8 check
       run: poetry run flake8 scrapers scrapers_next
     - name: black check

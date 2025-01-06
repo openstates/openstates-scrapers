@@ -37,7 +37,7 @@ jobs:
     - name: set poetry config path
       run: poetry config virtualenvs.path ~/.virtualenvs
     - name: install python dependencies
-      run: poetry install
+      run: poetry install --no-root
 
     # scout runs
     - name: run instrumented scout for people
