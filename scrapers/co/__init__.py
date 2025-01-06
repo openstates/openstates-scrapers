@@ -169,6 +169,15 @@ class Colorado(State):
             "end_date": "2024-08-30",
             "active": True,
         },
+        {
+            "_scraped_name": "2025 Regular Session",
+            "classification": "primary",
+            "identifier": "2025A",
+            "name": "2025 Regular Session",
+            "start_date": "2025-01-08",
+            "end_date": "2025-05-07",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2020 Extraordinary Session",
