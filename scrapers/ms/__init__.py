@@ -249,7 +249,7 @@ class Mississippi(State):
             "name": "2024 Regular Session",
             "start_date": "2024-01-02",
             "end_date": "2024-05-05",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2024 First Extraordinary Session",
@@ -259,7 +259,7 @@ class Mississippi(State):
             "start_date": "2024-01-19",
             # TODO: real end date
             "end_date": "2024-01-26",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2024 Second Extraordinary Session",
@@ -269,6 +269,15 @@ class Mississippi(State):
             "start_date": "2024-02-01",
             # TODO: real end date
             "end_date": "2024-02-02",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2025 Regular Session",
+            "classification": "primary",
+            "identifier": "2025",
+            "name": "2025 Regular Session",
+            "start_date": "2025-01-07",
+            "end_date": "2025-04-06",
             "active": True,
         },
     ]
