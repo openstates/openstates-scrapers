@@ -60,7 +60,7 @@ class DistrictOfColumbia(State):
             "name": "25th Council Period (2023-2024)",
             "start_date": "2023-01-02",
             "end_date": "2024-12-31",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "26",
@@ -68,7 +68,7 @@ class DistrictOfColumbia(State):
             "name": "26th Council Period (2025-2026)",
             "start_date": "2025-01-02",
             "end_date": "2025-12-31",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
