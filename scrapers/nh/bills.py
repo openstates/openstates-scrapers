@@ -75,6 +75,9 @@ class NHBillScraper(Scraper):
             .content.decode("utf-8")
             .split("\n")
         ):
+            # the first line in the file can contain a unicode zero width character \\ufeff
+            # maybe found in other lines? so just replace universally
+            line = line.replace("\ufeff", "")
             line = line.split("|")
             if len(line) < 1:
                 continue

@@ -1,5 +1,6 @@
-import re
 import csv
+import re
+import io
 import datetime
 import pytz
 import os
@@ -498,6 +499,7 @@ class ARBillScraper(Scraper):
     def decode_ar_utf16(self, data) -> str:
         data = data.decode("utf-16", errors="ignore")
         data = data.replace("\x00", "")
+
         return data
 
     def get_utf_16_ftp_content(self, filename):
@@ -512,6 +514,16 @@ class ARBillScraper(Scraper):
         with open(raw.name, "wb") as f:
             ftp_client.retrbinary("RETR " + filename, raw.write)
 
-        with open(raw.name, "rb") as f:
-            text = self.decode_ar_utf16(f.read())
-            return text
+        # 2025: we've seen encoding issues oscillate on this file
+        # so try both the "old" and "new" methods to decode
+        # as necessary
+        try:
+            with io.open(raw.name, "r", encoding="utf-16-le") as f:
+                text = f.read()
+                text = text.replace("\ufeff", "")
+                text = text.replace("\x00", "").strip()
+                return text
+        except UnicodeDecodeError:
+            with open(raw.name, "rb") as f:
+                text = self.decode_ar_utf16(f.read())
+                return text

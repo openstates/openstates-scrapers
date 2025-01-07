@@ -91,6 +91,8 @@ class PRBillScraper(Scraper):
             domain="sutra.oslpr.org", name="SUTRASplash", value="NoSplash"
         )
         self.s.cookies.set_cookie(cookie_obj)
+
+        self.info(f"POST {url}")
         xml = self.s.post(url, data=form, headers=headers).text
         return xml
 
@@ -156,7 +158,7 @@ class PRBillScraper(Scraper):
                 end = datetime.datetime.now().strftime("%m/%d/%Y")
             else:
                 window_end = datetime.datetime.strptime(window_end, "%Y-%m-%d")
-                end = window_start.strftime("%m/%d/%Y")
+                end = window_end.strftime("%m/%d/%Y")
 
         if bill_no is None:
             bill_no = ""

@@ -302,6 +302,17 @@ class USBillScraper(Scraper):
                     self.warning(f"Skipping action with no source: {action_text}")
                     continue
 
+                action_type = self.get_xpath(row, "type")
+                actor = "lower"
+                if "Senate" in source:
+                    actor = "upper"
+                elif "House" in source:
+                    actor = "lower"
+                elif action_type == "BecameLaw" or action_type == "President":
+                    actor = "executive"
+                elif action_type == "Committee":
+                    continue
+
                 # house actions give a time, senate just a date
                 if row.findall("actionTime"):
                     action_date = f"{self.get_xpath(row, 'actionDate')} {self.get_xpath(row, 'actionTime')}"
@@ -322,16 +333,6 @@ class USBillScraper(Scraper):
                 if classification is None:
                     classification = self.classify_action_by_name(action_text)
 
-                action_type = self.get_xpath(row, "type")
-                actor = "lower"
-                if "Senate" in source:
-                    actor = "upper"
-                elif "House" in source:
-                    actor = "lower"
-                elif action_type == "BecameLaw" or action_type == "President":
-                    actor = "executive"
-                elif action_type == "Committee":
-                    continue
                 # LOC doesn't make the actor clear, but you can back into it
                 # from the actions
                 if source == "Library of Congress":
@@ -620,7 +621,7 @@ class USBillScraper(Scraper):
                 content = requests.get(url).content
                 vote_xml = lxml.html.fromstring(content)
                 if chamber.lower() == "senate":
-                    vote = self.scrape_senate_votes(bill, vote_xml, url)
+                    vote = self.scrape_senate_votes(vote_xml, url)
                 elif chamber.lower() == "house":
                     vote = self.scrape_house_votes(bill, vote_xml, url)
                 yield vote
@@ -628,8 +629,13 @@ class USBillScraper(Scraper):
                 self.info(f"Error fetching {url}, skipping (used requests, no retries)")
                 return
 
-    def scrape_senate_votes(self, bill, page, url):
+    def scrape_senate_votes(self, page, url):
+        if not page.xpath("//roll_call_vote/vote_date/text()"):
+            self.error(f"Unable to parse vote date in {url}")
+            return
+
         vote_date = page.xpath("//roll_call_vote/vote_date/text()")[0].strip()
+
         when = self._TZ.localize(
             datetime.datetime.strptime(vote_date, "%B %d, %Y, %H:%M %p")
         )

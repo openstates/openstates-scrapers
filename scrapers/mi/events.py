@@ -50,6 +50,8 @@ class MIEventScraper(Scraper):
         chair = chair.split(".")[-1].strip()
 
         where = self.table_cell("Location")
+        if where == "":
+            where = "See Agenda"
 
         date = self.table_cell("Date")
         time = self.table_cell("Time")

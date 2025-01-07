@@ -13,7 +13,7 @@ from openstates.exceptions import EmptyScrape
 
 class INEventScraper(Scraper):
     _tz = pytz.timezone("America/Indianapolis")
-    base_url = "https://beta-api.iga.in.gov"
+    base_url = "https://api.iga.in.gov"
     session = date.today().year
 
     def __init__(self, *args, **kwargs):
@@ -24,11 +24,15 @@ class INEventScraper(Scraper):
         session_no = backoff(self.apiclient.get_session_no, self.session)
         response = self.apiclient.get("meetings", session=self.session)
 
-        meetings = response["meetings"]
-        if not meetings["items"]:
+        # in returns slightly different data depending on the year. See 2024 vs 2025
+        if "meetings" in response:
+            response = response["meetings"]
+
+        if response["itemCount"] == 0:
+            self.info("Item count returned by API is zero.")
             raise EmptyScrape("No meetings found in the response.")
 
-        for item in meetings["items"]:
+        for item in response["items"]:
             meeting = self.apiclient.get(
                 "meeting", session=self.session, meeting_link=item["link"]
             )

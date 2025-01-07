@@ -146,6 +146,15 @@ class Indiana(State):
             "name": "2024 Regular Session",
             "start_date": "2024-01-08",
             "end_date": "2024-03-14",  # https://iga.in.gov/session/2024/deadlines
+            "active": False,
+        },
+        {
+            "_scraped_name": "First Regular Session 124th General Assembly (2025)",
+            "classification": "primary",
+            "identifier": "2025",
+            "name": "2025 Regular Session",
+            "start_date": "2025-01-09",
+            "end_date": "2025-04-29",
             "active": True,
         },
     ]
@@ -179,6 +188,6 @@ class Indiana(State):
             "Accept": "application/json",
             "User-Agent": useragent,
         }
-        resp = requests.get("https://beta-api.iga.in.gov", headers=headers)
+        resp = requests.get("https://api.iga.in.gov", headers=headers)
         resp.raise_for_status()
         return [session["name"] for session in resp.json()["sessions"]]

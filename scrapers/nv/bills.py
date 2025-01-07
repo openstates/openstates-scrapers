@@ -59,6 +59,7 @@ CARRYOVERS = {
         "**": "2020Special32",
     },
     "82": {"*": "2021"},
+    "83": {"*": "82", "**": "2023Special35"},
 }
 
 
@@ -216,7 +217,12 @@ class BillTabDetail(HtmlPage):
             entity_type = "person"
             if "committee" in name.lower():
                 entity_type = "organization"
-            if name.split()[0] in ["Assemblywoman", "Assemblyman", "Senator"]:
+            if name.split()[0] in [
+                "Assemblywoman",
+                "Assemblyman",
+                "Assemblymember",
+                "Senator",
+            ]:
                 chamber = "lower" if "Assembly" in name.split()[0] else "upper"
                 name = " ".join(name.split()[1:]).strip()
             if name not in seen:

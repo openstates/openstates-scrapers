@@ -43,6 +43,7 @@ class WVEventScraper(Scraper, LXMLMixin):
                 yield event
 
     def scrape_committee_page(self, url):
+        self.info(f"GET {url}")
         # grab the first event, then look up the pages for the table entries
         page = self.lxmlize(url)
         page.make_links_absolute(url)
@@ -71,6 +72,7 @@ class WVEventScraper(Scraper, LXMLMixin):
                 yield from self.scrape_meeting_page(row.xpath("@href")[0])
 
     def scrape_meeting_page(self, url):
+        self.info(f"GET {url}")
         page = self.lxmlize(url)
         page.make_links_absolute(url)
 
@@ -96,7 +98,6 @@ class WVEventScraper(Scraper, LXMLMixin):
 
         when = when.split("-")[0]
         when = self.clean_date(when)
-        when.replace("Thursady", "Thursday")
         when = dateutil.parser.parse(when)
         when = self._tz.localize(when)
 
@@ -163,7 +164,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         # Remove all text after the third comma to make sure no extra text
         # is included in the date. Required to correctly parse text like this:
         # "Friday, March 3, 2023, Following wrap up of morning agenda"
-        when = ",".join(when.split(",")[:2])
+        when = ",".join(when.split(",")[:3])
 
         removals = [
             r"(\d+|Thirty) (min\.|mins\.|minutes) After (.*)",
@@ -188,6 +189,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         # After feburary, februarary, febuary, just give up and regex it
         when = re.sub(r"feb(.*?)y", "February", when, flags=re.IGNORECASE)
         when = re.sub(r"Tuesdat", "Tuesday", when, flags=re.IGNORECASE)
+        when = when.replace("Thursady", "Thursday")
         when = when.replace("22021", "2021")
         when = when.replace("20201", "2021")
         when = when.replace("20202", "2020")

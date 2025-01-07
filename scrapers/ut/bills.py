@@ -216,17 +216,18 @@ class UTBillScraper(Scraper, LXMLMixin):
         data = json.loads(response.content)
 
         # Sponsorships
-        sponsor_name = data["primeSponsorName"]
-        sponsor_name = sponsor_name.replace("Sen. ", "").replace("Rep. ", "")
-        sponsor_chamber = SPONSOR_HOUSE_TO_CHAMBER[data["primeSponsorHouse"]]
-        bill.add_sponsorship(
-            sponsor_name,
-            classification="primary",
-            entity_type="person",
-            primary=True,
-            chamber=sponsor_chamber,
-        )
-        if data["floorSponsor"]:
+        if "primeSponsorName" in data and data["primeSponsorName"]:
+            sponsor_name = data["primeSponsorName"]
+            sponsor_name = sponsor_name.replace("Sen. ", "").replace("Rep. ", "")
+            sponsor_chamber = SPONSOR_HOUSE_TO_CHAMBER[data["primeSponsorHouse"]]
+            bill.add_sponsorship(
+                sponsor_name,
+                classification="primary",
+                entity_type="person",
+                primary=True,
+                chamber=sponsor_chamber,
+            )
+        if "floorSponsor" in data and data["floorSponsor"]:
             floor_sponsor_name = data["floorSponsorName"]
             floor_sponsor_name = floor_sponsor_name.replace("Sen. ", "").replace(
                 "Rep. ", ""
@@ -243,38 +244,39 @@ class UTBillScraper(Scraper, LXMLMixin):
         # Versions, subjects, code citations
         subjects = set()
         # citations = set()
-        for version_data in data["billVersionList"]:
-            # subjects associated with each version, so dedupe
-            for subject_data in version_data["subjectList"]:
-                subjects.add(subject_data["description"])
+        if "billVersionList" in data:
+            for version_data in data["billVersionList"]:
+                # subjects associated with each version, so dedupe
+                for subject_data in version_data["subjectList"]:
+                    subjects.add(subject_data["description"])
 
-            # TODO finish citations work
-            # citations associated with each version, dedupe again
-            # for citation_data in version_data["sectionAffectedList"]:
-            #     citations.add(citation_data["secNo"])
+                # TODO finish citations work
+                # citations associated with each version, dedupe again
+                # for citation_data in version_data["sectionAffectedList"]:
+                #     citations.add(citation_data["secNo"])
 
-            for doc_data in version_data["billDocs"]:
-                # Not really sure what's going to be in this array
-                # just versions? other documents?
-                # so throw something here if we find surprise
-                # and improve scraper later
-                if doc_data["fileName"] != f"{bill_filename}.xml":
-                    self.error(f"Found unexplored bill version data at {api_url}")
+                for doc_data in version_data["billDocs"]:
+                    # Not really sure what's going to be in this array
+                    # just versions? other documents?
+                    # so throw something here if we find surprise
+                    # and improve scraper later
+                    if doc_data["fileName"] != f"{bill_filename}.xml":
+                        self.error(f"Found unexplored bill version data at {api_url}")
 
-                # There seem to be XML and PDF files on Utah server
-                # the UT bill details page seems to have code to
-                # display the XML as HTML inline
-                bill.add_version_link(
-                    doc_data["shortDesc"],
-                    f"https://le.utah.gov{doc_data['url']}",
-                    media_type="text/xml",
-                )
-                pdf_filepath = doc_data["url"].replace(".xml", ".pdf")
-                bill.add_version_link(
-                    doc_data["shortDesc"],
-                    f"https://le.utah.gov{pdf_filepath}",
-                    media_type="application/pdf",
-                )
+                    # There seem to be XML and PDF files on Utah server
+                    # the UT bill details page seems to have code to
+                    # display the XML as HTML inline
+                    bill.add_version_link(
+                        doc_data["shortDesc"],
+                        f"https://le.utah.gov{doc_data['url']}",
+                        media_type="text/xml",
+                    )
+                    pdf_filepath = doc_data["url"].replace(".xml", ".pdf")
+                    bill.add_version_link(
+                        doc_data["shortDesc"],
+                        f"https://le.utah.gov{pdf_filepath}",
+                        media_type="application/pdf",
+                    )
 
         for subject in subjects:
             bill.add_subject(subject)
@@ -284,29 +286,32 @@ class UTBillScraper(Scraper, LXMLMixin):
         #     bill.add_citation(citation)
 
         # Actions
-        for action_data in data["actionHistoryList"]:
-            categorizer_result = self.categorizer.categorize(action_data["description"])
-            actor = "legislature"
-            if action_data["owner"] == "Legislative Research and General Counsel":
-                actor = "legislature"
-            elif "governor" in action_data["owner"].lower():
-                actor = "executive"
-            else:
-                self.error(
-                    f"Found unexpected actor {action_data['owner']} at {api_url}"
+        if "actionHistoryList" in data:
+            for action_data in data["actionHistoryList"]:
+                categorizer_result = self.categorizer.categorize(
+                    action_data["description"]
                 )
+                actor = "legislature"
+                if action_data["owner"] == "Legislative Research and General Counsel":
+                    actor = "legislature"
+                elif "governor" in action_data["owner"].lower():
+                    actor = "executive"
+                else:
+                    self.warning(
+                        f"Found unexpected actor {action_data['owner']} at {api_url}"
+                    )
 
-            date = datetime.datetime.strptime(
-                action_data["actionDate"], "%m/%d/%Y"
-            ).date()
-            date = date.strftime("%Y-%m-%d")
+                date = datetime.datetime.strptime(
+                    action_data["actionDate"], "%m/%d/%Y"
+                ).date()
+                date = date.strftime("%Y-%m-%d")
 
-            bill.add_action(
-                date=date,
-                description=action_data["description"],
-                classification=categorizer_result["classification"],
-                chamber=actor,
-            )
+                bill.add_action(
+                    date=date,
+                    description=action_data["description"],
+                    classification=categorizer_result["classification"],
+                    chamber=actor,
+                )
 
     def parse_status(self, bill, status_table, chamber):
         page = status_table
