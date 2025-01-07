@@ -161,6 +161,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         yield event
 
     def clean_date(self, when):
+        print(f"before {when}")
         # Remove all text after the third comma to make sure no extra text
         # is included in the date. Required to correctly parse text like this:
         # "Friday, March 3, 2023, Following wrap up of morning agenda"
@@ -193,6 +194,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         when = when.replace("22021", "2021")
         when = when.replace("20201", "2021")
         when = when.replace("20202", "2020")
+        when = when.replace("9:AM", "9:00AM")
         # Convert 1:300PM -> 1:30PM
         when = re.sub(r"(\d0)0([ap])", r"\1\2", when, flags=re.IGNORECASE)
 
@@ -202,4 +204,5 @@ class WVEventScraper(Scraper, LXMLMixin):
         if when == "March 1, 2022, PM":
             when = "March 1, 2022, 1:00 PM"
 
+        print(f"after {when}")
         return when
