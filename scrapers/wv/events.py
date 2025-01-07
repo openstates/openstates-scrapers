@@ -193,6 +193,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         when = when.replace("22021", "2021")
         when = when.replace("20201", "2021")
         when = when.replace("20202", "2020")
+        when = when.replace("9:AM", "9:00AM")
         # Convert 1:300PM -> 1:30PM
         when = re.sub(r"(\d0)0([ap])", r"\1\2", when, flags=re.IGNORECASE)
 
@@ -201,5 +202,4 @@ class WVEventScraper(Scraper, LXMLMixin):
         # ?Chart=agr&input=March%201,%202022
         if when == "March 1, 2022, PM":
             when = "March 1, 2022, 1:00 PM"
-
         return when
