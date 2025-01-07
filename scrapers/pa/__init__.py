@@ -85,7 +85,7 @@ class Pennsylvania(State):
             "name": "2023-2024 Regular Session",
             "start_date": "2023-01-03",
             "end_date": "2024-11-30",
-            "active": True,
+            "active": False,
             "extras": {"session_year": "2023"},
         },
         {
@@ -95,7 +95,7 @@ class Pennsylvania(State):
             "name": "2023-2024 Special Session #1",
             "start_date": "2023-01-09",
             "end_date": "2024-11-30",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2025-2026 Regular Session",
@@ -104,7 +104,7 @@ class Pennsylvania(State):
             "name": "2025-2026 Regular Session",
             "start_date": "2025-01-07",
             "end_date": "2025-11-30",
-            "active": False,
+            "active": True,
             "extras": {"session_year": "2025"},
         },
     ]
