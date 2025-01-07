@@ -40,6 +40,10 @@ class VaEventScraper(Scraper):
             when_date = row["ScheduleDate"].replace("T12:00:00", "")
             when_time = row["ScheduleTime"]
 
+            # sometimes the site JSON contains this string
+            if when_time == "Invalid date":
+                when_time = ""
+
             when = dateutil.parser.parse(f"{when_date} {when_time}")
             when = self._tz.localize(when)
 
