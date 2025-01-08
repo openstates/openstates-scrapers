@@ -1,6 +1,7 @@
 import re
 import datetime as dt
 from collections import defaultdict
+
 import pytz
 
 import lxml.html
@@ -136,7 +137,9 @@ class NHBillScraper(Scraper):
                     # ex: HR 1 is lsr=847 but version id=838
                     resolution_url = (
                         "https://www.gencourt.state.nh.us/bill_status/legacy/bs2016/bill_status.aspx?"
-                        + "lsr={}&sy={}&txtsessionyear={}".format(lsr, session, session)
+                        + "lsr={}&sy={}&txtsessionyear={}&txtbillnumber={}".format(
+                            lsr, session, session, bill_id
+                        )
                     )
                     resolution_page = self.get(
                         resolution_url, allow_redirects=True
