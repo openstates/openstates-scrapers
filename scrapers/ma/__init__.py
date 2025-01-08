@@ -104,7 +104,7 @@ class Massachusetts(State):
             "identifier": "194th",
             "name": "194th Legislature (2025-2026)",
             "start_date": "2025-01-01",
-            "end_date": "2025-11-31",  # est
+            "end_date": "2026-07-31",
             "active": True,
         },
     ]
