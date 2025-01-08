@@ -160,6 +160,15 @@ class Illinois(State):
             "start_date": "2023-01-11",
             "end_date": "2024-05-24",
             "classification": "primary",
+            "active": False,
+        },
+        {
+            "_scraped_name": "104th General Assembly (2025-2026)",
+            "name": "104th Regular Session",
+            "identifier": "104th",
+            "start_date": "2025-01-08",
+            "end_date": "2025-05-31",
+            "classification": "primary",
             "active": True,
         },
     ]
