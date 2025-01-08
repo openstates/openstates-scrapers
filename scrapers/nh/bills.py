@@ -137,7 +137,9 @@ class NHBillScraper(Scraper):
                     # ex: HR 1 is lsr=847 but version id=838
                     resolution_url = (
                         "https://www.gencourt.state.nh.us/bill_status/legacy/bs2016/bill_status.aspx?"
-                        + "lsr={}&sy={}&txtsessionyear={}&txtbillnumber={}".format(lsr, session, session, bill_id)
+                        + "lsr={}&sy={}&txtsessionyear={}&txtbillnumber={}".format(
+                            lsr, session, session, bill_id
+                        )
                     )
                     resolution_page = self.get(
                         resolution_url, allow_redirects=True
