@@ -1,7 +1,7 @@
 # API Docs available at
 # http://kslegislature.org/klois/includes/kliss_restian_interface_guide_v12.pdf
 ksleg = "http://www.kslegislature.org/li"
-url = "%s/api/v12/rev-1/" % ksleg
+url = "%s/api/v13/rev-1/" % ksleg
 
 # These actions are from the KLISS API documentation,
 # and are in the same order as that table

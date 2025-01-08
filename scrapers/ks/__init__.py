@@ -94,12 +94,21 @@ class Kansas(State):
             "end_date": "2024-05-21",
             "active": True,
         },
+        {
+            "_scraped_name": "b2025_26",
+            "classification": "primary",
+            "identifier": "2025-2026",
+            "name": "2025-2026 Regular Session",
+            "start_date": "2025-01-13",
+            "end_date": "2025-05-06",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = []
 
     def get_session_list(self):
         url = url_xpath(
-            "http://www.kslegislature.org/li",
+            "https://www.kslegislature.org/li",
             '//div[@id="nav"]//a[contains(text(), "Senate Bills")]/@href',
         )[0]
         return [url.split("/")[2]]
