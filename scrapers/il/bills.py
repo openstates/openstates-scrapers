@@ -776,6 +776,10 @@ class IlBillScraper(Scraper):
                 # Converts "Davis,William" to "Davis, William".
                 name = re.sub(r"\,([a-zA-Z])", r", \1", name)
 
+            if name == "":
+                self.logger.warning(f"Found empty voter name in parsing vote at {href}")
+                continue
+
             if vcode == "Y":
                 yes_votes.append(name)
             elif vcode == "N":
