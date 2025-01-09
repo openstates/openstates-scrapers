@@ -106,6 +106,14 @@ class Hawaii(State):
             "name": "2024 Regular Session",
             "start_date": "2024-01-17",
             "end_date": "2024-05-02",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2025",
+            "identifier": "2025",
+            "name": "2025 Regular Session",
+            "start_date": "2025-01-17",
+            "end_date": "2025-05-02",
             "active": True,
         },
     ]
@@ -127,7 +135,7 @@ class Hawaii(State):
 
     def get_session_list(self):
         response = requests.get(
-            "https://www.capitol.hawaii.gov/session/archives/main.aspx", verify=False
+            "https://data.capitol.hawaii.gov/session/archives/main.aspx", verify=False
         ).content
         page = lxml.html.fromstring(response)
         # page doesn't include current session, we need to add it

@@ -1,6 +1,6 @@
 import lxml
 
-HI_URL_BASE = "https://www.capitol.hawaii.gov"
+HI_URL_BASE = "https://data.capitol.hawaii.gov"
 SHORT_CODES = f"{HI_URL_BASE}/legislature/committees.aspx?chamber=all"
 
 
@@ -25,3 +25,10 @@ def get_short_codes(scraper):
         else:
             chamber = "joint"
         scraper.short_ids[short_id] = {"chamber": chamber, "name": ctty_name}
+
+
+def make_data_url(url: str) -> str:
+    if "www" in url:
+        return url.replace("www.", "data.")
+    else:
+        return url.replace("capitol.", "data.capitol.")
