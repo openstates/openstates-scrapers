@@ -208,11 +208,13 @@ class HIBillScraper(Scraper):
                 # some bills (and GMs) swap the order or double-link to the same format
                 # so detect the type, and ignore dupes
                 bill.add_version_link(
-                    name, http_link, media_type=self.classify_media(http_link)
+                    name,
+                    make_data_url(http_link),
+                    media_type=self.classify_media(http_link),
                 )
                 bill.add_version_link(
                     name,
-                    pdf_link,
+                    make_data_url(pdf_link),
                     media_type=self.classify_media(pdf_link),
                     on_duplicate="ignore",
                 )
