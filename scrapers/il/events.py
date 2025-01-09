@@ -115,7 +115,7 @@ class IlEventScraper(Scraper):
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(url)
 
-            if doc.xpath('//div[contains(text(), "No hearings currently scheduled")]'):
+            if doc.xpath('//p[contains(text(), "No scheduled hearings for Month")]'):
                 self.info(f"No hearings in {chamber}")
                 no_scheduled_ct += 1
                 continue
