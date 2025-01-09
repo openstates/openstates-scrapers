@@ -91,7 +91,7 @@ class VaBillScraper(Scraper):
             self.add_actions(bill, row["LegislationID"])
             self.add_versions(bill, row["LegislationID"])
             self.add_carryover_related_bill(bill)
-            self.add_sponsors(bill, row["Patrons"])
+            self.add_sponsors(bill, row["LegislationID"])
             yield from self.add_votes(bill, row["LegislationID"])
             if subtitle is not None:
                 bill.add_abstract(subtitle, note="title")
@@ -156,7 +156,13 @@ class VaBillScraper(Scraper):
         if has_carryover_action:
             bill.add_related_bill(bill.identifier, f"{prior_session}", "prior-session")
 
-    def add_sponsors(self, bill: Bill, sponsors: list):
+    def add_sponsors(self, bill: Bill, legislation_id: str):
+        page = requests.get(
+            f"{self.base_url}/LegislationPatron/api/GetLegislationPatronsByIdAsync/{legislation_id}",
+            headers=self.headers,
+            verify=False,
+        ).json()
+        sponsors = page["Patrons"]
         for row in sponsors:
             primary = True if row["Name"] == "Chief Patron" else False
             bill.add_sponsorship(
