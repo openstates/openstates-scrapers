@@ -52,6 +52,14 @@ class Alaska(State):
             "name": "33rd Legislature (2023-2024)",
             "start_date": "2023-01-17",
             "end_date": "2024-05-15",
+            "active": False,
+        },
+        {
+            "_scraped_name": "34th Legislature (2025-2026)",
+            "identifier": "34",
+            "name": "34th Legislature (2025-2026)",
+            "start_date": "2025-01-21",
+            "end_date": "2025-05-21",
             "active": True,
         },
     ]
@@ -69,7 +77,6 @@ class Alaska(State):
     ]
 
     def get_session_list(self):
-        return [session["_scraped_name"] for session in self.legislative_sessions]
         return url_xpath(
             "https://www.akleg.gov/basis/Home/Archive",
             '//div[@id="fullpage"]//a[contains(@href, "/BillsandLaws/")]//text()',
