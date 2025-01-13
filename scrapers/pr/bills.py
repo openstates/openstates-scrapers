@@ -231,7 +231,8 @@ class PRBillScraper(Scraper):
     def parse_version(self, bill, row, is_document=False):
         # they have empty links in every action, and icon links preceeding the actual link
         # so only select links with an href set, and skip the icon links
-        for version_row in row.xpath("./following-sibling::p//span/a"):
+        links = row.xpath("./following-sibling::p//span/a")
+        for version_row in links:
             version_url = version_row.xpath("@href")[0]
             # version url is in an onclick handler built into the href
             version_url = "https://sutra.oslpr.org{}".format(version_url)
@@ -279,7 +280,8 @@ class PRBillScraper(Scraper):
         # note there's a typo in a class, one set is
         # DataGridItemSyle (syle) and the other is DataGridAltItemStyle (style)
         # if we're ever suddenly missing half the actions, check this
-        for row in page.xpath('//ul[@role="list"]/li//h2'):
+        rows = page.xpath('//ul[@role="list"]/li//h2')
+        for row in rows:
             action_text = row.xpath('./span[@class="text-sutra-primary"]//text()')[0]
             action_text = self.clean_broken_html(action_text)
             raw_date = row.xpath(
@@ -306,15 +308,20 @@ class PRBillScraper(Scraper):
                 classification=parsed_action[1],
             )
 
+            # as of 2025-01-13 there are no votes and unsure how they will appear
+            # so for now this is commented out, as it fails to accurately distinguish
+            # a vote from a bill version.
+            # A yield statement will needed in calling function if this is returned
+            #
             # if it's a vote, we don't want to add the document as a bill version
-            if row.xpath('./following-sibling::p//span/a[contains(@href, "doc")]'):
-                if url not in self.seen_votes:
-                    yield from self.parse_vote(
-                        chamber, bill, row, action_text, action_date, url
-                    )
-                    self.seen_votes.add(url)
-            else:
-                self.parse_version(bill, row)
+            # if row.xpath('./following-sibling::p//span/a[contains(@href, "doc")]'):
+            #     if url not in self.seen_votes:
+            #         yield from self.parse_vote(
+            #             chamber, bill, row, action_text, action_date, url
+            #         )
+            #         self.seen_votes.add(url)
+            # else:
+            self.parse_version(bill, row)
 
     def scrape_bill(self, chamber, session, url):
         headers = {
@@ -353,8 +360,10 @@ class PRBillScraper(Scraper):
                 authurl = "https://sutra.oslpr.org/" + aurl
                 self.scrape_author_table(authurl, url, bill)
 
-        # action table contains votes, hence the yield
-        yield from self.scrape_action_table(chamber, bill, page, url)
+        # action table MAY contains votes
+        # however as of 2025-01-13 I can't find any examples
+        # see commented-out code in this method
+        self.scrape_action_table(chamber, bill, page, url)
 
         bill.add_source(url)
         yield bill
