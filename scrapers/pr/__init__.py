@@ -1,8 +1,10 @@
 import requests
-import lxml.html
 from openstates.scrape import State
 from .bills import PRBillScraper
 from .votes import PRVoteScraper
+import re
+import json
+
 
 settings = dict(SCRAPELIB_TIMEOUT=600)
 
@@ -40,7 +42,7 @@ class PuertoRico(State):
             "name": "2021-2024 Session",
             "start_date": "2021-01-11",
             "end_date": "2024-12-31",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2025-2028",
@@ -48,7 +50,7 @@ class PuertoRico(State):
             "name": "2025-2028 Session",
             "start_date": "2025-01-13",
             "end_date": "2028-12-31",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
@@ -63,20 +65,25 @@ class PuertoRico(State):
     def get_session_list(self):
         s = requests.Session()
         # this URL should work even for future sessions
-        url = "https://sutra.oslpr.org/osl/esutra/"
+        url = "https://sutra.oslpr.org/"
 
         headers = {
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/79.0.3945.117 Safari/537.36",
+            "accept": "text/x-component",
+            "content-type": "text/plain;charset=UTF-8",
+            "next-action": "703ccedd8bdfbce1899c7590dfae240ff1aa6d2d2f",
+            "next-router-state-tree": "%5B%22%22%2C%7B%22children%22%3A%5B%22(public)%22%2C%7B%22children%22%3A%5B%22(landing)%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2C%22%2F%22%2C%22refresh%22%5D%7D%5D%7D%5D%7D%2Cnull%2Cnull%2Ctrue%5D",
+            "origin": url,
             "referer": url,
-            "origin": "https://sutra.oslpr.org",
-            "authority": "sutra.oslpr.org",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         }
-
-        data = s.get(url, headers=headers, verify=False)
-
-        doc = lxml.html.fromstring(data.text)
-        sessions = doc.xpath(
-            "//select[@id='ctl00_CPHBody_Tramites_lovCuatrienio']/option/text()"
+        data = '["/cuatrienios"]'
+        data = s.post(
+            "https://sutra.oslpr.org/", headers=headers, data=data, verify=False
         )
+        sdata = re.search(r"1:(.*?}])", data.text).group(1)
+        json_data = json.loads(sdata)
+        sessions = []
+        for data in json_data:
+            descripcion = data["descripcion"]
+            sessions.append(descripcion)
         return sessions
