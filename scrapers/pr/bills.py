@@ -74,6 +74,7 @@ class PRBillScraper(Scraper):
     def scrape(self, session=None, chamber=None, page=None):
         self.seen_votes = set()
         self.seen_bills = set()
+        self.seen_bill_identifiers = set()
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_search_results(
@@ -339,7 +340,16 @@ class PRBillScraper(Scraper):
         if title:
             bill_id = re.findall(r"[A-Z]{2}\d{4}", title)[0]
         else:
-            bill_id = ""
+            self.logger.error(f"Bill found with no bill identifier at {url}")
+
+        # PR occasionally repeats a bill at different URLs (????)
+        # example:
+        # PC0205 https://sutra.oslpr.org/medidas/152982
+        # PC0205 https://sutra.oslpr.org/medidas/152909
+        if bill_id in self.seen_bill_identifiers:
+            return
+        else:
+            self.seen_bill_identifiers.add(bill_id)
 
         bill_type = self.classify_bill_type(bill_id)
 
