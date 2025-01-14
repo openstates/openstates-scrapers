@@ -334,14 +334,18 @@ class PRBillScraper(Scraper):
         html = self.s.get(url, headers=headers, verify=False).text
         page = lxml.html.fromstring(html)
 
-        page_header_elems = page.xpath('//main//div[contains(@class, "items-center")]/h1/text()')
+        page_header_elems = page.xpath(
+            '//main//div[contains(@class, "items-center")]/h1/text()'
+        )
         if len(page_header_elems) > 0:
             page_header_text = page_header_elems[0].strip()
             bill_id = re.findall(r"[A-Z]{2}\d{4}", page_header_text)[0]
         else:
             self.logger.error(f"Bill found with no bill identifier at {url}")
 
-        bill_title_elems = page.xpath('//span/strong[text()="Título:"]/../following-sibling::span')
+        bill_title_elems = page.xpath(
+            '//span/strong[text()="Título:"]/../following-sibling::span'
+        )
         if len(bill_title_elems) > 0:
             title = bill_title_elems[0].text_content().strip()
         else:
