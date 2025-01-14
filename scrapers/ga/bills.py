@@ -202,7 +202,7 @@ class GABillScraper(Scraper):
                         "other", listed_vote["Excused"] + listed_vote["NotVoting"]
                     )
 
-                    vote.add_source(self.vsource)
+                    vote.add_source(self.vsource, note="api")
                     vote.dedupe_key = f"{bill}#{date}#{text}"
 
                     methods = {"Yea": "yes", "Nay": "no"}
@@ -316,8 +316,8 @@ class GABillScraper(Scraper):
                     "_version_id": version_id,
                 }
 
-            bill.add_source(self.msource)
-            bill.add_source(self.lsource)
+            bill.add_source(self.msource, note="api")
+            bill.add_source(self.lsource, note="api")
             bill.add_source(SOURCE_URL.format(**{"session": session, "bid": guid}))
 
             yield bill
