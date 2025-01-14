@@ -20,7 +20,7 @@ class Guam(State):
         },
         {
             "_scraped_name": "38th",
-            "identifier": "38th",
+            "identifier": "38",
             "name": "38th Guam Legislature",
             "start_date": "2025-01-01",
             "end_date": "2026-12-31",
