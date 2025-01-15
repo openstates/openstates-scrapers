@@ -179,12 +179,22 @@ class BillList(JsonPage):
             votes_list = doc.xpath(
                 '//div[@aria-labelledby="vote-modal"]//div[@class="modal-content"]'
             )
+            votes_seen_for_bill = []
             for vote_modal in votes_list:
                 motion_text = (
                     vote_modal.xpath('.//h5[@class="modal-title"]')[0]
                     .text_content()
                     .strip()
                 )
+                modal_id = vote_modal.xpath('../..')[0].attrib["id"]
+                dedupe_key = f"{modal_id}{motion_text}"
+                if dedupe_key in votes_seen_for_bill:
+                    # at least one ND bill has duplicate votes
+                    # so skip if we have seen this vote already
+                    self.logger.warning(f"Skipped duplicate vote {modal_id} on {bill_id}")
+                    continue
+                else:
+                    votes_seen_for_bill.append(dedupe_key)
                 date = parser.parse(
                     vote_modal.xpath(
                         './/div[@class="modal-body"]/span[@class="float-right"]'
