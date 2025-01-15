@@ -318,7 +318,7 @@ class IlBillScraper(Scraper):
         if session in ["90th", "91st", "92nd"]:
             yield from self.scrape_archive_bills(session)
         else:
-            for chamber in ("lower", "upper"):
+            for chamber in ["lower", "upper"]:
                 for doc_type in [
                     chamber_slug(chamber) + doc_type for doc_type in DOC_TYPES
                 ]:
@@ -525,8 +525,8 @@ class IlBillScraper(Scraper):
         for date, actor, action_elem in group(action_tds, 3):
             date = datetime.datetime.strptime(date.text_content().strip(), "%m/%d/%Y")
             date = date.date()
-            actor = actor.text_content()
-            actor_id = "upper" if actor == "Senate" else "lower"
+            actor = f"{actor.text_content()}".strip().lower()
+            actor_id = "upper" if actor == "senate" else "lower"
 
             action = action_elem.text_content()
             classification, related_orgs = _categorize_action(action)
