@@ -479,8 +479,7 @@ class MTBillScraper(Scraper):
                 )
                 when = dateutil.parser.parse(row["dateTime"])
             elif "standingCommitteeMeeting" in row:
-
-                if not row["billStatusId"] and not row["legislatorVotes"]:
+                if not row["billStatusId"] or not row["legislatorVotes"]:
                     # voice vote, skip it there's no data
                     self.info(f"Skipping voice vote {row['id']}")
                     continue
