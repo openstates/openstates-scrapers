@@ -199,8 +199,8 @@ class MTBillScraper(Scraper):
                         )
 
             yield bill
-            yield from self.scrape_votes(bill, row, source_url)
-            yield from self.scrape_committee_votes(bill, row, source_url)
+            yield from self.scrape_votes(bill, str(row["id"]))
+            yield from self.scrape_committee_votes(bill, str(row["id"]))
 
         if response["totalPages"] > page_num:
             yield from self.scrape_list_page(session, page_num + 1)
@@ -439,24 +439,20 @@ class MTBillScraper(Scraper):
                 on_duplicate="ignore",
             )
 
-    def scrape_votes(self, bill: Bill, row: dict, bill_url: str):
+    def scrape_votes(self, bill: Bill, bill_id: str):
         yield from self.scrape_votes_page(
-            f"https://api.legmt.gov/bills/v1/votes/findByBillId?billId={str(row['id'])}",
+            f"https://api.legmt.gov/bills/v1/votes/findByBillId?billId={bill_id}",
             bill,
-            row,
-            bill_url,
         )
 
-    def scrape_committee_votes(self, bill: Bill, row: dict, bill_url: str):
+    def scrape_committee_votes(self, bill: Bill, bill_id: str):
         yield from self.scrape_votes_page(
-            f"https://api.legmt.gov/committees/v1/executiveActions/findByBillId?billId={str(row['id'])}",
+            f"https://api.legmt.gov/committees/v1/executiveActions/findByBillId?billId={bill_id}",
             bill,
-            row,
-            bill_url,
         )
 
-    # this scrapes both regular and committe votes, which have slightly different json
-    def scrape_votes_page(self, vote_url: str, bill: Bill, row: dict, bill_url: str):
+    # this scrapes both regular and committee votes, which have slightly different json
+    def scrape_votes_page(self, vote_url: str, bill: Bill):
         try:
             page = self.get(vote_url).json()
         except scrapelib.HTTPError:
@@ -468,10 +464,8 @@ class MTBillScraper(Scraper):
 
             counts = {"YES": 0, "NO": 0, "ABSENT": 0}
             for v in row["legislatorVotes"]:
-                if "voteType" in v:
-                    counts[v["voteType"]] += 1
-                elif "committeeVote" in v:
-                    counts[v["committeeVote"]] += 1
+                vote_type_key = "voteType" if "voteType" in v else "committeeVote"
+                counts[v[vote_type_key]] += 1
 
             passed = counts["YES"] > counts["NO"]
 
@@ -533,7 +527,7 @@ class MTBillScraper(Scraper):
                 elif v[vote_type_key] == "NO":
                     vote.no(voter)
                 elif v[vote_type_key] == "ABSENT":
-                    vote.other(voter)
+                    vote.vote("absent", voter)
                 else:
                     self.error(v)
                     raise NotImplementedError
