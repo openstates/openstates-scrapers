@@ -66,7 +66,7 @@ class Iowa(State):
             "name": "2023-2024 Regular Session",
             "start_date": "2023-01-09",
             "end_date": "2024-04-16",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "General Assembly: 91",
@@ -75,7 +75,7 @@ class Iowa(State):
             "name": "2025-2026 Regular Session",
             "start_date": "2025-01-13",
             "end_date": "2025-04-22",
-            "active": False,
+            "active": True,
             "extras": {"ordinal": 91},
         },
     ]
