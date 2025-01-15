@@ -186,12 +186,14 @@ class BillList(JsonPage):
                     .text_content()
                     .strip()
                 )
-                modal_id = vote_modal.xpath('../..')[0].attrib["id"]
+                modal_id = vote_modal.xpath("../..")[0].attrib["id"]
                 dedupe_key = f"{modal_id}{motion_text}"
                 if dedupe_key in votes_seen_for_bill:
                     # at least one ND bill has duplicate votes
                     # so skip if we have seen this vote already
-                    self.logger.warning(f"Skipped duplicate vote {modal_id} on {bill_id}")
+                    self.logger.warning(
+                        f"Skipped duplicate vote {modal_id} on {bill_id}"
+                    )
                     continue
                 else:
                     votes_seen_for_bill.append(dedupe_key)
