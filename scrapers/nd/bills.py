@@ -54,6 +54,14 @@ class BillList(JsonPage):
         doc.make_links_absolute(url)
 
         fullname = doc.xpath("string(//h1)").strip()
+
+        if fullname == "":
+            # at least one ND biography page is returning 404 as of 1/15/25
+            # so here's a dumb fallback to get name literally from the URL
+            url_name = url.replace("https://ndlegis.gov/biography/", "")
+            name_with_spaces = url_name.replace("-", " ")
+            fullname = name_with_spaces.title()
+
         self.members_cache[url] = (
             fullname.replace("Representative", "").replace("Senator", "").strip()
         )
