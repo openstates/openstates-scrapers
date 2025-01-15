@@ -22,7 +22,9 @@ class MTBillScraper(Scraper):
 
     bill_types = {"B": "bill", "J": "joint resolution", "R": "resolution", "C": "bill"}
 
+    # legislator and action lookup tables for populating votes
     legislators_by_id = {}
+    actions_by_id = {}
 
     def scrape(self, session=None):
 
@@ -198,6 +200,7 @@ class MTBillScraper(Scraper):
 
             yield bill
             yield from self.scrape_votes(bill, row, source_url)
+            yield from self.scrape_committee_votes(bill, row, source_url)
 
         if response["totalPages"] > page_num:
             yield from self.scrape_list_page(session, page_num + 1)
@@ -221,9 +224,8 @@ class MTBillScraper(Scraper):
                 classification=categorize_actions(name),
             )
 
-            # TODO vote processing
-            # at this time, no new bills have votes yet
-            # so we have no idea how data will appear
+            # we want to be able to look up the action name later for votes
+            self.actions_by_id[str(action["id"])] = name
 
     def scrape_extras(self, bill: Bill, row: dict):
         bill.extras["bill_draft_number"] = row["draft"]["draftNumber"]
@@ -438,44 +440,74 @@ class MTBillScraper(Scraper):
             )
 
     def scrape_votes(self, bill: Bill, row: dict, bill_url: str):
-        url = (
-            f"https://api.legmt.gov/bills/v1/votes/findByBillId?billId={str(row['id'])}"
+        yield from self.scrape_votes_page(
+            f"https://api.legmt.gov/bills/v1/votes/findByBillId?billId={str(row['id'])}",
+            bill,
+            row,
+            bill_url,
         )
+
+    def scrape_committee_votes(self, bill: Bill, row: dict, bill_url: str):
+        yield from self.scrape_votes_page(
+            f"https://api.legmt.gov/committees/v1/executiveActions/findByBillId?billId={str(row['id'])}",
+            bill,
+            row,
+            bill_url,
+        )
+
+    # this scrapes both regular and committe votes, which have slightly different json
+    def scrape_votes_page(self, vote_url: str, bill: Bill, row: dict, bill_url: str):
         try:
-            page = self.get(url).json()
+            page = self.get(vote_url).json()
         except scrapelib.HTTPError:
             # no data = 404 instead of empty json
             return
 
-        print(page)
-
         for row in page:
+            motion = row["motion"]
 
-            counts = {
-                "YES": 0,
-                "NO": 0,
-            }
+            counts = {"YES": 0, "NO": 0, "ABSENT": 0}
             for v in row["legislatorVotes"]:
-                counts[v["voteType"]] += 1
+                if "voteType" in v:
+                    counts[v["voteType"]] += 1
+                elif "committeeVote" in v:
+                    counts[v["committeeVote"]] += 1
 
             passed = counts["YES"] > counts["NO"]
 
-            when = dateutil.parser.parse(row["dateTime"])
-            when = self.tz.localize(when)
-            motion = row["motion"]
-            chamber = (
-                "lower"
-                if row["billStatus"]["billStatusCode"]["chamber"] == "HOUSE"
-                else "upper"
-            )
+            # regular vs committee votes
+            if "billStatus" in row:
+                bill_action = self.actions_by_id[str(row["billStatus"]["id"])]
+                chamber = (
+                    "lower"
+                    if row["billStatus"]["billStatusCode"]["chamber"] == "HOUSE"
+                    else "upper"
+                )
+                when = dateutil.parser.parse(row["dateTime"])
+            elif "standingCommitteeMeeting" in row:
 
+                if not row["billStatusId"] and not row["legislatorVotes"]:
+                    # voice vote, skip it there's no data
+                    self.info(f"Skipping voice vote {row['id']}")
+                    continue
+
+                chamber = (
+                    "lower"
+                    if row["standingCommitteeMeeting"]["standingCommittee"]["chamber"]
+                    == "HOUSE"
+                    else "upper"
+                )
+                bill_action = self.actions_by_id[str(row["billStatusId"])]
+                when = dateutil.parser.parse(row["voteTime"])
+
+            when = self.tz.localize(when)
             vote_id = f"{bill.legislative_session}-{bill.identifier}-{str(row['id'])}"
 
             vote = VoteEvent(
                 identifier=vote_id,
                 start_date=when,
                 motion_text=motion,
-                bill_action=row["billStatus"]["billStatusCode"]["name"],
+                bill_action=bill_action,
                 result="pass" if passed else "fail",
                 chamber=chamber,
                 bill=bill,
@@ -484,14 +516,24 @@ class MTBillScraper(Scraper):
 
             vote.set_count("yes", counts["YES"])
             vote.set_count("no", counts["NO"])
-            vote.add_source(bill_url)
+            vote.set_count("absent", counts["NO"])
+            vote.add_source(bill.sources[0]["url"])
 
             for v in row["legislatorVotes"]:
-                voter = self.legislators_by_id[str(v["legislatorId"])]
-                if v["voteType"] == "YES":
+                leg_id = (
+                    v["legislatorId"]
+                    if "legislatorId" in v
+                    else v["membership"]["legislatorId"]
+                )
+                voter = self.legislators_by_id[str(leg_id)]
+                vote_type_key = "voteType" if "voteType" in v else "committeeVote"
+
+                if v[vote_type_key] == "YES":
                     vote.yes(voter)
-                elif v["voteType"] == "NO":
+                elif v[vote_type_key] == "NO":
                     vote.no(voter)
+                elif v[vote_type_key] == "ABSENT":
+                    vote.other(voter)
                 else:
                     self.error(v)
                     raise NotImplementedError
