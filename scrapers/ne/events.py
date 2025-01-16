@@ -110,15 +110,17 @@ class NEEventScraper(Scraper):
                 desc = re_span.sub(
                     "", lxml.etree.tostring(details.xpath("div")[2]).decode()
                 ).strip()
-                agenda_item = event.add_agenda_item(description=desc)
 
-                if document not in ["Appointment"]:
-                    bill_id = lxml.html.fromstring(document).text
-                    agenda_item.add_bill(bill_id)
+                if desc:
+                    agenda_item = event.add_agenda_item(description=desc)
 
-                bill_links = row.xpath(".//a[contains(@href, 'view_bill.php')]")
-                for link in bill_links:
-                    agenda_item.add_bill(link.xpath("text()")[0].strip())
+                    if document not in ["Appointment"]:
+                        bill_id = lxml.html.fromstring(document).text
+                        agenda_item.add_bill(bill_id)
+
+                    bill_links = row.xpath(".//a[contains(@href, 'view_bill.php')]")
+                    for link in bill_links:
+                        agenda_item.add_bill(link.xpath("text()")[0].strip())
 
             event.add_source("https://nebraskalegislature.gov/calendar/calendar.php")
             yield event

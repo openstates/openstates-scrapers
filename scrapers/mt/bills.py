@@ -8,7 +8,7 @@ import pytz
 
 
 class MTBillScraper(Scraper):
-    TIMEZONE = pytz.timezone("America/Denver")
+    tz = pytz.timezone("America/Denver")
     results_per_page = 100
 
     session_ord = None
@@ -21,6 +21,10 @@ class MTBillScraper(Scraper):
     }
 
     bill_types = {"B": "bill", "J": "joint resolution", "R": "resolution", "C": "bill"}
+
+    # legislator and action lookup tables for populating votes
+    legislators_by_id = {}
+    actions_by_id = {}
 
     def scrape(self, session=None):
 
@@ -71,6 +75,21 @@ class MTBillScraper(Scraper):
                     else None,
                 }
             )
+
+            display_name = " ".join(
+                filter(
+                    None,
+                    [
+                        legislator["namePrefix"],
+                        legislator["firstName"],
+                        legislator["middleName"],
+                        legislator["lastName"],
+                        legislator["nameSuffix"],
+                    ],
+                )
+            )
+
+            self.legislators_by_id[str(legislator["id"])] = display_name
 
     def scrape_requesting_agencies(self):
         self.requesting_agencies = []
@@ -154,7 +173,6 @@ class MTBillScraper(Scraper):
                 # attempt to add a bill relation to the LC/draft version of this bill
                 bill.add_related_bill(row["draft"]["draftNumber"], session, "replaces")
 
-            # TODO votes, used to be processed in actions
             self.scrape_actions(bill, row)
             self.scrape_extras(bill, row)
             self.scrape_subjects(bill, row)
@@ -181,6 +199,8 @@ class MTBillScraper(Scraper):
                         )
 
             yield bill
+            yield from self.scrape_votes(bill, str(row["id"]))
+            yield from self.scrape_committee_votes(bill, str(row["id"]))
 
         if response["totalPages"] > page_num:
             yield from self.scrape_list_page(session, page_num + 1)
@@ -189,7 +209,7 @@ class MTBillScraper(Scraper):
         for action in row["draft"]["billStatuses"]:
             name = action["billStatusCode"]["name"]
             when = dateutil.parser.parse(action["timeStamp"])
-            when = self.TIMEZONE.localize(when)
+            when = self.tz.localize(when)
             if "(H)" in name:
                 chamber = "lower"
             elif "(S)" in name:
@@ -204,9 +224,8 @@ class MTBillScraper(Scraper):
                 classification=categorize_actions(name),
             )
 
-            # TODO vote processing
-            # at this time, no new bills have votes yet
-            # so we have no idea how data will appear
+            # we want to be able to look up the action name later for votes
+            self.actions_by_id[str(action["id"])] = name
 
     def scrape_extras(self, bill: Bill, row: dict):
         bill.extras["bill_draft_number"] = row["draft"]["draftNumber"]
@@ -310,7 +329,7 @@ class MTBillScraper(Scraper):
         for action in row["billActions"]:
             name = action["actionType"]["description"]
             when = dateutil.parser.parse(action["date"])
-            when = self.TIMEZONE.localize(when)
+            when = self.tz.localize(when)
             if "(H)" in name:
                 chamber = "lower"
             elif "(S)" in name:
@@ -419,3 +438,97 @@ class MTBillScraper(Scraper):
                 media_type="application/pdf",
                 on_duplicate="ignore",
             )
+
+    def scrape_votes(self, bill: Bill, bill_id: str):
+        yield from self.scrape_votes_page(
+            f"https://api.legmt.gov/bills/v1/votes/findByBillId?billId={bill_id}",
+            bill,
+        )
+
+    def scrape_committee_votes(self, bill: Bill, bill_id: str):
+        yield from self.scrape_votes_page(
+            f"https://api.legmt.gov/committees/v1/executiveActions/findByBillId?billId={bill_id}",
+            bill,
+        )
+
+    # this scrapes both regular and committee votes, which have slightly different json
+    def scrape_votes_page(self, vote_url: str, bill: Bill):
+        try:
+            page = self.get(vote_url).json()
+        except scrapelib.HTTPError:
+            # no data = 404 instead of empty json
+            return
+
+        for row in page:
+            motion = row["motion"]
+
+            counts = {"YES": 0, "NO": 0, "ABSENT": 0}
+            for v in row["legislatorVotes"]:
+                vote_type_key = "voteType" if "voteType" in v else "committeeVote"
+                counts[v[vote_type_key]] += 1
+
+            passed = counts["YES"] > counts["NO"]
+
+            # regular vs committee votes
+            if "billStatus" in row:
+                bill_action = self.actions_by_id[str(row["billStatus"]["id"])]
+                chamber = (
+                    "lower"
+                    if row["billStatus"]["billStatusCode"]["chamber"] == "HOUSE"
+                    else "upper"
+                )
+                when = dateutil.parser.parse(row["dateTime"])
+            elif "standingCommitteeMeeting" in row:
+                if not row["billStatusId"] or not row["legislatorVotes"]:
+                    # voice vote, skip it there's no data
+                    self.info(f"Skipping voice vote {row['id']}")
+                    continue
+
+                chamber = (
+                    "lower"
+                    if row["standingCommitteeMeeting"]["standingCommittee"]["chamber"]
+                    == "HOUSE"
+                    else "upper"
+                )
+                bill_action = self.actions_by_id[str(row["billStatusId"])]
+                when = dateutil.parser.parse(row["voteTime"])
+
+            when = self.tz.localize(when)
+            vote_id = f"{bill.legislative_session}-{bill.identifier}-{str(row['id'])}"
+
+            vote = VoteEvent(
+                identifier=vote_id,
+                start_date=when,
+                motion_text=motion,
+                bill_action=bill_action,
+                result="pass" if passed else "fail",
+                chamber=chamber,
+                bill=bill,
+                classification=[],
+            )
+
+            vote.set_count("yes", counts["YES"])
+            vote.set_count("no", counts["NO"])
+            vote.set_count("absent", counts["NO"])
+            vote.add_source(bill.sources[0]["url"])
+
+            for v in row["legislatorVotes"]:
+                leg_id = (
+                    v["legislatorId"]
+                    if "legislatorId" in v
+                    else v["membership"]["legislatorId"]
+                )
+                voter = self.legislators_by_id[str(leg_id)]
+                vote_type_key = "voteType" if "voteType" in v else "committeeVote"
+
+                if v[vote_type_key] == "YES":
+                    vote.yes(voter)
+                elif v[vote_type_key] == "NO":
+                    vote.no(voter)
+                elif v[vote_type_key] == "ABSENT":
+                    vote.vote("absent", voter)
+                else:
+                    self.error(v)
+                    raise NotImplementedError
+
+            yield vote
