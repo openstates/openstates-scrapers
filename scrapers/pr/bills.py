@@ -339,7 +339,7 @@ class PRBillScraper(Scraper):
         )
         if len(page_header_elems) > 0:
             page_header_text = page_header_elems[0].strip()
-            bill_id = re.findall(r"[A-Z]{2}\d{4}", page_header_text)[0]
+            bill_id = re.findall(r"[A-Z]{2,3}\d{4}", page_header_text)[0]
         else:
             self.logger.error(f"Bill found with no bill identifier at {url}")
 
