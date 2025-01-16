@@ -470,7 +470,7 @@ class MTBillScraper(Scraper):
             passed = counts["YES"] > counts["NO"]
 
             # regular vs committee votes
-            if "billStatus" in row:
+            if "billStatus" in row and row["billStatus"] and "id" in row["billStatus"]:
                 bill_action = self.actions_by_id[str(row["billStatus"]["id"])]
                 chamber = (
                     "lower"
@@ -490,8 +490,19 @@ class MTBillScraper(Scraper):
                     == "HOUSE"
                     else "upper"
                 )
-                bill_action = self.actions_by_id[str(row["billStatusId"])]
+                if str(row["billStatusId"]) in self.actions_by_id:
+                    bill_action = self.actions_by_id[str(row["billStatusId"])]
+                else:
+                    self.warning(
+                        f"Unable to find bill action {str(row['billStatusId'])}"
+                    )
+                    bill_action = None
                 when = dateutil.parser.parse(row["voteTime"])
+            else:
+                self.error(
+                    f"Found MT vote with neither an action nor a meeting. {vote_url}"
+                )
+                continue
 
             when = self.tz.localize(when)
             vote_id = f"{bill.legislative_session}-{bill.identifier}-{str(row['id'])}"
