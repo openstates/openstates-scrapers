@@ -537,6 +537,8 @@ class MTBillScraper(Scraper):
                     vote.no(voter)
                 elif v[vote_type_key] == "ABSENT":
                     vote.vote("absent", voter)
+                elif v[vote_type_key] == "EXCUSED":
+                    vote.vote("excused", voter)
                 else:
                     self.error(v)
                     raise NotImplementedError
