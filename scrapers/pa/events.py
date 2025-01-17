@@ -51,6 +51,8 @@ class PAEventScraper(Scraper):
                 .replace("\n", "")
                 .strip()
             )
+            if not location:
+                location = "See Agenda"
 
             committees = div.xpath('.//a[contains(@href, "committees")]')
             bills = div.xpath('.//a[contains(@href, "bills")]')
