@@ -261,7 +261,7 @@ class UTBillScraper(Scraper, LXMLMixin):
                     # so throw something here if we find surprise
                     # and improve scraper later
                     if doc_data["fileName"] != f"{bill_filename}.xml":
-                        self.error(f"Found unexplored bill version data at {api_url}")
+                        self.warning(f"Found unexplored bill version data at {api_url}")
 
                     # There seem to be XML and PDF files on Utah server
                     # the UT bill details page seems to have code to
@@ -296,6 +296,10 @@ class UTBillScraper(Scraper, LXMLMixin):
                     actor = "legislature"
                 elif "governor" in action_data["owner"].lower():
                     actor = "executive"
+                elif "clerk of the house" in action_data["owner"].lower():
+                    actor = "lower"
+                elif "clerk of the senate" in action_data["owner"].lower():
+                    actor = "upper"
                 else:
                     self.warning(
                         f"Found unexpected actor {action_data['owner']} at {api_url}"
