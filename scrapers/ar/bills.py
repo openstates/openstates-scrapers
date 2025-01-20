@@ -150,7 +150,7 @@ class ARBillScraper(Scraper):
             if bill_id not in self.bills:
                 continue
 
-            if len(row) < 10:
+            if len(row) < 11:
                 continue
 
             # different term
