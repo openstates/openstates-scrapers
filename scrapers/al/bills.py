@@ -65,14 +65,14 @@ class ALBillScraper(Scraper):
                 id
                 sessionYear
                 instrumentNbr
-                instrumentSponsor
+                sponsor
                 sessionType
                 body
                 subject
                 shortTitle
                 assignedCommittee
                 prefiledDate
-                firstRead
+                firstReadDate
                 currentStatus
                 lastAction
                 actSummary
@@ -91,8 +91,7 @@ class ALBillScraper(Scraper):
             id
             instrumentNbr
             instrumentType
-            instrumentSponsor
-            instrumentUrl
+            sponsor
             introducedUrl
             engrossedUrl
             enrolledUrl
@@ -144,7 +143,7 @@ class ALBillScraper(Scraper):
                 chamber=chamber,
                 classification=self.bill_types[row["instrumentType"]],
             )
-            sponsor = row["instrumentSponsor"]
+            sponsor = row["sponsor"]
             if sponsor == "":
                 self.warning("No sponsors")
                 continue
@@ -161,8 +160,9 @@ class ALBillScraper(Scraper):
             self.scrape_rest(bill, row)
 
             bill.add_source("https://alison.legislature.state.al.us/bill-search")
-            if row["instrumentUrl"]:
-                bill.add_source(row["instrumentUrl"])
+            # AL removed instrumentUrl from API as of 1/20/25
+            # if row["instrumentUrl"]:
+            #     bill.add_source(row["instrumentUrl"])
 
             # some subjects are super long & more like abstracts, but it looks like whatever is before a comma or
             # semicolon is a clear enough subject. Adds the full given Subject as an Abstract & splits to add that
@@ -252,8 +252,8 @@ class ALBillScraper(Scraper):
                     committee
                     nays
                     yeas
-                    vote
-                    voteNbr
+                    # vote
+                    # voteNbr
                     amdSub
                     ...rollVoteModalInstrumentHistoryFragment
                     __typename
@@ -270,10 +270,10 @@ class ALBillScraper(Scraper):
                     instrumentNbr
                     sessionYear
                     sessionType
-                    bir
+                    # bir
                     calendarDate
                     matter
-                    roll
+                    # roll
                     ...rollVoteModalBirFragment
                     __typename
                 }
@@ -288,14 +288,14 @@ class ALBillScraper(Scraper):
             sessionType
             calendarDate
             body
-            voteNbr
+            # voteNbr
             }
             fragment rollVoteModalBirFragment on BudgetIsolationResolution {
             __typename
             instrumentNbr
-            bir
+            # bir
             calendarDate
-            roll
+            # roll
             }
             """,
             "variables": {
