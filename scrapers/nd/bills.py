@@ -150,6 +150,8 @@ class BillList(JsonPage):
             version_list = bill_data["versions"]
             for version in version_list:
                 description = version["description"]
+                if description == "":
+                    description = version["document_url"].split("/")[-1]
                 version_match = self.version_name_re.search(description.lower())
                 if version_match:
                     bill.add_version_link(
