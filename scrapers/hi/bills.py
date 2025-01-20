@@ -310,19 +310,24 @@ class HIBillScraper(Scraper):
         # check for companion bills
         companion = meta["Companion"].strip()
         if companion:
-            companion_url = bill_page.xpath(
+            companion_url_elems = bill_page.xpath(
                 "//span[@id='MainContent_ListView1_companionLabel_0']/a/@href"
-            )[0]
-            # a companion's session year is the last 4 chars of the link
-            # this will match the _scraped_name of a session in __init__.py
-            companion_year = companion_url[-4:]
-            companion_session = self.session_from_scraped_name(companion_year)
-            b.add_related_bill(
-                identifier=companion.replace("\xa0", " "),
-                legislative_session=companion_session,
-                relation_type="companion",
             )
-
+            if len(companion_url_elems) > 0:
+                companion_url = companion_url_elems[0]
+                # a companion's session year is the last 4 chars of the link
+                # this will match the _scraped_name of a session in __init__.py
+                companion_year = companion_url[-4:]
+                companion_session = self.session_from_scraped_name(companion_year)
+                b.add_related_bill(
+                    identifier=companion.replace("\xa0", " "),
+                    legislative_session=companion_session,
+                    relation_type="companion",
+                )
+            else:
+                self.logger.warning(
+                    f"Failed to find companion when expected at {make_data_url(url)}"
+                )
         # check for prior session bills
         if bill_page.xpath(
             "//table[@id='ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()"
