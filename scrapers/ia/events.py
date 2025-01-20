@@ -230,7 +230,9 @@ class IAEventScraper(Scraper):
             # IA seems to have legit events happening at same name+time
             # but import will fail, considering it a duplicate
             # so we just append location to the name to avoid
-            name_with_location = f"{meeting_details['name']} ({meeting_details['location']})"
+            name_with_location = (
+                f"{meeting_details['name']} ({meeting_details['location']})"
+            )
             sub_comm_event = Event(
                 name=name_with_location,
                 description=meeting_details["description"],
