@@ -325,7 +325,9 @@ class HIBillScraper(Scraper):
                     relation_type="companion",
                 )
             else:
-                self.logger.warning(f"Failed to find companion when expected at {make_data_url(url)}")
+                self.logger.warning(
+                    f"Failed to find companion when expected at {make_data_url(url)}"
+                )
         # check for prior session bills
         if bill_page.xpath(
             "//table[@id='ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()"
