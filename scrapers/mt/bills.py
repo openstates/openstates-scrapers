@@ -462,9 +462,20 @@ class MTBillScraper(Scraper):
         for row in page:
             motion = row["motion"]
 
-            counts = {"YES": 0, "NO": 0, "ABSENT": 0, "EXCUSED": 0}
+            counts = {
+                "YES": 0,
+                "NO": 0,
+                "ABSENT": 0,
+                "EXCUSED": 0,
+            }
             for v in row["legislatorVotes"]:
                 vote_type_key = "voteType" if "voteType" in v else "committeeVote"
+                # validation doesn't allow hybrid votes eg YES_EXCUSED
+                # so translate these to YES and NO
+                if v[vote_type_key] == "YES_EXCUSED":
+                    counts["YES"] += 1
+                elif v[vote_type_key] == "NO_EXCUSED":
+                    counts["NO"] += 1
                 counts[v[vote_type_key]] += 1
 
             passed = counts["YES"] > counts["NO"]
