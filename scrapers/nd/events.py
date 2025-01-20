@@ -3,6 +3,7 @@ import pytz
 import logging
 import dateutil.parser
 import requests
+import typing
 import lxml.html
 from spatula import HtmlPage
 from openstates.scrape import Scraper, Event
@@ -113,6 +114,9 @@ class BillNameScraper(HtmlPage):
             return bill_name
         except Exception:
             return ""
+
+    def process_page(self) -> typing.Any:
+        pass
 
 
 class EventsTable(HtmlPage):
