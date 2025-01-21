@@ -13,7 +13,8 @@ strip_chars = ".,\t\n\r "
 
 class CAEventWebScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Pacific")
-    date_format = "%m-%d-%Y"
+    # date_format = "%m-%d-%Y"
+    date_format = "%Y-%m-%d"
 
     def scrape(self, chamber=None, start=None, end=None):
         if start is None:
@@ -44,20 +45,20 @@ class CAEventWebScraper(Scraper, LXMLMixin):
         # https://www.senate.ca.gov/calendar?startdate=01-17-2024&
         # enddate=01-24-2024&committee=&committee-hearings=on
         # senate website needs start_date and end_date
-        # set it to a week
-        upper_start_url = f"https://www.senate.ca.gov/calendar?startdate={start}&enddate={end}&committee=&committee-hearings=on"
+        upper_start_url = f"https://www.senate.ca.gov/calendar?startDate={start}&endDate={end}&committeeHearings=1"
         html = requests.get(upper_start_url).text
         page = lxml.html.fromstring(html)
 
-        for date_row in page.xpath('//div[contains(@class, "calendarDayContainer")]'):
-            hearing_date = date_row.xpath('.//div[@class="calendarDate"]/text()')[
+        # TODO: started to "fix" selectors here, but didn't get very far
+        for date_row in page.xpath('//div[contains(@class, "day-wrapper")]'):
+            hearing_date = date_row.xpath('.//h2[@class="date"]/text()')[
                 0
             ].strip()
             for committee_row in date_row.xpath(
-                './/div[@class="eventContainer"][1]/div[@class="panel panel-default"]'
+                './/div[contains(@class, "committee-hearings")]/div[@class="page-events__item--committee-hearing"]'
             ):
                 hearing_title = committee_row.xpath(
-                    './/div[@class="panel-heading"]//strong'
+                    './/h4[@class="page-events__title"]'
                 )[0].xpath("string()")
                 panel_content = committee_row.xpath('.//div[@class="panel-content"]')[
                     0
@@ -182,7 +183,7 @@ class CAEventWebScraper(Scraper, LXMLMixin):
 
     def scrape_lower(self):
         lower_start_url = (
-            "https://www.assembly.ca.gov/schedules-publications/assembly-daily-file"
+            "c"
         )
         html = requests.get(lower_start_url).text
         page = lxml.html.fromstring(html)
