@@ -183,7 +183,7 @@ class CAEventWebScraper(Scraper, LXMLMixin):
 
     def scrape_lower(self):
         lower_start_url = (
-            "c"
+            "https://www.assembly.ca.gov/schedules-publications/assembly-daily-file"
         )
         html = requests.get(lower_start_url).text
         page = lxml.html.fromstring(html)
