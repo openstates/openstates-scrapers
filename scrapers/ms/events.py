@@ -27,7 +27,7 @@ class SenateAgenda(HtmlPage):
 
     def process_page(self):
         pdf_link = (
-            "https://legislature.ms.gov/media/1151/2024_SENATE_COMMITTEE_AGENDAS.pdf"
+            "https://legislature.ms.gov/media/1151/2025_SENATE_COMMITTEE_AGENDAS.pdf"
         )
         yield from SenateAgendaPdf(source=pdf_link).do_scrape()
 
@@ -36,7 +36,6 @@ class SenateAgenda(HtmlPage):
 class SenateAgendaPdf(PdfPage):
     def process_page(self):
         event = None
-
         # Strip all lines and remove empty lines
         lines = [line.strip() for line in self.text.splitlines() if line.strip()]
 
@@ -104,7 +103,9 @@ class MSEventScraper(Scraper):
         return SenateAgenda().do_scrape()
 
     def scrape_house(self):
-        event_url = "https://billstatus.ls.state.ms.us/htms/h_sched.htm"
+        event_url = (
+            "https://www.legislature.ms.gov/calendars-and-schedules/house-calendar/"
+        )
         text = self.get(event_url).text
         event = None
         when, time, room, com, desc = None, None, None, None, None
@@ -121,7 +122,7 @@ class MSEventScraper(Scraper):
                 alpha = alpha.replace(" ", "").replace(".", "")
                 bill = f"{alpha} {num}"
                 bills_seen.add(bill)
-
+                print("alpha", alpha, "bill", bill)
             if re.match(
                 r"^(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY)",
                 line,
@@ -203,7 +204,7 @@ class MSEventScraper(Scraper):
                 # Reset bills_seen so subsequent events don't get bills
                 # from previous events
                 bills_seen = set()
-
+                print("event=>", event)
                 yield event
 
     def is_com(self, event_name):
