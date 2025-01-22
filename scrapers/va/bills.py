@@ -232,8 +232,9 @@ class VaBillScraper(Scraper):
             "legislationID": legislation_id,
         }
 
+        vote_page_url = f"{self.base_url}/Vote/api/getvotebyidasync"
         page = requests.get(
-            f"{self.base_url}/Vote/api/getvotebyidasync",
+            vote_page_url,
             params=body,
             headers=self.headers,
             verify=False,
@@ -249,9 +250,16 @@ class VaBillScraper(Scraper):
             # and right now OS core requires a pass or fail, so we skip them with a notice
             # also skip rows that correspond to a bill action that does not indicate a vote by presence of ##-Y / ##-N
             #   if we don't skip on that last criteria, we get duplicate vote events
-            if (
-                row["PassFail"] or row["IsVoice"] is not True
-            ) and vote_shorthand_regex.search(row["LegislationActionDescription"]):
+            try:
+                vote_shorthand_match = vote_shorthand_regex.search(
+                    row["LegislationActionDescription"]
+                )
+            except TypeError:
+                self.logger.warning(
+                    f"Failed to process vote due to unexpected LegislativeActionDescription on {vote_page_url}"
+                )
+                vote_shorthand_match = False
+            if (row["PassFail"] or row["IsVoice"] is not True) and vote_shorthand_match:
                 vote_date = dateutil.parser.parse(row["VoteDate"]).date()
 
                 motion_text = row["VoteActionDescription"]
