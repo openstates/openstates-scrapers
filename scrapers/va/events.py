@@ -61,13 +61,15 @@ class VaEventScraper(Scraper):
             if row["IsCancelled"]:
                 status = "cancelled"
 
+            desc = row["Description"] if "Description" in row else "See Agenda."
+
             event = Event(
                 name=name,
                 start_date=when,
                 classification="committee-meeting",
                 location_name=location,
                 status=status,
-                description=row["Description"],
+                description=desc,
             )
             event.add_source("https://lis.virginia.gov/schedule")
 

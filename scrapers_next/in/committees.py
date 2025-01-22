@@ -25,7 +25,7 @@ class CommitteeDetail(HtmlPage):
 
 
 class CommitteeList(HtmlListPage):
-    session_year = 2024
+    session_year = 2025
     source = URL(
         f"https://tlhgp53g3c.execute-api.us-east-2.amazonaws.com/beta/api/getCommittees?session_lpid=session_{session_year}",
         headers={
@@ -88,7 +88,7 @@ class CommitteeList(HtmlListPage):
                 # TODO: update with better HTML link once Indiana has launched
                 #   their new legislative site. Currently, the "homepage" link
                 #   for each comm will point to list of all standing committees
-                coms_link = "https://iga.in.gov/legislative/2024/committees/"
+                coms_link = "https://iga.in.gov/2025/committees/"
                 com.add_link(coms_link, note="homepage")
 
                 yield CommitteeDetail(

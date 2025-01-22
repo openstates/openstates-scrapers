@@ -465,9 +465,9 @@ class NYBillScraper(Scraper):
         yield bill
 
     def scrape_assembly_votes(self, session, bill, assembly_url, bill_id):
-
         # parse the bill data page, finding the latest html text
-        url = assembly_url + "&Floor%26nbspVotes=Y"
+        # default_fld=/leg_video= removes bill summary table from content
+        url = assembly_url + "&Floor%26nbspVotes=Y&default_fld=&leg_video="
 
         data = self.get(url, verify=False).text
         doc = lxml.html.fromstring(data)
@@ -482,6 +482,8 @@ class NYBillScraper(Scraper):
             for table in doc.xpath("//table"):
 
                 date = table.xpath('caption/span[contains(., "DATE:")]')
+                if not date or len(date) == 0:
+                    continue
                 date = next(date[0].itersiblings()).text
                 date = datetime.datetime.strptime(date, "%m/%d/%Y")
                 date = eastern.localize(date)

@@ -217,7 +217,7 @@ class Minnesota(State):
             "name": "2023-2024 Regular Session",
             "start_date": "2023-01-03",
             "end_date": "2024-05-20",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "94th Legislature, 2025-2026",
@@ -227,7 +227,7 @@ class Minnesota(State):
             "start_date": "2025-01-14",
             # TODO: update end_date
             "end_date": "2026-05-20",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [

@@ -81,7 +81,10 @@ class IAEventScraper(Scraper):
             for key in junk:
                 when = when.replace(key, "")
 
-            pretty_name = f"{self.chambers[chamber]} {desc}"
+            # IA seems to have legit events happening at same name+time
+            # but import will fail, considering it a duplicate
+            # so we just append location to the name to avoid
+            pretty_name = f"{self.chambers[chamber]} {desc} ({location})"
 
             when = re.sub(r"\s+", " ", when).strip()
             if "tbd" in when.lower():
@@ -224,8 +227,14 @@ class IAEventScraper(Scraper):
 
         for sub_comm_meeting in sub_comm_meetings.values():
             meeting_details = sub_comm_meeting["event_obj"]
+            # IA seems to have legit events happening at same name+time
+            # but import will fail, considering it a duplicate
+            # so we just append location to the name to avoid
+            name_with_location = (
+                f"{meeting_details['name']} ({meeting_details['location']})"
+            )
             sub_comm_event = Event(
-                name=meeting_details["name"],
+                name=name_with_location,
                 description=meeting_details["description"],
                 start_date=meeting_details["start_date"],
                 location_name=meeting_details["location"],

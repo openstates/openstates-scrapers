@@ -8,6 +8,10 @@ from .utils import index_legislators, get_timezone, url_fix, SESSION_KEYS
 
 logger = logging.getLogger("openstates")
 
+digest_and_readability_score_regex = re.compile(
+    r".+\(Flesch Readability Score: [0-9.]+\)\."
+)
+
 
 class ORBillScraper(Scraper):
     tz = get_timezone()
@@ -65,7 +69,13 @@ class ORBillScraper(Scraper):
                 classification=self.bill_types[measure["MeasurePrefix"][1:]],
             )
             if measure.get("MeasureSummary", None):
-                bill.add_abstract(measure["MeasureSummary"].strip(), note="summary")
+                # MeasureSummary actually incdes two abstracts: a "digest" + readability score
+                # and a slightly longer version. These are concatenated together
+                # the longer version seems more useful so just cutting out the "digest" text
+                abstract = measure["MeasureSummary"]
+                abstract = re.sub(digest_and_readability_score_regex, "", abstract)
+                abstract = re.sub(r"\s+", " ", abstract)
+                bill.add_abstract(abstract.strip(), note="summary")
 
             if measure["RelatingTo"] is None:
                 self.warning("No bill title for {}, skipping.".format(bid))

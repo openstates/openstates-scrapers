@@ -54,6 +54,14 @@ class BillList(JsonPage):
         doc.make_links_absolute(url)
 
         fullname = doc.xpath("string(//h1)").strip()
+
+        if fullname == "":
+            # at least one ND biography page is returning 404 as of 1/15/25
+            # so here's a dumb fallback to get name literally from the URL
+            url_name = url.replace("https://ndlegis.gov/biography/", "")
+            name_with_spaces = url_name.replace("-", " ")
+            fullname = name_with_spaces.title()
+
         self.members_cache[url] = (
             fullname.replace("Representative", "").replace("Senator", "").strip()
         )
@@ -142,6 +150,8 @@ class BillList(JsonPage):
             version_list = bill_data["versions"]
             for version in version_list:
                 description = version["description"]
+                if description == "":
+                    description = version["document_url"].split("/")[-1]
                 version_match = self.version_name_re.search(description.lower())
                 if version_match:
                     bill.add_version_link(
@@ -171,12 +181,24 @@ class BillList(JsonPage):
             votes_list = doc.xpath(
                 '//div[@aria-labelledby="vote-modal"]//div[@class="modal-content"]'
             )
+            votes_seen_for_bill = []
             for vote_modal in votes_list:
                 motion_text = (
                     vote_modal.xpath('.//h5[@class="modal-title"]')[0]
                     .text_content()
                     .strip()
                 )
+                modal_id = vote_modal.xpath("../..")[0].attrib["id"]
+                dedupe_key = f"{modal_id}{motion_text}"
+                if dedupe_key in votes_seen_for_bill:
+                    # at least one ND bill has duplicate votes
+                    # so skip if we have seen this vote already
+                    self.logger.warning(
+                        f"Skipped duplicate vote {modal_id} on {bill_id}"
+                    )
+                    continue
+                else:
+                    votes_seen_for_bill.append(dedupe_key)
                 date = parser.parse(
                     vote_modal.xpath(
                         './/div[@class="modal-body"]/span[@class="float-right"]'

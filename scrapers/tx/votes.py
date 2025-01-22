@@ -396,7 +396,7 @@ def record_votes_with_short_count_notation(root, session, chamber):
             motion_text=motion_text,
             result="pass" if mv.passed else "fail",
             classification=identify_classification(motion_text, mv.passed),
-            legislative_session=session[0:2],
+            legislative_session=session,
             bill=mv.bill_id,
             bill_chamber=mv.chamber,
         )
@@ -445,7 +445,7 @@ def record_votes_with_yeas(root, session, chamber):
             motion_text=motion_text,
             result="pass" if mv.passed else "fail",
             classification=identify_classification(motion_text, mv.passed),
-            legislative_session=session[0:2],
+            legislative_session=session,
             bill=mv.bill_id,
             bill_chamber=mv.chamber,
         )
@@ -498,7 +498,7 @@ def viva_voce_votes(root, session, chamber):
             motion_text=motion_text,
             result="pass" if mv.passed else "fail",
             classification=identify_classification(motion_text, mv.passed),
-            legislative_session=session[0:2],
+            legislative_session=session,
             bill=mv.bill_id,
             bill_chamber=mv.chamber,
         )

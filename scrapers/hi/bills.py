@@ -3,7 +3,7 @@ import lxml.html
 import re
 from openstates.scrape import Scraper, Bill, VoteEvent
 from .actions import Categorizer, find_committee
-from .utils import get_short_codes
+from .utils import get_short_codes, make_data_url
 from urllib import parse as urlparse
 import dateutil
 import pytz
@@ -208,11 +208,13 @@ class HIBillScraper(Scraper):
                 # some bills (and GMs) swap the order or double-link to the same format
                 # so detect the type, and ignore dupes
                 bill.add_version_link(
-                    name, http_link, media_type=self.classify_media(http_link)
+                    name,
+                    make_data_url(http_link),
+                    media_type=self.classify_media(http_link),
                 )
                 bill.add_version_link(
                     name,
-                    pdf_link,
+                    make_data_url(pdf_link),
                     media_type=self.classify_media(pdf_link),
                     on_duplicate="ignore",
                 )
@@ -267,7 +269,7 @@ class HIBillScraper(Scraper):
             bill.add_document_link(name, filename, media_type=media_type)
 
     def scrape_bill(self, session, chamber, bill_type, url):
-        bill_html = self.get(url, verify=False).text
+        bill_html = self.get(make_data_url(url), verify=False).text
         bill_page = lxml.html.fromstring(bill_html)
         bill_page.make_links_absolute(url)
 
@@ -308,19 +310,24 @@ class HIBillScraper(Scraper):
         # check for companion bills
         companion = meta["Companion"].strip()
         if companion:
-            companion_url = bill_page.xpath(
+            companion_url_elems = bill_page.xpath(
                 "//span[@id='MainContent_ListView1_companionLabel_0']/a/@href"
-            )[0]
-            # a companion's session year is the last 4 chars of the link
-            # this will match the _scraped_name of a session in __init__.py
-            companion_year = companion_url[-4:]
-            companion_session = self.session_from_scraped_name(companion_year)
-            b.add_related_bill(
-                identifier=companion.replace("\xa0", " "),
-                legislative_session=companion_session,
-                relation_type="companion",
             )
-
+            if len(companion_url_elems) > 0:
+                companion_url = companion_url_elems[0]
+                # a companion's session year is the last 4 chars of the link
+                # this will match the _scraped_name of a session in __init__.py
+                companion_year = companion_url[-4:]
+                companion_session = self.session_from_scraped_name(companion_year)
+                b.add_related_bill(
+                    identifier=companion.replace("\xa0", " "),
+                    legislative_session=companion_session,
+                    relation_type="companion",
+                )
+            else:
+                self.logger.warning(
+                    f"Failed to find companion when expected at {make_data_url(url)}"
+                )
         # check for prior session bills
         if bill_page.xpath(
             "//table[@id='ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()"
@@ -418,7 +425,7 @@ class HIBillScraper(Scraper):
             "gm": "proclamation",
         }[billtype]
 
-        list_html = self.get(report_page_url, verify=False).text
+        list_html = self.get(make_data_url(report_page_url), verify=False).text
         list_page = lxml.html.fromstring(list_html)
         for bill_url in list_page.xpath("//a[@class='report']"):
             bill_url = bill_url.attrib["href"].replace("www.", "")
@@ -449,7 +456,7 @@ class HIBillScraper(Scraper):
     def scrape_xml(self, session, day):
         url = "https://www.capitol.hawaii.gov/sessions/session2024/rss/"
         self.info(f"fetching url {url}")
-        page = self.get(url, verify=False).text
+        page = self.get(make_data_url(url), verify=False).text
         # this content isn't amenable to lxml, but it's machine generated so regex should be ok
         bill_re = r"(?P<date>\d+\/\d+\/\d+)\s+(?P<time>.*?)\s+\d+\s\<a href=\"(?P<url>.*?)\">(?P<filename>.*?)\.xml<\/a>"
         for match in re.finditer(bill_re, page, flags=re.IGNORECASE):
