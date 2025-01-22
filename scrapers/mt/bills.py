@@ -476,7 +476,8 @@ class MTBillScraper(Scraper):
                     counts["YES"] += 1
                 elif v[vote_type_key] == "NO_EXCUSED":
                     counts["NO"] += 1
-                counts[v[vote_type_key]] += 1
+                else:
+                    counts[v[vote_type_key]] += 1
 
             passed = counts["YES"] > counts["NO"]
 
