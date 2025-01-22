@@ -25,7 +25,7 @@ class CommitteeDetail(HtmlPage):
 
 
 class CommitteeList(HtmlListPage):
-    session_year = 2024
+    session_year = 2025
     source = URL(
         f"https://tlhgp53g3c.execute-api.us-east-2.amazonaws.com/beta/api/getCommittees?session_lpid=session_{session_year}",
         headers={
