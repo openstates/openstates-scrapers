@@ -543,9 +543,9 @@ class MTBillScraper(Scraper):
                 voter = self.legislators_by_id[str(leg_id)]
                 vote_type_key = "voteType" if "voteType" in v else "committeeVote"
 
-                if v[vote_type_key] == "YES":
+                if "YES" in v[vote_type_key]:
                     vote.yes(voter)
-                elif v[vote_type_key] == "NO":
+                elif "NO" in v[vote_type_key]:
                     vote.no(voter)
                 elif v[vote_type_key] == "ABSENT":
                     vote.vote("absent", voter)
