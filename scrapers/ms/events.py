@@ -152,9 +152,9 @@ class MSEventScraper(Scraper):
                 room_number = cols[2].text_content()
                 location = f"400 High St, Jackson, MS 39201, {room_number}"
                 event_name = cols[3].text_content()
-                event_name = re.sub("\s+", " ", event_name).strip()
+                event_name = re.sub(r"\s+", " ", event_name).strip()
                 committee_name = event_name.replace("Standing Meeting", "").strip()
-                committee_name = re.sub("\sB$", "", committee_name).strip()
+                committee_name = re.sub(r"\sB$", "", committee_name).strip()
 
                 event = Event(
                     name=f"{event_name}{optional_time_indicator}",
