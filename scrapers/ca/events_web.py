@@ -7,13 +7,12 @@ from utils import LXMLMixin
 from openstates.scrape import Scraper, Event
 import requests
 
-
 strip_chars = ".,\t\n\r "
 
 
 class CAEventWebScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Pacific")
-    date_format = "%m-%d-%Y"
+    date_format = "%Y-%m-%d"
 
     def scrape(self, chamber=None, start=None, end=None):
         if start is None:
@@ -41,143 +40,169 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                 yield event
 
     def scrape_upper(self, start, end):
-        # https://www.senate.ca.gov/calendar?startdate=01-17-2024&
-        # enddate=01-24-2024&committee=&committee-hearings=on
         # senate website needs start_date and end_date
-        # set it to a week
-        upper_start_url = f"https://www.senate.ca.gov/calendar?startdate={start}&enddate={end}&committee=&committee-hearings=on"
+        upper_start_url = f"https://www.senate.ca.gov/calendar?startDate={start}&endDate={end}&committeeHearings=1"
         html = requests.get(upper_start_url).text
         page = lxml.html.fromstring(html)
+        for date_row in page.xpath(
+            '//div[@class="page-events--day-wrapper"]//div[contains(@class, "committee-hearings")]//div[@class="page-events__content"]'
+        ):
+            hearing_date = date_row.xpath(
+                './../../../h2[@class="page-events__date"]/text()'
+            )[0].strip()
+            hearing_title = date_row.xpath(
+                './/h4[contains(@class, "page-events__title")]//text()'
+            )[0]
+            panel_content = date_row.xpath(
+                './/div[contains(@class, "page-events__chair")]/p/text()'
+            )[0]
+            members = [
+                panel_content.split(", Chair")[0]
+                .replace("SENATOR", "")
+                .replace("ASSEMBLY", "")
+                .replace("MEMBER", "")
+                .strip()
+            ]
+            time_content = date_row.xpath(
+                './/div[contains(@class, "page-events__time-location")]//p/text()'
+            )[0]
+            time_loc = [
+                row
+                for row in time_content.split(" - ")
+                if "p.m." in row or "a.m." in row
+            ]
+            time_loc = "".join(time_loc)
 
-        for date_row in page.xpath('//div[contains(@class, "calendarDayContainer")]'):
-            hearing_date = date_row.xpath('.//div[@class="calendarDate"]/text()')[
-                0
-            ].strip()
-            for committee_row in date_row.xpath(
-                './/div[@class="eventContainer"][1]/div[@class="panel panel-default"]'
-            ):
-                hearing_title = committee_row.xpath(
-                    './/div[@class="panel-heading"]//strong'
-                )[0].xpath("string()")
-                panel_content = committee_row.xpath('.//div[@class="panel-content"]')[
-                    0
-                ].xpath("string()")
-                members = [
-                    m.replace("SENATOR", "")
-                    .replace("ASSEMBLY", "")
-                    .replace("MEMBER", "")
-                    .strip(strip_chars)
-                    .title()
-                    for m in panel_content.split("Chair")[0].split("AND")
-                ]
-                time_loc = [
-                    row
-                    for row in panel_content.split("\n")
-                    if "p.m." in row or "a.m." in row or " - " in row
-                ]
-                time_loc = "".join(time_loc)
+            time_loc_parts = time_loc.split(" or ")
+            hearing_time = time_loc_parts[0]
+            hearing_time = (
+                hearing_time.replace(".", "").strip() if ".m." in hearing_time else ""
+            )
+            hearing_location = time_content.split(" - ")[1]
+            hearing_location = hearing_location.strip()
+            when = (
+                " ".join([hearing_date, hearing_time])
+                .split("or")[0]
+                .split("and")[0]
+                .strip()
+            )
+            when = dateutil.parser.parse(when)
+            when = self._tz.localize(when)
 
-                time_loc_parts = time_loc.split(" - ")
-                hearing_time = time_loc_parts[0]
-                hearing_time = (
-                    hearing_time.replace(".", "").strip(strip_chars)
-                    if ".m." in hearing_time
-                    else ""
+            # Event stgatus
+            status = "confirmed"
+            if "CANCEL" in panel_content:
+                # Sometimes status in description
+                status = "cancelled"
+            # Sometimes an event has a status indicator, which is outside the "content" container / date_row
+            event_status_elem = date_row.getparent().cssselect(
+                "div.committee-hearing-status"
+            )
+            if len(event_status_elem) > 0:
+                status_text = event_status_elem[0].text_content().strip().lower()
+                status = (
+                    "cancelled"
+                    if "cancel" in status_text or "postpone" in status_text
+                    else "confirmed"
                 )
-                hearing_location = " ".join(time_loc_parts[1:])
-                hearing_location = hearing_location.strip(strip_chars)
 
-                when = (
-                    " ".join([hearing_date, hearing_time])
-                    .split("or")[0]
-                    .split("and")[0]
-                    .strip()
+            event = Event(
+                name=hearing_title,
+                location_name=hearing_location,
+                start_date=when,
+                status=status,
+                classification="committee-meeting",
+            )
+
+            committees = [
+                f"Senate {com.strip()} Committee"
+                for com in date_row.xpath(
+                    './/li[@class="page-events__committee-link"]/a/text()'
                 )
-                when = dateutil.parser.parse(when)
-                when = self._tz.localize(when)
-
-                status = "cancelled" if "CANCEL" in panel_content else "confirmed"
-
-                event = Event(
-                    name=hearing_title,
-                    location_name=hearing_location,
-                    start_date=when,
-                    status=status,
-                    classification="committee-meeting",
-                )
-
-                committees = [
-                    f"Senate {com.strip()} Committee"
-                    for com in committee_row.xpath(
-                        './/a[@class="panel-committees"]/text()'
-                    )
-                ]
-                for member in members:
-                    event.add_person(name=member, note="chair")
-                event.add_source(upper_start_url)
-                view_agenda_id = committee_row.xpath(
-                    './/button[contains(@class, "view-agenda")]/@data-nid'
-                )[0]
-                event_key = f"{hearing_title}#{when}#{view_agenda_id}"
-                event.dedupe_key = event_key
-                view_agenda_url = f"https://www.senate.ca.gov/getagenda?dfid={view_agenda_id}&type=committee"
-                self.scrape_upper_agenda(event, committees, view_agenda_url)
-                yield event
-
-    def scrape_upper_agenda(self, event, committees, url):
-        response = self.get(url).json()
-        page = lxml.html.fromstring(response["agenda"])
-        page.make_links_absolute(url)
-        start = False
-
-        for span in page.xpath('.//span[@class="CommitteeTopic "]/span'):
-            span_class = span.xpath("@class")[0].strip(strip_chars)
-            span_title = span.xpath("string()").strip(strip_chars)
-            span_title = re.sub(r"\s+", " ", span_title)
-            span_title = re.sub(r"^\d+", "", span_title)
-            span_title = span_title.replace("SUBJECT:", "").strip(strip_chars)
-
-            if "linesep" in span_class:
-                start = True
-            if not start:
-                continue
-            if "HearingTopic " in span_class:
-                continue
-            if not span_title:
-                continue
-            agenda = event.add_agenda_item(span_title)
-
+            ]
             for committee in committees:
-                agenda.add_committee(committee, note="host")
+                event.add_committee(committee)
+            for member in members:
+                event.add_person(name=member, note="chair")
+            event.add_source(upper_start_url)
+            view_agenda_url = (
+                "https://www.senate.ca.gov"
+                + date_row.xpath(
+                    './following-sibling::div[@class="page-events__link-listing"]/div[@class="view-agenda-link"]/a/@href'
+                )[0]
+                + "&_wrapper_format=drupal_modal"
+            )
+            view_agenda_id = view_agenda_url.split("?")[0].split("/")[-1]
+            event_key = f"{hearing_title}#{when}#{view_agenda_id}"
+            event.dedupe_key = event_key
+            self.scrape_upper_agenda(
+                event, committees, view_agenda_url, upper_start_url
+            )
+            yield event
 
-            if "Appointment" in span_class:
+    def scrape_upper_agenda(self, event, committees, url, upper_start_url):
+        headers = {
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Connection": "keep-alive",
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "Origin": "https://www.senate.ca.gov",
+            "Referer": upper_start_url,
+            "Sec-Fetch-Site": "same-origin",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+            "X-Requested-With": "XMLHttpRequest",
+        }
+
+        data = {
+            "js": "true",
+            "dialogOptions[width]": "800",
+            "dialogOptions[dialogClass]": "event-agenda-modal",
+            "_drupal_ajax": "1",
+            "ajax_page_state[theme]": "senatemigrationtheme",
+            "ajax_page_state[theme_token]": "",
+            "ajax_page_state[libraries]": "eJx1kFFuxCAMRC8EQuqFVg7MUisGIuwkSk9ftlH7sU1-MJr3LNDk1rLgQZXkMI4a8lvg8mqoE3oOk7Q4q98YuxP6OsLrcIpKhsK5k3Gr9omCkPCkVewaZmkTyTUrxNUX1PUaL5ThsaGaOj108DCRwu2kj0Qsx5PH5xPrInSEU_SRBDVRv7EUgmgfN3Sk_i89n_bjauh6v_E_fXMLElMQ3uDVOqiMQbaqt5ZH_T_2UKx1ndnO5s_iX2RvfdaF4m-V3zxms0E",
+        }
+        response = requests.post(url, headers=headers, data=data).json()
+        page = lxml.html.fromstring(response[0]["data"])
+        page.make_links_absolute(url)
+        agenda_title = response[0]["dialogOptions"]["title"]
+        agenda = event.add_agenda_item(agenda_title)
+
+        for committee in committees:
+            agenda.add_committee(committee, note="host")
+        appointment_class = page.xpath(
+            '//span[@class="Appointments"]/span[@class="Appointment"]'
+        )
+        measure_class = page.xpath(
+            '//span[@class="CommitteeTopic"]//span[@class="Measure"]'
+        )
+        if appointment_class:
+            for appointment in appointment_class:
                 appointee_name = (
-                    span.xpath('.//span[@class="AppointeeName"]')[0]
-                    .xpath("string()")
+                    appointment.xpath('.//span[@class="AppointeeName"]/text()')[0]
                     .strip(strip_chars)
+                    .replace(",", "")
                 )
                 appointee_position = (
-                    span.xpath('.//span[@class="AppointedPosition"]')[0]
-                    .xpath("string()")
+                    appointment.xpath('.//span[@class="AppointedPosition"]/text()')[0]
                     .strip(strip_chars)
+                    .replace(",", "")
                     .lower()
                 )
                 agenda.add_person(appointee_name, note=appointee_position)
 
-            elif "Measure row" in span_class:
+        elif measure_class:
+            for measure in measure_class:
+
                 bill_id = (
-                    span.xpath('.//a[contains(@class, "MeasureLink")]')[0]
-                    .xpath("string()")
+                    measure.xpath('.//span[@class="MeasureType"]/text()')[0]
                     .replace("No", "")
                     .replace(".", "")
                     .replace(" ", "")
-                    .strip(strip_chars)
+                    .strip()
                 )
-                note = (
-                    " ".join(span.xpath('.//span[contains(@class, "Topic")]//text()'))
-                    .strip(strip_chars)
-                    .strip(strip_chars)
-                )
+                note = measure.xpath('.//span[contains(@class, "Topic")]//text()')[
+                    0
+                ].strip()
                 agenda.add_bill(bill_id, note=note)
 
     def scrape_lower(self):
