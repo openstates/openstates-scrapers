@@ -12,7 +12,7 @@ strip_chars = ".,\t\n\r "
 
 class CAEventWebScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Pacific")
-    date_format = "%m-%d-%Y"
+    date_format = "%Y-%m-%d"
 
     def scrape(self, chamber=None, start=None, end=None):
         if start is None:
@@ -40,11 +40,8 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                 yield event
 
     def scrape_upper(self, start, end):
-        # https://www.senate.ca.gov/calendar?startdate=01-17-2024&
-        # enddate=01-24-2024&committee=&committee-hearings=on
         # senate website needs start_date and end_date
-        # set it to a week
-        upper_start_url = f"https://www.senate.ca.gov/calendar?startdate={start}&enddate={end}&committee=&committee-hearings=on"
+        upper_start_url = f"https://www.senate.ca.gov/calendar?startDate={start}&endDate={end}&committeeHearings=1"
         html = requests.get(upper_start_url).text
         page = lxml.html.fromstring(html)
         for date_row in page.xpath(
@@ -92,7 +89,23 @@ class CAEventWebScraper(Scraper, LXMLMixin):
             when = dateutil.parser.parse(when)
             when = self._tz.localize(when)
 
-            status = "cancelled" if "CANCEL" in panel_content else "confirmed"
+            # Event stgatus
+            status = "confirmed"
+            if "CANCEL" in panel_content:
+                # Sometimes status in description
+                status = "cancelled"
+            # Sometimes an event has a status indicator, which is outside the "content" container / date_row
+            event_status_elem = date_row.getparent().cssselect(
+                "div.committee-hearing-status"
+            )
+            if len(event_status_elem) > 0:
+                status_text = event_status_elem[0].text_content().strip().lower()
+                status = (
+                    "cancelled"
+                    if "cancel" in status_text or "postpone" in status_text
+                    else "confirmed"
+                )
+
             event = Event(
                 name=hearing_title,
                 location_name=hearing_location,
@@ -107,6 +120,8 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                     './/li[@class="page-events__committee-link"]/a/text()'
                 )
             ]
+            for committee in committees:
+                event.add_committee(committee)
             for member in members:
                 event.add_person(name=member, note="chair")
             event.add_source(upper_start_url)
