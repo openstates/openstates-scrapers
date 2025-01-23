@@ -2,8 +2,10 @@ from openstates.scrape import Scraper, Event
 import datetime
 import dateutil
 import json
+import lxml
 import pytz
 import re
+import requests
 
 
 simple_html_tag_regex = re.compile("<.*?>")
@@ -11,6 +13,49 @@ simple_html_tag_regex = re.compile("<.*?>")
 
 class VaEventScraper(Scraper):
     _tz = pytz.timezone("America/New_York")
+
+    coms = {"lower": {}, "upper": {}}
+
+    def scrape_senate_agenda(self, event: Event, url: str) -> None:
+        docket_id = re.findall(r"dockets\/(\d+)|$", url)[0]
+
+        print(url)
+
+        if docket_id:
+            url = f"https://lis.virginia.gov/Calendar/api/GetDocketsByIdAsync?docketId={docket_id}"
+            headers = {
+                "Referer": url,
+                "webapikey": "FCE351B6-9BD8-46E0-B18F-5572F4CCA5B9",
+                "User-Agent": "openstates.org",
+            }
+            page = requests.get(url, headers=headers).json()
+            print(page)
+            print(url)
+            for row in page["Dockets"][0]["DocketCategories"][0]["DocketItems"]:
+                agenda_item = event.add_agenda_item(row["LegislationDescription"])
+                if row["LegislationNumber"]:
+                    agenda_item.add_bill(row["LegislationNumber"])
+        else:
+            self.warning(f"No Docket ID found in {url}")
+
+    # instead of linking directly to their agendas,
+    # individual events link to committee pages that link to multiple meeting agendas
+    def scrape_house_com_agendas(self, url: str) -> None:
+        headers = {
+            "Referer": url,
+            "webapikey": "FCE351B6-9BD8-46E0-B18F-5572F4CCA5B9",
+            "User-Agent": "openstates.org",
+        }
+        page = requests.get(url, headers=headers).content
+        print(page)
+        page = lxml.html.fromstring(page)
+
+        for row in page.cssselect("div.agendaContainer tr"):
+            link = row.cssselect("td[1] a")[0]
+            when = dateutil.parser.parse(link.text_content()).date()
+            link_url = link.xpath("@href")[0]
+
+            self.coms["upper"]["url"][when] = link_url
 
     def scrape(self, start_date=None):
         # TODO: what's the deal with this WebAPIKey, will it expire?
@@ -72,6 +117,28 @@ class VaEventScraper(Scraper):
                 description=desc,
             )
             event.add_source("https://lis.virginia.gov/schedule")
+
+            if row["Description"]:
+                html_desc = lxml.html.fromstring(desc)
+
+                for link in html_desc.xpath("//a[contains(text(),'Agenda')]"):
+                    docket_url = link.xpath("@href")[0]
+                    event.add_document(
+                        link.text_content(),
+                        link.xpath("@href")[0],
+                        media_type="text/html",
+                        on_duplicate="ignore",
+                    )
+                    self.scrape_senate_agenda(event, docket_url)
+
+            if "LinkURL" in row and row["LinkURL"]:
+                print("FOUND LINKURL")
+                event.add_document(
+                    "Docket Info",
+                    row["LinkURL"],
+                    media_type="text/html",
+                )
+                self.scrape_senate_agenda(event, row["LinkURL"])
 
             for ct, attach in enumerate(row["ScheduleFiles"]):
                 if ct == 0:
