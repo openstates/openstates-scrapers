@@ -53,7 +53,7 @@ class SenateAgendaPdf(PdfPage):
                 date = lines[i]
                 time = lines[i + 1]
                 event_title = lines[i + 2]
-                committee = event_title.replace('Hearing', '').strip()
+                committee = event_title.replace("Hearing", "").strip()
                 room = lines[i + 3]
 
                 date = date.split(", ", 1)[1]
@@ -105,9 +105,7 @@ class MSEventScraper(Scraper):
         return SenateAgenda().do_scrape()
 
     def scrape_house(self):
-        event_url = (
-            "https://billstatus.ls.state.ms.us/htms/h_sched.htm"
-        )
+        event_url = "https://billstatus.ls.state.ms.us/htms/h_sched.htm"
         page = self.get(event_url).text
         doc = lxml.html.fromstring(page)
 
@@ -133,9 +131,9 @@ class MSEventScraper(Scraper):
                 base_date_string = main_elem.text
 
             # Individual committee hearing will be in a div.row
-            if main_elem.tag == 'div' and "row" in main_elems[6].classes:
+            if main_elem.tag == "div" and "row" in main_elems[6].classes:
                 # should contain four "cells": blank, time, room number, meeting name
-                cols = main_elem.cssselect('div.row > div')
+                cols = main_elem.cssselect("div.row > div")
 
                 # Sometimes time is "AA+01" or "AA+10" etc. so not all will parse
                 # treat those "non-time" times as all day events
@@ -162,7 +160,7 @@ class MSEventScraper(Scraper):
                     name=f"{event_name}{optional_time_indicator}",
                     start_date=date,
                     all_day=all_day,
-                    location_name=location
+                    location_name=location,
                 )
                 event.add_source(event_url)
                 event.add_committee(committee_name)
