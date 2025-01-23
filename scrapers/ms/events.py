@@ -1,4 +1,5 @@
 import dateutil.parser
+import lxml
 import pytz
 import re
 from utils.events import match_coordinates
@@ -27,7 +28,7 @@ class SenateAgenda(HtmlPage):
 
     def process_page(self):
         pdf_link = (
-            "https://legislature.ms.gov/media/1151/2024_SENATE_COMMITTEE_AGENDAS.pdf"
+            "https://legislature.ms.gov/media/1151/2025_SENATE_COMMITTEE_AGENDAS.pdf"
         )
         yield from SenateAgendaPdf(source=pdf_link).do_scrape()
 
@@ -36,7 +37,6 @@ class SenateAgenda(HtmlPage):
 class SenateAgendaPdf(PdfPage):
     def process_page(self):
         event = None
-
         # Strip all lines and remove empty lines
         lines = [line.strip() for line in self.text.splitlines() if line.strip()]
 
@@ -52,7 +52,8 @@ class SenateAgendaPdf(PdfPage):
 
                 date = lines[i]
                 time = lines[i + 1]
-                committee = lines[i + 2]
+                event_title = lines[i + 2]
+                committee = event_title.replace("Hearing", "").strip()
                 room = lines[i + 3]
 
                 date = date.split(", ", 1)[1]
@@ -68,7 +69,7 @@ class SenateAgendaPdf(PdfPage):
 
                 location = f"400 High St, Jackson, MS 39201, {room}"
                 event = Event(
-                    name=committee,
+                    name=event_title,
                     start_date=TZ.localize(start_time),
                     location_name=location,
                 )
@@ -105,108 +106,64 @@ class MSEventScraper(Scraper):
 
     def scrape_house(self):
         event_url = "https://billstatus.ls.state.ms.us/htms/h_sched.htm"
-        text = self.get(event_url).text
-        event = None
-        when, time, room, com, desc = None, None, None, None, None
-        events = set()
-        bills_seen = set()
+        page = self.get(event_url).text
+        doc = lxml.html.fromstring(page)
 
-        for line in text.splitlines():
-            # new date
-            for alpha, num in bill_re.findall(line):
-                # Find all bills on this line and format them properly
-                # Add them to bills_seen set and hold onto them until an event
-                # is about to be added - When an event is added, add all seen
-                # bills to it and reset bills_seen back to an empty set
-                alpha = alpha.replace(" ", "").replace(".", "")
-                bill = f"{alpha} {num}"
-                bills_seen.add(bill)
+        # First clean out any hidden text elements
+        hidden_elems = doc.xpath("//p[@hidden='']")
+        for elem in hidden_elems:
+            parent = elem.getparent()
+            parent.remove(elem)
 
-            if re.match(
-                r"^(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY)",
-                line,
-                re.IGNORECASE,
-            ):
-                day = line.split("   ")[0].strip()
-            # timestamp, start of a new event
-            if re.match(r"^\d{2}:\d{2}", line) or re.match(r"^(BC|AR|AA|TBA)\+", line):
-                # if there's an event from the previous lines, yield it
-                if when and room and com:
-                    room = f"400 High St, Jackson, MS 39201, Room {room}"
-                    event_name = f"{com}#{when}#{room}"
-                    if event_name in events:
-                        self.warning(f"Duplicate event: {event_name}")
-                    else:
-                        events.add(event_name)
-                        event = Event(
-                            name=com,
-                            start_date=when,
-                            location_name=room,
-                            classification="committee-meeting",
-                            description=desc,
-                        )
-                        event.dedupe_key = event_name
-                        event.add_source(event_url)
-                        if self.is_com(com):
-                            event.add_committee(name=f"House {com}", note="host")
+        main_elems = doc.cssselect("div.container > *")
 
-                        for bill in bills_seen:
-                            event.add_bill(bill)
-                        # Reset bills_seen so subsequent events don't get bills
-                        # from previous events
-                        bills_seen = set()
+        base_date_string = ""
+        for main_elem in main_elems:
+            text = main_elem.text_content()
+            # If text contains "Legend:" we can stop iteration
+            # Legend is the footer of the document
+            if "Legend:" in text:
+                break
 
-                        match_coordinates(event, {"400 High St": (32.30404, -90.18141)})
-                        yield event
+            # Find date in an element that starts with a day of week
+            # eg THURSDAY, JANUARY 23, 2025
+            if start_time_re.match(text):
+                base_date_string = main_elem.text
 
-                (time, room, com) = re.split(r"\s+", line, maxsplit=2)
+            # Individual committee hearing will be in a div.row
+            if main_elem.tag == "div" and "row" in main_elems[6].classes:
+                # should contain four "cells": blank, time, room number, meeting name
+                cols = main_elem.cssselect("div.row > div")
 
-                # if it's an after recess/adjourn
-                # we can't calculate the time so just leave it empty
-                if re.match(r"^(BC|AR|AA|TBA)\+", line):
-                    time = ""
+                # Sometimes time is "AA+01" or "AA+10" etc. so not all will parse
+                # treat those "non-time" times as all day events
+                time_of_day = cols[1].text_content()
+                all_day = False
+                optional_time_indicator = ""
+                try:
+                    date = dateutil.parser.parse(f"{time_of_day} {base_date_string}")
+                    date = TZ.localize(date)
+                except dateutil.parser.ParserError:
+                    optional_time_indicator = f" {time_of_day}"
+                    date = dateutil.parser.parse(base_date_string)
+                    all_day = True
+                    date = date.date()
 
-                com = com.strip()
-                when = dateutil.parser.parse(f"{day} {time}")
-                when = TZ.localize(when)
+                room_number = cols[2].text_content()
+                location = f"400 High St, Jackson, MS 39201, {room_number}"
+                event_name = cols[3].text_content()
+                event_name = re.sub(r"\s+", " ", event_name).strip()
+                committee_name = event_name.replace("Standing Meeting", "").strip()
+                committee_name = re.sub(r"\sB$", "", committee_name).strip()
 
-                # reset the description so we can populate it w/
-                # upcoming lines (if any)
-                desc = ""
-            elif when and room and com:
-                if line.strip():
-                    desc += "\n" + line.strip()
-
-        # don't forget about the last event, which won't get triggered by a new date
-        if when and room and com:
-            room = f"400 High St, Jackson, MS 39201, Room {room}"
-            event_name = f"{com}#{when}#{room}"
-            if event_name in events:
-                self.warning(f"Duplicate event: {event_name}")
-            else:
-                events.add(event_name)
                 event = Event(
-                    name=com,
-                    start_date=when,
-                    location_name=room,
-                    classification="committee-meeting",
-                    description=desc,
+                    name=f"{event_name}{optional_time_indicator}",
+                    start_date=date,
+                    all_day=all_day,
+                    location_name=location,
                 )
-                event.dedupe_key = event_name
-                if self.is_com(com):
-                    event.add_committee(name=f"House {com}", note="host")
-                match_coordinates(event, {"400 High St": (32.30404, -90.18141)})
                 event.add_source(event_url)
-
-                for bill in bills_seen:
-                    event.add_bill(bill)
-                # Reset bills_seen so subsequent events don't get bills
-                # from previous events
-                bills_seen = set()
+                event.add_committee(committee_name)
+                match_coordinates(event, {"400 High St": (32.30404, -90.18141)})
 
                 yield event
-
-    def is_com(self, event_name):
-        if "reserved" not in event_name.lower() and "dept of" not in event_name.lower():
-            return True
-        return False
