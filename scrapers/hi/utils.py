@@ -7,7 +7,7 @@ SHORT_CODES = f"{HI_URL_BASE}/legislature/committees.aspx?chamber=all"
 def get_short_codes(scraper):
     list_html = scraper.get(SHORT_CODES, verify=False).text
     list_page = lxml.html.fromstring(list_html)
-    rows = list_page.xpath("//*[@id='MainContent_GridView1']//tr")
+    rows = list_page.xpath("//table[contains(@id, 'MainContent_GridView1')]//tr")
     scraper.short_ids = {"CONF": {"chamber": "joint", "name": "Conference Committee"}}
 
     for row in rows:
