@@ -121,15 +121,24 @@ class VaBillScraper(Scraper):
 
         for row in page["LegislationEvents"]:
             when = dateutil.parser.parse(row["EventDate"]).date()
-            action_attr = self.categorizer.categorize(row["Description"])
-            classification = action_attr["classification"]
+            description = row["Description"]
+            if not description and row["VoteTally"]:
+                description = f"Vote {row['VoteTally']}"
 
-            bill.add_action(
-                chamber=self.chamber_map[row["ChamberCode"]],
-                description=row["Description"],
-                date=when,
-                classification=classification,
-            )
+            if description:
+                action_attr = self.categorizer.categorize(description)
+                classification = action_attr["classification"]
+
+                bill.add_action(
+                    chamber=self.chamber_map[row["ChamberCode"]],
+                    description=description,
+                    date=when,
+                    classification=classification,
+                )
+            else:
+                self.logger.warning(
+                    f"Could not add action due to missing description for {bill.identifier} LegislataionEventID {row['LegislationEventID']}"
+                )
 
             # map reference numbers back to their actions for impact filenames
             # HB9F122.PDF > { 'HB9F122' => "Impact statement from DPB (HB9)" }

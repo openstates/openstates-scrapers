@@ -46,11 +46,14 @@ class Rule(namedtuple("Rule", "regexes types stop attrs")):
         matched = False
 
         for regex in self.regexes:
-            m = regex.search(text)
-            if m:
-                matched = True
-                # add any matched attrs
-                attrs.update(m.groupdict())
+            try:
+                m = regex.search(text)
+                if m:
+                    matched = True
+                    # add any matched attrs
+                    attrs.update(m.groupdict())
+            except TypeError:
+                continue
 
         if matched:
             return attrs
