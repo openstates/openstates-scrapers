@@ -227,6 +227,14 @@ class Florida(State):
             "end_date": "2025-05-02",
             "active": True,
         },
+        {
+            "name": "2025 Special Session A",
+            "identifier": "2025A",
+            "classification": "special",
+            "start_date": "2025-01-27",
+            "end_date": "2025-12-31",  # est
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         *(str(each) for each in range(1997, 2010)),
