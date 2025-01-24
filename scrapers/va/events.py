@@ -5,8 +5,6 @@ import json
 import lxml
 import pytz
 import re
-import requests
-
 
 simple_html_tag_regex = re.compile("<.*?>")
 
@@ -14,12 +12,10 @@ simple_html_tag_regex = re.compile("<.*?>")
 class VaEventScraper(Scraper):
     _tz = pytz.timezone("America/New_York")
 
-    coms = {"lower": {}, "upper": {}}
-
+    # individual senate events link to a page that makes a JSON api request
+    # to build the page dynamically, so parse that output
     def scrape_senate_agenda(self, event: Event, url: str) -> None:
         docket_id = re.findall(r"dockets\/(\d+)|$", url)[0]
-
-        print(url)
 
         if docket_id:
             url = f"https://lis.virginia.gov/Calendar/api/GetDocketsByIdAsync?docketId={docket_id}"
@@ -28,9 +24,7 @@ class VaEventScraper(Scraper):
                 "webapikey": "FCE351B6-9BD8-46E0-B18F-5572F4CCA5B9",
                 "User-Agent": "openstates.org",
             }
-            page = requests.get(url, headers=headers).json()
-            print(page)
-            print(url)
+            page = self.get(url, headers=headers).json()
             for row in page["Dockets"][0]["DocketCategories"][0]["DocketItems"]:
                 agenda_item = event.add_agenda_item(row["LegislationDescription"])
                 if row["LegislationNumber"]:
@@ -40,22 +34,27 @@ class VaEventScraper(Scraper):
 
     # instead of linking directly to their agendas,
     # individual events link to committee pages that link to multiple meeting agendas
-    def scrape_house_com_agendas(self, url: str) -> None:
-        headers = {
-            "Referer": url,
-            "webapikey": "FCE351B6-9BD8-46E0-B18F-5572F4CCA5B9",
-            "User-Agent": "openstates.org",
-        }
-        page = requests.get(url, headers=headers).content
-        print(page)
+    # so loop through that table, comparing the dates and scrape the matching one(s)
+    def scrape_house_com_agendas(self, event: Event, url: str) -> None:
+        page = self.get(url).content
         page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-        for row in page.cssselect("div.agendaContainer tr"):
-            link = row.cssselect("td[1] a")[0]
+        for row in page.cssselect("div.agendaContainer tbody tr"):
+            link = row.xpath("td[1]/a")[0]
             when = dateutil.parser.parse(link.text_content()).date()
-            link_url = link.xpath("@href")[0]
+            if when == event.start_date.date():
+                self.scrape_house_com_agenda(event, link.xpath("@href")[0])
 
-            self.coms["upper"]["url"][when] = link_url
+    def scrape_house_com_agenda(self, event: Event, url: str) -> None:
+        # https://virginiageneralassembly.gov/house/agendas/agendaItemExport.php?id=4790&ses=251
+        page = self.get(url).content
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+
+        for row in page.xpath("//table[contains(@summary, 'Agenda')]/tbody/tr[td[3]]"):
+            agenda_item = event.add_agenda_item(row.xpath("td[3]")[0].text_content())
+            agenda_item.add_bill(row.xpath("td[1]/a")[0].text_content())
 
     def scrape(self, start_date=None):
         # TODO: what's the deal with this WebAPIKey, will it expire?
@@ -129,16 +128,23 @@ class VaEventScraper(Scraper):
                         media_type="text/html",
                         on_duplicate="ignore",
                     )
-                    self.scrape_senate_agenda(event, docket_url)
+                    if "lis.virginia" in docket_url.lower():
+                        self.scrape_senate_agenda(event, docket_url)
+                    elif "virginiageneralassembly" in docket_url.lower():
+                        self.scrape_house_com_agendas(event, docket_url)
 
             if "LinkURL" in row and row["LinkURL"]:
-                print("FOUND LINKURL")
                 event.add_document(
                     "Docket Info",
                     row["LinkURL"],
                     media_type="text/html",
+                    on_duplicate="ignore",
                 )
-                self.scrape_senate_agenda(event, row["LinkURL"])
+
+                if "lis.virginia" in row["LinkURL"].lower():
+                    self.scrape_senate_agenda(event, row["LinkURL"])
+                elif "virginiageneralassembly" in row["LinkURL"].lower():
+                    self.scrape_house_com_agendas(event, row["LinkURL"])
 
             for ct, attach in enumerate(row["ScheduleFiles"]):
                 if ct == 0:
