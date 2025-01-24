@@ -8,8 +8,8 @@ from openstates.exceptions import EmptyScrape
 from utils import LXMLMixin
 
 
-agenda_url = "http://status.rilin.state.ri.us/agendas.aspx"
-column_order = {"upper": 1, "other": 2, "lower": 0}
+agenda_url = "https://status.rilegislature.gov/agendas.aspx"
+column_order = {"upper": 1, "joint": 2, "lower": 0}
 
 replace = {
     "House Joint Resolution No.": "HJR ",
@@ -193,10 +193,12 @@ class RIEventScraper(Scraper, LXMLMixin):
             yield from self.scrape_agenda(chamber, url.attrib["href"], event_keys)
 
     def scrape(self, chamber=None):
-        chambers = [chamber] if chamber is not None else ["upper", "lower"]
+        chambers = [chamber] if chamber is not None else ["upper", "lower", "joint"]
         event_keys = set()
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, event_keys)
+        if not self.found_events:
+            raise EmptyScrape
 
     def scrape_chamber(self, chamber, event_keys):
         offset = column_order[chamber]
@@ -209,6 +211,3 @@ class RIEventScraper(Scraper, LXMLMixin):
                 yield from self.scrape_agenda_dir(
                     chamber, page.attrib["href"], event_keys
                 )
-
-        if not self.found_events:
-            raise EmptyScrape
