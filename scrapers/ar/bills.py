@@ -251,6 +251,9 @@ class ARBillScraper(Scraper):
         )
         for sponsor_path in primary_sponsors_path:
             primary_sponsors = sponsor_path.text_content().strip()
+            if primary_sponsors == "":
+                continue
+
             primary_sponsors_link = sponsor_path.attrib["href"]
             chamber = self.scrape_chamber(primary_sponsors_link)
 
