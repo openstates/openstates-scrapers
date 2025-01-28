@@ -637,9 +637,13 @@ class HouseSearchPage(HtmlListPage):
 
     def get_source_from_input(self):
         url = "https://flhouse.gov/Sections/Bills/bills.aspx"
-        # Keep the digits and all following characters in the bill's ID
-        bill_number = re.search(r"^\w+\s(\d+\w*)$", self.input.identifier).group(1)
+        # Keep the digits, as of 2025 flhouse.gov seems to be stripping any trailing letters
+        # eg entering "1A" into https://flhouse.gov/Sections/Bills/bills.aspx results in
+        # a URL param that looks like billNumber=1
+        bill_number = re.search(r"^\w+\s(\d+)\w*$", self.input.identifier).group(1)
         session_number = {
+            "2025B": "109",
+            "2025A": "107",
             "2025": "105",
             "2024": "103",
             "2023C": "104",
