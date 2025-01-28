@@ -70,7 +70,7 @@ class PuertoRico(State):
         headers = {
             "accept": "text/x-component",
             "content-type": "text/plain;charset=UTF-8",
-            "next-action": "703ccedd8bdfbce1899c7590dfae240ff1aa6d2d2f",
+            "next-action": "70e26f78391fe165f4b45b0a504d1d370ad6495e83",
             "next-router-state-tree": "%5B%22%22%2C%7B%22children%22%3A%5B%22(public)%22%2C%7B%22children%22%3A%5B%22(landing)%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2C%22%2F%22%2C%22refresh%22%5D%7D%5D%7D%5D%7D%2Cnull%2Cnull%2Ctrue%5D",
             "origin": url,
             "referer": url,
