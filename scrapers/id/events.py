@@ -31,6 +31,7 @@ class IDEventScraper(Scraper):
 
         page = self.get(url).content
         page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
         if page.xpath(
             "//div[@id='allDiv' and contains(text(),'No meetings scheduled')]"
