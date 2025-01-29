@@ -7,6 +7,7 @@ import pytz
 from openstates.scrape import Scraper, Event
 from utils.events import match_coordinates
 from openstates.exceptions import EmptyScrape
+from json.decoder import JSONDecodeError
 
 import datetime as dt
 from dateutil.relativedelta import relativedelta
@@ -176,12 +177,15 @@ class OHEventScraper(Scraper):
                 hearing_date = when.strftime("%Y-%m-%d")
                 api_url = f"{self.api_base_url}/solarapi/v1/general_assembly_{self.session_id}/notices/{com_id}/{hearing_date}?format=json"
                 self.info(f"Fetching {api_url}")
-                api_data = json.loads(self.scraper.get(api_url).content)
-                for row in api_data["agenda"]:
-                    item_text = f"{row['headline']} - {row['proposed_sponsor']}"
-                    agenda_item = event.add_agenda_item(item_text)
-                    if "billno" in row:
-                        agenda_item.add_bill(row["billno"])
+                try:
+                    api_data = json.loads(self.scraper.get(api_url).content)
+                    for row in api_data["agenda"]:
+                        item_text = f"{row['headline']} - {row['proposed_sponsor']}"
+                        agenda_item = event.add_agenda_item(item_text)
+                        if "billno" in row:
+                            agenda_item.add_bill(row["billno"])
+                except JSONDecodeError:
+                    pass
 
                 # Note: there's an api element called 'testimonies' that appears to just be
                 # witness registration forms from the bill sponsors, so we're skipping those.
