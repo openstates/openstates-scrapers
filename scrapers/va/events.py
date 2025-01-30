@@ -163,7 +163,11 @@ class VaEventScraper(Scraper):
             if when_time == "Invalid date":
                 when_time = ""
 
-            when = dateutil.parser.parse(f"{when_date} {when_time}")
+            try:
+                when = dateutil.parser.parse(f"{when_date} {when_time}")
+            except ValueError:
+                # Handle cases where when_time is not a valid time.
+                when = dateutil.parser.parse(when_date)
             when = self._tz.localize(when)
 
             if "RoomDescription" in row:
@@ -198,7 +202,7 @@ class VaEventScraper(Scraper):
             for match in re.findall(self.bill_regex, desc, flags=re.IGNORECASE):
                 event.add_bill(match)
 
-            if row["Description"]:
+            if "Description" in row and row["Description"]:
                 html_desc = lxml.html.fromstring(desc)
 
                 for link in html_desc.xpath("//a[contains(text(),'Agenda')]"):
