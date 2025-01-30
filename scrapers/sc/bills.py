@@ -418,7 +418,7 @@ class SCBillScraper(Scraper):
             )
         for sponsor in doc.xpath('//a[contains(@href, "committee.php")]'):
             sp_chamber = _get_sponsor_chamber(sponsor)
-            sponsor = sponsor.replace("\xa0", " ").strip()
+            sponsor = sponsor.text_content().replace("\xa0", " ").strip()
             bill.add_sponsorship(
                 name=sponsor,
                 classification="primary",
