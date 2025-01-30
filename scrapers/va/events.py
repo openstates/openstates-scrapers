@@ -51,7 +51,9 @@ class VaEventScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for row in page.xpath("//table[contains(@summary, 'Agenda')]/tbody/tr[td[3]]"):
+        for row in page.xpath(
+            "//table[contains(@summary, 'Agenda')]/tbody/tr[contains(@class, 'standardZebra')]"
+        ):
             agenda_item = event.add_agenda_item(row.xpath("td[3]")[0].text_content())
             agenda_item.add_bill(row.xpath("td[1]/a")[0].text_content())
 
@@ -150,6 +152,7 @@ class VaEventScraper(Scraper):
         for row in page["Schedules"]:
             status = "tentative"
             name = row["OwnerName"].strip()
+            all_day = False
 
             if name == "":
                 name = row["Description"].split(";")[0].strip()
@@ -162,13 +165,25 @@ class VaEventScraper(Scraper):
             # sometimes the site JSON contains this string
             if when_time == "Invalid date":
                 when_time = ""
+            when_date_has_time = None
 
             try:
                 when = dateutil.parser.parse(f"{when_date} {when_time}")
             except ValueError:
                 # Handle cases where when_time is not a valid time.
                 when = dateutil.parser.parse(when_date)
-            when = self._tz.localize(when)
+                # It is possible that when_date is actually a valid datetime object
+                # If that is the case then ignore setting all_day = True
+                when_date_has_time = (
+                    when.hour != 0 or when.minute != 0 or when.second != 0
+                )
+                if not when_date_has_time:
+                    all_day = True
+
+            if all_day:
+                when = when.date()
+            else:
+                when = self._tz.localize(when)
 
             if "RoomDescription" in row:
                 location = row["RoomDescription"]
@@ -193,14 +208,9 @@ class VaEventScraper(Scraper):
                 location_name=location,
                 status=status,
                 description=desc,
+                all_day=all_day,
             )
             event.add_source("https://lis.virginia.gov/schedule")
-
-            for match in re.findall(self.bill_regex, name, flags=re.IGNORECASE):
-                event.add_bill(match)
-
-            for match in re.findall(self.bill_regex, desc, flags=re.IGNORECASE):
-                event.add_bill(match)
 
             if "Description" in row and row["Description"]:
                 html_desc = lxml.html.fromstring(desc)
