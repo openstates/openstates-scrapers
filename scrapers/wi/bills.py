@@ -142,6 +142,7 @@ class WIBillScraper(Scraper):
     def scrape_bill_history(self, bill, url, chamber):
         seen_votes = set()
         body = self.get(url).text
+        print(body)
         doc = lxml.html.fromstring(body)
         doc.make_links_absolute(url)
 
