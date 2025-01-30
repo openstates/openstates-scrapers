@@ -51,7 +51,9 @@ class VaEventScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for row in page.xpath("//table[contains(@summary, 'Agenda')]/tbody/tr[td[3]]"):
+        for row in page.xpath(
+            "//table[contains(@summary, 'Agenda')]/tbody/tr[contains(@class, 'standardZebra')]"
+        ):
             agenda_item = event.add_agenda_item(row.xpath("td[3]")[0].text_content())
             agenda_item.add_bill(row.xpath("td[1]/a")[0].text_content())
 
@@ -209,12 +211,6 @@ class VaEventScraper(Scraper):
                 all_day=all_day,
             )
             event.add_source("https://lis.virginia.gov/schedule")
-
-            for match in re.findall(self.bill_regex, name, flags=re.IGNORECASE):
-                event.add_bill(match)
-
-            for match in re.findall(self.bill_regex, desc, flags=re.IGNORECASE):
-                event.add_bill(match)
 
             if "Description" in row and row["Description"]:
                 html_desc = lxml.html.fromstring(desc)
