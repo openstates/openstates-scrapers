@@ -170,8 +170,7 @@ class Tennessee(State):
 
     def get_session_list(self):
         # Special sessions are available in the archive, but not in current session.
-        # Solution is to scrape special session as part of regular session
-        return [
+        archived_sessions = [
             x
             for x in url_xpath(
                 "https://www.capitol.tn.gov/legislation/archives.html",
@@ -180,6 +179,21 @@ class Tennessee(State):
             )
             if x.strip()
         ]
+
+        # check to see if regular session index page has a link to a special session
+        current_special_session_links = [
+            x
+            for x in url_xpath(
+                "https://wapp.capitol.tn.gov/apps/indexes/",
+                '//a[contains(text(), "Extraordinary Session")]/text()',
+                verify=False,
+            )
+        ]
+        current_special_sessions = [
+            x.replace("Bill Index", "").strip() for x in current_special_session_links
+        ]
+
+        return archived_sessions + current_special_sessions
 
     @property
     def sessions_by_id(self):
