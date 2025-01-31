@@ -146,6 +146,15 @@ class Tennessee(State):
             "end_date": "2025-04-25",
             "active": True,
         },
+        {
+            "_scraped_name": "First Extraordinary Session (January 2025)",
+            "classification": "special",
+            "identifier": "114S1",
+            "name": "114th First Extraordinary Session (January 2025)",
+            "start_date": "2025-01-27",
+            "end_date": "2025-01-31",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "107th General Assembly",
