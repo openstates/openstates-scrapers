@@ -186,12 +186,11 @@ class Tennessee(State):
             for x in url_xpath(
                 "https://wapp.capitol.tn.gov/apps/indexes/",
                 '//a[contains(text(), "Extraordinary Session")]/text()',
-                verify=False
+                verify=False,
             )
         ]
         current_special_sessions = [
-            x.replace("Bill Index", "").strip()
-            for x in current_special_session_links
+            x.replace("Bill Index", "").strip() for x in current_special_session_links
         ]
 
         return archived_sessions + current_special_sessions
