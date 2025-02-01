@@ -43,6 +43,7 @@ class MTBillScraper(Scraper):
             yield from self.scrape_archive_list_page(session, 0)
         else:
             # Get prerequisite data
+            self.scrape_standing_committees()
             self.scrape_non_standing_committees()
             self.scrape_requesting_agencies()
             self.scrape_legislators()
@@ -121,6 +122,23 @@ class MTBillScraper(Scraper):
                     "name": cmte_code["name"],
                     "code": cmte_code["code"],
                     "type": cmte_code["committeeType"]["description"],
+                }
+            )
+
+    def scrape_standing_committees(self):
+        self.standing_committees = []
+        url = f"https://api.legmt.gov/committees/v1/standingCommittees/findBySessionId?sessionId={self.new_api_session_identifier}"
+        response = requests.get(url).json()
+
+        for committee in response:
+            cmte_code = committee["committeeDetails"]["committeeCode"]
+            self.standing_committees.append(
+                {
+                    "id": committee["id"],
+                    "committee_code_id": cmte_code["id"],
+                    "name": cmte_code["name"],
+                    "chamber": committee["chamber"],
+                    "code": cmte_code["code"],
                 }
             )
 
@@ -208,6 +226,21 @@ class MTBillScraper(Scraper):
     def scrape_actions(self, bill: Bill, row: dict):
         for action in row["draft"]["billStatuses"]:
             name = action["billStatusCode"]["name"]
+            # Try to add committee Name to description where applicable
+            standing_committee_id = action["standingCommitteeId"]
+            committee = None
+
+            if standing_committee_id:
+                committee = next(
+                    (
+                        comm
+                        for comm in self.standing_committees
+                        if comm.get("id") == standing_committee_id
+                    ),
+                    None,
+                )
+            description = f"{name} - {committee['name']}" if committee else name
+
             when = dateutil.parser.parse(action["timeStamp"])
             when = self.tz.localize(when)
             if "(H)" in name:
@@ -218,7 +251,7 @@ class MTBillScraper(Scraper):
                 chamber = "legislature"
 
             bill.add_action(
-                name,
+                description,
                 date=when,
                 chamber=chamber,
                 classification=categorize_actions(name),
