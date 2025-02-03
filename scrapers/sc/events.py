@@ -228,15 +228,19 @@ class SCEventScraper(Scraper):
                     self.event_keys.add(event_key)
 
                 location = location.replace(
-                    "Blatt", "Blatt Building, 1105 Pendleton St, Columbia, SC 29201"
+                    "Blatt",
+                    "Blatt Building, 1105 Pendleton St, Columbia, SC 29201",
+                    1,
                 )
                 location = location.replace(
                     "Gressette",
                     "Gressette Building, 1101 Pendleton St, Columbia, SC 29201",
+                    1,
                 )
                 location = location.replace(
                     "State House",
                     "South Carolina State House, 1100 Gervais St, Columbia, SC 29208",
+                    1,
                 )
 
                 event = Event(
