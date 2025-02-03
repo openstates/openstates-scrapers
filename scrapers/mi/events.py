@@ -47,7 +47,7 @@ class MIEventScraper(Scraper):
             chamber = "Senate"
         elif "rep." in chair.lower():
             chamber = "House"
-        chair = chair.split(".")[-1].strip()
+        chair = chair.replace("Rep. ", "").replace("Sen. ", "").strip()
 
         where = self.table_cell("Location")
         if where == "":
