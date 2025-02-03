@@ -494,14 +494,6 @@ class IlBillScraper(Scraper):
         bill_id = doc_type + bill_num
 
         title = doc.xpath('//div[@id="content"]/div[1]/div/h5/text()')[0].strip()
-        # 1. Find the heading with "Synopsis As Introduced" for text.
-        # 2. Go to the next heading.
-        # 3. Backtrack and grab everything to, but not including, #1.
-        # 4. Grab text of all, including nested, nodes.
-        summary = doc.xpath(
-            '//h5[text()="Synopsis As Introduced"]/../div[@class="list-group"]/span/'
-            "text()"
-        )[0].strip()
 
         bill = Bill(
             identifier=bill_id,
@@ -511,7 +503,13 @@ class IlBillScraper(Scraper):
             chamber=chamber,
         )
 
-        if summary:
+        # 1. Find the heading with "Synopsis As Introduced" for text.
+        # 2. Go to the next heading.
+        # 3. Backtrack and grab everything to, but not including, #1.
+        # 4. Grab text of all, including nested, nodes.
+        summary_xpath = '//h5[text()="Synopsis As Introduced"]/../div[@class="list-group"]/span/text()'
+        if doc.xpath(summary_xpath):
+            summary = doc.xpath(summary_xpath)[0].strip()
             bill.add_abstract(summary, note="")
 
         bill.add_source(url)
