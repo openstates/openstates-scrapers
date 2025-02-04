@@ -8,6 +8,7 @@ import dateutil.parser
 from openstates.scrape import Scraper, Bill, VoteEvent
 from .common import session_slugs
 from spatula import HtmlListPage, HtmlPage, CSS, XPath, SelectorError
+from scrapelib import HTTPError
 
 TZ = pytz.timezone("PST8PDT")
 ACTION_CLASSIFIERS = (
@@ -366,7 +367,13 @@ class BillTabText(HtmlPage):
                 title, link, media_type="application/pdf", on_duplicate="ignore"
             )
         ex_url = self.source.url.replace("Text", "Exhibits")
-        return ExhibitTabText(bill, source=ex_url)
+
+        try:
+            return ExhibitTabText(bill, source=ex_url)
+        except HTTPError:
+            self.warning(f"Failure on exhibit url {ex_url}")
+            am_url = self.source.url.replace("Text", "Amendments")
+            return AmendmentTabText(bill, source=am_url)
 
 
 class ExhibitTabText(HtmlPage):
