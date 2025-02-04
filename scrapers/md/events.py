@@ -4,6 +4,7 @@ import datetime
 import re
 
 from utils import LXMLMixin
+from utils.events import match_coordinates
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 
@@ -116,6 +117,14 @@ class MDEventScraper(Scraper, LXMLMixin):
                 location_name=where,
                 start_date=when,
                 classification="committee-meeting",
+            )
+
+            match_coordinates(
+                event,
+                {
+                    "house office building": ("38.98021", "-76.49229"),
+                    "miller senate": ("38.97975", "-76.49325"),
+                },
             )
 
             com_name = re.sub(r"[\s\-]*Work Session", "", com_row)

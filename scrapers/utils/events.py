@@ -3,12 +3,14 @@ import itertools
 import operator
 
 from dateutil.relativedelta import relativedelta
+from openstates.scrape import Event
+from typing import Dict
 
 
 # the current function to set coordinates requires a
 # valid URL and Note, which we often don't have.
 # so this will add just coordinates
-def set_coordinates(event, lat, lon):
+def set_coordinates(event: Event, lat, lon):
     # the schema requires strings for these
     coords = {
         "latitude": str(lat),
@@ -19,7 +21,7 @@ def set_coordinates(event, lat, lon):
     event.__setattr__("location", loc_dict)
 
 
-def set_location_url(event, url: str):
+def set_location_url(event: Event, url: str):
     loc_dict = event.location
     loc_dict["url"] = url
     event.__setattr__("location", loc_dict)
@@ -28,7 +30,7 @@ def set_location_url(event, url: str):
 # loop through a dict of
 # {"location string", (lat, lon)} entries
 # and update the location lat/lon if any matches are found
-def match_coordinates(event, locations):
+def match_coordinates(event: Event, locations: Dict[str, tuple]):
     for location, coords in locations.items():
         if location.lower() in event.location.get("name").lower():
             set_coordinates(event, coords[0], coords[1])
