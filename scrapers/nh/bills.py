@@ -306,6 +306,12 @@ class NHBillScraper(Scraper):
 
     def add_source(self, bill, lsr, session):
         bill_url = (
+            "https://www.gencourt.state.nh.us/bill_status/legacy/bs2016/bill_docket.aspx?"
+            + "lsr={}&sy={}&sortoption=&txtsessionyear={}".format(lsr, session, session)
+        )
+        bill.add_source(bill_url)
+
+        bill_url = (
             "https://www.gencourt.state.nh.us/bill_status/legacy/bs2016/bill_status.aspx?"
             + "lsr={}&sy={}&sortoption=&txtsessionyear={}".format(lsr, session, session)
         )
