@@ -144,22 +144,52 @@ class COBillScraper(Scraper, LXMLMixin):
         yield from self.scrape_votes(session, bill, page)
 
     def scrape_sponsors(self, bill, page):
-        chamber_map = {"Senator": "upper", "Representative": "lower"}
+        chamber_map_full = {"Senator": "upper", "Representative": "lower"}
 
+        # Primary sponsors
         sponsors = page.xpath('//div[contains(@class,"sponsor-item")]')
         for sponsor in sponsors:
             sponsor_name = sponsor.xpath(".//h4/a/text()")[0]
             sponsor_chamber = sponsor.xpath(
                 './/span[contains(@class, "member-title")]/text()'
             )[0]
-            sponsor_chamber = chamber_map[sponsor_chamber]
+            sponsor_chamber = chamber_map_full[sponsor_chamber]
 
             bill.add_sponsorship(
                 sponsor_name,
                 classification="primary",
                 entity_type="person",
                 primary=True,
+                chamber=sponsor_chamber,
             )
+
+        # Other sponsors
+        sponsor_table_cells = page.xpath(
+            "//div/h2[text()='Sponsors']/following-sibling::table//td"
+        )
+        co_sponsor_cells = [sponsor_table_cells[3], sponsor_table_cells[5]]
+        for cell in co_sponsor_cells:
+            sponsor_links = cell.xpath(".//a")
+            for sponsor_link in sponsor_links:
+                sponsor_name = sponsor_link.text_content()
+                if "Rep." in sponsor_name:
+                    sponsor_chamber = "lower"
+                    sponsor_name = sponsor_name.replace("Rep.", "").strip()
+                elif "Sen." in sponsor_name:
+                    sponsor_chamber = "upper"
+                    sponsor_name = sponsor_name.replace("Sen.", "").strip()
+                else:
+                    self.logger.warning(
+                        f"Unable to classify chamber of sponsor {sponsor_name} on {bill.identifier}"
+                    )
+                    continue
+                bill.add_sponsorship(
+                    sponsor_name,
+                    classification="cosponsor",
+                    entity_type="person",
+                    primary=False,
+                    chamber=sponsor_chamber,
+                )
 
     def scrape_versions(self, bill, page):
         versions = page.xpath('//div[@id="bill-documents-tabs1"]//table//tbody//tr')
