@@ -164,7 +164,9 @@ class COBillScraper(Scraper, LXMLMixin):
             )
 
         # Other sponsors
-        sponsor_table_cells = page.xpath("//div/h2[text()='Sponsors']/following-sibling::table//td")
+        sponsor_table_cells = page.xpath(
+            "//div/h2[text()='Sponsors']/following-sibling::table//td"
+        )
         co_sponsor_cells = [sponsor_table_cells[3], sponsor_table_cells[5]]
         for cell in co_sponsor_cells:
             sponsor_links = cell.xpath(".//a")
@@ -177,7 +179,9 @@ class COBillScraper(Scraper, LXMLMixin):
                     sponsor_chamber = "upper"
                     sponsor_name = sponsor_name.replace("Sen.", "").strip()
                 else:
-                    self.logger.warning(f"Unable to classify chamber of sponsor {sponsor_name} on {bill.identifier}")
+                    self.logger.warning(
+                        f"Unable to classify chamber of sponsor {sponsor_name} on {bill.identifier}"
+                    )
                     continue
                 bill.add_sponsorship(
                     sponsor_name,
@@ -186,7 +190,6 @@ class COBillScraper(Scraper, LXMLMixin):
                     primary=False,
                     chamber=sponsor_chamber,
                 )
-
 
     def scrape_versions(self, bill, page):
         versions = page.xpath('//div[@id="bill-documents-tabs1"]//table//tbody//tr')
