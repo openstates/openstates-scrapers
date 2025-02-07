@@ -1,13 +1,8 @@
 import csv
 import re
-import io
 import datetime
 import pytz
-import os
-import ssl
-import ftplib
-import tempfile
-
+import urllib.parse
 
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.exceptions import EmptyScrape
@@ -24,28 +19,6 @@ _AR_ORGANIZATION_ENTITY_NAME_KEYWORDS = [
 ]
 
 
-# Needed because they're using a port python doesn't expect
-# https://stackoverflow.com/questions/12164470/python-ftp-implicit-tls-connection-issue
-class ImplicitFTP_TLS(ftplib.FTP_TLS):
-    """FTP_TLS subclass that automatically wraps sockets in SSL to support implicit FTPS."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._sock = None
-
-    @property
-    def sock(self):
-        """Return the socket."""
-        return self._sock
-
-    @sock.setter
-    def sock(self, value):
-        """When modifying the socket, ensure that it is ssl wrapped."""
-        if value is not None and not isinstance(value, ssl.SSLSocket):
-            value = self.context.wrap_socket(value)
-        self._sock = value
-
-
 class ARBillScraper(Scraper):
     ftp_user = ""
     ftp_pass = ""
@@ -53,13 +26,6 @@ class ARBillScraper(Scraper):
     sponsors_chamber_cache = {}
 
     def scrape(self, chamber=None, session=None):
-
-        self.ftp_user = os.environ.get("AR_FTP_USER")
-        self.ftp_pass = os.environ.get("AR_FTP_PASSWORD")
-
-        if not self.ftp_user or not self.ftp_pass:
-            self.error("AR_FTP_USER and AR_FTP_PASSWORD env variables are required.")
-            raise EmptyScrape
 
         self.slug = get_slug_for_session(session)
 
@@ -506,27 +472,6 @@ class ARBillScraper(Scraper):
         return data
 
     def get_utf_16_ftp_content(self, filename):
-        self.info(f"GET from ftp: {filename}")
-        ftp_client = ImplicitFTP_TLS()
-        ftp_client.connect(host="secureftp.arkleg.state.ar.us", port=990)
-        ftp_client.login(user=self.ftp_user, passwd=self.ftp_pass)
-        ftp_client.prot_p()
-        ftp_client.cwd("SessionInformation")
-        raw = tempfile.NamedTemporaryFile()
-
-        with open(raw.name, "wb") as f:
-            ftp_client.retrbinary("RETR " + filename, raw.write)
-
-        # 2025: we've seen encoding issues oscillate on this file
-        # so try both the "old" and "new" methods to decode
-        # as necessary
-        try:
-            with io.open(raw.name, "r", encoding="utf-16-le") as f:
-                text = f.read()
-                text = text.replace("\ufeff", "")
-                text = text.replace("\x00", "").strip()
-                return text
-        except UnicodeDecodeError:
-            with open(raw.name, "rb") as f:
-                text = self.decode_ar_utf16(f.read())
-                return text
+        path = urllib.parse.quote_plus(f"/SessionInformation/{filename}")
+        url = f"https://arkleg.state.ar.us/Home/FTPDocument?path={path}"
+        return self.decode_ar_utf16(self.get(url).content)
