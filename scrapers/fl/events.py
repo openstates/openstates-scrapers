@@ -46,83 +46,68 @@ class FlEventScraper(Scraper):
         yield from self.scrape_upper_events(session)
 
     def scrape_lower_events(self, session):
-        # get all the coms, then for each committee
-        # get the correct notices link
-        # then for each notice, parse the event
-        com_url = "https://www.myfloridahouse.gov/Sections/Committees/committees.aspx"
-        page = self.get(com_url).content
+        self.headers = {
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "accept-language": "en-US,en;q=0.9",
+            "dnt": "1",
+            "priority": "u=0, i",
+            "sec-ch-ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Linux"',
+            "sec-fetch-dest": "document",
+            "sec-fetch-mode": "navigate",
+            "sec-fetch-site": "none",
+            "sec-fetch-user": "?1",
+            "upgrade-insecure-requests": "1",
+            "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        }
+
+        com_url = "https://www.flhouse.gov/Sections/HouseCalendar/finalizedmeetingnotice.aspx?mode=month"
+        page = self.get(com_url, headers=self.headers).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(com_url)
 
-        for link in page.xpath('//a[contains(@href,"CommitteeId")]'):
-            com_id = re.findall(r"CommitteeId=(\d+)", link.xpath("@href")[0])[0]
-            yield from self.scrape_lower_notice_list(com_id, session)
+        for row in page.cssselect("div.meeting-notice"):
+            status = "tentative"
 
-    def scrape_lower_notice_list(self, com_id, session):
-        session_id = self.session_ids[session]
-        url = (
-            f"https://www.myfloridahouse.gov/Sections/Documents/publications.aspx?"
-            f"CommitteeId={com_id}&PublicationType=Committees&DocumentType=Meeting%20Notices&SessionId={session_id}"
-        )
-        page = self.get(url).content
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
+            com = row.cssselect("h3.committee-title")[0].text_content().strip()
 
-        for link in page.xpath('//li[contains(@class,"list-group-item")]/span/a'):
-            yield from self.scrape_lower_event(link.xpath("@href")[0])
+            if "joint" not in com.lower():
+                com = f"House {com}"
+            start = row.cssselect("span.date")[0].text_content().strip()
+            start = dateutil.parser.parse(start)
+            start = self.tz.localize(start)
 
-    def scrape_lower_event(self, url):
-        html = self.get(url).text
+            end = row.cssselect("span.date")[1].text_content().strip()
+            end = dateutil.parser.parse(end)
+            end = self.tz.localize(end)
 
-        if "not meeting" in html.lower():
-            self.info(f"Skipping {url}, not meeting")
-            return
+            location = row.xpath(
+                ".//span[contains(text(),'Location')]/following-sibling::span"
+            )[0].text_content()
 
-        page = lxml.html.fromstring(html)
-        page.make_links_absolute(url)
+            summary = ""
 
-        com = (
-            page.xpath('//div[contains(@class,"sectionhead")]/h1')[0]
-            .text_content()
-            .strip()
-        )
+            if row.cssselect("div.meeting-notice-details"):
+                summary = row.cssselect("div.meeting-notice-details")[0].text_content()
 
-        com = f"House {com}"
+                if "[not meeting]" in summary.lower():
+                    status = "cancelled"
 
-        start = self.get_meeting_row(page, "Start Date")
-        start = self.tz.localize(dateutil.parser.parse(start))
-
-        end = None
-        if self.get_meeting_row(page, "End Date"):
-            end = self.get_meeting_row(page, "End Date")
-            end = self.tz.localize(dateutil.parser.parse(end))
-        location = self.get_meeting_row(page, "Location")
-
-        summary = ""
-        if page.xpath('//div[contains(text(),"Meeting Overview")]'):
-            summary = (
-                page.xpath(
-                    '//div[div[contains(text(),"Meeting Overview")]]/div[contains(@class,"ml-3")]'
-                )[0]
-                .text_content()
-                .strip()
-            )
-
-        if end:
             event = Event(
                 name=com,
                 start_date=start,
                 end_date=end,
                 location_name=location,
                 description=summary,
-            )
-        else:
-            event = Event(
-                name=com, start_date=start, location_name=location, description=summary
+                status=status,
             )
 
-        event.add_committee(com)
-        event.add_source(url)
+            event.add_source(com_url)
+
+            event.add_committee(com)
+
+            yield event
 
         for h5 in page.xpath('//div[contains(@class,"meeting-actions-bills")]/h5'):
             event.add_agenda_item(h5.text_content().strip())
