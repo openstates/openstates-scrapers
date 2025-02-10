@@ -323,12 +323,14 @@ class ALBillScraper(Scraper):
             )
 
         for row in page["data"]["birs"]["data"]:
-            bill.add_document_link(
-                f"Budget Isolation Resolution: {row['description']}",
-                row["url"],
-                media_type="application/pdf",
-                on_duplicate="ignore",
-            )
+            # So far it looks like "birs" do not have url
+            if "url" in row:
+                bill.add_document_link(
+                    f"Budget Isolation Resolution: {row['matter']}",
+                    row["url"],
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
 
     def scrape_versions(self, bill: Bill, row: dict):
         if row["introducedUrl"]:
