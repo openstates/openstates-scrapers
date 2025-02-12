@@ -401,7 +401,12 @@ class CABillScraper(Scraper, LXMLMixin):
                         subject = cleaned_subjects[0:-2].split(": ")
                     # break up subject to actually be a list of them instead of one long string
                     else:
-                        subject = cleaned_subjects.replace(".", "").split(":")
+                        subject = (
+                            cleaned_subjects.replace(".", "")
+                            .replace(" ", "")
+                            .split(":")
+                        )
+                        subject = [s for s in subject if len(s) != 0]
 
             if not title:
                 self.warning("Couldn't find title for %s, skipping" % bill_id)
