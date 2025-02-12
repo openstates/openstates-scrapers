@@ -305,9 +305,9 @@ class UTBillScraper(Scraper, LXMLMixin):
                     actor = "lower"
                 elif "clerk of the senate" in action_data["owner"].lower():
                     actor = "upper"
-                elif action_data.startswith("Senate"):
+                elif action_data["owner"].startswith("Senate"):
                     actor = "upper"
-                elif action_data.startswith("House"):
+                elif action_data["owner"].startswith("House"):
                     actor = "lower"
                 else:
                     self.warning(
