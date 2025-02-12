@@ -406,7 +406,7 @@ class CABillScraper(Scraper, LXMLMixin):
                             .replace(" ", "")
                             .split(":")
                         )
-                        subject = [s for s in subject if len(s) != 0]
+                        subject = [sub for sub in subject if len(sub) != 0]
 
             if not title:
                 self.warning("Couldn't find title for %s, skipping" % bill_id)
