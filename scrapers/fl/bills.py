@@ -642,6 +642,7 @@ class HouseSearchPage(HtmlListPage):
         # a URL param that looks like billNumber=1
         bill_number = re.search(r"^\w+\s(\d+)\w*$", self.input.identifier).group(1)
         session_number = {
+            "2025C": "111",
             "2025B": "109",
             "2025A": "107",
             "2025": "105",
