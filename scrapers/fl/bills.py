@@ -1,6 +1,7 @@
 import re
 import logging
 import datetime
+import typing
 from urllib.parse import urlencode
 from collections import defaultdict
 from openstates.scrape import Bill, VoteEvent, Scraper
@@ -681,10 +682,25 @@ class HouseSearchPage(HtmlListPage):
                 "Host": "flhouse.gov",
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
             },
+            retries=3,
         )
 
     def process_item(self, item):
         return HouseBillPage(self.input, source=item)
+
+    # Override so that we can handle occasional bill that does not show up in search
+    # by catching SelectorError
+    def process_page(self) -> typing.Iterable[typing.Any]:
+        if not self.selector:
+            raise NotImplementedError("must either provide selector or override scrape")
+        try:
+            items = self.selector.match(self.root)
+            yield from self._process_or_skip_loop(items)
+        except SelectorError:
+            # Occasionally a bill will not appear in House search even though it should!
+            self.logger.error(
+                f"Selector Error at source {self.source}, could not find bill in House Search"
+            )
 
 
 class HouseBillPage(HtmlListPage):
