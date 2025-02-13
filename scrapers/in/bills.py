@@ -134,7 +134,13 @@ class INBillScraper(Scraper):
             chamber = (
                 "lower" if "house of representatives" in lines[0].lower() else "upper"
             )
-            date_parts = lines[1].strip().split()[-3:]
+            try:
+                date_parts = lines[1].strip().split()[-3:]
+            except IndexError:
+                self.logger.warning(
+                    f"Failed to parse Vote document text from {vote_url}"
+                )
+                continue
             date_str = " ".join(date_parts).title() + " " + lines[2].strip()
             vote_date = datetime.datetime.strptime(date_str, "%b %d, %Y %I:%M:%S %p")
             vote_date = pytz.timezone("America/Indiana/Indianapolis").localize(
