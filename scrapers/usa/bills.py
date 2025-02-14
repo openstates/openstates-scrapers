@@ -91,11 +91,22 @@ class USBillScraper(Scraper):
     }
 
     # to scrape everything UPDATED after a given date/time, start="2020-01-01 22:01:01"
-    def scrape(self, chamber=None, session=None, start=None):
+    def scrape(self, chamber=None, session=None, start=None, hearings=True):
         if start:
             start = datetime.datetime.strptime(start, "%Y-%m-%d %H:%I:%S")
         else:
             start = datetime.datetime(1980, 1, 1, 0, 0, 1)
+
+        # "hearings" flag determines whether we scrape hearing data found amongst bill data
+        # this is problematic in Plural Open usage because the import pipeline wants one
+        # set of events at a time as a snapshot of truth
+        # and this should come from the events scraper.
+        # But other users of this code may prefer the intermingled behavior.
+        # Parse string flag to boolean
+        if isinstance(hearings, str) and hearings.lower() in ["false", "0"]:
+            hearings = False
+        elif isinstance(hearings, str):
+            hearings = True
 
         sitemap_url = (
             "https://www.govinfo.gov/sitemap/bulkdata/BILLSTATUS/sitemapindex.xml"
@@ -115,9 +126,9 @@ class USBillScraper(Scraper):
                     continue
 
             if session in link.text:
-                yield from self.parse_bill_list(link.text, start)
+                yield from self.parse_bill_list(link.text, start, hearings)
 
-    def parse_bill_list(self, url, start):
+    def parse_bill_list(self, url, start, scrape_hearings=True):
         sitemap = self.get(url).content
         root = ET.fromstring(sitemap)
         for row in root.findall("us:url", self.ns):
@@ -130,9 +141,9 @@ class USBillScraper(Scraper):
                 self.debug(
                     f"{datetime.datetime.strftime(date, '%c')} > {datetime.datetime.strftime(start, '%c')}, scraping {bill_url}"
                 )
-                yield from self.parse_bill(bill_url)
+                yield from self.parse_bill(bill_url, scrape_hearings)
 
-    def parse_bill(self, url):
+    def parse_bill(self, url, scrape_hearings=True):
         xml = self.get(url).content
         xml = ET.fromstring(xml)
 
@@ -192,8 +203,9 @@ class USBillScraper(Scraper):
         # use cg_url to get additional version for public law
         # disabled 9/2021 - congress.gov was giving 503s
         # self.scrape_public_law_version(bill, cg_url)
-        for event in self.scrape_hearing_by(bill, xml, xml_url):
-            yield event
+        if scrape_hearings:
+            for event in self.scrape_hearing_by(bill, xml, xml_url):
+                yield event
 
         yield bill
 
