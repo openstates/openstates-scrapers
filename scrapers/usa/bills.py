@@ -128,7 +128,7 @@ class USBillScraper(Scraper):
             if session in link.text:
                 yield from self.parse_bill_list(link.text, start, hearings)
 
-    def parse_bill_list(self, url, start, scrape_hearings = True):
+    def parse_bill_list(self, url, start, scrape_hearings=True):
         sitemap = self.get(url).content
         root = ET.fromstring(sitemap)
         for row in root.findall("us:url", self.ns):
@@ -143,7 +143,7 @@ class USBillScraper(Scraper):
                 )
                 yield from self.parse_bill(bill_url, scrape_hearings)
 
-    def parse_bill(self, url, scrape_hearings = True):
+    def parse_bill(self, url, scrape_hearings=True):
         xml = self.get(url).content
         xml = ET.fromstring(xml)
 
