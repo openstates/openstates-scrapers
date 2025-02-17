@@ -138,6 +138,9 @@ class MSEventScraper(Scraper):
                 # Sometimes time is "AA+01" or "AA+10" etc. so not all will parse
                 # treat those "non-time" times as all day events
                 time_of_day = cols[1].text_content()
+                # This is probably the table headers
+                if time_of_day == "Time":
+                    continue
                 all_day = False
                 optional_time_indicator = ""
                 try:
