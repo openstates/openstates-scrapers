@@ -182,7 +182,7 @@ class IAVoteScraper(Scraper):
                 (passed == (votes["yes_count"] > votes["no_count"])) or (not passed)
             ):
                 self.error("The bill passed without a majority?")
-                raise ValueError("invalid vote")
+                # raise ValueError("invalid vote")
 
             # also throw a warning if the bill failed but got a majority
             # it could be OK, but is probably something we'd want to check
@@ -288,7 +288,11 @@ class IAVoteScraper(Scraper):
                     """
                     passage_line = text
                 passed = False
-                if any(p in passage_line for p in passage_strings):
+                # This text can appear in a line
+                # "Amendment H–1011 lost. Harris of Appanoose moved that House Resolution 3 be adopted".
+                if not ("lost" in passage_line) and any(
+                    p in passage_line for p in passage_strings
+                ):
                     passed = True
                 break
 
