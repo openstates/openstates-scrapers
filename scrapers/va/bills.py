@@ -129,8 +129,17 @@ class VaBillScraper(Scraper):
                 action_attr = self.categorizer.categorize(description)
                 classification = action_attr["classification"]
 
+                if not row["ChamberCode"] and row["ActorType"] == "Governor":
+                    chamber = "executive"
+                elif row["ChamberCode"]:
+                    chamber = self.chamber_map[row["ChamberCode"]]
+                else:
+                    chamber = None
+                    self.logger.warning(
+                        f"Encountered unexpected action actor for legislation_id {legislation_id}"
+                    )
                 bill.add_action(
-                    chamber=self.chamber_map[row["ChamberCode"]],
+                    chamber=chamber,
                     description=description,
                     date=when,
                     classification=classification,
