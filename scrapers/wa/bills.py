@@ -239,7 +239,7 @@ class WABillScraper(Scraper, LXMLMixin):
             self.scrape_chamber(chamber, session)
 
         # uncomment the line below to scrape a single bill
-        # self._bill_id_list = ["HB 1589"]
+        # self._bill_id_list = ["HB 1002"]
 
         # de-dup bill_id
         for bill_id in list(set(self._bill_id_list)):
@@ -359,8 +359,8 @@ class WABillScraper(Scraper, LXMLMixin):
             pass
 
         self.scrape_sponsors(bill)
+        # self.scrape_hearings(bill, bill_num)
         self.scrape_actions(bill, chamber, fake_source, prefile_year, second_year)
-        self.scrape_hearings(bill, bill_num)
         yield from self.scrape_votes(bill)
         bill.subject = list(set(self._subjects[bill_id]))
         yield bill
@@ -390,6 +390,10 @@ class WABillScraper(Scraper, LXMLMixin):
             first = False
 
     def scrape_hearings(self, bill, bill_num):
+        # This is not used at present because it seems to duplicate
+        # bill actions found on the bill page itself
+        # and is not trivial to deduplicate because of subtle text diffs
+
         # http://wslwebservices.leg.wa.gov/LegislationService.asmx?op=GetHearings&
         # biennium=2019-20&billNumber=5000
         url = (
@@ -439,9 +443,11 @@ class WABillScraper(Scraper, LXMLMixin):
         api_actions = self.scrape_api_actions(bill, prefile_year, second_year)
 
         page = lxml.html.fromstring(self.get(bill_url).content)
-        headers = page.xpath(
-            "//p[contains(@style, 'font-weight: bold; margin-top: 0.6em; margin-bottom: 0.6em;')]"
-        )
+        # there are two "headers" we expect, that should be like
+        # 2019 REGULAR SESSION
+        # IN THE SENATE
+        # ["IN THE SENATE/HOUSE"] is followed by a table of actions
+        headers = page.xpath("//p[@class='actionHistoryHeader']")
 
         # first actions table is from chamber of origin
         actor = chamber
@@ -453,6 +459,21 @@ class WABillScraper(Scraper, LXMLMixin):
         for header in headers:
             header_text = header.text_content().lower()
 
+            # handle the session year header
+            # action years are in a header YYYY Regular|Special session
+            # for a bill with actions that span years, see
+            # see https://apps.leg.wa.gov/billsummary?BillNumber=5315&Initiative=false&Year=2019
+            if "session" in header_text:
+                action_year = self.action_year_re.search(header_text).group()
+                if action_year is None:
+                    self.logger.error(
+                        f"Encountered unexpected session header text {header.text_content()} at {bill_url}"
+                    )
+                # we continue here to go to the next header
+                # bill actions table is always after a chamber header, not session header
+                continue
+
+            # Handle the Chamber header
             if "house" in header_text:
                 actor = "lower"
             elif "senate" in header_text:
@@ -460,26 +481,25 @@ class WABillScraper(Scraper, LXMLMixin):
             elif "other than legislative" in header_text:
                 actor = "executive"
 
-            # action years are in a header YYYY Regular|Special session
-            # for a bill with actions that span years, see
-            # see https://apps.leg.wa.gov/billsummary?BillNumber=5315&Initiative=false&Year=2019
-            if self.action_year_re.match(header_text):
-                action_year = self.action_year_re.search(header_text).group()
-
-            rows = header.xpath("following-sibling::div[1]/div")
+            rows = header.xpath("following-sibling::div[@class='historytable']/div")
+            action_day_text = ""
             for row in rows:
-                # skip later lines that are just links to files
+                # div[1] is the date
                 if row.xpath("div[1]")[0].text_content().strip():
-                    action_day = row.xpath("div[1]")[0].text_content().strip()
+                    action_day_text = row.xpath("div[1]")[0].text_content().strip()
 
-                raw_action = row.xpath("div[2]")[0].text_content()
+                # div[2] is the action description
+                raw_action = row.xpath("div[2]")[0]
+                for link in raw_action.xpath(".//a"):
+                    link.drop_tree()
+                raw_action_text = raw_action.text_content()
                 action_text = " ".join(
-                    [x.strip() for x in raw_action.split("\r\n")]
+                    [x.strip() for x in raw_action_text.split("\r\n")]
                 ).strip()
 
                 action_date = self._TZ.localize(
                     datetime.datetime.strptime(
-                        f"{action_day} {action_year}", "%b %d %Y"
+                        f"{action_day_text} {action_year}", "%b %d %Y"
                     )
                 )
 
@@ -494,6 +514,10 @@ class WABillScraper(Scraper, LXMLMixin):
                         and action_date.day == api_date.day
                     ):
                         action_date = api_date
+                    else:
+                        action_date = action_date.date()
+                else:
+                    action_date = action_date.date()
 
                 temp = self.categorizer.categorize(action_text)
                 classification = temp["classification"]
