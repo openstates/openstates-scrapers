@@ -456,7 +456,6 @@ class WABillScraper(Scraper, LXMLMixin):
 
         became_law = False
 
-        session = ""
         for header in headers:
             header_text = header.text_content().lower()
 
@@ -465,7 +464,6 @@ class WABillScraper(Scraper, LXMLMixin):
             # for a bill with actions that span years, see
             # see https://apps.leg.wa.gov/billsummary?BillNumber=5315&Initiative=false&Year=2019
             if "session" in header_text:
-                session = header_text
                 action_year = self.action_year_re.search(header_text).group()
                 if action_year is None:
                     self.logger.error(
