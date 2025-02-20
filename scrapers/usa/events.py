@@ -133,7 +133,7 @@ class USEventScraper(Scraper, LXMLMixin):
             event.dedupe_key = event_name
             agenda_item = event.add_agenda_item(description=agenda)
 
-            for doc in row.xpath("//Documents/AssociatedDocument"):
+            for doc in row.xpath(".//Documents/AssociatedDocument"):
                 doc_congress = doc.xpath("@congress")[0]
                 doc_title = doc.xpath("@document_description")[0]
                 doc_num = doc.xpath("@document_num")[0]
@@ -141,16 +141,25 @@ class USEventScraper(Scraper, LXMLMixin):
                 doc_type = "nomination" if doc_prefix == "PN" else "bill"
                 if doc_prefix in self.senate_prefix_mapping:
                     doc_prefix = self.senate_prefix_mapping[doc_prefix]
+                    bill_id = f"{doc_prefix} {doc_num}"
+                else:
+                    # if not mapped, do not add a bill!
+                    bill_id = None
                 doc_id = f"{doc_congress}-{doc_prefix}-{doc_num}"
 
-                bill_id = f"{doc_prefix} {doc_num}"
-                try:
-                    agenda_item.add_entity(
-                        name=bill_id, entity_type=doc_type, id=doc_id, note=doc_title
-                    )
-                except ScrapeValueError:
-                    self.warning(f"Skipping agenda item {bill_id} of type {doc_type}")
-                    pass
+                if bill_id:
+                    try:
+                        agenda_item.add_entity(
+                            name=bill_id,
+                            entity_type=doc_type,
+                            id=doc_id,
+                            note=doc_title,
+                        )
+                    except ScrapeValueError:
+                        self.warning(
+                            f"Skipping agenda item {bill_id} of type {doc_type}"
+                        )
+                        pass
 
             event.add_participant(
                 com,
