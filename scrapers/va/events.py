@@ -15,6 +15,23 @@ class VaEventScraper(Scraper):
 
     bill_regex = r"([shbrj]+\s*\d+)"
 
+    event_processed_docs_map = {}
+
+    def check_for_unique_document(self, event: Event, document_url: str) -> bool:
+        dedupe_key = f"{event.name}-{event.start_date}-{event.location}"
+        if (
+            dedupe_key in self.event_processed_docs_map
+            and document_url in self.event_processed_docs_map[dedupe_key]
+        ):
+            # we have already processed this document, do not add it again
+            self.logger.info(f"Found a duplicate document {document_url}")
+            return False
+        else:
+            if dedupe_key not in self.event_processed_docs_map:
+                self.event_processed_docs_map[dedupe_key] = []
+            self.event_processed_docs_map[dedupe_key].append(document_url)
+            return True
+
     def choose_agenda_parser(self, event: Event, url: str) -> None:
         if "lis.virginia" in url.lower():
             self.scrape_senate_agenda(event, url)
@@ -38,12 +55,13 @@ class VaEventScraper(Scraper):
             when = dateutil.parser.parse(link.text_content()).date()
             if when == event.start_date.date():
                 self.scrape_house_com_agenda(event, link.xpath("@href")[0])
-                event.add_document(
-                    "Agenda",
-                    link.xpath("@href")[0],
-                    media_type="text/html",
-                    on_duplicate="ignore",
-                )
+                if self.check_for_unique_document(event, link.xpath("@href")[0]):
+                    event.add_document(
+                        "Agenda",
+                        link.xpath("@href")[0],
+                        media_type="text/html",
+                        on_duplicate="ignore",
+                    )
 
     def scrape_house_com_agenda(self, event: Event, url: str) -> None:
         # https://virginiageneralassembly.gov/house/agendas/agendaItemExport.php?id=4790&ses=251
@@ -98,14 +116,15 @@ class VaEventScraper(Scraper):
                 continue
 
             for link in row.xpath("td[4]/a"):
-                event.add_document(
-                    link.text_content(),
-                    link.xpath("@href")[0],
-                    media_type=get_media_type(
-                        link.xpath("@href")[0], default="text/html"
-                    ),
-                    on_duplicate="ignore",
-                )
+                if self.check_for_unique_document(event, link.xpath("@href")[0]):
+                    event.add_document(
+                        link.text_content(),
+                        link.xpath("@href")[0],
+                        media_type=get_media_type(
+                            link.xpath("@href")[0], default="text/html"
+                        ),
+                        on_duplicate="ignore",
+                    )
 
             for item in row.xpath("./following-sibling::tr[1]/td/p"):
                 item_text = item.text_content().strip()
@@ -119,14 +138,17 @@ class VaEventScraper(Scraper):
                 for item_link in item.xpath("a"):
                     # most of the link text is just "(Presentation)"
                     # so use the whole item
-                    event.add_document(
-                        item_text,
-                        item_link.xpath("@href")[0],
-                        media_type=get_media_type(
-                            item_link.xpath("@href")[0], default="text/html"
-                        ),
-                        on_duplicate="ignore",
-                    )
+                    if self.check_for_unique_document(
+                        event, item_link.xpath("@href")[0]
+                    ):
+                        event.add_document(
+                            item_text,
+                            item_link.xpath("@href")[0],
+                            media_type=get_media_type(
+                                item_link.xpath("@href")[0], default="text/html"
+                            ),
+                            on_duplicate="ignore",
+                        )
 
                 for match in re.findall(
                     self.bill_regex, item_text, flags=re.IGNORECASE
@@ -217,15 +239,20 @@ class VaEventScraper(Scraper):
 
                 for link in html_desc.xpath("//a[contains(text(),'Agenda')]"):
                     docket_url = link.xpath("@href")[0]
-                    event.add_document(
-                        link.text_content(),
-                        link.xpath("@href")[0],
-                        media_type="text/html",
-                        on_duplicate="ignore",
-                    )
-                    self.choose_agenda_parser(event, docket_url)
+                    if self.check_for_unique_document(event, docket_url):
+                        event.add_document(
+                            link.text_content(),
+                            link.xpath("@href")[0],
+                            media_type="text/html",
+                            on_duplicate="ignore",
+                        )
+                        self.choose_agenda_parser(event, docket_url)
 
-            if "LinkURL" in row and row["LinkURL"]:
+            if (
+                "LinkURL" in row
+                and row["LinkURL"]
+                and self.check_for_unique_document(event, row["LinkURL"])
+            ):
                 event.add_document(
                     "Docket Info",
                     row["LinkURL"],
@@ -235,13 +262,13 @@ class VaEventScraper(Scraper):
                 self.choose_agenda_parser(event, row["LinkURL"])
 
             for ct, attach in enumerate(row["ScheduleFiles"]):
-                if ct == 0:
+                if ct == 0 and self.check_for_unique_document(event, attach["FileURL"]):
                     event.add_document(
                         "Agenda",
                         attach["FileURL"],
                         media_type="application/pdf",
                     )
-                else:
+                elif self.check_for_unique_document(event, attach["FileURL"]):
                     event.add_document(
                         f"Attachment {ct}",
                         attach["FileURL"],
