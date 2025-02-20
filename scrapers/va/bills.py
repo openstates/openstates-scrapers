@@ -131,10 +131,12 @@ class VaBillScraper(Scraper):
 
                 if not row["ChamberCode"] and row["ActorType"] == "Governor":
                     chamber = "executive"
+                elif not row["ChamberCode"] and row["ActorType"] == "Conference":
+                    chamber = "legislature"
                 elif row["ChamberCode"]:
                     chamber = self.chamber_map[row["ChamberCode"]]
                 else:
-                    chamber = None
+                    chamber = "legislature"
                     self.logger.warning(
                         f"Encountered unexpected action actor for legislation_id {legislation_id}"
                     )
