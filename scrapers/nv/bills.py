@@ -197,7 +197,9 @@ class BillTabDetail(HtmlPage):
         return url
 
     def process_error_response(self, exception: Exception) -> None:
-        self.logger.warning(f"Encountered error fetching Bill Overview for {self.input.identifier}, skipping {self.input.source_url}")
+        self.logger.warning(
+            f"Encountered error fetching Bill Overview for {self.input.identifier}, skipping {self.input.source_url}"
+        )
         raise SkipItem
 
     def get_column_div(self, name):
@@ -388,7 +390,9 @@ class ExhibitTabText(HtmlPage):
     )
 
     def process_error_response(self, exception: Exception) -> None:
-        self.logger.warning(f"Encountered error fetching Exhibits tab, skipping {self.source}")
+        self.logger.warning(
+            f"Encountered error fetching Exhibits tab, skipping {self.source}"
+        )
         raise SkipItem
 
     def process_page(self):
