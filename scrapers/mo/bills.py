@@ -642,7 +642,13 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         # house Witnesses
         for row in response.xpath("//BillInformation/Witness"):
-            path = row.xpath("./WitnessFormsLink/text()")[0].strip()
+            witness_elems = row.xpath("./WitnessFormsLink/text()")
+            if not witness_elems or len(witness_elems) == 0:
+                self.logger.warning(
+                    f"Found missing Witness Form link for bill {bill.identifier}"
+                )
+                continue
+            path = witness_elems[0].strip()
             summary_name = "Bill Summary (Witnesses)"
             if ".pdf" in path:
                 mimetype = "application/pdf"
