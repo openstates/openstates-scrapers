@@ -415,13 +415,20 @@ class COBillScraper(Scraper, LXMLMixin):
                 "//tr/td[preceding-sibling::td/descendant::"
                 "font[contains(text(),'Aye')]]/font/text()"
             )
-            other_counts = page.xpath(
+            # Found at least once instance where font tag is not present
+            # https://leg.colorado.gov/content/sb25-004vote58e9a7
+            # so we need to be a bit more flexible
+            other_count_elements = page.xpath(
                 "//tr/td[preceding-sibling::td/descendant::"
-                "font[contains(text(),'Absent')]]/font/text()"
+                "*[contains(text(),'Absent')]]"
             )
             abstain_counts = page.xpath(
                 "//tr/td[preceding-sibling::td/descendant::"
                 "font[contains(text(),'17C')]]/font/text()"
+            )
+            vacant_count_elements = page.xpath(
+                "//tr/td[preceding-sibling::td/descendant::"
+                "*[contains(text(),'Vacant')]]"
             )
 
             if not yes_no_counts:
@@ -430,11 +437,14 @@ class COBillScraper(Scraper, LXMLMixin):
 
             yes_count = int(yes_no_counts[0])
             no_count = int(yes_no_counts[2])
-            exc_count = int(other_counts[2])
-            absent_count = int(other_counts[0])
+            exc_count = int(other_count_elements[2].text_content())
+            absent_count = int(other_count_elements[0].text_content())
             abstain_count = 0
+            vacant_count = 0
             if abstain_counts:
                 abstain_count = int(abstain_counts[0])
+            if vacant_count_elements and len(vacant_count_elements) > 1:
+                vacant_count = int(vacant_count_elements[0].text_content().strip())
 
             # fix for
             # https://leg.colorado.gov/content/hb19-1029vote65e72e
@@ -456,6 +466,9 @@ class COBillScraper(Scraper, LXMLMixin):
             vote.set_count("excused", exc_count)
             vote.set_count("absent", absent_count)
             vote.set_count("abstain", abstain_count)
+            # Use "not voting" for vacant, because "vacant" not an option in os-core
+            # see openstates-core's data/common.py VOTE_OPTION_CHOICES
+            vote.set_count("not voting", vacant_count)
             vote.add_source(vote_url)
 
             rolls = page.xpath(
