@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import dateutil.parser
 from openstates.scrape import Scraper, Bill, VoteEvent
 from .common import session_slugs
-from spatula import HtmlListPage, HtmlPage, CSS, XPath, SelectorError
+from spatula import HtmlListPage, HtmlPage, CSS, XPath, SelectorError, SkipItem
 from scrapelib import HTTPError
 
 TZ = pytz.timezone("PST8PDT")
@@ -167,6 +167,7 @@ class BillList(HtmlListPage):
         if link is None:
             return
 
+        self.logger.info(f"About to process BillTabDetail for {identifier} at {link}")
         return BillTabDetail(
             BillStub(
                 link,
@@ -194,6 +195,10 @@ class BillTabDetail(HtmlPage):
             f"&_={time.time()}"
         )
         return url
+
+    def process_error_response(self, exception: Exception) -> None:
+        self.logger.warning(f"Encountered error fetching Bill Overview for {self.input.identifier}, skipping {self.input.source_url}")
+        raise SkipItem
 
     def get_column_div(self, name):
         # lots of places where we have a <div class='col-md-2 font-weight-bold'>
@@ -381,6 +386,10 @@ class ExhibitTabText(HtmlPage):
         "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Bill/"
         "FillSelectedBillTab?selectedTab=Exhibits&billKey=9581"
     )
+
+    def process_error_response(self, exception: Exception) -> None:
+        self.logger.warning(f"Encountered error fetching Exhibits tab, skipping {self.source}")
+        raise SkipItem
 
     def process_page(self):
         bill = self.input

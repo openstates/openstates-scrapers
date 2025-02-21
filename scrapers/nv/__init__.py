@@ -139,7 +139,7 @@ class Nevada(State):
             "name": "2023 Regular Session",
             "start_date": "2023-02-01",
             "end_date": "2023-06-01",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "34th (2023) Special Session",
