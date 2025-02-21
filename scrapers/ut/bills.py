@@ -1,5 +1,6 @@
 import re
 import datetime
+from dateutil import parser
 
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 from .actions import Categorizer
@@ -314,10 +315,14 @@ class UTBillScraper(Scraper, LXMLMixin):
                         f"Found unexpected actor {action_data['owner']} at {api_url}"
                     )
 
-                date = datetime.datetime.strptime(
-                    action_data["actionDate"], "%m/%d/%Y"
-                ).date()
-                date = date.strftime("%Y-%m-%d")
+                if ":" in action_data["actionDate"]:
+                    date = parser.parse(action_data["actionDate"])
+                    date = self._TZ.localize(date)
+                else:
+                    date = datetime.datetime.strptime(
+                        action_data["actionDate"], "%m/%d/%Y"
+                    ).date()
+                    date = date.strftime("%Y-%m-%d")
 
                 bill.add_action(
                     date=date,
