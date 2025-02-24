@@ -4,8 +4,12 @@ import logging
 import os
 
 
-def url_xpath(url, path, verify=False, user_agent=None):
+def url_xpath(url, path, verify=None, user_agent=None):
     headers = {"user-agent": user_agent} if user_agent else None
+
+    if verify is None:
+        verify = os.getenv("VERIFY_CERTS", "True").lower() == "true"
+
     res = requests.get(url, verify=verify, headers=headers)
     try:
         doc = lxml.html.fromstring(res.text)
