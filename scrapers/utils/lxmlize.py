@@ -1,10 +1,15 @@
 import requests
 import lxml.html
 import logging
+import os
 
 
-def url_xpath(url, path, verify=True, user_agent=None):
+def url_xpath(url, path, verify=None, user_agent=None):
     headers = {"user-agent": user_agent} if user_agent else None
+
+    if verify is None:
+        verify = os.getenv("VERIFY_CERTS", "True").lower() == "true"
+
     res = requests.get(url, verify=verify, headers=headers)
     try:
         doc = lxml.html.fromstring(res.text)
@@ -21,7 +26,7 @@ def url_xpath(url, path, verify=True, user_agent=None):
 class LXMLMixin(object):
     """Mixin for adding LXML helper functions to Open States code."""
 
-    def lxmlize(self, url, raise_exceptions=False, verify=True):
+    def lxmlize(self, url, raise_exceptions=False, verify=None):
         """Parses document into an LXML object and makes links absolute.
 
         Args:
@@ -29,6 +34,9 @@ class LXMLMixin(object):
         Returns:
             Element: Document node representing the page.
         """
+        if verify is None:
+            verify = os.getenv("VERIFY_CERTS", "True").lower() == "true"
+
         try:
             # This class is always mixed into subclasses of `Scraper`,
             # which have a `get` method defined.
