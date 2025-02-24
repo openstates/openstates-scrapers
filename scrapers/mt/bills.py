@@ -543,8 +543,14 @@ class MTBillScraper(Scraper):
                     )
                     bill_action = None
                 when = dateutil.parser.parse(row["voteTime"])
+            elif "billStatus" in row and row["billStatus"] is None:
+                # Possibly when voting on a crossover bill?
+                # see the third entry on https://api.legmt.gov/bills/v1/votes/findByBillId?billId=559
+                bill_action = None
+                when = dateutil.parser.parse(row["dateTime"])
+                chamber = "lower" if row["systemId"]["chamber"] == "HOUSE" else "upper"
             else:
-                self.error(
+                self.warning(
                     f"Found MT vote with neither an action nor a meeting. {vote_url}"
                 )
                 continue
