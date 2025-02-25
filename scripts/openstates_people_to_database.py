@@ -76,7 +76,7 @@ def opts():
         "--data-class",
         "-d",
         type=str,
-        help="Set to True to purge old data from database",
+        help="Set to data lass to committees or people to ingest only the specified data",
     )
     return parser.parse_args()
 
