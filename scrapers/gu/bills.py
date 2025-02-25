@@ -342,6 +342,15 @@ class GUBillScraper(Scraper):
                         name, "cosponsor", "person", False, chamber="legislature"
                     )
 
+        for row in body.xpath(
+            ".//a[contains(@href, '.pdf') and (contains(@href, 'History') or contains(@href, 'Res'))]"
+        ):
+            v_url = row.xpath("@href")[0]
+            v_title = row.text_content().strip()
+            bill.add_version_link(
+                v_title, v_url, media_type="application/pdf", on_duplicate="ignore"
+            )
+
         bill.add_source(url)
         yield bill
 
