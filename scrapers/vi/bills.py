@@ -18,8 +18,14 @@ class VIBillScraper(Scraper):
         "U_DateIntro": ("Introduced", ["introduction"]),
         "U_DateToLtGov": ("Sent to Lt. Governor", ["executive-receipt"]),
         "U_DateToGov": ("Sent to Governor", ["executive-receipt"]),
-        "U_DateVetoed": ("Vetoed", ["veto"]),
+        "U_DateVetoed": ("Vetoed", ["executive-veto"]),
         "U_DateAppGov": ("Approved by Governor", ["executive-signature"]),
+    }
+
+    bill_type_overrides = {
+        "bill&amend": "bill",
+        "lease": "contract",
+        "amendment": "bill",
     }
 
     def scrape(self, session=None):
@@ -45,7 +51,6 @@ class VIBillScraper(Scraper):
                 yield from self.scrape_bill(session, row)
 
     def scrape_bill(self, session, row: dict):
-        print(row)
         data = {"docEntryID": row["ID"]}
 
         row = self.post(
@@ -53,13 +58,12 @@ class VIBillScraper(Scraper):
         ).json()
         row = row["recordset"][0]
 
-        print(row)
-
         identifier = row["U_BillNumber"] or row["U_ResolutionNumber"]
         title = row["U_Subject"]
         bill_type = row["U_RequestType"].lower()
 
-        print(identifier, title, bill_type)
+        if bill_type in self.bill_type_overrides:
+            bill_type = self.bill_type_overrides[bill_type]
 
         bill = Bill(
             identifier=identifier,
