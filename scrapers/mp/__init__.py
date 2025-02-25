@@ -19,6 +19,14 @@ class NorthernMarianaIslands(State):
             "name": "23rd Commonwealth Legislature",
             "start_date": "2023-01-01",
             "end_date": "2023-12-31",
+            "active": False,
+        },
+        {
+            "_scraped_name": "24",
+            "identifier": "24",
+            "name": "24th Commonwealth Legislature",
+            "start_date": "2025-01-01",
+            "end_date": "2026-12-31",
             "active": True,
         },
     ]
