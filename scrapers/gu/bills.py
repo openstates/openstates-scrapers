@@ -329,6 +329,19 @@ class GUBillScraper(Scraper):
                 continue
             bill.add_sponsorship(name, "primary", "person", True, chamber="legislature")
 
+        if body.xpath(".//strong[contains(text(), 'Co-Sponsor')]"):
+            names = body.xpath(
+                ".//strong[contains(text(), 'Co-Sponsor')]/following-sibling::text()[1]"
+            )
+            if names:
+                for name in names[0].split("/"):
+                    name = name.strip()
+                    if name == "":
+                        continue
+                    bill.add_sponsorship(
+                        name, "cosponsor", "person", False, chamber="legislature"
+                    )
+
         bill.add_source(url)
         yield bill
 
