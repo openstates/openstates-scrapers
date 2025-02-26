@@ -60,6 +60,8 @@ class SenateAgendaPdf(PdfPage):
                 time = time.replace(".", "").replace("am", "AM").replace("pm", "PM")
                 # AR is after recess, which is undefined
                 start_time = f"{date} {time}".replace("AR+", "").replace("AR", "")
+                # manual fix, turn "9: AM" into "9:00 AM"
+                start_time = re.sub(r"(\d+): (A|P)", r"\g<1>:00 \g<2>", start_time)
                 try:
                     start_time = datetime.datetime.strptime(
                         start_time, "%B %d, %Y %I:%M %p"
