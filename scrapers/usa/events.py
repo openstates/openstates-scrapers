@@ -1,6 +1,5 @@
 import pytz
 import lxml
-from lxml.etree import tostring
 import datetime
 import dateutil
 import re
