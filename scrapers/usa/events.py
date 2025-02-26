@@ -303,7 +303,9 @@ class USEventScraper(Scraper, LXMLMixin):
                     try:
                         doc_name = self.hearing_document_types[doc.get("type")]
                     except KeyError:
-                        self.error(f"Unable to find document type: {doc.get('type')} for {url}")
+                        self.error(
+                            f"Unable to find document type: {doc.get('type')} for {url}"
+                        )
 
                 event.add_document(
                     doc_name[:300], url, media_type=media_type, on_duplicate="ignore"
