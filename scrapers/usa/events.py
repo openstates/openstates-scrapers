@@ -21,6 +21,7 @@ class USEventScraper(Scraper, LXMLMixin):
     }
 
     hearing_document_types = {
+        "CV": "Committee Vote",
         "HW": "Witness List",
         "HM": "Meeting Roster",
         "HC": "Hearing Notice",
@@ -302,7 +303,9 @@ class USEventScraper(Scraper, LXMLMixin):
                     try:
                         doc_name = self.hearing_document_types[doc.get("type")]
                     except KeyError:
-                        self.warning(f"Unable to find document type: {doc.get('type')}")
+                        self.error(
+                            f"Unable to find document type: {doc.get('type')} for {url}"
+                        )
 
                 event.add_document(
                     doc_name[:300], url, media_type=media_type, on_duplicate="ignore"
