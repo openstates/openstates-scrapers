@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def is_recent_people_repo_commit() -> bool:
     repo_url = "https://api.github.com/repos/openstates/people/commits"
     response = requests.get(repo_url)
-    no_new_commit = False
+    recent_commit_exists = False
     if response.status_code == 200:
         latest_commit = response.json()[0]
         last_commit_time = latest_commit["commit"]["committer"]["date"]
@@ -29,8 +29,8 @@ def is_recent_people_repo_commit() -> bool:
         ) - datetime.timedelta(
             minutes=2 * 60 + 5
         )  # 2 hours and 5-minute buffer.
-        no_new_commit = last_commit_time > two_hours_ago
-    return no_new_commit
+        recent_commit_exists = last_commit_time > two_hours_ago
+    return recent_commit_exists
 
 
 def clone_people_repo() -> None:
@@ -41,9 +41,11 @@ def clone_people_repo() -> None:
         if "OS_PEOPLE_DIRECTORY" in os.environ
         else Path(".")
     )
+    # This is mostly for local development
     if (base_dir / data_path).is_dir():
         logger.info(f"{repo_name} directory exist")
         return
+
     logger.info(f"Cloning {repo_name}")
     git.refresh("/usr/bin/git")
     repo_url_ssh = "git@github.com:openstates/people.git"
@@ -76,7 +78,7 @@ def opts():
         "--data-class",
         "-d",
         type=str,
-        help="Set to data lass to committees or people to ingest only the specified data",
+        help="Set data class to committees or people to ingest only the specified data",
     )
     return parser.parse_args()
 
@@ -99,16 +101,25 @@ def main():
     clone_people_repo()
     people_arguments = ["python", "-m", "openstates.cli.people", "to-database"]
     committee_arguments = ["python", "-m", "openstates.cli.committees", "to-database"]
-    if is_purge:
-        people_arguments.append("--purge")
-        committee_arguments.append("--purge")
-    if data_class == "people":
-        subprocess.run(people_arguments)
-    elif data_class == "committees":
-        subprocess.run(committee_arguments)
-    else:
-        subprocess.run(people_arguments)
-        subprocess.run(committee_arguments)
+    try:
+        if is_purge:
+            people_arguments.append("--purge")
+            committee_arguments.append("--purge")
+        if data_class == "people":
+            result = subprocess.run(people_arguments, check=True)
+            logger.info(f"Status code {result.returncode} returned for people.")
+        elif data_class == "committees":
+            result = subprocess.run(committee_arguments, check=True)
+            logger.info(f"Status code {result.returncode} returned for people.")
+        else:
+            people_result = subprocess.run(people_arguments, check=True)
+            committees_result = subprocess.run(committee_arguments, check=True)
+            logger.info(f"Status code {people_result.returncode} returned for people.")
+            logger.info(
+                f"Status code {committees_result.returncode} returned for committees."
+            )
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Subprocess failed with error: {e}")
 
 
 if __name__ == "__main__":
