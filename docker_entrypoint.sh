@@ -21,12 +21,5 @@ elif [[ -n "${GOOGLE_CREDENTIAL_FILE}" ]]; then
     export GOOGLE_APPLICATION_CREDENTIALS
 fi
 
-# Check the command mode and execute accordingly
-if [[ "${COMMAND_MODE}" == "people-repo" ]]; then
-    echo "Running os-people-repo-update with arguments: $*"
-    poetry run os-people-repo-update "$@"
-else
-    # shellcheck disable=SC2048 disable=SC2086
-    echo "Running os-update with arguments: $*"
-    poetry run os-update "$@"
-fi
+# shellcheck disable=SC2048 disable=SC2086
+poetry run os-update $*
