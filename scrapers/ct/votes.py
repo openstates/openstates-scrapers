@@ -54,7 +54,13 @@ class CTVoteScraper(Scraper):
         pdf_text = doc[0].get_text()
 
         bill_re = re.compile(r"R\d+(?P<prefix>[A-Z]+)0+(?P<number>\d+)")
-        bill_data = bill_re.search(url).groupdict()
+        bill_number_match = bill_re.search(url)
+        if not bill_number_match:
+            # At least once a vote PDF seems to be generated in error
+            # see ex: https://www.cga.ct.gov/2025/vote/s/pdf/2025SV-00035-R00-SV.PDF
+            self.error(f"Failed to find bill number in url {url}, cannot parse vote")
+            return
+        bill_data = bill_number_match.groupdict()
         bill_id = bill_data["prefix"] + bill_data["number"]
 
         voters_re = re.compile(r"(?P<type>Y|N|X|A)(\s+\d+)?\s+(?P<name>[^\n]+)")
