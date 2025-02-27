@@ -183,17 +183,17 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "boto3"
-version = "1.37.1"
+version = "1.37.3"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.37.1-py3-none-any.whl", hash = "sha256:4320441f904435a1b85e6ecb81793192e522c737cc9ed6566014e29f0a11cb22"},
-    {file = "boto3-1.37.1.tar.gz", hash = "sha256:96d18f7feb0c1fcb95f8837b74b6c8880e1b4e35ce5f8a8f8cb243a090c278ed"},
+    {file = "boto3-1.37.3-py3-none-any.whl", hash = "sha256:2063b40af99fd02f6228ff52397b552ff3353831edaf8d25cc04801827ab9794"},
+    {file = "boto3-1.37.3.tar.gz", hash = "sha256:21f3ce0ef111297e63a6eb998a25197b8c10982970c320d4c6e8db08be2157be"},
 ]
 
 [package.dependencies]
-botocore = ">=1.37.1,<1.38.0"
+botocore = ">=1.37.3,<1.38.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.11.0,<0.12.0"
 
@@ -202,13 +202,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.37.1"
+version = "1.37.3"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.37.1-py3-none-any.whl", hash = "sha256:c1db1bfc5d8c6b3b6d1ca6794f605294b4264e82a7e727b88e0fef9c2b9fbb9c"},
-    {file = "botocore-1.37.1.tar.gz", hash = "sha256:b194db8fb2a0ffba53568c364ae26166e7eec0445496b2ac86a6e142f3dd982f"},
+    {file = "botocore-1.37.3-py3-none-any.whl", hash = "sha256:d01bd3bf4c80e61fa88d636ad9f5c9f60a551d71549b481386c6b4efe0bb2b2e"},
+    {file = "botocore-1.37.3.tar.gz", hash = "sha256:fe8403eb55a88faf9b0f9da6615e5bee7be056d75e17af66c3c8f0a3b0648da4"},
 ]
 
 [package.dependencies]
@@ -1501,13 +1501,13 @@ et-xmlfile = "*"
 
 [[package]]
 name = "openstates"
-version = "6.20.15"
+version = "6.20.16"
 description = "core infrastructure for the openstates project"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "openstates-6.20.15-py3-none-any.whl", hash = "sha256:ea3b83efd0678a1d64e3a2c8dce3a8425be54339dc1ac5b979e0ffb066f605f9"},
-    {file = "openstates-6.20.15.tar.gz", hash = "sha256:e6b250c39cefd9aaa2788c2b5c9c2d3e6993ea316b0e1b9573d61899ba065552"},
+    {file = "openstates-6.20.16-py3-none-any.whl", hash = "sha256:0b95148dabda0914e4f8b108f678c7d594cbe7320c9a5418a989b8a9aee60c7b"},
+    {file = "openstates-6.20.16.tar.gz", hash = "sha256:dffba49745fd9cccfa6c63aee2e4f899be25039529c80664ba9e06256d8415e9"},
 ]
 
 [package.dependencies]
@@ -1517,6 +1517,7 @@ chardet = ">=3.0,<4.0"
 click = ">=8.0,<9.0"
 dj_database_url = ">=0.5.0,<0.6.0"
 Django = "3.2.14"
+gitpython = ">=3.1.44,<4.0.0"
 google-cloud-storage = ">=2.18.0,<3.0.0"
 influxdb-client = ">=1.37.0,<2.0.0"
 jsonschema = ">=3.2.0,<4.0.0"
@@ -2415,13 +2416,13 @@ pyasn1 = ">=0.1.3"
 
 [[package]]
 name = "s3transfer"
-version = "0.11.2"
+version = "0.11.3"
 description = "An Amazon S3 Transfer Manager"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "s3transfer-0.11.2-py3-none-any.whl", hash = "sha256:be6ecb39fadd986ef1701097771f87e4d2f821f27f6071c872143884d2950fbc"},
-    {file = "s3transfer-0.11.2.tar.gz", hash = "sha256:3b39185cb72f5acc77db1a58b6e25b977f28d20496b6e58d6813d75f464d632f"},
+    {file = "s3transfer-0.11.3-py3-none-any.whl", hash = "sha256:ca855bdeb885174b5ffa95b9913622459d4ad8e331fc98eb01e6d5eb6a30655d"},
+    {file = "s3transfer-0.11.3.tar.gz", hash = "sha256:edae4977e3a122445660c7c114bba949f9d191bae3b34a096f18a1c8c354527a"},
 ]
 
 [package.dependencies]
@@ -2870,4 +2871,4 @@ california = ["SQLAlchemy", "mysqlclient"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "62cb4bb9c977cc20f703b1e076ecd94a2ee810d0844be4f18cfb81b9c8cbb3ca"
+content-hash = "cefad3851af7a551d6d39552232f0f6644fe20f3eb3915ca74c5f7ef4359975c"
