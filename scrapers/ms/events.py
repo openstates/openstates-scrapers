@@ -76,7 +76,9 @@ class SenateAgendaPdf(PdfPage):
                         # Some events have a relative description of when they start
                         # eg February 28, 2025 After Hwys
                         # these should be treated as all_day events with no time component
-                        match = re.search(r"(.+)(\s+after.+)", start_time, re.IGNORECASE)
+                        match = re.search(
+                            r"(.+)(\s+after.+)", start_time, re.IGNORECASE
+                        )
                         start_time = match.group(1)
                         start_time = dateutil.parser.parse(start_time)
                         start_time = start_time.date()
