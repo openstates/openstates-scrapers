@@ -12,6 +12,8 @@ class DCEventScraper(Scraper):
 
     bill_prefixes = {"bill": "B", "resolution": "R"}
 
+    events_seen = []
+
     def scrape(self, start_date=None, end_date=None):
 
         if start_date is None:
@@ -60,7 +62,17 @@ class DCEventScraper(Scraper):
 
         where = f"{row['locationAddress']} {row['location']}".strip()
 
-        e = Event(row["hearingTitle"], when, where, upstream_id=str(row["hearingId"]))
+        # Once in a while DC has a semi-duplicate event
+        # even though URLs and upstream IDs are different
+        # so we append ID into title when collision occurs
+        event_title = row["hearingTitle"]
+        event_dupe_key = f"{event_title}-{when}"
+        if event_dupe_key in self.events_seen:
+            event_title = f"{event_title} ({row['hearingId']})"
+        else:
+            self.events_seen.append(event_dupe_key)
+
+        e = Event(event_title, when, where, upstream_id=str(row["hearingId"]))
 
         e.add_source(f"https://lims.dccouncil.gov/Hearings/hearings/{row['hearingId']}")
 
