@@ -281,7 +281,7 @@ class USEventScraper(Scraper, LXMLMixin):
             doc_name = doc.xpath("string(description)")
             doc_files = doc.xpath("files/file")
             for doc_file in doc_files:
-                media_type = self.media_types[doc_file.get("doc-type")]
+                media_type = self.media_types[doc_file.get("doc-type").strip()]
                 url = doc_file.get("doc-url")
 
                 # list of types from:
