@@ -47,7 +47,10 @@ class SubjectPDF(PdfPage):
     preserve_layout = False
 
     def get_source_from_input(self):
-        return URL(f"http://www.leg.state.fl.us/data/session/{self.input['session']}/citator/Daily/subindex.pdf", verify=False)
+        return URL(
+            f"http://www.leg.state.fl.us/data/session/{self.input['session']}/citator/Daily/subindex.pdf",
+            verify=False,
+        )
 
     def process_page(self):
         """
@@ -686,7 +689,7 @@ class HouseSearchPage(HtmlListPage):
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
             },
             retries=3,
-            verify=False
+            verify=False,
         )
 
     def process_item(self, item):
