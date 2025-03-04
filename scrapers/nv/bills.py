@@ -314,13 +314,9 @@ class BillTabDetail(HtmlPage):
                 )
                 return
 
-        # Only known cases where bill title is over 300 characters
-        if self.input.session == "82":
-            if self.input.identifier in ("SJR7-2021", "AB488"):
-                short_title = shorten_bill_title(short_title)
-        # If additional case arises in future
-        elif len(short_title) > 300:
-            raise BillTitleLengthError(self.input.identifier, short_title)
+        if len(short_title) > 300:
+            self.warning(f"Short title too long, truncating. {self.input.identifier}")
+            short_title = shorten_bill_title(short_title)
 
         bill = Bill(
             identifier=self.input.identifier,
