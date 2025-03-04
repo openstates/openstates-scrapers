@@ -293,4 +293,6 @@ class Florida(State):
 
         requests.packages.urllib3.disable_warnings()
         requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
-        return url_xpath("https://flsenate.gov", "//option/text()", False)
+        return url_xpath(
+            "https://flsenate.gov", "//select[@name='SessionYear']/option/text()", False
+        )

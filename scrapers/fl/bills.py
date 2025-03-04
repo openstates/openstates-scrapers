@@ -47,7 +47,10 @@ class SubjectPDF(PdfPage):
     preserve_layout = False
 
     def get_source_from_input(self):
-        return f"http://www.leg.state.fl.us/data/session/{self.input['session']}/citator/Daily/subindex.pdf"
+        return URL(
+            f"http://www.leg.state.fl.us/data/session/{self.input['session']}/citator/Daily/subindex.pdf",
+            verify=False,
+        )
 
     def process_page(self):
         """
@@ -100,7 +103,7 @@ class BillList(HtmlListPage):
         if len(set(next_urls)) > 1:
             raise PaginationError("get_next_page returned multiple links: {next_urls}")
 
-        return next_urls[0]
+        return URL(f"{next_urls[0]}", verify=False)
 
     def process_item(self, item):
         bill_id = item.text.strip()
@@ -392,11 +395,13 @@ class BillDetail(HtmlPage):
 
                 vote_url = tr.xpath("td[4]/a")[0].attrib["href"]
                 if "SenateVote" in vote_url:
+                    vote_url = URL(vote_url, verify=False)
                     yield FloorVote(
                         dict(date=vote_date, chamber="upper", bill=self.input),
                         source=vote_url,
                     )
                 elif "HouseVote" in vote_url:
+                    vote_url = URL(vote_url, verify=False)
                     yield FloorVote(
                         dict(
                             date=vote_date,
@@ -406,6 +411,7 @@ class BillDetail(HtmlPage):
                         source=vote_url,
                     )
                 else:
+                    vote_url = URL(vote_url, verify=False)
                     yield UpperComVote(
                         dict(date=vote_date, bill=self.input),
                         source=vote_url,
@@ -526,7 +532,7 @@ class UpperComVote(PdfPage):
     def process_page(self):
         lines = self.text.splitlines()
         if len(lines) < 5:
-            self.warning(f"Couldn't split {self.text}, skipping")
+            self.logger.warning(f"Couldn't split {self.text}, skipping")
             return
 
         (_, motion) = lines[5].split("FINAL ACTION:")
@@ -683,10 +689,12 @@ class HouseSearchPage(HtmlListPage):
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
             },
             retries=3,
+            verify=False,
         )
 
     def process_item(self, item):
-        return HouseBillPage(self.input, source=item)
+        source = URL(f"{item}", verify=False)
+        return HouseBillPage(self.input, source=source)
 
     # Override so that we can handle occasional bill that does not show up in search
     # by catching SelectorError
@@ -713,7 +721,8 @@ class HouseBillPage(HtmlListPage):
     )
 
     def process_item(self, item):
-        return HouseComVote(self.input, source=item)
+        source = URL(f"{item}", verify=False)
+        return HouseComVote(self.input, source=source)
 
 
 class HouseComVote(HtmlPage):
