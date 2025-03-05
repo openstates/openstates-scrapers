@@ -315,7 +315,9 @@ class BillTabDetail(HtmlPage):
                 return
 
         if len(short_title) > 300:
-            self.warning(f"Short title too long, truncating. {self.input.identifier}")
+            self.logger.warning(
+                f"Short title too long, truncating. {self.input.identifier}"
+            )
             short_title = shorten_bill_title(short_title)
 
         bill = Bill(
