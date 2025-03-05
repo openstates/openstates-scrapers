@@ -8,9 +8,21 @@ from openstates.scrape import Bill, VoteEvent, Scraper
 from openstates.utils import format_datetime
 from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage, URL
 from .actions import Categorizer
+from .utils import (
+    fix_name,
+    get_random_user_agent,
+    add_random_delay,
+    retry_on_connection_error,
+    handle_remote_disconnected,
+)
 
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
 import requests
+import time
+import random
+from http.client import RemoteDisconnected
+from urllib.error import URLError
+from requests.exceptions import ConnectionError, Timeout, RequestException
 
 SPONSOR_RE = re.compile(
     r"by\s+(?P<sponsors>[^(]+)(\(CO-INTRODUCERS\)\s+(?P<cosponsors>[\s\S]+))?"
@@ -37,6 +49,54 @@ FL_ORGANIZATION_ENTITY_NAME_KEYWORDS = [
 
 requests.packages.urllib3.disable_warnings()
 requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
+
+# Patch the URL class to handle connection errors more gracefully
+original_get_response = URL.get_response
+
+
+def patched_get_response(self, scraper):
+    """
+    Patch the URL.get_response method to add retry logic for connection errors.
+    """
+
+    # Use our handle_remote_disconnected function to specifically handle RemoteDisconnected errors
+    def get_response_with_retry():
+        # Add a small random delay before each request
+        add_random_delay(0.5, 2)
+
+        try:
+            # Try to get the response
+            return original_get_response(self, scraper)
+        except (ConnectionError, URLError, Timeout, RequestException) as e:
+            # For other connection errors, use our retry_on_connection_error function
+            logging.warning(f"Connection error when fetching {self.url}: {e}")
+
+            # Rotate user agent before retry
+            if hasattr(scraper, "headers"):
+                scraper.headers["User-Agent"] = get_random_user_agent()
+                logging.info(f"Rotated user agent to: {scraper.headers['User-Agent']}")
+
+            # Re-raise to let the outer handler deal with it
+            raise
+
+    # First, handle RemoteDisconnected errors specifically
+    from .utils import handle_remote_disconnected
+
+    # Then, handle other connection errors
+    from .utils import retry_on_connection_error
+
+    return retry_on_connection_error(
+        lambda: handle_remote_disconnected(
+            get_response_with_retry, max_retries=5, initial_backoff=10, max_backoff=120
+        ),
+        max_retries=3,
+        initial_backoff=5,
+        max_backoff=60,
+    )
+
+
+# Apply the patch
+URL.get_response = patched_get_response
 
 
 class PaginationError(Exception):
@@ -808,10 +868,122 @@ class HouseComVote(HtmlPage):
 class FlBillScraper(Scraper):
     def scrape(self, session=None):
         self.raise_errors = False
-        self.retry_attempts = 1
-        self.retry_wait_seconds = 3
+        self.retry_attempts = 5  # Increase retry attempts
+        self.retry_wait_seconds = 5  # Increase retry wait time
+
+        # Set up a circuit breaker to track consecutive failures
+        self._consecutive_failures = 0
+        self._max_consecutive_failures = 3
+        self._circuit_breaker_timeout = 120  # 2 minutes
+
+        # Set a random user agent
+        self.headers["User-Agent"] = get_random_user_agent()
+
+        # Set up connection pool reset
+        self._last_reset_time = time.time()
+        self._reset_interval = 600  # Reset connection pool every 10 minutes
+
+        # Create a fresh session
+        self._create_fresh_session()
 
         # spatula's logging is better than scrapelib's
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
-        bill_list = BillList({"session": session})
-        yield from bill_list.do_scrape()
+
+        # Use our retry wrapper to handle connection issues
+        def do_scrape_with_retry():
+            bill_list = BillList({"session": session})
+            yield from self._process_bill_list(bill_list)
+
+        yield from retry_on_connection_error(
+            lambda: list(do_scrape_with_retry()),
+            max_retries=3,
+            initial_backoff=10,
+            max_backoff=120,
+        )
+
+    def _create_fresh_session(self):
+        """
+        Create a fresh session with appropriate settings.
+        """
+        if hasattr(self, "session"):
+            self.session.close()
+
+        # Create a new session
+        self.session = requests.Session()
+
+        # Set up retry mechanism
+        adapter = requests.adapters.HTTPAdapter(
+            max_retries=self.retry_attempts,
+            pool_connections=10,
+            pool_maxsize=10,
+            pool_block=False,
+        )
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
+
+        # Set a random user agent
+        self.headers["User-Agent"] = get_random_user_agent()
+
+        self.logger.info(
+            f"Created fresh session with user agent: {self.headers['User-Agent']}"
+        )
+
+        return self.session
+
+    def _reset_connection_pool_if_needed(self):
+        """
+        Reset the connection pool if it's been too long since the last reset.
+        This helps prevent "Remote end closed connection without response" errors.
+        """
+        current_time = time.time()
+        if current_time - self._last_reset_time > self._reset_interval:
+            self.logger.info(
+                f"Resetting connection pool after {self._reset_interval} seconds"
+            )
+
+            # Create a fresh session
+            self._create_fresh_session()
+
+            self._last_reset_time = current_time
+
+    def _process_bill_list(self, bill_list):
+        """
+        Process the bill list with error handling and circuit breaker pattern.
+        """
+        for item in bill_list.do_scrape():
+            try:
+                # Reset connection pool if needed
+                self._reset_connection_pool_if_needed()
+
+                # Add a random delay between processing items
+                add_random_delay(1, 3)
+
+                # If we've had too many consecutive failures, pause for a while
+                if self._consecutive_failures >= self._max_consecutive_failures:
+                    self.logger.warning(
+                        f"Circuit breaker triggered after {self._consecutive_failures} consecutive failures. "
+                        f"Pausing for {self._circuit_breaker_timeout} seconds."
+                    )
+                    time.sleep(self._circuit_breaker_timeout)
+                    self._consecutive_failures = 0
+
+                    # Rotate user agent after circuit breaker timeout
+                    self.headers["User-Agent"] = get_random_user_agent()
+
+                # Process the item
+                yield item
+
+                # Reset consecutive failures counter on success
+                self._consecutive_failures = 0
+
+            except Exception as e:
+                self._consecutive_failures += 1
+                self.logger.error(f"Error processing item: {e}")
+
+                # If it's a connection error, add a longer delay
+                if isinstance(e, (ConnectionError, RemoteDisconnected)):
+                    self.logger.warning(f"Connection error. Adding longer delay.")
+                    add_random_delay(5, 15)
+
+                    # Rotate user agent after connection error
+                    self.headers["User-Agent"] = get_random_user_agent()
