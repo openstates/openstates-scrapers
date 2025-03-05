@@ -1,28 +1,27 @@
-import re
-import logging
 import datetime
+import logging
+import re
+import time
 import typing
-from urllib.parse import urlencode
 from collections import defaultdict
+from http.client import RemoteDisconnected
+from urllib.error import URLError
+from urllib.parse import urlencode
+
+import requests
 from openstates.scrape import Bill, VoteEvent, Scraper
 from openstates.utils import format_datetime
+from requests.exceptions import ConnectionError, Timeout, RequestException
 from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage, URL
+
 from .actions import Categorizer
 from .utils import (
-    fix_name,
     get_random_user_agent,
     add_random_delay,
     retry_on_connection_error,
-    handle_remote_disconnected,
 )
 
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
-import requests
-import time
-import random
-from http.client import RemoteDisconnected
-from urllib.error import URLError
-from requests.exceptions import ConnectionError, Timeout, RequestException
 
 SPONSOR_RE = re.compile(
     r"by\s+(?P<sponsors>[^(]+)(\(CO-INTRODUCERS\)\s+(?P<cosponsors>[\s\S]+))?"
@@ -65,7 +64,6 @@ def patched_get_response(self, scraper):
         add_random_delay(0.5, 2)
 
         try:
-            # Try to get the response
             return original_get_response(self, scraper)
         except (ConnectionError, URLError, Timeout, RequestException) as e:
             # For other connection errors, use our retry_on_connection_error function
@@ -76,7 +74,6 @@ def patched_get_response(self, scraper):
                 scraper.headers["User-Agent"] = get_random_user_agent()
                 logging.info(f"Rotated user agent to: {scraper.headers['User-Agent']}")
 
-            # Re-raise to let the outer handler deal with it
             raise
 
     # First, handle RemoteDisconnected errors specifically
@@ -868,15 +865,14 @@ class HouseComVote(HtmlPage):
 class FlBillScraper(Scraper):
     def scrape(self, session=None):
         self.raise_errors = False
-        self.retry_attempts = 5  # Increase retry attempts
-        self.retry_wait_seconds = 5  # Increase retry wait time
+        self.retry_attempts = 5
+        self.retry_wait_seconds = 5
 
         # Set up a circuit breaker to track consecutive failures
         self._consecutive_failures = 0
         self._max_consecutive_failures = 3
         self._circuit_breaker_timeout = 120  # 2 minutes
 
-        # Set a random user agent
         self.headers["User-Agent"] = get_random_user_agent()
 
         # Set up connection pool reset
@@ -889,7 +885,6 @@ class FlBillScraper(Scraper):
         # spatula's logging is better than scrapelib's
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
 
-        # Use our retry wrapper to handle connection issues
         def do_scrape_with_retry():
             bill_list = BillList({"session": session})
             yield from self._process_bill_list(bill_list)
@@ -921,7 +916,6 @@ class FlBillScraper(Scraper):
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
 
-        # Set a random user agent
         self.headers["User-Agent"] = get_random_user_agent()
 
         self.logger.info(
@@ -970,7 +964,6 @@ class FlBillScraper(Scraper):
                     # Rotate user agent after circuit breaker timeout
                     self.headers["User-Agent"] = get_random_user_agent()
 
-                # Process the item
                 yield item
 
                 # Reset consecutive failures counter on success
