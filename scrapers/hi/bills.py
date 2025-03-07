@@ -15,6 +15,40 @@ TEST_SINGLE_BILL = False
 TEST_SINGLE_BILL_NUMBER = "572"  # set to bill num you want to test
 repeated_action = ["Excused: none", "Representative(s) Eli"]
 
+vote_re_list = [
+    r"""
+        (?P<n_yes>\d+)\sAye\(?s\)?  # Yes vote count
+        (:\s+(?P<yes>.*?))?;\s+  # Yes members
+        Aye\(?s\)?\swith\sreservations:\s+(?P<yes_resv>.*?);?
+        (?P<n_no>\d*)\sNo\(?es\)?:\s+(?P<no>.*?);?
+        (\s+and\s+)?
+        (?P<n_excused>\d*)\sExcused:\s(?P<excused>.*)\.?
+        """,
+    r"""
+        Ayes,?\s(?P<n_yes>\d+)  # Capture number of Ayes
+        (?:;\s*(?P<yes>[^.;]*))?  # Capture Yes members if present
+        [.;]?\s*Aye\(s\)?\swith\sreservations:?\s(?P<yes_resv>[^.;]*)?  # Capture Ayes with reservations
+        [.;]?\s*Noes?,?\s(?P<n_no>\d+)  # Capture number of Noes
+        (?:\s?\((?P<no>[^)]*)\))?  # Optional: Noes details in parentheses
+        [.;]?\s*Excused,?\s(?P<n_excused>\d+)  # Capture number of Excused
+        (?:\s?\((?P<excused>[^)]*)\))?  # Optional: Excused details in parentheses
+        [.;]?  # Optional end punctuation
+        """,
+    r"""
+    (?P<n_yes>\d+)\sAyes?:\s(?:Representative|Senator)\(s\)\s(?P<yes>.*?);
+    \s*Ayes?\swith\sreservations:\s+(?P<yes_resv>.*?);
+    \s*(?P<n_no>\d*)\sNoes?:\s(?:Representative\(s\)|Senator\(s\)|)\s?(?P<no>.*?);?
+    \s*and\s*(?P<n_excused>\d*)\sExcused:\s(?P<excused>.*)\.?
+""",
+    r"""
+    Passed.*?Reading.*?  # Match "Passed...Reading" including amendments
+    Ayes,?\s(?P<n_yes>\d+);?  # Capture Yes vote count
+    \s*Aye\(s\)?\swith\sreservations:?\s(?P<yes_resv>[^.;]*)[.;]?  # Capture Yes with reservations
+    \s*Noes?,?\s(?P<n_no>\d+)\s?\(?([^)]*)\).*\)?\.? # Capture No votes
+    \s*Excused,?\s(?P<n_excused>\d+)\s?\(?(?P<excused>[^)]*)\)?\.?  # Capture Excused votes
+""",
+]
+
 
 def create_bill_report_url(chamber, year, bill_type):
     cname = {"upper": "s", "lower": "h"}[chamber]
@@ -35,7 +69,7 @@ def create_bill_report_url(chamber, year, bill_type):
 
 
 def split_specific_votes(voters):
-    if voters is None or voters.startswith("none"):
+    if voters is None or voters.startswith("none") or voters == "":
         return []
     elif voters.startswith("Senator(s)"):
         voters = voters.replace("Senator(s) ", "")
@@ -142,17 +176,19 @@ class HIBillScraper(Scraper):
                 vote.add_source(url)
                 yays = v["n_yes"]
                 nays = v["n_no"]
+                v_yes = v.get("yes", "")
+                v_no = v.get("no", "")
                 vote.set_count("yes", int(yays or 0))
                 vote.set_count("no", int(nays or 0))
                 vote.set_count("not voting", int(v["n_excused"] or 0))
                 vote.dedupe_key = f"{index}#{bill_id}#{date}#{string[:300]}"
-                for voter in split_specific_votes(v["yes"]):
+                for voter in split_specific_votes(v_yes):
                     voter = self.clean_voter_name(voter)
                     vote.yes(voter)
                 for voter in split_specific_votes(v["yes_resv"]):
                     voter = self.clean_voter_name(voter)
                     vote.yes(voter)
-                for voter in split_specific_votes(v["no"]):
+                for voter in split_specific_votes(v_no):
                     voter = self.clean_voter_name(voter)
                     vote.no(voter)
                 for voter in split_specific_votes(v["excused"]):
@@ -398,15 +434,12 @@ class HIBillScraper(Scraper):
         )
 
     def parse_vote(self, action):
-        vote_re = r"""
-                (?P<n_yes>\d+)\sAye\(?s\)?  # Yes vote count
-                (:\s+(?P<yes>.*?))?;\s+  # Yes members
-                Aye\(?s\)?\swith\sreservations:\s+(?P<yes_resv>.*?);?
-                (?P<n_no>\d*)\sNo\(?es\)?:\s+(?P<no>.*?);?
-                (\s+and\s+)?
-                (?P<n_excused>\d*)\sExcused:\s(?P<excused>.*)\.?
-                """
-        result = re.search(vote_re, action, re.VERBOSE)
+        # Try regex for a couple of edge cases
+        result = None
+        for vote_re in vote_re_list:
+            result = re.search(vote_re, action, re.VERBOSE)
+            if result:
+                break
         if result is None:
             return None
         result = result.groupdict()
