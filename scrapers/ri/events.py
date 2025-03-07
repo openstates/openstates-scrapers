@@ -79,6 +79,7 @@ class RIEventScraper(Scraper, LXMLMixin):
             "A.M.": "AM",
             "POSTPONED": "",
             "RESCHEDULED": "",
+            "Rescheduled": "",
             "and Rise of the Senate": "",
             "MOVED": "",
         }
