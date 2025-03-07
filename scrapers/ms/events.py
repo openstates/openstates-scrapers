@@ -72,10 +72,22 @@ class SenateAgendaPdf(PdfPage):
                     )
                     start_time = TZ.localize(start_time)
                 except Exception:
-                    if "after" in start_time.lower():
-                        # Some events have a relative description of when they start
-                        # eg February 28, 2025 After Hwys
-                        # these should be treated as all_day events with no time component
+                    # Some events have a relative description of when they start
+                    # these should be treated as all_day events with no time component
+                    # TODO refactor if we end up with a third special case here
+                    if "+" in start_time:
+                        # handle "+" eg AR +5
+                        match = re.search(
+                            r"(.+)(\s+\+.+)", start_time, re.IGNORECASE
+                        )
+                        start_time = match.group(1)
+                        start_time = dateutil.parser.parse(start_time)
+                        start_time = start_time.date()
+                        all_day = True
+                        after_description = match.group(2)
+                        event_title = f"{event_title} ({after_description.strip()})"
+                    elif "after" in start_time.lower() or "+" in start_time:
+                        # handle "after" eg February 28, 2025 After Hwys
                         match = re.search(
                             r"(.+)(\s+after.+)", start_time, re.IGNORECASE
                         )
