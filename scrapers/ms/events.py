@@ -77,9 +77,7 @@ class SenateAgendaPdf(PdfPage):
                     # TODO refactor if we end up with a third special case here
                     if "+" in start_time:
                         # handle "+" eg AR +5
-                        match = re.search(
-                            r"(.+)(\s+\+.+)", start_time, re.IGNORECASE
-                        )
+                        match = re.search(r"(.+)(\s+\+.+)", start_time, re.IGNORECASE)
                         start_time = match.group(1)
                         start_time = dateutil.parser.parse(start_time)
                         start_time = start_time.date()
