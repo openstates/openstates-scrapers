@@ -59,7 +59,9 @@ class SenateAgendaPdf(PdfPage):
                 date = date.split(", ", 1)[1]
                 time = time.replace(".", "").replace("am", "AM").replace("pm", "PM")
                 # AR is after recess, which is undefined
-                start_time = f"{date} {time}".replace("AR+", "").replace("AR", "")
+                # so remove AR, AR+, AR+5, AR+ 5
+                time = re.sub(r"AR\s*\+?\s*(\d+)?", "", time)
+                start_time = f"{date} {time}"
                 # manual fix, turn "9: AM" into "9:00 AM"
                 start_time = re.sub(r"(\d+): (A|P)", r"\g<1>:00 \g<2>", start_time)
                 # wipe everything after AM/PM in case they forgot a seperator
@@ -88,6 +90,11 @@ class SenateAgendaPdf(PdfPage):
                     else:
                         start_time = dateutil.parser.parse(start_time)
                         start_time = TZ.localize(start_time)
+
+                # if we wiped the time component due to regex replacements, "AR", etc.
+                # then just send the date so it's not saved as midnight
+                if time.strip() == "":
+                    start_time = start_time.date()
 
                 location = f"400 High St, Jackson, MS 39201, {room}"
                 event = Event(
