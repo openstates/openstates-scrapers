@@ -493,7 +493,9 @@ class MTBillScraper(Scraper):
             return
 
         for row in page:
-            motion = row["motion"]
+            # at least one example where this value is "null" in source
+            # https://api.legmt.gov/bills/v1/votes/findByBillId?billId=2308
+            motion = row["motion"] if row["motion"] else "Unknown"
 
             counts = {
                 "YES": 0,
