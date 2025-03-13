@@ -1,5 +1,6 @@
 import re
-import datetime as dt
+import datetime
+import dateutil
 
 import pytz
 from openstates.scrape import Scraper, Event
@@ -31,6 +32,7 @@ class RIEventScraper(Scraper, LXMLMixin):
     found_events = False
 
     def scrape_agenda(self, chamber, url, event_keys):
+        status = "tentative"
         page = self.lxmlize(url)
         # Get the date/time info:
         date_time = page.xpath("//table[@class='time_place']")
@@ -56,53 +58,33 @@ class RIEventScraper(Scraper, LXMLMixin):
             else:
                 time = start
 
-        fmts = ["%A, %B %d, %Y", "%A, %B %d, %Y %I:%M %p", "%A, %B %d, %Y %I:%M"]
-
         event_desc = "Meeting Notice"
         if "Rise" in time:
-            datetime = date
+            when = date
             event_desc = "Meeting Notice: Starting at {}".format(time)
         else:
-            datetime = "%s %s" % (date, time)
-        if "CANCELLED" in datetime.upper() or "CANCELED" in datetime.upper():
-            return
+            when = "%s %s" % (date, time)
+        if "CANCELLED" in when.upper() or "CANCELED" in when.upper():
+            status = "cancelled"
+
+        if "POSTPONED" in when.upper():
+            status = "cancelled"
 
         if page.xpath("//span[@id='lblSession']"):
             event_desc = (
                 page.xpath("//span[@id='lblSession']")[0].text_content().strip()
             )
 
-        transtable = {
-            "P.M": "PM",
-            "PM.": "PM",
-            "P.M.": "PM",
-            "A.M.": "AM",
-            "POSTPONED": "",
-            "RESCHEDULED": "",
-            "and Rise of the Senate": "",
-            "MOVED": "",
-        }
-        for trans in transtable:
-            datetime = datetime.replace(trans, transtable[trans])
+        when = dateutil.parser.parse(when, fuzzy=True)
 
-        datetime = datetime.strip()
-
-        for fmt in fmts:
-            try:
-                datetime = dt.datetime.strptime(datetime, fmt)
-                break
-            except ValueError:
-                continue
-
-        if isinstance(datetime, str):
-            self.error(f"Unable to parse datetime {datetime}, skipping")
-            return
-
-        event_start = self._tz.localize(datetime)
+        if when.time() == datetime.time(0, 0):
+            when = when.date()
+        else:
+            when = self._tz.localize(when)
 
         # Unique key to prevent triggering of DuplicateItemError during import,
         #  so duplication check can be conducted below instead
-        event_details_key = f"{chamber}#{event_desc}#{event_start}#{where}"
+        event_details_key = f"{chamber}#{event_desc}#{when}#{where}"
 
         if event_details_key in event_keys:
             self.warning(f"Skipping duplicate event: {event_details_key}")
@@ -110,7 +92,9 @@ class RIEventScraper(Scraper, LXMLMixin):
         else:
             event_keys.add(event_details_key)
 
-        event = Event(name=event_desc, start_date=event_start, location_name=where)
+        event = Event(
+            name=event_desc, start_date=when, location_name=where, status=status
+        )
         event.dedupe_key = event_details_key
         event.add_document("Agenda", url, media_type="text/html", on_duplicate="ignore")
         event.add_source(url)

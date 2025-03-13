@@ -21,5 +21,14 @@ elif [[ -n "${GOOGLE_CREDENTIAL_FILE}" ]]; then
     export GOOGLE_APPLICATION_CREDENTIALS
 fi
 
+###
+# Print external IP used: helpful for debugging connectivity/IP-based blocks
+# both OS-level and requests library (in case requests is using proxy)
+###
+ip="$(curl -s --insecure -m 5 https://ipecho.net/plain)"
+printf "OS-level external IP for this scraper run is: %s\n" "$ip"
+poetry run python scripts/log_external_ip.py
+echo "Keep in mind IP may not be stable from request to request if using a proxy"
+
 # shellcheck disable=SC2048 disable=SC2086
 poetry run os-update $*

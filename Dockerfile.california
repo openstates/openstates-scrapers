@@ -44,6 +44,12 @@ RUN pip --no-cache-dir --disable-pip-version-check install wheel \
 ADD poetry.lock /opt/openstates/openstates/
 ADD pyproject.toml /opt/openstates/openstates/
 ADD scrapers/ca/ca-entrypoint.sh /ca-entrypoint.sh
+
+# Also add the non-CA entrypoint, for running the events_web scraper
+# (to bypass wait for SQL download which that scraper doesn't use)
+ADD docker_entrypoint.sh /opt/openstates/openstates/non-ca-entrypoint.sh
+RUN chmod ug+x /opt/openstates/openstates/non-ca-entrypoint.sh
+
 WORKDIR /opt/openstates/openstates/
 ENV PYTHONPATH=./scrapers
 
