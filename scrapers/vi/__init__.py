@@ -3,6 +3,7 @@ from openstates.scrape import State
 
 from .bills import VIBillScraper
 from .events import VIEventScraper
+import requests
 
 
 class VirginIslands(State):
@@ -58,17 +59,25 @@ class VirginIslands(State):
             "name": "2023-2024 Regular Session",
             "start_date": "2023-01-09",
             "end_date": "2024-12-31",
+            "active": False,
+        },
+        {
+            "_scraped_name": "36",
+            "classification": "primary",
+            "identifier": "36",
+            "name": "2025-2026 Regular Session",
+            "start_date": "2025-01-09",
+            "end_date": "2026-12-31",
             "active": True,
         },
     ]
     ignored_scraped_sessions = ["21", "22", "23", "24", "25", "26", "27", "28", "29"]
 
     def get_session_list(self):
-        """
-        In theory, this works, but this is a weird JS hack and doesn't load in tests...
-        return url_xpath(
-            "https://legvi.org/billtracking/",
-            '//select[@name="ctl00$ContentPlaceHolder$leginum"]/option/text()',
-        )
-        """
-        return [s["identifier"] for s in self.legislative_sessions]
+        sessions = []
+        listing = requests.get(
+            "https://billtracking.legvi.org:8082/legislatures", verify=False
+        ).json()
+        for row in listing["recordset"]:
+            sessions.append(row["U_LegiNum"])
+        return sessions
