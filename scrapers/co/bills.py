@@ -403,7 +403,11 @@ class COBillScraper(Scraper, LXMLMixin):
         try:
             motion = page.xpath("//font/text()")[2]
         except IndexError:
-            self.warning("Vote Summary Page Broken ")
+            self.warning(f"Vote Summary Page Broken, skipping {vote_url}")
+            return
+
+        if motion.strip() == "":
+            self.warning(f"Vote Summary Page Broken, skipping {vote_url}")
             return
 
         # eg. https://leg.colorado.gov/content/sb18-033vote563ce6
