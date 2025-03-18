@@ -271,11 +271,12 @@ class UTBillScraper(Scraper, LXMLMixin):
                     if not doc_data["url"].startswith("http"):
                         doc_url = f"https://le.utah.gov{doc_data['url']}"
 
-                    bill.add_version_link(
-                        doc_data["shortDesc"],
-                        doc_url,
-                        media_type="text/xml",
-                    )
+                    if doc_url.endswith("html") or doc_url.endswith("xml"):
+                        bill.add_version_link(
+                            doc_data["shortDesc"],
+                            doc_url,
+                            media_type="text/xml",
+                        )
 
                     pdf_filepath = doc_url.replace(".xml", ".pdf")
                     bill.add_version_link(
