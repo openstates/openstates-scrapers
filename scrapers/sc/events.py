@@ -75,7 +75,9 @@ class Agenda(PdfPage):
         # in browser seeing Cloudflare errors pointing at backend
         # Rather be able to get most events than totally fail scrape on this
         if isinstance(exception, HTTPError) and exception.response.status_code == 522:
-            self.logger.warning(f"Unable to fetch PDF agenda doc {self.source}. Ignored error and continued.")
+            self.logger.warning(
+                f"Unable to fetch PDF agenda doc {self.source}. Ignored error and continued."
+            )
             pass
         else:
             raise exception
