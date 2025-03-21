@@ -246,6 +246,7 @@ class MOBillScraper(Scraper, LXMLMixin):
                     link_url,
                     media_type="application/pdf",
                     on_duplicate="ignore",
+                    classification="amendment",
                 )
 
         yield bill
@@ -263,6 +264,13 @@ class MOBillScraper(Scraper, LXMLMixin):
         for version_tag in version_tags:
             description = version_tag.text_content().strip()
             pdf_url = version_tag.attrib["href"]
+
+            # MO seems to have busted HTML: tag ends with forward slash making it incorrectly self-closed
+            # eg <a href='https://www.senate.mo.gov/25info/pdf-bill/intro/SB40.pdf'/>Introduced</a>
+            # so text_content() fails to work as expected. Content is in tail property
+            if description == "":
+                description = version_tag.tail.strip()
+
             if description == "" and "intro" in pdf_url:
                 description = "Introduced"
             elif not description:
@@ -273,7 +281,10 @@ class MOBillScraper(Scraper, LXMLMixin):
             else:
                 mimetype = None
             bill.add_version_link(
-                description, pdf_url, media_type=mimetype, on_duplicate="ignore"
+                description,
+                pdf_url,
+                media_type=mimetype,
+                on_duplicate="ignore",
             )
 
     def _parse_senate_actions(self, bill, url):
