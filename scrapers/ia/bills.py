@@ -10,6 +10,7 @@ from .actions import Categorizer
 
 _IA_ORGANIZATION_ENTITY_NAME_KEYWORDS = ["COMMITTEE", "RULES AND ADMINISTRATION"]
 
+
 def get_random_user_agent():
     """
     Return a random user agent to help avoid detection.
