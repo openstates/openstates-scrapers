@@ -385,7 +385,7 @@ class NMBillScraper(Scraper):
                 None,
             ),
             "7672": (
-                "senate has receded its amendments from its amendments",
+                "senate has receded its amendments",
                 None,
             ),
             "7675": (
