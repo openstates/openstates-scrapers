@@ -384,6 +384,10 @@ class NMBillScraper(Scraper):
                 "from its amendments",
                 None,
             ),
+            "7672": (
+                "senate has receded its amendments from its amendments",
+                None,
+            ),
             "7675": (
                 "bill recalled from the House for further consideration by the Senate.",
                 None,
