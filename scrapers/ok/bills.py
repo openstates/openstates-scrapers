@@ -232,7 +232,10 @@ class OKBillScraper(Scraper):
             version_url = link.xpath("@href")[0]
             version_name = link.xpath("string(.)").strip()
             bill.add_version_link(
-                version_name, version_url, media_type="application/pdf"
+                version_name,
+                version_url,
+                classification="amendment",
+                media_type="application/pdf",
             )
 
     def scrape_votes(self, bill, url):
