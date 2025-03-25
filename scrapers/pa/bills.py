@@ -182,6 +182,7 @@ class PABillScraper(Scraper):
                 bill.add_version_link(
                     version_name,
                     version_link,
+                    classification="amendment",
                     media_type=mimetype,
                     on_duplicate="ignore",
                 )

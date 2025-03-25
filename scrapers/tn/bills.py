@@ -257,6 +257,7 @@ class TNBillScraper(Scraper):
             bill.add_version_link(
                 "Amendment " + amendment.text,
                 amd_url,
+                classification="amendment",
                 media_type="application/pdf",
             )
         # amendment notes in image with alt text describing doc inside <a>

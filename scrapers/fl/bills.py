@@ -336,7 +336,11 @@ class BillDetail(HtmlPage):
                         mimetype = "text/html"
 
                     self.input.add_document_link(
-                        name, version_url, media_type=mimetype, on_duplicate="ignore"
+                        name,
+                        version_url,
+                        classification="amendment",
+                        media_type=mimetype,
+                        on_duplicate="ignore",
                     )
         except IndexError:
             self.logger.warning(

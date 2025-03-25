@@ -635,7 +635,11 @@ class MOBillScraper(Scraper, LXMLMixin):
             else:
                 mimetype = "text/html"
             bill.add_version_link(
-                summary_name, path, media_type=mimetype, on_duplicate="ignore"
+                summary_name,
+                path,
+                classification="amendment",
+                media_type=mimetype,
+                on_duplicate="ignore",
             )
 
         # house fiscal notes
