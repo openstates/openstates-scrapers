@@ -2,6 +2,7 @@ import re
 import feedparser
 import json
 import dateutil
+from scrapelib import HTTPError
 from utils.media import get_media_type
 from openstates.scrape import Scraper, Bill
 
@@ -36,11 +37,19 @@ class KSBillScraper(Scraper):
             yield from self.scrape_bill_from_api(session, item.title, item.guid)
 
     def scrape_bill_from_api(self, session, bill_id, bill_url):
-
         api_url = (
             f"https://www.kslegislature.org/li/api/v12/rev-1/bill_status/{bill_id}/"
         )
-        page = self.get(api_url).content
+        try:
+            page = self.get(api_url).content
+        except HTTPError as e:
+            # 500 error on HCR 5011 for some reason
+            # temporarily swallow this exception to allow scrape to finish
+            if bill_id == "HCR5011":
+                self.logger.warning(f"Swallowing HTTPError for {bill_id} as a temporary fix: {e}")
+                return
+            else:
+                raise e
         page = json.loads(page)
 
         bill_data = page["content"][0]
