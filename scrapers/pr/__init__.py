@@ -72,7 +72,7 @@ class PuertoRico(State):
             "content-type": "text/plain;charset=UTF-8",
             # It looks like this values will keep changing and causing failure,
             # So this might be the first place to look if this is failing again.
-            "next-action": "701bc4180b09b54d0d0b9a154678cd9d067f902377",
+            "next-action": "70fc8d50b1d79df660541b6f3f7f5e1aff580a5c08",
             "next-router-state-tree": "%5B%22%22%2C%7B%22children%22%3A%5B%22(public)%22%2C%7B%22children%22%3A%5B%22(landing)%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2C%22%2F%22%2C%22refresh%22%5D%7D%5D%7D%5D%7D%2Cnull%2Cnull%2Ctrue%5D",
             "origin": url,
             "referer": url,
