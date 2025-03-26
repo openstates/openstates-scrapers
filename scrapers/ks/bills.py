@@ -46,7 +46,9 @@ class KSBillScraper(Scraper):
             # 500 error on HCR 5011 for some reason
             # temporarily swallow this exception to allow scrape to finish
             if bill_id == "HCR5011":
-                self.logger.warning(f"Swallowing HTTPError for {bill_id} as a temporary fix: {e}")
+                self.logger.warning(
+                    f"Swallowing HTTPError for {bill_id} as a temporary fix: {e}"
+                )
                 return
             else:
                 raise e
