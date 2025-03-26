@@ -86,7 +86,7 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                 .split("and")[0]
                 .strip()
             )
-            when = dateutil.parser.parse(when)
+            when = dateutil.parser.parse(when, fuzzy=True)
             when = self._tz.localize(when)
 
             # Event stgatus
