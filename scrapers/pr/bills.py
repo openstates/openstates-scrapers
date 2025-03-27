@@ -283,7 +283,14 @@ class PRBillScraper(Scraper):
         # if we're ever suddenly missing half the actions, check this
         rows = page.xpath('//ul[@role="list"]/li//h2')
         for row in rows:
-            action_text = row.xpath('./span[@class="text-sutra-primary"]//text()')[0]
+            action_text_elements = row.xpath(
+                './span[@class="text-sutra-primary"]//text()'
+            )
+            if len(action_text_elements) == 0:
+                # Found at least one action that has different structure
+                # see Ley 1-2025 on https://sutra.oslpr.org/medidas/153232
+                action_text_elements = row.xpath(".//text()")
+            action_text = action_text_elements[0]
             action_text = self.clean_broken_html(action_text)
             raw_date = row.xpath(
                 './following-sibling::p//span[contains(text(), "Fecha")]/../text()'
