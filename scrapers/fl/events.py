@@ -109,7 +109,9 @@ class FlEventScraper(Scraper):
 
             yield event
 
-        for h5 in page.xpath('//div[contains(@class,"meeting-actions-bills")]/h5'):
+        for h5 in page.xpath(
+            '//div[@class="text"]/h5[contains(text(), "Consideration of the following bill(s):")]'
+        ):
             event.add_agenda_item(h5.text_content().strip())
             for agenda_item in h5.xpath("following-sibling::ul/li"):
                 agenda_text = agenda_item.text_content().strip()
