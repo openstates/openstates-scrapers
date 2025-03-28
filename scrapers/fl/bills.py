@@ -227,35 +227,36 @@ class BillDetail(HtmlPage):
         ).strip()
 
         match = SPONSOR_RE.search(sponsor)
-        sponsors = match.groupdict()["sponsors"]
-        if not sponsors:
-            raise ValueError(
-                "Failed to find sponsors for {}".format(self.input.identifier)
-            )
-        sponsors = re.sub(r"^(?:Rep|Sen)\.\s", "", sponsors)
-        sponsors = re.sub(r",\s+(Jr|Sr)\.", r" \1.", sponsors)
-        for sp in sponsors.split("; "):
-            sp = sp.strip()
-            if sp:
-                sp_type = "person"
-                if any(
-                    keyword in sp.lower()
-                    for keyword in FL_ORGANIZATION_ENTITY_NAME_KEYWORDS
-                ):
-                    sp_type = "organization"
-                self.input.add_sponsorship(sp, "primary", sp_type, True)
+        if match:
+            sponsors = match.groupdict()["sponsors"]
+            if not sponsors:
+                raise ValueError(
+                    "Failed to find sponsors for {}".format(self.input.identifier)
+                )
+            sponsors = re.sub(r"^(?:Rep|Sen)\.\s", "", sponsors)
+            sponsors = re.sub(r",\s+(Jr|Sr)\.", r" \1.", sponsors)
+            for sp in sponsors.split("; "):
+                sp = sp.strip()
+                if sp:
+                    sp_type = "person"
+                    if any(
+                        keyword in sp.lower()
+                        for keyword in FL_ORGANIZATION_ENTITY_NAME_KEYWORDS
+                    ):
+                        sp_type = "organization"
+                    self.input.add_sponsorship(sp, "primary", sp_type, True)
 
-        cosponsors = match.groupdict()["cosponsors"]
-        if cosponsors:
-            cosponsors = re.sub(r"^(?:Rep|Sen)\.\s", "", cosponsors)
-            cosponsors = re.sub(r",\s+(Jr|Sr)\.", r" \1.", cosponsors)
-            for csp in cosponsors.split("; "):
-                csp = csp.strip()
-                if csp:
-                    csp_type = (
-                        "organization" if "committee" in csp.lower() else "person"
-                    )
-                    self.input.add_sponsorship(csp, "cosponsor", csp_type, False)
+            cosponsors = match.groupdict()["cosponsors"]
+            if cosponsors:
+                cosponsors = re.sub(r"^(?:Rep|Sen)\.\s", "", cosponsors)
+                cosponsors = re.sub(r",\s+(Jr|Sr)\.", r" \1.", cosponsors)
+                for csp in cosponsors.split("; "):
+                    csp = csp.strip()
+                    if csp:
+                        csp_type = (
+                            "organization" if "committee" in csp.lower() else "person"
+                        )
+                        self.input.add_sponsorship(csp, "cosponsor", csp_type, False)
 
     def process_summary(self):
         summary = self.root.xpath(
