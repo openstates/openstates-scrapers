@@ -4,6 +4,7 @@ import requests
 import feedparser
 
 import lxml.html
+from scrapelib import HTTPError
 from openstates.scrape import Scraper, VoteEvent
 
 
@@ -34,7 +35,19 @@ class KSVoteScraper(Scraper):
             yield from self.scrape_vote_from_bill(session, bill_id, item.guid)
 
     def scrape_vote_from_bill(self, session, bill, url):
-        doc = lxml.html.fromstring(self.get(url, retry_on_404=True).text)
+        try:
+            vote_response = self.get(url, retry_on_404=True)
+        except HTTPError as e:
+            # 500 error on HCR 5011 for some reason
+            # temporarily swallow this exception to allow scrape to finish
+            if bill == "HCR 5011":
+                self.logger.warning(
+                    f"Swallowing HTTPError for {bill} as a temporary fix: {e}"
+                )
+                return
+            else:
+                raise e
+        doc = lxml.html.fromstring(vote_response.text)
         doc.make_links_absolute(url)
         all_links = doc.xpath(
             "//table[@class='bottom']/tbody[@class='tab-content-sub']/tr/td/a/@href"
