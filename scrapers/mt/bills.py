@@ -512,7 +512,10 @@ class MTBillScraper(Scraper):
                     or v[vote_type_key] == "YES_BY_PROXY"
                 ):
                     counts["YES"] += 1
-                elif v[vote_type_key] == "NO_EXCUSED":
+                elif (
+                    v[vote_type_key] == "NO_EXCUSED"
+                    or v[vote_type_key] == "NO_BY_PROXY"
+                ):
                     counts["NO"] += 1
                 else:
                     counts[v[vote_type_key]] += 1
