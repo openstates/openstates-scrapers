@@ -507,9 +507,9 @@ class MTBillScraper(Scraper):
                 vote_type_key = "voteType" if "voteType" in v else "committeeVote"
                 # validation doesn't allow hybrid votes eg YES_EXCUSED, YES_BY_PROXY
                 # so translate these to YES and NO
-                if v[vote_type_key] in ("YES_EXCUSED", "YES_BY_PROXY"):
+                if v[vote_type_key] in ("YES_EXCUSED", "YES_BY_PROXY", "YES_VOTE"):
                     counts["YES"] += 1
-                elif v[vote_type_key] in ("NO_EXCUSED", "NO_BY_PROXY"):
+                elif v[vote_type_key] in ("NO_EXCUSED", "NO_BY_PROXY", "NO_VOTE"):
                     counts["NO"] += 1
                 else:
                     counts[v[vote_type_key]] += 1
