@@ -94,6 +94,11 @@ class WVEventScraper(Scraper, LXMLMixin):
             when = re.sub("time to be announced", "", when, flags=re.IGNORECASE)
             when = re.sub("TBA", "", when, flags=re.IGNORECASE)
 
+        status = "tentative"
+
+        if "cancelled" in when.lower():
+            when = re.sub(r"cancelled", "", when, flags=re.IGNORECASE)
+
         when = re.sub(r"or\s+conclusion\s+(.*)", "", when, flags=re.IGNORECASE)
         when = re.sub(r", After Session Ends", ", 5:00 PM", when, flags=re.IGNORECASE)
         when = re.sub(
@@ -124,6 +129,7 @@ class WVEventScraper(Scraper, LXMLMixin):
             classification="committee-meeting",
             # descriptions have a character limit
             description=desc,
+            status=status,
         )
 
         event.add_committee(com, note="host")
