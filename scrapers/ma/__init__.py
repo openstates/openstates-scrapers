@@ -9,6 +9,22 @@ from .votes import MAVoteScraper
 
 logger = logging.getLogger("openstates")
 
+def get_fallback_hardcoded_sessions(url):
+    logger.warning(f"Got a 500 Error on : {url}, using hard coded session list")
+    hard_coded_session_list = [
+        "184th",
+        "185th",
+        "186th",
+        "187th",
+        "188th",
+        "189th",
+        "190th",
+        "191st",
+        "192nd",
+        "193rd",
+        "194th",
+    ]
+    return list(hard_coded_session_list)
 
 class Massachusetts(State):
     scrapers = {
@@ -115,35 +131,24 @@ class Massachusetts(State):
 
     def get_session_list(self):
         url = "https://malegislature.gov/Bills/Search"
-        response = requests.get(url, verify=False)
-        if response.status_code == 500:
-            logger.warning(f"Got a 500 Error on : {url}, using hard coded session list")
-            hard_coded_session_list = [
-                "184th",
-                "185th",
-                "186th",
-                "187th",
-                "188th",
-                "189th",
-                "190th",
-                "191st",
-                "192nd",
-                "193rd",
-                "194th",
-            ]
-            sessions = list(hard_coded_session_list)
-        else:
-            doc = lxml.html.fromstring(response.text)
-            sessions = doc.xpath(
-                "//div[@data-refinername='lawsgeneralcourt']/div/label/text()"
-            )
-
-            # Remove all text between parens, like (Current) (7364)
-            sessions = list(
-                filter(
-                    None,
-                    [re.sub(r"\([^)]*\)", "", session).strip() for session in sessions],
+        try:
+            response = requests.get(url, verify=False)
+            if response.status_code == 500:
+                sessions = get_fallback_hardcoded_sessions(url)
+            else:
+                doc = lxml.html.fromstring(response.text)
+                sessions = doc.xpath(
+                    "//div[@data-refinername='lawsgeneralcourt']/div/label/text()"
                 )
-            )
+
+                # Remove all text between parens, like (Current) (7364)
+                sessions = list(
+                    filter(
+                        None,
+                        [re.sub(r"\([^)]*\)", "", session).strip() for session in sessions],
+                    )
+                )
+        except requests.exceptions.ConnectionError:
+            sessions = get_fallback_hardcoded_sessions(url)
 
         return sessions
