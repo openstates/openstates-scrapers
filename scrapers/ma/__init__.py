@@ -9,6 +9,7 @@ from .votes import MAVoteScraper
 
 logger = logging.getLogger("openstates")
 
+
 def get_fallback_hardcoded_sessions(url):
     logger.warning(f"Got a 500 Error on : {url}, using hard coded session list")
     hard_coded_session_list = [
@@ -25,6 +26,7 @@ def get_fallback_hardcoded_sessions(url):
         "194th",
     ]
     return list(hard_coded_session_list)
+
 
 class Massachusetts(State):
     scrapers = {
@@ -145,7 +147,10 @@ class Massachusetts(State):
                 sessions = list(
                     filter(
                         None,
-                        [re.sub(r"\([^)]*\)", "", session).strip() for session in sessions],
+                        [
+                            re.sub(r"\([^)]*\)", "", session).strip()
+                            for session in sessions
+                        ],
                     )
                 )
         except requests.exceptions.ConnectionError:
