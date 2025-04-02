@@ -75,7 +75,14 @@ class FlEventScraper(Scraper):
             if "joint" not in com.lower():
                 com = f"House {com}"
             start = row.cssselect("span.date")[0].text_content().strip()
-            start = dateutil.parser.parse(start)
+            try:
+                start = dateutil.parser.parse(start)
+            except dateutil.parser.ParserError as e:  # noqa: F841
+                pattern = r"\d{2}/\d{2}/\d{4} \d{2}:\d{2} [APM]{2}"
+                match = re.search(pattern, start)
+                if match:
+                    start = match.group()
+                    start = dateutil.parser.parse(start)
             start = self.tz.localize(start)
 
             end = row.cssselect("span.date")[1].text_content().strip()
@@ -174,19 +181,22 @@ class FlEventScraper(Scraper):
             chair, vice_chair, members, place, bill_ids = self.scrape_pdf(pdf_url)
 
             event = Event(name=com, start_date=date, location_name=place)
-            event.add_person(
-                name=chair,
-                note="Chair",
-            )
-            event.add_person(
-                name=vice_chair,
-                note="Vice Chair",
-            )
-            for member in members:
+            if chair:
                 event.add_person(
-                    name=member,
-                    note="Member",
+                    name=chair,
+                    note="Chair",
                 )
+            if vice_chair:
+                event.add_person(
+                    name=vice_chair,
+                    note="Vice Chair",
+                )
+            for member in members:
+                if member:
+                    event.add_person(
+                        name=member,
+                        note="Member",
+                    )
             for bill_id, description in bill_ids:
                 if description:
                     item = event.add_agenda_item(description=description)
