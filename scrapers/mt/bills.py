@@ -502,6 +502,7 @@ class MTBillScraper(Scraper):
                 "NO": 0,
                 "ABSENT": 0,
                 "EXCUSED": 0,
+                "ABSTAINED": 0,
             }
             for v in row["legislatorVotes"]:
                 vote_type_key = "voteType" if "voteType" in v else "committeeVote"
@@ -512,7 +513,12 @@ class MTBillScraper(Scraper):
                 elif v[vote_type_key] in ("NO_EXCUSED", "NO_BY_PROXY", "NO_VOTE"):
                     counts["NO"] += 1
                 else:
-                    counts[v[vote_type_key]] += 1
+                    if v[vote_type_key] not in counts:
+                        self.warning(
+                            f"Unknown vote type {v[vote_type_key]} found at {vote_url}"
+                        )
+                    else:
+                        counts[v[vote_type_key]] += 1
 
             passed = counts["YES"] > counts["NO"]
 
