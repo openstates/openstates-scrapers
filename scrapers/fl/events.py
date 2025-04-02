@@ -77,7 +77,7 @@ class FlEventScraper(Scraper):
             start = row.cssselect("span.date")[0].text_content().strip()
             try:
                 start = dateutil.parser.parse(start)
-            except dateutil.parser.ParserError as e:
+            except dateutil.parser.ParserError as e:  # noqa: F841
                 pattern = r"\d{2}/\d{2}/\d{4} \d{2}:\d{2} [APM]{2}"
                 match = re.search(pattern, start)
                 if match:
