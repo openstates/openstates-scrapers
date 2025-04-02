@@ -171,7 +171,7 @@ class MSEventScraper(Scraper):
                 base_date_string = main_elem.text
 
             # Individual committee hearing will be in a div.row
-            if main_elem.tag == "div" and "row" in main_elems[6].classes:
+            if main_elem.tag == "div" and "row" in main_elem.classes:
                 # should contain four "cells": blank, time, room number, meeting name
                 cols = main_elem.cssselect("div.row > div")
 
