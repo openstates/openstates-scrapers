@@ -595,7 +595,9 @@ class MTBillScraper(Scraper):
                 elif v[vote_type_key] == "ABSTAINED":
                     vote.vote("abstain", voter)
                 else:
-                    self.warning(f"Could not match vote {vote_id} option for legislator vote: {v}")
+                    self.warning(
+                        f"Could not match vote {vote_id} option for legislator vote: {v}"
+                    )
                     vote.vote("other", voter)
 
             yield vote
