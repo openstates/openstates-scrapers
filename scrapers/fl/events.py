@@ -114,21 +114,19 @@ class FlEventScraper(Scraper):
 
             event.add_committee(com)
 
+            for h5 in page.xpath(
+                '//div[@class="text"]/h5[contains(text(), "Consideration of the following bill(s):")]'
+            ):
+                event.add_agenda_item(h5.text_content().strip())
+                for agenda_item in h5.xpath("following-sibling::ul/li"):
+                    agenda_text = agenda_item.text_content().strip()
+                    agenda_text = re.sub(r"\s+\u2013\s+", " - ", agenda_text)
+                    item = event.add_agenda_item(agenda_text)
+                    found_bills = re.findall(r"H.*\s+\d+", agenda_text)
+                    if found_bills:
+                        item.add_bill(found_bills[0])
+
             yield event
-
-        for h5 in page.xpath(
-            '//div[@class="text"]/h5[contains(text(), "Consideration of the following bill(s):")]'
-        ):
-            event.add_agenda_item(h5.text_content().strip())
-            for agenda_item in h5.xpath("following-sibling::ul/li"):
-                agenda_text = agenda_item.text_content().strip()
-                agenda_text = re.sub(r"\s+\u2013\s+", " - ", agenda_text)
-                item = event.add_agenda_item(agenda_text)
-                found_bills = re.findall(r"H.*\s+\d+", agenda_text)
-                if found_bills:
-                    item.add_bill(found_bills[0])
-
-        yield event
 
     def get_meeting_row(self, page, header):
         xpath = f"//div[contains(@class,'meeting-info-rows') and span[contains(text(),'{header}')]]/span[contains(@class,'value')]"
