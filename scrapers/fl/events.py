@@ -114,8 +114,8 @@ class FlEventScraper(Scraper):
 
             event.add_committee(com)
 
-            for h5 in page.xpath(
-                '//div[@class="text"]/h5[contains(text(), "Consideration of the following bill(s):")]'
+            for h5 in row.xpath(
+                './/div[@class="text"]/h5[contains(text(), "Consideration of the following")]'
             ):
                 event.add_agenda_item(h5.text_content().strip())
                 for agenda_item in h5.xpath("following-sibling::ul/li"):
