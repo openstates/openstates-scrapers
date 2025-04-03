@@ -502,7 +502,7 @@ class MTBillScraper(Scraper):
                 "NO": 0,
                 "ABSENT": 0,
                 "EXCUSED": 0,
-                "ABSTAINED": 0,
+                "ABSTAIN": 0,
             }
             for v in row["legislatorVotes"]:
                 vote_type_key = "voteType" if "voteType" in v else "committeeVote"
