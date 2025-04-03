@@ -47,5 +47,6 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
+          file: Dockerfile.california
           tags: "us-central1-docker.pkg.dev/civic-eagle-enview-prod/open-containers/scrapers-california:latest,us-central1-docker.pkg.dev/civic-eagle-enview-prod/open-containers/scrapers-california:${{ github.sha }}"
           push: true
