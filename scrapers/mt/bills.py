@@ -524,7 +524,24 @@ class MTBillScraper(Scraper):
 
             # regular vs committee votes
             if "billStatus" in row and row["billStatus"] and "id" in row["billStatus"]:
-                bill_action = self.actions_by_id[str(row["billStatus"]["id"])]
+                if str(row["billStatus"]["id"]) in self.actions_by_id:
+                    bill_action = self.actions_by_id[str(row["billStatus"]["id"])]
+                else:
+                    # somehow earlier part of scrape didn't find this action
+                    # see if we can find the action in the Vote's copy of the bill data
+                    action_names = [
+                        status["billStatusCode"]["name"]
+                        for status in row["bill"]["draft"]["billStatuses"]
+                        if status["id"] == row["billStatus"]["id"]
+                    ]
+                    if len(action_names) > 0:
+                        bill_action = action_names[0]
+                    else:
+                        self.warning(
+                            f"Unable to find Vote's bill action matching {str(row['billStatus']['id'])} on {vote_url}"
+                        )
+                        bill_action = None
+
                 chamber = (
                     "lower"
                     if row["billStatus"]["billStatusCode"]["chamber"] == "HOUSE"
