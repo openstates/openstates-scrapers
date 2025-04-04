@@ -161,8 +161,16 @@ class IDBillScraper(Scraper):
         for link in doc_links:
             name = link.text_content().strip()
             href = link.get("href")
+            classification = ""
             if "Engrossment" in name or "Bill Text" in name or "Amendment" in name:
-                bill.add_version_link(note=name, url=href, media_type="application/pdf")
+                if "amendment" in name.lower():
+                    classification = "amendment"
+                bill.add_version_link(
+                    note=name,
+                    url=href,
+                    classification=classification,
+                    media_type="application/pdf",
+                )
             else:
                 bill.add_document_link(
                     note=name, url=href, media_type="application/pdf"
