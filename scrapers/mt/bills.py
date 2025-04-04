@@ -512,6 +512,8 @@ class MTBillScraper(Scraper):
                     counts["YES"] += 1
                 elif v[vote_type_key] in ("NO_EXCUSED", "NO_BY_PROXY", "NO_VOTE"):
                     counts["NO"] += 1
+                elif v[vote_type_key] in ("ABSTAIN", "ABSTAINED"):
+                    counts["ABSTAIN"] += 1
                 else:
                     if v[vote_type_key] not in counts:
                         self.warning(
