@@ -111,7 +111,9 @@ class MTEventScraper(Scraper):
 
                 parts = agenda_text.split(" - ")
                 if len(parts) > 1:
-                    found_bills = re.findall(r"\b(?:SB|HB|SR|HR|SJ|HJ|LC)\s*\d+\b", parts[0])
+                    found_bills = re.findall(
+                        r"\b(?:SB|HB|SR|HR|SJ|HJ|LC)\s*\d+\b", parts[0]
+                    )
                     if found_bills:
                         item = event.add_agenda_item(parts[1])
                         item.add_bill(found_bills[0])
