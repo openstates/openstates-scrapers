@@ -66,6 +66,35 @@ class WABillScraper(Scraper, LXMLMixin):
         "": "",
     }
 
+    documents = {}
+    short_codes = {
+        "2ND": "As of Second Reading",
+        "APH0": "As Passed House (Original)",
+        "APH": "As Passed House",
+        "APH2": "As Passed House (2)",
+        "APS0": "As Passed Senate (Original)",
+        "APS": "As Passed Senate",
+        "APS2": "As Passed Senate (2)",
+        "FBR": "Final Bill Report",
+        "HA": "As Amended By House",
+        "PL": "As Passed Legislature",
+        "SA": "As Amended By Senate",
+    }
+
+    def scrape_committees(self):
+        url = "https://leg.wa.gov/about-the-legislature/committees/"
+        html = self.get(url).text
+        page = lxml.html.fromstring(html)
+
+        for link in page.cssselect(".nav-card-text a.title"):
+            url = link.get("href")
+            com = link.text_content().strip()
+            com_code = url.split("/")[-2].upper()
+            if com_code in self.short_codes:
+                self.error(f"Duplicate committee code: {com_code} {com}")
+            else:
+                self.short_codes[com_code] = com
+
     def build_subject_mapping(self, year):
         # no need to run this more than once
         if len(self._subjects) > 0:
@@ -149,9 +178,23 @@ class WABillScraper(Scraper, LXMLMixin):
                     {"note": name, "url": pdf_url, "media_type": "application/pdf"}
                 )
 
+    def format_document(self, title):
+        doctypes = {
+            "HBA": "House Bill Analysis",
+            "HBR": "House Bill Report",
+            "SBA": "Senate Bill Analysis",
+            "SBR": "Senate Bill Report",
+        }
+        parts = title.split(" ")
+        (doctype, committee, number) = parts[0], parts[1], parts[1:]
+
+        doctype = doctypes[doctype]
+        committee = self.short_codes[committee]
+
+        return f"{doctype} {committee} {number}"
+
     def _load_documents(self, chamber):
         chamber = {"lower": "House", "upper": "Senate"}[chamber]
-        self.documents = {}
 
         document_types = ["Amendments", "Bill Reports", "Digests"]
         for doctype in document_types:
@@ -181,10 +224,14 @@ class WABillScraper(Scraper, LXMLMixin):
                     document_title,
                 ) = self.doc_groups_re.search(text).groups()
 
+                if bill_number == "1543":
+                    print(bill_number, is_engrossed, document_title)
+
                 if doctype == "Amendments":
                     name = "Amendment {}".format(document_title[4:])
 
                 elif doctype == "Bill Reports":
+                    print(bill_number, is_engrossed, document_title, link)
                     name = " ".join(
                         [
                             x
@@ -199,7 +246,7 @@ class WABillScraper(Scraper, LXMLMixin):
                             if x.strip()
                         ]
                     )
-
+                    name = f"{name} - {self.format_document(document_title)}"
                 elif doctype == "Digests":
                     name = "Digest"
                     if is_substitute:
@@ -211,9 +258,13 @@ class WABillScraper(Scraper, LXMLMixin):
 
                 if not self.documents.get(bill_number):
                     self.documents[bill_number] = []
+
                 self.documents[bill_number].append(
                     {"note": name, "url": link, "media_type": "text/html"}
                 )
+
+                if bill_number == "1543":
+                    print(self.documents[bill_number])
 
     def get_prefiles(self, chamber, session, year):
         url = "http://apps.leg.wa.gov/billinfo/prefiled.aspx?" "year={}".format(year)
@@ -235,11 +286,13 @@ class WABillScraper(Scraper, LXMLMixin):
         self._bill_id_list = self.get_prefiles(chamber, session, year)
         self.biennium = "%s-%s" % (session[0:4], session[7:9])
 
+        self.scrape_committees()
+
         for chamber in chambers:
             self.scrape_chamber(chamber, session)
 
         # uncomment the line below to scrape a single bill
-        # self._bill_id_list = ["HB 1002"]
+        self._bill_id_list = ["HB 1543"]
 
         # de-dup bill_id
         for bill_id in list(set(self._bill_id_list)):
@@ -355,6 +408,18 @@ class WABillScraper(Scraper, LXMLMixin):
                     url=document["url"],
                     media_type=document["media_type"],
                 )
+
+                if "/Amendments/" in document["url"]:
+                    if document["media_type"] == "text/html":
+                        bill.add_document_link(
+                            note=document["note"],
+                            url=document["url"]
+                            .replace("/Htm/", "/Pdf/")
+                            .replace(".htm", ".pdf"),
+                            media_type="application/pdf",
+                            on_duplicate="ignore",
+                        )
+
         except KeyError:
             pass
 
