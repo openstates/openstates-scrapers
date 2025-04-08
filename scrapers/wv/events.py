@@ -212,4 +212,6 @@ class WVEventScraper(Scraper, LXMLMixin):
         # ?Chart=agr&input=March%201,%202022
         if when == "March 1, 2022, PM":
             when = "March 1, 2022, 1:00 PM"
+
+        when = re.sub(r"\s+", " ", when)
         return when
