@@ -104,6 +104,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         when = re.sub(
             r", 30 Minutes Following House Floor Session", "", when, flags=re.IGNORECASE
         )
+        when = re.sub(r",?\s+After Floor", "", when, flags=re.IGNORECASE)
 
         when = when.split("-")[0]
         when = self.clean_date(when)
