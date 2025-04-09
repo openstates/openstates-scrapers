@@ -180,18 +180,26 @@ class WABillScraper(Scraper, LXMLMixin):
 
     def format_document(self, title):
         doctypes = {
-            "HBA": "House Bill Analysis",
-            "HBR": "House Bill Report",
-            "SBA": "Senate Bill Analysis",
-            "SBR": "Senate Bill Report",
+            "HBA": "Bill Analysis",
+            "HBR": "Bill Report",
+            "SBA": "Bill Analysis",
+            "SBR": "Bill Report",
         }
         parts = title.split(" ")
-        (doctype, committee, number) = parts[0], parts[1], parts[1:]
+        (doctype, committee, rest) = parts[0], parts[1], parts[2:]
 
         doctype = doctypes[doctype]
         committee = self.short_codes[committee]
 
-        return f"{doctype} {committee} {number}"
+        return f"{doctype} - {committee} {' '.join(rest)}".strip()
+
+    def format_amendment(self, title):
+        com_code = title.split(" ")[0]
+        rest = title.split()[1:]
+        if com_code in self.short_codes:
+            return f"{self.short_codes[com_code]} {' '.join(rest)}"
+        else:
+            return title
 
     def _load_documents(self, chamber):
         chamber = {"lower": "House", "upper": "Senate"}[chamber]
@@ -228,7 +236,9 @@ class WABillScraper(Scraper, LXMLMixin):
                     print(bill_number, is_engrossed, document_title)
 
                 if doctype == "Amendments":
-                    name = "Amendment {}".format(document_title[4:])
+                    name = "Amendment {}".format(
+                        self.format_amendment(document_title[4:])
+                    )
 
                 elif doctype == "Bill Reports":
                     print(bill_number, is_engrossed, document_title, link)
