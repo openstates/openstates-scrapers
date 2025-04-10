@@ -237,16 +237,12 @@ class WABillScraper(Scraper, LXMLMixin):
                     document_title,
                 ) = self.doc_groups_re.search(text).groups()
 
-                if bill_number == "1543":
-                    print(bill_number, is_engrossed, document_title)
-
                 if doctype == "Amendments":
                     name = "Amendment {}".format(
                         self.format_amendment(document_title[4:])
                     )
 
                 elif doctype == "Bill Reports":
-                    print(bill_number, is_engrossed, document_title, link)
                     name = " ".join(
                         [
                             x
