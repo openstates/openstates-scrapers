@@ -66,6 +66,9 @@ class WABillScraper(Scraper, LXMLMixin):
         "": "",
     }
 
+    # amendments and bill reports contain a mix of committee short codes (fin, envi)
+    # and document abbreviations. Here we hard code the doc abbreviations and scrape
+    # the short codes in scrape_committees
     documents = {}
     short_codes = {
         "2ND": "As of Second Reading",
@@ -76,8 +79,10 @@ class WABillScraper(Scraper, LXMLMixin):
         "APS": "As Passed Senate",
         "APS2": "As Passed Senate (2)",
         "FBR": "Final Bill Report",
+        "HA0": "As Amended By House (Original)",
         "HA": "As Amended By House",
         "PL": "As Passed Legislature",
+        "SA0": "As Amended By Senate (Original)",
         "SA": "As Amended By Senate",
     }
 
@@ -302,7 +307,7 @@ class WABillScraper(Scraper, LXMLMixin):
             self.scrape_chamber(chamber, session)
 
         # uncomment the line below to scrape a single bill
-        self._bill_id_list = ["HB 1543"]
+        # self._bill_id_list = ["HB 1543"]
 
         # de-dup bill_id
         for bill_id in list(set(self._bill_id_list)):
