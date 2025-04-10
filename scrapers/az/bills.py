@@ -88,15 +88,20 @@ class AZBillScraper(Scraper):
                     url = "https://apps.azleg.gov{}".format(url)
 
                 if type_ in version_types:
+                    classification = "amendment" if "amend" in type_.lower() else ""
                     if media_type == "text/html":
                         pdf_url = re.sub("(.docx)?.htm(l)?$", ".pdf", url.lower())
                         bill.add_version_link(
                             note=doc["DocumentName"],
                             url=pdf_url,
                             media_type="application/pdf",
+                            classification=classification,
                         )
                     bill.add_version_link(
-                        note=doc["DocumentName"], url=url, media_type=media_type
+                        note=doc["DocumentName"],
+                        classification=classification,
+                        url=url,
+                        media_type=media_type,
                     )
                 else:
                     bill.add_document_link(
