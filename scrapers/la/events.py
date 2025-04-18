@@ -52,6 +52,9 @@ class LAEventScraper(Scraper, LXMLMixin):
         if re.search(r"(?i)\d[AP]M$", time):
             time = time[:-2] + " " + time[-2:]
 
+        # manual fix for https://www.legis.la.gov/legis/Agenda.aspx?m=24770
+        time = re.sub(r"^130  PM", "1:30 PM", time)
+
         if re.search("UPON ADJ|TBA", " ".join(time.split()).upper()):
             all_day = True
             when = datetime.datetime.strptime(date, "%B %d, %Y")
