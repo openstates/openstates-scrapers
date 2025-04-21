@@ -222,7 +222,10 @@ class AZBillScraper(Scraper):
             if status["Committee"]["TypeName"] == "Floor":
                 # A Committee of The Whole Do Pass is not Official even if the entire floor voted.
                 # The vote is not recorded.
-                if status["Committee"]["CommitteeShortName"] == "COW" and category == "passage":
+                if (
+                    status["Committee"]["CommitteeShortName"] == "COW"
+                    and category == "passage"
+                ):
                     categories = ["informal-passage"]
                 else:
                     categories = [category]
