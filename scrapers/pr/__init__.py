@@ -100,4 +100,4 @@ class PuertoRico(State):
             return sessions
         else:
             # return hardcoded sessions for now
-            return [session['identifier'] for session in self.legislative_sessions]
+            return [session["identifier"] for session in self.legislative_sessions]
