@@ -63,29 +63,41 @@ class PuertoRico(State):
     ]
 
     def get_session_list(self):
-        s = requests.Session()
-        # this URL should work even for future sessions
-        url = "https://sutra.oslpr.org/"
+        # The "next-action" property is changing every few weeks
+        # this is making maintenance of the scraper time-consuming
+        # so this flag is hardcoded for now pragmatically to save time
+        # if someone wants to revisit, this seems to be part of the Next.js
+        # framework: https://scastiel.dev/simplest-example-server-actions-nextjs
+        # must be available to the client somehow :(
+        get_sessions_dynamically = False
 
-        headers = {
-            "accept": "text/x-component",
-            "content-type": "text/plain;charset=UTF-8",
-            # It looks like this values will keep changing and causing failure,
-            # So this might be the first place to look if this is failing again.
-            "next-action": "70fc8d50b1d79df660541b6f3f7f5e1aff580a5c08",
-            "next-router-state-tree": "%5B%22%22%2C%7B%22children%22%3A%5B%22(public)%22%2C%7B%22children%22%3A%5B%22(landing)%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2C%22%2F%22%2C%22refresh%22%5D%7D%5D%7D%5D%7D%2Cnull%2Cnull%2Ctrue%5D",
-            "origin": url,
-            "referer": url,
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        }
-        data = '["/cuatrienios"]'
-        data = s.post(
-            "https://sutra.oslpr.org/", headers=headers, data=data, verify=False
-        )
-        sdata = re.search(r"1:(.*?}])", data.text).group(1)
-        json_data = json.loads(sdata)
-        sessions = []
-        for data in json_data:
-            descripcion = data["descripcion"]
-            sessions.append(descripcion)
-        return sessions
+        if get_sessions_dynamically:
+            s = requests.Session()
+            # this URL should work even for future sessions
+            url = "https://sutra.oslpr.org/"
+
+            headers = {
+                "accept": "text/x-component",
+                "content-type": "text/plain;charset=UTF-8",
+                # It looks like this values will keep changing and causing failure,
+                # So this might be the first place to look if this is failing again.
+                "next-action": "70fc8d50b1d79df660541b6f3f7f5e1aff580a5c08",
+                "next-router-state-tree": "%5B%22%22%2C%7B%22children%22%3A%5B%22(public)%22%2C%7B%22children%22%3A%5B%22(landing)%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2C%22%2F%22%2C%22refresh%22%5D%7D%5D%7D%5D%7D%2Cnull%2Cnull%2Ctrue%5D",
+                "origin": url,
+                "referer": url,
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            }
+            data = '["/cuatrienios"]'
+            data = s.post(
+                "https://sutra.oslpr.org/", headers=headers, data=data, verify=False
+            )
+            sdata = re.search(r"1:(.*?}])", data.text).group(1)
+            json_data = json.loads(sdata)
+            sessions = []
+            for data in json_data:
+                descripcion = data["descripcion"]
+                sessions.append(descripcion)
+            return sessions
+        else:
+            # return hardcoded sessions for now
+            return [session['identifier'] for session in self.legislative_sessions]
