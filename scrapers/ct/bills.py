@@ -3,6 +3,8 @@ import datetime
 import string
 import urllib3
 
+import types  # fmt: skip  # noqa: F401
+
 from collections import defaultdict
 from operator import itemgetter
 
@@ -22,6 +24,7 @@ class SkipBill(Exception):
 class CTBillScraper(Scraper):
     latest_only = True
     categorizer = Categorizer()
+    action_list = {}
 
     def scrape(self, chamber=None, session=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
@@ -30,18 +33,23 @@ class CTBillScraper(Scraper):
         self._subjects = defaultdict(list)
         self.scrape_committee_names()
         self.scrape_subjects()
-        yield from self.scrape_bill_info(session, chambers)
-        # for chamber in chambers:
-        #     self.scrape_versions(chamber, session)
         self.scrape_bill_history()
 
-        for bill in self.bills.values():
-            yield bill[0]
+        yield from self.scrape_bill_info(session, chambers)
 
     def scrape_bill_info(self, session, chambers):
         info_url = "ftp://ftp.cga.ct.gov/pub/data/bill_info.csv"
         data = self.get(info_url)
         page = open_csv(data)
+
+        # # For local dev -- bill_info.csv can get to mulitple megabytes and CT's
+        # # ftp server is not super fast, so uncomment this to use a local copy.
+        # info_url = "https://ct.gov"
+        # with open('ct.csv', 'rb') as file:
+        #     file_content = file.read()
+        #     test = types.SimpleNamespace()
+        #     test.content = file_content
+        #     page = open_csv(test)
 
         chamber_map = {"H": "lower", "S": "upper"}
 
@@ -69,7 +77,7 @@ class CTBillScraper(Scraper):
                 chamber=chamber,
             )
             bill.add_source(info_url)
-
+            self.scrape_actions(bill, chamber)
             try:
                 for subject in self._subjects[bill_id]:
                     bill.subject.append(subject)
@@ -132,69 +140,67 @@ class CTBillScraper(Scraper):
         page = self.get(history_url)
         page = open_csv(page)
 
-        action_rows = defaultdict(list)
-
         for row in page:
             bill_id = row["bill_num"]
+            if bill_id not in self.action_list:
+                self.action_list[bill_id] = []
+            self.action_list[bill_id].append(row)
 
-            if bill_id in self.bills:
-                action_rows[bill_id].append(row)
+    def scrape_actions(self, bill: Bill, initial_chamber: str):
 
-        for bill_id, actions in action_rows.items():
-            bill = self.bills[bill_id][0]
+        actions = self.action_list[bill.identifier]
+        actions.sort(key=itemgetter("act_date"))
+        act_chamber = initial_chamber
 
-            actions.sort(key=itemgetter("act_date"))
-            act_chamber = self.bills[bill_id][1]
+        for row in actions:
+            date = row["act_date"]
+            date = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S").date()
 
-            for row in actions:
-                date = row["act_date"]
-                date = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S").date()
+            action = row["act_desc"].strip()
+            act_type = []
 
-                action = row["act_desc"].strip()
-                act_type = []
+            match = re.search(r"COMM(ITTEE|\.) ON$", action)
+            if match:
+                comm_code = row["qual1"]
+                comm_name = self._committee_names.get(comm_code, comm_code)
+                action = "%s %s" % (action, comm_name)
+                act_type.append("referral-committee")
+            elif row["qual1"]:
+                if bill.legislative_session in row["qual1"]:
+                    action += " (%s" % row["qual1"]
+                    if row["qual2"]:
+                        action += " %s)" % row["qual2"]
+                else:
+                    action += " %s" % row["qual1"]
 
-                match = re.search(r"COMM(ITTEE|\.) ON$", action)
-                if match:
-                    comm_code = row["qual1"]
-                    comm_name = self._committee_names.get(comm_code, comm_code)
-                    action = "%s %s" % (action, comm_name)
-                    act_type.append("referral-committee")
-                elif row["qual1"]:
-                    if bill.legislative_session in row["qual1"]:
-                        action += " (%s" % row["qual1"]
-                        if row["qual2"]:
-                            action += " %s)" % row["qual2"]
-                    else:
-                        action += " %s" % row["qual1"]
-
-                match = re.search(r"REFERRED TO OLR, OFA (.*)", action)
-                if match:
-                    action = (
-                        "REFERRED TO Office of Legislative Research"
-                        " AND Office of Fiscal Analysis %s" % (match.group(1))
-                    )
-
-                action_attr = self.categorizer.categorize(action)
-                classification = action_attr["classification"]
-
-                bill.add_action(
-                    description=action,
-                    date=date,
-                    chamber=act_chamber,
-                    classification=classification,
+            match = re.search(r"REFERRED TO OLR, OFA (.*)", action)
+            if match:
+                action = (
+                    "REFERRED TO Office of Legislative Research"
+                    " AND Office of Fiscal Analysis %s" % (match.group(1))
                 )
 
-                # if an action is the terminal step in one chamber,
-                # switch the chamber for the next action
-                if (
-                    "TRANS.TO HOUSE" in action
-                    or "SENATE PASSED" in action
-                    or "SEN. PASSED" in action
-                ):
-                    act_chamber = "lower"
+            action_attr = self.categorizer.categorize(action)
+            classification = action_attr["classification"]
 
-                if "TRANSMITTED TO SENATE" in action or "HOUSE PASSED" in action:
-                    act_chamber = "upper"
+            bill.add_action(
+                description=action,
+                date=date,
+                chamber=act_chamber,
+                classification=classification,
+            )
+
+            # if an action is the terminal step in one chamber,
+            # switch the chamber for the next action
+            if (
+                "TRANS.TO HOUSE" in action
+                or "SENATE PASSED" in action
+                or "SEN. PASSED" in action
+            ):
+                act_chamber = "lower"
+
+            if "TRANSMITTED TO SENATE" in action or "HOUSE PASSED" in action:
+                act_chamber = "upper"
 
     def scrape_versions(self, chamber, session):
         chamber_letter = {"upper": "s", "lower": "h"}[chamber]
