@@ -82,6 +82,7 @@ class INBillScraper(Scraper):
             "NOT SECONDED": False,
             "OVERRIDDEN": True,
             "ADOPTED": True,
+            "REJECTED": False,
         }
 
         for r in rollcalls:
@@ -329,7 +330,7 @@ class INBillScraper(Scraper):
 
         # if you need to test a single bill:
         # all_pages = [
-        #     {"billName": "SB0001", "displayName": "SB 1", "link": "/2023/bills/sb0001/"}
+        #     {"billName": "HB1389", "displayName": "HB 1389", "link": "/2025/bills/hb1389/", "type": "bill"}
         # ]
 
         for b in all_pages:
