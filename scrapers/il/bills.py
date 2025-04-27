@@ -625,7 +625,13 @@ class IlBillScraper(Scraper):
                     )
                     # if it's html, extract the pdf link too while we're here.
                     pdf_url = f"{BASE_URL}/documents/legislation/{session_number}/{doctype}/PDF/{version_id}.pdf"
-                    bill.add_version_link(name, pdf_url, media_type="application/pdf")
+                    classification = "amendment" if "amendment" in name.lower() else ""
+                    bill.add_version_link(
+                        name,
+                        pdf_url,
+                        classification=classification,
+                        media_type="application/pdf",
+                    )
 
                 bill.add_version_link(name, url, media_type=mimetype)
             elif name in FULLTEXT_DOCUMENT_TYPES:
