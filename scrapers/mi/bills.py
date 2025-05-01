@@ -394,7 +394,6 @@ class MIBillScraper(Scraper):
                     on_duplicate="ignore",
                 )
 
-    # TODO: VOTES
     #         # check if action mentions a sub
     #         submatch = re.search(
     #             r"WITH SUBSTITUTE\s+([\w\-\d]+)", action, re.IGNORECASE
