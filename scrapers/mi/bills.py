@@ -1,9 +1,12 @@
 import dateutil
 import re
+import lxml.html
+import scrapelib
+import collections
+from datetime import date
 from utils.media import get_media_type
 
-import lxml.html
-from openstates.scrape import Scraper, Bill
+from openstates.scrape import Scraper, Bill, VoteEvent
 
 _categorizers = {
     "approved by governor with line item(s) vetoed": "executive-veto-line-item",
@@ -24,6 +27,7 @@ _categorizers = {
     "amendment(s) defeated": "amendment-failure",
     "vetoed by governor": "executive-veto",
 }
+BASE_URL = "https://legislature.mi.gov"
 
 
 def categorize_action(action: str) -> str:
@@ -81,7 +85,7 @@ class MIBillScraper(Scraper):
         self.scrape_sponsors(bill, page)
         self.scrape_subjects(bill, page)
         self.scrape_versions(bill, page)
-
+        yield from self.scrape_votes(bill, page)
         yield bill
 
     def scrape_actions(self, bill: Bill, page: lxml.html.HtmlElement):
@@ -137,6 +141,189 @@ class MIBillScraper(Scraper):
                     f"Public Act {act_num} of {act_year}",
                     citation_type="chapter",
                 )
+
+    def scrape_votes(self, bill: Bill, page: lxml.html.HtmlElement):
+
+        # Iterate through vote history table rows
+        for row in page.xpath("//div[@id='History']/table/tbody/tr"):
+            # Extract vote metadata
+            when = row.xpath("td[1]/text()")[0]
+            when = dateutil.parser.parse(when).date()
+            action = row.xpath("string(td[3])").strip()
+            journal = row.xpath("string(td[2])").strip()
+
+            # Determine chamber from journal reference
+            if "HJ" in journal:
+                actor = "lower"
+            elif "SJ" in journal:
+                actor = "upper"
+
+            # Process roll call votes
+            rcmatch = re.search(r"Roll Call # (\d+)", action, re.IGNORECASE)
+            if rcmatch:
+                rc_num = rcmatch.groups()[0]
+                vote_url = None
+                journal_link = None
+
+                # In format: mileg.aspx?page=getobject&objectname=2011-SJ-02-10-011
+                journal_link = row.xpath("td[2]/a/@href")
+                chamber_name = {"upper": "Senate", "lower": "House"}[actor]
+
+                # Build vote URL from journal link or generate fallback
+                if journal_link:
+                    objectname = journal_link[0].rsplit("=", 1)[-1]
+                    vote_url = BASE_URL + "/documents/%s/Journal/%s/htm/%s.htm" % (
+                        bill.legislative_session,
+                        chamber_name,
+                        objectname,
+                    )
+                else:
+                    self.warning(
+                        f"Missing journal link for {bill.identifier} {action}, Trying to generate it using journal reference {journal}"
+                    )
+                    vote_url = (
+                        self.make_michigan_votes_url_when_journal_link_not_available(
+                            action_date=when,
+                            journal_reference=journal,
+                            base_url=BASE_URL,
+                            legislative_session=bill.legislative_session,
+                            chamber=chamber_name,
+                        )
+                    )
+
+                # Parse and validate vote results
+                results = self.parse_roll_call(
+                    vote_url, rc_num, bill.legislative_session
+                )
+
+                if results is not None:
+                    vote_passed = len(results["yes"]) > len(results["no"])
+                    vote = VoteEvent(
+                        start_date=when,
+                        chamber=actor,
+                        bill=bill,
+                        motion_text=action,
+                        result="pass" if vote_passed else "fail",
+                        classification="passage",
+                    )
+
+                    # Verify vote count matching the expected count in the action string
+                    count = re.search(r"YEAS (\d+)", action, re.IGNORECASE)
+                    count = int(count.groups()[0]) if count else 0
+                    if count != len(results["yes"]):
+                        self.warning(
+                            "vote count mismatch for %s %s, %d != %d"
+                            % (bill.identifier, action, count, len(results["yes"]))
+                        )
+
+                    count = re.search(r"NAYS (\d+)", action, re.IGNORECASE)
+                    count = int(count.groups()[0]) if count else 0
+                    if count != len(results["no"]):
+                        self.warning(
+                            "vote count mismatch for %s %s, %d != %d"
+                            % (bill.identifier, action, count, len(results["no"]))
+                        )
+
+                    vote.set_count("yes", len(results["yes"]))
+                    vote.set_count("no", len(results["no"]))
+                    vote.set_count("other", len(results["other"]))
+                    possible_vote_results = ["yes", "no", "other"]
+                    for pvr in possible_vote_results:
+                        for name in results[pvr]:
+                            if bill.legislative_session == "2017-2018":
+                                names = name.split("\t")
+                                for n in names:
+                                    vote.vote(pvr, n.strip())
+                            else:
+                                # Prevents voter names like "House Bill No. 4451, entitled" and other sentences
+                                if len(name.split()) < 5:
+                                    vote.vote(pvr, name.strip())
+
+                    vote.add_source(vote_url)
+                    yield vote
+
+    def make_michigan_votes_url_when_journal_link_not_available(
+        self,
+        action_date: date,
+        journal_reference: str,
+        base_url: str,
+        legislative_session: str,
+        chamber: str,
+    ) -> str:
+
+        journal_match = re.search(r"[HS]J\s+(\d+)", journal_reference)
+        if not journal_match:
+            self.warning(f"Could not extract journal number from '{journal_reference}'")
+            return None
+
+        if not isinstance(action_date, date):
+            self.warning(
+                f"Invalid action_date while generating vote url: {action_date}, must be a datetime.date object"
+            )
+            return None
+
+        journal_num = journal_match.group(1).zfill(3)
+        date_formatted = action_date.strftime("%m-%d")
+        journal_prefix = "SJ" if chamber == "Senate" else "HJ"
+        year = str(action_date.year)
+        objectname = f"{year}-{journal_prefix}-{date_formatted}-{journal_num}"
+        return f"{base_url}/documents/{legislative_session}/Journal/{chamber}/htm/{objectname}.htm"
+
+    def parse_roll_call(self, url, rc_num, session):
+        try:
+            resp = self.get(url)
+        except scrapelib.HTTPError:
+            self.warning(
+                f"Could not fetch roll call document at {url}, unable to extract vote"
+            )
+            return
+        html = resp.text
+        vote_doc = lxml.html.fromstring(html)
+        vote_doc_textonly = vote_doc.text_content()
+
+        if re.search("In\\s+The\\s+Chair", vote_doc_textonly) is None:
+            self.warning('"In The Chair" indicator not found, unable to extract vote')
+            return
+
+        # Split the file into lines using the <p> tags
+        pieces = [
+            p.text_content().replace("\xa0", " ").replace("\r\n", " ")
+            for p in vote_doc.xpath("//p")
+        ]
+
+        # Go until we find the roll call
+        for i, p in enumerate(pieces):
+            if p.startswith(f"Roll Call No. {rc_num}"):
+                break
+
+        vtype = None
+        results = collections.defaultdict(list)
+
+        # Once we find the roll call, go through voters
+        for p in pieces[i:]:
+            if "Yeas" in p:
+                vtype = "yes"
+            elif "Nays" in p:
+                vtype = "no"
+            elif "Excused" in p or "Not Voting" in p:
+                vtype = "other"
+            elif "Roll Call No" in p:
+                continue
+            elif p.startswith("In The Chair:"):
+                break
+            elif vtype:
+                # Split on multiple spaces not preceded by commas
+                for line in re.split(r"(?<!,)\s{2,}", p):
+                    if line.strip():
+                        if session == "2017-2018":
+                            for leg in line.split():
+                                results[vtype].append(leg)
+                        else:
+                            results[vtype].append(line)
+            else:
+                self.warning("piece without vtype set: %s", p)
+
+        return results
 
     def scrape_legal(self, bill: Bill, page: lxml.html.HtmlElement):
         for row in page.xpath(
@@ -207,7 +394,6 @@ class MIBillScraper(Scraper):
                     on_duplicate="ignore",
                 )
 
-    # TODO: VOTES
     #         # check if action mentions a sub
     #         submatch = re.search(
     #             r"WITH SUBSTITUTE\s+([\w\-\d]+)", action, re.IGNORECASE
@@ -222,121 +408,3 @@ class MIBillScraper(Scraper):
     #             elif version_url.lower().endswith(".htm"):
     #                 mimetype = "text/html"
     #             bill.add_version_link(version_name, version_url, media_type=mimetype)
-
-    #         # check if action mentions a vote
-    #         rcmatch = re.search(r"Roll Call # (\d+)", action, re.IGNORECASE)
-    #         if rcmatch:
-    #             rc_num = rcmatch.groups()[0]
-    #             # in format mileg.aspx?page=getobject&objectname=2011-SJ-02-10-011
-    #             journal_link = tds[1].xpath("a/@href")
-    #             if journal_link:
-    #                 objectname = journal_link[0].rsplit("=", 1)[-1]
-    #                 chamber_name = {"upper": "Senate", "lower": "House"}[actor]
-    #                 vote_url = BASE_URL + "/documents/%s/Journal/%s/htm/%s.htm" % (
-    #                     session,
-    #                     chamber_name,
-    #                     objectname,
-    #                 )
-    #                 results = self.parse_roll_call(vote_url, rc_num, session)
-
-    #                 if results is not None:
-    #                     vote_passed = len(results["yes"]) > len(results["no"])
-    #                     vote = VoteEvent(
-    #                         start_date=date,
-    #                         chamber=actor,
-    #                         bill=bill,
-    #                         motion_text=action,
-    #                         result="pass" if vote_passed else "fail",
-    #                         classification="passage",
-    #                     )
-
-    #                     # check the expected counts vs actual
-    #                     count = re.search(r"YEAS (\d+)", action, re.IGNORECASE)
-    #                     count = int(count.groups()[0]) if count else 0
-    #                     if count != len(results["yes"]):
-    #                         self.warning(
-    #                             "vote count mismatch for %s %s, %d != %d"
-    #                             % (bill_id, action, count, len(results["yes"]))
-    #                         )
-    #                     count = re.search(r"NAYS (\d+)", action, re.IGNORECASE)
-    #                     count = int(count.groups()[0]) if count else 0
-    #                     if count != len(results["no"]):
-    #                         self.warning(
-    #                             "vote count mismatch for %s %s, %d != %d"
-    #                             % (bill_id, action, count, len(results["no"]))
-    #                         )
-
-    #                     vote.set_count("yes", len(results["yes"]))
-    #                     vote.set_count("no", len(results["no"]))
-    #                     vote.set_count("other", len(results["other"]))
-    #                     possible_vote_results = ["yes", "no", "other"]
-    #                     for pvr in possible_vote_results:
-    #                         for name in results[pvr]:
-    #                             if session == "2017-2018":
-    #                                 names = name.split("\t")
-    #                                 for n in names:
-    #                                     vote.vote(pvr, name.strip())
-    #                             else:
-    #                                 # Prevents voter names like "House Bill No. 4451, entitled" and other sentences
-    #                                 if len(name.split()) < 5:
-    #                                     vote.vote(pvr, name.strip())
-    #                     vote.add_source(vote_url)
-    #                     yield vote
-    #             else:
-    #                 self.warning("missing journal link for %s %s" % (bill_id, journal))
-
-    # def parse_roll_call(self, url, rc_num, session):
-    #     try:
-    #         resp = self.get(url)
-    #     except scrapelib.HTTPError:
-    #         self.warning(
-    #             "Could not fetch roll call document at %s, unable to extract vote" % url
-    #         )
-    #         return
-    #     html = resp.text
-    #     vote_doc = lxml.html.fromstring(html)
-    #     vote_doc_textonly = vote_doc.text_content()
-    #     if re.search("In\\s+The\\s+Chair", vote_doc_textonly) is None:
-    #         self.warning('"In The Chair" indicator not found, unable to extract vote')
-    #         return
-
-    #     # split the file into lines using the <p> tags
-    #     pieces = [
-    #         p.text_content().replace("\xa0", " ").replace("\r\n", " ")
-    #         for p in vote_doc.xpath("//p")
-    #     ]
-
-    #     # go until we find the roll call
-    #     for i, p in enumerate(pieces):
-    #         if p.startswith("Roll Call No. %s" % rc_num):
-    #             break
-
-    #     vtype = None
-    #     results = collections.defaultdict(list)
-
-    #     # once we find the roll call, go through voters
-    #     for p in pieces[i:]:
-    #         # mdash: \xe2\x80\x94 splits Yeas/Nays/Excused/NotVoting
-    #         if "Yeas" in p:
-    #             vtype = "yes"
-    #         elif "Nays" in p:
-    #             vtype = "no"
-    #         elif "Excused" in p or "Not Voting" in p:
-    #             vtype = "other"
-    #         elif "Roll Call No" in p:
-    #             continue
-    #         elif p.startswith("In The Chair:"):
-    #             break
-    #         elif vtype:
-    #             # split on multiple spaces not preceeded by commas
-    #             for line in re.split(r"(?<!,)\s{2,}", p):
-    #                 if line.strip():
-    #                     if session == "2017-2018":
-    #                         for leg in line.split():
-    #                             results[vtype].append(leg)
-    #                     else:
-    #                         results[vtype].append(line)
-    #         else:
-    #             self.warning("piece without vtype set: %s", p)
-
-    #     return results
