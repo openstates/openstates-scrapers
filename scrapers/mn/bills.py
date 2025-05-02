@@ -76,7 +76,7 @@ def ensure_url_fully_qualified(url):
 class MNBillScraper(Scraper, LXMLMixin):
     # For testing purposes, this will do a lite version of things.  If
     # testing_bills is set, only these bills will be scraped.  Use SF0077
-    testing = True
+    testing = False
     testing_bills = ["HF2184"]
     testing_year = "2025"
 
