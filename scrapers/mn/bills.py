@@ -357,6 +357,7 @@ class MNBillScraper(Scraper, LXMLMixin):
 
     # action date formats are inconsistent
     def parse_dates(self, datestr):
+        datestr = datestr.replace("/225", "/2025")
         date_formats = ["%m/%d/%Y", "%m/%d/%y"]
         for fmt in date_formats:
             try:
