@@ -76,8 +76,9 @@ def ensure_url_fully_qualified(url):
 class MNBillScraper(Scraper, LXMLMixin):
     # For testing purposes, this will do a lite version of things.  If
     # testing_bills is set, only these bills will be scraped.  Use SF0077
-    testing = False
-    testing_bills = ["SC9", "SR102"]
+    testing = True
+    testing_bills = ["HF2184"]
+    testing_year = "2025"
 
     # Regular expressions to match category of actions
     _categorizers = (
@@ -139,7 +140,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                     bill_url = BILL_DETAIL_URL % (
                         self.search_chamber(chamber),
                         b,
-                        "2023",
+                        self.testing_year,
                     )
                     version_url = VERSION_URL % (
                         self.search_session(session)[-4:],
@@ -357,6 +358,8 @@ class MNBillScraper(Scraper, LXMLMixin):
 
     # action date formats are inconsistent
     def parse_dates(self, datestr):
+        # Fixing a typo in source data on following URL
+        # https://www.revisor.mn.gov/bills/bill.php?b=House&f=HF2184&ssn=0&y=2025
         datestr = datestr.replace("/225", "/2025")
         date_formats = ["%m/%d/%Y", "%m/%d/%y"]
         for fmt in date_formats:
