@@ -544,7 +544,10 @@ class MTBillScraper(Scraper):
                         )
                         bill_action = None
 
-                if "billStatusCode" in row["billStatus"] and "chamber" in row["billStatus"]["billStatusCode"]:
+                if (
+                    "billStatusCode" in row["billStatus"]
+                    and "chamber" in row["billStatus"]["billStatusCode"]
+                ):
                     chamber = (
                         "lower"
                         if row["billStatus"]["billStatusCode"]["chamber"] == "HOUSE"
@@ -552,9 +555,7 @@ class MTBillScraper(Scraper):
                     )
                 elif "systemId" in row and "chamber" in row["systemId"]:
                     chamber = (
-                        "lower"
-                        if row["systemId"]["chamber"] == "HOUSE"
-                        else "upper"
+                        "lower" if row["systemId"]["chamber"] == "HOUSE" else "upper"
                     )
                 else:
                     chamber = None
