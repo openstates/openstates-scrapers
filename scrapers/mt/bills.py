@@ -544,11 +544,21 @@ class MTBillScraper(Scraper):
                         )
                         bill_action = None
 
-                chamber = (
-                    "lower"
-                    if row["billStatus"]["billStatusCode"]["chamber"] == "HOUSE"
-                    else "upper"
-                )
+                if (
+                    "billStatusCode" in row["billStatus"]
+                    and "chamber" in row["billStatus"]["billStatusCode"]
+                ):
+                    chamber = (
+                        "lower"
+                        if row["billStatus"]["billStatusCode"]["chamber"] == "HOUSE"
+                        else "upper"
+                    )
+                elif "systemId" in row and "chamber" in row["systemId"]:
+                    chamber = (
+                        "lower" if row["systemId"]["chamber"] == "HOUSE" else "upper"
+                    )
+                else:
+                    chamber = None
                 when = dateutil.parser.parse(row["dateTime"])
             elif "standingCommitteeMeeting" in row:
                 if not row["billStatusId"] or not row["legislatorVotes"]:
