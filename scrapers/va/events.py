@@ -6,6 +6,7 @@ import json
 import lxml
 import pytz
 import re
+from urllib.parse import urlparse
 
 simple_html_tag_regex = re.compile("<.*?>")
 
@@ -33,11 +34,12 @@ class VaEventScraper(Scraper):
             return True
 
     def choose_agenda_parser(self, event: Event, url: str) -> None:
-        if "lis.virginia" in url.lower():
+        hostname = urlparse(url).hostname
+        if hostname and hostname.endswith("lis.virginia.gov"):
             self.scrape_senate_agenda(event, url)
-        elif "virginiageneralassembly" in url.lower():
+        elif hostname and hostname.endswith("virginiageneralassembly.gov"):
             self.scrape_house_com_agendas(event, url)
-        elif "sfac.virginia.gov" in url.lower():
+        elif hostname and hostname.endswith("sfac.virginia.gov"):
             self.scrape_senate_fac_agendas(event, url)
         else:
             self.error(f"Found VA agenda link with no parser {url}")
