@@ -35,11 +35,11 @@ class VaEventScraper(Scraper):
 
     def choose_agenda_parser(self, event: Event, url: str) -> None:
         hostname = urlparse(url).hostname
-        if hostname and hostname.endswith("lis.virginia.gov"):
+        if hostname and (hostname == "lis.virginia.gov" or hostname.endswith(".lis.virginia.gov")):
             self.scrape_senate_agenda(event, url)
-        elif hostname and hostname.endswith("virginiageneralassembly.gov"):
+        elif hostname and (hostname == "virginiageneralassembly.gov" or hostname.endswith(".virginiageneralassembly.gov")):
             self.scrape_house_com_agendas(event, url)
-        elif hostname and hostname.endswith("sfac.virginia.gov"):
+        elif hostname and (hostname == "sfac.virginia.gov" or hostname.endswith(".sfac.virginia.gov")):
             self.scrape_senate_fac_agendas(event, url)
         else:
             self.error(f"Found VA agenda link with no parser {url}")
