@@ -264,6 +264,7 @@ class CABillScraper(Scraper, LXMLMixin):
                 "SCR": "concurrent resolution",
                 "SJR": "joint resolution",
                 "SR": "resolution",
+                "GRP": "bill",
             },
         }
 
