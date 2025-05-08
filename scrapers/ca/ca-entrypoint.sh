@@ -8,4 +8,4 @@ set -e
 
 mysqld --user root --max_allowed_packet=512M &
 /opt/openstates/openstates/scrapers/ca/download.sh
-poetry run os-update ca $1
+poetry run os-update ca $*
