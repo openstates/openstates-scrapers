@@ -43,7 +43,7 @@ RUN pip --no-cache-dir --disable-pip-version-check install wheel \
 
 ADD poetry.lock /opt/openstates/openstates/
 ADD pyproject.toml /opt/openstates/openstates/
-ADD scrapers/ca/ca-entrypoint.sh /ca-entrypoint.sh
+ADD scrapers/ca/ca-entrypoint.sh /opt/openstates/openstates/ca-entrypoint.sh
 
 # Also add the non-CA entrypoint, for running the events_web scraper
 # (to bypass wait for SQL download which that scraper doesn't use)
@@ -69,4 +69,4 @@ RUN poetry install --no-root  --extras "california" \
 
 ENV OPENSSL_CONF=/opt/openstates/openstates/openssl.cnf
 
-ENTRYPOINT ["/ca-entrypoint.sh"]
+ENTRYPOINT ["/opt/openstates/openstates/ca-entrypoint.sh"]
