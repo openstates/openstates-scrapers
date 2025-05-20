@@ -15,6 +15,7 @@ from . import actions
 tz = pytz.timezone("America/New_York")
 
 
+# FYI: as of 2025 this should be run with --http-resilience
 class PABillScraper(Scraper):
     session_year: str = ""
 
@@ -292,9 +293,7 @@ class PABillScraper(Scraper):
                 raise Exception(msg)
 
     def get_page(self, url):
-        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36"
-        headers = {"User-Agent": user_agent}
-        html = self.get(url, headers=headers).text
+        html = self.get(url).text
         page = lxml.html.fromstring(html)
         page.make_links_absolute(url)
         return page
@@ -413,7 +412,7 @@ class PABillScraper(Scraper):
             'string(//div[contains(@class, "detailsLabel")][contains(., "Date")]/following-sibling::div/a)'
         ).strip()
         date = tz.localize(datetime.datetime.strptime(date, "%B %d, %Y"))
-        self.logger.info("Committe Vote Date: {}, URL: {}".format(date, url))
+        self.logger.info("Committee Vote Date: {}, URL: {}".format(date, url))
         # Motion
         motion = doc.xpath(
             'string(//div[contains(text(), "Type of Motion")]/following-sibling::div[1])'
