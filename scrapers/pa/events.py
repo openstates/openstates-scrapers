@@ -16,8 +16,10 @@ class PAEventScraper(Scraper):
             yield from self.scrape_chamber(chamber)
 
     def scrape_chamber(self, chamber):
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36"
+        headers = {"User-Agent": user_agent}
         url = utils.urls["events"][chamber]
-        page = self.get(url).text
+        page = self.get(url, headers=headers).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
