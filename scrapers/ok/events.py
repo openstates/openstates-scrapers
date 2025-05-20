@@ -106,9 +106,11 @@ class OKEventScraper(Scraper):
 
         event = Event(title, when, location)
         for row in page.xpath("//article//ol/li"):
-            item = event.add_agenda_item(row.xpath("string(.)"))
-            for bill_link in row.xpath(".//a[contains(@href,'/cf_pdf/')]"):
-                item.add_bill(bill_link.xpath("string()"))
+            item_text = row.xpath("string(.)").strip()
+            if item_text:
+                item = event.add_agenda_item(item_text)
+                for bill_link in row.xpath(".//a[contains(@href,'/cf_pdf/')]"):
+                    item.add_bill(bill_link.xpath("string()"))
 
         event.add_committee(title)
 
