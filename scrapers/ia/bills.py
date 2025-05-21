@@ -1,8 +1,6 @@
 import re
 import datetime
-from http.client import RemoteDisconnected
 import lxml.html
-import random
 import requests
 import time
 from openstates.scrape import Scraper, Bill
@@ -11,29 +9,12 @@ from .actions import Categorizer
 _IA_ORGANIZATION_ENTITY_NAME_KEYWORDS = ["COMMITTEE", "RULES AND ADMINISTRATION"]
 
 
-def get_random_user_agent():
-    """
-    Return a random user agent to help avoid detection.
-    """
-    user_agents = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36",
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1",
-        "Mozilla/5.0 (iPad; CPU OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.59",
-    ]
-    return random.choice(user_agents)
-
-
+# FYI: as of 2025 this should be run with --http-resilience
 class IABillScraper(Scraper):
     categorizer = Categorizer()
 
     def scrape(self, session=None, chamber=None, prefiles=None):
-
-        self.retry_attempts = 10
-        self.retry_wait_seconds = 30
+        self.http_resilience_headers = {"X-Requested-With": "XMLHttpRequest"}
         req_session = requests.Session()
         req_session.headers.update({"X-Requested-With": "XMLHttpRequest"})
         # openstates/issues#252 - IA continues to prefile after session starts
@@ -43,68 +24,21 @@ class IABillScraper(Scraper):
         if prefiles == "True":
             return
 
-        # Set up a circuit breaker to track consecutive failures
-        self._consecutive_failures = 0
-        self._max_consecutive_failures = 3
-        self._circuit_breaker_timeout = 120  # 2 minutes
-
-        self.headers["User-Agent"] = get_random_user_agent()
-
-        # Set up connection pool reset
-        self._last_reset_time = time.time()
-        self._reset_interval = 600  # Reset connection pool every 10 minutes
-
-        # Create a fresh session
-        self._create_fresh_session()
-
         session_id = self.get_session_id(session)
         url = f"https://www.legis.iowa.gov/legislation/findLegislation/allbills?ga={session_id}"
         page = lxml.html.fromstring(req_session.get(url).text)
         start_time = time.time()
         for option in page.xpath("//*[@id='sortableTable']/tbody/tr"):
-            try:
-                # Reset connection pool if needed
-                self._reset_connection_pool_if_needed()
+            bill_id = option.xpath("td[2]/a/text()")[0]
+            title = option.xpath("td[3]/text()")[0].split("(")[0]
+            chamber = "lower" if bill_id[0] == "H" else "upper"
+            sponsors = option.xpath("td[6]/text()")[0]
 
-                # Add a random delay between processing items
-                self.add_random_delay(1, 3)
+            bill_url = f"https://www.legis.iowa.gov/legislation/BillBook?ga={session_id}&ba={bill_id.replace(' ', '')}"
 
-                # If we've had too many consecutive failures, pause for a while
-                if self._consecutive_failures >= self._max_consecutive_failures:
-                    self.logger.warning(
-                        f"Circuit breaker triggered after {self._consecutive_failures} consecutive failures. "
-                        f"Pausing for {self._circuit_breaker_timeout} seconds."
-                    )
-                    time.sleep(self._circuit_breaker_timeout)
-                    self._consecutive_failures = 0
-
-                    # Rotate user agent after circuit breaker timeout
-                    self.headers["User-Agent"] = get_random_user_agent()
-
-                bill_id = option.xpath("td[2]/a/text()")[0]
-                title = option.xpath("td[3]/text()")[0].split("(")[0]
-                chamber = "lower" if bill_id[0] == "H" else "upper"
-                sponsors = option.xpath("td[6]/text()")[0]
-
-                bill_url = f"https://www.legis.iowa.gov/legislation/BillBook?ga={session_id}&ba={bill_id.replace(' ', '')}"
-
-                # Reset consecutive failures counter on success
-                self._consecutive_failures = 0
-
-                yield self.scrape_bill(
-                    chamber, session, session_id, bill_id, bill_url, title, sponsors
-                )
-            except Exception as e:
-                self._consecutive_failures += 1
-                self.logger.error(f"Error processing item: {e}")
-
-                # If it's a connection error, add a longer delay
-                if isinstance(e, (ConnectionError, RemoteDisconnected)):
-                    self.logger.warning("Connection error. Adding longer delay.")
-                    self.add_random_delay(5, 15)
-
-                    # Rotate user agent after connection error
-                    self.headers["User-Agent"] = get_random_user_agent()
+            yield self.scrape_bill(
+                chamber, session, session_id, bill_id, bill_url, title, sponsors
+            )
 
         # scrapes dropdown options on 'Bill Book' page
         #  to get bill types not found on 'All Bills' page
@@ -185,7 +119,8 @@ class IABillScraper(Scraper):
 
     def scrape_subjects(self, bill, bill_number, session):
 
-        self.session.headers.update({"X-Requested-With": "XMLHttpRequest"})
+        self.http_resilience_headers = {"X-Requested-With": "XMLHttpRequest"}
+        # self.session.headers.update({"X-Requested-With": "XMLHttpRequest"})
 
         session_id = self.get_session_id(session)
         bill_id = bill_number.replace(" ", "+")
@@ -196,7 +131,12 @@ class IABillScraper(Scraper):
             )
         )
 
-        html = self.session.get(subject_url, cookies=self.session.cookies).text
+        # In HTTP resilience mode, we will have cookies (--http-resilience)
+        if hasattr(self, "session"):
+            cookies = self.session.cookies
+        else:
+            cookies = None
+        html = self.get(subject_url, cookies=cookies).text
         page = lxml.html.fromstring(html)
 
         subjects = page.xpath('//div[@class="taggedTopics"]/a/text()')
@@ -206,8 +146,14 @@ class IABillScraper(Scraper):
     def scrape_bill(
         self, chamber, session, session_id, bill_id, url, title=None, sponsors=None
     ):
+        # In HTTP resilience mode, we will have cookies (--http-resilience)
+        # check if self has attribute session
+        if hasattr(self, "session"):
+            cookies = self.session.cookies
+        else:
+            cookies = None
         try:
-            sidebar = lxml.html.fromstring(self.get(url, cookies=self.cookies).text)
+            sidebar = lxml.html.fromstring(self.get(url, cookies=cookies).text)
             sidebar.make_links_absolute("https://www.legis.iowa.gov")
         except requests.exceptions.ConnectionError:
             self.warning("Connection closed without response, skipping")
@@ -217,7 +163,7 @@ class IABillScraper(Scraper):
             f"https://www.legis.iowa.gov/legislation/billTracking/"
             f"billHistory?billName={bill_id}&ga={session_id}"
         )
-        req = self.session.get(hist_url)
+        req = self.get(hist_url)
         if req.status_code == 500:
             self.warning("500 error on {}, skipping".format(hist_url))
             return
@@ -434,62 +380,3 @@ class IABillScraper(Scraper):
             "2021-2022": "89",
             "2023-2024": "90",
         }[session]
-
-    def _create_fresh_session(self):
-        """
-        Create a fresh session with appropriate settings.
-        """
-        if hasattr(self, "session"):
-            self.session.close()
-
-        # Create a new session
-        self.session = requests.Session()
-
-        # IA specific thing
-        self.session.headers.update({"X-Requested-With": "XMLHttpRequest"})
-
-        # Set up retry mechanism
-        adapter = requests.adapters.HTTPAdapter(
-            max_retries=self.retry_attempts,
-            pool_connections=10,
-            pool_maxsize=10,
-            pool_block=False,
-        )
-        self.session.mount("http://", adapter)
-        self.session.mount("https://", adapter)
-
-        self.headers["User-Agent"] = get_random_user_agent()
-
-        self.logger.info(
-            f"Created fresh session with user agent: {self.headers['User-Agent']}"
-        )
-
-        return self.session
-
-    def _reset_connection_pool_if_needed(self):
-        """
-        Reset the connection pool if it's been too long since the last reset.
-        This helps prevent "Remote end closed connection without response" errors.
-        """
-        current_time = time.time()
-        if current_time - self._last_reset_time > self._reset_interval:
-            self.logger.info(
-                f"Resetting connection pool after {self._reset_interval} seconds"
-            )
-
-            # Create a fresh session
-            self._create_fresh_session()
-
-            self._last_reset_time = current_time
-
-    def add_random_delay(self, min_seconds=1, max_seconds=3):
-        """
-        Add a random delay to simulate human behavior.
-
-        Args:
-            min_seconds: Minimum delay in seconds
-            max_seconds: Maximum delay in seconds
-        """
-        delay = random.uniform(min_seconds, max_seconds)
-        self.logger.debug(f"Adding random delay of {delay:.2f} seconds")
-        time.sleep(delay)
