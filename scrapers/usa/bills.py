@@ -75,6 +75,7 @@ class USBillScraper(Scraper):
         "Joint Resolution Passed": "pass",
         "Joint Resolution Defeated": "fail",
         "Point of Order Well Taken": "pass",
+        "Point of Order Sustained": "pass",
         "Resolution Agreed to": "pass",
         "Resolution of Ratification Agreed to": "pass",
         "Veto Sustained": "fail",
