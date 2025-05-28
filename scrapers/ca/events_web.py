@@ -198,10 +198,9 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                     .replace(".", "")
                     .strip()
                 )
-                bill_number = (
-                    measure.xpath('.//span[@class="MeasureNum"]/text()')[0]
-                    .strip()
-                )
+                bill_number = measure.xpath('.//span[@class="MeasureNum"]/text()')[
+                    0
+                ].strip()
                 bill_id = f"{bill_type}{bill_number}"
                 note = measure.xpath('.//span[contains(@class, "Topic")]//text()')[
                     0
