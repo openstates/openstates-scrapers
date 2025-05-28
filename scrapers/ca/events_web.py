@@ -193,13 +193,16 @@ class CAEventWebScraper(Scraper, LXMLMixin):
         elif measure_class:
             for measure in measure_class:
 
-                bill_id = (
+                bill_type = (
                     measure.xpath('.//span[@class="MeasureType"]/text()')[0]
-                    .replace("No", "")
                     .replace(".", "")
-                    .replace(" ", "")
                     .strip()
                 )
+                bill_number = (
+                    measure.xpath('.//span[@class="MeasureNum"]/text()')[0]
+                    .strip()
+                )
+                bill_id = f"{bill_type}{bill_number}"
                 note = measure.xpath('.//span[contains(@class, "Topic")]//text()')[
                     0
                 ].strip()
