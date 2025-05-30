@@ -281,7 +281,7 @@ class Mississippi(State):
             "active": False,
         },
         {
-            "_scraped_name": "2025 First Extraordinary Session",
+            "_scraped_name": "2025 1st Extraordinary Session",
             "classification": "special",
             "identifier": "20251E",
             "name": "2025 First Extraordinary Session",
