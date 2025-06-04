@@ -239,7 +239,7 @@ class WABillScraper(Scraper, LXMLMixin):
             self.scrape_chamber(chamber, session)
 
         # uncomment the line below to scrape a single bill
-        # self._bill_id_list = ["HB 1002"]
+        # self._bill_id_list = ["HB 1146"]
 
         # de-dup bill_id
         for bill_id in list(set(self._bill_id_list)):
@@ -481,7 +481,8 @@ class WABillScraper(Scraper, LXMLMixin):
             elif "other than legislative" in header_text:
                 actor = "executive"
 
-            rows = header.xpath("following-sibling::div[@class='historytable']/div")
+            # get items in only the FIRST following sibling DIV of class historytable
+            rows = header.xpath("following-sibling::div[@class='historytable'][1]/div")
             action_day_text = ""
             for row in rows:
                 # div[1] is the date
