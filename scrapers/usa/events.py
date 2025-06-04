@@ -2,6 +2,7 @@ import pytz
 import lxml
 import datetime
 import dateutil
+import os
 import re
 import requests
 
@@ -314,9 +315,67 @@ class USEventScraper(Scraper, LXMLMixin):
         self.geocode(event)
         event.extras["US_HOUSE_EVENT_ID"] = xml.xpath("//committee-meeting/@meeting-id")
 
+        event_id_matches = re.findall(r"EventID=(\d+)", source_url, re.IGNORECASE)
+        if event_id_matches:
+            event.extras["CONGRESS_GOV_EVENT_ID"] = event_id_matches[0]
+            self.congress_gov_api("119", "house", event, event_id_matches[0])
+
         yield event
 
-    def asp_post(self, url, params):
+    def congress_gov_api(
+        self, congress_num: str, chamber: str, event: Event, congress_gov_id: str
+    ):
+        if os.environ["CONGRESS_GOV_API_KEY"]:
+            url = f"https://api.congress.gov/v3/committee-meeting/{congress_num}/{chamber}/{congress_gov_id}"
+            # using params instead of ? in the url to avoid logging api keys
+            params = {"api_key": os.environ["CONGRESS_GOV_API_KEY"]}
+            data = self.get(url, params=params).json()
+            print(data)
+
+            if not data:
+                self.warning(
+                    f"Nothing on congress.gov yet for {congress_gov_id}, skipping"
+                )
+                return
+
+            data = data["committeeMeeting"]
+
+            if "witnesses" in data:
+                for witness in data["witnesses"]:
+                    print(self.format_witness(witness))
+                    event.add_participant(self.format_witness(witness), "person")
+
+            if "videos" in data:
+                for vid in data["videos"]:
+                    event.add_media_link(
+                        vid["name"],
+                        vid["url"],
+                        media_type="text/html",
+                        on_duplicate="ignore",
+                    )
+
+            if "meetingDocuments" in data:
+                for doc in data["meetingDocuments"]:
+                    if doc["name"]:
+                        event.add_document(
+                            doc["name"],
+                            doc["url"],
+                            media_type=self.media_types[doc["format"].strip()],
+                        )
+
+    def format_witness(self, witness: dict) -> str:
+        return ", ".join(
+            filter(
+                None,
+                (
+                    witness["name"].strip(),
+                    witness.get("position", "").strip(),
+                    witness.get("organization", "").strip(),
+                ),
+            )
+        )
+
+    def asp_post(self, url: str, params: dict):
         page = self.s.get(url)
         page = lxml.html.fromstring(page.content)
         (viewstate,) = page.xpath('//input[@id="__VIEWSTATE"]/@value')
