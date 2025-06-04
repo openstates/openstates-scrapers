@@ -310,8 +310,7 @@ class IlBillScraper(Scraper):
         session_id = session
         # scrape a single bill for debug
         # yield from self.scrape_bill(
-        #     'lower', '101st', 'HB', 'https://ilga.gov/legislation/BillStatus.asp?DocNum=
-        # 2488&GAID=15&DocTypeID=HB&LegId=118516&SessionID=108&GA=101'
+        #     'upper', '104th', 'SB', 'https://beta.ilga.gov/Legislation/BillStatus?GAID=18&DocNum=2111&DocTypeID=SB&LegId=161644&SessionID=114'
         # )
 
         # Sessions that run from 1997 - 2002. Last few sessiosn before bills were PDFs
@@ -671,7 +670,7 @@ class IlBillScraper(Scraper):
                     motion += amendment
 
                 actor = link.xpath("../following-sibling::td/text()")[0]
-                actor = "upper" if actor == "SENATE" else "lower"
+                actor = "upper" if actor.upper() == "SENATE" else "lower"
 
             classification, _ = _categorize_action(motion)
 
@@ -713,7 +712,7 @@ class IlBillScraper(Scraper):
         # vote indicator, a few spaces, a name, newline or multiple spaces
         # VOTE_RE = re.compile('(Y|N|E|NV|A|P|-)\s{2,5}(\w.+?)(?:\n|\s{2})')
         COUNT_RE = re.compile(
-            r"^(\d+)\s+YEAS?\s+(\d+)\s+NAYS?\s+(\d+)\s+PRESENT(?:\s+(\d+)\s+NOT\sVOTING)?\s*$"
+            r"^\s*(\d+)\s+YEAS?\s+(\d+)\s+NAYS?\s+(\d+)\s+PRESENT(?:\s+(\d+)\s+NOT\sVOTING)?\s*$"
         )
         PASS_FAIL_WORDS = {
             "PASSED": "pass",
