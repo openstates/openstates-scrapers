@@ -5,6 +5,7 @@ import dateutil
 import os
 import re
 import requests
+import scrapelib
 
 from utils import LXMLMixin
 from utils.events import match_coordinates
@@ -329,9 +330,11 @@ class USEventScraper(Scraper, LXMLMixin):
             url = f"https://api.congress.gov/v3/committee-meeting/{congress_num}/{chamber}/{congress_gov_id}"
             # using params instead of ? in the url to avoid logging api keys
             params = {"api_key": os.environ["CONGRESS_GOV_API_KEY"]}
-            data = self.get(url, params=params).json()
-            print(data)
 
+            try:
+                data = self.get(url, params=params).json()
+            except scrapelib.HTTPError:
+                return
             if not data:
                 self.warning(
                     f"Nothing on congress.gov yet for {congress_gov_id}, skipping"
@@ -339,10 +342,9 @@ class USEventScraper(Scraper, LXMLMixin):
                 return
 
             data = data["committeeMeeting"]
-
+            print(data)
             if "witnesses" in data:
                 for witness in data["witnesses"]:
-                    print(self.format_witness(witness))
                     event.add_participant(self.format_witness(witness), "person")
 
             if "videos" in data:
@@ -355,13 +357,39 @@ class USEventScraper(Scraper, LXMLMixin):
                     )
 
             if "meetingDocuments" in data:
-                for doc in data["meetingDocuments"]:
-                    if doc["name"]:
-                        event.add_document(
-                            doc["name"],
-                            doc["url"],
-                            media_type=self.media_types[doc["format"].strip()],
-                        )
+                self.add_documents_from_api(event, data["meetingDocuments"])
+            if "witnessDocuments" in data:
+                self.add_documents_from_api(event, data["witnessDocuments"])
+
+    def add_documents_from_api(self, event: Event, docs: dict):
+        seen_docs = {}
+        for doc in docs:
+            print(doc)
+            if "name" in doc:
+                event.add_document(
+                    doc["name"],
+                    doc["url"],
+                    media_type=self.media_types[doc["format"].strip()],
+                )
+            elif doc["documentType"] not in seen_docs:
+                # "Witness Statement"
+                event.add_document(
+                    doc["documentType"],
+                    doc["url"],
+                    media_type=self.media_types[doc["format"].strip()],
+                )
+                seen_docs[doc["documentType"]] = 1
+            else:
+                # "Witness Statment 2", "Witness Statement 3", etc.
+                seen_docs[doc["documentType"]] += 1
+                doc_name = (
+                    f"{doc['documentType']} {str(seen_docs[doc['documentType']])}"
+                )
+                event.add_document(
+                    doc_name,
+                    doc["url"],
+                    media_type=self.media_types[doc["format"].strip()],
+                )
 
     def format_witness(self, witness: dict) -> str:
         return ", ".join(
