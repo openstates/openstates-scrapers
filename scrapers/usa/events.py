@@ -2,8 +2,10 @@ import pytz
 import lxml
 import datetime
 import dateutil
+import os
 import re
 import requests
+import scrapelib
 
 from utils import LXMLMixin
 from utils.events import match_coordinates
@@ -174,6 +176,17 @@ class USEventScraper(Scraper, LXMLMixin):
 
             event.add_source("https://www.senate.gov/committees/hearings_meetings.htm")
 
+            if event_date.date() > datetime.date(
+                2025, 1, 3
+            ) and event_date.date() < datetime.date(2027, 1, 3):
+                congress_num = 119
+            else:
+                self.error("Code a congress number here.")
+
+            self.congress_gov_api(
+                congress_num, "senate", event, row.xpath("string(identifier)")
+            )
+
             yield event
 
     # window is an int of how many days out to scrape
@@ -314,9 +327,99 @@ class USEventScraper(Scraper, LXMLMixin):
         self.geocode(event)
         event.extras["US_HOUSE_EVENT_ID"] = xml.xpath("//committee-meeting/@meeting-id")
 
+        event_id_matches = re.findall(r"EventID=(\d+)", source_url, re.IGNORECASE)
+        if event_id_matches:
+            event.extras["CONGRESS_GOV_EVENT_ID"] = event_id_matches[0]
+
+            congress_num = xml.xpath("@congress-num")[0]
+            self.congress_gov_api(congress_num, "house", event, event_id_matches[0])
+
         yield event
 
-    def asp_post(self, url, params):
+    def congress_gov_api(
+        self, congress_num: str, chamber: str, event: Event, congress_gov_id: str
+    ):
+        if os.environ.get("CONGRESS_GOV_API_KEY", None):
+            url = f"https://api.congress.gov/v3/committee-meeting/{congress_num}/{chamber}/{congress_gov_id}"
+            # using params instead of ? in the url to avoid logging api keys
+            params = {"api_key": os.environ["CONGRESS_GOV_API_KEY"]}
+
+            try:
+                data = self.get(url, params=params).json()
+            except scrapelib.HTTPError:
+                return
+            if not data:
+                self.warning(
+                    f"Nothing on congress.gov yet for {congress_gov_id}, skipping"
+                )
+                return
+
+            data = data["committeeMeeting"]
+            if "witnesses" in data:
+                for witness in data["witnesses"]:
+                    event.add_participant(self.format_witness(witness), "person")
+
+            if "videos" in data:
+                for vid in data["videos"]:
+                    event.add_media_link(
+                        vid["name"],
+                        vid["url"],
+                        media_type="text/html",
+                        on_duplicate="ignore",
+                    )
+
+            if "meetingDocuments" in data:
+                self.add_documents_from_api(event, data["meetingDocuments"])
+            if "witnessDocuments" in data:
+                self.add_documents_from_api(event, data["witnessDocuments"])
+
+    def add_documents_from_api(self, event: Event, docs: dict):
+        seen_docs = {}
+        for doc in docs:
+            if "url" not in doc:
+                continue
+            if "name" in doc:
+                event.add_document(
+                    doc["name"],
+                    doc["url"],
+                    media_type=self.media_types[doc["format"].strip()],
+                    on_duplicate="ignore",
+                )
+            elif doc["documentType"] not in seen_docs:
+                # "Witness Statement"
+                event.add_document(
+                    doc["documentType"],
+                    doc["url"],
+                    media_type=self.media_types[doc["format"].strip()],
+                    on_duplicate="ignore",
+                )
+                seen_docs[doc["documentType"]] = 1
+            else:
+                # "Witness Statment 2", "Witness Statement 3", etc.
+                seen_docs[doc["documentType"]] += 1
+                doc_name = (
+                    f"{doc['documentType']} {str(seen_docs[doc['documentType']])}"
+                )
+                event.add_document(
+                    doc_name,
+                    doc["url"],
+                    media_type=self.media_types[doc["format"].strip()],
+                    on_duplicate="ignore",
+                )
+
+    def format_witness(self, witness: dict) -> str:
+        return ", ".join(
+            filter(
+                None,
+                (
+                    witness["name"].strip(),
+                    witness.get("position", "").strip(),
+                    witness.get("organization", "").strip(),
+                ),
+            )
+        )
+
+    def asp_post(self, url: str, params: dict):
         page = self.s.get(url)
         page = lxml.html.fromstring(page.content)
         (viewstate,) = page.xpath('//input[@id="__VIEWSTATE"]/@value')
