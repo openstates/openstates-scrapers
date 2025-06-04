@@ -339,7 +339,7 @@ class USEventScraper(Scraper, LXMLMixin):
     def congress_gov_api(
         self, congress_num: str, chamber: str, event: Event, congress_gov_id: str
     ):
-        if os.environ["CONGRESS_GOV_API_KEY"]:
+        if os.environ.get("CONGRESS_GOV_API_KEY", None):
             url = f"https://api.congress.gov/v3/committee-meeting/{congress_num}/{chamber}/{congress_gov_id}"
             # using params instead of ? in the url to avoid logging api keys
             params = {"api_key": os.environ["CONGRESS_GOV_API_KEY"]}
