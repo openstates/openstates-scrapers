@@ -176,6 +176,10 @@ class USEventScraper(Scraper, LXMLMixin):
 
             event.add_source("https://www.senate.gov/committees/hearings_meetings.htm")
 
+            self.congress_gov_api(
+                "119", "senate", event, row.xpath("string(identifier)")
+            )
+
             yield event
 
     # window is an int of how many days out to scrape
@@ -342,7 +346,6 @@ class USEventScraper(Scraper, LXMLMixin):
                 return
 
             data = data["committeeMeeting"]
-            print(data)
             if "witnesses" in data:
                 for witness in data["witnesses"]:
                     event.add_participant(self.format_witness(witness), "person")
@@ -364,7 +367,8 @@ class USEventScraper(Scraper, LXMLMixin):
     def add_documents_from_api(self, event: Event, docs: dict):
         seen_docs = {}
         for doc in docs:
-            print(doc)
+            if "url" not in doc:
+                continue
             if "name" in doc:
                 event.add_document(
                     doc["name"],
