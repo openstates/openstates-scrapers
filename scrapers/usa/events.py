@@ -374,6 +374,7 @@ class USEventScraper(Scraper, LXMLMixin):
                     doc["name"],
                     doc["url"],
                     media_type=self.media_types[doc["format"].strip()],
+                    on_duplicate="ignore",
                 )
             elif doc["documentType"] not in seen_docs:
                 # "Witness Statement"
@@ -381,6 +382,7 @@ class USEventScraper(Scraper, LXMLMixin):
                     doc["documentType"],
                     doc["url"],
                     media_type=self.media_types[doc["format"].strip()],
+                    on_duplicate="ignore",
                 )
                 seen_docs[doc["documentType"]] = 1
             else:
@@ -393,6 +395,7 @@ class USEventScraper(Scraper, LXMLMixin):
                     doc_name,
                     doc["url"],
                     media_type=self.media_types[doc["format"].strip()],
+                    on_duplicate="ignore",
                 )
 
     def format_witness(self, witness: dict) -> str:
