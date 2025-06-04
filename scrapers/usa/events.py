@@ -176,8 +176,15 @@ class USEventScraper(Scraper, LXMLMixin):
 
             event.add_source("https://www.senate.gov/committees/hearings_meetings.htm")
 
+            if event_date.date() > datetime.date(
+                2025, 1, 3
+            ) and event_date.date() < datetime.date(2027, 1, 3):
+                congress_num = 119
+            else:
+                self.error("Code a congress number here.")
+
             self.congress_gov_api(
-                "119", "senate", event, row.xpath("string(identifier)")
+                congress_num, "senate", event, row.xpath("string(identifier)")
             )
 
             yield event
@@ -323,7 +330,9 @@ class USEventScraper(Scraper, LXMLMixin):
         event_id_matches = re.findall(r"EventID=(\d+)", source_url, re.IGNORECASE)
         if event_id_matches:
             event.extras["CONGRESS_GOV_EVENT_ID"] = event_id_matches[0]
-            self.congress_gov_api("119", "house", event, event_id_matches[0])
+
+            congress_num = xml.xpath("@congress-num")[0]
+            self.congress_gov_api(congress_num, "house", event, event_id_matches[0])
 
         yield event
 
