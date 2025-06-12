@@ -110,7 +110,9 @@ class ApiClient(object):
         headers["Accept"] = "application/pdf"
         headers["User-Agent"] = self.user_agent
         url = urljoin(self.root, url)
-        resp = requests.get(url, headers=headers, allow_redirects=False, verify=self.verify)
+        resp = requests.get(
+            url, headers=headers, allow_redirects=False, verify=self.verify
+        )
         if "Location" in resp.headers:
             return resp.headers["Location"]
 
@@ -142,7 +144,9 @@ class ApiClient(object):
         headers["x-api-key"] = self.apikey
         headers["Accept"] = "application/json"
         headers["User-Agent"] = self.user_agent
-        response = requests.get(url, headers=headers, allow_redirects=False, verify=self.verify)
+        response = requests.get(
+            url, headers=headers, allow_redirects=False, verify=self.verify
+        )
         if response.status_code in (301, 302):
             return response.headers["Location"]
         else:
@@ -178,7 +182,9 @@ class ApiClient(object):
         resp = None
         tries = 0
         while resp is None and tries < num_bad_packets_allowed:
-            resp = self.scraper.get(url, *requests_args, verify=self.verify, **requests_kwargs)
+            resp = self.scraper.get(
+                url, *requests_args, verify=self.verify, **requests_kwargs
+            )
         return resp
 
     def unpaginate(self, result):
