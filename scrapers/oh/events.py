@@ -179,11 +179,12 @@ class OHEventScraper(Scraper):
                 self.info(f"Fetching {api_url}")
                 try:
                     api_data = json.loads(self.scraper.get(api_url).content)
-                    for row in api_data["agenda"]:
-                        item_text = f"{row['headline']} - {row['proposed_sponsor']}"
-                        agenda_item = event.add_agenda_item(item_text)
-                        if "billno" in row:
-                            agenda_item.add_bill(row["billno"])
+                    if api_data:
+                        for row in api_data["agenda"]:
+                            item_text = f"{row['headline']} - {row['proposed_sponsor']}"
+                            agenda_item = event.add_agenda_item(item_text)
+                            if "billno" in row:
+                                agenda_item.add_bill(row["billno"])
                 except JSONDecodeError:
                     pass
 
