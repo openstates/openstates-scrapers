@@ -36,7 +36,11 @@ class PAEventScraper(Scraper):
             time_string = "".join(
                 div.xpath('.//i[contains(@class, "fa-clock")]/..//text()')
             ).strip()
-            if "Call of Chair" in time_string or "Off the Floor" in time_string:
+            if time_string in [
+                "Call of Chair",
+                "Off the Floor",
+                "At the Conclusion of Session",
+            ]:
                 time_string = ""
                 all_day = True
             time_string = time_string.replace("*", "").strip()
