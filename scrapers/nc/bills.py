@@ -114,6 +114,7 @@ class NCBillScraper(Scraper):
             bill.add_version_link(
                 version_name,
                 version_url,
+                classification="amendment",
                 media_type="application/pdf",
                 on_duplicate="ignore",
             )

@@ -197,6 +197,7 @@ class NHBillScraper(Scraper):
                     self.bills[lsr].add_version_link(
                         note=amendment_name,
                         url=amendment_url,
+                        classification="amendment",
                         media_type="application/pdf",
                     )
 

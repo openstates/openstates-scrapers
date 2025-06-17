@@ -234,6 +234,7 @@ class WIBillScraper(Scraper):
                 bill.add_version_link(
                     version_name,
                     version_url,
+                    classification="amendment",
                     media_type="text/html",
                     on_duplicate="ignore",
                 )

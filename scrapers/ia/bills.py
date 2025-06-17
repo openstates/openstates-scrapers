@@ -305,7 +305,10 @@ class IABillScraper(Scraper):
 
                         if amd_url not in version_urls:
                             bill.add_version_link(
-                                note=amd_name, url=amd_url, media_type="application/pdf"
+                                note=amd_name,
+                                url=amd_url,
+                                classification="amendment",
+                                media_type="application/pdf",
                             )
                             version_urls.append(amd_url)
                         else:
@@ -327,7 +330,10 @@ class IABillScraper(Scraper):
                         )
                     elif "acts" in link_text.lower():
                         bill.add_document_link(
-                            note=link_text, url=link_url, media_type="application/pdf"
+                            note=link_text,
+                            url=link_url,
+                            classification="became-law",
+                            media_type="application/pdf",
                         )
                         bill.add_citation(
                             f"IA Acts, {session}",
