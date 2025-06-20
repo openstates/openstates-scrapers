@@ -194,9 +194,10 @@ class USBillScraper(Scraper):
                 yield vote
         except Exception as e:
             self.warning(f"Error parsing bill {bill_id}: {e}")
-            self.error(f"XML content: {ET.tostring(xml, encoding='unicode', method='xml')}")
+            self.error(
+                f"XML content: {ET.tostring(xml, encoding='unicode', method='xml')}"
+            )
             raise e
-
 
         xml_url = f"https://www.govinfo.gov/bulkdata/BILLSTATUS/{session}/{bill_type.lower()}/BILLSTATUS-{session}{bill_type.lower()}{bill_num}.xml"
         bill.add_source(xml_url)
