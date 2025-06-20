@@ -176,21 +176,27 @@ class USBillScraper(Scraper):
             classification=classification,
         )
 
-        self.scrape_actions(bill, xml)
-        self.scrape_amendments(bill, xml, session, chamber, bill_id)
-        self.scrape_cbo(bill, xml)
-        self.scrape_committee_reports(bill, xml)
-        self.scrape_cosponsors(bill, xml)
-        self.scrape_laws(bill, xml)
-        self.scrape_related_bills(bill, xml)
-        self.scrape_sponsors(bill, xml)
-        self.scrape_subjects(bill, xml)
-        self.scrape_summaries(bill, xml)
-        self.scrape_titles(bill, xml)
-        self.scrape_versions(bill, xml)
+        try:
+            self.scrape_actions(bill, xml)
+            self.scrape_amendments(bill, xml, session, chamber, bill_id)
+            self.scrape_cbo(bill, xml)
+            self.scrape_committee_reports(bill, xml)
+            self.scrape_cosponsors(bill, xml)
+            self.scrape_laws(bill, xml)
+            self.scrape_related_bills(bill, xml)
+            self.scrape_sponsors(bill, xml)
+            self.scrape_subjects(bill, xml)
+            self.scrape_summaries(bill, xml)
+            self.scrape_titles(bill, xml)
+            self.scrape_versions(bill, xml)
 
-        for vote in self.scrape_votes(bill, xml):
-            yield vote
+            for vote in self.scrape_votes(bill, xml):
+                yield vote
+        except Exception as e:
+            self.warning(f"Error parsing bill {bill_id}: {e}")
+            self.error(f"XML content: {ET.tostring(xml, encoding='unicode', method='xml')}")
+            raise e
+
 
         xml_url = f"https://www.govinfo.gov/bulkdata/BILLSTATUS/{session}/{bill_type.lower()}/BILLSTATUS-{session}{bill_type.lower()}{bill_num}.xml"
         bill.add_source(xml_url)
