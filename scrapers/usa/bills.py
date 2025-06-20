@@ -656,7 +656,6 @@ class USBillScraper(Scraper):
                 )
                 raise e
 
-
     def scrape_senate_votes(self, page, url):
         if not page.xpath("//roll_call_vote/vote_date/text()"):
             self.error(f"Unable to parse vote date in {url}")
