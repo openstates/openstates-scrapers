@@ -23,7 +23,7 @@ cryptography = "^37.0.2"
 ics = "^0.7.2"
 pymupdf = "^1.23.8"
 pandas = "^2.1.4"
-openstates = "^6.23.0"
+openstates = "^6.24.0"
 
 [tool.poetry.extras]
 california = ["mysqlclient", "SQLAlchemy"]
