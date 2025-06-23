@@ -640,6 +640,11 @@ class USBillScraper(Scraper):
             # so, we use requests library directly to avoid long retries cycle
             try:
                 content = requests.get(url).content
+
+                if "You don't have permission to access" in content:
+                    # sometimes clerk.house.gov serves an error page, but doesn't send a 403 header
+                    self.info(f"Error fetching {url}, skipping")
+                    return
                 vote_xml = lxml.html.fromstring(content)
                 if chamber.lower() == "senate":
                     vote = self.scrape_senate_votes(vote_xml, url)
