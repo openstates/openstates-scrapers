@@ -38,6 +38,7 @@ class PAEventScraper(Scraper):
             ).strip()
             if time_string in [
                 "Call of Chair",
+                "Call of the Chair",
                 "Off the Floor",
                 "At the Conclusion of Session",
             ]:
