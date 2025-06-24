@@ -641,7 +641,7 @@ class USBillScraper(Scraper):
             try:
                 content = requests.get(url).content
 
-                if "You don't have permission to access" in content:
+                if "You don't have permission to access" in content.decode():
                     # sometimes clerk.house.gov serves an error page, but doesn't send a 403 header
                     self.info(f"Error fetching {url}, skipping")
                     return
