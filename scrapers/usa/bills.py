@@ -117,7 +117,7 @@ class USBillScraper(Scraper):
         root = ET.fromstring(sitemaps)
 
         # if you want to test a bill:
-        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/118/s/BILLSTATUS-118s4869.xml')
+        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/119/hr/BILLSTATUS-119hr152.xml')
 
         for link in root.findall("us:sitemap/us:loc", self.ns):
             # split by /, then check that "116s" matches the chamber
@@ -641,7 +641,7 @@ class USBillScraper(Scraper):
             try:
                 content = requests.get(url).content
 
-                if "You don't have permission to access" in content:
+                if "You don't have permission to access" in content.decode():
                     # sometimes clerk.house.gov serves an error page, but doesn't send a 403 header
                     self.info(f"Error fetching {url}, skipping")
                     return
@@ -743,6 +743,9 @@ class USBillScraper(Scraper):
         yield vote
 
     def scrape_house_votes(self, bill, page, url):
+        if not page.xpath("//rollcall-vote/vote-metadata/action-date"):
+            self.error(f"No date and time for this vote, skipping {url}")
+            return
         vote_date = page.xpath("//rollcall-vote/vote-metadata/action-date/text()")[0]
         vote_time = page.xpath("//rollcall-vote/vote-metadata/action-time/@time-etz")[0]
 
