@@ -349,6 +349,7 @@ class COBillScraper(Scraper, LXMLMixin):
                         bill.add_version_link(
                             amendment_name,
                             amendment_url,
+                            classification="amendment",
                             media_type="application/pdf",
                             on_duplicate="ignore",
                         )

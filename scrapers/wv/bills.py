@@ -487,7 +487,11 @@ class WVBillScraper(Scraper):
             version_url = row.xpath("@href")[0]
             version_url = version_url.replace(" ", "%20")
             bill.add_version_link(
-                version_name, version_url, media_type="text/html", on_duplicate="ignore"
+                version_name,
+                version_url,
+                classification="amendment",
+                media_type="text/html",
+                on_duplicate="ignore",
             )
 
     def scrape_versions(self, session, chamber, page, bill_id):
