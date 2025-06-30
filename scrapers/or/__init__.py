@@ -220,6 +220,7 @@ class Oregon(State):
         "Mock Session 2025",
         "Mock Session 2024",
         "2023-2024 Interim",
+        "2025-2026 Interim",
         "Mock Session 2023",
         "2021-2022 Interim",
         "Mock Session 2020",
