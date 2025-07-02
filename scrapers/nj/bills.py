@@ -447,7 +447,7 @@ class NJBillScraper(Scraper, MDBMixin):
                     date = datetime.strptime(date, "%m/%d/%Y")
                     vote_id = "_".join(vote_parts).replace(" ", "_")
 
-                    if vote_id not in votes:
+                    if vote_id not in votes and len(action) > 0:
                         votes[vote_id] = VoteEvent(
                             start_date=TIMEZONE.localize(date),
                             chamber=chamber,
@@ -457,6 +457,8 @@ class NJBillScraper(Scraper, MDBMixin):
                             bill=bill_dict[bill_id],
                         )
                         votes[vote_id].dedupe_key = vote_id
+                    elif len(action) == 0:
+                        self.warning(f"Action string is empty, so cannot save VoteEvent for vote {vote_id}")
                     if leg_vote == "Y":
                         votes[vote_id].vote("yes", leg)
                     elif leg_vote == "N":
