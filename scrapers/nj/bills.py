@@ -458,7 +458,9 @@ class NJBillScraper(Scraper, MDBMixin):
                         )
                         votes[vote_id].dedupe_key = vote_id
                     elif len(action) == 0:
-                        self.warning(f"Action string is empty, so cannot save VoteEvent for vote {vote_id}")
+                        self.warning(
+                            f"Action string is empty, so cannot save VoteEvent for vote {vote_id}"
+                        )
                     if leg_vote == "Y":
                         votes[vote_id].vote("yes", leg)
                     elif leg_vote == "N":
