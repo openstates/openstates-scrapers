@@ -6,7 +6,7 @@ from requests import HTTPError
 import pytz
 import lxml
 
-URL = "https://www.capitol.hawaii.gov/upcominghearings.aspx"
+URL = "https://www.capitol.hawaii.gov/session/upcominghearings.aspx"
 
 TIMEZONE = pytz.timezone("Pacific/Honolulu")
 
