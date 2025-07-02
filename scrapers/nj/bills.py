@@ -447,26 +447,27 @@ class NJBillScraper(Scraper, MDBMixin):
                     date = datetime.strptime(date, "%m/%d/%Y")
                     vote_id = "_".join(vote_parts).replace(" ", "_")
 
-                    if vote_id not in votes and len(action) > 0:
-                        votes[vote_id] = VoteEvent(
-                            start_date=TIMEZONE.localize(date),
-                            chamber=chamber,
-                            motion_text=action,
-                            classification="passage",
-                            result=None,
-                            bill=bill_dict[bill_id],
-                        )
-                        votes[vote_id].dedupe_key = vote_id
-                    elif len(action) == 0:
+                    if len(action) == 0:
                         self.warning(
                             f"Action string is empty, so cannot save VoteEvent for vote {vote_id}"
                         )
-                    if leg_vote == "Y":
-                        votes[vote_id].vote("yes", leg)
-                    elif leg_vote == "N":
-                        votes[vote_id].vote("no", leg)
                     else:
-                        votes[vote_id].vote("other", leg)
+                        if vote_id not in votes:
+                            votes[vote_id] = VoteEvent(
+                                start_date=TIMEZONE.localize(date),
+                                chamber=chamber,
+                                motion_text=action,
+                                classification="passage",
+                                result=None,
+                                bill=bill_dict[bill_id],
+                            )
+                            votes[vote_id].dedupe_key = vote_id
+                        if leg_vote == "Y":
+                            votes[vote_id].vote("yes", leg)
+                        elif leg_vote == "N":
+                            votes[vote_id].vote("no", leg)
+                        else:
+                            votes[vote_id].vote("other", leg)
 
             # remove temp file
             os.remove(s_vote_zip)
