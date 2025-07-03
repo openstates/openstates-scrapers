@@ -106,6 +106,8 @@ class OpenLegislationAPIClient(object):
         headers = requests_kwargs.get("headers", {})
         headers["Accept"] = "application/json"
         requests_kwargs["headers"] = headers
+        if os.environ.get("HTTP_PROXY"):
+            requests_kwargs["verify"] = False
 
         args = (url, requests_args, requests_kwargs)
         self.scraper.info("API GET: %r, %r, %r" % args)
