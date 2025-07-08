@@ -55,7 +55,7 @@ class HIEventScraper(Scraper):
         if page.xpath("//td[contains(string(.),'No Hearings')]"):
             raise EmptyScrape
 
-        table = page.xpath("//table[@id='ctl00_MainContent_GridView1']")[0]
+        table = page.xpath("//table[contains(@id, 'MainContent_GridView1')]")[0]
 
         events = set()
         for event in table.xpath(".//tr")[1:]:
