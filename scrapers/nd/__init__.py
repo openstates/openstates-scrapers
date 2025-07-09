@@ -1,6 +1,7 @@
 from openstates.scrape import State
 from .bills import NDBillScraper
-from .events import NDEventScraper
+from .events_web import NDEventScraper
+from .events import NDEventsCSVScraper
 
 
 settings = {
@@ -13,7 +14,8 @@ settings = {
 class NorthDakota(State):
     scrapers = {
         "bills": NDBillScraper,
-        "events": NDEventScraper,
+        "events_web": NDEventScraper,
+        "events": NDEventsCSVScraper,
     }
     legislative_sessions = [
         {
