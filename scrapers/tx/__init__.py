@@ -201,6 +201,15 @@ class Texas(State):
             "end_date": "2025-06-02",
             "active": True,
         },
+        {
+            "_scraped_name": "89(1) - 2025",
+            "classification": "special",
+            "identifier": "891",
+            "name": "89th Legislature, 1st Called Session (2025)",
+            "start_date": "2025-07-21",
+            "end_date": "2025-08-04",
+            "active": True,
+        },
         # TODO: Re-enable vote scraper when adding next regular session
     ]
     ignored_scraped_sessions = [
