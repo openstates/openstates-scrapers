@@ -67,7 +67,12 @@ class Alabama(State):
     ignored_scraped_sessions = []
 
     def get_session_list(self):
-        return ["Regular Session 2023", "Regular Session 2024", "Regular Session 2025", "Regular Session 2026"]
+        return [
+            "Regular Session 2023",
+            "Regular Session 2024",
+            "Regular Session 2025",
+            "Regular Session 2026",
+        ]
 
     def get_scraper_ids(self, session):
         ids = {
