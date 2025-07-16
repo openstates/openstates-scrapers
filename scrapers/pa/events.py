@@ -40,6 +40,7 @@ class PAEventScraper(Scraper):
                 "Call of Chair",
                 "Call of the Chair",
                 "Off the Floor",
+                "Off the floor",
                 "At the Conclusion of Session",
             ]:
                 time_string = ""
