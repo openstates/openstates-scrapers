@@ -120,7 +120,7 @@ class IlEventScraper(Scraper):
                 no_scheduled_ct += 1
                 continue
 
-            tables = doc.xpath('//*[@id="pane-Week"]//table//tr')
+            tables = doc.xpath('//*[@id="pane-Month"]//table//tr')
             events = set()
             for table in tables:
                 meetings = table.xpath(".//button")
