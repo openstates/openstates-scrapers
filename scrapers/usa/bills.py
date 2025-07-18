@@ -469,6 +469,9 @@ class USBillScraper(Scraper):
             except (requests.exceptions.HTTPError, lxml.etree.XMLSyntaxError):
                 # Not every bill has a rules committee page
                 return
+            except requests.exceptions.ProxyError:
+                self.warning(f"ProxyError exception was swallowed for {rules_url}")
+                return
 
     # CBO cost estimates
     def scrape_cbo(self, bill, xml):
