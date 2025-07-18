@@ -9,6 +9,7 @@ from utils.events import match_coordinates
 
 
 class NJEventScraper(Scraper, MDBMixin):
+    verify = False
     _tz = pytz.timezone("US/Eastern")
     _event_bills = {}
 

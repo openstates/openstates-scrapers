@@ -17,6 +17,8 @@ TIMEZONE = pytz.timezone("US/Eastern")
 
 
 class NJBillScraper(Scraper, MDBMixin):
+    verify = False
+
     _bill_types = {
         "": "bill",
         "R": "resolution",
