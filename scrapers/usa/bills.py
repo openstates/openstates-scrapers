@@ -71,6 +71,7 @@ class USBillScraper(Scraper):
         "Motion to Proceed Rejected": "fail",
         "Motion Rejected": "fail",
         "Motion to Refer Rejected": "fail",
+        "Motion to Recommit Rejected": "fail",
         "Bill Defeated": "fail",
         "Joint Resolution Passed": "pass",
         "Joint Resolution Defeated": "fail",
