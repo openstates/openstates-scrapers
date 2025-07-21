@@ -55,7 +55,7 @@ class OKBillScraper(Scraper):
         # start by building subject map
         self.scrape_subjects(chamber, session)
 
-        url = "http://webserver1.lsb.state.ok.us/WebApplication3/WebForm1.aspx"
+        url = "https://webapps.oklegislature.gov/WebApplication3/WebForm1.aspx"
         form_page = html.fromstring(self.get(url).text)
 
         if chamber == "upper":
@@ -467,7 +467,7 @@ class OKBillScraper(Scraper):
             yield vote
 
     def scrape_subjects(self, chamber, session):
-        form_url = "http://webserver1.lsb.state.ok.us/WebApplication19/WebForm1.aspx"
+        form_url = "https://webapps.oklegislature.gov/WebApplication3/WebForm1.aspx"
         form_html = self.get(form_url).text
         fdoc = html.fromstring(form_html)
 
