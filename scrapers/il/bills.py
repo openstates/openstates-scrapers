@@ -9,7 +9,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 
 
-BASE_URL = "https://beta.ilga.gov"
+BASE_URL = "https://ilga.gov"
 central = pytz.timezone("US/Central")
 
 
@@ -310,7 +310,7 @@ class IlBillScraper(Scraper):
         session_id = session
         # scrape a single bill for debug
         # yield from self.scrape_bill(
-        #     'upper', '104th', 'SB', 'https://beta.ilga.gov/Legislation/BillStatus?GAID=18&DocNum=2111&DocTypeID=SB&LegId=161644&SessionID=114'
+        #     'upper', '104th', 'SB', 'https://ilga.gov/Legislation/BillStatus?GAID=18&DocNum=2111&DocTypeID=SB&LegId=161644&SessionID=114'
         # )
 
         # Sessions that run from 1997 - 2002. Last few sessiosn before bills were PDFs
@@ -944,6 +944,7 @@ def build_sponsor_list(sponsor_atags):
 
 
 def clean_archivebill_url(url):
-    if "https://beta.ilga.gov/documents/" not in url:
-        url = url.replace("https://beta.ilga.gov/", "https://beta.ilga.gov/documents/")
+    if "https://ilga.gov/documents/" not in url:
+        url = url.replace("https://ilga.gov/", "https://ilga.gov/documents/")
+        url = url.replace("https://beta.ilga.gov/", "https://ilga.gov/documents/")
     return url
