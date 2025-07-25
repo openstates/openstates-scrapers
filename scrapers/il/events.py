@@ -7,7 +7,7 @@ from openstates.exceptions import EmptyScrape
 
 import pytz
 
-BASE_URL = "https://beta.ilga.gov"
+BASE_URL = "https://ilga.gov"
 urls = {
     "upper": f"{BASE_URL}/Senate/Schedules",
     "lower": f"{BASE_URL}/House/Schedules",

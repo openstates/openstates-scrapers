@@ -191,7 +191,7 @@ class Illinois(State):
 
     def get_session_list(self):
         response = requests.get(
-            "https://beta.ilga.gov/API/Legislation/GetGeneralAssemblies"
+            "https://ilga.gov/API/Legislation/GetGeneralAssemblies"
         )
         response.raise_for_status()
         session_list = [ga["gaLabel"] for ga in response.json()]
