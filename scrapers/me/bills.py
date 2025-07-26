@@ -217,7 +217,9 @@ class MEBillScraper(Scraper):
                     classification=["executive-signature"],
                 )
         # Add Become Law action
-        if page.xpath('//b[contains(text(), "Became Law without Governor\'s Signature")]'):
+        if page.xpath(
+            '//b[contains(text(), "Became Law without Governor\'s Signature")]'
+        ):
             date = page.xpath(
                 (
                     'string(//td[contains(text(), "Date")]/'
