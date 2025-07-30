@@ -32,7 +32,7 @@ class KYBillScraper(Scraper, LXMLMixin):
     _subjects = defaultdict(list)
     _is_post_2016 = False
 
-    verify=False
+    verify = False
 
     _action_classifiers = [
         ("introduced in", "introduction"),
