@@ -18,7 +18,7 @@ class KYEventScraper(Scraper):
         ] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36"
         url = "https://apps.legislature.ky.gov/legislativecalendar"
 
-        page = self.get(url).content
+        page = self.get(url, verify=False).content
         page = lxml.html.fromstring(page)
 
         if len(page.xpath('//div[contains(@class,"TimeAndLocation")]')) == 0:
@@ -124,7 +124,7 @@ class KYEventScraper(Scraper):
 
     @functools.lru_cache(maxsize=None)
     def scrape_com_docs(self, url):
-        page = self.get(url).content
+        page = self.get(url, verify=False).content
         page = lxml.html.fromstring(page)
 
         docs = {}
@@ -142,7 +142,7 @@ class KYEventScraper(Scraper):
         return docs
 
     def scrape_meeting_mats(self, url):
-        page = self.get(url).content
+        page = self.get(url, verify=False).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -176,7 +176,7 @@ class KYEventScraper(Scraper):
         return docs
 
     def scrape_minutes(self, url):
-        page = self.get(url).content
+        page = self.get(url, verify=False).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 

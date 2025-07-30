@@ -225,7 +225,9 @@ class Kentucky(State):
 
     def get_session_list(self):
         sessions = url_xpath(
-            "https://apps.legislature.ky.gov/record/pastses.html", "//td/div/a/text()"
+            "https://apps.legislature.ky.gov/record/pastses.html",
+            "//td/div/a/text()",
+            verify=False,
         )
 
         for index, session in enumerate(sessions):
