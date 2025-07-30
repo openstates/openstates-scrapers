@@ -199,7 +199,7 @@ class Texas(State):
             "name": "89th Legislature (2025)",
             "start_date": "2025-01-10",
             "end_date": "2025-06-02",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "89(1) - 2025",
