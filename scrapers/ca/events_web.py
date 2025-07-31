@@ -263,6 +263,11 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                     .split(" to ")[0]
                     .strip()
                 )
+                # Encountered a date in the form 'Tuesday, August 26, 2025 9:00 am – 12 Noon'
+                # Strip out non-start-time part of string
+                # using character code to identify the specific form of em dash used here
+                if chr(8211) in when:
+                    when = when.split(chr(8211))[0].strip()
                 when = dateutil.parser.parse(when)
                 when = self._tz.localize(when)
 
