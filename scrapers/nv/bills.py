@@ -117,10 +117,10 @@ class SubjectMapping(HtmlPage):
     def get_source_from_input(self):
         session = self.input["session"]
         slug = session_slugs[session]
-        year = slug[4:]
+        # year = slug[4:]
         url = (
             f"https://www.leg.state.nv.us/Session/{slug}/Reports/"
-            f"TablesAndIndex/{year}_{session}-index.html"
+            f"TablesAndIndex/index.html"
         )
         return url
 
