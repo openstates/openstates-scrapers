@@ -183,6 +183,15 @@ class SouthDakota(State):
             "end_date": "2025-03-31",
             "active": True,
         },
+        # TODO: CHECK ON 2025-09-03
+        {
+            "_scraped_name": "2025s",
+            "identifier": "2025s",
+            "name": "2025 First Special Session",
+            "start_date": "2025-09-03",
+            "end_date": "2025-09-10",  # Estimated
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = []
 
