@@ -176,6 +176,16 @@ class Colorado(State):
             "name": "2025 Regular Session",
             "start_date": "2025-01-08",
             "end_date": "2025-05-07",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2025 Extraordinary Session",
+            "classification": "special",
+            "identifier": "2025B",
+            "name": "2025 First Extraordinary Session",
+            "start_date": "2025-08-26",
+            # TODO
+            "end_date": "2025-08-30",
             "active": True,
         },
     ]
