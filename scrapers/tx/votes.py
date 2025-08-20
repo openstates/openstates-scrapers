@@ -510,6 +510,7 @@ def viva_voce_votes(root, session, chamber):
 
         yield v
 
+
 def get_journal_session_url_file_part(session, chamber):
     if not "R" in session and len(session) == 3:
         # seems URL is different for special sessions, at least for 88/89
@@ -539,9 +540,7 @@ class TXVoteScraper(Scraper):
         # and see if there were any journals that day
         session_start_date = self.get_session_start_date_string(session)
         today = datetime.datetime.today()
-        session_year = datetime.datetime.strptime(
-            session_start_date, "%Y-%m-%d"
-        ).year
+        session_year = datetime.datetime.strptime(session_start_date, "%Y-%m-%d").year
         if session_year != today.year:
             today = today.replace(year=session_year, month=12, day=31)
         today = datetime.datetime(today.year, today.month, today.day)
@@ -560,7 +559,11 @@ class TXVoteScraper(Scraper):
                 )
                 session_url_part = get_journal_session_url_file_part(session, "lower")
                 journal_url = (
-                    journal_root + session_url_part + "DAY" + str(day_num).zfill(2) + "FINAL.HTM"
+                    journal_root
+                    + session_url_part
+                    + "DAY"
+                    + str(day_num).zfill(2)
+                    + "FINAL.HTM"
                 )
                 if url_match is None or url_match.lower() in journal_url.lower():
                     try:
@@ -570,7 +573,9 @@ class TXVoteScraper(Scraper):
                         pass
                     else:
                         urls_scraped.append(journal_url)
-                        yield from self.scrape_journal(journal_url, "lower", session, session_url_part)
+                        yield from self.scrape_journal(
+                            journal_url, "lower", session, session_url_part
+                        )
 
                 # Check if this "legislative day" has a Continuing journal entry
                 # a "Cont" entry can occur the next actual calendar day
@@ -583,7 +588,9 @@ class TXVoteScraper(Scraper):
                         pass
                     else:
                         urls_scraped.append(continuing_url)
-                        yield from self.scrape_journal(continuing_url, "lower", session, session_url_part)
+                        yield from self.scrape_journal(
+                            continuing_url, "lower", session, session_url_part
+                        )
 
             if "upper" in chambers:
                 journal_root = (
@@ -603,7 +610,9 @@ class TXVoteScraper(Scraper):
                         pass
                     else:
                         urls_scraped.append(journal_url)
-                        yield from self.scrape_journal(journal_url, "upper", session, session_url_part)
+                        yield from self.scrape_journal(
+                            journal_url, "upper", session, session_url_part
+                        )
 
                 # Check if this "legislative day" has a Continuing journal entry
                 # a "Cont" entry can occur the next actual calendar day
@@ -616,7 +625,9 @@ class TXVoteScraper(Scraper):
                         pass
                     else:
                         urls_scraped.append(continuing_url)
-                        yield from self.scrape_journal(continuing_url, "upper", session, session_url_part)
+                        yield from self.scrape_journal(
+                            continuing_url, "upper", session, session_url_part
+                        )
 
             journal_day += datetime.timedelta(days=1)
             day_num += 1
@@ -640,14 +651,14 @@ class TXVoteScraper(Scraper):
             date = datetime.datetime.strptime(date_str, "%A, %B %d, %Y").date()
         else:
             session_start_date = self.get_session_start_date_string(session)
-            year = datetime.datetime.strptime(
-                session_start_date, "%Y-%m-%d"
-            ).year
+            year = datetime.datetime.strptime(session_start_date, "%Y-%m-%d").year
             if year is None:
                 return
             fname = os.path.split(urlparse.urlparse(url).path)[-1]
             date_str = (
-                re.match(r"%sSJ(\d\d-\d\d).*\.HTM" % session_url_filename_part, fname).group(1)
+                re.match(
+                    r"%sSJ(\d\d-\d\d).*\.HTM" % session_url_filename_part, fname
+                ).group(1)
                 + " %s" % year
             )
             date = datetime.datetime.strptime(date_str, "%m-%d %Y").date()
@@ -676,4 +687,4 @@ class TXVoteScraper(Scraper):
             self.warning("Session metadata could not be found for %s", session)
             return None
 
-        return session_instance['start_date']
+        return session_instance["start_date"]
