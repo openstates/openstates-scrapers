@@ -151,7 +151,7 @@ class ARBillScraper(Scraper):
                 action_type.append("executive-receipt")
             elif action.startswith("Notification"):
                 action_type.append("executive-signature")
-            elif "vetoed by the Governor" in action:
+            elif "vetoed by the Governor" in action or "Governor Vetoed" in action:
                 action_type.append("executive-veto")
             elif "override" and "veto passed" in action.casefold():
                 action_type.append("veto-override-passage")
