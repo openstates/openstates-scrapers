@@ -512,7 +512,7 @@ def viva_voce_votes(root, session, chamber):
 
 
 def get_journal_session_url_file_part(session, chamber):
-    if not "R" in session and len(session) == 3:
+    if "R" not in session and len(session) == 3:
         # seems URL is different for special sessions, at least for 88/89
         if chamber == "upper":
             # senate, for ex: 89S1 - eg /SJRNL/891/HTML/89S1SJ08-08-F.HTM
