@@ -232,13 +232,29 @@ class PRBillScraper(Scraper):
     def parse_version(self, bill, row, is_document=False):
         # they have empty links in every action, and icon links preceeding the actual link
         # so only select links with an href set, and skip the icon links
-        links = row.xpath("./following-sibling::p//span/a")
+        links = row.xpath("./following-sibling::a")
         for version_row in links:
             version_url = version_row.xpath("@href")[0]
             # version url is in an onclick handler built into the href
             version_url = "https://sutra.oslpr.org{}".format(version_url)
 
-            version_title = self.clean_broken_html(version_row.xpath("text()")[0])
+            version_title = self.clean_broken_html(row.text_content())
+
+            possible_date_elems = row.xpath("./following-sibling::p/span/text()")
+            version_date = ""
+            for version_date_text in possible_date_elems:
+                try:
+                    date = datetime.datetime.strptime(
+                        version_date_text, "%m/%d/%Y"
+                    ).date()
+                    version_date = date.strftime("%Y-%m-%d")
+                except ValueError:
+                    # could not parse that text to a date, so skip it
+                    continue
+            if version_date == "":
+                self.warning(
+                    f"Unable to parse date on version of {bill}, possible dates: {possible_date_elems}"
+                )
 
             media_type = self.classify_media_type(version_url)
             if not media_type:
@@ -249,6 +265,7 @@ class PRBillScraper(Scraper):
                     url=version_url,
                     media_type=media_type,
                     on_duplicate="ignore",
+                    date=version_date,
                 )
             else:
                 bill.add_version_link(
@@ -256,6 +273,7 @@ class PRBillScraper(Scraper):
                     url=version_url,
                     media_type=media_type,
                     on_duplicate="ignore",
+                    date=version_date,
                 )
 
     def scrape_author_table(self, authurl, url, bill):
