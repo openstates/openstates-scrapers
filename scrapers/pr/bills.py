@@ -248,7 +248,7 @@ class PRBillScraper(Scraper):
                         version_date_text, "%m/%d/%Y"
                     ).date()
                     version_date = date.strftime("%Y-%m-%d")
-                except:
+                except ValueError:
                     # could not parse that text to a date, so skip it
                     continue
             if version_date == "":
