@@ -244,13 +244,17 @@ class PRBillScraper(Scraper):
             version_date = ""
             for version_date_text in possible_date_elems:
                 try:
-                    date = datetime.datetime.strptime(version_date_text, '%m/%d/%Y').date()
-                    version_date = date.strftime('%Y-%m-%d')
+                    date = datetime.datetime.strptime(
+                        version_date_text, "%m/%d/%Y"
+                    ).date()
+                    version_date = date.strftime("%Y-%m-%d")
                 except:
                     # could not parse that text to a date, so skip it
                     continue
             if version_date == "":
-                self.warning(f"Unable to parse date on version of {bill}, possible dates: {possible_date_elems}")
+                self.warning(
+                    f"Unable to parse date on version of {bill}, possible dates: {possible_date_elems}"
+                )
 
             media_type = self.classify_media_type(version_url)
             if not media_type:
