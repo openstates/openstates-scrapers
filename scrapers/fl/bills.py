@@ -735,6 +735,7 @@ class HouseSearchPage(HtmlListPage):
             "2014O": "78",
             "2014A": "77",
             "2016O": "84",
+            "2026": "113",
         }[self.input.legislative_session]
 
         form = {"Chamber": "B", "SessionId": session_number, "BillNumber": bill_number}
