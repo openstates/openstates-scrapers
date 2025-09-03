@@ -122,6 +122,16 @@ class Missouri(State):
             "start_date": "2025-06-02",
             # TODO: real end date when session is over
             "end_date": "2025-06-13",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2025 2nd Extraordinary Session",
+            "classification": "primary",
+            "identifier": "2025S2",
+            "name": "2025 2nd Extraordinary Session",
+            "start_date": "2025-09-03",
+            # TODO: real end date when session is over
+            "end_date": "2025-09-13",
             "active": True,
         },
     ]
