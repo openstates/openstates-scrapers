@@ -216,14 +216,25 @@ class WABillScraper(Scraper, LXMLMixin):
                 )
 
     def get_prefiles(self, chamber, session, year):
-        url = "http://apps.leg.wa.gov/billinfo/prefiled.aspx?" "year={}".format(year)
-        page = self.lxmlize(url)
+        try:
+            url = "http://apps.leg.wa.gov/billinfo/prefiled.aspx?" "year={}".format(
+                year
+            )
+            page = self.lxmlize(url)
 
-        bill_rows = page.xpath('//table[@id="ctl00_ContentPlaceHolder1_gvPrefiled"]/tr')
-        for row in bill_rows[1:]:
-            if row.xpath("td[1]/a"):
-                bill_id = row.xpath("td[1]/a/text()")[0]
-                self._bill_id_list.append(bill_id)
+            bill_rows = page.xpath(
+                '//table[@id="ctl00_ContentPlaceHolder1_gvPrefiled"]/tr'
+            )
+            for row in bill_rows[1:]:
+                if row.xpath("td[1]/a"):
+                    bill_id = row.xpath("td[1]/a/text()")[0]
+                    self._bill_id_list.append(bill_id)
+        except (scrapelib.HTTPError, Exception) as e:
+            self.warning(
+                "Unable to scrape prefiled bills for session {}, error {}".format(
+                    session, e
+                )
+            )
 
         return self._bill_id_list
 
@@ -332,8 +343,8 @@ class WABillScraper(Scraper, LXMLMixin):
             classification=[bill_type],
         )
         fake_source = (
-            "http://apps.leg.wa.gov/billinfo/"
-            "summary.aspx?bill=%s&year=%s" % (bill_num, session[0:4])
+            "https://app.leg.wa.gov/billsummary/"
+            f"?BillNumber={bill_num}&Year={session[0:4]}&Initiative=false"
         )
 
         bill.add_source(fake_source)
@@ -447,7 +458,7 @@ class WABillScraper(Scraper, LXMLMixin):
         # 2019 REGULAR SESSION
         # IN THE SENATE
         # ["IN THE SENATE/HOUSE"] is followed by a table of actions
-        headers = page.xpath("//p[@class='actionHistoryHeader']")
+        action_lists = page.xpath("//div[@class='historytable']")
 
         # first actions table is from chamber of origin
         actor = chamber
@@ -456,33 +467,38 @@ class WABillScraper(Scraper, LXMLMixin):
 
         became_law = False
 
-        for header in headers:
-            header_text = header.text_content().lower()
+        for action_list in action_lists:
+            session_headers = action_list.xpath("preceding-sibling::h3")
+            for header in session_headers:
+                header_text = header.text_content().lower()
 
-            # handle the session year header
-            # action years are in a header YYYY Regular|Special session
-            # for a bill with actions that span years, see
-            # see https://apps.leg.wa.gov/billsummary?BillNumber=5315&Initiative=false&Year=2019
-            if "session" in header_text:
-                action_year = self.action_year_re.search(header_text).group()
-                if action_year is None:
-                    self.logger.error(
-                        f"Encountered unexpected session header text {header.text_content()} at {bill_url}"
-                    )
-                # we continue here to go to the next header
-                # bill actions table is always after a chamber header, not session header
-                continue
+                # handle the session year header
+                # action years are in a header YYYY Regular|Special session
+                # for a bill with actions that span years, see
+                # see https://apps.leg.wa.gov/billsummary?BillNumber=5315&Initiative=false&Year=2019
+                if "session" in header_text:
+                    action_year = self.action_year_re.search(header_text).group()
+                    if action_year is None:
+                        self.logger.error(
+                            f"Encountered unexpected session header text {header.text_content()} at {bill_url}"
+                        )
+                    # we continue here to go to the next header
+                    # bill actions table is always after a chamber header, not session header
+                    continue
 
-            # Handle the Chamber header
-            if "house" in header_text:
-                actor = "lower"
-            elif "senate" in header_text:
-                actor = "upper"
-            elif "other than legislative" in header_text:
-                actor = "executive"
+            chamber_headers = action_list.xpath("preceding-sibling::h4")
+            for header in chamber_headers:
+                header_text = header.text_content().lower()
+                # Handle the Chamber header
+                if "house" in header_text:
+                    actor = "lower"
+                elif "senate" in header_text:
+                    actor = "upper"
+                elif "other than legislative" in header_text:
+                    actor = "executive"
 
             # get items in only the FIRST following sibling DIV of class historytable
-            rows = header.xpath("following-sibling::div[@class='historytable'][1]/div")
+            rows = action_list.xpath("div")
             action_day_text = ""
             for row in rows:
                 # div[1] is the date
