@@ -217,16 +217,24 @@ class WABillScraper(Scraper, LXMLMixin):
 
     def get_prefiles(self, chamber, session, year):
         try:
-            url = "http://apps.leg.wa.gov/billinfo/prefiled.aspx?" "year={}".format(year)
+            url = "http://apps.leg.wa.gov/billinfo/prefiled.aspx?" "year={}".format(
+                year
+            )
             page = self.lxmlize(url)
 
-            bill_rows = page.xpath('//table[@id="ctl00_ContentPlaceHolder1_gvPrefiled"]/tr')
+            bill_rows = page.xpath(
+                '//table[@id="ctl00_ContentPlaceHolder1_gvPrefiled"]/tr'
+            )
             for row in bill_rows[1:]:
                 if row.xpath("td[1]/a"):
                     bill_id = row.xpath("td[1]/a/text()")[0]
                     self._bill_id_list.append(bill_id)
         except (scrapelib.HTTPError, Exception) as e:
-            self.warning("Unable to scrape prefiled bills for session {}, error {}".format(session, e))
+            self.warning(
+                "Unable to scrape prefiled bills for session {}, error {}".format(
+                    session, e
+                )
+            )
 
         return self._bill_id_list
 
