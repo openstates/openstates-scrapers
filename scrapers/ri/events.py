@@ -96,6 +96,7 @@ class RIEventScraper(Scraper, LXMLMixin):
             name=event_desc, start_date=when, location_name=where, status=status
         )
         event.dedupe_key = event_details_key
+        url = url.replace("http:", "https:")
         event.add_document("Agenda", url, media_type="text/html", on_duplicate="ignore")
         event.add_source(url)
 
@@ -103,6 +104,7 @@ class RIEventScraper(Scraper, LXMLMixin):
         bills = page.xpath("//b/a")
         for bill in bills:
             bill_ft = bill.attrib["href"]
+            bill_ft = bill_ft.replace("http:", "https:")
             event.add_document(
                 bill.text_content(),
                 bill_ft,
