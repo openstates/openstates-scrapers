@@ -14,7 +14,6 @@ from .actions import Categorizer
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 four_digit_regex = re.compile("[0-9]{4}")
-vote_shorthand_regex = re.compile("[0-9]+-[YN]")
 
 
 class VaBillScraper(Scraper):
@@ -265,26 +264,20 @@ class VaBillScraper(Scraper):
 
         page = json.loads(page)
 
+        vote_ids_processed = set()
         for row in page["Votes"]:
-            # VA Voice votes don't indicate pass fail,
-            # and right now OS core requires a pass or fail, so we skip them with a notice
-            # also skip rows that correspond to a bill action that does not indicate a vote by presence of ##-Y / ##-N
-            #   if we don't skip on that last criteria, we get duplicate vote events
-            try:
-                vote_shorthand_match = vote_shorthand_regex.search(
-                    row["LegislationActionDescription"]
-                )
-            except TypeError:
-                self.logger.warning(
-                    f"Failed to process vote due to unexpected LegislativeActionDescription on {vote_page_url}"
-                )
-                vote_shorthand_match = False
-            if (row["PassFail"] or row["IsVoice"] is not True) and vote_shorthand_match:
+            if row["VoteID"] in vote_ids_processed:
+                # there tends to be lots of duplicates of votes in this page["Votes"] list, no idea why
+                continue
+            if row["PassFail"] or row["IsVoice"] is not True:
                 vote_date = dateutil.parser.parse(row["VoteDate"]).date()
 
-                motion_text = row["VoteActionDescription"]
+                # Our historical votes have mostly used the bill action descrioption, so we stick with this
+                motion_text = row["LegislationActionDescription"]
                 if motion_text is None:
-                    motion_text = row["LegislationActionDescription"]
+                    # VoteActionDescription doesn't seem as user friendly, when looking at the text values.
+                    # A lot of "H Vote:" values
+                    motion_text = row["VoteActionDescription"]
 
                 # the api returns 'Continued to %NextSessionYear% in Finance' so fix that
                 motion_text = motion_text.replace(
@@ -301,14 +294,13 @@ class VaBillScraper(Scraper):
                     classification=[],
                 )
 
-                # BatchNumber is not unique to an individual Vote Event, so we need to add context
-                # in order to avoid duplicate dedupe keys
-                if not row["BatchNumber"]:
+                if not row["VoteID"]:
+                    # I think VoteID is reliable, but just in case let's error
+                    self.logger.error(
+                        f"Could not process vote. VoteID not found for bill {bill.identifier} vote described as  {row['LegislationActionDescription']}."
+                    )
                     continue
-                v.dedupe_key = (
-                    f"{row['BatchNumber'].strip()}-{bill.identifier.strip()}-"
-                    f"{row['LegislationActionDescription'].strip()}"
-                )[:500]
+                v.dedupe_key = (f"{row['VoteID']}-{bill.identifier.strip()}")[:500]
 
                 tally = {
                     "Y": 0,
@@ -319,6 +311,12 @@ class VaBillScraper(Scraper):
                 }
 
                 for subrow in row["VoteMember"]:
+                    if "ResponseCode" not in subrow:
+                        # Found one example where an entry in row["VoteMember"] has no response
+                        # and that voter is not listed on the source page.
+                        # (Karrie K. Delaney, https://lis.virginia.gov/vote-details/HB1549/20251/H19004V2511813)
+                        # So I think we just skip that "voter"
+                        continue
                     v.vote(
                         self.vote_map[subrow["ResponseCode"]],
                         subrow["MemberDisplayName"],
@@ -341,12 +339,21 @@ class VaBillScraper(Scraper):
                 else:
                     v.result = "fail"
 
+                # Vote detail urls like vote-details/{identifier}/{session}/{batch number}
                 # https://lis.virginia.gov/vote-details/HB88/20251/H1003V0001
+                # or
+                # vote-details/{identifier}/{session}/{vote ID}
+                # https://lis.virginia.gov/vote-details/HB1549/20251/SV565
+                if "BatchNumber" in row:
+                    vote_identifier_url_part = row["BatchNumber"]
+                else:
+                    vote_identifier_url_part = row["VoteID"]
                 v.add_source(
                     f"https://lis.virginia.gov/vote-details/"
-                    f"{row['VoteLegislation'][0].get('LegislationNumber', 'NOT_FOUND')}/"
-                    f"{self.session_code}/{row['BatchNumber']}"
+                    f"{bill.identifier}/"
+                    f"{self.session_code}/{vote_identifier_url_part}"
                 )
+                vote_ids_processed.add(row["VoteID"])
                 yield v
             else:
                 self.info(f"Skipping vote {row['BatchNumber']} with no pass fail")
