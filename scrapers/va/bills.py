@@ -269,7 +269,7 @@ class VaBillScraper(Scraper):
             if row["VoteID"] in vote_ids_processed:
                 # there tends to be lots of duplicates of votes in this page["Votes"] list, no idea why
                 continue
-            if (row["PassFail"] or row["IsVoice"] is not True):
+            if row["PassFail"] or row["IsVoice"] is not True:
                 vote_date = dateutil.parser.parse(row["VoteDate"]).date()
 
                 # Our historical votes have mostly used the bill action descrioption, so we stick with this
@@ -296,11 +296,11 @@ class VaBillScraper(Scraper):
 
                 if not row["VoteID"]:
                     # I think VoteID is reliable, but just in case let's error
-                    self.logger.error(f"Could not process vote. VoteID not found for bill {bill.identifier} vote described as  {row['LegislationActionDescription']}.")
+                    self.logger.error(
+                        f"Could not process vote. VoteID not found for bill {bill.identifier} vote described as  {row['LegislationActionDescription']}."
+                    )
                     continue
-                v.dedupe_key = (
-                    f"{row['VoteID']}-{bill.identifier.strip()}"
-                )[:500]
+                v.dedupe_key = (f"{row['VoteID']}-{bill.identifier.strip()}")[:500]
 
                 tally = {
                     "Y": 0,
@@ -347,7 +347,7 @@ class VaBillScraper(Scraper):
                 if "BatchNumber" in row:
                     vote_identifier_url_part = row["BatchNumber"]
                 else:
-                    vote_identifier_url_part = row['VoteID']
+                    vote_identifier_url_part = row["VoteID"]
                 v.add_source(
                     f"https://lis.virginia.gov/vote-details/"
                     f"{bill.identifier}/"
