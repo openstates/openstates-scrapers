@@ -56,7 +56,8 @@ class VaBillScraper(Scraper):
             "Accept": "application/json",
         }
 
-        body = {"SessionCode": self.session_code}
+        # If we don't IncludeFailed, we will only get a subset of legislation
+        body = {"SessionCode": self.session_code, "IncludeFailed": True}
 
         page = requests.post(
             f"{self.base_url}/Legislation/api/getlegislationlistasync",
