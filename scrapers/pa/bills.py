@@ -294,7 +294,10 @@ class PABillScraper(Scraper):
                 raise Exception(msg)
 
     def get_page(self, url):
-        html = self.get(url, verify=False).text
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
+        }
+        html = self.get(url, verify=False, headers=headers).text
         page = lxml.html.fromstring(html)
         page.make_links_absolute(url)
         return page
