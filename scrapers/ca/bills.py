@@ -272,7 +272,7 @@ class CABillScraper(Scraper, LXMLMixin):
             for abbr, type_ in bill_types[chamber].items():
                 try:
                     yield from self.scrape_bill_type(chamber, session, type_, abbr)
-                except (StopIteration, RuntimeError) as e:
+                except (StopIteration, RuntimeError):
                     continue
 
     def scrape_bill_type(
