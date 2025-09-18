@@ -1,6 +1,5 @@
 import datetime
 import pytz
-import re
 import dateutil.parser
 import lxml.html
 from utils import LXMLMixin
