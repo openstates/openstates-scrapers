@@ -216,7 +216,10 @@ class SDEventScraper(Scraper):
                 return api_session["SessionId"]
 
         for api_session in sessions[::-1]:
-            if api_session["SpecialSession"] is False and api_session["CurrentSession"] is True:
+            if (
+                api_session["SpecialSession"] is False
+                and api_session["CurrentSession"] is True
+            ):
                 return api_session["SessionId"]
 
         self.error(f"Could not find current API session ID for {session}")
