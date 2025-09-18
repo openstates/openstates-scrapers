@@ -1,6 +1,5 @@
 import datetime
 import pytz
-import re
 import dateutil.parser
 import lxml.html
 from utils import LXMLMixin
@@ -213,124 +212,106 @@ class CAEventWebScraper(Scraper, LXMLMixin):
 
     def scrape_lower(self):
         lower_start_url = (
-            "https://www.assembly.ca.gov/schedules-publications/assembly-daily-file"
+            "https://www.assembly.ca.gov/schedules-publications/daily-file"
         )
         html = requests.get(lower_start_url).text
         page = lxml.html.fromstring(html)
 
-        for date_row in page.xpath("//h5[@class='date']"):
-            hearing_date = date_row.xpath("string()").strip()
+        for date_row in page.xpath(
+            "//table[contains(@class, 'committee-hearing-table')]/tbody/tr"
+        ):
+            hearing_topic = hearing_subject = None
 
-            for content_xpath in date_row.xpath(
-                './following-sibling::div[@class="wrapper--border"][1]/div[@class="dailyfile-section-item"]'
-            ):
-                hearing_title = (
-                    content_xpath.xpath('.//div[@class="hearing-name"]')[0]
-                    .xpath("string()")
-                    .strip()
-                )
-                members = [
-                    m.replace("SENATOR", "")
-                    .replace("ASSEMBLY", "")
-                    .replace("MEMBER", "")
-                    .strip(strip_chars)
-                    .title()
-                    for m in content_xpath.xpath('.//div[@class="attribute chair"]')[0]
-                    .xpath("string()")
-                    .split(", Chair")[0]
-                    .split("AND")
-                ]
-                members = [item for sublist in members for item in sublist.split(", ")]
+            # Get event basics
+            hearing_date = date_row.xpath("td[@class='committee_hearing-date']/text()")[
+                0
+            ].strip()
+            hearing_time = (
+                date_row.xpath("td[@class='committee_hearing-time']/text()")[0]
+                .lower()
+                .strip()
+            )
+            committee_name = date_row.xpath(
+                "td[@class='committee_hearing-name']/text()"
+            )[0].strip()
+            hearing_location = date_row.xpath(
+                "td[@class='committee_hearing-location']/text()"
+            )[0].strip()
 
-                time_loc = content_xpath.xpath(
-                    './/div[@class="attribute time-location"]'
-                )[0].xpath("string()")
-
-                time_loc = time_loc.split(" - ")
-                hearing_time = time_loc[0]
-                hearing_location = " - ".join(time_loc[1:])
-                hearing_time = (
-                    hearing_time.replace(".", "").strip(strip_chars)
-                    if ".m." in hearing_time
-                    else ""
-                )
-                hearing_location = hearing_location.strip(strip_chars)
-
-                when = (
-                    " ".join([hearing_date, hearing_time])
-                    .split("or")[0]
-                    .split("and")[0]
-                    .split(" to ")[0]
-                    .strip()
-                )
-                # Encountered a date in the form 'Tuesday, August 26, 2025 9:00 am – 12 Noon'
-                # Strip out non-start-time part of string
-                # using character code to identify the specific form of em dash used here
-                if chr(8211) in when:
-                    when = when.split(chr(8211))[0].strip()
+            # Parse date/time
+            if "am" in hearing_time or "pm" in hearing_time:
+                when = f"{hearing_date} {hearing_time}"
                 when = dateutil.parser.parse(when)
                 when = self._tz.localize(when)
+                all_day = False
+            else:
+                when = dateutil.parser.parse(hearing_date)
+                when = self._tz.localize(when)
+                all_day = True
 
-                event = Event(
-                    name=hearing_title,
-                    location_name=hearing_location,
-                    start_date=when,
-                    classification="committee-meeting",
+            # If agenda URL, fetch and parse
+            bill_numbers = []
+            agenda_url = None
+            agenda_urls = date_row.xpath(
+                "td[@class='committee_hearing-menu']//a[@class='use-ajax']/@href"
+            )
+            if len(agenda_urls) > 0:
+                agenda_url = f"https://www.assembly.ca.gov{agenda_urls[0]}"
+                agenda_html = requests.get(agenda_url).text
+                agenda_page = lxml.html.fromstring(agenda_html)
+
+                # topic examples: INFORMATIONAL HEARING, OVERSIGHT HEARING, FOR CONCURRENCE VOTE PER A.R. 77.2
+                # sometimes there is more than one topic, ex: https://www.assembly.ca.gov/api/dailyfile/agenda/18616
+                hearing_topics = agenda_page.xpath(
+                    "//span[@class='HearingTopic']/text()"
                 )
-                event_key = f"{hearing_title}#{when}#{hearing_location}"
-                event.dedupe_key = event_key
+                if len(hearing_topics) > 0:
+                    hearing_topic = hearing_topics[0].strip()
 
-                committees = [
-                    f"Assembly {com.strip()} Committee"
-                    for com in content_xpath.xpath(
-                        './/div[@class="attribute committees"]/ul/li/a/text()'
-                    )
-                ]
-
-                for member in members:
-                    event.add_person(name=member, note="chair")
-
-                event.add_source(lower_start_url)
-
-                agenda_xpaths = content_xpath.xpath('.//div[@class="agenda"]')
-
-                for agenda_xpath in agenda_xpaths:
-                    self.scrape_lower_agenda(event, committees, agenda_xpath)
-
-                yield event
-
-    def scrape_lower_agenda(self, event, committees, page):
-        start = False
-
-        for span in page.xpath('.//span[@class="CommitteeTopic"]/span'):
-            span_class = span.xpath("@class")[0].strip(strip_chars)
-            span_title = (" ".join(span.xpath(".//text()"))).strip(strip_chars)
-            span_title = re.sub(r"\s+", " ", span_title)
-            span_title = re.sub(r"^\d+", "", span_title)
-            span_title = span_title.replace("SUBJECT:", "").strip(strip_chars)
-
-            if "linesp" in span_class or "HearingTopic" in span_class:
-                start = True
-            if not start:
-                continue
-            if "HearingTopic" in span_class or "Header" in span_class:
-                continue
-
-            if span_title:
-                agenda = event.add_agenda_item(span_title)
-                for committee in committees:
-                    agenda.add_committee(committee, note="host")
-
-            if "Measure" == span_class:
-                bill_id = (
-                    span.xpath(".//a")[0]
-                    .xpath("string()")
-                    .replace("No", "")
-                    .replace(".", "")
-                    .replace(" ", "")
-                    .strip(strip_chars)
+                # subject examples:
+                # Infrastructure, Pollution, and Climate Resilience
+                # 50th Annual Zeke Grader Fisheries Forum
+                # The Future of Higher Education and the Role of the Federal Government.
+                hearing_subjects = agenda_page.xpath(
+                    "//span[@class='HearingSubject']/text()"
                 )
-                note = " ".join(
-                    span.xpath('.//span[contains(@class, "Topic")]//text()')
-                ).strip(strip_chars)
-                agenda.add_bill(bill_id, note=note)
+                if len(hearing_subjects) > 0:
+                    hearing_subject = hearing_subjects[0].strip()
+
+                # Bills
+                # ex with bills: https://www.assembly.ca.gov/api/dailyfile/agenda/18616
+                bill_links = agenda_page.xpath("//span[@class='Measure']//a")
+                if len(bill_links) > 0:
+                    for bill_link in bill_links:
+                        bill_number_raw = bill_link.text_content().strip()
+                        bill_number = (
+                            bill_number_raw.replace(".", "").replace("No", "").strip()
+                        )
+                        bill_numbers.append(bill_number)
+
+            # Create event
+            event = Event(
+                name=committee_name,
+                location_name=hearing_location,
+                start_date=when,
+                classification="committee-meeting",
+                all_day=all_day,
+            )
+            event_key = f"{committee_name}#{when}#{hearing_location}"
+            event.dedupe_key = event_key
+            event.add_source(lower_start_url)
+            if agenda_url:
+                event.add_source(agenda_url)
+
+            if hearing_subject:
+                agenda_title = hearing_subject
+            elif hearing_topic:
+                agenda_title = hearing_topic
+            else:
+                agenda_title = committee_name
+            agenda = event.add_agenda_item(agenda_title)
+            agenda.add_committee(committee_name, note="host")
+            for bill_number in bill_numbers:
+                agenda.add_bill(bill_number)
+
+            yield event
