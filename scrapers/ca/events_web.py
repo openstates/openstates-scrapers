@@ -218,14 +218,26 @@ class CAEventWebScraper(Scraper, LXMLMixin):
         html = requests.get(lower_start_url).text
         page = lxml.html.fromstring(html)
 
-        for date_row in page.xpath("//table[contains(@class, 'committee-hearing-table')]/tbody/tr"):
+        for date_row in page.xpath(
+            "//table[contains(@class, 'committee-hearing-table')]/tbody/tr"
+        ):
             hearing_topic = hearing_subject = None
 
             # Get event basics
-            hearing_date = date_row.xpath("td[@class='committee_hearing-date']/text()")[0].strip()
-            hearing_time = date_row.xpath("td[@class='committee_hearing-time']/text()")[0].lower().strip()
-            committee_name = date_row.xpath("td[@class='committee_hearing-name']/text()")[0].strip()
-            hearing_location = date_row.xpath("td[@class='committee_hearing-location']/text()")[0].strip()
+            hearing_date = date_row.xpath("td[@class='committee_hearing-date']/text()")[
+                0
+            ].strip()
+            hearing_time = (
+                date_row.xpath("td[@class='committee_hearing-time']/text()")[0]
+                .lower()
+                .strip()
+            )
+            committee_name = date_row.xpath(
+                "td[@class='committee_hearing-name']/text()"
+            )[0].strip()
+            hearing_location = date_row.xpath(
+                "td[@class='committee_hearing-location']/text()"
+            )[0].strip()
 
             # Parse date/time
             if "am" in hearing_time or "pm" in hearing_time:
@@ -241,7 +253,9 @@ class CAEventWebScraper(Scraper, LXMLMixin):
             # If agenda URL, fetch and parse
             bill_numbers = []
             agenda_url = None
-            agenda_urls = date_row.xpath("td[@class='committee_hearing-menu']//a[@class='use-ajax']/@href")
+            agenda_urls = date_row.xpath(
+                "td[@class='committee_hearing-menu']//a[@class='use-ajax']/@href"
+            )
             if len(agenda_urls) > 0:
                 agenda_url = f"https://www.assembly.ca.gov{agenda_urls[0]}"
                 agenda_html = requests.get(agenda_url).text
@@ -249,7 +263,9 @@ class CAEventWebScraper(Scraper, LXMLMixin):
 
                 # topic examples: INFORMATIONAL HEARING, OVERSIGHT HEARING, FOR CONCURRENCE VOTE PER A.R. 77.2
                 # sometimes there is more than one topic, ex: https://www.assembly.ca.gov/api/dailyfile/agenda/18616
-                hearing_topics = agenda_page.xpath("//span[@class='HearingTopic']/text()")
+                hearing_topics = agenda_page.xpath(
+                    "//span[@class='HearingTopic']/text()"
+                )
                 if len(hearing_topics) > 0:
                     hearing_topic = hearing_topics[0].strip()
 
@@ -257,7 +273,9 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                 # Infrastructure, Pollution, and Climate Resilience
                 # 50th Annual Zeke Grader Fisheries Forum
                 # The Future of Higher Education and the Role of the Federal Government.
-                hearing_subjects = agenda_page.xpath("//span[@class='HearingSubject']/text()")
+                hearing_subjects = agenda_page.xpath(
+                    "//span[@class='HearingSubject']/text()"
+                )
                 if len(hearing_subjects) > 0:
                     hearing_subject = hearing_subjects[0].strip()
 
@@ -267,7 +285,9 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                 if len(bill_links) > 0:
                     for bill_link in bill_links:
                         bill_number_raw = bill_link.text_content().strip()
-                        bill_number = bill_number_raw.replace(".", "").replace("No", "").strip()
+                        bill_number = (
+                            bill_number_raw.replace(".", "").replace("No", "").strip()
+                        )
                         bill_numbers.append(bill_number)
 
             # Create event
