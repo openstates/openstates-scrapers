@@ -86,6 +86,14 @@ class NorthDakota(State):
             "end_date": "2025-05-02",
             "active": True,
         },
+        {
+            "_scraped_name": "70th Legislative Assembly (2027-28)",
+            "identifier": "70",
+            "name": "70th Legislative Assembly (2027-28)",
+            "start_date": "2027-01-07",  # TODO approximate; get real date when closer
+            "end_date": "2028-05-02",  # TODO approximate; get real date when closer
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "61st Legislative Assembly (2009-10)",
