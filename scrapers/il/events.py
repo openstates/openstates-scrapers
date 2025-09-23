@@ -123,11 +123,9 @@ class IlEventScraper(Scraper):
             tables = doc.xpath('//*[@id="pane-Month"]//table//tr')
             events = set()
             for table in tables:
-                meetings = table.xpath(".//button")
+                meetings = table.xpath(".//a[contains(@class, 'btn')]")
                 for meeting in meetings:
-                    meeting_url = BASE_URL + meeting.attrib["onclick"].replace(
-                        "location.href=", ""
-                    ).strip("'. ")
+                    meeting_url = meeting.attrib["href"]
                     event, name = self.scrape_page(meeting_url, chamber_names[chamber])
                     if event and name:
                         if name in events:
