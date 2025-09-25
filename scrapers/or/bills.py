@@ -2,6 +2,8 @@ import datetime
 import logging
 import re
 
+from dateutil import parser
+
 from openstates.scrape import Scraper, Bill
 from .apiclient import OregonLegislatorODataClient
 from .utils import index_legislators, get_timezone, url_fix, SESSION_KEYS
@@ -59,7 +61,8 @@ class ORBillScraper(Scraper):
 
         for measure in measures_response:
             bid = "{} {}".format(measure["MeasurePrefix"], measure["MeasureNumber"])
-
+            if bid == "SB 6":
+                print("Hi")
             chamber = self.chamber_code[bid[0]]
             bill = Bill(
                 bid.replace(" ", ""),
@@ -131,6 +134,15 @@ class ORBillScraper(Scraper):
                             amendment_url,
                             media_type="application/pdf",
                             on_duplicate="ignore",
+                        )
+                    elif "proposed" in document["Meaning"].lower():
+                        dt = parser.isoparse(document["MeetingDate"])
+                        when = dt.date().isoformat()
+                        bill.add_document_link(
+                            note=F"{document['Meaning']}Amendment{document['AmendmentNumber']}",
+                            url=document["ProposedAmendmentUrl"],
+                            date=when,
+                            media_type="text/html",
                         )
 
             for action in measure["MeasureHistoryActions"]:
