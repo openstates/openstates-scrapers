@@ -61,8 +61,6 @@ class ORBillScraper(Scraper):
 
         for measure in measures_response:
             bid = "{} {}".format(measure["MeasurePrefix"], measure["MeasureNumber"])
-            if bid == "SB 6":
-                print("Hi")
             chamber = self.chamber_code[bid[0]]
             bill = Bill(
                 bid.replace(" ", ""),
@@ -138,8 +136,9 @@ class ORBillScraper(Scraper):
                     elif "proposed" in document["Meaning"].lower():
                         dt = parser.isoparse(document["MeetingDate"])
                         when = dt.date().isoformat()
+                        note_name = f"{when} {document['Meaning']} Amendment {document['AmendmentNumber']}"
                         bill.add_document_link(
-                            note=F"{document['Meaning']}Amendment{document['AmendmentNumber']}",
+                            note=note_name,
                             url=document["ProposedAmendmentUrl"],
                             date=when,
                             media_type="text/html",
