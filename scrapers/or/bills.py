@@ -141,7 +141,7 @@ class ORBillScraper(Scraper):
                             note=note_name,
                             url=document["ProposedAmendmentUrl"],
                             date=when,
-                            media_type="text/html",
+                            media_type="application/pdf",
                         )
 
             for action in measure["MeasureHistoryActions"]:
