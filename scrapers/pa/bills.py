@@ -80,10 +80,6 @@ class PABillScraper(Scraper):
         url = utils.info_url(session, special, bill_id)
         page = self.get_page(url)
 
-        xpath = (
-            '//div[contains(@class, "header")]/following-sibling::*[1]'
-            '/div[@class="col-md-9"]/div[1]'
-        )
         # Bill title (for PA title is a short abstract)
         # elem contains show/hide sub elements
         title = page.xpath("//div[@id='shortTitle-wrapper']")
