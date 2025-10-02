@@ -16,6 +16,8 @@ def session_slug(session):
         return "22 Special"
     elif session == "2024S1":
         return "24 Special"
+    elif session == "2025S1":
+        return "25 Special"
     session_type = "Special" if "s" in session.lower() else "Regular"
     check_for_special_session_number = re.search(r"\d{2}S(\d)", session)
     if check_for_special_session_number is None:
@@ -25,10 +27,15 @@ def session_slug(session):
     )
 
 
+def url_session_slug(session):
+    specials = {"2025S1": "25s"}
+    return specials.get(session, session[2:])
+
+
 class NMBillScraper(Scraper):
     def _init_mdb(self, session):
         ftp_base = "ftp://www.nmlegis.gov/other/"
-        fname = "LegInfo{}".format(session[2:]).replace("S", "s")
+        fname = "LegInfo{}".format(session[2:])
         fname_re = (
             r"(\d{{2}}-\d{{2}}-\d{{2}}  \d{{2}}:\d{{2}}(?:A|P)M) .* "
             "({fname}.*zip)".format(fname=fname)
@@ -147,8 +154,9 @@ class NMBillScraper(Scraper):
                 }
             )
 
+            session_year = url_session_slug(session)
             bill.add_source(
-                "http://www.nmlegis.gov/Legislation/Legislation?chamber="
+                "https://www.nmlegis.gov/Legislation/Legislation?chamber="
                 "{Chamber}&legType={LegType}&legNo={LegNo}"
                 "&year={SessionYear}".format(**data)
             )
@@ -190,10 +198,10 @@ class NMBillScraper(Scraper):
         """check for documents that reside in their own directory"""
 
         s_slug = session_slug(session)
-        firs_url = "http://www.nmlegis.gov/Sessions/{}/firs/".format(s_slug)
-        lesc_url = "http://www.nmlegis.gov/Sessions/{}/LESCAnalysis/".format(s_slug)
-        final_url = "http://www.nmlegis.gov/Sessions/{}/final/".format(s_slug)
-        amd_url = "http://www.nmlegis.gov/Sessions/{}/Amendments_In_Context/".format(
+        firs_url = "https://www.nmlegis.gov/Sessions/{}/firs/".format(s_slug)
+        lesc_url = "https://www.nmlegis.gov/Sessions/{}/LESCAnalysis/".format(s_slug)
+        final_url = "https://www.nmlegis.gov/Sessions/{}/final/".format(s_slug)
+        amd_url = "https://www.nmlegis.gov/Sessions/{}/Amendments_In_Context/".format(
             s_slug
         )
 
@@ -463,7 +471,7 @@ class NMBillScraper(Scraper):
                     if action_code == row["ActionCode"]:
                         self.warning(row)
                         self.warning(
-                            "look up at http://www.nmlegis.gov/Legislation/Action_Abbreviations"
+                            "look up at https://www.nmlegis.gov/Legislation/Action_Abbreviations"
                         )
                 raise
 
@@ -495,7 +503,7 @@ class NMBillScraper(Scraper):
         if chamber_name is None:
             chamber_name = "house" if chamber == "lower" else "senate"
 
-        doc_path = "http://www.nmlegis.gov/Sessions/{}/{}/{}/".format(
+        doc_path = "https://www.nmlegis.gov/Sessions/{}/{}/{}/".format(
             session_path, doc_type, chamber_name
         )
 
