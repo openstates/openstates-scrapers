@@ -522,13 +522,9 @@ class NMBillScraper(Scraper):
             # Delete any errant words found following the file name
             fname = fname.split(" ")[0]
 
-            # skip PDFs for now -- everything but votes have HTML versions
-            if fname.endswith("pdf") and "VOTE" not in fname:
-                continue
-
             match = re.match(r"([A-Z]+)0*(\d{1,4})([^.]*)", fname.upper())
             if match is None:
-                self.warning("No match, skipping")
+                self.warning(f"No match, skipping {fname.upper()}")
                 continue
 
             bill_type, bill_num, suffix = match.groups()
