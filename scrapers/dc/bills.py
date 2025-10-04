@@ -93,7 +93,7 @@ class DCBillScraper(Scraper):
 
                         mimetype = (
                             "application/pdf"
-                            if ".pdf" in download
+                            if ".pdf" in download.lower()
                             else get_media_type(download)
                         )
                         is_version = False
