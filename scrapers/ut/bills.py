@@ -244,17 +244,15 @@ class UTBillScraper(Scraper, LXMLMixin):
 
         # Versions, subjects, code citations
         subjects = set()
-        # citations = set()
         if "billVersionList" in data:
+
             for version_data in data["billVersionList"]:
                 # subjects associated with each version, so dedupe
                 for subject_data in version_data["subjectList"]:
                     subjects.add(subject_data["description"])
 
-                # TODO finish citations work
-                # citations associated with each version, dedupe again
-                # for citation_data in version_data["sectionAffectedList"]:
-                #     citations.add(citation_data["secNo"])
+                for citation in version_data.get("sectionAffectedList", []):
+                    bill.add_citation("Utah Code", citation["secNo"], "proposed")
 
                 for doc_data in version_data["billDocs"]:
                     # Not really sure what's going to be in this array
@@ -287,10 +285,6 @@ class UTBillScraper(Scraper, LXMLMixin):
 
         for subject in subjects:
             bill.add_subject(subject)
-
-        # TODO finish citations work
-        # for citation in citations:
-        #     bill.add_citation(citation)
 
         # Actions
         if "actionHistoryList" in data:
