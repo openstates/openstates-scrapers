@@ -6,6 +6,8 @@ from utils.media import get_media_type
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
 from spatula import HtmlPage, PdfPage, URL, XPath, SelectorError
+import scrapelib
+import requests
 import re
 
 bills_re = re.compile(
@@ -139,7 +141,14 @@ class CurrentMeetings(HtmlPage):
                 for bill in Agenda(source=agenda).do_scrape():
                     agenda_bills.append(bill)
 
-            except SelectorError:
+            # NV seems to have a lot of problems with these event agenda URLs
+            # 404 is not uncommon, or weird failing redirects
+            # so we catch those exceptions and keep moving
+            except (
+                SelectorError,
+                scrapelib.HTTPError,
+                requests.exceptions.TooManyRedirects,
+            ):
                 agenda = None
                 agenda_start_time = ""
 
