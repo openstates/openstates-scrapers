@@ -1,7 +1,6 @@
 import re
 import requests
 
-requests.packages.urllib3.disable_warnings()
 import os
 import json
 from datetime import datetime
@@ -10,6 +9,9 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 
 from .actions import Categorizer
+
+
+requests.packages.urllib3.disable_warnings()
 
 
 class MABillScraper(Scraper):
