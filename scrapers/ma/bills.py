@@ -1,5 +1,6 @@
 import re
 import requests
+
 requests.packages.urllib3.disable_warnings()
 import os
 import json
@@ -61,7 +62,9 @@ class MABillScraper(Scraper):
     # chunks are available to split up this long, slow scrape into 12 smaller scrapes
     # os-update ma bills --scrape scrape_chunk_number=1
     # this trades off comprehensivity for limited scope of failure/faster time to recovery
-    def scrape(self, chamber=None, session=None, bill_no=None, scrape_chunk_number=None):
+    def scrape(
+        self, chamber=None, session=None, bill_no=None, scrape_chunk_number=None
+    ):
         self.scrape_bill_list(session)
 
         # optionally scrape a single bill then exit
@@ -116,10 +119,15 @@ class MABillScraper(Scraper):
         # let's use 1-based counting so we're not doing scrape_chunk_number=0
         if scrape_chunk_number:
             # divide up the chamber_bill_list into 12 equal-sized lists
-            chunk_size = len(chamber_bill_list) // 12 if len(chamber_bill_list) >= 12 else 1
+            chunk_size = (
+                len(chamber_bill_list) // 12 if len(chamber_bill_list) >= 12 else 1
+            )
             if len(chamber_bill_list) % 12 > 0:
                 chunk_size += 1
-            bill_chunks = [chamber_bill_list[i:i + chunk_size] for i in range(0, len(chamber_bill_list), chunk_size)]
+            bill_chunks = [
+                chamber_bill_list[i : i + chunk_size]
+                for i in range(0, len(chamber_bill_list), chunk_size)
+            ]
             chunk_number = int(scrape_chunk_number)
 
             chamber_bill_list = bill_chunks[chunk_number - 1]
