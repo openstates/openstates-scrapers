@@ -1,5 +1,6 @@
 import re
 import requests
+
 import os
 import json
 from datetime import datetime
@@ -8,6 +9,9 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 
 from .actions import Categorizer
+
+
+requests.packages.urllib3.disable_warnings()
 
 
 class MABillScraper(Scraper):
@@ -33,6 +37,7 @@ class MABillScraper(Scraper):
         # forcing these values so that 500s come back as skipped bills
         self.raise_errors = False
         self.verify = False
+        self.retry_attempts = 0
 
     def format_bill_number(self, raw):
         return raw.replace("Bill ", "").replace(".", " ").strip()
@@ -55,7 +60,13 @@ class MABillScraper(Scraper):
 
     # bill_no can be set to a specific bill (no spaces) to scrape only one
     # os-update ma bills --scrape bill_no=H2
-    def scrape(self, chamber=None, session=None, bill_no=None):
+    # we can also scrape a "chunk" of all available bills by specifying an integer 1-12 (inclusive)
+    # chunks are available to split up this long, slow scrape into 12 smaller scrapes
+    # os-update ma bills --scrape scrape_chunk_number=1
+    # this trades off comprehensivity for limited scope of failure/faster time to recovery
+    def scrape(
+        self, chamber=None, session=None, bill_no=None, scrape_chunk_number=None
+    ):
         self.scrape_bill_list(session)
 
         # optionally scrape a single bill then exit
@@ -68,10 +79,10 @@ class MABillScraper(Scraper):
                     return
 
         if not chamber:
-            yield from self.scrape_chamber("lower", session)
-            yield from self.scrape_chamber("upper", session)
+            yield from self.scrape_chamber("lower", session, scrape_chunk_number)
+            yield from self.scrape_chamber("upper", session, scrape_chunk_number)
         else:
-            yield from self.scrape_chamber(chamber, session)
+            yield from self.scrape_chamber(chamber, session, scrape_chunk_number)
 
     def scrape_bill_list(self, session):
         session_numeric = re.sub(r"[^0-9]", "", session)
@@ -97,12 +108,34 @@ class MABillScraper(Scraper):
                 {"BillNumber": row["BillNumber"], "DocketNumber": row["DocketNumber"]}
             )
 
-    def scrape_chamber(self, chamber, session):
+    def scrape_chamber(self, chamber, session, scrape_chunk_number):
         chamber_code = "H" if chamber == "lower" else "S"
+        chamber_bill_list = []
         for bill_meta in self.bill_list:
             bill_id = bill_meta["BillNumber"] or bill_meta["DocketNumber"]
             if chamber_code in bill_id:
-                yield from self.scrape_bill(session, bill_meta, chamber)
+                chamber_bill_list.append(bill_meta)
+
+        # if scrape_chunk_number is specified, we are being asked to scrape
+        # only a specific chunk of the total bills in this chamber
+        # let's use 1-based counting so we're not doing scrape_chunk_number=0
+        if scrape_chunk_number:
+            # divide up the chamber_bill_list into 12 equal-sized lists
+            chunk_size = (
+                len(chamber_bill_list) // 12 if len(chamber_bill_list) >= 12 else 1
+            )
+            if len(chamber_bill_list) % 12 > 0:
+                chunk_size += 1
+            bill_chunks = [
+                chamber_bill_list[i : i + chunk_size]
+                for i in range(0, len(chamber_bill_list), chunk_size)
+            ]
+            chunk_number = int(scrape_chunk_number)
+
+            chamber_bill_list = bill_chunks[chunk_number - 1]
+
+        for chamber_bill_meta in chamber_bill_list:
+            yield from self.scrape_bill(session, chamber_bill_meta, chamber)
 
     def scrape_bill(self, session, bill_meta, chamber):
         # https://malegislature.gov/Bills/189/SD2739
