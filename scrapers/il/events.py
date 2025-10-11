@@ -22,9 +22,7 @@ chamber_names = {
 bill_re = re.compile(r"(\w+?)\s*0*(\d+)")
 
 # Used to remove prefixes from committee name
-ctty_name_re = re.compile(
-    r"(hearing notice for )?(senate )?(house )?(.*)", flags=re.IGNORECASE
-)
+committee_name_re = re.compile(r"(.*) Hearing Details", flags=re.IGNORECASE)
 
 
 class IlEventScraper(Scraper):
@@ -35,12 +33,12 @@ class IlEventScraper(Scraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        ctty_name = doc.xpath('//*[@id="main-content"]/section[2]//h2')[
-            0
-        ].text_content()
+        ctty_name = doc.xpath(
+            '//*[@id="main-content"]/div[@id="copyable-content"]//h2'
+        )[0].text_content()
 
         # Remove prefixes from the name like "Hearing notice for"
-        ctty_name = ctty_name_re.match(ctty_name).group(4)
+        ctty_name = committee_name_re.match(ctty_name).group(1)
 
         tables = doc.xpath(
             '//div[contains(@class, "card")][.//h4[contains(., "Hearing Details")]]//table'
