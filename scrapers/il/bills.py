@@ -492,7 +492,9 @@ class IlBillScraper(Scraper):
         bill_type = bill_type or DOC_TYPES[doc_type[1:]]
         bill_id = doc_type + bill_num
 
-        title = doc.xpath('//div[contains(@class, "tab-content")]/div[contains(@class, "row")][1]//h5/text()')[0].strip()
+        title = doc.xpath(
+            '//div[contains(@class, "tab-content")]/div[contains(@class, "row")][1]//h5/text()'
+        )[0].strip()
 
         bill = Bill(
             identifier=bill_id,
