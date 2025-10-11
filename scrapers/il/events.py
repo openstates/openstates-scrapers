@@ -33,9 +33,9 @@ class IlEventScraper(Scraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        ctty_name = doc.xpath('//*[@id="main-content"]/div[@id="copyable-content"]//h2')[
-            0
-        ].text_content()
+        ctty_name = doc.xpath(
+            '//*[@id="main-content"]/div[@id="copyable-content"]//h2'
+        )[0].text_content()
 
         # Remove prefixes from the name like "Hearing notice for"
         ctty_name = committee_name_re.match(ctty_name).group(1)
