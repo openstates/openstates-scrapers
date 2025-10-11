@@ -492,7 +492,9 @@ class IlBillScraper(Scraper):
         bill_type = bill_type or DOC_TYPES[doc_type[1:]]
         bill_id = doc_type + bill_num
 
-        title = doc.xpath('//div[@id="content"]/div[1]/div/h5/text()')[0].strip()
+        title = doc.xpath(
+            '//div[contains(@class, "tab-content")]/div[contains(@class, "row")][1]//h5/text()'
+        )[0].strip()
 
         bill = Bill(
             identifier=bill_id,
@@ -629,7 +631,7 @@ class IlBillScraper(Scraper):
                 bill.add_version_link(name, url, media_type=mimetype)
             elif name in FULLTEXT_DOCUMENT_TYPES:
                 bill.add_document_link(name, url)
-            elif "Printer-Friendly" in name:
+            elif "Printer-Friendly" or "Printer Friendly" in name:
                 pass
             else:
                 self.warning("unknown document type %s - adding as document" % name)
