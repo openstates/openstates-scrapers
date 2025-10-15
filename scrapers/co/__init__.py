@@ -201,4 +201,4 @@ class Colorado(State):
             "https://leg.colorado.gov/bill-search",
             "//select[@id='edit-field-sessions']/option/text()",
         )
-        return tags
+        return [tag for tag in tags if tag != "- Any -"]
