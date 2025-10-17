@@ -30,6 +30,10 @@ class MPEventScraper(Scraper):
         timestring = timestring.replace(": ", "")
         matches = re.findall(r"\d+:\d+\s*[apm\.]*", timestring, flags=re.IGNORECASE)
 
+        if "TBA" in timestring.upper():
+            self.info(f"Skipping TBA event. {timestring}")
+            return ""
+
         if len(matches) == 0:
             self.error(f"Could not parse timestring {timestring}")
             return ""
