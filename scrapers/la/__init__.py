@@ -285,6 +285,18 @@ class Louisiana(State):
             "end_date": "2025-06-12",
             "active": True,
         },
+        {
+            "_scraped_name": "2025 First Extraordinary Session",
+            "classification": "special",
+            "identifier": "2025s1",
+            "name": "2025 First Extraordinary Session",
+            "start_date": "2025-10-23",
+            "end_date": "2025-10-24",  # TODO: EST
+            "active": False,
+            "extras": {
+                "session_id": "251ES",
+            },
+        },
     ]
     ignored_scraped_sessions = [
         "2024 Organizational Session",
