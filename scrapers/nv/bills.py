@@ -132,10 +132,7 @@ class SubjectMapping(HtmlPage):
             )
         else:
             # Use new format URL for more recent sessions
-            url = (
-                f"https://www.leg.state.nv.us/Session/{slug}/Reports/"
-                f"TablesAndIndex/index.html"
-            )
+            url = f"https://www.leg.state.nv.us/App/NELIS/REL/{slug}/Bills/List"
         return url
 
     def process_page(self):
