@@ -37,20 +37,20 @@ class UTBillScraper(Scraper, LXMLMixin):
     _TZ = pytz.timezone("America/Denver")
 
     def scrape(self, session=None, chamber=None):
-        # if you need to test on an individual bill...
-        # yield from self.scrape_bill(
-        #             chamber='lower',
-        #             session='2019',
-        #             bill_id='H.B. 87',
-        #             url='https://le.utah.gov/~2019/bills/static/HB0087.html'
-        #         )
-
         if session in SPECIAL_SLUGS:
             session_slug = SPECIAL_SLUGS[session]
         elif "S" in session:
             session_slug = session
         else:
             session_slug = "{}GS".format(session)
+
+        # if you need to test on an individual bill...
+        # yield from self.scrape_bill(
+        #             'lower',
+        #             '2019',
+        #             'https://le.utah.gov/~2025/bills/static/SR0002.html',
+        #             session_slug,
+        #         )
 
         session_url = "https://le.utah.gov/billlist.jsp?session={}".format(session_slug)
 
@@ -292,12 +292,16 @@ class UTBillScraper(Scraper, LXMLMixin):
                             bill.add_document_link(
                                 doc_data["shortDesc"], doc_url, media_type="text/xml"
                             )
-                        pdf_filepath = doc_url.replace(".xml", ".pdf")
-                        bill.add_document_link(
-                            doc_data["shortDesc"],
-                            pdf_filepath,
-                            media_type="application/pdf",
-                        )
+                        elif doc_url.lower().endswith("pdf"):
+                            bill.add_document_link(
+                                doc_data["shortDesc"],
+                                doc_url,
+                                media_type="application/pdf",
+                            )
+                        else:
+                            self.warning(
+                                f"Encountered unexpected document type for {doc_url}"
+                            )
 
         for subject in subjects:
             bill.add_subject(subject)
