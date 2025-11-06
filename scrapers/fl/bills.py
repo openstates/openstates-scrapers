@@ -593,8 +593,11 @@ class UpperComVote(PdfPage):
             self.logger.warning(f"Couldn't split {self.text}, skipping")
             return
 
-        (_, motion) = lines[5].split("FINAL ACTION:")
-        motion = motion.strip()
+        motion_regex = re.compile(r"final action:", re.IGNORECASE)
+        for line in lines:
+            if motion_regex.search(line):
+                (_, motion) = motion_regex.split(line)
+                motion = motion.strip()
         if not motion:
             self.logger.warning("Vote appears to be empty")
             return
