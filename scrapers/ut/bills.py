@@ -37,20 +37,20 @@ class UTBillScraper(Scraper, LXMLMixin):
     _TZ = pytz.timezone("America/Denver")
 
     def scrape(self, session=None, chamber=None):
-        # if you need to test on an individual bill...
-        # yield from self.scrape_bill(
-        #             chamber='lower',
-        #             session='2019',
-        #             bill_id='H.B. 87',
-        #             url='https://le.utah.gov/~2019/bills/static/HB0087.html'
-        #         )
-
         if session in SPECIAL_SLUGS:
             session_slug = SPECIAL_SLUGS[session]
         elif "S" in session:
             session_slug = session
         else:
             session_slug = "{}GS".format(session)
+
+        # if you need to test on an individual bill...
+        # yield from self.scrape_bill(
+        #             'lower',
+        #             '2019',
+        #             'https://le.utah.gov/~2025/bills/static/SR0002.html',
+        #             session_slug,
+        #         )
 
         session_url = "https://le.utah.gov/billlist.jsp?session={}".format(session_slug)
 
@@ -255,12 +255,14 @@ class UTBillScraper(Scraper, LXMLMixin):
                     bill.add_citation("Utah Code", citation["secNo"], "proposed")
 
                 for doc_data in version_data["billDocs"]:
-                    # Not really sure what's going to be in this array
-                    # just versions? other documents?
-                    # so throw something here if we find surprise
-                    # and improve scraper later
-                    if doc_data["fileName"] != f"{bill_filename}.xml":
-                        self.warning(f"Found unexplored bill version data at {api_url}")
+                    # Some documents in here are not really bill versions, more supplemental documents
+                    doc_type = "version"
+                    if (
+                        doc_data["shortDesc"] == "Fiscal Note"
+                        or "Transmittal Letter" in doc_data["shortDesc"]
+                        or "Committee Report" in doc_data["shortDesc"]
+                    ):
+                        doc_type = "document"
 
                     # There seem to be XML and PDF files on Utah server
                     # the UT bill details page seems to have code to
@@ -268,26 +270,45 @@ class UTBillScraper(Scraper, LXMLMixin):
 
                     if not doc_data["url"].startswith("http"):
                         doc_url = f"https://le.utah.gov{doc_data['url']}"
+                    else:
+                        doc_url = doc_data["url"]
 
-                    if doc_url.endswith("html") or doc_url.endswith("xml"):
+                    if doc_type == "version":
+                        if doc_url.endswith("html") or doc_url.endswith("xml"):
+                            bill.add_version_link(
+                                doc_data["shortDesc"],
+                                doc_url,
+                                media_type="text/xml",
+                            )
+
+                        pdf_filepath = doc_url.replace(".xml", ".pdf")
                         bill.add_version_link(
                             doc_data["shortDesc"],
-                            doc_url,
-                            media_type="text/xml",
+                            pdf_filepath,
+                            media_type="application/pdf",
                         )
-
-                    pdf_filepath = doc_url.replace(".xml", ".pdf")
-                    bill.add_version_link(
-                        doc_data["shortDesc"],
-                        pdf_filepath,
-                        media_type="application/pdf",
-                    )
+                    else:
+                        if doc_url.endswith("html") or doc_url.endswith("xml"):
+                            bill.add_document_link(
+                                doc_data["shortDesc"], doc_url, media_type="text/xml"
+                            )
+                        elif doc_url.lower().endswith("pdf"):
+                            bill.add_document_link(
+                                doc_data["shortDesc"],
+                                doc_url,
+                                media_type="application/pdf",
+                            )
+                        else:
+                            self.warning(
+                                f"Encountered unexpected document type for {doc_url}"
+                            )
 
         for subject in subjects:
             bill.add_subject(subject)
 
         # Actions
         if "actionHistoryList" in data:
+            cmte_match_re = re.compile(r"(committee|comm|to rules)", re.IGNORECASE)
             for action_data in data["actionHistoryList"]:
                 categorizer_result = self.categorizer.categorize(
                     action_data["description"]
@@ -305,6 +326,12 @@ class UTBillScraper(Scraper, LXMLMixin):
                     actor = "upper"
                 elif action_data["owner"].startswith("House"):
                     actor = "lower"
+                # we can also fall back in a few ways
+                # one is to use action description which often starts with House or Senate
+                elif action_data["description"].startswith("Senate"):
+                    actor = "upper"
+                elif action_data["description"].startswith("House"):
+                    actor = "lower"
                 else:
                     self.warning(
                         f"Found unexpected actor {action_data['owner']} at {api_url}"
@@ -319,9 +346,19 @@ class UTBillScraper(Scraper, LXMLMixin):
                     ).date()
                     date = date.strftime("%Y-%m-%d")
 
+                # In cases where action is a committee referral, include "owner" in description
+                # because the "owner" data point contains the committee name
+                # this provides important context to the action
+                if re.search(cmte_match_re, action_data["description"]):
+                    description = (
+                        f"{action_data['description']} [{action_data['owner']}]"
+                    )
+                else:
+                    description = action_data["description"]
+
                 bill.add_action(
                     date=date,
-                    description=action_data["description"],
+                    description=description,
                     classification=categorizer_result["classification"],
                     chamber=actor,
                 )
