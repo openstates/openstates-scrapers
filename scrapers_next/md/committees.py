@@ -1,4 +1,4 @@
-from spatula import HtmlPage, XPath, SelectorError, URL
+from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, URL
 from openstates.models import ScrapeCommittee
 
 
@@ -7,15 +7,14 @@ class UnknownRole(Exception):
         super().__init__(f"Unknown role: {role}")
 
 
-class CommitteeList(HtmlPage):
-    def process_page(self):
-        selector = XPath("//div[@class='hide-on-mobile']//tr/td[1]/a")
-        committees = selector.match(self.root)
-        for item in committees:
-            yield CommitteeDetails(
-                {"chamber": self.chamber, "listpage": self.source.url},
-                source=URL(item.get("href"), timeout=30),
-            )
+class CommitteeList(HtmlListPage):
+    selector = XPath("//div[@class='hide-on-mobile']//tr/td[1]/a")
+
+    def process_item(self, item):
+        return CommitteeDetails(
+            {"chamber": self.chamber, "listpage": self.source.url},
+            source=URL(item.get("href"), timeout=30),
+        )
 
 
 class CommitteeDetails(HtmlPage):
