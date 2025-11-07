@@ -1,3 +1,5 @@
+import re
+
 from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, URL
 from openstates.models import ScrapeCommittee
 
@@ -40,6 +42,10 @@ class CommitteeDetails(HtmlPage):
         for prefix in joint_prefixes:
             if name.startswith(prefix):
                 name = name.replace(prefix, "")
+
+        # Remove prefix from numbered committees
+        if name.startswith("No. "):
+            name = re.sub(r"No\. \d+ - ", "", name).strip()
 
         self.com = ScrapeCommittee(
             name=name,
