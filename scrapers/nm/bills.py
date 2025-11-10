@@ -30,7 +30,7 @@ def session_slug(session):
 
 
 def url_session_slug(session):
-    specials = {"2025S1": "25s", "2025S2": "25s"}
+    specials = {"2025S1": "25s", "2025S2": "25s2"}
     return specials.get(session, session[2:])
 
 
