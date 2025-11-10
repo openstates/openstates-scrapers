@@ -18,6 +18,8 @@ def session_slug(session):
         return "24 Special"
     elif session == "2025S1":
         return "25 Special"
+    elif session == "2025S2":
+        return "25 Special2"
     session_type = "Special" if "s" in session.lower() else "Regular"
     check_for_special_session_number = re.search(r"\d{2}S(\d)", session)
     if check_for_special_session_number is None:
@@ -28,7 +30,7 @@ def session_slug(session):
 
 
 def url_session_slug(session):
-    specials = {"2025S1": "25s"}
+    specials = {"2025S1": "25s", "2025S2": "25s2"}
     return specials.get(session, session[2:])
 
 
