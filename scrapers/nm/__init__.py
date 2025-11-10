@@ -222,6 +222,16 @@ class NewMexico(State):
             "start_date": "2025-10-01",
             # TODO: Correct start date
             "end_date": "2025-10-10",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2025 2nd Special",
+            "classification": "special",
+            "identifier": "2025S2",
+            "name": "2025 Second Special Session",
+            "start_date": "2025-11-10",
+            # TODO: Correct end date
+            "end_date": "2025-11-17",
             "active": True,
         },
     ]
