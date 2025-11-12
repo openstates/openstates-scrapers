@@ -164,12 +164,19 @@ class AZBillScraper(Scraper):
                         cleaned_date, "%Y-%m-%dT%H:%M:%S"
                     ).strftime("%Y-%m-%d")
 
-                    bill.add_action(
+                    action_instance = bill.add_action(
                         chamber=self.actor_from_action(bill, action, self_chamber),
                         description=utils.action_map[action]["name"],
                         date=action_date,
                         classification=utils.action_map[action]["action"],
                     )
+
+                    committee_obj = status["Committee"]
+                    if committee_obj and committee_obj["TypeName"] != "Floor":
+                        committee = committee_obj["CommitteeName"]
+                        action_instance.add_related_entity(
+                            committee, entity_type="organization"
+                        )
                 except (ValueError, TypeError):
                     self.info(
                         "Invalid Action Time {} for {}".format(page[action], action)
