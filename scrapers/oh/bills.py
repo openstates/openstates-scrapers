@@ -70,6 +70,7 @@ class OHBillScraper(Scraper):
             "House of Representatives": "lower",
             "house": "lower",
             "senate": "upper",
+            "legislature": "legislature",
         }
 
         # so presumably not everything passes, but we haven't
@@ -255,10 +256,11 @@ class OHBillScraper(Scraper):
                 # but the first element is a TH for some dang reason
                 for action_row in reversed(action_rows):
                     # obtain values from HTML
+                    # TODO TODO TODO NEXT: these SPANs below are optional :(
                     date_string = action_row.xpath(".//th[@class='date-cell']/span/text()")[0].strip()
                     chamber_elems = action_row.xpath(".//td[@class='chamber-cell']/span/text()")
                     action_description = action_row.xpath(".//td[@class='action-cell']/span/text()")[0].strip()
-                    committee_text_elems = action_row.xpath(".//td[@class='action-cell']/span/text()")
+                    committee_text_elems = action_row.xpath(".//td[@class='committee-cell']/span/text()")
                     chamber = 'legislature'
                     if len(chamber_elems) > 0:
                         chamber = chamber_elems[0].strip()
