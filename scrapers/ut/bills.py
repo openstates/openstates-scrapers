@@ -349,19 +349,31 @@ class UTBillScraper(Scraper, LXMLMixin):
                 # In cases where action is a committee referral, include "owner" in description
                 # because the "owner" data point contains the committee name
                 # this provides important context to the action
+                committee = None
+                action_owner = action_data["owner"]
                 if re.search(cmte_match_re, action_data["description"]):
-                    description = (
-                        f"{action_data['description']} [{action_data['owner']}]"
+                    description = f"{action_data['description']} [{action_owner}]"
+                    match = re.search(
+                        r"(?:Senate|House) (.+) (?:\bCommittee)",
+                        action_owner,
+                        flags=re.IGNORECASE,
                     )
+                    if match:
+                        committee = match.group(1).strip()
                 else:
                     description = action_data["description"]
 
-                bill.add_action(
+                action_instance = bill.add_action(
                     date=date,
                     description=description,
                     classification=categorizer_result["classification"],
                     chamber=actor,
                 )
+
+                if committee:
+                    action_instance.add_related_entity(
+                        committee, entity_type="organization"
+                    )
 
     def parse_status(self, bill, status_table, chamber):
         page = status_table
