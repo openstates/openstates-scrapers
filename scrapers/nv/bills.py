@@ -61,6 +61,7 @@ CARRYOVERS = {
     },
     "82": {"*": "2021"},
     "83": {"*": "82", "**": "2023Special35"},
+    "85": {"**": "2025Special36"},
 }
 
 
@@ -119,8 +120,7 @@ class SubjectMapping(HtmlPage):
         slug = session_slugs[session]
         if "Special" in session:
             year = slug[4:8]
-            special_session_num = slug[0:2]
-            url = f"https://www.leg.state.nv.us/Session/{slug}/Reports/TablesAndIndex/{year}_SS{special_session_num}-index.html"
+            url = f"https://www.leg.state.nv.us/App/NELIS/REL/{slug}/Bills/List"
         elif (len(session) >= 4 and int(session[0:4]) <= 2024) or (
             len(session) < 4 and int(session) < 83
         ):
