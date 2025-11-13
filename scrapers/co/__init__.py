@@ -198,7 +198,7 @@ class Colorado(State):
 
     def get_session_list(self):
         tags = url_xpath(
-            "https://leg.colorado.gov/bill-search",
-            "//select[@id='edit-field-sessions']/option/text()",
+            "https://leg.colorado.gov/bills/bill-search",
+            "//div[@id='session-filters-list']//span[contains(@class,'search-filter-label')]/text()",
         )
         return [tag for tag in tags if tag != "- Any -"]
