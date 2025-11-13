@@ -7,6 +7,8 @@ import re
 import dateutil
 import requests
 
+from .actions import OHCategorizer
+
 BAD_BILLS = [("134", "SB 92")]
 
 requests.packages.urllib3.disable_warnings()
@@ -17,6 +19,8 @@ class OHBillScraper(Scraper):
     base_url = ""
     session_url_slug = ""
     _tz = pytz.timezone("US/Eastern")
+
+    categorizer = OHCategorizer()
 
     # Vote Motion Dictionary was created by comparing vote codes to
     # the actions tables via dates and chambers. If it made sense, the
@@ -140,7 +144,6 @@ class OHBillScraper(Scraper):
         # )
 
         bills = self.get_total_bills(session)
-        error_recovery_html_parser = lxml.etree.HTMLParser(recover=True)
         for api_bill in bills:
             bill_name = api_bill["name"]
             bill_number = api_bill["number"]
@@ -250,23 +253,27 @@ class OHBillScraper(Scraper):
                 pass
             else:
                 # scrape actions from public-facing bill status page
-                actions_page = lxml.etree.fromstring(actions_response.content, error_recovery_html_parser)
+                actions_page = lxml.html.fromstring(actions_response.content)
+                actions_page.make_links_absolute(self.short_base_url)
                 action_rows = actions_page.xpath("//table[contains(@class, 'legislation-status-table')]/tbody/tr")
                 # Columns in table are: Date 	Chamber 	Action 	Committee
                 # but the first element is a TH for some dang reason
                 for action_row in reversed(action_rows):
                     # obtain values from HTML
-                    # TODO TODO TODO NEXT: these SPANs below are optional :(
-                    date_string = action_row.xpath(".//th[@class='date-cell']/span/text()")[0].strip()
-                    chamber_elems = action_row.xpath(".//td[@class='chamber-cell']/span/text()")
-                    action_description = action_row.xpath(".//td[@class='action-cell']/span/text()")[0].strip()
-                    committee_text_elems = action_row.xpath(".//td[@class='committee-cell']/span/text()")
+                    date_string = action_row.xpath(".//th[@class='date-cell']")[0].text_content().strip()
+                    chamber_elems = action_row.xpath(".//td[@class='chamber-cell']")
+                    action_description = action_row.xpath(".//td[@class='action-cell']")[0].text_content().strip()
+                    committee_text_elems = action_row.xpath(".//td[@class='committee-cell']")
                     chamber = 'legislature'
                     if len(chamber_elems) > 0:
-                        chamber = chamber_elems[0].strip()
+                        chamber_text = chamber_elems[0].text_content().strip()
+                        if len(chamber_text) > 0:
+                            chamber = chamber_text
                     committee = None
                     if len(committee_text_elems) > 0:
-                        committee = committee_text_elems[0].strip()
+                        committee_text = committee_text_elems[0].text_content().strip()
+                        if len(committee_text) > 0:
+                            committee = committee_text
 
 
                     # TODO: code action type - we seemingly no long have action codes to work with :(
@@ -284,8 +291,9 @@ class OHBillScraper(Scraper):
                     date = dateutil.parser.parse(date_string)
                     date = self._tz.localize(date)
                     actor = chamber_dict[chamber]
+                    action_types = self.categorizer.categorize(action_description)["classification"]
                     action = bill.add_action(
-                        action_description, date, chamber=actor  # TODO classification see above
+                        action_description, date, chamber=actor, classification=action_types
                     )
                     if committee:
                         committee = f'{chamber} {committee} Committee'.strip()
