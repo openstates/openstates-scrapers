@@ -193,7 +193,7 @@ class SDBillScraper(Scraper, LXMLMixin):
 
             if "referred to" in action_text.lower():
                 atypes.append("referral-committee")
-                if "AssignedCommittee" in full_action:
+                if action_text.lower().endswith("referred to"):
                     full_action.append(action["AssignedCommittee"]["FullName"])
 
             if "Veto override" in action_text:
@@ -214,6 +214,17 @@ class SDBillScraper(Scraper, LXMLMixin):
 
             if "signed by the governor" in action_text.lower():
                 atypes.append("executive-signature")
+
+            committee = None
+            assigned_committee = action["AssignedCommittee"]
+            if assigned_committee and assigned_committee != "null":
+                match = re.search(
+                    r"(?:\bCommittee|\bSubcommittee)\s+on\s+(.+)",
+                    assigned_committee["Name"],
+                    flags=re.IGNORECASE,
+                )
+                if match:
+                    committee = match.group(1)
 
             match = re.match("First read in (Senate|House)", action_text)
             if match:
@@ -278,7 +289,13 @@ class SDBillScraper(Scraper, LXMLMixin):
                     full_action.append(f"Amendment {version_name}")
 
             description = " ".join(full_action)
-            bill.add_action(description, date, chamber=actor, classification=atypes)
+            action_instance = bill.add_action(
+                description, date, chamber=actor, classification=atypes
+            )
+            if committee:
+                action_instance.add_related_entity(
+                    committee, entity_type="organization"
+                )
 
     def add_bill_version(self, bill, version, api_id):
         date = version["DocumentDate"]
