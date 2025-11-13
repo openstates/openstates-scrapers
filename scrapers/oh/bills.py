@@ -1,5 +1,5 @@
 import datetime
-from openstates.scrape import Scraper, Bill, VoteEvent
+from openstates.scrape import Scraper, Bill
 import scrapelib
 import lxml
 import pytz
