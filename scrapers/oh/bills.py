@@ -87,7 +87,11 @@ class OHBillScraper(Scraper):
             chamber = "lower" if "H" in bill_id else "upper"
             classification = "bill" if "B" in bill_id else "resolution"
 
-            title = api_bill["short_title"] if api_bill["short_title"] else "No title provided"
+            title = (
+                api_bill["short_title"]
+                if api_bill["short_title"]
+                else "No title provided"
+            )
             bill = Bill(
                 bill_id,
                 legislative_session=session,
@@ -107,7 +111,9 @@ class OHBillScraper(Scraper):
             # get "versions" bill from API
             # "versions" bill object has many of the same properties
             # but also some additional details
-            bill_versions_url = f"https://search-prod.lis.state.oh.us{api_bill['versions']}"
+            bill_versions_url = (
+                f"https://search-prod.lis.state.oh.us{api_bill['versions']}"
+            )
             api_versions_data = self.get(bill_versions_url, verify=False).json()
 
             effective_date_string = None
@@ -133,9 +139,7 @@ class OHBillScraper(Scraper):
                     version_name, pdf_link, media_type="application/pdf"
                 )
                 html_link = self.short_base_url + api_bill_version["download_html"]
-                bill.add_version_link(
-                    version_name, html_link, media_type="text/html"
-                )
+                bill.add_version_link(version_name, html_link, media_type="text/html")
 
                 # we'll use the latest bill_version for source
                 bill.add_source(bill_versions_url)
@@ -217,7 +221,9 @@ class OHBillScraper(Scraper):
         doc_groups = docs_page.xpath("//section[@class='legislation-section']")
         for doc_group in doc_groups:
             # the first group should always be the bill versions, which we ignore (see above: we get those from API)
-            legislature_title = doc_group.xpath(".//h2[contains(text(),'Legislation Text')]")
+            legislature_title = doc_group.xpath(
+                ".//h2[contains(text(),'Legislation Text')]"
+            )
             if len(legislature_title) > 0:
                 continue
 
@@ -226,7 +232,9 @@ class OHBillScraper(Scraper):
             document_links = doc_group.xpath(".//ul/li/a")
             for document_link in document_links:
                 doc_note = document_link.xpath(".//span[not(@class)]/text()")[0].strip()
-                doc_type = document_link.xpath(".//span[@class='file-format-icon']/text()")[0]
+                doc_type = document_link.xpath(
+                    ".//span[@class='file-format-icon']/text()"
+                )[0]
                 doc_url = document_link.xpath("./@href")[0].strip()
                 media_type = None
                 if "pdf" in doc_type.lower():
@@ -245,16 +253,24 @@ class OHBillScraper(Scraper):
         # scrape actions from public-facing bill status page
         actions_page = lxml.html.fromstring(actions_response.content)
         actions_page.make_links_absolute("https://www.legislature.ohio.gov")
-        action_rows = actions_page.xpath("//table[contains(@class, 'legislation-status-table')]/tbody/tr")
+        action_rows = actions_page.xpath(
+            "//table[contains(@class, 'legislation-status-table')]/tbody/tr"
+        )
         # Columns in table are: Date 	Chamber 	Action 	Committee
         # but the first element is a TH for some dang reason
         for action_row in reversed(action_rows):
             # obtain values from HTML
-            date_string = action_row.xpath(".//th[@class='date-cell']")[0].text_content().strip()
+            date_string = (
+                action_row.xpath(".//th[@class='date-cell']")[0].text_content().strip()
+            )
             chamber_elems = action_row.xpath(".//td[@class='chamber-cell']")
-            action_description = action_row.xpath(".//td[@class='action-cell']")[0].text_content().strip()
+            action_description = (
+                action_row.xpath(".//td[@class='action-cell']")[0]
+                .text_content()
+                .strip()
+            )
             committee_text_elems = action_row.xpath(".//td[@class='committee-cell']")
-            chamber = 'legislature'
+            chamber = "legislature"
             if len(chamber_elems) > 0:
                 chamber_text = chamber_elems[0].text_content().strip()
                 if len(chamber_text) > 0:
@@ -269,12 +285,14 @@ class OHBillScraper(Scraper):
             date = dateutil.parser.parse(date_string)
             date = self._tz.localize(date)
             actor = self.chamber_dict[chamber]
-            action_types = self.categorizer.categorize(action_description)["classification"]
+            action_types = self.categorizer.categorize(action_description)[
+                "classification"
+            ]
             action = bill.add_action(
                 action_description, date, chamber=actor, classification=action_types
             )
             if committee:
-                committee = f'{chamber} {committee} Committee'.strip()
+                committee = f"{chamber} {committee} Committee".strip()
                 action.add_related_entity(
                     committee,
                     entity_type="organization",
@@ -293,7 +311,9 @@ class OHBillScraper(Scraper):
         # The /resolutions endpoint has included duplicate bills in its output, so use a set to filter duplicates
         bill_numbers_seen = set()
         total_bills = []
-        bills_url = f"{self.short_base_url}/api/v2/general_assembly_{session}/legislation/"
+        bills_url = (
+            f"{self.short_base_url}/api/v2/general_assembly_{session}/legislation/"
+        )
         bill_data = self.get(bills_url, verify=False).json()
         if len(bill_data) == 0:
             self.logger.warning("No bills")
