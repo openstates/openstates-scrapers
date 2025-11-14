@@ -1,5 +1,5 @@
 import datetime
-from openstates.scrape import Scraper, Bill
+from openstates.scrape import Scraper, Bill, VoteEvent
 import scrapelib
 import lxml
 import pytz
@@ -22,34 +22,7 @@ class OHBillScraper(Scraper):
 
     categorizer = OHCategorizer()
 
-    # Vote Motion Dictionary was created by comparing vote codes to
-    # the actions tables via dates and chambers. If it made sense, the
-    # vote code was added to the below dictionary.
-    _vote_motion_dict = {
-        "confer_713": "Conference report agreed to",
-        "confer_712": "Conference report agreed to",
-        "msg_506": "Refused to concur in Senate amendments",
-        "motion_913": "Passed",
-        "motion_909": "Motion to reconsider",
-        "final_510": "Motion to reconsider",
-        "imm_consid_360": "Adopted",
-        "pass_300": "Pass",
-        "msg_reso_503": "Adopted",
-        "intro_103": "Adopted",
-        "intro_108": "Adopted",
-        "intro_101": "Adopted",
-        "concur_606": "Concurred in Senate amendments",
-        "crpt_301": "Reported - Substitute",
-        "adopt_reso_110": "Adopted",
-        "intro_102": "Adopted",
-        "concur_608": "Refused to concur in House amendments",
-        "msg_507": "Concurred in Senate amendments",
-        "pass_301": "Adopted",
-        "third_407": "Passed - Amended",
-        "concur_602": "Concurred in Senate amendments",
-        "concur_622": "Concurred in Senate amendments",
-        "amend_452": "Amended",
-    }
+    legislators = {}
 
     chamber_dict = {
         "Senate": "upper",
@@ -72,6 +45,9 @@ class OHBillScraper(Scraper):
             if i["identifier"] == session:
                 if "extras" in i and "session_id" in i["extras"]:
                     session_url_slug = i["extras"]["session_url_slug"]
+
+        # we will need legislators for identifying Voters on Vote Events
+        self.legislators = self.get_legislators(session)
 
         bills = self.get_total_bills(session)
         for api_bill in bills:
@@ -175,6 +151,7 @@ class OHBillScraper(Scraper):
                     primary=False,
                 )
 
+            # Additional web requests fro actions, documents, votes
             try:
                 self.scrape_actions(bill, session, api_bill)
             except scrapelib.HTTPError:
@@ -184,10 +161,10 @@ class OHBillScraper(Scraper):
             try:
                 self.scrape_documents(bill, session, api_bill)
             except scrapelib.HTTPError:
-                self.warning(f"Failed to get actions for bill {bill.identifier}")
+                self.warning(f"Failed to get documents for bill {bill.identifier}")
                 pass
 
-            # TODO votes: have not found votes in API v2 yet
+            yield from self.scrape_votes_api(bill, session, api_bill)
 
             if effective_date_string:
                 effective_date = datetime.datetime.strptime(
@@ -207,6 +184,17 @@ class OHBillScraper(Scraper):
                 )
 
             yield bill
+
+    def get_legislators(self, session):
+        legislators_url = (
+            f"{self.short_base_url}/api/v2/general_assembly_{session}/legislators"
+        )
+        legislators_data = self.get(legislators_url, verify=False).json()
+        legislators = {}
+        for legislator in legislators_data:
+            legislators[legislator["lpid"]] = legislator["displayname"]
+
+        return legislators
 
     def scrape_documents(self, bill, session, api_bill):
         # As of Nov 25 API v2 does not contain actions as in prior version
@@ -243,6 +231,52 @@ class OHBillScraper(Scraper):
                     self.error(f"Unexpected media type {doc_url} on {docs_page_url}")
                 note = f"{section_title}: {doc_note}"
                 bill.add_document_link(note, doc_url, media_type=media_type)
+
+    def scrape_votes_api(self, bill, session, api_bill):
+        # the "actions" API endpoint includes *most* bill actions, but seems to exclude some (Governor stuff, Effective)
+        # so we use it just for votes data at this point
+        actions_api_url = f"{self.short_base_url}/api/v2/general_assembly_{session}/legislation/{api_bill['number']}/actions"
+        actions_api_data = self.get(actions_api_url, verify=False).json()
+
+        # Actions include vote info
+        for action in actions_api_data:
+            if "yeas" not in action:
+                # not a vote
+                continue
+
+            date = dateutil.parser.parse(action["occurred"])
+            chamber = self.chamber_dict[action["chamber"]]
+            classifications = []
+            if action["cmte_name"]:
+                classifications.append("committee-passage")
+            if action["amended"]:
+                classifications.append("amendment")
+            if len(classifications) == 0:
+                classifications.append("passage")
+            vote = VoteEvent(
+                chamber=chamber,
+                motion_text=action["description"],
+                start_date=date,
+                bill=bill,
+                result="pass" if action["result"] == "Passed" else "fail",
+                classification=classifications,
+            )
+            vote.dedupe_key = f"vote-revno-{action['revno']}"
+            vote.set_count("yes", len(action["yeas"]))
+            vote.set_count("no", len(action["nays"]))
+
+            # add individual votes
+            for voter in action["yeas"]:
+                voter_full_name = self.legislators[voter]
+                vote.vote("yes", voter_full_name)
+
+            for voter in action["nays"]:
+                voter_full_name = self.legislators[voter]
+                vote.vote("no", voter_full_name)
+
+            vote.add_source(actions_api_url)
+
+            yield vote
 
     def scrape_actions(self, bill, session, api_bill):
         # As of Nov 25 API v2 does not contain actions as in prior version
