@@ -77,7 +77,7 @@ class COBillScraper(Scraper, LXMLMixin):
             yield from self.scrape_bill(row.xpath("@href")[0], session)
 
     def clean(self, text):
-        if type(text) == list:
+        if type(text) is list:
             return text[0].text_content().strip()
         return text.text_content().strip()
 
