@@ -8,7 +8,7 @@ import lxml.html
 # import math
 import pytz
 from openstates.scrape import Scraper, Bill, VoteEvent
-
+from openstates.data.common import VOTE_OPTIONS
 from utils import LXMLMixin
 
 from .actions import Categorizer
@@ -43,6 +43,8 @@ class COBillScraper(Scraper, LXMLMixin):
     categorizer = Categorizer()
     session_name = ""
     bill_year = ""
+    page_number = 1
+    max_pages = 2
 
     def scrape(self, chamber=None, session=None):
         # TODO: there's a better way to do this
@@ -52,11 +54,15 @@ class COBillScraper(Scraper, LXMLMixin):
                 # we need this for session laws
                 self.bill_year = str(dateutil.parser.parse(i["start_date"]).year)
 
-        yield from self.scrape_bill_list(session, self.session_name, 2, chamber)
+        while self.page_number <= self.max_pages:
+            yield from self.scrape_bill_list(
+                session, self.session_name, self.page_number, chamber
+            )
 
     def scrape_bill_list(
-        self, session: str, session_name: str, pageNumber: int = 2, chamber: str = None
+        self, session: str, session_name: str, pageNumber: int = 1, chamber: str = None
     ):
+        self.info(f"Scraping page {self.page_number}")
         url = "https://leg.colorado.gov/bills/bill-search"
         data = {
             "q": "",
@@ -73,8 +79,12 @@ class COBillScraper(Scraper, LXMLMixin):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
+        self.max_pages = int(page.cssselect("button[data-page]")[-1].text_content())
+
         for row in page.cssselect("a.all-bills-data-heading"):
             yield from self.scrape_bill(row.xpath("@href")[0], session)
+
+        self.page_number += 1
 
     def clean(self, text):
         if type(text) is list:
@@ -161,6 +171,7 @@ class COBillScraper(Scraper, LXMLMixin):
             )
 
     def scrape_documents(self, bill: Bill, page: lxml.html.HtmlElement):
+        # committee reports
         for row in page.xpath("//a[contains(text(), 'Committee Report')]"):
             title = row.xpath("@aria-label")[0].replace("View ", "").strip()
             url = row.xpath("@href")[0].strip()
@@ -168,6 +179,7 @@ class COBillScraper(Scraper, LXMLMixin):
                 title,
                 url,
                 media_type="text/html",
+                classification="commitee-report",
             )
 
             if row.xpath("span/a[contains(@class,'ext-link-pdf')]"):
@@ -175,7 +187,23 @@ class COBillScraper(Scraper, LXMLMixin):
                     title,
                     row.xpath("span/a[contains(@class,'ext-link-pdf')]")[0].strip(),
                     media_type="application/pdf",
+                    classification="commitee-report",
                 )
+
+        # fiscal notes
+        for row in page.cssselect("div#bill-files-fiscal tbody tr"):
+            title = self.clean(row.xpath("td[2]/span"))
+            title = title.replace("FN", "Fiscal Note ")
+            published = dateutil.parser.parse(
+                self.clean(row.xpath("td[1]/span"))
+            ).date()
+            bill.add_document_link(
+                title,
+                row.xpath("td[3]/span/a/@href")[0],
+                date=published,
+                media_type="application/pdf",
+                classification="fiscal-note",
+            )
 
     def scrape_laws(self, bill: Bill, page: lxml.html.HtmlElement):
         for row in page.cssselect("div#bill-activity-session-laws tbody tr"):
@@ -247,19 +275,6 @@ class COBillScraper(Scraper, LXMLMixin):
                     media_type="text/html",
                 )
 
-        for row in page.cssselect("div#bill-files-fiscal tbody tr"):
-            title = self.clean(row.xpath("td[2]/span"))
-            title = title.replace("FN", "Fiscal Note ")
-            published = dateutil.parser.parse(
-                self.clean(row.xpath("td[1]/span"))
-            ).date()
-            bill.add_document_link(
-                title,
-                row.xpath("td[3]/span/a/@href")[0],
-                date=published,
-                media_type="application/pdf",
-            )
-
     def scrape_votes(self, bill: Bill, page: lxml.html.HtmlElement, chamber: str):
         # committee votes are slightly differently formatted
         for parent in page.cssselect("div#bill-activity-committees div.gen-accordion"):
@@ -290,6 +305,11 @@ class COBillScraper(Scraper, LXMLMixin):
                     ).lower()
 
                     if "voice vote" not in vote_option.lower():
+                        if vote_option not in VOTE_OPTIONS:
+                            self.info(
+                                f"Couldn't find {vote_option} in choices, setting to other."
+                            )
+                            vote_option = "other"
                         vote.vote(
                             vote_option,
                             self.clean(vote_row.xpath("td[1]")),
@@ -326,6 +346,11 @@ class COBillScraper(Scraper, LXMLMixin):
             ):
                 vote_option = self.clean(vote_row.cssselect("span.vote-tag")).lower()
                 if "voice vote" not in vote_option.lower():
+                    if vote_option not in VOTE_OPTIONS:
+                        self.info(
+                            f"Couldn't find {vote_option} in choices, setting to other."
+                        )
+                        vote_option = "other"
                     vote.vote(
                         vote_option,
                         self.clean(vote_row.xpath("td[1]")),
