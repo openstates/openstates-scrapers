@@ -1,4 +1,5 @@
 # import datetime as dt
+import dateutil
 import re
 import lxml.html
 
@@ -17,6 +18,12 @@ CO_URL_BASE = "https://leg.colorado.gov"
 CHAMBERS = {
     "upper": "Senate",
     "lower": "House",
+}
+
+ACTION_CHAMBERS = {
+    "Senate": "upper",
+    "House": "lower",
+    "Governor": "executive",
 }
 
 BILL_CHAMBERS = {
@@ -89,6 +96,8 @@ class COBillScraper(Scraper, LXMLMixin):
         )
 
         self.scrape_sponsors(bill, page)
+        self.scrape_versions(bill, page)
+        self.scrape_actions(bill, page)
 
         bill.add_source(url)
 
@@ -121,7 +130,60 @@ class COBillScraper(Scraper, LXMLMixin):
             )
 
     def scrape_actions(self, bill: Bill, page: lxml.html.HtmlElement):
-        pass
+        for row in page.cssselect("div#bill-histories tbody tr"):
+            action_date = dateutil.parser.parse(
+                self.clean(row.xpath("td[1]/span"))
+            ).date()
+            actor = self.clean(row.xpath("td[2]/span"))
+            actor = ACTION_CHAMBERS[actor]
+            action_text = self.clean(row.xpath("td[3]/span"))
+
+            action_class = self.categorizer.categorize(action_text)
+
+            action = bill.add_action(
+                action_text,
+                action_date,
+                chamber=actor,
+                classification=action_class["classification"],
+            )
+
+            if "committees" in action_class:
+                for com in action_class["committees"]:
+                    action.add_related_entity(com, entity_type="organization")
+
+    def scrape_versions(self, bill: Bill, page: lxml.html.HtmlElement):
+        for row in page.cssselect("div#bill-files-all-versions tbody tr"):
+            title = self.clean(row.xpath("td[2]/span"))
+            published = dateutil.parser.parse(
+                self.clean(row.xpath("td[1]/span"))
+            ).date()
+            bill.add_version_link(
+                title,
+                row.xpath("td[3]/span/a/@href")[0],
+                date=published,
+                media_type="application/pdf",
+            )
+
+            if row.xpath("td[2]/span/a"):
+                bill.add_version_link(
+                    title,
+                    row.xpath("td[2]/span/a/@href")[0],
+                    date=published,
+                    media_type="text/html",
+                )
+
+        for row in page.cssselect("div#bill-files-fiscal tbody tr"):
+            title = self.clean(row.xpath("td[2]/span"))
+            title = title.replace("FN", "Fiscal Note ")
+            published = dateutil.parser.parse(
+                self.clean(row.xpath("td[1]/span"))
+            ).date()
+            bill.add_document_link(
+                title,
+                row.xpath("td[3]/span/a/@href")[0],
+                date=published,
+                media_type="application/pdf",
+            )
 
     # def scrape(self, chamber=None, session=None):
     #     """
