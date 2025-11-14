@@ -24,6 +24,7 @@ ACTION_CHAMBERS = {
     "Senate": "upper",
     "House": "lower",
     "Governor": "executive",
+    "Joint": "joint",
 }
 
 BILL_CHAMBERS = {
@@ -102,10 +103,13 @@ class COBillScraper(Scraper, LXMLMixin):
         )
         bill.add_abstract(summary, "summary")
 
-        self.scrape_sponsors(bill, page)
-        self.scrape_versions(bill, page)
         self.scrape_actions(bill, page)
+        self.scrape_amendments(bill, page)
+        self.scrape_documents(bill, page)
+        self.scrape_sponsors(bill, page)
         self.scrape_subjects(bill, page)
+        self.scrape_versions(bill, page)
+
         yield from self.scrape_votes(bill, page, chamber)
 
         bill.add_source(url)
@@ -118,6 +122,10 @@ class COBillScraper(Scraper, LXMLMixin):
                 self.clean(row.xpath("td[1]/span"))
             ).date()
             actor = self.clean(row.xpath("td[2]/span"))
+
+            if actor == "ConfComm":
+                actor = "Joint"
+
             actor = ACTION_CHAMBERS[actor]
             action_text = self.clean(row.xpath("td[3]/span"))
 
@@ -133,6 +141,37 @@ class COBillScraper(Scraper, LXMLMixin):
             if "committees" in action_class:
                 for com in action_class["committees"]:
                     action.add_related_entity(com, entity_type="organization")
+
+    def scrape_amendments(self, bill: Bill, page: lxml.html.HtmlElement):
+        for row in page.cssselect("div#bill-activity-amendments tbody tr"):
+            title = self.clean(row.xpath("td[2]/span"))
+            title = f"Amendment {title}"
+            published = dateutil.parser.parse(
+                self.clean(row.xpath("td[1]/span"))
+            ).date()
+            bill.add_document_link(
+                title,
+                row.xpath("td[5]/span/a/@href")[0],
+                date=published,
+                media_type="application/pdf",
+            )
+
+    def scrape_documents(self, bill: Bill, page: lxml.html.HtmlElement):
+        for row in page.xpath("//a[contains(text(), 'Committee Report')]"):
+            title = row.xpath("@aria-label")[0].replace("View ").strip()
+            url = row.xpath("@href")[0].strip()
+            bill.add_document_link(
+                title,
+                url,
+                media_type="text/html",
+            )
+
+            if row.xpath("span/a[contains(@class,'ext-link-pdf')]"):
+                bill.add_document_link(
+                    title,
+                    row.xpath("span/a[contains(@class,'ext-link-pdf')]")[0].strip(),
+                    media_type="application/pdf",
+                )
 
     def scrape_sponsors(self, bill: Bill, page: lxml.html.HtmlElement):
         for row in page.cssselect(
@@ -257,13 +296,16 @@ class COBillScraper(Scraper, LXMLMixin):
             votes_page = self.get(votes_url, headers=HEADERS).content
             votes_page = lxml.html.fromstring(votes_page)
 
+            vote.add_source(votes_url)
             for vote_row in votes_page.cssselect(
                 "div.standard-table div.col-12:nth-of-type(2) table.table tr"
             ):
-                vote.vote(
-                    self.clean(vote_row.cssselect("span.vote-tag")).lower(),
-                    self.clean(vote_row.xpath("td[1]")),
-                )
+                vote_option = self.clean(vote_row.cssselect("span.vote-tag")).lower()
+                if "voice vote" not in vote_option.lower():
+                    vote.vote(
+                        vote_option,
+                        self.clean(vote_row.xpath("td[1]")),
+                    )
 
             yield vote
 
