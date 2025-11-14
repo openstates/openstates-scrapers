@@ -42,12 +42,15 @@ class COBillScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Mountain")
     categorizer = Categorizer()
     session_name = ""
+    bill_year = ""
 
     def scrape(self, chamber=None, session=None):
         # TODO: there's a better way to do this
         for i in self.jurisdiction.legislative_sessions:
             if i["identifier"] == session:
                 self.session_name = i["_scraped_name"]
+                # we need this for session laws
+                self.bill_year = str(dateutil.parser.parse(i["start_date"]).year)
 
         yield from self.scrape_bill_list(session, self.session_name, 2, chamber)
 
@@ -106,6 +109,7 @@ class COBillScraper(Scraper, LXMLMixin):
         self.scrape_actions(bill, page)
         self.scrape_amendments(bill, page)
         self.scrape_documents(bill, page)
+        self.scrape_laws(bill, page)
         self.scrape_sponsors(bill, page)
         self.scrape_subjects(bill, page)
         self.scrape_versions(bill, page)
@@ -158,7 +162,7 @@ class COBillScraper(Scraper, LXMLMixin):
 
     def scrape_documents(self, bill: Bill, page: lxml.html.HtmlElement):
         for row in page.xpath("//a[contains(text(), 'Committee Report')]"):
-            title = row.xpath("@aria-label")[0].replace("View ").strip()
+            title = row.xpath("@aria-label")[0].replace("View ", "").strip()
             url = row.xpath("@href")[0].strip()
             bill.add_document_link(
                 title,
@@ -172,6 +176,24 @@ class COBillScraper(Scraper, LXMLMixin):
                     row.xpath("span/a[contains(@class,'ext-link-pdf')]")[0].strip(),
                     media_type="application/pdf",
                 )
+
+    def scrape_laws(self, bill: Bill, page: lxml.html.HtmlElement):
+        for row in page.cssselect("div#bill-activity-session-laws tbody tr"):
+            effective = dateutil.parser.parse(
+                self.clean(row.xpath("td[1]/span"))
+            ).date()
+            chapter = self.clean(row.xpath("td[2]/span"))
+            title = self.clean(row.xpath("td[3]/span"))
+            chapter = f"Chapter: {chapter} {title}"
+            url = row.xpath("td[4]//a/@href")[0]
+
+            bill.add_citation(
+                f"Colorado Session Laws of {self.bill_year}",
+                chapter,
+                citation_type="chapter",
+                effective=effective,
+                url=url,
+            )
 
     def scrape_sponsors(self, bill: Bill, page: lxml.html.HtmlElement):
         for row in page.cssselect(
