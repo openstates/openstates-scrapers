@@ -65,8 +65,6 @@ class COBillScraper(Scraper, LXMLMixin):
         if chamber:
             data["chambers[]"] = CHAMBERS[chamber]
 
-        print(data)
-
         page = self.post(url, data=data, headers=HEADERS).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
@@ -80,7 +78,6 @@ class COBillScraper(Scraper, LXMLMixin):
         return text.text_content().strip()
 
     def scrape_bill(self, url: str, session: str):
-        print(f"Scraping {url}")
         page = self.get(url, headers=HEADERS).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
@@ -109,7 +106,7 @@ class COBillScraper(Scraper, LXMLMixin):
         self.scrape_versions(bill, page)
         self.scrape_actions(bill, page)
         self.scrape_subjects(bill, page)
-        self.scrape_votes(bill, page, chamber)
+        yield from self.scrape_votes(bill, page, chamber)
 
         bill.add_source(url)
 
@@ -203,7 +200,6 @@ class COBillScraper(Scraper, LXMLMixin):
             )
 
     def scrape_votes(self, bill: Bill, page: lxml.html.HtmlElement, chamber: str):
-
         # committee votes are slightly differently formatted
         for parent in page.cssselect("div#bill-activity-committees div.gen-accordion"):
             when = parent.cssselect("button h4")[0].text_content().split("|")[0]
@@ -224,12 +220,20 @@ class COBillScraper(Scraper, LXMLMixin):
                 votes_page = self.get(votes_url, headers=HEADERS).content
                 votes_page = lxml.html.fromstring(votes_page)
 
-                for vote_row in votes_page.cssselect("table.table.mb-site tr"):
-                    vote.vote(
-                        self.clean(vote_row.cssselect("span.vote-tag")).lower(),
-                        self.clean(vote_row.xpath("td[1]")),
-                    )
+                for vote_row in votes_page.cssselect(
+                    "div.standard-table div.col-12:nth-of-type(2) table.table tr"
+                ):
+                    vote_option = self.clean(
+                        vote_row.cssselect("span.vote-tag")
+                    ).lower()
 
+                    if "voice vote" not in vote_option.lower():
+                        vote.vote(
+                            vote_option,
+                            self.clean(vote_row.xpath("td[1]")),
+                        )
+
+                vote.add_source(votes_url)
                 yield vote
 
         for row in page.cssselect("div#bill-votes-first-chamber tbody tr"):
@@ -253,7 +257,9 @@ class COBillScraper(Scraper, LXMLMixin):
             votes_page = self.get(votes_url, headers=HEADERS).content
             votes_page = lxml.html.fromstring(votes_page)
 
-            for vote_row in votes_page.cssselect("table.table.mb-site tr"):
+            for vote_row in votes_page.cssselect(
+                "div.standard-table div.col-12:nth-of-type(2) table.table tr"
+            ):
                 vote.vote(
                     self.clean(vote_row.cssselect("span.vote-tag")).lower(),
                     self.clean(vote_row.xpath("td[1]")),
