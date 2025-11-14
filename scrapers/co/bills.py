@@ -1,12 +1,12 @@
 # import datetime as dt
-# import re
+import re
 import lxml.html
 
 # import scrapelib
 # import json
 # import math
 import pytz
-from openstates.scrape import Scraper  # , Bill, VoteEvent
+from openstates.scrape import Scraper, Bill  # , VoteEvent
 
 from utils import LXMLMixin
 
@@ -17,6 +17,11 @@ CO_URL_BASE = "https://leg.colorado.gov"
 CHAMBERS = {
     "upper": "Senate",
     "lower": "House",
+}
+
+BILL_CHAMBERS = {
+    "H": "lower",
+    "S": "upper",
 }
 
 
@@ -51,12 +56,16 @@ class COBillScraper(Scraper, LXMLMixin):
         print(data)
 
         page = self.post(url, data=data).content
-        print(page)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
         for row in page.cssselect("a.all-bills-data-heading"):
             yield from self.scrape_bill(row.xpath("@href")[0], session)
+
+    def clean(self, text):
+        if type(text) == list:
+            return text[0].text_content().strip()
+        return text.text_content().strip()
 
     def scrape_bill(self, url: str, session: str):
         print(f"Scraping {url}")
@@ -64,8 +73,55 @@ class COBillScraper(Scraper, LXMLMixin):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        print(page.cssselect("div.full-bill-topic h1")[0].text_content())
-        yield {}
+        bill_title = self.clean(page.cssselect("div.full-bill-topic h1"))
+        bill_number = self.clean(page.cssselect("span.bill-detail-bill-number-tag"))
+
+        # convert from SB25-300 or SB24B-300 to SB 300
+        match = re.search(r"\d+[A-Z]?\-", bill_number, re.IGNORECASE)
+        if match:
+            parts = bill_number.split(match.group(0))
+            bill_number = f"{parts[0]} {parts[1]}"
+
+        chamber = BILL_CHAMBERS[bill_number[0:1]]
+
+        bill = Bill(
+            bill_number, legislative_session=session, chamber=chamber, title=bill_title
+        )
+
+        self.scrape_sponsors(bill, page)
+
+        bill.add_source(url)
+
+        yield bill
+
+    def scrape_sponsors(self, bill: Bill, page: lxml.html.HtmlElement):
+        for row in page.cssselect(
+            "div.bill-detail-prime div.sponsor-link a, div.bill-detail-additional-sponsor div.sponsor-link a"
+        ):
+            sponsor = self.clean(row)
+            chamber = "upper" if "Sen." in sponsor else "lower"
+            sponsor = sponsor.replace("Sen.", "").replace("Rep.", "")
+            bill.add_sponsorship(
+                sponsor,
+                classification="sponsor",
+                entity_type="person",
+                primary=True,
+                chamber=chamber,
+            )
+        for row in page.cssselect("div.bill-detail-co-sponsor div.sponsor-link a"):
+            sponsor = self.clean(row)
+            chamber = "upper" if "Sen." in sponsor else "lower"
+            sponsor = sponsor.replace("Sen.", "").replace("Rep.", "")
+            bill.add_sponsorship(
+                sponsor,
+                classification="cosponsor",
+                entity_type="person",
+                primary=False,
+                chamber=chamber,
+            )
+
+    def scrape_actions(self, bill: Bill, page: lxml.html.HtmlElement):
+        pass
 
     # def scrape(self, chamber=None, session=None):
     #     """
