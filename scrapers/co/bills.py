@@ -7,7 +7,7 @@ import lxml.html
 # import json
 # import math
 import pytz
-from openstates.scrape import Scraper, Bill  # , VoteEvent
+from openstates.scrape import Scraper, Bill, VoteEvent
 
 from utils import LXMLMixin
 
@@ -29,6 +29,11 @@ ACTION_CHAMBERS = {
 BILL_CHAMBERS = {
     "H": "lower",
     "S": "upper",
+}
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
 }
 
 
@@ -62,7 +67,7 @@ class COBillScraper(Scraper, LXMLMixin):
 
         print(data)
 
-        page = self.post(url, data=data).content
+        page = self.post(url, data=data, headers=HEADERS).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -76,7 +81,7 @@ class COBillScraper(Scraper, LXMLMixin):
 
     def scrape_bill(self, url: str, session: str):
         print(f"Scraping {url}")
-        page = self.get(url).content
+        page = self.get(url, headers=HEADERS).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -95,13 +100,42 @@ class COBillScraper(Scraper, LXMLMixin):
             bill_number, legislative_session=session, chamber=chamber, title=bill_title
         )
 
+        summary = (
+            page.cssselect("div.bill-detail-bill-summary")[0].text_content().strip()
+        )
+        bill.add_abstract(summary, "summary")
+
         self.scrape_sponsors(bill, page)
         self.scrape_versions(bill, page)
         self.scrape_actions(bill, page)
+        self.scrape_subjects(bill, page)
+        self.scrape_votes(bill, page, chamber)
 
         bill.add_source(url)
 
         yield bill
+
+    def scrape_actions(self, bill: Bill, page: lxml.html.HtmlElement):
+        for row in page.cssselect("div#bill-histories tbody tr"):
+            action_date = dateutil.parser.parse(
+                self.clean(row.xpath("td[1]/span"))
+            ).date()
+            actor = self.clean(row.xpath("td[2]/span"))
+            actor = ACTION_CHAMBERS[actor]
+            action_text = self.clean(row.xpath("td[3]/span"))
+
+            action_class = self.categorizer.categorize(action_text)
+
+            action = bill.add_action(
+                action_text,
+                action_date,
+                chamber=actor,
+                classification=action_class["classification"],
+            )
+
+            if "committees" in action_class:
+                for com in action_class["committees"]:
+                    action.add_related_entity(com, entity_type="organization")
 
     def scrape_sponsors(self, bill: Bill, page: lxml.html.HtmlElement):
         for row in page.cssselect(
@@ -129,27 +163,10 @@ class COBillScraper(Scraper, LXMLMixin):
                 chamber=chamber,
             )
 
-    def scrape_actions(self, bill: Bill, page: lxml.html.HtmlElement):
-        for row in page.cssselect("div#bill-histories tbody tr"):
-            action_date = dateutil.parser.parse(
-                self.clean(row.xpath("td[1]/span"))
-            ).date()
-            actor = self.clean(row.xpath("td[2]/span"))
-            actor = ACTION_CHAMBERS[actor]
-            action_text = self.clean(row.xpath("td[3]/span"))
-
-            action_class = self.categorizer.categorize(action_text)
-
-            action = bill.add_action(
-                action_text,
-                action_date,
-                chamber=actor,
-                classification=action_class["classification"],
-            )
-
-            if "committees" in action_class:
-                for com in action_class["committees"]:
-                    action.add_related_entity(com, entity_type="organization")
+    def scrape_subjects(self, bill: Bill, page: lxml.html.HtmlElement):
+        for row in page.cssselect("span.subject-tag"):
+            subject = self.clean(row)
+            bill.add_subject(subject)
 
     def scrape_versions(self, bill: Bill, page: lxml.html.HtmlElement):
         for row in page.cssselect("div#bill-files-all-versions tbody tr"):
@@ -185,68 +202,64 @@ class COBillScraper(Scraper, LXMLMixin):
                 media_type="application/pdf",
             )
 
-    # def scrape(self, chamber=None, session=None):
-    #     """
-    #     Entry point when invoking this (or really whatever else)
-    #     """
-    #     page = self.scrape_bill_list(session, 0)
-    #     bill_list = page.xpath(
-    #         '//header[contains(@class,"search-result-single-item")]'
-    #         '/h4[contains(@class,"node-title")]/a/@href'
-    #     )
+    def scrape_votes(self, bill: Bill, page: lxml.html.HtmlElement, chamber: str):
 
-    #     for bill_url in bill_list:
-    #         yield from self.scrape_bill(session, bill_url)
+        # committee votes are slightly differently formatted
+        for parent in page.cssselect("div#bill-activity-committees div.gen-accordion"):
+            when = parent.cssselect("button h4")[0].text_content().split("|")[0]
+            when = dateutil.parser.parse(when, fuzzy=True).date()
 
-    #     try:
-    #         pagination_str = page.xpath(
-    #             '//div[contains(@class, "view-header")]/text()'
-    #         )[0]
-    #         max_results = re.search(r"of (\d+) results", pagination_str)
-    #         max_results = int(max_results.group(1))
-    #         max_page = int(math.ceil(max_results / 25.0))
-    #     except IndexError:
-    #         self.warning(f"No bills for {session}")
-    #         return
+            for row in parent.cssselect("tbody tr"):
+                motion = self.clean(row.xpath("td[1]/span"))
+                result_text = self.clean(row.xpath("td[2]/span"))
+                vote = VoteEvent(
+                    chamber=chamber,
+                    start_date=when,
+                    motion_text=motion,
+                    result="pass" if "passed" in result_text else "fail",
+                    bill=bill,
+                    classification="passage",
+                )
+                votes_url = row.xpath("td[3]/span/a/@href")[0]
+                votes_page = self.get(votes_url, headers=HEADERS).content
+                votes_page = lxml.html.fromstring(votes_page)
 
-    #     # We already have the first page load, so just grab later pages
-    #     if max_page > 1:
-    #         for i in range(1, max_page):
-    #             page = self.scrape_bill_list(session, i)
-    #             bill_list = page.xpath(
-    #                 '//header[contains(@class,"search-result-single-item")]'
-    #                 '/h4[contains(@class,"node-title")]/a/@href'
-    #             )
-    # #             for bill_url in bill_list:
-    # #                 yield from self.scrape_bill(session, bill_url)
+                for vote_row in votes_page.cssselect("table.table.mb-site tr"):
+                    vote.vote(
+                        self.clean(vote_row.cssselect("span.vote-tag")).lower(),
+                        self.clean(vote_row.xpath("td[1]")),
+                    )
 
-    # def scrape_bill_list(self, session, pageNumber):
-    #     ajax_url = "https://leg.colorado.gov/views/ajax"
+                yield vote
 
-    #     form = {
-    #         "field_chamber": "All",
-    #         "field_bill_type": "All",
-    #         "field_sessions": SESSION_DATA_ID[session],
-    #         "sort_bef_combine": "search_api_relevance DESC",
-    #         "view_name": "bill_search",
-    #         "view_display_id": "full",
-    #         "view_args": "",
-    #         "view_path": "bill-search",
-    #         "view_base_path": "bill-search",
-    #         "view_dom_id": "54db497ce6a9943741e901a9e4ab2211",
-    #         "pager_element": "0",
-    #         "page": pageNumber,
-    #     }
-    #     resp = self.post(url=ajax_url, data=form, allow_redirects=True)
-    #     resp = json.loads(resp.content.decode("utf-8"))
+        for row in page.cssselect("div#bill-votes-first-chamber tbody tr"):
+            when = dateutil.parser.parse(self.clean(row.xpath("td[1]/span"))).date()
+            motion = self.clean(row.xpath("td[3]/span"))
+            ct_yes = int(self.clean(row.cssselect(".bill-votes-count-yes")))
+            ct_no = int(self.clean(row.cssselect(".bill-votes-count-no")))
+            # TODO: is passage in colorado yes > no or yes > (no + other) ?
+            # ct_other = int(self.clean(row.cssselect(".bill-votes-count-others")))
 
-    #     # Yes, they return a big block of HTML inside the json response
-    #     html = resp[3]["data"]
+            vote = VoteEvent(
+                chamber=chamber,
+                start_date=when,
+                motion_text=motion,
+                result="pass" if ct_yes > ct_no else "fail",
+                bill=bill,
+                classification="passage",
+            )
 
-    #     page = lxml.html.fromstring(html)
-    #     # We Need to return the page
-    #     # so we can pull the max page # from it on page 1
-    #     return page
+            votes_url = row.xpath("td[5]/span/a/@href")[0]
+            votes_page = self.get(votes_url, headers=HEADERS).content
+            votes_page = lxml.html.fromstring(votes_page)
+
+            for vote_row in votes_page.cssselect("table.table.mb-site tr"):
+                vote.vote(
+                    self.clean(vote_row.cssselect("span.vote-tag")).lower(),
+                    self.clean(vote_row.xpath("td[1]")),
+                )
+
+            yield vote
 
     # def scrape_bill(self, session, bill_url):
     #     try:
