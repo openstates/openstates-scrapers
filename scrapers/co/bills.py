@@ -265,6 +265,7 @@ class COBillScraper(Scraper, LXMLMixin):
         for parent in page.cssselect("div#bill-activity-committees div.gen-accordion"):
             when = parent.cssselect("button h4")[0].text_content().split("|")[0]
             when = dateutil.parser.parse(when, fuzzy=True).date()
+            chamber = "upper" if "Senate" in parent.text_content() else "lower"
 
             for row in parent.cssselect("tbody tr"):
                 motion = self.clean(row.xpath("td[1]/span"))
@@ -302,6 +303,7 @@ class COBillScraper(Scraper, LXMLMixin):
             motion = self.clean(row.xpath("td[3]/span"))
             ct_yes = int(self.clean(row.cssselect(".bill-votes-count-yes")))
             ct_no = int(self.clean(row.cssselect(".bill-votes-count-no")))
+            chamber = "upper" if "Senate" in row.text_content() else "lower"
             # TODO: is passage in colorado yes > no or yes > (no + other) ?
             # ct_other = int(self.clean(row.cssselect(".bill-votes-count-others")))
 
