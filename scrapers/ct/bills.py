@@ -148,6 +148,10 @@ class CTBillScraper(Scraper):
 
     def scrape_actions(self, bill: Bill, initial_chamber: str):
 
+        if bill.identifier not in self.action_list:
+            self.warning(f"Missing bill actions from FTP source for {bill.identifier}")
+            return
+
         actions = self.action_list[bill.identifier]
         actions.sort(key=itemgetter("act_date"))
         act_chamber = initial_chamber
