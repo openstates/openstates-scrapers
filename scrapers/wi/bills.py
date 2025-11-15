@@ -312,7 +312,7 @@ class WIBillScraper(Scraper):
                     )
 
     def add_vote(self, bill, chamber, date, text, url):
-        votes = re.findall(r"Ayes,?[\s]?(\d+)[,;]\s+N(?:oes|ays),?[\s]?(\d+)", text)
+        votes = re.findall(r"Ayes,?[\s]?(\d+)[,;.]\s+N(?:oes|ays),?[\s]?(\d+)", text)
         yes, no = int(votes[0][0]), int(votes[0][1])
 
         vtype = []
