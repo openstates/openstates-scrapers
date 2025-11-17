@@ -1,9 +1,16 @@
 import re
 
+from openstates.scrape import Scraper
 from .lxmlize import LXMLMixin  # noqa
 from .lxmlize import url_xpath  # noqa
 import hashlib
 import uuid
+
+
+def get_session_meta(scraper: Scraper, identifier: str):
+    for i in scraper.jurisdiction.legislative_sessions:
+        if i["identifier"] == identifier:
+            return i
 
 
 def hash_key(key_str):
