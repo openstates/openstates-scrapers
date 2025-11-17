@@ -302,8 +302,8 @@ class Arizona(State):
             "classification": "primary",
             "identifier": "57th-2nd-regular",
             "name": "57th Legislature - Second Regular Session",
-            "start_date": "2026-01-13",
-            "end_date": "2026-04-26",
+            "start_date": "2026-01-12",
+            "end_date": "2026-04-25",
             "extras": {
                 "session_id": 130,
             },
