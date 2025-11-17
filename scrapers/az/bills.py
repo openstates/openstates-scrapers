@@ -4,6 +4,7 @@ import re
 
 from lxml import html
 from openstates.scrape import Scraper, Bill, VoteEvent
+from utils import get_session_meta
 
 from . import utils
 from . import session_metadata
@@ -171,12 +172,17 @@ class AZBillScraper(Scraper):
                         classification=utils.action_map[action]["action"],
                     )
 
-                    committee_obj = status["Committee"]
-                    if committee_obj and committee_obj["TypeName"] != "Floor":
-                        committee = committee_obj["CommitteeName"]
-                        action_instance.add_related_entity(
-                            committee, entity_type="organization"
-                        )
+                    # TODO: this code relies on a side effect of action_from_struct
+                    # and should be refactored
+                    try:
+                        committee_obj = status["Committee"]
+                        if committee_obj and committee_obj["TypeName"] != "Floor":
+                            committee = committee_obj["CommitteeName"]
+                            action_instance.add_related_entity(
+                                committee, entity_type="organization"
+                            )
+                    except UnboundLocalError:
+                        continue
                 except (ValueError, TypeError):
                     self.info(
                         "Invalid Action Time {} for {}".format(page[action], action)
@@ -338,9 +344,11 @@ class AZBillScraper(Scraper):
                 vote.set_count("no", nays)
                 vote.set_count(
                     "other",
-                    action["Present"]
-                    if "Present" in action and action["Present"]
-                    else 0,
+                    (
+                        action["Present"]
+                        if "Present" in action and action["Present"]
+                        else 0
+                    ),
                 )
                 vote.set_count(
                     "absent",
@@ -348,15 +356,19 @@ class AZBillScraper(Scraper):
                 )
                 vote.set_count(
                     "excused",
-                    action["Excused"]
-                    if "Present" in action and action["Present"]
-                    else 0,
+                    (
+                        action["Excused"]
+                        if "Present" in action and action["Present"]
+                        else 0
+                    ),
                 )
                 vote.set_count(
                     "not voting",
-                    action["NotVoting"]
-                    if "NotVoting" in action and action["NotVoting"]
-                    else 0,
+                    (
+                        action["NotVoting"]
+                        if "NotVoting" in action and action["NotVoting"]
+                        else 0
+                    ),
                 )
 
                 for v in action["Votes"]:
@@ -366,7 +378,11 @@ class AZBillScraper(Scraper):
                 yield vote
 
     def scrape(self, chamber=None, session=None):
-        session_id = session_metadata.session_id_meta_data[session]
+        meta = get_session_meta(self, session)
+        session_id = meta.get("extras", {}).get("session_id", None)
+
+        if not session_id:
+            session_id = session_metadata.session_id_meta_data[session]
 
         # Get the bills page to start the session
         req = self.get("https://www.azleg.gov/bills/", timeout=80)
