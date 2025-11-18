@@ -111,10 +111,11 @@ class COBillScraper(Scraper, LXMLMixin):
             bill_number, legislative_session=session, chamber=chamber, title=bill_title
         )
 
-        summary = (
-            page.cssselect("div.bill-detail-bill-summary")[0].text_content().strip()
-        )
-        bill.add_abstract(summary, "summary")
+        summary_elems = page.cssselect("div.bill-detail-bill-summary")
+        # Some bills do not have a summary shown on the page
+        if len(summary_elems) > 0:
+            summary = summary_elems[0].text_content().strip()
+            bill.add_abstract(summary, "summary")
 
         self.scrape_actions(bill, page)
         self.scrape_amendments(bill, page)
@@ -179,7 +180,7 @@ class COBillScraper(Scraper, LXMLMixin):
                 title,
                 url,
                 media_type="text/html",
-                classification="commitee-report",
+                classification="committee-report",
             )
 
             if row.xpath("span/a[contains(@class,'ext-link-pdf')]"):
@@ -187,7 +188,7 @@ class COBillScraper(Scraper, LXMLMixin):
                     title,
                     row.xpath("span/a[contains(@class,'ext-link-pdf')]")[0].strip(),
                     media_type="application/pdf",
-                    classification="commitee-report",
+                    classification="committee-report",
                 )
 
         # fiscal notes
