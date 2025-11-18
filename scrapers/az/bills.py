@@ -142,6 +142,13 @@ class AZBillScraper(Scraper):
             if subject.get("Name", None):
                 bill.add_subject(subject["Name"])
 
+    def get_action_committee(self, status_actions):
+        committee = None
+        committee_obj = status_actions["Committee"]
+        if committee_obj and committee_obj["TypeName"] != "Floor":
+            committee = committee_obj["CommitteeName"]
+        return committee
+
     def scrape_actions(self, bill, page, self_chamber):
         """
         Scrape the actions for a given bill
@@ -165,24 +172,12 @@ class AZBillScraper(Scraper):
                         cleaned_date, "%Y-%m-%dT%H:%M:%S"
                     ).strftime("%Y-%m-%d")
 
-                    action_instance = bill.add_action(
+                    bill.add_action(
                         chamber=self.actor_from_action(bill, action, self_chamber),
                         description=utils.action_map[action]["name"],
                         date=action_date,
                         classification=utils.action_map[action]["action"],
                     )
-
-                    # TODO: this code relies on a side effect of action_from_struct
-                    # and should be refactored
-                    try:
-                        committee_obj = status["Committee"]
-                        if committee_obj and committee_obj["TypeName"] != "Floor":
-                            committee = committee_obj["CommitteeName"]
-                            action_instance.add_related_entity(
-                                committee, entity_type="organization"
-                            )
-                    except UnboundLocalError:
-                        continue
                 except (ValueError, TypeError):
                     self.info(
                         "Invalid Action Time {} for {}".format(page[action], action)
@@ -261,7 +256,7 @@ class AZBillScraper(Scraper):
                 action_date = datetime.datetime.strptime(
                     cleaned_date, "%Y-%m-%dT%H:%M:%S"
                 ).strftime("%Y-%m-%d")
-                bill.add_action(
+                action_instance = bill.add_action(
                     description=status["Action"],
                     chamber={"S": "upper", "H": "lower"}[
                         status["Committee"]["LegislativeBody"]
@@ -269,6 +264,11 @@ class AZBillScraper(Scraper):
                     date=action_date,
                     classification=categories,
                 )
+                committee = self.get_action_committee(status)
+                if committee:
+                    action_instance.add_related_entity(
+                        committee, entity_type="organization"
+                    )
             else:
                 self.info("Action without report date: {}".format(status["Action"]))
         else:
