@@ -1,9 +1,10 @@
 import logging
-from utils import url_xpath
 from openstates.scrape import State
 from .csv_bills import VaCSVBillScraper
 from .events import VaEventScraper
 from .bills import VaBillScraper
+
+import requests
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -228,13 +229,22 @@ class Virginia(State):
             "active": False,
         },
         {
-            "_scraped_name": "2025 Session",
+            "_scraped_name": "2025 Regular Session",
             "identifier": "2025",
             "name": "2025 Regular Session",
             "start_date": "2025-01-08",
             "end_date": "2025-02-22",
-            "active": True,
+            "active": False,
             "extras": {"session_code": "20251"},
+        },
+        {
+            "_scraped_name": "2026 Regular Session",
+            "identifier": "2026",
+            "name": "2026 Regular Session",
+            "start_date": "2026-01-14",
+            "end_date": "2026-03-14",
+            "active": True,
+            "extras": {"session_code": "20261"},
         },
     ]
     ignored_scraped_sessions = [
@@ -280,8 +290,20 @@ class Virginia(State):
     ]
 
     def get_session_list(self):
-        sessions = url_xpath(
-            "https://legacylis.virginia.gov/",
-            "//div[@id='sLink']//select/option/text()",
-        )
-        return [s.strip() for s in sessions if "Session" in s]
+        headers = {
+            "Accept": "*/*",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": "https://lis.virginia.gov/bill-search",
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+            "WebAPIKey": "FCE351B6-9BD8-46E0-B18F-5572F4CCA5B9",
+            "sec-ch-ua": '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Linux"',
+        }
+        response = requests.get(
+            "https://lis.virginia.gov/Session/api/GetSessionListAsync/", headers=headers
+        ).json()
+        session_list = []
+        for row in response["Sessions"]:
+            session_list.append(f"{row['SessionYear']} {row['DisplayName']}")
+        return session_list
