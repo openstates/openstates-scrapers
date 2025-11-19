@@ -155,7 +155,7 @@ class Indiana(State):
             "name": "2025 Regular Session",
             "start_date": "2025-01-09",
             "end_date": "2025-04-29",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "Second Regular Session 124th General Assembly (2026)",
@@ -165,7 +165,7 @@ class Indiana(State):
             # TODO correct dates
             "start_date": "2026-01-09",
             "end_date": "2026-04-29",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
