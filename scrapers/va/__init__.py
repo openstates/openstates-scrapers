@@ -233,8 +233,17 @@ class Virginia(State):
             "name": "2025 Regular Session",
             "start_date": "2025-01-08",
             "end_date": "2025-02-22",
-            "active": True,
+            "active": False,
             "extras": {"session_code": "20251"},
+        },
+        {
+            "_scraped_name": "2026 Session",
+            "identifier": "2026",
+            "name": "2026 Regular Session",
+            "start_date": "2026-01-14",
+            "end_date": "2026-03-14",
+            "active": True,
+            "extras": {"session_code": "20261"},
         },
     ]
     ignored_scraped_sessions = [
