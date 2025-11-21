@@ -615,60 +615,56 @@ class MNBillScraper(Scraper, LXMLMixin):
         #  this gets versions from link on page that follows the label
         #  "Current bill text:"
         if not version_rows:
-            try:
-                current = doc.xpath(
-                    "//div[contains(text(), 'Current bill text')]/a[1]"
-                )[0]
-                current_html_url = current.xpath("@href")[0]
-                # if senate resolution, rewrite URL to avoid weird HTTP server errros
-                if (
-                    "https://www.revisor.mn.gov/bills/text.php" in current_html_url
-                    and (
-                        "sc" in bill.identifier.lower()
-                        or "sr" in bill.identifier.lower()
-                    )
-                ):
-                    current_html_url = self.rewrite_senate_resolution_url(
-                        current_html_url
-                    )
-                current_response = requests.get(current_html_url, verify=False)
-                current_content = lxml.html.fromstring(current_response.content)
-
-                other_page_version_rows = current_content.xpath(
-                    "//div[@id='versions']/table/tbody/tr"
+            current = doc.xpath(
+                "//div[contains(text(), 'Current bill text')]/a[1]"
+            )[0]
+            current_html_url = current.xpath("@href")[0]
+            # if senate resolution, rewrite URL to avoid weird HTTP server errros
+            if (
+                "https://www.revisor.mn.gov/bills/text.php" in current_html_url
+                and (
+                    "sc" in bill.identifier.lower()
+                    or "sr" in bill.identifier.lower()
                 )
+            ):
+                current_html_url = self.rewrite_senate_resolution_url(
+                    current_html_url
+                )
+            current_response = requests.get(current_html_url, verify=False)
+            current_content = lxml.html.fromstring(current_response.content)
 
-                for version_row in other_page_version_rows:
-                    # Should be two links in the first TD, text of first one is version name
-                    vers_title = version_row.xpath(".//td[1]/a/text()")[0]
-                    vers_posted_on = version_row.xpath(".//td[2]/text()")[0]
-                    date_match = version_date_re.search(vers_posted_on)
-                    raw_date = date_match[1]
-                    vers_day = datetime.datetime.strptime(raw_date, "%m/%d/%Y").date()
+            other_page_version_rows = current_content.xpath(
+                "//div[@id='versions']/table/tbody/tr"
+            )
 
-                    href = version_row.xpath(".//td[1]/a/@href")[0]
+            for version_row in other_page_version_rows:
+                # Should be two links in the first TD, text of first one is version name
+                vers_title = version_row.xpath(".//td[1]/a/text()")[0]
+                vers_posted_on = version_row.xpath(".//td[2]/text()")[0]
+                date_match = version_date_re.search(vers_posted_on)
+                raw_date = date_match[1]
+                vers_day = datetime.datetime.strptime(raw_date, "%m/%d/%Y").date()
 
-                    vers_html_url = href
-                    vers_html_url = ensure_url_fully_qualified(vers_html_url)
-                    vers_pdf_url = f"{vers_html_url}pdf/"
+                href = version_row.xpath(".//td[1]/a/@href")[0]
 
-                    bill.add_version_link(
-                        vers_title,
-                        vers_html_url,
-                        date=vers_day,
-                        media_type="text/html",
-                        on_duplicate="ignore",
-                    )
-                    bill.add_version_link(
-                        vers_title,
-                        vers_pdf_url,
-                        date=vers_day,
-                        media_type="application/pdf",
-                        on_duplicate="ignore",
-                    )
+                vers_html_url = href
+                vers_html_url = ensure_url_fully_qualified(vers_html_url)
+                vers_pdf_url = f"{vers_html_url}pdf/"
 
-            except IndexError:
-                self.warning(f"No versions were found for {bill.identifier}")
+                bill.add_version_link(
+                    vers_title,
+                    vers_html_url,
+                    date=vers_day,
+                    media_type="text/html",
+                    on_duplicate="ignore",
+                )
+                bill.add_version_link(
+                    vers_title,
+                    vers_pdf_url,
+                    date=vers_day,
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
 
         # Otherwise if there IS a 'Version List' to show versions table
         for row in version_rows:
