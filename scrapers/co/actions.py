@@ -70,6 +70,8 @@ rules = (
     Rule("to Senate Committee of the Whole", "committee-passage", actor="upper"),
     Rule("to House Committee of the Whole", "committee-passage", actor="lower"),
     Rule("Governor Vetoed", "executive-veto", actor="executive"),
+    Rule("Signed by the Speaker of the House", "passage", actor="lower"),
+    Rule("Signed by the President of the Senate", "passage", actor="upper"),
 )
 
 committees_rgx = "(%s)" % "|".join(sorted(committees, key=len, reverse=True))
