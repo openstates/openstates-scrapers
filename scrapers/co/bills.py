@@ -111,10 +111,10 @@ class COBillScraper(Scraper, LXMLMixin):
             bill_number, legislative_session=session, chamber=chamber, title=bill_title
         )
 
-        if page.cssselect("div.bill-detail-bill-summary"):
-            summary = (
-                page.cssselect("div.bill-detail-bill-summary")[0].text_content().strip()
-            )
+        summary_elems = page.cssselect("div.bill-detail-bill-summary")
+        # Some bills do not have a summary shown on the page
+        if len(summary_elems) > 0:
+            summary = summary_elems[0].text_content().strip()
             bill.add_abstract(summary, "summary")
 
         self.scrape_actions(bill, page)
