@@ -65,7 +65,7 @@ SITE_IDS = {
     "2025s1": "1942025",
 }
 
-version_re = re.compile(r".+,\s+(.+):.+Session.+\)\s+Posted on\s+(.+)")
+version_date_re = re.compile(r"Posted on\s+(.+)")
 
 
 def ensure_url_fully_qualified(url):
@@ -634,48 +634,23 @@ class MNBillScraper(Scraper, LXMLMixin):
                 current_response = requests.get(current_html_url, verify=False)
                 current_content = lxml.html.fromstring(current_response.content)
 
-                pdf_xpath = ".//a[contains(text(), 'Authors and Status')]/../following-sibling::td/a"
+                other_page_version_rows = current_content.xpath(
+                    "//div[@id='versions']/table/tbody/tr"
+                )
 
-                current_pdf_url = current_content.xpath(pdf_xpath)[0].xpath("@href")[0]
-                current_pdf_url = ensure_url_fully_qualified(current_pdf_url)
+                for version_row in other_page_version_rows:
+                    # Should be two links in the first TD, text of first one is version name
+                    vers_title = version_row.xpath(".//td[1]/a/text()")[0]
+                    vers_posted_on = version_row.xpath(".//td[2]/text()")[0]
+                    date_match = version_date_re.search(vers_posted_on)
+                    raw_date = date_match[1]
+                    vers_day = datetime.datetime.strptime(raw_date, "%m/%d/%Y").date()
 
-                vers_list = [
-                    x
-                    for x in current_content.xpath(".//b")
-                    if "Posted on" in x.getparent().text_content()
-                ]
+                    href = version_row.xpath(".//td[1]/a/@href")[0]
 
-                for vers in vers_list:
-                    vers_descriptor = vers.getparent().text_content().strip()
-                    title_date_match = version_re.search(vers_descriptor)
-                    if not title_date_match:
-                        continue
-                    raw_title, raw_date = title_date_match.groups()
-                    vers_title = (
-                        "Introduction"
-                        if "introduced" in raw_title.lower()
-                        else raw_title
-                    )
-                    vers_day = datetime.datetime.strptime(raw_date, "%B %d, %Y").date()
-
-                    href = vers.getparent().xpath("@href")
-                    # If parent element has href, that means it is a link
-                    # to an additional version, and the below conditional block
-                    # gets the html and pdf urls for that version
-                    if href:
-                        vers_html_url = href[0]
-                        vers_html_url = ensure_url_fully_qualified(vers_html_url)
-                        vers_response = requests.get(vers_html_url, verify=False)
-                        vers_content = lxml.html.fromstring(vers_response.content)
-                        vers_pdf_url = vers_content.xpath(pdf_xpath)[0].xpath("@href")[
-                            0
-                        ]
-                        vers_pdf_url = ensure_url_fully_qualified(vers_pdf_url)
-
-                    # If parent element does not have href, it is current version
-                    else:
-                        vers_html_url = current_html_url
-                        vers_pdf_url = current_pdf_url
+                    vers_html_url = href
+                    vers_html_url = ensure_url_fully_qualified(vers_html_url)
+                    vers_pdf_url = f"{vers_html_url}pdf/"
 
                     bill.add_version_link(
                         vers_title,
