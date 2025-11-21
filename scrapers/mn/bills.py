@@ -615,21 +615,13 @@ class MNBillScraper(Scraper, LXMLMixin):
         #  this gets versions from link on page that follows the label
         #  "Current bill text:"
         if not version_rows:
-            current = doc.xpath(
-                "//div[contains(text(), 'Current bill text')]/a[1]"
-            )[0]
+            current = doc.xpath("//div[contains(text(), 'Current bill text')]/a[1]")[0]
             current_html_url = current.xpath("@href")[0]
             # if senate resolution, rewrite URL to avoid weird HTTP server errros
-            if (
-                "https://www.revisor.mn.gov/bills/text.php" in current_html_url
-                and (
-                    "sc" in bill.identifier.lower()
-                    or "sr" in bill.identifier.lower()
-                )
+            if "https://www.revisor.mn.gov/bills/text.php" in current_html_url and (
+                "sc" in bill.identifier.lower() or "sr" in bill.identifier.lower()
             ):
-                current_html_url = self.rewrite_senate_resolution_url(
-                    current_html_url
-                )
+                current_html_url = self.rewrite_senate_resolution_url(current_html_url)
             current_response = requests.get(current_html_url, verify=False)
             current_content = lxml.html.fromstring(current_response.content)
 
