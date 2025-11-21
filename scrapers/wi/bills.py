@@ -228,22 +228,26 @@ class WIBillScraper(Scraper):
 
             # Amendment links, only on passage
             if atype is not None and "amendment-passage" in atype:
-                amd_link = action_td.xpath("a")[0]
-                version_name = amd_link.text_content()
-                version_url = amd_link.get("href")
-                bill.add_version_link(
-                    version_name,
-                    version_url,
-                    media_type="text/html",
-                    on_duplicate="ignore",
-                )
-                pdf_url = "{}.pdf".format(version_url)
-                bill.add_version_link(
-                    version_name,
-                    pdf_url,
-                    media_type="application/pdf",
-                    on_duplicate="ignore",
-                )
+                amd_link_elems = action_td.xpath("a")
+                # Found one example where amendment passage-classified action is lacking a link
+                # https://docs.legis.wisconsin.gov/2025/proposals/reg/asm/bill/ab89
+                if len(amd_link_elems) > 0:
+                    amd_link = amd_link_elems[0]
+                    version_name = amd_link.text_content()
+                    version_url = amd_link.get("href")
+                    bill.add_version_link(
+                        version_name,
+                        version_url,
+                        media_type="text/html",
+                        on_duplicate="ignore",
+                    )
+                    pdf_url = "{}.pdf".format(version_url)
+                    bill.add_version_link(
+                        version_name,
+                        pdf_url,
+                        media_type="application/pdf",
+                        on_duplicate="ignore",
+                    )
 
             # if this is a vote, add a Vote to the bill
             if "Ayes" in action:
@@ -312,7 +316,7 @@ class WIBillScraper(Scraper):
                     )
 
     def add_vote(self, bill, chamber, date, text, url):
-        votes = re.findall(r"Ayes,?[\s]?(\d+)[,;]\s+N(?:oes|ays),?[\s]?(\d+)", text)
+        votes = re.findall(r"Ayes,?[\s]?(\d+)[,;.]\s+N(?:oes|ays),?[\s]?(\d+)", text)
         yes, no = int(votes[0][0]), int(votes[0][1])
 
         vtype = []

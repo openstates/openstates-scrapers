@@ -1,4 +1,6 @@
 import datetime
+import os
+
 import lxml
 import pytz
 import re
@@ -119,7 +121,7 @@ class USBillScraper(Scraper):
         root = ET.fromstring(sitemaps)
 
         # if you want to test a bill:
-        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/119/hr/BILLSTATUS-119hr152.xml')
+        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/119/hr/BILLSTATUS-119hr1968.xml')
 
         for link in root.findall("us:sitemap/us:loc", self.ns):
             # split by /, then check that "116s" matches the chamber
@@ -192,14 +194,18 @@ class USBillScraper(Scraper):
             self.scrape_titles(bill, xml)
             self.scrape_versions(bill, xml)
 
-            for vote in self.scrape_votes(bill, xml):
-                yield vote
         except Exception as e:
             self.warning(f"Error parsing bill {bill_id}: {e}")
             self.error(
                 f"XML content: {ET.tostring(xml, encoding='unicode', method='xml')}"
             )
             raise e
+
+        try:
+            for vote in self.scrape_votes(bill, xml):
+                yield vote
+        except Exception as e:
+            self.warning(f"Error parsing votes for bill {bill_id}: {e}")
 
         xml_url = f"https://www.govinfo.gov/bulkdata/BILLSTATUS/{session}/{bill_type.lower()}/BILLSTATUS-{session}{bill_type.lower()}{bill_num}.xml"
         bill.add_source(xml_url)
@@ -643,8 +649,18 @@ class USBillScraper(Scraper):
             # USA roll call requests sometimes fail for a long time, and the wait on retries
             # piles up very quickly, causing the whole scrape to be over 24 hours
             # so, we use requests library directly to avoid long retries cycle
+            vote_xml = None
             try:
-                content = requests.get(url).content
+                # Nov 2025 update: roll call endpoint seems to deny a lot of cloud traffic
+                # Adding support for proxy for this request specifically
+                if os.environ.get("HTTPS_PROXY_SELECTIVE"):
+                    proxies = {
+                        "https": os.environ.get("HTTPS_PROXY_SELECTIVE"),
+                        "http": os.environ.get("HTTP_PROXY_SELECTIVE"),
+                    }
+                    content = requests.get(url, proxies=proxies, verify=False).content
+                else:
+                    content = requests.get(url).content
 
                 if "You don't have permission to access" in content.decode():
                     # sometimes clerk.house.gov serves an error page, but doesn't send a 403 header
@@ -661,9 +677,10 @@ class USBillScraper(Scraper):
                 return
             except Exception as e:
                 self.warning(f"Error parsing vote at {url}: {e}")
-                self.error(
-                    f"XML content: {ET.tostring(vote_xml, encoding='unicode', method='xml')}"
-                )
+                if vote_xml:
+                    self.error(
+                        f"XML content: {ET.tostring(vote_xml, encoding='unicode', method='xml')}"
+                    )
                 raise e
 
     def scrape_senate_votes(self, page, url):

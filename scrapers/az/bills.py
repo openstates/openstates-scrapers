@@ -4,6 +4,7 @@ import re
 
 from lxml import html
 from openstates.scrape import Scraper, Bill, VoteEvent
+from utils import get_session_meta
 
 from . import utils
 from . import session_metadata
@@ -141,6 +142,13 @@ class AZBillScraper(Scraper):
             if subject.get("Name", None):
                 bill.add_subject(subject["Name"])
 
+    def get_action_committee(self, status_actions):
+        committee = None
+        committee_obj = status_actions["Committee"]
+        if committee_obj and committee_obj["TypeName"] != "Floor":
+            committee = committee_obj["CommitteeName"]
+        return committee
+
     def scrape_actions(self, bill, page, self_chamber):
         """
         Scrape the actions for a given bill
@@ -164,19 +172,12 @@ class AZBillScraper(Scraper):
                         cleaned_date, "%Y-%m-%dT%H:%M:%S"
                     ).strftime("%Y-%m-%d")
 
-                    action_instance = bill.add_action(
+                    bill.add_action(
                         chamber=self.actor_from_action(bill, action, self_chamber),
                         description=utils.action_map[action]["name"],
                         date=action_date,
                         classification=utils.action_map[action]["action"],
                     )
-
-                    committee_obj = status["Committee"]
-                    if committee_obj and committee_obj["TypeName"] != "Floor":
-                        committee = committee_obj["CommitteeName"]
-                        action_instance.add_related_entity(
-                            committee, entity_type="organization"
-                        )
                 except (ValueError, TypeError):
                     self.info(
                         "Invalid Action Time {} for {}".format(page[action], action)
@@ -255,7 +256,7 @@ class AZBillScraper(Scraper):
                 action_date = datetime.datetime.strptime(
                     cleaned_date, "%Y-%m-%dT%H:%M:%S"
                 ).strftime("%Y-%m-%d")
-                bill.add_action(
+                action_instance = bill.add_action(
                     description=status["Action"],
                     chamber={"S": "upper", "H": "lower"}[
                         status["Committee"]["LegislativeBody"]
@@ -263,6 +264,11 @@ class AZBillScraper(Scraper):
                     date=action_date,
                     classification=categories,
                 )
+                committee = self.get_action_committee(status)
+                if committee:
+                    action_instance.add_related_entity(
+                        committee, entity_type="organization"
+                    )
             else:
                 self.info("Action without report date: {}".format(status["Action"]))
         else:
@@ -338,9 +344,11 @@ class AZBillScraper(Scraper):
                 vote.set_count("no", nays)
                 vote.set_count(
                     "other",
-                    action["Present"]
-                    if "Present" in action and action["Present"]
-                    else 0,
+                    (
+                        action["Present"]
+                        if "Present" in action and action["Present"]
+                        else 0
+                    ),
                 )
                 vote.set_count(
                     "absent",
@@ -348,15 +356,19 @@ class AZBillScraper(Scraper):
                 )
                 vote.set_count(
                     "excused",
-                    action["Excused"]
-                    if "Present" in action and action["Present"]
-                    else 0,
+                    (
+                        action["Excused"]
+                        if "Present" in action and action["Present"]
+                        else 0
+                    ),
                 )
                 vote.set_count(
                     "not voting",
-                    action["NotVoting"]
-                    if "NotVoting" in action and action["NotVoting"]
-                    else 0,
+                    (
+                        action["NotVoting"]
+                        if "NotVoting" in action and action["NotVoting"]
+                        else 0
+                    ),
                 )
 
                 for v in action["Votes"]:
@@ -366,7 +378,11 @@ class AZBillScraper(Scraper):
                 yield vote
 
     def scrape(self, chamber=None, session=None):
-        session_id = session_metadata.session_id_meta_data[session]
+        meta = get_session_meta(self, session)
+        session_id = meta.get("extras", {}).get("session_id", None)
+
+        if not session_id:
+            session_id = session_metadata.session_id_meta_data[session]
 
         # Get the bills page to start the session
         req = self.get("https://www.azleg.gov/bills/", timeout=80)

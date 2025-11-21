@@ -295,6 +295,18 @@ class Arizona(State):
             "name": "57th Legislature - First Regular Session",
             "start_date": "2025-01-13",
             "end_date": "2025-04-26",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2026 - Fifty-seventh Legislature - Second Regular Session",
+            "classification": "primary",
+            "identifier": "57th-2nd-regular",
+            "name": "57th Legislature - Second Regular Session",
+            "start_date": "2026-01-12",
+            "end_date": "2026-04-25",
+            "extras": {
+                "session_id": 130,
+            },
             "active": True,
         },
     ]
