@@ -658,7 +658,7 @@ class USBillScraper(Scraper):
                         "https": os.environ.get("HTTPS_PROXY_SELECTIVE"),
                         "http": os.environ.get("HTTP_PROXY_SELECTIVE"),
                     }
-                    content = requests.get(url, proxies=proxies).content
+                    content = requests.get(url, proxies=proxies, verify=False).content
                 else:
                     content = requests.get(url).content
 
