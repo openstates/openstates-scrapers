@@ -378,12 +378,22 @@ class Utah(State):
         },
         {
             "_scraped_name": "2025 1st Special Session",
-            "classification": "primary",
+            "classification": "special",
             "identifier": "2025S1",
             "name": "2025 First Special Session",
             "start_date": "2025-10-06",
             "end_date": "2025-10-10",
             "active": True,
+        },
+        {
+            "_scraped_name": "2025 2nd Special Session",
+            "classification": "special",
+            "identifier": "2025S2",
+            "name": "2025 Second Special Session",
+            "start_date": "2025-12-09",
+            # TODO fix end_date
+            "end_date": "2025-12-12",
+            "active": False,
         },
         {
             "_scraped_name": "2026 General Session",
