@@ -132,6 +132,15 @@ class Missouri(State):
             "start_date": "2025-09-03",
             # TODO: real end date when session is over
             "end_date": "2025-09-13",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2026 Regular Session",
+            "classification": "primary",
+            "identifier": "2026",
+            "name": "2026 Regular Session",
+            "start_date": "2026-01-07",
+            "end_date": "2026-05-15",
             "active": True,
         },
     ]
