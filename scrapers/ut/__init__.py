@@ -383,7 +383,7 @@ class Utah(State):
             "name": "2025 First Special Session",
             "start_date": "2025-10-06",
             "end_date": "2025-10-10",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2025 2nd Special Session",
@@ -402,7 +402,7 @@ class Utah(State):
             "name": "2026 General Session",
             "start_date": "2026-01-20",
             "end_date": "2026-03-06",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
