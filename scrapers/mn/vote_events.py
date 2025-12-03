@@ -28,6 +28,7 @@ VOTES_URLS = {
     "2021-2022": "https://www.house.mn.gov/votes/getVotesls92.asp",
     "2023-2024": "https://www.house.mn.gov/votes/getVotesls93.asp",
     "2025-2026": "https://www.house.mn.gov/votes/getVotesls94.asp",
+    "2025s1": "https://www.house.mn.gov/votes/getVotesls9420251.asp",
 }
 
 

@@ -167,6 +167,15 @@ class Nevada(State):
             # TODO: update dates
             "start_date": "2025-02-01",
             "end_date": "2025-06-01",
+            "active": False,
+        },
+        {
+            "_scraped_name": "36th (2026) Special Session",
+            "classification": "special",
+            "identifier": "2025Special36",
+            "name": "36th (2026) Special Session",
+            "start_date": "2025-11-13",
+            "end_date": "2025-11-21",
             "active": True,
         },
     ]

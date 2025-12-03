@@ -15,8 +15,10 @@ from . import actions
 tz = pytz.timezone("America/New_York")
 
 
+# FYI: as of 2025 this should be run with --http-resilience
 class PABillScraper(Scraper):
     session_year: str = ""
+    verify = False
 
     def scrape(self, chamber=None, session=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
@@ -78,13 +80,19 @@ class PABillScraper(Scraper):
         url = utils.info_url(session, special, bill_id)
         page = self.get_page(url)
 
-        xpath = (
-            '//div[contains(@class, "header")]/following-sibling::*[1]'
-            '/div[@class="col-md-9"]/div[1]'
-        )
+        # Bill title (for PA title is a short abstract)
+        # elem contains show/hide sub elements
+        title = page.xpath("//div[@id='shortTitle-wrapper']")
 
-        if page.xpath(xpath):
-            title = page.xpath(xpath).pop().text_content().strip()
+        if title:
+            title_part_one = title[0].xpath("./text()")  # "teaser" part of title
+            title_part_two = title[0].xpath(
+                ".//*[@id='shortTitle-more']/text()"
+            )  # remainder
+            if title_part_one and title_part_two:
+                title = f"{title_part_one[0]}{title_part_two[0]}".strip()
+            else:
+                title = title_part_one[0].strip()
         else:
             self.warning("Skipping {} {}, No title found".format(bill_id, url))
             return
@@ -293,7 +301,10 @@ class PABillScraper(Scraper):
                 raise Exception(msg)
 
     def get_page(self, url):
-        html = self.get(url).text
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
+        }
+        html = self.get(url, verify=False, headers=headers).text
         page = lxml.html.fromstring(html)
         page.make_links_absolute(url)
         return page
@@ -412,7 +423,7 @@ class PABillScraper(Scraper):
             'string(//div[contains(@class, "detailsLabel")][contains(., "Date")]/following-sibling::div/a)'
         ).strip()
         date = tz.localize(datetime.datetime.strptime(date, "%B %d, %Y"))
-        self.logger.info("Committe Vote Date: {}, URL: {}".format(date, url))
+        self.logger.info("Committee Vote Date: {}, URL: {}".format(date, url))
         # Motion
         motion = doc.xpath(
             'string(//div[contains(text(), "Type of Motion")]/following-sibling::div[1])'

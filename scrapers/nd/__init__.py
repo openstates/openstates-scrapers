@@ -1,6 +1,7 @@
 from openstates.scrape import State
 from .bills import NDBillScraper
-from .events import NDEventScraper
+from .events_web import NDEventScraper
+from .events import NDEventsCSVScraper
 
 
 settings = {
@@ -13,7 +14,8 @@ settings = {
 class NorthDakota(State):
     scrapers = {
         "bills": NDBillScraper,
-        "events": NDEventScraper,
+        "events_web": NDEventScraper,
+        "events": NDEventsCSVScraper,
     }
     legislative_sessions = [
         {
@@ -83,6 +85,14 @@ class NorthDakota(State):
             "start_date": "2025-01-07",
             "end_date": "2025-05-02",
             "active": True,
+        },
+        {
+            "_scraped_name": "70th Legislative Assembly (2027-28)",
+            "identifier": "70",
+            "name": "70th Legislative Assembly (2027-28)",
+            "start_date": "2027-01-07",  # TODO approximate; get real date when closer
+            "end_date": "2028-05-02",  # TODO approximate; get real date when closer
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [

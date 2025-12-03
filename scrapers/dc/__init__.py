@@ -94,7 +94,7 @@ class DistrictOfColumbia(State):
             "User-Agent": useragent,
         }
         resp = requests.get(
-            "http://lims.dccouncil.gov/api/v2/PublicData/CouncilPeriods",
+            "https://lims.dccouncil.gov/api/v2/PublicData/CouncilPeriods",
             headers=headers,
             verify=False,
         )

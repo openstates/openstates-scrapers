@@ -112,6 +112,35 @@ class Missouri(State):
             "name": "2025 Regular Session",
             "start_date": "2025-01-08",
             "end_date": "2025-05-16",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2025 1st Extraordinary Session",
+            "classification": "primary",
+            "identifier": "2025S1",
+            "name": "2025 1st Extraordinary Session",
+            "start_date": "2025-06-02",
+            # TODO: real end date when session is over
+            "end_date": "2025-06-13",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2025 2nd Extraordinary Session",
+            "classification": "primary",
+            "identifier": "2025S2",
+            "name": "2025 2nd Extraordinary Session",
+            "start_date": "2025-09-03",
+            # TODO: real end date when session is over
+            "end_date": "2025-09-13",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2026 Regular Session",
+            "classification": "primary",
+            "identifier": "2026",
+            "name": "2026 Regular Session",
+            "start_date": "2026-01-07",
+            "end_date": "2026-05-15",
             "active": True,
         },
     ]

@@ -1,4 +1,6 @@
-from spatula import HtmlPage, XPath, SelectorError, URL
+import re
+
+from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, URL
 from openstates.models import ScrapeCommittee
 
 
@@ -7,15 +9,14 @@ class UnknownRole(Exception):
         super().__init__(f"Unknown role: {role}")
 
 
-class CommitteeList(HtmlPage):
-    def process_page(self):
-        selector = XPath("//div[@class='hide-on-mobile']//tr/td[1]/a")
-        committees = selector.match(self.root)
-        for item in committees:
-            yield CommitteeDetails(
-                {"chamber": self.chamber, "listpage": self.source.url},
-                source=URL(item.get("href"), timeout=30),
-            )
+class CommitteeList(HtmlListPage):
+    selector = XPath("//div[@class='hide-on-mobile']//tr/td[1]/a")
+
+    def process_item(self, item):
+        return CommitteeDetails(
+            {"chamber": self.chamber, "listpage": self.source.url},
+            source=URL(item.get("href"), timeout=30),
+        )
 
 
 class CommitteeDetails(HtmlPage):
@@ -31,11 +32,20 @@ class CommitteeDetails(HtmlPage):
         if name.endswith(comm_suffix):
             name = name[: -len(comm_suffix)]
 
-        # Remove prefix from joint committies
-        joint_prefixes = ["Joint Committee on ", "Joint Subcommittee on ", "Joint "]
+        # Remove prefix from joint committees
+        joint_prefixes = [
+            "Joint Committee on the ",
+            "Joint Committee on ",
+            "Joint Subcommittee on ",
+            "Joint ",
+        ]
         for prefix in joint_prefixes:
             if name.startswith(prefix):
                 name = name.replace(prefix, "")
+
+        # Remove prefix from numbered committees
+        if name.startswith("No. "):
+            name = re.sub(r"No\. \d+ - ", "", name).strip()
 
         self.com = ScrapeCommittee(
             name=name,

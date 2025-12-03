@@ -35,6 +35,9 @@ class VaEventScraper(Scraper):
     def choose_agenda_parser(self, event: Event, url: str) -> None:
         if "lis.virginia" in url.lower():
             self.scrape_senate_agenda(event, url)
+        elif "virginiageneralassembly" in url.lower() and "agendaItem.php" in url:
+            # once in a while an event desc links directly to the event
+            self.scrape_house_com_agenda(event, url)
         elif "virginiageneralassembly" in url.lower():
             self.scrape_house_com_agendas(event, url)
         elif "sfac.virginia.gov" in url.lower():
@@ -43,7 +46,7 @@ class VaEventScraper(Scraper):
             self.error(f"Found VA agenda link with no parser {url}")
 
     # instead of linking directly to their agendas,
-    # individual events link to committee pages that link to multiple meeting agendas
+    # individual events USUALLY link to committee pages that link to multiple meeting agendas
     # so loop through that table, comparing the dates and scrape the matching one(s)
     def scrape_house_com_agendas(self, event: Event, url: str) -> None:
         page = self.get(url).content

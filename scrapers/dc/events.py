@@ -53,6 +53,7 @@ class DCEventScraper(Scraper):
             "https://lims.dccouncil.gov/Hearings/API/Public/GetHearingsCalendar",
             headers=headers,
             json=json_data,
+            verify=False,
         )
         return response.json()
 

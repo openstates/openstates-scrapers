@@ -9,6 +9,7 @@ session_slugs = {
     "2021Special33": "33rd2021Special",
     "2023Special34": "34th2023Special",
     "2023Special35": "35th2023Special",
+    "2025Special36": "36th2025Special",
     "75": "75th2009",
     "76": "76th2011",
     "77": "77th2013",

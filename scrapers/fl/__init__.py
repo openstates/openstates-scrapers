@@ -225,7 +225,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2025-03-04",
             "end_date": "2025-05-02",
-            "active": True,
+            "active": False,
         },
         {
             "name": "2025 Special Session A",
@@ -233,7 +233,7 @@ class Florida(State):
             "classification": "special",
             "start_date": "2025-01-27",
             "end_date": "2025-12-31",  # est
-            "active": True,
+            "active": False,
         },
         {
             "name": "2025 Special Session B",
@@ -241,7 +241,7 @@ class Florida(State):
             "classification": "special",
             "start_date": "2025-01-27",
             "end_date": "2025-12-31",  # est
-            "active": True,
+            "active": False,
         },
         {
             "name": "2025 Special Session C",
@@ -249,6 +249,14 @@ class Florida(State):
             "classification": "special",
             "start_date": "2025-02-11",
             "end_date": "2025-12-31",  # est
+            "active": False,
+        },
+        {
+            "name": "2026 Regular Session",
+            "identifier": "2026",
+            "classification": "primary",
+            "start_date": "2026-01-13",
+            "end_date": "2026-03-13",
             "active": True,
         },
     ]

@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
 ###
-# Entrypoint that sets up GOOGLE_APPLICATION_CREDENTIALS, if present
-#
-# This simple script:
-# 1. ensures any GOOGLE_APPLICATION_CREDENTIALS are correctly enabled
-# 2. Executes the actual CMD args passed to the container, using "poetry run os-update" as entrypoint
+# Ensures any GOOGLE_APPLICATION_CREDENTIALS are correctly enabled
 #
 # Sometimes we want to be able to pass in Google Cloud Platform credentials as an environment variable,
 # but GCP libraries look for this to be saved as a file and for the env var to be a filepath.
-# Only intended to be used in docker containers
 ###
 if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS}" ]]; then
     echo "Applying app credentials..."

@@ -278,6 +278,16 @@ class Mississippi(State):
             "name": "2025 Regular Session",
             "start_date": "2025-01-07",
             "end_date": "2025-04-06",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2025 1st Extraordinary Session",
+            "classification": "special",
+            "identifier": "20251E",
+            "name": "2025 First Extraordinary Session",
+            "start_date": "2025-05-28",
+            # TODO: real end date
+            "end_date": "2025-06-06",
             "active": True,
         },
     ]

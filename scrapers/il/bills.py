@@ -9,7 +9,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 
 
-BASE_URL = "https://beta.ilga.gov"
+BASE_URL = "https://ilga.gov"
 central = pytz.timezone("US/Central")
 
 
@@ -310,8 +310,7 @@ class IlBillScraper(Scraper):
         session_id = session
         # scrape a single bill for debug
         # yield from self.scrape_bill(
-        #     'lower', '101st', 'HB', 'https://ilga.gov/legislation/BillStatus.asp?DocNum=
-        # 2488&GAID=15&DocTypeID=HB&LegId=118516&SessionID=108&GA=101'
+        #     'upper', '104th', 'SB', 'https://ilga.gov/Legislation/BillStatus?GAID=18&DocNum=2111&DocTypeID=SB&LegId=161644&SessionID=114'
         # )
 
         # Sessions that run from 1997 - 2002. Last few sessiosn before bills were PDFs
@@ -493,7 +492,9 @@ class IlBillScraper(Scraper):
         bill_type = bill_type or DOC_TYPES[doc_type[1:]]
         bill_id = doc_type + bill_num
 
-        title = doc.xpath('//div[@id="content"]/div[1]/div/h5/text()')[0].strip()
+        title = doc.xpath(
+            '//div[contains(@class, "tab-content")]/div[contains(@class, "row")][1]//h5/text()'
+        )[0].strip()
 
         bill = Bill(
             identifier=bill_id,
@@ -636,7 +637,7 @@ class IlBillScraper(Scraper):
                 bill.add_version_link(name, url, media_type=mimetype)
             elif name in FULLTEXT_DOCUMENT_TYPES:
                 bill.add_document_link(name, url)
-            elif "Printer-Friendly" in name:
+            elif "Printer-Friendly" or "Printer Friendly" in name:
                 pass
             else:
                 self.warning("unknown document type %s - adding as document" % name)
@@ -677,7 +678,7 @@ class IlBillScraper(Scraper):
                     motion += amendment
 
                 actor = link.xpath("../following-sibling::td/text()")[0]
-                actor = "upper" if actor == "SENATE" else "lower"
+                actor = "upper" if actor.upper() == "SENATE" else "lower"
 
             classification, _ = _categorize_action(motion)
 
@@ -719,7 +720,7 @@ class IlBillScraper(Scraper):
         # vote indicator, a few spaces, a name, newline or multiple spaces
         # VOTE_RE = re.compile('(Y|N|E|NV|A|P|-)\s{2,5}(\w.+?)(?:\n|\s{2})')
         COUNT_RE = re.compile(
-            r"^(\d+)\s+YEAS?\s+(\d+)\s+NAYS?\s+(\d+)\s+PRESENT(?:\s+(\d+)\s+NOT\sVOTING)?\s*$"
+            r"^\s*(\d+)\s+YEAS?\s+(\d+)\s+NAYS?\s+(\d+)\s+PRESENT(?:\s+(\d+)\s+NOT\sVOTING)?\s*$"
         )
         PASS_FAIL_WORDS = {
             "PASSED": "pass",
@@ -951,6 +952,7 @@ def build_sponsor_list(sponsor_atags):
 
 
 def clean_archivebill_url(url):
-    if "https://beta.ilga.gov/documents/" not in url:
-        url = url.replace("https://beta.ilga.gov/", "https://beta.ilga.gov/documents/")
+    if "https://ilga.gov/documents/" not in url:
+        url = url.replace("https://ilga.gov/", "https://ilga.gov/documents/")
+        url = url.replace("https://beta.ilga.gov/", "https://ilga.gov/documents/")
     return url

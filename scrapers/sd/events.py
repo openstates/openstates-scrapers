@@ -64,7 +64,7 @@ class SDEventScraper(Scraper):
             event.dedupe_key = event_name
             yield event
 
-    def scrape(self):
+    def scrape(self, session=None):
 
         yield from self.scrape_schedule_file()
         # SD is weird because they don't have individual 'events' that have their own IDs.
@@ -74,7 +74,7 @@ class SDEventScraper(Scraper):
         # but it only shows future meetings, so we wouldn't be able to scrape minutes and audio
         # so instead, do it by committee page
 
-        session_id = self.get_current_session_id()
+        session_id = self.get_current_session_id(session)
 
         coms_url = (
             f"https://sdlegislature.gov/api/SessionCommittees/Session/{session_id}"
@@ -206,12 +206,23 @@ class SDEventScraper(Scraper):
 
         return event
 
-    def get_current_session_id(self):
+    def get_current_session_id(self, session):
         session_url = "https://sdlegislature.gov/api/Sessions/"
         sessions = self.get(session_url).json()
-        for session in sessions[::-1]:
-            if session["SpecialSession"] is False and session["CurrentSession"] is True:
-                return session["SessionId"]
+
+        # first see if we can match to our expected session identifier
+        for api_session in sessions[::-1]:
+            if api_session["Year"] == session:
+                return api_session["SessionId"]
+
+        for api_session in sessions[::-1]:
+            if (
+                api_session["SpecialSession"] is False
+                and api_session["CurrentSession"] is True
+            ):
+                return api_session["SessionId"]
+
+        self.error(f"Could not find current API session ID for {session}")
 
     def scrape_agendas_and_bills(self, event, document_id):
         agenda_url = f"https://sdlegislature.gov/api/Documents/{document_id}.html"

@@ -126,14 +126,19 @@ class LABillScraper(Scraper, LXMLMixin):
             return []
 
     def scrape(self, chamber=None, session=None):
+        session_id = None
         # LA doesn't provide the year in action dates,
         # so assume it's the year of the active session
         for i in self.jurisdiction.legislative_sessions:
             if i["identifier"] == session:
                 self.start_year = i["start_date"][0:4]
+                if "extras" in i and "session_id" in i["extras"]:
+                    session_id = i["extras"]["session_id"]
 
         chambers = [chamber] if chamber else ["upper", "lower"]
-        session_id = self._session_ids[session]
+
+        if not session_id:
+            session_id = self._session_ids[session]
         # Scan bill abbreviation list if necessary.
         self._bill_abbreviations = self._get_bill_abbreviations(session_id)
         # there are duplicates we need to skip

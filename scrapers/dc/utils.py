@@ -2,7 +2,7 @@ import json
 import requests
 
 
-API_BASE_URL = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx"
+API_BASE_URL = "https://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx"
 API_HEADERS = {"Content-Type": "application/json", "User-Agent": "openstates"}
 
 

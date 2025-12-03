@@ -216,6 +216,27 @@ class MEBillScraper(Scraper):
                     chamber="executive",
                     classification=["executive-signature"],
                 )
+        # Add Become Law action
+        if page.xpath(
+            '//b[contains(text(), "Became Law without Governor\'s Signature")]'
+        ):
+            date = page.xpath(
+                (
+                    'string(//td[contains(text(), "Date")]/'
+                    "following-sibling::td/b/text())"
+                )
+            )
+            try:
+                dt = datetime.datetime.strptime(date, "%m/%d/%Y")
+            except ValueError:
+                self.warning("Could not parse signed date {0}".format(date))
+            else:
+                bill.add_action(
+                    "Became Law without Governor's Signature",
+                    date=dt.strftime("%Y-%m-%d"),
+                    chamber=chamber,
+                    classification=["became-law"],
+                )
 
         xpath = "//a[contains(@href, 'rollcalls.asp')]"
         votes_link = page.xpath(xpath)[0]

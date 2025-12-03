@@ -212,6 +212,26 @@ class NewMexico(State):
             "name": "2025 Regular Session",
             "start_date": "2025-01-21",
             "end_date": "2025-03-22",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2025 1st Special",
+            "classification": "special",
+            "identifier": "2025S1",
+            "name": "2025 First Special Session",
+            "start_date": "2025-10-01",
+            # TODO: Correct start date
+            "end_date": "2025-10-10",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2025 2nd Special",
+            "classification": "special",
+            "identifier": "2025S2",
+            "name": "2025 Second Special Session",
+            "start_date": "2025-11-10",
+            # TODO: Correct end date
+            "end_date": "2025-11-17",
             "active": True,
         },
     ]

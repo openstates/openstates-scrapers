@@ -29,3 +29,24 @@ jobs:
           file: Dockerfile.california
           tags: "openstates/scrapers-california:latest,openstates/scrapers-california:${{ github.sha }}"
           push: true
+  publish-plural:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: civic-eagle-enview-prod
+          credentials_json: "${{ secrets.PLURAL_OPEN_REPO_PUSHER_KEY }}"
+      - name: Setup Google Cloud SDK
+        uses: "google-github-actions/setup-gcloud@v2"
+      - name: Docker Auth
+        run: |-
+          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+      - name: Build and Push docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: Dockerfile.california
+          tags: "us-central1-docker.pkg.dev/civic-eagle-enview-prod/open-containers/scrapers-california:latest,us-central1-docker.pkg.dev/civic-eagle-enview-prod/open-containers/scrapers-california:${{ github.sha }}"
+          push: true

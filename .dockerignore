@@ -2,6 +2,7 @@
 *.pyc
 data
 _data
+scrapers/_data
 cache
 _cache
 pubinfo_*

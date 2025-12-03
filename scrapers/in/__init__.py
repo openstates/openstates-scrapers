@@ -155,6 +155,16 @@ class Indiana(State):
             "name": "2025 Regular Session",
             "start_date": "2025-01-09",
             "end_date": "2025-04-29",
+            "active": False,
+        },
+        {
+            "_scraped_name": "Second Regular Session 124th General Assembly (2026)",
+            "classification": "primary",
+            "identifier": "2026",
+            "name": "2026 Regular Session",
+            # TODO correct dates
+            "start_date": "2026-01-09",
+            "end_date": "2026-04-29",
             "active": True,
         },
     ]
@@ -188,6 +198,8 @@ class Indiana(State):
             "Accept": "application/json",
             "User-Agent": useragent,
         }
-        resp = requests.get("https://api.iga.in.gov", headers=headers)
+        # On 2025-06-12 IN TLS certificate expired, so we need to use verify=False
+        # If this is fixed in the future, this can be set to True here and in apiclient.py
+        resp = requests.get("https://api.iga.in.gov", headers=headers, verify=False)
         resp.raise_for_status()
         return [session["name"] for session in resp.json()["sessions"]]

@@ -100,6 +100,24 @@ class MTEventScraper(Scraper):
         if "HB" not in title.lower() and "SB" not in title.lower():
             event.add_committee(title)
 
+        # Add agenda item
+        match = re.search(r"AgendaTree:\s*(\[\{.*?\}\])", html, re.DOTALL)
+        if match:
+            agenda_tree_json = match.group(1)
+            agenda_items = json.loads(agenda_tree_json)
+            for item in agenda_items:
+                agenda_text = item["text"]
+                agenda_text = re.sub(r"\s+\u2013\s+", " - ", agenda_text)
+
+                parts = agenda_text.split(" - ")
+                if len(parts) > 1:
+                    found_bills = re.findall(
+                        r"\b(?:SB|HB|SR|HR|SJ|HJ|LC)\s*\d+\b", parts[0]
+                    )
+                    if found_bills:
+                        item = event.add_agenda_item(parts[1])
+                        item.add_bill(found_bills[0])
+
         match_coordinates(
             event,
             {

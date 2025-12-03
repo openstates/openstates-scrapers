@@ -213,6 +213,15 @@ class Oregon(State):
             "name": "2025 Regular Session",
             "start_date": "2025-01-21",
             "end_date": "2025-06-30",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2025 1st Special Session",
+            "identifier": "2025S1",
+            "name": "2025 Special Session",
+            "classification": "special",
+            "start_date": "2025-08-29",
+            "end_date": "2025-09-05",  # TODO: approximate
             "active": True,
         },
     ]
@@ -220,6 +229,7 @@ class Oregon(State):
         "Mock Session 2025",
         "Mock Session 2024",
         "2023-2024 Interim",
+        "2025-2026 Interim",
         "Mock Session 2023",
         "2021-2022 Interim",
         "Mock Session 2020",

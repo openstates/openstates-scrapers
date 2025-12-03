@@ -75,7 +75,14 @@ class FlEventScraper(Scraper):
             if "joint" not in com.lower():
                 com = f"House {com}"
             start = row.cssselect("span.date")[0].text_content().strip()
-            start = dateutil.parser.parse(start)
+            try:
+                start = dateutil.parser.parse(start)
+            except dateutil.parser.ParserError as e:  # noqa: F841
+                pattern = r"\d{2}/\d{2}/\d{4} \d{2}:\d{2} [APM]{2}"
+                match = re.search(pattern, start)
+                if match:
+                    start = match.group()
+                    start = dateutil.parser.parse(start)
             start = self.tz.localize(start)
 
             end = row.cssselect("span.date")[1].text_content().strip()
@@ -107,19 +114,19 @@ class FlEventScraper(Scraper):
 
             event.add_committee(com)
 
+            for h5 in row.xpath(
+                './/div[@class="text"]/h5[contains(text(), "Consideration of the following")]'
+            ):
+                event.add_agenda_item(h5.text_content().strip())
+                for agenda_item in h5.xpath("following-sibling::ul/li"):
+                    agenda_text = agenda_item.text_content().strip()
+                    agenda_text = re.sub(r"\s+\u2013\s+", " - ", agenda_text)
+                    item = event.add_agenda_item(agenda_text)
+                    found_bills = re.findall(r"H.*\s+\d+", agenda_text)
+                    if found_bills:
+                        item.add_bill(found_bills[0])
+
             yield event
-
-        for h5 in page.xpath('//div[contains(@class,"meeting-actions-bills")]/h5'):
-            event.add_agenda_item(h5.text_content().strip())
-            for agenda_item in h5.xpath("following-sibling::ul/li"):
-                agenda_text = agenda_item.text_content().strip()
-                agenda_text = re.sub(r"\s+\u2013\s+", " - ", agenda_text)
-                item = event.add_agenda_item(agenda_text)
-                found_bills = re.findall(r"H.*\s+\d+", agenda_text)
-                if found_bills:
-                    item.add_bill(found_bills[0])
-
-        yield event
 
     def get_meeting_row(self, page, header):
         xpath = f"//div[contains(@class,'meeting-info-rows') and span[contains(text(),'{header}')]]/span[contains(@class,'value')]"
@@ -172,19 +179,22 @@ class FlEventScraper(Scraper):
             chair, vice_chair, members, place, bill_ids = self.scrape_pdf(pdf_url)
 
             event = Event(name=com, start_date=date, location_name=place)
-            event.add_person(
-                name=chair,
-                note="Chair",
-            )
-            event.add_person(
-                name=vice_chair,
-                note="Vice Chair",
-            )
-            for member in members:
+            if chair:
                 event.add_person(
-                    name=member,
-                    note="Member",
+                    name=chair,
+                    note="Chair",
                 )
+            if vice_chair:
+                event.add_person(
+                    name=vice_chair,
+                    note="Vice Chair",
+                )
+            for member in members:
+                if member:
+                    event.add_person(
+                        name=member,
+                        note="Member",
+                    )
             for bill_id, description in bill_ids:
                 if description:
                     item = event.add_agenda_item(description=description)

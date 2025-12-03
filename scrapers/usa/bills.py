@@ -1,4 +1,6 @@
 import datetime
+import os
+
 import lxml
 import pytz
 import re
@@ -59,6 +61,7 @@ class USBillScraper(Scraper):
         "Conference Report Agreed to": "pass",
         "Amendment Rejected": "fail",
         "Decision of Chair Sustained": "pass",
+        "Decision of Chair Not Sustained": "fail",
         "Motion Agreed to": "pass",
         "Motion for Attendance Agreed to": "pass",
         "Motion to Discharge Agreed to": "pass",
@@ -71,10 +74,12 @@ class USBillScraper(Scraper):
         "Motion to Proceed Rejected": "fail",
         "Motion Rejected": "fail",
         "Motion to Refer Rejected": "fail",
+        "Motion to Recommit Rejected": "fail",
         "Bill Defeated": "fail",
         "Joint Resolution Passed": "pass",
         "Joint Resolution Defeated": "fail",
         "Point of Order Well Taken": "pass",
+        "Point of Order Sustained": "pass",
         "Resolution Agreed to": "pass",
         "Resolution of Ratification Agreed to": "pass",
         "Veto Sustained": "fail",
@@ -116,7 +121,7 @@ class USBillScraper(Scraper):
         root = ET.fromstring(sitemaps)
 
         # if you want to test a bill:
-        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/118/s/BILLSTATUS-118s4869.xml')
+        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/119/hr/BILLSTATUS-119hr1968.xml')
 
         for link in root.findall("us:sitemap/us:loc", self.ns):
             # split by /, then check that "116s" matches the chamber
@@ -175,21 +180,32 @@ class USBillScraper(Scraper):
             classification=classification,
         )
 
-        self.scrape_actions(bill, xml)
-        self.scrape_amendments(bill, xml, session, chamber, bill_id)
-        self.scrape_cbo(bill, xml)
-        self.scrape_committee_reports(bill, xml)
-        self.scrape_cosponsors(bill, xml)
-        self.scrape_laws(bill, xml)
-        self.scrape_related_bills(bill, xml)
-        self.scrape_sponsors(bill, xml)
-        self.scrape_subjects(bill, xml)
-        self.scrape_summaries(bill, xml)
-        self.scrape_titles(bill, xml)
-        self.scrape_versions(bill, xml)
+        try:
+            self.scrape_actions(bill, xml)
+            self.scrape_amendments(bill, xml, session, chamber, bill_id)
+            self.scrape_cbo(bill, xml)
+            self.scrape_committee_reports(bill, xml)
+            self.scrape_cosponsors(bill, xml)
+            self.scrape_laws(bill, xml)
+            self.scrape_related_bills(bill, xml)
+            self.scrape_sponsors(bill, xml)
+            self.scrape_subjects(bill, xml)
+            self.scrape_summaries(bill, xml)
+            self.scrape_titles(bill, xml)
+            self.scrape_versions(bill, xml)
 
-        for vote in self.scrape_votes(bill, xml):
-            yield vote
+        except Exception as e:
+            self.warning(f"Error parsing bill {bill_id}: {e}")
+            self.error(
+                f"XML content: {ET.tostring(xml, encoding='unicode', method='xml')}"
+            )
+            raise e
+
+        try:
+            for vote in self.scrape_votes(bill, xml):
+                yield vote
+        except Exception as e:
+            self.warning(f"Error parsing votes for bill {bill_id}: {e}")
 
         xml_url = f"https://www.govinfo.gov/bulkdata/BILLSTATUS/{session}/{bill_type.lower()}/BILLSTATUS-{session}{bill_type.lower()}{bill_num}.xml"
         bill.add_source(xml_url)
@@ -463,6 +479,9 @@ class USBillScraper(Scraper):
             except (requests.exceptions.HTTPError, lxml.etree.XMLSyntaxError):
                 # Not every bill has a rules committee page
                 return
+            except requests.exceptions.ProxyError:
+                self.warning(f"ProxyError exception was swallowed for {rules_url}")
+                return
 
     # CBO cost estimates
     def scrape_cbo(self, bill, xml):
@@ -625,15 +644,30 @@ class USBillScraper(Scraper):
         for row in xml.findall("bill/actions/item/recordedVotes/recordedVote"):
             url = self.get_xpath(row, "url")
             chamber = self.get_xpath(row, "chamber")
-            if url not in vote_urls:
+            if (url, chamber) not in vote_urls:
                 vote_urls.append((url, chamber))
 
         for url, chamber in vote_urls:
             # USA roll call requests sometimes fail for a long time, and the wait on retries
             # piles up very quickly, causing the whole scrape to be over 24 hours
             # so, we use requests library directly to avoid long retries cycle
+            vote_xml = None
             try:
-                content = requests.get(url).content
+                # Nov 2025 update: roll call endpoint seems to deny a lot of cloud traffic
+                # Adding support for proxy for this request specifically
+                if os.environ.get("HTTPS_PROXY_SELECTIVE"):
+                    proxies = {
+                        "https": os.environ.get("HTTPS_PROXY_SELECTIVE"),
+                        "http": os.environ.get("HTTP_PROXY_SELECTIVE"),
+                    }
+                    content = requests.get(url, proxies=proxies, verify=False).content
+                else:
+                    content = requests.get(url).content
+
+                if "You don't have permission to access" in content.decode():
+                    # sometimes clerk.house.gov serves an error page, but doesn't send a 403 header
+                    self.info(f"Error fetching {url}, skipping")
+                    return
                 vote_xml = lxml.html.fromstring(content)
                 if chamber.lower() == "senate":
                     vote = self.scrape_senate_votes(vote_xml, url)
@@ -643,6 +677,13 @@ class USBillScraper(Scraper):
             except (requests.exceptions.HTTPError, lxml.etree.XMLSyntaxError):
                 self.info(f"Error fetching {url}, skipping (used requests, no retries)")
                 return
+            except Exception as e:
+                self.warning(f"Error parsing vote at {url}: {e}")
+                if vote_xml:
+                    self.error(
+                        f"XML content: {ET.tostring(vote_xml, encoding='unicode', method='xml')}"
+                    )
+                raise e
 
     def scrape_senate_votes(self, page, url):
         if not page.xpath("//roll_call_vote/vote_date/text()"):
@@ -726,6 +767,9 @@ class USBillScraper(Scraper):
         yield vote
 
     def scrape_house_votes(self, bill, page, url):
+        if not page.xpath("//rollcall-vote/vote-metadata/action-date"):
+            self.error(f"No date and time for this vote, skipping {url}")
+            return
         vote_date = page.xpath("//rollcall-vote/vote-metadata/action-date/text()")[0]
         vote_time = page.xpath("//rollcall-vote/vote-metadata/action-time/@time-etz")[0]
 

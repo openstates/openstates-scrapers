@@ -192,6 +192,7 @@ class Oklahoma(State):
         },
     ]
     ignored_scraped_sessions = [
+        "2026 Regular Session",
         "2021 Regular Session - Web",
         "2020 Second Special Session",
         "2020 Regular Session (web)",
@@ -231,8 +232,8 @@ class Oklahoma(State):
         from utils import url_xpath
 
         sessions = url_xpath(
-            "http://webserver1.lsb.state.ok.us/WebApplication2/WebForm1.aspx",
-            "//select[@name='cbxSession']/option/text()",
+            "https://webapps.oklegislature.gov/WebApplication3/WebForm1.aspx",
+            "//select[@name='cbxSessionId']/option/text()",
         )
         # OK Sometimes appends (Mainsys) to their session listings
         sessions = [s.replace("(Mainsys)", "").strip() for s in sessions]

@@ -74,14 +74,12 @@ class MOBillScraper(Scraper, LXMLMixin):
         return categories or None
 
     def _get_session_code(self, session):
-        # R or S1
-        year = session[2:]
         if len(session) == 4:
-            return f"{year}1"
+            return f"{session[2:4]}1"
         elif "S1" in session:
-            return f"{year}3"
+            return f"{session[2:4]}3"
         elif "S2" in session:
-            return f"{year}4"
+            return f"{session[2:4]}4"
         else:
             raise UnrecognizedSessionType(session)
 

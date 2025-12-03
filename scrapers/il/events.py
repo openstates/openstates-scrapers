@@ -7,7 +7,7 @@ from openstates.exceptions import EmptyScrape
 
 import pytz
 
-BASE_URL = "https://beta.ilga.gov"
+BASE_URL = "https://ilga.gov"
 urls = {
     "upper": f"{BASE_URL}/Senate/Schedules",
     "lower": f"{BASE_URL}/House/Schedules",
@@ -22,9 +22,7 @@ chamber_names = {
 bill_re = re.compile(r"(\w+?)\s*0*(\d+)")
 
 # Used to remove prefixes from committee name
-ctty_name_re = re.compile(
-    r"(hearing notice for )?(senate )?(house )?(.*)", flags=re.IGNORECASE
-)
+committee_name_re = re.compile(r"(.*) Hearing Details", flags=re.IGNORECASE)
 
 
 class IlEventScraper(Scraper):
@@ -35,12 +33,12 @@ class IlEventScraper(Scraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        ctty_name = doc.xpath('//*[@id="main-content"]/section[2]//h2')[
-            0
-        ].text_content()
+        ctty_name = doc.xpath(
+            '//*[@id="main-content"]/div[@id="copyable-content"]//h2'
+        )[0].text_content()
 
         # Remove prefixes from the name like "Hearing notice for"
-        ctty_name = ctty_name_re.match(ctty_name).group(4)
+        ctty_name = committee_name_re.match(ctty_name).group(1)
 
         tables = doc.xpath(
             '//div[contains(@class, "card")][.//h4[contains(., "Hearing Details")]]//table'
@@ -120,14 +118,12 @@ class IlEventScraper(Scraper):
                 no_scheduled_ct += 1
                 continue
 
-            tables = doc.xpath('//*[@id="pane-Week"]//table//tr')
+            tables = doc.xpath('//*[@id="pane-Month"]//table//tr')
             events = set()
             for table in tables:
-                meetings = table.xpath(".//button")
+                meetings = table.xpath(".//a[contains(@class, 'btn')]")
                 for meeting in meetings:
-                    meeting_url = BASE_URL + meeting.attrib["onclick"].replace(
-                        "location.href=", ""
-                    ).strip("'. ")
+                    meeting_url = meeting.attrib["href"]
                     event, name = self.scrape_page(meeting_url, chamber_names[chamber])
                     if event and name:
                         if name in events:

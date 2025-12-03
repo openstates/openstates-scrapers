@@ -36,6 +36,7 @@ class USVoteScraper(Scraper):
         "Conference Report Agreed to": "pass",
         "Amendment Rejected": "fail",
         "Decision of Chair Sustained": "pass",
+        "Decision of Chair Not Sustained": "fail",
         "Motion Agreed to": "pass",
         "Motion for Attendance Agreed to": "pass",
         "Motion to Discharge Agreed to": "pass",

@@ -370,14 +370,25 @@ class NYBillScraper(Scraper):
             chamber = chamber_map[action["chamber"].lower()]
             action_datetime = datetime.datetime.strptime(action["date"], "%Y-%m-%d")
             action_date = action_datetime.date()
-            types, _ = NYBillScraper.categorizer.categorize(action["text"])
+            action_description = action["text"]
+            types, _ = NYBillScraper.categorizer.categorize(action_description)
 
-            bill.add_action(
-                action["text"],
+            action_instance = bill.add_action(
+                action_description,
                 action_date.strftime("%Y-%m-%d"),
                 chamber=chamber,
                 classification=types,
             )
+
+            if "referral-committee" in types:
+                match = re.search(
+                    r"REFERRED TO (.+)", action_description, flags=re.IGNORECASE
+                )
+                if match:
+                    committee = match.group(1).strip()
+                    action_instance.add_related_entity(
+                        committee, entity_type="organization"
+                    )
 
         # Handling of sources follows. Sources serving either chamber
         # maintain duplicate data, so we can see certain bill data

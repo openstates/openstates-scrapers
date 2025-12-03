@@ -61,6 +61,7 @@ CARRYOVERS = {
     },
     "82": {"*": "2021"},
     "83": {"*": "82", "**": "2023Special35"},
+    "85": {"**": "2025Special36"},
 }
 
 
@@ -117,11 +118,21 @@ class SubjectMapping(HtmlPage):
     def get_source_from_input(self):
         session = self.input["session"]
         slug = session_slugs[session]
-        year = slug[4:]
-        url = (
-            f"https://www.leg.state.nv.us/Session/{slug}/Reports/"
-            f"TablesAndIndex/{year}_{session}-index.html"
-        )
+        if "Special" in session:
+            year = slug[4:8]
+            url = f"https://www.leg.state.nv.us/App/NELIS/REL/{slug}/Bills/List"
+        elif (len(session) >= 4 and int(session[0:4]) <= 2024) or (
+            len(session) < 4 and int(session) < 83
+        ):
+            # Use the old format of URL for sessions < 2025
+            year = slug[4:]
+            url = (
+                f"https://www.leg.state.nv.us/Session/{slug}/Reports/"
+                f"TablesAndIndex/{year}_{session}-index.html"
+            )
+        else:
+            # Use new format URL for more recent sessions
+            url = f"https://www.leg.state.nv.us/App/NELIS/REL/{slug}/Bills/List"
         return url
 
     def process_page(self):
@@ -197,10 +208,9 @@ class BillTabDetail(HtmlPage):
         return url
 
     def process_error_response(self, exception: Exception) -> None:
-        self.logger.warning(
-            f"Encountered error fetching Bill Overview for {self.input.identifier}, skipping {self.input.source_url}"
-        )
-        raise SkipItem
+        message = f"Encountered error fetching Bill Overview for {self.input.identifier}, skipping {self.input.source_url}"
+        self.logger.warning(message)
+        raise SkipItem(message)
 
     def get_column_div(self, name):
         # lots of places where we have a <div class='col-md-2 font-weight-bold'>
@@ -388,10 +398,9 @@ class ExhibitTabText(HtmlPage):
     )
 
     def process_error_response(self, exception: Exception) -> None:
-        self.logger.warning(
-            f"Encountered error fetching Exhibits tab, skipping {self.source}"
-        )
-        raise SkipItem
+        message = f"Encountered error fetching Exhibits tab, skipping {self.source}"
+        self.logger.warning(message)
+        raise SkipItem(message)
 
     def process_page(self):
         bill = self.input
