@@ -205,7 +205,10 @@ class WYBillScraper(Scraper, LXMLMixin):
                 )
             # add versions of the bill text
             version = bill.add_version_link(
-                note=title, url=url, media_type="application/pdf"
+                note=title,
+                url=url,
+                classification="amendment",
+                media_type="application/pdf",
             )
             version["extras"] = {
                 "amendmentNumber": amendment["amendmentNumber"],

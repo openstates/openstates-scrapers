@@ -426,7 +426,11 @@ class AmendmentTabText(HtmlPage):
             title = row.text_content()
             link = row.get("href")
             bill.add_version_link(
-                title, link, media_type="application/pdf", on_duplicate="ignore"
+                title,
+                link,
+                classification="amendment",
+                media_type="application/pdf",
+                on_duplicate="ignore",
             )
 
         fn_url = self.source.url.replace("Text", "FiscalNotes")

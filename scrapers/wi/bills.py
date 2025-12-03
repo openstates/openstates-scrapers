@@ -240,6 +240,7 @@ class WIBillScraper(Scraper):
                         version_url,
                         media_type="text/html",
                         on_duplicate="ignore",
+                        classification="amendment",
                     )
                     pdf_url = "{}.pdf".format(version_url)
                     bill.add_version_link(

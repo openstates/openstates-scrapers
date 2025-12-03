@@ -109,13 +109,16 @@ class DCBillScraper(Scraper):
                                 is_version = True
                                 doc_type = vt
 
+                        version_classification = ""
                         if "amendment" in download.lower():
                             doc_type = "Amendment"
+                            version_classification = "amendment"
 
                         if is_version:
                             bill.add_version_link(
                                 doc_type,
                                 download,
+                                classification=version_classification,
                                 media_type=mimetype,
                                 on_duplicate="ignore",
                             )
@@ -224,8 +227,10 @@ class DCBillScraper(Scraper):
                                         is_version = True
                                         doc_type = vt
 
+                                version_classification = ""
                                 if "amendment" in act["attachment"].lower():
                                     doc_type = "Amendment"
+                                    version_classification = "amendment"
 
                                 if is_version:
                                     bill.add_version_link(
@@ -233,6 +238,7 @@ class DCBillScraper(Scraper):
                                         act["attachment"],
                                         media_type=mimetype,
                                         on_duplicate="ignore",
+                                        classification=version_classification,
                                     )
                                 else:
                                     bill.add_document_link(

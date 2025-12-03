@@ -337,6 +337,7 @@ class LABillScraper(Scraper, LXMLMixin):
             if "href" in amendment.attrib:
                 bill.add_version_link(
                     note=amendment.text,
+                    classification="amendment",
                     url=amendment.attrib["href"],
                     media_type="application/pdf",
                 )

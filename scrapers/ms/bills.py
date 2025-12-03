@@ -272,6 +272,7 @@ class MSBillScraper(Scraper):
                     bill.add_version_link(
                         name,
                         pdf_url,
+                        classification="amendment",
                         on_duplicate="ignore",
                         media_type="application/pdf",
                     )

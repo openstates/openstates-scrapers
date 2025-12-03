@@ -425,14 +425,22 @@ class NYBillScraper(Scraper):
                 "{}&term={}&Text=Y".format(bill_id, self.term_start_year)
             )
             bill.add_version_link(
-                version, html_url, on_duplicate="ignore", media_type="text/html"
+                version,
+                html_url,
+                classification="amendment",
+                on_duplicate="ignore",
+                media_type="text/html",
             )
 
             pdf_url = "http://legislation.nysenate.gov/pdf/bills/{}/{}".format(
                 self.term_start_year, version
             )
             bill.add_version_link(
-                version, pdf_url, on_duplicate="ignore", media_type="application/pdf"
+                version,
+                pdf_url,
+                classification="amendment",
+                on_duplicate="ignore",
+                media_type="application/pdf",
             )
 
             for key, container in amendment["relatedLaws"]["items"].items():

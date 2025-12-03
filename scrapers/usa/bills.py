@@ -443,6 +443,7 @@ class USBillScraper(Scraper):
             bill.add_document_link(
                 note=f"{self.get_xpath(row, 'type')} {num}",
                 url=f"https://www.congress.gov/amendment/{session}th-congress/{slugs[self.get_xpath(row, 'type')]}/{num}",
+                classification="amendment",
                 media_type="text/html",
             )
 
@@ -472,6 +473,7 @@ class USBillScraper(Scraper):
                         bill.add_document_link(
                             note=amdt_name,
                             url=amdt_url,
+                            classification="amendment",
                             media_type="application/pdf",
                         )
             except (requests.exceptions.HTTPError, lxml.etree.XMLSyntaxError):

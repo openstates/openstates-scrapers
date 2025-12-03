@@ -444,10 +444,12 @@ class MTBillScraper(Scraper):
             # we could POST to https://api.legmt.gov/docs/v1/documents/shortPdfUrl?documentId=2710 and get back a better
             # GET url, but is that worth 5x the requests?
             for doc_row in page:
+                classification = "amendment" if endpoint == "Amendments" else ""
                 doc_url = f"https://api.legmt.gov/docs/v1/documents/getContent?documentId={str(doc_row['id'])}"
                 bill.add_version_link(
                     doc_row["fileName"],
                     doc_url,
+                    classification=classification,
                     media_type="application/pdf",
                     on_duplicate="ignore",
                 )
