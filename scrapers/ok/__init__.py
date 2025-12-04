@@ -188,11 +188,18 @@ class Oklahoma(State):
             "name": "2025 Regular Session",
             "start_date": "2025-02-03",
             "end_date": "2025-05-30",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2026 Regular Session",
+            "identifier": "2026",
+            "name": "2026 Regular Session",
+            "start_date": "2026-02-02",
+            "end_date": "2026-05-29",
             "active": True,
         },
     ]
     ignored_scraped_sessions = [
-        "2026 Regular Session",
         "2021 Regular Session - Web",
         "2020 Second Special Session",
         "2020 Regular Session (web)",
