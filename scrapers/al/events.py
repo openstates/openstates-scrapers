@@ -16,7 +16,7 @@ class ALEventScraper(Scraper, LXMLMixin):
         headers = {
             "Accept": "*/*",
             "Accept-Language": "en-US,en;q=0.9",
-            "Authorization": "Bearer undefined",
+            # "Authorization": "Bearer undefined",  # as of 12/4/25, this header causes "invalid token" error
             "Content-Type": "application/json",
             "Origin": "https://alison.legislature.state.al.us",
             "Referer": "https://alison.legislature.state.al.us/",
