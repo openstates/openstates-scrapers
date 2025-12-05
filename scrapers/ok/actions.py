@@ -108,6 +108,7 @@ _categorizer_rules = (
     ),
     Rule(["Sent to Governor"], ["executive-receipt"], actor="governor"),
     Rule(["^(Signed|Approved) by Governor"], ["executive-signature"], actor="governor"),
+    Rule(["Becomes law without"], ["became-law"], actor="executive"),
     Rule(["^Vetoed"], ["executive-veto"], actor="governor"),
     Rule(["^Pocket veto"], ["executive-veto"], actor="executive"),
     Rule([r"Veto overridden"], ["veto-override-passage"]),
