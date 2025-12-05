@@ -11,7 +11,14 @@ from .actions import Categorizer
 
 from .legacyBills import NHLegacyBillScraper
 
+import feedparser
+
 body_code = {"lower": "H", "upper": "S"}
+chamber_map = {
+    "H": "lower",
+    "S": "upper",
+    "C": "legislature",
+}
 bill_type_map = {
     "B": "bill",
     "R": "resolution",
@@ -24,8 +31,27 @@ bill_type_map = {
     "SSHB": "bill",
 }
 
-VERSION_URL = "https://www.gencourt.state.nh.us/legislation/%s/%s.html"
-AMENDMENT_URL = "https://www.gencourt.state.nh.us/legislation/amendments/%s.html"
+extended_type_map = {
+    "HB": "bill",
+    "SB": "bill",
+    "HCR": "concurrent resolution",
+    "SCR": "concurrent resolution",
+    "HR": "resolution",
+    "SR": "resolutoin",
+    "JR": "resolution",
+    "HJR": "joint resolution",
+    "SJR": "joint resolution",
+    "HCO": "concurrent order",
+    "SCO": "concurrent order",
+    "CO": "concurrent order",
+    "SSSB": "bill",
+    "SSHB": "bill",
+    "CACR": "constitutional amendment",
+    "PET": "petition,",
+}
+
+VERSION_URL = "https://gc.nh.gov/legislation/%s/%s.html"
+AMENDMENT_URL = "https://gc.nh.gov/legislation/amendments/%s.html"
 
 
 def extract_amendment_id(action):
@@ -38,7 +64,7 @@ class NHBillScraper(Scraper):
     cachebreaker = dt.datetime.now().strftime("%Y%d%d%H%I%s")
     categorizer = Categorizer()
 
-    def scrape(self, chamber=None, session=None):
+    def scrape(self, chamber=None, session=None, scrape_from_web=None):
         est = pytz.timezone("America/New_York")
         time_est = dt.datetime.now(est)
 
@@ -47,9 +73,62 @@ class NHBillScraper(Scraper):
 
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber, session)
+            yield from self.scrape_chamber(chamber, session, scrape_from_web)
 
-    def scrape_chamber(self, chamber, session):
+    def scrape_from_web(self, session):
+        bills = {}
+
+        url = f"https://gc.nh.gov/rssFeeds/rssQueryResults.aspx?&sortoption=&txtsessionyear={session}"
+        feed = self.get(url).content
+        feed = feedparser.parse(feed)
+
+        for item in feed.entries:
+            bill_type = self.extract_until_number(item.billnumber)
+            bill_type = extended_type_map[bill_type]
+
+            bill_id = item.billnumber
+            lsr = item.lsrnumber
+
+            bills[lsr] = Bill(
+                legislative_session=session,
+                chamber=chamber_map[item.billnumber[0:1]],
+                identifier=bill_id,
+                title=item.lsrtitle,
+                classification=bill_type,
+            )
+
+            if lsr in self.versions_by_lsr:
+                version_id = self.versions_by_lsr[lsr]
+                version_url = (
+                    "https://gc.nh.gov/bill_status/legacy/bs2016/"
+                    "billText.aspx?sy={}&id={}&txtFormat=html".format(
+                        session, version_id
+                    )
+                )
+
+                pdf_version_url = (
+                    "https://gc.nh.gov/bill_status/legacy/bs2016/"
+                    "billText.aspx?sy={}&id={}&txtFormat=pdf&v=current".format(
+                        session, version_id
+                    )
+                )
+                latest_version_name = "latest version"
+                bills[lsr].add_version_link(
+                    note=latest_version_name,
+                    url=version_url,
+                    media_type="text/html",
+                )
+                bills[lsr].add_version_link(
+                    note=latest_version_name,
+                    url=pdf_version_url,
+                    media_type="application/pdf",
+                )
+
+            self.bills_by_id[bill_id] = bills[lsr]
+
+        return bills
+
+    def scrape_chamber(self, chamber, session, scrape_from_web):
         if int(session) < 2017:
             legacy = NHLegacyBillScraper(self.metadata, self.datadir)
             yield from legacy.scrape(chamber, session)
@@ -68,145 +147,152 @@ class NHBillScraper(Scraper):
         self.scrape_version_ids()
         self.scrape_amendments()
 
-        last_line = []
-        for line in (
-            self.get(
-                f"https://www.gencourt.state.nh.us/dynamicdatadump/LSRs.txt?x={self.cachebreaker}"
-            )
-            .content.decode("utf-8")
-            .split("\n")
-        ):
-            # the first line in the file can contain a unicode zero width character \\ufeff
-            # maybe found in other lines? so just replace universally
-            line = line.replace("\ufeff", "")
-            line = line.split("|")
-            if len(line) < 1:
-                continue
+        if scrape_from_web and self.bills == {}:
+            self.info("Scraping from web.")
+            self.bills = self.scrape_from_web(session)
+        else:
 
-            if len(line) < 36:
-                if len(last_line + line[1:]) == 36:
-                    # combine two lines for processing
-                    # (skip an empty entry at beginning of second line)
-                    line = last_line + line
-                    self.warning("used bad line")
-                else:
-                    # skip this line, maybe we'll use it later
-                    self.warning("bad line: %s" % "|".join(line))
-                    last_line = line
-                    continue
-            session_yr = line[0]
-            lsr = line[1]
-            title = line[2]
-            body = line[3]
-            # type_num = line[4]
-            expanded_bill_id = line[9]
-            bill_id = line[10]
-
-            if (
-                body == body_code[chamber]
-                and session_yr == session
-                and expanded_bill_id != ""
-            ):
-                if expanded_bill_id.startswith("CACR"):
-                    bill_type = "constitutional amendment"
-                elif expanded_bill_id.startswith("PET"):
-                    bill_type = "petition"
-                elif expanded_bill_id.startswith("AR") and bill_id.startswith("CACR"):
-                    bill_type = "constitutional amendment"
-                elif expanded_bill_id.startswith("SSSB") or expanded_bill_id.startswith(
-                    "SSHB"
-                ):
-                    # special session house/senate bills
-                    bill_type = "bill"
-                else:
-                    bill_type = bill_type_map[expanded_bill_id.split(" ")[0][1:]]
-
-                if title.startswith("("):
-                    title = title.split(")", 1)[1].strip()
-
-                self.bills[lsr] = Bill(
-                    legislative_session=session,
-                    chamber=chamber,
-                    identifier=bill_id,
-                    title=title,
-                    classification=bill_type,
+            last_line = []
+            for line in (
+                self.get(
+                    f"https://gc.nh.gov/dynamicdatadump/LSRs.txt?x={self.cachebreaker}"
                 )
+                .content.decode("utf-8")
+                .split("\n")
+            ):
+                # the first line in the file can contain a unicode zero width character \\ufeff
+                # maybe found in other lines? so just replace universally
+                line = line.replace("\ufeff", "")
+                line = line.split("|")
+                if len(line) < 1:
+                    continue
 
-                # check to see if resolution, process versions by getting lsr off link on the bill source page
-                if re.match(r"^.R\d+", bill_id):
-                    # ex: HR 1 is lsr=847 but version id=838
-                    resolution_url = (
-                        "https://www.gencourt.state.nh.us/bill_status/legacy/bs2016/bill_status.aspx?"
-                        + "lsr={}&sy={}&txtsessionyear={}&txtbillnumber={}".format(
-                            lsr, session, session, bill_id
-                        )
-                    )
-                    resolution_page = self.get(
-                        resolution_url, allow_redirects=True
-                    ).content.decode("utf-8")
-                    page = lxml.html.fromstring(resolution_page)
-                    try:
-                        version_href = page.xpath("//a[2]/@href")[1]
-                    except Exception:
-                        self.logger.warning(f"{bill_id} missing version link")
+                if len(line) < 36:
+                    if len(last_line + line[1:]) == 36:
+                        # combine two lines for processing
+                        # (skip an empty entry at beginning of second line)
+                        line = last_line + line
+                        self.warning("used bad line")
+                    else:
+                        # skip this line, maybe we'll use it later
+                        self.warning("bad line: %s" % "|".join(line))
+                        last_line = line
                         continue
-                    true_version = re.search(r"id=(\d+)&", version_href)[1]
-                    self.versions_by_lsr[lsr] = true_version
+                session_yr = line[0]
+                lsr = line[1]
+                title = line[2]
+                body = line[3]
+                # type_num = line[4]
+                expanded_bill_id = line[9]
+                bill_id = line[10]
 
-                # http://www.gencourt.state.nh.us/bill_status/billText.aspx?sy=2017&id=95&txtFormat=html
-                # or if 2022 bills
-                # http://www.gencourt.state.nh.us/bill_status/legacy/bs2016/billText.aspx?id=1410&txtFormat=html&sy=2022
-                if lsr in self.versions_by_lsr:
-                    version_id = self.versions_by_lsr[lsr]
-                    version_url = (
-                        "https://www.gencourt.state.nh.us/bill_status/legacy/bs2016/"
-                        "billText.aspx?sy={}&id={}&txtFormat=html".format(
-                            session, version_id
+                if (
+                    body == body_code[chamber]
+                    and session_yr == session
+                    and expanded_bill_id != ""
+                ):
+                    if expanded_bill_id.startswith("CACR"):
+                        bill_type = "constitutional amendment"
+                    elif expanded_bill_id.startswith("PET"):
+                        bill_type = "petition"
+                    elif expanded_bill_id.startswith("AR") and bill_id.startswith(
+                        "CACR"
+                    ):
+                        bill_type = "constitutional amendment"
+                    elif expanded_bill_id.startswith(
+                        "SSSB"
+                    ) or expanded_bill_id.startswith("SSHB"):
+                        # special session house/senate bills
+                        bill_type = "bill"
+                    else:
+                        bill_type = bill_type_map[expanded_bill_id.split(" ")[0][1:]]
+
+                    if title.startswith("("):
+                        title = title.split(")", 1)[1].strip()
+
+                    self.bills[lsr] = Bill(
+                        legislative_session=session,
+                        chamber=chamber,
+                        identifier=bill_id,
+                        title=title,
+                        classification=bill_type,
+                    )
+
+                    # check to see if resolution, process versions by getting lsr off link on the bill source page
+                    if re.match(r"^.R\d+", bill_id):
+                        # ex: HR 1 is lsr=847 but version id=838
+                        resolution_url = (
+                            "https://gc.nh.gov/bill_status/legacy/bs2016/bill_status.aspx?"
+                            + "lsr={}&sy={}&txtsessionyear={}&txtbillnumber={}".format(
+                                lsr, session, session, bill_id
+                            )
                         )
-                    )
+                        resolution_page = self.get(
+                            resolution_url, allow_redirects=True
+                        ).content.decode("utf-8")
+                        page = lxml.html.fromstring(resolution_page)
+                        try:
+                            version_href = page.xpath("//a[2]/@href")[1]
+                        except Exception:
+                            self.logger.warning(f"{bill_id} missing version link")
+                            continue
+                        true_version = re.search(r"id=(\d+)&", version_href)[1]
+                        self.versions_by_lsr[lsr] = true_version
 
-                    pdf_version_url = (
-                        "https://www.gencourt.state.nh.us/bill_status/legacy/bs2016/"
-                        "billText.aspx?sy={}&id={}&txtFormat=pdf&v=current".format(
-                            session, version_id
+                    # http://www.gencourt.state.nh.us/bill_status/billText.aspx?sy=2017&id=95&txtFormat=html
+                    # or if 2022 bills
+                    # http://www.gencourt.state.nh.us/bill_status/legacy/bs2016/billText.aspx?id=1410&txtFormat=html&sy=2022
+                    if lsr in self.versions_by_lsr:
+                        version_id = self.versions_by_lsr[lsr]
+                        version_url = (
+                            "https://gc.nh.gov/bill_status/legacy/bs2016/"
+                            "billText.aspx?sy={}&id={}&txtFormat=html".format(
+                                session, version_id
+                            )
                         )
-                    )
-                    latest_version_name = "latest version"
-                    self.bills[lsr].add_version_link(
-                        note=latest_version_name,
-                        url=version_url,
-                        media_type="text/html",
-                    )
-                    self.bills[lsr].add_version_link(
-                        note=latest_version_name,
-                        url=pdf_version_url,
-                        media_type="application/pdf",
-                    )
 
-                # http://gencourt.state.nh.us/bill_status/billtext.aspx?sy=2017&txtFormat=amend&id=2017-0464S
-                if lsr in self.amendments_by_lsr:
-                    amendment_id = self.amendments_by_lsr[lsr]
-                    amendment_url = (
-                        "https://www.gencourt.state.nh.us/bill_status/legacy/bs2016/"
-                        "billText.aspx?sy={}&id={}&txtFormat=amend".format(
-                            session, amendment_id
+                        pdf_version_url = (
+                            "https://gc.nh.gov/bill_status/legacy/bs2016/"
+                            "billText.aspx?sy={}&id={}&txtFormat=pdf&v=current".format(
+                                session, version_id
+                            )
                         )
-                    )
-                    amendment_name = "Amendment #{}".format(amendment_id)
+                        latest_version_name = "latest version"
+                        self.bills[lsr].add_version_link(
+                            note=latest_version_name,
+                            url=version_url,
+                            media_type="text/html",
+                        )
+                        self.bills[lsr].add_version_link(
+                            note=latest_version_name,
+                            url=pdf_version_url,
+                            media_type="application/pdf",
+                        )
 
-                    self.bills[lsr].add_version_link(
-                        note=amendment_name,
-                        url=amendment_url,
-                        media_type="application/pdf",
-                    )
+                    # http://gencourt.state.nh.us/bill_status/billtext.aspx?sy=2017&txtFormat=amend&id=2017-0464S
+                    if lsr in self.amendments_by_lsr:
+                        amendment_id = self.amendments_by_lsr[lsr]
+                        amendment_url = (
+                            "https://gc.nh.gov/bill_status/legacy/bs2016/"
+                            "billText.aspx?sy={}&id={}&txtFormat=amend".format(
+                                session, amendment_id
+                            )
+                        )
+                        amendment_name = "Amendment #{}".format(amendment_id)
 
-                self.bills_by_id[bill_id] = self.bills[lsr]
+                        self.bills[lsr].add_version_link(
+                            note=amendment_name,
+                            url=amendment_url,
+                            media_type="application/pdf",
+                        )
+
+                    self.bills_by_id[bill_id] = self.bills[lsr]
 
         # load legislators
         self.legislators = {}
         for line in (
             self.get(
-                "https://www.gencourt.state.nh.us/dynamicdatadump/legislators.txt?x={}".format(
+                "https://gc.nh.gov/dynamicdatadump/legislators.txt?x={}".format(
                     self.cachebreaker
                 )
             )
@@ -231,7 +317,7 @@ class NHBillScraper(Scraper):
         # sponsors
         for line in (
             self.get(
-                f"https://www.gencourt.state.nh.us/dynamicdatadump/LsrSponsors.txt?x={self.cachebreaker}"
+                f"https://gc.nh.gov/dynamicdatadump/LsrSponsors.txt?x={self.cachebreaker}"
             )
             .content.decode("utf-8")
             .split("\n")
@@ -262,7 +348,7 @@ class NHBillScraper(Scraper):
         # actions
         for line in (
             self.get(
-                f"https://www.gencourt.state.nh.us/dynamicdatadump/Docket.txt?x={self.cachebreaker}"
+                f"https://gc.nh.gov/dynamicdatadump/Docket.txt?x={self.cachebreaker}"
             )
             .content.decode("utf-8")
             .split("\n")
@@ -306,13 +392,13 @@ class NHBillScraper(Scraper):
 
     def add_source(self, bill, lsr, session):
         bill_url = (
-            "https://www.gencourt.state.nh.us/bill_status/legacy/bs2016/bill_docket.aspx?"
+            "https://gc.nh.gov/bill_status/legacy/bs2016/bill_docket.aspx?"
             + "lsr={}&sy={}&sortoption=&txtsessionyear={}".format(lsr, session, session)
         )
         bill.add_source(bill_url)
 
         bill_url = (
-            "https://www.gencourt.state.nh.us/bill_status/legacy/bs2016/bill_status.aspx?"
+            "https://gc.nh.gov/bill_status/legacy/bs2016/bill_status.aspx?"
             + "lsr={}&sy={}&sortoption=&txtsessionyear={}".format(lsr, session, session)
         )
         bill.add_source(bill_url)
@@ -321,7 +407,7 @@ class NHBillScraper(Scraper):
 
         for line in (
             self.get(
-                "https://www.gencourt.state.nh.us/dynamicdatadump/LsrsOnly.txt?x={}".format(
+                "https://gc.nh.gov/dynamicdatadump/LsrsOnly.txt?x={}".format(
                     self.cachebreaker
                 )
             )
@@ -343,7 +429,7 @@ class NHBillScraper(Scraper):
     def scrape_amendments(self):
         for line in (
             self.get(
-                "https://www.gencourt.state.nh.us/dynamicdatadump/Docket.txt?x={}".format(
+                "https://gc.nh.gov/dynamicdatadump/Docket.txt?x={}".format(
                     self.cachebreaker
                 )
             )
@@ -368,7 +454,7 @@ class NHBillScraper(Scraper):
         votes = {}
         other_counts = defaultdict(int)
         last_line = []
-        vote_url = f"https://www.gencourt.state.nh.us/dynamicdatadump/RollCallSummary.txt?x={self.cachebreaker}"
+        vote_url = f"https://gc.nh.gov/dynamicdatadump/RollCallSummary.txt?x={self.cachebreaker}"
         lines = self.get(vote_url).content.decode("utf-8").splitlines()
 
         for line in lines:
@@ -420,7 +506,7 @@ class NHBillScraper(Scraper):
 
         for line in (
             self.get(
-                f"https://www.gencourt.state.nh.us/dynamicdatadump/RollCallHistory.txt?x={self.cachebreaker}"
+                f"https://gc.nh.gov/dynamicdatadump/RollCallHistory.txt?x={self.cachebreaker}"
             )
             .content.decode("utf-8")
             .splitlines()
@@ -466,3 +552,12 @@ class NHBillScraper(Scraper):
                     votes[body + v_num].set_count("other", other_counts[body + v_num])
         for vote in votes.values():
             yield vote
+
+    def extract_until_number(self, text_string: str) -> str:
+        """
+        Extracts characters from a string until the first number is encountered.
+        """
+        match = re.match(r"^[^0-9]*", text_string)
+        if match:
+            return match.group(0)
+        return ""
