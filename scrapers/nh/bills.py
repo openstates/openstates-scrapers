@@ -93,7 +93,7 @@ class NHBillScraper(Scraper):
                 legislative_session=session,
                 chamber=chamber_map[item.billnumber[0:1]],
                 identifier=bill_id,
-                title=item.lsrtitle,
+                title=item.lsrtitle.replace("\n", ""),
                 classification=bill_type,
             )
 
