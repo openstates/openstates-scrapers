@@ -393,7 +393,7 @@ class Utah(State):
             "start_date": "2025-12-09",
             # TODO fix end_date
             "end_date": "2025-12-12",
-            "active": False,
+            "active": True,
         },
         {
             "_scraped_name": "2026 General Session",
