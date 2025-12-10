@@ -593,7 +593,19 @@ class UpperComVote(PdfPage):
             self.logger.warning(f"Couldn't split {self.text}, skipping")
             return
 
-        (_, motion) = lines[5].split("FINAL ACTION:")
+        # Look for the line containing "FINAL ACTION:"; don't assume it's always lines[5]
+        motion_line = next(
+            (line for line in lines if "FINAL ACTION:" in line),
+            None,
+        )
+        if not motion_line:
+            self.logger.warning(
+                "Couldn't find 'FINAL ACTION:' line in Senate committee vote PDF %s",
+                self.source.url,
+            )
+            return
+
+        _, motion = motion_line.split("FINAL ACTION:", 1)
         motion = motion.strip()
         if not motion:
             self.logger.warning("Vote appears to be empty")
