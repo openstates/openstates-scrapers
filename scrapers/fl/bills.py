@@ -806,96 +806,94 @@ class HouseComVote(HtmlPage):
     )
 
     def process_page(self):
-        # Checks to see if any vote totals are provided
-        if (
-            len(
-                self.root.xpath(
-                    '//span[contains(@id, "ctl00_MainContent_lblTotal")]/text()'
-                )
-            )
-            > 0
-        ):
-            (date,) = self.root.xpath('//span[contains(@id, "lblDate")]/text()')
-            date = format_datetime(
-                datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p"), "US/Eastern"
-            )
-            # ctl00_MainContent_lblTotal //span[contains(@id, "ctl00_MainContent_lblTotal")]
-            yes_count = int(
-                self.root.xpath('//span[contains(@id, "lblYeas")]/text()')[0]
-            )
-            no_count = int(
-                self.root.xpath('//span[contains(@id, "lblNays")]/text()')[0]
-            )
-            other_count = int(
-                self.root.xpath('//span[contains(@id, "lblMissed")]/text()')[0]
-            )
-            result = "pass" if yes_count > no_count else "fail"
-
-            (committee,) = self.root.xpath(
-                '//span[contains(@id, "lblCommittee")]/text()'
-            )
-            (action,) = self.root.xpath('//span[contains(@id, "lblAction")]/text()')
-            motion = "{} ({})".format(action, committee)
-
-            vote = VoteEvent(
-                start_date=date,
-                bill=self.input,
-                chamber="lower",
-                motion_text=motion,
-                result=result,
-                classification="committee-passage",
-            )
-            vote.add_source(self.source.url)
-            vote.set_count("yes", yes_count)
-            vote.set_count("no", no_count)
-            vote.set_count("not voting", other_count)
-
-        # New parsing logic for member votes.
-        # The page now renders the record vote as bullet items like:
-        # "Y Basabe", "N Eskamani", "- Holcomb", etc.
-        votes_found = False
-
-        for li in self.root.xpath("//li"):
-            text = " ".join(li.xpath(".//text()")).strip()
-            if not text:
-                continue
-
-            # Look for lines that start with a vote code and a name
-            m = re.match(r"^([YN\-][YN\-\(\)]*)\s+(.*)$", text)
-            if not m:
-                continue
-
-            code_raw, member = m.groups()
-            member = member.strip()
-
-            # Parenthetical votes like "Y(N)" are not counted in totals
-            if re.search(r"\([YN]\)", code_raw):
-                continue
-
-            code = code_raw[0]
-
-            if code == "Y":
-                vote.yes(member)
-            elif code == "N":
-                vote.no(member)
-            elif code == "-":
-                vote.vote("not voting", member)
-            else:
-                # Should not happen with the regex above
-                self.logger.warning(
-                    "Unknown vote code %r for member %r on %s",
-                    code_raw,
-                    member,
-                    self.source.url,
-                )
-                continue
-
-            votes_found = True
-
-        if not votes_found:
+        # Checks to see if any vote totals are provided. Newer pages may not use
+        # the old ctl00_MainContent_ prefix so match any lblTotal.
+        total_nodes = self.root.xpath(
+            '//span[contains(@id, "lblTotal")]/text()'
+        )
+        if len(total_nodes) == 0:
+            # No totals = nothing to scrape.
             self.logger.warning(
-                "Found totals but no per-member votes on %s", self.source.url
+                "No totals found on House committee vote page %s", self.source.url
             )
+            return
+
+        # Date can show up with or without seconds; try both.
+        (date_str,) = self.root.xpath('//span[contains(@id, "lblDate")]/text()')
+        date_str = date_str.strip()
+
+        parsed = None
+        for fmt in ("%m/%d/%Y %I:%M:%S %p", "%m/%d/%Y %I:%M %p"):
+            try:
+                parsed = datetime.datetime.strptime(date_str, fmt)
+                break
+            except ValueError:
+                continue
+
+        if parsed is None:
+            # If we truly can't parse the date, bail instead of crashing.
+            self.logger.warning(
+                "Could not parse date '%s' on House committee vote page %s",
+                date_str,
+                self.source.url,
+            )
+            return
+
+        date = format_datetime(parsed, "US/Eastern")
+
+        yes_count = int(
+            self.root.xpath('//span[contains(@id, "lblYeas")]/text()')[0]
+        )
+        no_count = int(
+            self.root.xpath('//span[contains(@id, "lblNays")]/text()')[0]
+        )
+        other_count = int(
+            self.root.xpath('//span[contains(@id, "lblMissed")]/text()')[0]
+        )
+        result = "pass" if yes_count > no_count else "fail"
+
+        (committee,) = self.root.xpath(
+            '//span[contains(@id, "lblCommittee")]/text()'
+        )
+        (action,) = self.root.xpath('//span[contains(@id, "lblAction")]/text()')
+        motion = "{} ({})".format(action, committee)
+
+        vote = VoteEvent(
+            start_date=date,
+            bill=self.input,
+            chamber="lower",
+            motion_text=motion,
+            result=result,
+            classification="committee-passage",
+        )
+        vote.add_source(self.source.url)
+        vote.set_count("yes", yes_count)
+        vote.set_count("no", no_count)
+        vote.set_count("not voting", other_count)
+
+        for member_vote in self.root.xpath(
+            '//ul[contains(@class, "vote-list")]/li'
+        ):
+            if not member_vote.text_content().strip():
+                continue
+
+            (member,) = member_vote.xpath("span[2]//text()")
+            (member_vote_text,) = member_vote.xpath("span[1]//text()")
+
+            member = member.strip()
+            if member_vote_text == "Y":
+                vote.yes(member)
+            elif member_vote_text == "N":
+                vote.no(member)
+            elif member_vote_text == "-":
+                vote.vote("not voting", member)
+            # Parenthetical votes appear to not be counted in the totals
+            elif re.search(r"\([YN]\)", member_vote_text):
+                continue
+            else:
+                raise ValueError(
+                    "Unknown vote type found: {}".format(member_vote_text)
+                )
 
         return vote
 
