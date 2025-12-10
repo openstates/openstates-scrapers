@@ -838,30 +838,54 @@ class HouseComVote(HtmlPage):
             vote.set_count("no", no_count)
             vote.set_count("not voting", other_count)
 
-            for member_vote in self.root.xpath(
-                '//ul[contains(@class, "vote-list")]/li'
-            ):
-                if not member_vote.text_content().strip():
-                    continue
+        # New parsing logic for member votes.
+        # The page now renders the record vote as bullet items like:
+        # "Y Basabe", "N Eskamani", "- Holcomb", etc.
+        votes_found = False
 
-                (member,) = member_vote.xpath("span[2]//text()")
-                (member_vote,) = member_vote.xpath("span[1]//text()")
+        for li in self.root.xpath("//li"):
+            text = " ".join(li.xpath(".//text()")).strip()
+            if not text:
+                continue
 
-                member = member.strip()
-                if member_vote == "Y":
-                    vote.yes(member)
-                elif member_vote == "N":
-                    vote.no(member)
-                elif member_vote == "-":
-                    vote.vote("not voting", member)
-                # Parenthetical votes appear to not be counted in the
-                # totals for Yea, Nay, _or_ Missed
-                elif re.search(r"\([YN]\)", member_vote):
-                    continue
-                else:
-                    raise ValueError("Unknown vote type found: {}".format(member_vote))
+            # Look for lines that start with a vote code and a name
+            m = re.match(r"^([YN\-][YN\-\(\)]*)\s+(.*)$", text)
+            if not m:
+                continue
 
-            return vote
+            code_raw, member = m.groups()
+            member = member.strip()
+
+            # Parenthetical votes like "Y(N)" are not counted in totals
+            if re.search(r"\([YN]\)", code_raw):
+                continue
+
+            code = code_raw[0]
+
+            if code == "Y":
+                vote.yes(member)
+            elif code == "N":
+                vote.no(member)
+            elif code == "-":
+                vote.vote("not voting", member)
+            else:
+                # Should not happen with the regex above
+                self.logger.warning(
+                    "Unknown vote code %r for member %r on %s",
+                    code_raw,
+                    member,
+                    self.source.url,
+                )
+                continue
+
+            votes_found = True
+
+        if not votes_found:
+            self.logger.warning(
+                "Found totals but no per-member votes on %s", self.source.url
+            )
+
+        return vote
 
 
 class FlBillScraper(Scraper):
