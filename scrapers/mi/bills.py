@@ -148,7 +148,9 @@ class MIBillScraper(Scraper):
                         citation_type="chapter",
                     )
                 else:
-                    self.logger.warning(f"Could not match Public Act pattern in string {action} for {bill}")
+                    self.logger.warning(
+                        f"Could not match Public Act pattern in string {action} for {bill}"
+                    )
 
     def scrape_votes(self, bill: Bill, page: lxml.html.HtmlElement):
 
