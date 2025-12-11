@@ -226,6 +226,7 @@ class Oregon(State):
         },
     ]
     ignored_scraped_sessions = [
+        "Mock Session 2026",
         "Mock Session 2025",
         "Mock Session 2024",
         "2023-2024 Interim",
