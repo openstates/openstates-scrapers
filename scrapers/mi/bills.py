@@ -139,13 +139,18 @@ class MIBillScraper(Scraper):
             # chapter law
             if "assigned pa" in action.lower():
                 match = re.search(r"(\d+)'(\d+)", action)
-                act_num = match.group(1).lstrip("0")
-                act_year = f"20{match.group(2)}"
-                bill.add_citation(
-                    "Michigan Public Acts",
-                    f"Public Act {act_num} of {act_year}",
-                    citation_type="chapter",
-                )
+                if match:
+                    act_num = match.group(1).lstrip("0")
+                    act_year = f"20{match.group(2)}"
+                    bill.add_citation(
+                        "Michigan Public Acts",
+                        f"Public Act {act_num} of {act_year}",
+                        citation_type="chapter",
+                    )
+                else:
+                    self.logger.warning(
+                        f"Could not match Public Act pattern in string {action} for {bill}"
+                    )
 
     def scrape_votes(self, bill: Bill, page: lxml.html.HtmlElement):
 
