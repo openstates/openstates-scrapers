@@ -206,6 +206,15 @@ class Maryland(State):
             "name": "2025 Regular Session",
             "start_date": "2025-01-08",
             "end_date": "2025-04-07",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2025 Special Session",
+            "classification": "special",
+            "identifier": "2025s1",
+            "name": "2025 Special Session",
+            "start_date": "2025-12-16",
+            "end_date": "2025-12-31",
             "active": True,
         },
         {
