@@ -101,9 +101,19 @@ class IABillScraper(Scraper):
                     media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 elif ".pdf" in document_url:
                     media_type = "application/pdf"
-                bill.add_document_link(
-                    note="Background Statement", url=document_url, media_type=media_type
-                )
+                elif ".xlsx" in document_url or ".xls" in document_url:
+                    media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                else:
+                    media_type = None
+                    self.logger.warning(
+                        f"Failed to ID media type for bill doc url: {document_url}"
+                    )
+                if media_type:
+                    bill.add_document_link(
+                        note="Background Statement",
+                        url=document_url,
+                        media_type=media_type,
+                    )
 
             bill.add_version_link(
                 note="Prefiled", url=url, media_type="application/pdf"
