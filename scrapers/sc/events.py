@@ -195,7 +195,7 @@ class SCEventScraper(Scraper):
                 # For cases when time string is listed as a reference to prior
                 #  event's start time:
                 #   i.e. "Immediately after EOC full committee"
-                if "after" in time_string:
+                if "after" in time_string and self.prior_event_time_string is not None:
                     time_string = self.prior_event_time_string
 
                 # Set attribute to be used for following event, as above case
