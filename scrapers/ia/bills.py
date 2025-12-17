@@ -105,10 +105,14 @@ class IABillScraper(Scraper):
                     media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 else:
                     media_type = None
-                    self.logger.warning(f"Failed to ID media type for bill doc url: {document_url}")
+                    self.logger.warning(
+                        f"Failed to ID media type for bill doc url: {document_url}"
+                    )
                 if media_type:
                     bill.add_document_link(
-                        note="Background Statement", url=document_url, media_type=media_type
+                        note="Background Statement",
+                        url=document_url,
+                        media_type=media_type,
                     )
 
             bill.add_version_link(
