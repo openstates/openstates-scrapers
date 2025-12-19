@@ -30,5 +30,7 @@ def get_short_codes(scraper):
 def make_data_url(url: str) -> str:
     if "www" in url:
         return url.replace("www.", "data.")
+    elif "http" not in url:
+        return f"{HI_URL_BASE}{url}"
     else:
         return url.replace("capitol.", "data.capitol.")
