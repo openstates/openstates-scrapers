@@ -189,7 +189,7 @@ class SouthDakota(State):
             "name": "2025 First Special Session",
             "start_date": "2025-09-03",
             "end_date": "2025-09-10",  # Estimated
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2026",
@@ -197,7 +197,7 @@ class SouthDakota(State):
             "name": "2026 Regular Session",
             "start_date": "2026-01-14",
             "end_date": "2026-03-31",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = []
