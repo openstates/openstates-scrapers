@@ -160,6 +160,16 @@ class Idaho(State):
             "end_date": "2025-04-10",
             "active": True,
         },
+        {
+            "_scraped_name": "2026 Session",
+            "classification": "primary",
+            "identifier": "2026",
+            "name": "68th Legislature, 2nd Regular Session (2026)",
+            "start_date": "2026-01-05",
+            # TODO: Update end data
+            "end_date": "2026-04-10",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2010 Session",
