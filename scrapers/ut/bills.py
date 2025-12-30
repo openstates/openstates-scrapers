@@ -97,7 +97,9 @@ class UTBillScraper(Scraper, LXMLMixin):
 
         bill_id = page.cssselect("#breadcrumb li")[-1].text
 
-        (header,) = page.xpath('//h3[@class="heading"]/text()')
+        (header,) = page.xpath(
+            '//h3[@class="heading"]/text() | //h1[@class="heading"]/text()'
+        )
         title = header.replace(bill_id, "").strip()
 
         if ".B. " in bill_id:
