@@ -116,3 +116,5 @@ def clean_sponsor_name(name: str) -> str:
             .strip()
             .title()
         )
+    else:
+        return ""
