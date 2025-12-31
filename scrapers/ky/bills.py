@@ -393,6 +393,9 @@ class KYBillScraper(Scraper, LXMLMixin):
                     bill=bill,
                     classification="passage",
                 )
+                ve.set_count("yes", yeas)
+                ve.set_count("no", nays)
+                ve.set_count("other", abstained + not_voting)
                 ve.add_source(vote_url)
                 for how_voted, how_voted_voters in voters.items():
                     for voter in how_voted_voters:
