@@ -206,14 +206,15 @@ class PABillScraper(Scraper):
         )
         primary_sponsors = page.xpath(xpath)
         for sponsor in primary_sponsors:
-            sponsor = sponsor.text_content()
-            bill.add_sponsorship(
-                utils.clean_sponsor_name(sponsor),
-                classification="primary",
-                chamber=utils.get_sponsor_chamber(sponsor),
-                primary=True,
-                entity_type="person",
-            )
+            sponsor = utils.clean_sponsor_name(sponsor.text_content())
+            if sponsor:
+                bill.add_sponsorship(
+                    sponsor,
+                    classification="primary",
+                    chamber=utils.get_sponsor_chamber(sponsor),
+                    primary=True,
+                    entity_type="person",
+                )
 
         # Co-Sponsors
         xpath = (
@@ -222,26 +223,28 @@ class PABillScraper(Scraper):
         )
         co_sponsors = page.xpath(xpath)
         for sponsor in co_sponsors:
-            sponsor = sponsor.text_content()
-            bill.add_sponsorship(
-                utils.clean_sponsor_name(sponsor),
-                classification="cosponsor",
-                chamber=utils.get_sponsor_chamber(sponsor),
-                primary=False,
-                entity_type="person",
-            )
+            sponsor = utils.clean_sponsor_name(sponsor.text_content())
+            if sponsor:
+                bill.add_sponsorship(
+                    sponsor,
+                    classification="cosponsor",
+                    chamber=utils.get_sponsor_chamber(sponsor),
+                    primary=False,
+                    entity_type="person",
+                )
         # Collapsed Co-Sponsors
         xpath = '//div[@id="coSponsAdd"]//strong'
         co_sponsors = page.xpath(xpath)
         for sponsor in co_sponsors:
-            sponsor = sponsor.text_content()
-            bill.add_sponsorship(
-                utils.clean_sponsor_name(sponsor),
-                classification="cosponsor",
-                chamber=utils.get_sponsor_chamber(sponsor),
-                primary=False,
-                entity_type="person",
-            )
+            sponsor =  utils.clean_sponsor_name(sponsor.text_content())
+            if sponsor:
+                bill.add_sponsorship(
+                    sponsor,
+                    classification="cosponsor",
+                    chamber=utils.get_sponsor_chamber(sponsor),
+                    primary=False,
+                    entity_type="person",
+                )
 
     def parse_actions(self, bill, chamber, page):
         for tr in page.xpath(
