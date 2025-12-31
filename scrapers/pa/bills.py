@@ -236,7 +236,7 @@ class PABillScraper(Scraper):
         xpath = '//div[@id="coSponsAdd"]//strong'
         co_sponsors = page.xpath(xpath)
         for sponsor in co_sponsors:
-            sponsor =  utils.clean_sponsor_name(sponsor.text_content())
+            sponsor = utils.clean_sponsor_name(sponsor.text_content())
             if sponsor:
                 bill.add_sponsorship(
                     sponsor,
