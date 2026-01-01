@@ -125,6 +125,14 @@ class Connecticut(State):
             "end_date": "2025-06-04",
             "active": True,
         },
+        {
+            "_scraped_name": "2026",
+            "identifier": "2026",
+            "name": "2026 Regular Session",
+            "start_date": "2026-02-04",
+            "end_date": "2026-05-06",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "1991",
