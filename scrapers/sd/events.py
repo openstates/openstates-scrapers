@@ -20,7 +20,7 @@ class SDEventScraper(Scraper):
         meetings = self.get(url).json()
 
         for row in meetings["sessionMeetings"]:
-            if row["NoMeeting"] is True:
+            if row["NoMeeting"] is True or row["DocumentId"] is None:
                 continue
 
             com_name = row["CommitteeFullName"]
@@ -224,7 +224,8 @@ class SDEventScraper(Scraper):
 
         self.error(f"Could not find current API session ID for {session}")
 
-    def scrape_agendas_and_bills(self, event, document_id):
+    def scrape_agendas_and_bills(self, event: Event, document_id: str):
+
         agenda_url = f"https://sdlegislature.gov/api/Documents/{document_id}.html"
 
         try:
