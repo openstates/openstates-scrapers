@@ -232,7 +232,7 @@ class NewMexico(State):
             "start_date": "2025-11-10",
             # TODO: Correct end date
             "end_date": "2025-11-17",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2026 Regular",
@@ -241,7 +241,7 @@ class NewMexico(State):
             "name": "2026 Regular Session",
             "start_date": "2026-01-20",
             "end_date": "2026-02-19",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
