@@ -86,11 +86,26 @@ class OKBillScraper(Scraper):
         page.make_links_absolute(url)
 
         bill_nums = []
-        for link in page.xpath("//a[contains(@href, 'BillInfo')]"):
+        for row in page.xpath("//tr"):  # [0].xpath("./td[last()]")[0].text_content()
+            title = row.xpath("./td[last()]")[0].text_content()
+            if title.strip() == "Title":
+                # Skip the header row
+                continue
+            if "test bill" in title.lower() or "please disregard" in title.lower():
+                # Skip test bills
+                # some test bills are in a bill number range < 9900
+                # which can overlap with real bills (historically, eg 2024 SB 9134)
+                # so added a title text check for these test bills as well as
+                # the number check below
+                self.warning("skipping likely bad bill due to title %s" % title)
+                continue
+            link = row.xpath(".//a")[0]
             bill_id = link.text.strip()
             bill_num = int(re.findall(r"\d+", bill_id)[0])
             if bill_num >= 9900:
-                self.warning("skipping likely bad bill %s" % bill_id)
+                # We should have skipped test bills with new method above
+                # but leaving this here just in case
+                self.warning("skipping likely bad bill due to identifier %s" % bill_id)
                 continue
             if only_bills is not None and bill_id not in only_bills:
                 self.warning("skipping bill we are not interested in %s" % bill_id)
