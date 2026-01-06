@@ -9,6 +9,12 @@ def get_short_codes(scraper):
     list_page = lxml.html.fromstring(list_html)
     rows = list_page.xpath("//table[contains(@id, 'MainContent_GridView1')]//tr")
     scraper.short_ids = {"CONF": {"chamber": "joint", "name": "Conference Committee"}}
+    scraper.short_ids = {
+        "STF": {
+            "chamber": "lower",
+            "name": "Simplifying Permitting for Enhanced Economic Development (SPEED) Task Force",
+        }
+    }
 
     for row in rows:
         tds = row.xpath("./td")
