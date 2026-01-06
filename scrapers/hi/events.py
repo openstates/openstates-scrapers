@@ -6,7 +6,7 @@ from requests import HTTPError
 import pytz
 import lxml
 
-URL = "https://www.capitol.hawaii.gov/session/upcominghearings.aspx"
+URL = "https://www.capitol.hawaii.gov/session/upcominghearingsfiltered.aspx"
 
 TIMEZONE = pytz.timezone("Pacific/Honolulu")
 
@@ -55,12 +55,12 @@ class HIEventScraper(Scraper):
         if page.xpath("//td[contains(string(.),'No Hearings')]"):
             raise EmptyScrape
 
-        table = page.xpath("//table[contains(@id, 'MainContent_GridView1')]")[0]
+        table = page.xpath("//table[contains(@id, 'MainContent_GridView2')]")[0]
 
         events = set()
         for event in table.xpath(".//tr")[1:]:
             tds = event.xpath("./td")
-            committee = tds[0].text_content().strip()
+            committee = tds[1].text_content().strip()
 
             # Multi-committee events will be CODE1/CODE2/CODE3
             if "/" in committee:
@@ -79,8 +79,8 @@ class HIEventScraper(Scraper):
                     raise Exception
                 descr = descr[0].replace(".", "").strip()
 
-            when = tds[2].text_content().strip()
-            where = tds[3].text_content().strip()
+            when = tds[0].text_content().strip()
+            where = tds[2].text_content().strip()
             notice = tds[4].xpath(".//a")[0]
             notice_href = notice.attrib["href"]
             notice_name = notice.text
@@ -96,7 +96,7 @@ class HIEventScraper(Scraper):
             else:
                 self.seen_hearings.append(notice_href)
 
-            when = dt.datetime.strptime(when, "%m/%d/%Y %I:%M %p")
+            when = dt.datetime.strptime(when, "%a %b %d, %Y %I:%M%p")
             when = TIMEZONE.localize(when)
             event_name = f"{descr}#{where}#{when}"
             if event_name in events:
