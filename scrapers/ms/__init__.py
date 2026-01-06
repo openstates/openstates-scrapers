@@ -288,7 +288,7 @@ class Mississippi(State):
             "start_date": "2025-05-28",
             # TODO: real end date
             "end_date": "2025-06-06",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2026 Regular Session",
@@ -297,7 +297,7 @@ class Mississippi(State):
             "name": "2026 Regular Session",
             "start_date": "2025-01-06",
             "end_date": "2025-04-05",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
