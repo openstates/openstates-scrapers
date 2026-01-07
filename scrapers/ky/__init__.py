@@ -191,6 +191,15 @@ class Kentucky(State):
             "name": "2025 Regular Session",
             "start_date": "2025-01-07",
             "end_date": "2025-04-15",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2026 Regular Session",
+            "classification": "primary",
+            "identifier": "2026RS",
+            "name": "2026 Regular Session",
+            "start_date": "2026-01-06",
+            "end_date": "2026-04-15",
             "active": True,
         },
     ]
