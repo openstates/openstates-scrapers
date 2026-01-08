@@ -22,6 +22,7 @@ class VaBillScraper(Scraper):
     base_url: str = "https://lis.virginia.gov"
     session_code: str = ""
     categorizer = Categorizer()
+    verify = False
 
     chamber_map = {
         "S": "upper",
@@ -51,6 +52,7 @@ class VaBillScraper(Scraper):
             return
 
         self.headers = {
+            "x-oxylabs-force-headers": "1",
             "WebAPIKey": os.getenv("VA_API_KEY"),
             "Content-Type": "application/json",
             "Accept": "application/json",
