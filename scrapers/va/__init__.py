@@ -302,7 +302,9 @@ class Virginia(State):
             "sec-ch-ua-platform": '"Linux"',
         }
         response = requests.get(
-            "https://lis.virginia.gov/Session/api/GetSessionListAsync/", verify=False, headers=headers
+            "https://lis.virginia.gov/Session/api/GetSessionListAsync/",
+            verify=False,
+            headers=headers,
         ).json()
         session_list = []
         for row in response["Sessions"]:

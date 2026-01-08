@@ -299,7 +299,10 @@ class VTBillScraper(Scraper, LXMLMixin):
                     year_slug, internal_bill_id
                 )
             )
-            votes_json = self.get(votes_url, verify=False,).text
+            votes_json = self.get(
+                votes_url,
+                verify=False,
+            ).text
             votes = json.loads(votes_json)["data"]
             bill.add_source(votes_url)
 
