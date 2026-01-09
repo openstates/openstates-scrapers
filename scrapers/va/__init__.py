@@ -291,6 +291,7 @@ class Virginia(State):
 
     def get_session_list(self):
         headers = {
+            "x-oxylabs-force-headers": "1",
             "Accept": "*/*",
             "Accept-Language": "en-US,en;q=0.9",
             "Referer": "https://lis.virginia.gov/bill-search",
@@ -301,7 +302,9 @@ class Virginia(State):
             "sec-ch-ua-platform": '"Linux"',
         }
         response = requests.get(
-            "https://lis.virginia.gov/Session/api/GetSessionListAsync/", headers=headers
+            "https://lis.virginia.gov/Session/api/GetSessionListAsync/",
+            verify=False,
+            headers=headers,
         ).json()
         session_list = []
         for row in response["Sessions"]:

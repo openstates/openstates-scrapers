@@ -18,7 +18,7 @@ class VTBillScraper(Scraper, LXMLMixin):
         bills_url = "http://legislature.vermont.gov/bill/loadBillsReleased/{}/".format(
             year_slug
         )
-        bills_json = self.get(bills_url).text
+        bills_json = self.get(bills_url, verify=False).text
         bills = json.loads(bills_json)["data"] or []
 
         bills_url = (
@@ -26,13 +26,13 @@ class VTBillScraper(Scraper, LXMLMixin):
                 year_slug
             )
         )
-        bills_json = self.get(bills_url).text
+        bills_json = self.get(bills_url, verify=False).text
         bills.extend(json.loads(bills_json)["data"] or [])
 
         resolutions_url = "http://legislature.vermont.gov/bill/loadAllResolutionsByChamber/{}/both".format(
             year_slug
         )
-        resolutions_json = self.get(resolutions_url).text
+        resolutions_json = self.get(resolutions_url, verify=False).text
         bills.extend(json.loads(resolutions_json)["data"] or [])
 
         # Parse the information from each bill
@@ -183,7 +183,7 @@ class VTBillScraper(Scraper, LXMLMixin):
             actions_url = "http://legislature.vermont.gov/bill/loadBillDetailedStatus/{0}/{1}".format(
                 year_slug, internal_bill_id
             )
-            actions_json = self.get(actions_url)
+            actions_json = self.get(actions_url, verify=False)
 
             # Checks if page actually has json posted
             if "json" in actions_json.headers.get("Content-Type"):
@@ -299,7 +299,10 @@ class VTBillScraper(Scraper, LXMLMixin):
                     year_slug, internal_bill_id
                 )
             )
-            votes_json = self.get(votes_url).text
+            votes_json = self.get(
+                votes_url,
+                verify=False,
+            ).text
             votes = json.loads(votes_json)["data"]
             bill.add_source(votes_url)
 
@@ -309,7 +312,7 @@ class VTBillScraper(Scraper, LXMLMixin):
                     "http://legislature.vermont.gov/bill/"
                     "loadBillRollCallDetails/{0}/{1}".format(year_slug, roll_call_id)
                 )
-                roll_call_json = self.get(roll_call_url).text
+                roll_call_json = self.get(roll_call_url, verify=False).text
                 roll_call = json.loads(roll_call_json)["data"]
 
                 roll_call_yea = []
