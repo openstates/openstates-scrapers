@@ -83,6 +83,9 @@ class NHBillScraper(Scraper):
         feed = feedparser.parse(feed)
 
         for item in feed.entries:
+            # Uncomment below to debug scrape of a specific bill
+            # if "HB323" not in item["title"]:
+            #     continue
             bill_type = self.extract_until_number(item.billnumber)
             bill_type = extended_type_map[bill_type]
 
@@ -96,6 +99,86 @@ class NHBillScraper(Scraper):
                 title=item.lsrtitle.replace("\n", ""),
                 classification=bill_type,
             )
+
+            if lsr not in self.versions_by_lsr:
+                # Try to get the bill versions from the bill page
+                # since no version was found in the bulk data (for unknown reason)
+                docket_url = f"https://gc.nh.gov/bill_status/legacy/bs2016/bill_docket.aspx?lsr={lsr}&sy={session}&sortoption=&txtsessionyear={session}"
+                docket_content = None
+                try_num = 1
+                tries = 3
+                # we have to be prepared to retry, because sometimes NH responds with a basically empty HTML response
+                # (contains only some inline Javascript snippet)
+                while try_num < tries and (
+                    docket_content is None or "<head></head>" in docket_content
+                ):
+                    if try_num > 1:
+                        self.logger.info(
+                            f"Retrying fetch of docket page, try number {try_num}"
+                        )
+                    docket_content = self.get(
+                        docket_url,
+                        allow_redirects=True,
+                        headers={
+                            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                        },
+                    ).content.decode("utf-8")
+                    try_num += 1
+
+                docket_page = lxml.html.fromstring(docket_content)
+                version_elems = docket_page.xpath(
+                    "//table[@id='Table1']//a[contains(@href, 'billtext.aspx') or contains(@href, 'billText.aspx')]"
+                )
+                version_urls_seen = []
+                for version_elem in version_elems:
+                    version_url = version_elem.attrib["href"]
+                    if version_url in version_urls_seen:
+                        # do not add duplicates
+                        continue
+                    else:
+                        version_urls_seen.append(version_url)
+                    version_text = version_elem.xpath(".//text()")[0]
+                    if "txtFormat=html" in version_url:
+                        # "normal" version (maybe always Introduced?)
+                        bills[lsr].add_version_link(
+                            note=version_text,
+                            url=f"https://gc.nh.gov/bill_status/legacy/bs2016/{version_url}",
+                            media_type="text/html",
+                        )
+                        pdf_version_url = version_url.replace(
+                            "txtFormat=html", "txtFormat=pdf"
+                        )
+                        bills[lsr].add_version_link(
+                            note=version_text,
+                            url=f"https://gc.nh.gov/bill_status/legacy/bs2016/{pdf_version_url}",
+                            media_type="application/pdf",
+                        )
+                    elif "txtFormat=amend" in version_url:
+                        # Amendment version
+                        # pretty sure this is always a PDF
+                        bills[lsr].add_version_link(
+                            note=f"Amendment: {version_text}",
+                            url=f"https://gc.nh.gov/bill_status/legacy/bs2016/{version_url}",
+                            media_type="application/pdf",
+                        )
+                    elif "v=HP" in version_url or "v=SP" in version_url:
+                        # This is the House Passed or Senate Passed version
+                        # pretty sure this is always HTML, but PDF is available
+                        bills[lsr].add_version_link(
+                            note=version_text,
+                            url=f"https://gc.nh.gov/bill_status/legacy/bs2016/{version_url}",
+                            media_type="text/html",
+                        )
+                        pdf_version_url = f"{version_url}&txtFormat=pdf"
+                        bills[lsr].add_version_link(
+                            note=version_text,
+                            url=f"https://gc.nh.gov/bill_status/legacy/bs2016/{pdf_version_url}",
+                            media_type="application/pdf",
+                        )
+                    else:
+                        self.logger.warning(
+                            f"Found an unexpected version URL on {docket_url}, version URL: {version_url}"
+                        )
 
             if lsr in self.versions_by_lsr:
                 version_id = self.versions_by_lsr[lsr]
