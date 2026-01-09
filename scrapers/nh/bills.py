@@ -109,9 +109,13 @@ class NHBillScraper(Scraper):
                 tries = 3
                 # we have to be prepared to retry, because sometimes NH responds with a basically empty HTML response
                 # (contains only some inline Javascript snippet)
-                while try_num < tries and (docket_content is None or "<head></head>" in docket_content):
+                while try_num < tries and (
+                    docket_content is None or "<head></head>" in docket_content
+                ):
                     if try_num > 1:
-                        self.logger.info(f"Retrying fetch of docket page, try number {try_num}")
+                        self.logger.info(
+                            f"Retrying fetch of docket page, try number {try_num}"
+                        )
                     docket_content = self.get(
                         docket_url,
                         allow_redirects=True,
@@ -122,7 +126,9 @@ class NHBillScraper(Scraper):
                     try_num += 1
 
                 docket_page = lxml.html.fromstring(docket_content)
-                version_elems = docket_page.xpath("//table[@id='Table1']//a[contains(@href, 'billtext.aspx') or contains(@href, 'billText.aspx')]")
+                version_elems = docket_page.xpath(
+                    "//table[@id='Table1']//a[contains(@href, 'billtext.aspx') or contains(@href, 'billText.aspx')]"
+                )
                 version_urls_seen = []
                 for version_elem in version_elems:
                     version_url = version_elem.attrib["href"]
@@ -139,7 +145,9 @@ class NHBillScraper(Scraper):
                             url=f"https://gc.nh.gov/bill_status/legacy/bs2016/{version_url}",
                             media_type="text/html",
                         )
-                        pdf_version_url = version_url.replace("txtFormat=html", "txtFormat=pdf")
+                        pdf_version_url = version_url.replace(
+                            "txtFormat=html", "txtFormat=pdf"
+                        )
                         bills[lsr].add_version_link(
                             note=version_text,
                             url=f"https://gc.nh.gov/bill_status/legacy/bs2016/{pdf_version_url}",
@@ -168,7 +176,9 @@ class NHBillScraper(Scraper):
                             media_type="application/pdf",
                         )
                     else:
-                        self.logger.warning(f"Found an unexpected version URL on {docket_url}, version URL: {version_url}")
+                        self.logger.warning(
+                            f"Found an unexpected version URL on {docket_url}, version URL: {version_url}"
+                        )
 
             if lsr in self.versions_by_lsr:
                 version_id = self.versions_by_lsr[lsr]
