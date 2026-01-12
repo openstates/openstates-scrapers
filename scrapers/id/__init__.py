@@ -158,7 +158,7 @@ class Idaho(State):
             "name": "68th Legislature, 1st Regular Session (2025)",
             "start_date": "2025-01-06",
             "end_date": "2025-04-10",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2026 Session",
@@ -168,7 +168,7 @@ class Idaho(State):
             "start_date": "2026-01-05",
             # TODO: Update end data
             "end_date": "2026-04-10",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
