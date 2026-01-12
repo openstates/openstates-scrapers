@@ -206,7 +206,7 @@ class Maryland(State):
             "name": "2025 Regular Session",
             "start_date": "2025-01-08",
             "end_date": "2025-04-07",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2026 Regular Session",
@@ -215,7 +215,7 @@ class Maryland(State):
             "name": "2026 Regular Session",
             "start_date": "2026-01-14",
             "end_date": "2026-04-13",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
@@ -232,6 +232,7 @@ class Maryland(State):
         "2005 Regular Session",
         "2006 Regular Session",
         "2006 Special Session 1",
+        "2025 Special Session",
     ]
 
     def get_session_list(self):
