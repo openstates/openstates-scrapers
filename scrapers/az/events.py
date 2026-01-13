@@ -128,7 +128,7 @@ class AZEventScraper(Scraper):
         )
         com_url = com_url.format(chamber_abbr, session_id)
 
-        coms = self.get(com_url).json()
+        coms = self.get(com_url, timeout=80, verify=False).json()
         events = set()
         for com in coms:
             # joint committees get returned by both endpoints, so skip one
@@ -142,7 +142,7 @@ class AZEventScraper(Scraper):
                 "&sessionId={}&isInterimAgenda=false&body={}&committeeId={}"
             )
             events_url = events_url.format(session_id, chamber_abbr, com["CommitteeId"])
-            events_list = self.get(events_url).json()
+            events_list = self.get(events_url, timeout=80, verify=False).json()
 
             for row in events_list:
                 if (
