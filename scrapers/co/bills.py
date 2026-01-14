@@ -79,7 +79,10 @@ class COBillScraper(Scraper, LXMLMixin):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        self.max_pages = int(page.cssselect("button[data-page]")[-1].text_content())
+        if len(page.cssselect("button.pagination-button")) == 1:
+            self.max_pages = 1
+        else:
+            self.max_pages = int(page.cssselect("button[data-page]")[-1].text_content())
 
         for row in page.cssselect("a.all-bills-data-heading"):
             yield from self.scrape_bill(row.xpath("@href")[0], session)
