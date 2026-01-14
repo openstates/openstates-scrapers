@@ -20,6 +20,7 @@ class ALBillScraper(Scraper):
     gql_url = "https://alison.legislature.state.al.us/graphql"
     session_year = ""
     session_type = ""
+    session_identifier = ""
     bill_ids = set()
     vote_keys = set()
     count = 0
@@ -37,6 +38,7 @@ class ALBillScraper(Scraper):
         scraper_ids = self.jurisdiction.get_scraper_ids(session)
         self.session_year = scraper_ids["session_year"]
         self.session_type = scraper_ids["session_type"]
+        self.session_identifier = session
 
         for bill_type in ["B", "R"]:
             yield from self.scrape_bill_type(session, bill_type, 0, 50)
@@ -48,13 +50,13 @@ class ALBillScraper(Scraper):
         self.info(f"Scraping {bill_type} offset {offset} limit {limit}")
 
         json_data = {
-            "query": """query bills($googleId: ID, $category: String, $instrumentType: InstrumentType, $sessionYear: Int, $sessionType: String, $order: Order = [
-            "sessionYear",
-            "DESC"], $offset: Int, $limit: Int, $where: InstrumentOverviewWhere! = {}, $search: String) {
-            instrumentOverviews(
+            "query": """query bills($googleId: ID, $category: String, $instrumentType: InstrumentType, $prefiledDateFilter: DateFilter, $sessionAbbreviation: String, $order: Order = [
+            "sessionAbbreviation",
+            "DESC"], $offset: Int, $limit: Int, $where: InstrumentWhere! = {}, $search: String) {
+            instruments(
                 googleId: $googleId
                 category: $category
-                where: [{instrumentType: {eq: $instrumentType}, sessionYear: {eq: $sessionYear}, sessionType: {eq: $sessionType}}, $where]
+                where: [{sessionAbbreviation: {eq: $sessionAbbreviation}, instrumentType: {eq: $instrumentType}, prefiledDate: $prefiledDateFilter}, $where]
                 order: $order
                 limit: $limit
                 offset: $offset
@@ -71,6 +73,7 @@ class ALBillScraper(Scraper):
                 subject
                 shortTitle
                 assignedCommittee
+                allCommittees
                 prefiledDate
                 firstReadDate
                 currentStatus
@@ -87,14 +90,15 @@ class ALBillScraper(Scraper):
                 __typename
             }
             }
-            fragment billModalDataFragment on InstrumentOverview {
+            fragment billModalDataFragment on Instrument {
             id
+            sessionAbbreviation
             instrumentNbr
             instrumentType
             sponsor
-            introducedUrl
-            engrossedUrl
-            enrolledUrl
+            introducedFileUrl
+            engrossedFileUrl
+            enrolledFileUrl
             companionInstrumentNbr
             sessionType
             sessionYear
@@ -105,7 +109,7 @@ class ALBillScraper(Scraper):
             __typename
             }""",
             "variables": {
-                "sessionType": self.session_type,
+                "sessionAbbreviation": self.session_identifier,
                 "instrumentType": bill_type,
                 "orderBy": "LastActionDate",
                 "direction": "DESC",
@@ -118,10 +122,10 @@ class ALBillScraper(Scraper):
         page = requests.post(self.gql_url, headers=self.gql_headers, json=json_data)
         page = json.loads(page.content)
 
-        if page["data"]["instrumentOverviews"]["count"] < 1:
+        if page["data"]["instruments"]["count"] < 1:
             return
 
-        for row in page["data"]["instrumentOverviews"]["data"]:
+        for row in page["data"]["instruments"]["data"]:
             chamber = self.chamber_map[row["body"]]
             title = row["shortTitle"].strip()
 
@@ -186,7 +190,7 @@ class ALBillScraper(Scraper):
             yield bill
 
         # no need to paginate again if we max the last page
-        if page["data"]["instrumentOverviews"]["count"] > offset:
+        if page["data"]["instruments"]["count"] > offset:
             yield from self.scrape_bill_type(session, bill_type, offset + 50, limit)
 
     # this is one api call to grab the actions, fiscalnote, and budget isolation resolutions
@@ -194,15 +198,13 @@ class ALBillScraper(Scraper):
 
         json_data = {
             "query": """query billModal(
-            $sessionType: String
-            $sessionYear: Int
-            $instrumentNbr: String
+            $sessionAbbreviation: String,
+            $instrumentNbr: String,
             $instrumentType: InstrumentType
             ) {
-            instrument: instrumentOverview(
+            instrument: instrument(
                 where: {
-                sessionType: { eq: $sessionType }
-                sessionYear: { eq: $sessionYear }
+                sessionAbbreviation: { eq: $sessionAbbreviation }
                 instrumentNbr: { eq: $instrumentNbr }
                 instrumentType: { eq: $instrumentType }
                 }
@@ -212,9 +214,9 @@ class ALBillScraper(Scraper):
                 sessionType
                 currentStatus
                 shortTitle
-                introducedUrl
-                engrossedUrl
-                enrolledUrl
+                introducedFileUrl
+                engrossedFileUrl
+                enrolledFileUrl
                 viewEnacted
                 viewEnacted
                 actNbr
@@ -222,14 +224,13 @@ class ALBillScraper(Scraper):
             }
             fiscalNotes(
                 where: {
-                sessionType: { eq: $sessionType }
-                sessionYear: { eq: $sessionYear }
+                sessionAbbreviation: { eq: $sessionAbbreviation }
                 instrumentNbr: { eq: $instrumentNbr }
                 }
             ) {
                 data {
                 description
-                url
+                fileUrl
                 sortOrder
                 __typename
                 }
@@ -238,8 +239,7 @@ class ALBillScraper(Scraper):
 
                 histories: instrumentHistories(
                 where: {
-                    sessionType: { eq: $sessionType }
-                    sessionYear: { eq: $sessionYear }
+                    sessionAbbreviation: { eq: $sessionAbbreviation }
                     instrumentNbr: { eq: $instrumentNbr }
                 }
                 ) {
@@ -250,12 +250,14 @@ class ALBillScraper(Scraper):
                     calendarDate
                     body
                     matter
-                    amdSubUrl
+                    amdSub
+                    amdSubFileUrl
                     committee
                     nays
                     yeas
-                    # vote
-                    # voteNbr
+                    voteType
+                    voteTitle
+                    rollCallNbr
                     amdSub
                     ...rollVoteModalInstrumentHistoryFragment
                     __typename
@@ -264,7 +266,7 @@ class ALBillScraper(Scraper):
                 }
                 birs(
                 where: {
-                    sessionType: { eq: $sessionType }
+                    sessionAbbreviation: { eq: $sessionAbbreviation }
                     instrumentNbr: { eq: $instrumentNbr }
                 }
                 ) {
@@ -272,9 +274,11 @@ class ALBillScraper(Scraper):
                     instrumentNbr
                     sessionYear
                     sessionType
-                    # bir
+                    # birTitle
                     calendarDate
                     matter
+                    voteType
+                    voteTitle
                     # roll
                     ...rollVoteModalBirFragment
                     __typename
@@ -287,7 +291,7 @@ class ALBillScraper(Scraper):
             fragment rollVoteModalInstrumentHistoryFragment on InstrumentHistory {
             __typename
             instrumentNbr
-            sessionType
+            sessionAbbreviation
             calendarDate
             body
             # voteNbr
@@ -302,10 +306,8 @@ class ALBillScraper(Scraper):
             """,
             "variables": {
                 "__typename": "InstrumentOverview",
-                "id": bill_row["id"],
                 "instrumentNbr": bill_row["instrumentNbr"],
-                "sessionType": bill_row["sessionType"],
-                "sessionYear": bill_row["sessionYear"],
+                "sessionAbbreviation": bill_row["sessionAbbreviation"],
             },
         }
 
@@ -319,14 +321,14 @@ class ALBillScraper(Scraper):
         for row in page["data"]["fiscalNotes"]["data"]:
             bill.add_document_link(
                 f"Fiscal Note: {row['description']}",
-                row["url"],
+                row["fileUrl"],
                 media_type="application/pdf",
                 on_duplicate="ignore",
             )
 
         for row in page["data"]["birs"]["data"]:
             # So far it looks like "birs" do not have url
-            if "url" in row:
+            if "fileUrl" in row:
                 bill.add_document_link(
                     f"Budget Isolation Resolution: {row['matter']}",
                     row["url"],
@@ -335,22 +337,22 @@ class ALBillScraper(Scraper):
                 )
 
     def scrape_versions(self, bill: Bill, row: dict):
-        if row["introducedUrl"]:
+        if row["introducedFileUrl"]:
             bill.add_version_link(
                 "Introduced",
-                url=row["introducedUrl"],
+                url=row["introducedFileUrl"],
                 media_type="application/pdf",
             )
-        if row["engrossedUrl"]:
+        if row["engrossedFileUrl"]:
             bill.add_version_link(
                 "Engrossed",
-                url=row["engrossedUrl"],
+                url=row["engrossedFileUrl"],
                 media_type="application/pdf",
             )
-        if row["enrolledUrl"]:
+        if row["enrolledFileUrl"]:
             bill.add_version_link(
                 "Enrolled",
-                url=row["enrolledUrl"],
+                url=row["enrolledFileUrl"],
                 media_type="application/pdf",
             )
 
@@ -413,7 +415,7 @@ class ALBillScraper(Scraper):
         for row in histories["data"]:
             action_text = row["matter"]
 
-            if action_text == "":
+            if not action_text or action_text == "":
                 self.warning(f"Skipping blank action for {bill}")
                 continue
 
@@ -425,7 +427,7 @@ class ALBillScraper(Scraper):
 
             action_attr = self.categorizer.categorize(row["matter"])
             action_class = action_attr["classification"]
-            if row["body"] == "":
+            if not row["body"] or row["body"] == "":
                 self.warning(f"No chamber for {action_text}, skipping")
                 continue
 
@@ -436,11 +438,11 @@ class ALBillScraper(Scraper):
                 classification=action_class,
             )
 
-            if row["amdSubUrl"]:
+            if row["amdSubFileUrl"]:
                 bill.add_version_link(
                     row["matter"],
-                    url=row["amdSubUrl"],
-                    media_type=get_media_type(row["amdSubUrl"]),
+                    url=row["amdSubFileUrl"],
+                    media_type=get_media_type(row["amdSubFileUrl"]),
                     on_duplicate="ignore",
                 )
 
@@ -455,7 +457,7 @@ class ALBillScraper(Scraper):
     def scrape_vote(self, bill, action_row):
         cal_date = self.transform_date(action_row["CalendarDate"])
         json_data = {
-            "query": f'{{\nrollCallVotesByRollNbr(\ninstrumentNbr: "{action_row["InstrumentNbr"]}"\nsessionYear: "{self.session_year}"\nsessionType: "{self.session_type}"\ncalendarDate:"{cal_date}"\nrollNumber:"{action_row["VoteNbr"]}"\n) {{\nFullName\nVote\nYeas\nNays\nAbstains\nPass\n}}\n}}',
+            "query": f'{{\nrollCallVotesByRollNbr(\ninstrumentNbr: "{action_row["InstrumentNbr"]}"\nsessionAbbreviation: "{self.session_identifier}"\nsessionYear: "{self.session_year}"\nsessionType: "{self.session_type}"\ncalendarDate:"{cal_date}"\nrollNumber:"{action_row["VoteNbr"]}"\n) {{\nFullName\nVote\nYeas\nNays\nAbstains\nPass\n}}\n}}',
             "variables": {},
         }
 
