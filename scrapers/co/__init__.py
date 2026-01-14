@@ -186,6 +186,15 @@ class Colorado(State):
             "start_date": "2025-08-26",
             # TODO
             "end_date": "2025-08-30",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2026 Regular Session",
+            "classification": "primary",
+            "identifier": "2026A",
+            "name": "2026 Regular Session",
+            "start_date": "2026-01-14",
+            "end_date": "2026-05-13",
             "active": True,
         },
     ]
