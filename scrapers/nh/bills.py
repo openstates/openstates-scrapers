@@ -91,6 +91,9 @@ class NHBillScraper(Scraper):
 
             bill_id = item.billnumber
             lsr = item.lsrnumber
+            # Pad lsr with zeroes so that it is a 4-character string
+            # lsr value is a padding string in the bulk data documents that are parsed elsewhere, so needs to match
+            lsr = lsr.zfill(4)
 
             bills[lsr] = Bill(
                 legislative_session=session,
@@ -429,13 +432,14 @@ class NHBillScraper(Scraper):
                     self.warning("Error, can't find person %s" % employee)
 
         # actions
-        for line in (
+        action_lines = (
             self.get(
                 f"https://gc.nh.gov/dynamicdatadump/Docket.txt?x={self.cachebreaker}"
             )
             .content.decode("utf-8")
             .split("\n")
-        ):
+        )
+        for line in action_lines:
             if len(line) < 1:
                 continue
             # a few blank/irregular lines, irritating
