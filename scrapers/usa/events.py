@@ -20,6 +20,7 @@ class USEventScraper(Scraper, LXMLMixin):
     media_types = {
         "PDF": "application/pdf",
         "XML": "application/xml",
+        "Formatted XML": "application/xml",
     }
 
     hearing_document_types = {
