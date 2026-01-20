@@ -111,8 +111,11 @@ class VaEventScraper(Scraper):
                 continue
 
             when = row.xpath("td[1]")[0].text_content()
+            if "Materials" in when:
+                continue
+
             # fix for 01/14/ 2025
-            when = when.replace(" ", "")
+            when = when.replace(" ", "").strip()
             when = dateutil.parser.parse(when).date()
 
             if when != event.start_date.date():

@@ -86,7 +86,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         com = re.sub(r"[\s\-]+Agenda", "", com)
         when = page.xpath('//div[@id="wrapleftcol"]/h1[1]/text()')[0].strip()
 
-        if when == "test, test" or when == ',':
+        if when == "test, test" or when == ",":
             # Ignore test page
             return
 
