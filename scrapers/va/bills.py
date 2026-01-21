@@ -39,7 +39,11 @@ class VaBillScraper(Scraper):
 
     ref_num_map: object = {}
 
-    def scrape(self, session=None):
+    # we can also scrape a "chunk" of all available bills by specifying an integer 1-12 (inclusive)
+    # chunks are available to split up this long, slow scrape into 12 smaller scrapes
+    # os-update ma bills --scrape scrape_chunk_number=1
+    # this trades off comprehensivity for limited scope of failure/faster time to recovery
+    def scrape(self, session=None, scrape_chunk_number=None):
 
         for i in self.jurisdiction.legislative_sessions:
             if i["identifier"] == session:
@@ -68,7 +72,24 @@ class VaBillScraper(Scraper):
             verify=False,
         ).json()
 
-        for row in page["Legislations"]:
+        bill_list = page["Legislations"]
+        # if scrape_chunk_number is specified, we are being asked to scrape
+        # only a specific chunk of the total bills
+        # let's use 1-based counting so we're not doing scrape_chunk_number=0
+        if scrape_chunk_number:
+            # divide up the  into 12 equal-sized lists
+            chunk_size = len(bill_list) // 12 if len(bill_list) >= 12 else 1
+            if len(bill_list) % 12 > 0:
+                chunk_size += 1
+            bill_chunks = [
+                bill_list[i : i + chunk_size]
+                for i in range(0, len(bill_list), chunk_size)
+            ]
+            chunk_number = int(scrape_chunk_number)
+
+            bill_list = bill_chunks[chunk_number - 1]
+
+        for row in bill_list:
             # the short title on the VA site is 'description',
             # LegislationTitle is on top of all the versions
             title = row["Description"]
