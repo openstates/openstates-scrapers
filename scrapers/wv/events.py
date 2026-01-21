@@ -86,7 +86,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         com = re.sub(r"[\s\-]+Agenda", "", com)
         when = page.xpath('//div[@id="wrapleftcol"]/h1[1]/text()')[0].strip()
 
-        if when == "test, test" or when == ',':
+        if when == "test, test" or when == ",":
             # Ignore test page
             return
 
@@ -108,7 +108,6 @@ class WVEventScraper(Scraper, LXMLMixin):
 
         when = when.split("-")[0]
         when = self.clean_date(when)
-        print(when)
         when = dateutil.parser.parse(when)
         when = self._tz.localize(when)
 
