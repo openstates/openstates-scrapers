@@ -78,13 +78,11 @@ class VaBillScraper(Scraper):
         # let's use 1-based counting so we're not doing scrape_chunk_number=0
         if scrape_chunk_number:
             # divide up the  into 12 equal-sized lists
-            chunk_size = (
-                len(bill_list) // 12 if len(bill_list) >= 12 else 1
-            )
+            chunk_size = len(bill_list) // 12 if len(bill_list) >= 12 else 1
             if len(bill_list) % 12 > 0:
                 chunk_size += 1
             bill_chunks = [
-                bill_list[i: i + chunk_size]
+                bill_list[i : i + chunk_size]
                 for i in range(0, len(bill_list), chunk_size)
             ]
             chunk_number = int(scrape_chunk_number)
