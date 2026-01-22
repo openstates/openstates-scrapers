@@ -3,6 +3,7 @@ import json
 import logging
 import dateutil.parser
 from openstates.scrape import Scraper, Bill
+from .actions import Categorizer as ActionCategorizer
 
 TIMEZONE = pytz.timezone("US/Eastern")
 
@@ -14,6 +15,8 @@ class NJBillScraper(Scraper):
         "JR": "joint resolution",
         "CR": "concurrent resolution",
     }
+
+    categorizer = ActionCategorizer()
 
     def process_versions(self, year, bill):
         url = f"https://www.njleg.state.nj.us/api/billDetail/billText/{bill.identifier}/{year}"
@@ -51,10 +54,13 @@ class NJBillScraper(Scraper):
 
             actor = "upper" if "Senate" in action else "lower"
             # TODO: add action classification
+            action_attr = self.categorizer.categorize(action)
+            classification = action_attr["classification"]
             bill.add_action(
                 action,
                 date=TIMEZONE.localize(date),
                 chamber=actor,
+                classification=classification,
             )
 
     def process_sponsors(self, year, bill):

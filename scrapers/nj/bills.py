@@ -26,6 +26,8 @@ class NJBillScraper(Scraper, MDBMixin):
         "CR": "concurrent resolution",
     }
 
+    # PLEASE NOTE: the bills_web scraper uses the actions classifier instead of the below reference
+    # So if you make changes here, you may need to make changes to the actions.py classifier
     _actions = {
         "INT 1RA AWR 2RA": (
             "Introduced, 1st Reading without Reference, 2nd Reading",
