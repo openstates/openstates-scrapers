@@ -1,4 +1,7 @@
-from utils import url_xpath
+import os
+import requests
+
+from datetime import datetime
 from openstates.scrape import State
 from .bills import NYBillScraper
 from .events import NYEventScraper
@@ -83,7 +86,18 @@ class NewYork(State):
     ignored_scraped_sessions = []
 
     def get_session_list(self):
-        return url_xpath(
-            "http://nysenate.gov/search/legislation",
-            '//select[@name="session_year"]/option[@value!="0"]/@value',
-        )
+        current_year = datetime.now().year
+        # Make sure we end on an odd year
+        end_year = current_year if current_year % 2 == 1 else current_year + 1
+
+        listed_sessions = []
+        api_key = os.environ["NEW_YORK_API_KEY"]
+        for start_year in range(2007, end_year + 1, 2):
+            response = requests.get(
+                f"https://legislation.nysenate.gov/api/3/bills/{start_year}?limit=1&offset=1&full=True&sort=&key={api_key}"
+            )
+            if response.status_code == 200:
+                data = response.json()["result"]["items"]
+                if len(data) >= 1:
+                    listed_sessions.append(f"{start_year}")
+        return listed_sessions
