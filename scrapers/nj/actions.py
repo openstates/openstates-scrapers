@@ -14,11 +14,17 @@ _categorizer_rules = (
     Rule(r"^Approved$", "executive-signature"),
     Rule(r"Approved with Line Item Veto", "executive-veto-line-item"),
     Rule(r"(Absolute|Conditional) Veto", "executive-veto"),
-    Rule(r"(Introduced|Received) in the (Assembly|Senate), Referred to", "referral-committee"),
+    Rule(
+        r"(Introduced|Received) in the (Assembly|Senate), Referred to",
+        "referral-committee",
+    ),
     Rule(r"Referred to .+ Committee", "referral-committee"),
     Rule(r"Reported and Referred to", "referral-committee"),
     Rule(r"(Transferred|Recommitted) to", "referral-committee"),
-    Rule(r"Reported out of (Assembly|Senate) Committee with Amendments and Referred to", "referral-committee"),
+    Rule(
+        r"Reported out of (Assembly|Senate) Committee with Amendments and Referred to",
+        "referral-committee",
+    ),
     Rule(r"Withdrawn from Consideration", "withdrawal"),
 )
 
