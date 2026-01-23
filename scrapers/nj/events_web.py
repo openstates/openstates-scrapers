@@ -29,11 +29,13 @@ class NJEventScraper(Scraper):
         event_list = json.loads(json_data)[0]
 
         for item in event_list:
+            if item["Committee_House"] in ["A", "S", "J"]:
+                continue
             name = item["Code_Description"]
             start_date = item["Agenda_Time_Start"]
             end_date = item["Agenda_Time_End"]
             location = item["Agenda_Location"]
-            description = item["AgendaComment"]
+            description = item["AgendaComment"] or ""
             link = item["ScheduleLink"]
 
             status = "tentative"
