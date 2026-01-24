@@ -193,7 +193,10 @@ class SDBillScraper(Scraper, LXMLMixin):
 
             if "referred to" in action_text.lower():
                 atypes.append("referral-committee")
-                if action_text.lower().endswith("referred to"):
+                if (
+                    action_text.lower().endswith("referred to")
+                    and action["AssignedCommittee"]
+                ):
                     full_action.append(action["AssignedCommittee"]["FullName"])
 
             if "Veto override" in action_text:
