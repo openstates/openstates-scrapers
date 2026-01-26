@@ -149,7 +149,7 @@ class TNBillScraper(Scraper):
             if is_special:
                 bill_link_xpath = '//table//a[contains(@href, "BillNumber=")]/@href'
             else:
-                bill_link_xpath = '//h1[text()="Legislation"]/following-sibling::div/div/div/div//a/@href'
+                bill_link_xpath = '//span[@id="content"]//a/@href'
             for bill_link in set(bill_list_page.xpath(bill_link_xpath)):
                 bill = self.scrape_bill(session, bill_link)
                 if bill:
