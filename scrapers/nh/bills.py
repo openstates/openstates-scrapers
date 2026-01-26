@@ -435,13 +435,14 @@ class NHBillScraper(Scraper):
                     date=time.strftime("%Y-%m-%d"),
                     classification=classification,
                 )
-                amendment_id = extract_amendment_id(action)
-                if amendment_id:
-                    self.bills[lsr].add_document_link(
-                        note="amendment %s" % amendment_id,
-                        url=AMENDMENT_URL % amendment_id,
-                        on_duplicate="ignore",
-                    )
+                # todo: how do we build the new urls?
+                # amendment_id = extract_amendment_id(action)
+                # if amendment_id:
+                #     self.bills[lsr].add_document_link(
+                #         note="amendment %s" % amendment_id,
+                #         url=AMENDMENT_URL % amendment_id,
+                #         on_duplicate="ignore",
+                #     )
 
         yield from self.scrape_votes(session)
 
