@@ -225,6 +225,7 @@ class NHBillScraper(Scraper):
                 note=name,
                 url=version_url,
                 media_type="text/html",
+                on_duplicate="ignore",
             )
 
             version_url = (
@@ -234,6 +235,7 @@ class NHBillScraper(Scraper):
                 note=name,
                 url=version_url,
                 media_type="application/pdf",
+                on_duplicate="ignore",
             )
 
     def scrape_chamber(self, chamber, session, scrape_from_web):
@@ -334,6 +336,18 @@ class NHBillScraper(Scraper):
 
                     self.bills_by_id[bill_id] = self.bills[lsr]
 
+                    if lsr in self.versions_by_lsr:
+                        version_id = self.versions_by_lsr[lsr][0]
+                        self.add_source(self.bills[lsr], version_id)
+                        print(bill_id, lsr, self.versions_by_lsr[lsr][0])
+                    else:
+                        print(bill_id, lsr)
+                        self.error(f"Missing version_id for {bill_id}")
+                        guess = str(int(lsr) + 10)
+                        print(
+                            f"Guessing here: https://gc.nh.gov/bill_Status/billinfo.aspx?id={guess}&inflect=2"
+                        )
+
         # load legislators
         self.legislators = {}
         for line in (
@@ -433,12 +447,10 @@ class NHBillScraper(Scraper):
 
         # save all bills
         for bill in self.bills:
-            # bill.add_source(zip_url)
-            self.add_source(self.bills[bill], bill, session)
             yield self.bills[bill]
 
-    def add_source(self, bill, lsr, session):
-        bill_url = f"https://gc.nh.gov/bill_Status/billinfo.aspx?id={lsr}&inflect=2"
+    def add_source(self, bill: Bill, id: str):
+        bill_url = f"https://gc.nh.gov/bill_Status/billinfo.aspx?id={id}&inflect=2"
         bill.add_source(bill_url)
 
     def scrape_version_ids(self):
