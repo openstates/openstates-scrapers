@@ -66,7 +66,7 @@ PREFIXES = {p for prefixes in CHAMBER_TO_PREFIXES.values() for p in prefixes}
 
 # Bill listing is something like "BillIndex.aspx?StartNum=HB0001&EndNum=HB0100"
 # This is meant to always return only one result, the prefix for this bill listing
-BILL_LISTING_PREFIX_RE = re.compile(r"StartNum=([A-Z]{2,3})")
+BILL_LISTING_PREFIX_RE = re.compile(r"startNum=([A-Z]{2,3})")
 
 
 def listing_matches_chamber(listing, chamber):
@@ -102,7 +102,9 @@ class TNBillScraper(Scraper):
         session_details = self.jurisdiction.sessions_by_id[session]
 
         # The index page gives us links to the paginated bill pages
-        index_page = f"http://wapp.capitol.tn.gov/apps/indexes/?year={session}"
+        index_page = (
+            f"http://wapp.capitol.tn.gov/apps/indexes/BillsByIndex/?year={session}"
+        )
         if session_details["classification"] == "special":
             xpath = '//a[contains(text(), "{}")]'.format(
                 session_details["_scraped_name"]
