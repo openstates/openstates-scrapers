@@ -228,15 +228,16 @@ class NHBillScraper(Scraper):
                 on_duplicate="ignore",
             )
 
-            version_url = (
-                f"https://gc.nh.gov/bill_Status/pdf.aspx?id={version_id}&q=billVersion"
-            )
-            self.bills[lsr].add_version_link(
-                note=name,
-                url=version_url,
-                media_type="application/pdf",
-                on_duplicate="ignore",
-            )
+            # TODO: how do we find the correct ID from pdf versions? It's not in the bulk data.
+            # version_url = (
+            #     f"https://gc.nh.gov/bill_Status/pdf.aspx?id={version_id}&q=billVersion"
+            # )
+            # self.bills[lsr].add_version_link(
+            #     note=name,
+            #     url=version_url,
+            #     media_type="application/pdf",
+            #     on_duplicate="ignore",
+            # )
 
     def scrape_chamber(self, chamber, session, scrape_from_web):
         if int(session) < 2017:
@@ -328,24 +329,25 @@ class NHBillScraper(Scraper):
                         classification=bill_type,
                     )
 
+                    self.bills[lsr].extras["LSR"] = lsr
+
                     if lsr in self.versions_by_lsr:
                         self.add_version(lsr, "latest version")
 
-                    if lsr in self.amendments_by_lsr:
-                        self.add_version(lsr, "latest version")
+                    # if lsr in self.amendments_by_lsr:
+                    #     self.add_version(lsr, "latest version from amend")
 
                     self.bills_by_id[bill_id] = self.bills[lsr]
 
                     if lsr in self.versions_by_lsr:
-                        version_id = self.versions_by_lsr[lsr][0]
+                        version_id = self.versions_by_lsr[lsr]
                         self.add_source(self.bills[lsr], version_id)
-                        print(bill_id, lsr, self.versions_by_lsr[lsr][0])
                     else:
-                        print(bill_id, lsr)
-                        self.error(f"Missing version_id for {bill_id}")
-                        guess = str(int(lsr) + 10)
-                        print(
-                            f"Guessing here: https://gc.nh.gov/bill_Status/billinfo.aspx?id={guess}&inflect=2"
+                        self.warning(
+                            f"Missing version_id for {bill_id}, can't build bill page"
+                        )
+                        self.bills[lsr].add_source(
+                            "https://gc.nh.gov/bill_Status/advanced.aspx"
                         )
 
         # load legislators
@@ -399,9 +401,7 @@ class NHBillScraper(Scraper):
                         entity_type="person",
                         primary=True if sp_type == "primary" else False,
                     )
-                    self.bills[lsr].extras = {
-                        "_code": self.legislators[employee]["seat"]
-                    }
+                    self.bills[lsr].extras["_code"] = self.legislators[employee]["seat"]
                 except KeyError:
                     self.warning("Error, can't find person %s" % employee)
 
