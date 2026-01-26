@@ -181,16 +181,16 @@ class Tennessee(State):
         ]
 
         # check to see if regular session index page has a link to a special session
-        current_special_session_links = [
-            x
+        current_special_session_names = [
+            x.strip()
             for x in url_xpath(
-                "https://wapp.capitol.tn.gov/apps/indexes/",
-                '//a[contains(text(), "Extraordinary Session")]/text()',
+                "https://wapp.capitol.tn.gov/apps/Indexes/BillsByIndex",
+                '//select[@id="ssDropdown"]/option/text()',
                 verify=False,
             )
         ]
         current_special_sessions = [
-            x.replace("Bill Index", "").strip() for x in current_special_session_links
+            x.replace("Bill Index", "").strip() for x in current_special_session_names
         ]
 
         return archived_sessions + current_special_sessions
