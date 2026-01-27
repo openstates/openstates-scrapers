@@ -178,6 +178,8 @@ class VaEventScraper(Scraper):
         page = self.get(url, verify=False, headers=headers)
         page = json.loads(page.content)
         for row in page["Schedules"]:
+            if "OwnerName" not in row:
+                continue
             status = "tentative"
             name = row["OwnerName"].strip()
             all_day = False
