@@ -214,6 +214,31 @@ class NHBillScraper(Scraper):
 
         return bills
 
+    def add_version(self, lsr: str, name: str):
+        if lsr in self.versions_by_lsr:
+            version_id = self.versions_by_lsr[lsr]
+            version_url = (
+                f"https://gc.nh.gov/lsr_search/billText.aspx?id={version_id}&type=4"
+            )
+
+            self.bills[lsr].add_version_link(
+                note=name,
+                url=version_url,
+                media_type="text/html",
+                on_duplicate="ignore",
+            )
+
+            # TODO: how do we find the correct ID from pdf versions? It's not in the bulk data.
+            # version_url = (
+            #     f"https://gc.nh.gov/bill_Status/pdf.aspx?id={version_id}&q=billVersion"
+            # )
+            # self.bills[lsr].add_version_link(
+            #     note=name,
+            #     url=version_url,
+            #     media_type="application/pdf",
+            #     on_duplicate="ignore",
+            # )
+
     def scrape_chamber(self, chamber, session, scrape_from_web):
         if int(session) < 2017:
             legacy = NHLegacyBillScraper(self.metadata, self.datadir)
@@ -304,75 +329,26 @@ class NHBillScraper(Scraper):
                         classification=bill_type,
                     )
 
-                    # check to see if resolution, process versions by getting lsr off link on the bill source page
-                    if re.match(r"^.R\d+", bill_id):
-                        # ex: HR 1 is lsr=847 but version id=838
-                        resolution_url = (
-                            "https://gc.nh.gov/bill_status/legacy/bs2016/bill_status.aspx?"
-                            + "lsr={}&sy={}&txtsessionyear={}&txtbillnumber={}".format(
-                                lsr, session, session, bill_id
-                            )
-                        )
-                        resolution_page = self.get(
-                            resolution_url, allow_redirects=True
-                        ).content.decode("utf-8")
-                        page = lxml.html.fromstring(resolution_page)
-                        try:
-                            version_href = page.xpath("//a[2]/@href")[1]
-                        except Exception:
-                            self.logger.warning(f"{bill_id} missing version link")
-                            continue
-                        true_version = re.search(r"id=(\d+)&", version_href)[1]
-                        self.versions_by_lsr[lsr] = true_version
+                    self.bills[lsr].extras["LSR"] = lsr
 
-                    # http://www.gencourt.state.nh.us/bill_status/billText.aspx?sy=2017&id=95&txtFormat=html
-                    # or if 2022 bills
-                    # http://www.gencourt.state.nh.us/bill_status/legacy/bs2016/billText.aspx?id=1410&txtFormat=html&sy=2022
                     if lsr in self.versions_by_lsr:
-                        version_id = self.versions_by_lsr[lsr]
-                        version_url = (
-                            "https://gc.nh.gov/bill_status/legacy/bs2016/"
-                            "billText.aspx?sy={}&id={}&txtFormat=html".format(
-                                session, version_id
-                            )
-                        )
+                        self.add_version(lsr, "latest version")
 
-                        pdf_version_url = (
-                            "https://gc.nh.gov/bill_status/legacy/bs2016/"
-                            "billText.aspx?sy={}&id={}&txtFormat=pdf&v=current".format(
-                                session, version_id
-                            )
-                        )
-                        latest_version_name = "latest version"
-                        self.bills[lsr].add_version_link(
-                            note=latest_version_name,
-                            url=version_url,
-                            media_type="text/html",
-                        )
-                        self.bills[lsr].add_version_link(
-                            note=latest_version_name,
-                            url=pdf_version_url,
-                            media_type="application/pdf",
-                        )
-
-                    # http://gencourt.state.nh.us/bill_status/billtext.aspx?sy=2017&txtFormat=amend&id=2017-0464S
-                    if lsr in self.amendments_by_lsr:
-                        amendment_id = self.amendments_by_lsr[lsr]
-                        amendment_url = (
-                            "https://gc.nh.gov/bill_status/legacy/bs2016/"
-                            "billText.aspx?sy={}&id={}&txtFormat=amend".format(
-                                session, amendment_id
-                            )
-                        )
-                        amendment_name = "Amendment #{}".format(amendment_id)
-
-                        self.bills[lsr].add_version_link(
-                            note=amendment_name,
-                            url=amendment_url,
-                            media_type="application/pdf",
-                        )
+                    # if lsr in self.amendments_by_lsr:
+                    #     self.add_version(lsr, "latest version from amend")
 
                     self.bills_by_id[bill_id] = self.bills[lsr]
+
+                    if lsr in self.versions_by_lsr:
+                        version_id = self.versions_by_lsr[lsr]
+                        self.add_source(self.bills[lsr], version_id)
+                    else:
+                        self.warning(
+                            f"Missing version_id for {bill_id}, can't build bill page"
+                        )
+                        self.bills[lsr].add_source(
+                            "https://gc.nh.gov/bill_Status/advanced.aspx"
+                        )
 
         # load legislators
         self.legislators = {}
@@ -425,9 +401,7 @@ class NHBillScraper(Scraper):
                         entity_type="person",
                         primary=True if sp_type == "primary" else False,
                     )
-                    self.bills[lsr].extras = {
-                        "_code": self.legislators[employee]["seat"]
-                    }
+                    self.bills[lsr].extras["_code"] = self.legislators[employee]["seat"]
                 except KeyError:
                     self.warning("Error, can't find person %s" % employee)
 
@@ -461,33 +435,23 @@ class NHBillScraper(Scraper):
                     date=time.strftime("%Y-%m-%d"),
                     classification=classification,
                 )
-                amendment_id = extract_amendment_id(action)
-                if amendment_id:
-                    self.bills[lsr].add_document_link(
-                        note="amendment %s" % amendment_id,
-                        url=AMENDMENT_URL % amendment_id,
-                        on_duplicate="ignore",
-                    )
+                # todo: how do we build the new urls?
+                # amendment_id = extract_amendment_id(action)
+                # if amendment_id:
+                #     self.bills[lsr].add_document_link(
+                #         note="amendment %s" % amendment_id,
+                #         url=AMENDMENT_URL % amendment_id,
+                #         on_duplicate="ignore",
+                #     )
 
         yield from self.scrape_votes(session)
 
         # save all bills
         for bill in self.bills:
-            # bill.add_source(zip_url)
-            self.add_source(self.bills[bill], bill, session)
             yield self.bills[bill]
 
-    def add_source(self, bill, lsr, session):
-        bill_url = (
-            "https://gc.nh.gov/bill_status/legacy/bs2016/bill_docket.aspx?"
-            + "lsr={}&sy={}&sortoption=&txtsessionyear={}".format(lsr, session, session)
-        )
-        bill.add_source(bill_url)
-
-        bill_url = (
-            "https://gc.nh.gov/bill_status/legacy/bs2016/bill_status.aspx?"
-            + "lsr={}&sy={}&sortoption=&txtsessionyear={}".format(lsr, session, session)
-        )
+    def add_source(self, bill: Bill, id: str):
+        bill_url = f"https://gc.nh.gov/bill_Status/billinfo.aspx?id={id}&inflect=2"
         bill.add_source(bill_url)
 
     def scrape_version_ids(self):
