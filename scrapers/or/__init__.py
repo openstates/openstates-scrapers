@@ -222,6 +222,14 @@ class Oregon(State):
             "classification": "special",
             "start_date": "2025-08-29",
             "end_date": "2025-09-05",  # TODO: approximate
+            "active": False,
+        },
+        {
+            "_scraped_name": "2026 Regular Session",
+            "identifier": "2026R1",
+            "name": "2026 Regular Session",
+            "start_date": "2026-02-02",
+            "end_date": "2026-03-09",
             "active": True,
         },
     ]
