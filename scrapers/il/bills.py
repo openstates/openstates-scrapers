@@ -302,7 +302,7 @@ class IlBillScraper(Scraper):
         doc.make_links_absolute(url)
 
         for bill_url in doc.xpath(
-            '//div[contains(@id,"div_")]//table//td[1]/a[contains(@href, "DocNum=")]/@href'
+            '//*[@id="copyable-content"]//table/tbody/tr/td[1]/a/@href'
         ):
             yield bill_url
 
