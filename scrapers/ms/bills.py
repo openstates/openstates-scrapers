@@ -52,10 +52,11 @@ class MSBillScraper(Scraper):
 
     def scrape_bills(self, chamber_to_scrape, session):
         url = (
-            "http://billstatus.ls.state.ms.us/%s/pdf/all_measures/allmsrs.xml" % session
+            "https://billstatus.ls.state.ms.us/%s/pdf/all_measures/allmsrs.xml"
+            % session
         )
 
-        bill_dir_page = self.get(url)
+        bill_dir_page = self.get(url, verify=False)
         root = lxml.etree.fromstring(bill_dir_page.content)
         for mr in root.xpath("//LASTACTION/MSRGROUP"):
             bill_id = mr.xpath("string(MEASURE)").replace(" ", "")
@@ -77,13 +78,13 @@ class MSBillScraper(Scraper):
 
             link = mr.xpath("string(ACTIONLINK)").replace("..", "")
             main_doc = mr.xpath("string(MEASURELINK)").replace("../../../", "")
-            main_doc_url = "http://billstatus.ls.state.ms.us/%s" % main_doc
-            bill_details_url = "http://billstatus.ls.state.ms.us/%s/pdf%s" % (
+            main_doc_url = "https://billstatus.ls.state.ms.us/%s" % main_doc
+            bill_details_url = "https://billstatus.ls.state.ms.us/%s/pdf%s" % (
                 session,
                 link,
             )
             try:
-                details_page = self.get(bill_details_url)
+                details_page = self.get(bill_details_url, verify=False)
             except scrapelib.HTTPError:
                 self.warning("Bill page not loading for {}; skipping".format(bill_id))
                 continue
@@ -374,7 +375,7 @@ class MSBillScraper(Scraper):
 
     def scrape_votes(self, url, motion, date, chamber, bill):
         try:
-            vote_pdf, resp = self.urlretrieve(url)
+            vote_pdf, resp = self.urlretrieve(url, verify=False)
         except scrapelib.HTTPError:
             self.warning("Can't find vote file {}, skipping".format(url))
             return
