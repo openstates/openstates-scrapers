@@ -285,6 +285,7 @@ class WestVirginia(State):
     ]
     ignored_scraped_sessions = [
         "2029",
+        "2027",
         *(str(each) for each in range(1930, 2011)),
     ]
 
