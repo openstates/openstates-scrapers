@@ -244,11 +244,11 @@ class CAEventWebScraper(Scraper, LXMLMixin):
                 hearing_time = hearing_time.lower().split(" to ")[0]
             if "am" in hearing_time or "pm" in hearing_time:
                 when = f"{hearing_date} {hearing_time}"
-                when = dateutil.parser.parse(when)
+                when = dateutil.parser.parse(when, fuzzy=True)
                 when = self._tz.localize(when)
                 all_day = False
             else:
-                when = dateutil.parser.parse(hearing_date)
+                when = dateutil.parser.parse(hearing_date, fuzzy=True)
                 when = self._tz.localize(when)
                 all_day = True
 
