@@ -75,6 +75,35 @@ class NHBillScraper(Scraper):
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session, scrape_from_web)
 
+    def scrape_versions_from_web_2026(self, bill_with_sources):
+        if len(bill_with_sources.sources) == 0:
+            self.warning(
+                f"Bill {bill_with_sources} has no sources, cannot scrape versions"
+            )
+            return
+        for source in bill_with_sources.sources:
+            source_url = source["url"]
+        bill_response = self.get(source_url)
+        bill_page = lxml.html.fromstring(bill_response.content)
+
+        version_selector_options = bill_page.xpath(
+            "//select[@name='ctl00$pageBody$ddlBillVersions']/option"
+        )
+        for option in version_selector_options:
+            version_id_string = option.xpath("./@value")[0]
+            version_name_string = option.text_content()
+            try:
+                int(version_id_string)
+                # Parses as an integer, so this is a real ID and not a placeholder string like "Select version..."
+                bill_with_sources.add_version_link(
+                    note=version_name_string,
+                    url=f"https://gc.nh.gov/bill_Status/pdf.aspx?id={version_id_string}&q=billVersion",
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
+            except ValueError:
+                continue
+
     def scrape_from_web(self, session):
         bills = {}
 
@@ -214,6 +243,9 @@ class NHBillScraper(Scraper):
 
         return bills
 
+    # Deprecating this as of 2026-02-04 because a bunch of these links go to an error
+    # "error: Index 0 is either negative or above rows count."
+    # Instead PDF links are added using logic at the end of scrape_chamber
     def add_version(self, lsr: str, name: str):
         if lsr in self.versions_by_lsr:
             version_id = self.versions_by_lsr[lsr]
@@ -331,9 +363,6 @@ class NHBillScraper(Scraper):
 
                     self.bills[lsr].extras["LSR"] = lsr
 
-                    if lsr in self.versions_by_lsr:
-                        self.add_version(lsr, "latest version")
-
                     # if lsr in self.amendments_by_lsr:
                     #     self.add_version(lsr, "latest version from amend")
 
@@ -342,6 +371,10 @@ class NHBillScraper(Scraper):
                     if lsr in self.versions_by_lsr:
                         version_id = self.versions_by_lsr[lsr]
                         self.add_source(self.bills[lsr], version_id)
+
+                        # since we have source, then we can scrape versions from web
+                        self.scrape_versions_from_web_2026(self.bills[lsr])
+
                     else:
                         self.warning(
                             f"Missing version_id for {bill_id}, can't build bill page"
