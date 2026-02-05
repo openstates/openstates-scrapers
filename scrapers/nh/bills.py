@@ -77,14 +77,18 @@ class NHBillScraper(Scraper):
 
     def scrape_versions_from_web_2026(self, bill_with_sources):
         if len(bill_with_sources.sources) == 0:
-            self.warning(f"Bill {bill_with_sources} has no sources, cannot scrape versions")
+            self.warning(
+                f"Bill {bill_with_sources} has no sources, cannot scrape versions"
+            )
             return
         for source in bill_with_sources.sources:
             source_url = source["url"]
         bill_response = self.get(source_url)
         bill_page = lxml.html.fromstring(bill_response.content)
 
-        version_selector_options = bill_page.xpath("//select[@name='ctl00$pageBody$ddlBillVersions']/option")
+        version_selector_options = bill_page.xpath(
+            "//select[@name='ctl00$pageBody$ddlBillVersions']/option"
+        )
         for option in version_selector_options:
             version_id_string = option.xpath("./@value")[0]
             version_name_string = option.text_content()
@@ -92,14 +96,13 @@ class NHBillScraper(Scraper):
                 int(version_id_string)
                 # Parses as an integer, so this is a real ID and not a placeholder string like "Select version..."
                 bill_with_sources.add_version_link(
-                    note = version_name_string,
-                    url = f"https://gc.nh.gov/bill_Status/pdf.aspx?id={version_id_string}&q=billVersion",
-                    media_type = "application/pdf",
+                    note=version_name_string,
+                    url=f"https://gc.nh.gov/bill_Status/pdf.aspx?id={version_id_string}&q=billVersion",
+                    media_type="application/pdf",
                     on_duplicate="ignore",
                 )
             except ValueError:
                 continue
-
 
     def scrape_from_web(self, session):
         bills = {}
