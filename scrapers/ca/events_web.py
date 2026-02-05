@@ -242,13 +242,16 @@ class CAEventWebScraper(Scraper, LXMLMixin):
             if " to " in hearing_time.lower():
                 # remove the " to 12 noon" in something like "9:30am to 12 noon"
                 hearing_time = hearing_time.lower().split(" to ")[0]
+            if " or upon " in hearing_time.lower():
+                # remove the " or upon adjournment of budget subcommittee no. 3" suffix
+                hearing_time = hearing_time.lower().split(" or upon ")[0]
             if "am" in hearing_time or "pm" in hearing_time:
                 when = f"{hearing_date} {hearing_time}"
-                when = dateutil.parser.parse(when)
+                when = dateutil.parser.parse(when, fuzzy=True)
                 when = self._tz.localize(when)
                 all_day = False
             else:
-                when = dateutil.parser.parse(hearing_date)
+                when = dateutil.parser.parse(hearing_date, fuzzy=True)
                 when = self._tz.localize(when)
                 all_day = True
 
