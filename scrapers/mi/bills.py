@@ -53,6 +53,21 @@ class MIBillScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(search_url)
 
+        # UNCOMMENT TO TEST SINGLE BILL
+        # Test one specific bill in scrape only
+        # bill id string's numerals must be 0-padded to 4 digits
+        # bill_id_to_test = "HB 5150"
+        # for link in [
+        #     link
+        #     for link in page.xpath(
+        #         "//div[contains(@class,'tableScrollWrapper')]/table[1]/tbody/tr/td[1]/a"
+        #     )
+        #     if bill_id_to_test in link.xpath("text()")[0].split(" of ")[0]
+        # ]:
+        #     bill_url = self.make_bill_url(link.xpath("@href")[0])
+        #     bill_id = link.xpath("text()")[0].split(" of ")[0]
+        #     yield from self.scrape_bill(session, bill_id, bill_url)
+
         for link in page.xpath(
             "//div[contains(@class,'tableScrollWrapper')]/table[1]/tbody/tr/td[1]/a"
         ):
@@ -118,10 +133,20 @@ class MIBillScraper(Scraper):
                 version_url = row.xpath("td[3]/a/@href")[0]
                 sub = re.search(r"\(.*?\)", action)
 
+                version_name = None
                 if sub:
                     version_name = f"Substitute {sub.group(0)}"
                 elif "committee of the whole" in action.lower():
                     version_name = "Substitute, reported by Committee of the Whole"
+                elif "committee on" in action.lower():
+                    match = re.search(
+                        r"committee\s+on\s+(.+)\s+with", action, re.IGNORECASE
+                    )
+                    if match and match.group(1):
+                        version_name = f"Substitute {match.group(1)}"
+
+                if not version_name:
+                    version_name = "Substitute"
 
                 if version_name in seen_subs:
                     seen_subs[version_name] += 1
