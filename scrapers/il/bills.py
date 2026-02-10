@@ -301,9 +301,7 @@ class IlBillScraper(Scraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        for bill_url in doc.xpath(
-            '//*[@id="copyable-content"]//table/tbody/tr/td[1]/a/@href'
-        ):
+        for bill_url in doc.xpath("//table/tbody/tr/td[1]/a/@href"):
             yield bill_url
 
     def scrape(self, session=None):
@@ -317,13 +315,26 @@ class IlBillScraper(Scraper):
         if session in ["90th", "91st", "92nd"]:
             yield from self.scrape_archive_bills(session)
         else:
+            urls = {}
+            # Identify all bill URLs first for easier debugging
             for chamber in ["lower", "upper"]:
                 for doc_type in [
                     chamber_slug(chamber) + doc_type for doc_type in DOC_TYPES
                 ]:
-                    for bill_url in self.get_bill_urls(chamber, session_id, doc_type):
+                    if chamber not in urls:
+                        urls[chamber] = {doc_type: []}
+                    if doc_type not in urls[chamber]:
+                        urls[chamber][doc_type] = []
+
+                    for url in self.get_bill_urls(chamber, session_id, doc_type):
+                        urls[chamber][doc_type].append(url)
+
+            # Scrape all individual bills from URLs
+            for chamber in urls.keys():
+                for chamber_doc_type in urls[chamber].keys():
+                    for bill_url in urls[chamber][chamber_doc_type]:
                         yield from self.scrape_bill(
-                            chamber, session_id, doc_type, bill_url
+                            chamber, session_id, chamber_doc_type, bill_url
                         )
 
             # special non-chamber cases
