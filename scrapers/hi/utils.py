@@ -4,6 +4,7 @@ from scrapelib import HTTPError
 HI_URL_BASE = "https://data.capitol.hawaii.gov"
 SHORT_CODES = f"{HI_URL_BASE}/legislature/committees.aspx?chamber=all"
 
+
 def get_short_codes(scraper):
     scraper.short_ids = {
         "STF": {
@@ -169,7 +170,7 @@ def get_short_codes(scraper):
             "WLA": {
                 "chamber": "upper",
                 "name": "Senate Committee on Water, Land, Culture and the Arts",
-            }
+            },
         }
 
 
