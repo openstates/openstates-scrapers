@@ -366,7 +366,6 @@ class GUBillScraper(Scraper):
         return matches[0]
 
     def extract_title(self, content: str) -> str:
-        print(content)
         # if the title isn't linked, the markup will be a mess of random elements.
         # try to pull it via regex
         matches = re.findall(r"(AN ACT.*)Sponsor:", content)
