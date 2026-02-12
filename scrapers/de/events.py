@@ -12,6 +12,15 @@ class DEEventScraper(Scraper, LXMLMixin):
 
     _tz = pytz.timezone("US/Eastern")
 
+    # Starting Feb 2026 we get a 403 if we don't pass some headers along
+    # with POST requests
+    post_headers = {
+        "User-Agent": "curl/8.5.0",
+        "Accept": "*/*",
+        "Content-Length": "0",
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
+
     def scrape_meeting_notice(self, item, url):
         # Since Event Name is not provided for all mettings.
         if "Joint" in str(item["CommitteeName"]):
@@ -42,7 +51,9 @@ class DEEventScraper(Scraper, LXMLMixin):
 
         page_data = []
         try:
-            page_data = self.post(page_url, verify=False).json()["Data"]
+            page_data = self.post(
+                page_url, verify=False, headers=self.post_headers
+            ).json()["Data"]
         except json.decoder.JSONDecodeError:
             # No agenda items
             self.info(f"POST returned nothing on {page_url}")
@@ -66,7 +77,7 @@ class DEEventScraper(Scraper, LXMLMixin):
 
     def scrape(self):
         url = "https://legis.delaware.gov/json/CommitteeMeetings/GetUpcomingCommitteeMeetings"
-        resp = self.post(url, verify=False)
+        resp = self.post(url, verify=False, headers=self.post_headers)
 
         if resp.text == "":
             raise EmptyScrape
