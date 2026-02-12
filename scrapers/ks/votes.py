@@ -86,6 +86,7 @@ class KSVoteScraper(Scraper):
             self.warning(
                 f"cloudflare bad gateway error, probably transient, skipping {bill} at {link}"
             )
+            return
 
         member_doc = lxml.html.fromstring(text)
         motion = member_doc.xpath("//div[@id='main_content']/h4/text()")
