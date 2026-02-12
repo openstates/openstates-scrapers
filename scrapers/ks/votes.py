@@ -65,7 +65,8 @@ class KSVoteScraper(Scraper):
         # sometimes not
         try:
             self.info("Get {}".format(link))
-            text = requests.get(link).text
+            response = requests.get(link)
+            text = response.text
         except requests.exceptions.HTTPError as err:
             self.warning("{} fetching vote {}, skipping".format(err, link))
             return
@@ -80,6 +81,12 @@ class KSVoteScraper(Scraper):
         if "Page Not Found" in text or "Page Unavailable" in text:
             self.warning("missing vote, skipping")
             return
+
+        if "502: Bad gateway" in text:
+            self.warning(
+                f"cloudflare bad gateway error, probably transient, skipping {bill} at {link}"
+            )
+
         member_doc = lxml.html.fromstring(text)
         motion = member_doc.xpath("//div[@id='main_content']/h4/text()")
         chamber_date_line = "".join(
