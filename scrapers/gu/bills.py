@@ -292,10 +292,15 @@ class GUBillScraper(Scraper):
         yield bill_obj
 
     def scrape(self, session):
-        yield from self.scrape_type(
-            session, "https://guamlegislature.gov/bills/", "bill"
-        )
-        # yield from self.scrape_type(session, 'https://guamlegislature.gov/resolutions/', 'resolution')
+        url = "https://guamlegislature.gov/bills/"
+        page = self.get(url).content
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+
+        for link in page.xpath(
+            "//a[contains(@href, 'https://guamlegislature.gov/bills-page')]/@href"
+        ):
+            yield from self.scrape_type(session, link, "bill")
 
     def scrape_type(self, session, url, billtype):
         page = self.get(url).content
@@ -312,6 +317,8 @@ class GUBillScraper(Scraper):
         bill_id = f"{self.bill_prefixes[billtype]} {bill_id}"
 
         title = body.xpath(".//a")[1].text_content()
+        # sometimes they put AN  ACT or AN   ACT
+        title = re.sub(r"AN\s+ACT", "AN ACT", title)
         if "an act" not in title.lower():
             self.info(f"Unclear markup for {bill_id}, extracting title by regex.")
             # if the title isn't in the initial link, the markup seems to be all over the place.
