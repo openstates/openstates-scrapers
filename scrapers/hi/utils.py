@@ -88,7 +88,7 @@ def get_short_codes(scraper):
                 "name": "House Committee on Finance",
             },
             "GVO": {
-                "chamebr": "upper",
+                "chamber": "upper",
                 "name": "Senate Committee on Government Operations",
             },
             "HED": {
