@@ -18,12 +18,12 @@ class VoteTotalMismatch(Exception):
 
 class MAVoteScraper(Scraper):
     def scrape(self, session=None):
-        # yield from HouseJournalDirectory(session=session).do_scrape()
+        yield from HouseJournalDirectory(session=session).do_scrape()
         yield from SenateJournalDirectory(session=session).do_scrape()
 
 
 class HouseJournalDirectory(HtmlPage):
-    source = URL("http://malegislature.gov/Journal/House/", verify=False)
+    source = URL("https://malegislature.gov/Journal/House/", verify=False)
 
     def __init__(self, source=None, session=None):
         super().__init__(source=source or self.source)
@@ -368,7 +368,12 @@ class HouseVoteRecordParser:
         lines = vote_text.split("\n")
         self.raw = vote_text
         for line in lines:
-            self.read_line(line)
+            if re.search(r"^[XP]\s", line):
+                sub_lines = line.split(" ")
+                self.read_line(sub_lines[0])
+                self.read_line(sub_lines[1])
+            else:
+                self.read_line(line)
 
     def read_line(self, line):
         line = line.strip()
@@ -401,7 +406,6 @@ class HouseVoteRecordParser:
 
         elif (match := self.total_nv_re.match(line)) is not None:
             self.total_nv = int(match.group(1))
-
         # line is vote type
         # Y is sometimes read as P by the pdf reader.
         elif line in ["Y", "N", "X", "P"]:
