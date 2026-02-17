@@ -18,10 +18,12 @@ def actions_from_table(bill, actions_table):
 
     for ar in action_rows[1:]:
         tds = ar.xpath("td")
+
         action_taken = tds[0].text
+
         # sometimes there's an empty action ex:
         # https://wapp.capitol.tn.gov/apps/BillInfo/Default.aspx?BillNumber=HB0243&GA=113
-        if action_taken.strip() == "":
+        if action_taken is None or action_taken.strip() == "":
             continue
         strptime = datetime.datetime.strptime
         action_date = strptime(tds[1].text.strip(), "%m/%d/%Y").date()
@@ -165,7 +167,8 @@ class TNBillScraper(Scraper):
         except IndexError:
             self.logger.warning("Something is wrong with bill page, skipping.")
             return
-        secondary_bill_id = page.xpath('//span[@id="lblCompNumber"]/a[1]')
+        # secondary_bill_id = page.cssselect("div#udpBillInfo h3 a")
+        secondary_bill_id = False
 
         # checking if there is a matching bill
         if secondary_bill_id:
@@ -213,9 +216,9 @@ class TNBillScraper(Scraper):
         if secondary_bill_id:
             bill.add_identifier(secondary_bill_id)
 
-        if page.xpath('//span[@id="lblCompNumber"]/a'):
+        if page.cssselect("div#udpBillInfo h3 a"):
             companion_id = (
-                page.xpath('//span[@id="lblCompNumber"]/a')[0].text_content().strip()
+                page.cssselect("div#udpBillInfo h3 a")[0].text_content().strip()
             )
             bill.add_related_bill(
                 identifier=companion_id,
@@ -248,13 +251,13 @@ class TNBillScraper(Scraper):
         summary = page.xpath('//a[contains(@href, "BillSummaryArchive")]')
         if summary:
             bill.add_document_link("Summary", summary[0].get("href"))
-        fiscal = page.xpath('//span[@id="lblFiscalNote"]//a')
+        fiscal = page.xpath('//li[@id="tabpanel-fiscal-note"]//a')
         if fiscal:
             bill.add_document_link("Fiscal Note", fiscal[0].get("href"))
         # alternate fiscal note markup
-        alt_fiscal = page.xpath('//span[@id="lblFiscalNoteLink"]//a')
-        if alt_fiscal:
-            bill.add_document_link("Fiscal Note", alt_fiscal[0].get("href"))
+        # alt_fiscal = page.xpath('//span[@id="lblFiscalNoteLink"]//a')
+        # if alt_fiscal:
+        #     bill.add_document_link("Fiscal Note", alt_fiscal[0].get("href"))
         amendments = page.xpath('//a[contains(@href, "/Amend/")]')
         for amendment in amendments:
             amd_url = amendment.get("href").replace("http:", "https:")
