@@ -18,12 +18,16 @@ class VoteTotalMismatch(Exception):
 
 class MAVoteScraper(Scraper):
     def scrape(self, session=None):
-        # yield from HouseJournalDirectory().do_scrape()
-        yield from SenateJournalDirectory().do_scrape()
+        # yield from HouseJournalDirectory(session=session).do_scrape()
+        yield from SenateJournalDirectory(session=session).do_scrape()
 
 
 class HouseJournalDirectory(HtmlPage):
-    source = URL("http://malegislature.gov/Journal/House/192", verify=False)
+    source = URL("http://malegislature.gov/Journal/House/", verify=False)
+
+    def __init__(self, source=None, session=None):
+        super().__init__(source=source or self.source)
+        self.session = session
 
     def process_page(self):
         # find all links to a file called RollCalls
@@ -32,7 +36,9 @@ class HouseJournalDirectory(HtmlPage):
             x for x in XPath("//a/@href").match(self.root) if x.endswith("RollCalls")
         ]
         for rc in roll_calls:
-            vote_events = HouseRollCall(source=URL(rc, verify=False)).do_scrape()
+            vote_events = HouseRollCall(
+                source=URL(rc, verify=False), session=self.session
+            ).do_scrape()
             for vote_event in vote_events:
                 vote_event.add_source(self.source.url, note="House journal listing")
                 yield vote_event
@@ -42,12 +48,18 @@ class SenateJournalDirectory(HtmlListPage):
     source = URL("https://malegislature.gov/Journal/Senate", verify=False)
     votes_list = []
 
+    def __init__(self, source=None, session=None):
+        super().__init__(source=source or self.source)
+        self.session = session
+
     def process_page(self):
         # Find all link to each month
         month_links = XPath("//a[@aria-controls='journalList']/@href").match(self.root)
         for month_link in month_links:
             vote_events = SenateJournalMonth(
-                source=URL(month_link, verify=False), votes_list=self.votes_list
+                source=URL(month_link, verify=False),
+                votes_list=self.votes_list,
+                session=self.session,
             ).do_scrape()
             for vote_event in vote_events:
                 # vote_event.add_source(self.source.url, note="Senate jouenal listing")
@@ -55,9 +67,10 @@ class SenateJournalDirectory(HtmlListPage):
 
 
 class SenateJournalMonth(HtmlListPage):
-    def __init__(self, source, votes_list):
+    def __init__(self, source, votes_list, session=None):
         super().__init__(source=source)
         self.votes_list = votes_list
+        self.session = session
 
     def process_page(self):
         journal_pdf_links = XPath("//tr/td/a/@href").match(self.root)
@@ -67,7 +80,9 @@ class SenateJournalMonth(HtmlListPage):
             #     "https://malegislature.gov/Journal/Senate/193/768/sj03232023_0100PM.pdf",
             # ):
             yield SenateJournal(
-                source=URL(journal_pdf_link, verify=False), votes_list=self.votes_list
+                source=URL(journal_pdf_link, verify=False),
+                votes_list=self.votes_list,
+                session=self.session,
             )
 
 
@@ -112,9 +127,10 @@ class SenateJournal(PdfPage):
     bill_id = None
     vote_date = None
 
-    def __init__(self, source, votes_list):
+    def __init__(self, source, votes_list, session=None):
         super().__init__(source=source)
         self.votes_list = votes_list
+        self.session = session
 
     def process_date(self):
         # Find the match
@@ -295,7 +311,7 @@ class SenateJournal(PdfPage):
 
         vote_event = VoteEvent(
             chamber="upper",
-            legislative_session="193rd",
+            legislative_session=self.session or "193rd",
             start_date=self.vote_date,
             motion_text=normalized_motion,
             bill=bill_id,
@@ -337,7 +353,7 @@ class HouseVoteRecordParser:
     bill_re = re.compile(r"(h|s)\.? ?(\d+) ?(.*)", re.IGNORECASE)
     number_re = re.compile(r"no\.? ?(\d+)", re.IGNORECASE)
 
-    def __init__(self, vote_text):
+    def __init__(self, vote_text, session=None):
         self.votes = []
         self.names = []
         self.time = None
@@ -348,6 +364,7 @@ class HouseVoteRecordParser:
         self.vote_number = None
         self.motion = None
         self.motion_parts = []
+        self.session = session
         lines = vote_text.split("\n")
         self.raw = vote_text
         for line in lines:
@@ -433,7 +450,7 @@ class HouseVoteRecordParser:
 
         vote = VoteEvent(
             chamber="lower",
-            legislative_session="193rd",
+            legislative_session=self.session or "193rd",
             start_date=self.time,
             motion_text=self.motion,
             bill=bill_id,
@@ -458,6 +475,10 @@ class HouseVoteRecordParser:
 
 
 class HouseRollCall(PdfPage):
+    def __init__(self, source, session=None):
+        super().__init__(source=source)
+        self.session = session
+
     def process_page(self):
         # Each bill vote starts with the same text, so use it as a separator.
         separator = "MASSACHUSETTS HOUSE OF REPRESENTATIVES"
@@ -466,7 +487,7 @@ class HouseRollCall(PdfPage):
         vote_text = self.text.split(separator)[1:]
 
         for vote in vote_text:
-            vote_parser = HouseVoteRecordParser(vote)
+            vote_parser = HouseVoteRecordParser(vote, session=self.session)
             if (warning := vote_parser.get_warning()) is not None:
                 self.logger.warn(warning)
             else:
