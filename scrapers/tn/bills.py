@@ -8,7 +8,7 @@ from .actions import categorize_action
 
 def actions_from_table(bill, actions_table):
     """"""
-    action_rows = actions_table.xpath("tr")
+    action_rows = actions_table.cssselect("tr")
 
     # first row will say "Actions Taken on S|H(B|R|CR)..."
     if "Actions For S" in action_rows[0].text_content():
@@ -161,7 +161,7 @@ class TNBillScraper(Scraper):
         page.make_links_absolute(bill_url)
 
         try:
-            bill_id = page.xpath('//span[@id="lblBillNumber"]/a[1]')[0].text
+            bill_id = page.cssselect("div#udpBillInfo h2 a")[1].text
         except IndexError:
             self.logger.warning("Something is wrong with bill page, skipping.")
             return
@@ -188,7 +188,7 @@ class TNBillScraper(Scraper):
         primary_chamber = "lower" if "H" in bill_id else "upper"
         # secondary_chamber = 'upper' if primary_chamber == 'lower' else 'lower'
 
-        title = page.xpath("//span[@id='lblAbstract']")[0].text
+        title = page.cssselect("div.abstract-container")[0].text.strip()
         if title is None:
             title = "[No title given by state]"
             subjects = []
@@ -226,11 +226,13 @@ class TNBillScraper(Scraper):
         bill.add_source(bill_url)
 
         # Primary Sponsor
-        sponsor = (
-            page.xpath("//span[@id='lblBillPrimeSponsor']")[0]
-            .text_content()
-            .split("by")[-1]
-        )
+        # sponsor = (
+        #     page.xpath("//span[@id='lblBillPrimeSponsor']")[0]
+        #     .text_content()
+        #     .split("by")[-1]
+        # )
+
+        sponsor = page.cssselect("div#udpBillInfo h2 small a")[0].text_content()
         sponsor = sponsor.replace("*", "").strip()
         if sponsor:
             bill.add_sponsorship(
@@ -238,7 +240,7 @@ class TNBillScraper(Scraper):
             )
 
         # bill text
-        btext = page.xpath("//span[@id='lblBillNumber']/a")[0]
+        btext = page.cssselect("div#udpBillInfo h2 a")[1]
         url = btext.get("href").replace("http:", "https:")
         bill.add_version_link("Current Version", url, media_type="application/pdf")
 
@@ -269,7 +271,7 @@ class TNBillScraper(Scraper):
             )
 
         # actions
-        atable = page.xpath("//table[@id='gvBillActionHistory']")[0]
+        atable = page.cssselect("table.action-table")[0]
         actions_from_table(bill, atable)
 
         # votes
@@ -279,7 +281,7 @@ class TNBillScraper(Scraper):
         yield bill
 
     def scrape_vote_events(self, bill, page, link):
-        chamber_labels = (("lower", "lblHouseVoteData"), ("upper", "lblSenateVoteData"))
+        chamber_labels = (("lower", "pnlHouseVotes"), ("upper", "pnlSenateVotes"))
         for chamber, element_id in chamber_labels:
             raw_vote_data = page.xpath(f"//*[@id='{element_id}']")[0].text_content()
             votes = self.scrape_votes_for_chamber(chamber, raw_vote_data, bill, link)
