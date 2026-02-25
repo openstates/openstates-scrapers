@@ -114,6 +114,8 @@ class PABillScraper(Scraper):
             page,
         )
 
+        self.parse_subjects(bill, session, special)
+
         # only fetch votes if votes were seen in history
         yield from self.parse_votes(bill, page)
 
@@ -124,6 +126,71 @@ class PABillScraper(Scraper):
                 sources.remove(source)
 
         yield bill
+
+    def parse_subjects(self, bill, session, special):
+        """Fetch subject/topic classifications for a bill from the topics CFC."""
+        match = re.match(r"([HS])([BR])\s*(\d+)", bill.identifier)
+        if not match:
+            return
+
+        params = urllib.parse.urlencode(
+            {
+                "method": "GetTopicsByBill",
+                "returnformat": "json",
+                "SessYr": utils.start_year(session),
+                "SessInd": special,
+                "BillBody": match.group(1),
+                "BillType": match.group(2),
+                "BillNbr": match.group(3),
+            }
+        )
+        url = f"{utils.base_url}/resources/cfc/bills/topics.cfc?{params}"
+
+        try:
+            resp = self.get(url, verify=False)
+        except Exception:
+            self.warning(f"Could not fetch subjects for {bill.identifier}")
+            return
+
+        if not resp.text.strip():
+            return
+
+        # Try parsing as JSON (ColdFusion supports returnformat=json)
+        try:
+            data = resp.json()
+        except ValueError:
+            # Endpoint returned HTML fragment instead of JSON; parse link text
+            try:
+                page = lxml.html.fromstring(resp.text)
+                for link in page.xpath("//a"):
+                    name = link.text_content().strip()
+                    if name:
+                        bill.add_subject(name)
+            except Exception:
+                self.warning(f"Could not parse subjects for {bill.identifier}")
+            return
+
+        # Handle ColdFusion query format: {"COLUMNS": [...], "DATA": [[...]]}
+        if isinstance(data, dict) and "DATA" in data:
+            cols = [c.upper() for c in data.get("COLUMNS", [])]
+            idx = next(
+                (cols.index(c) for c in ("TOPICNAME", "TOPIC", "NAME") if c in cols),
+                0,
+            )
+            for row in data["DATA"]:
+                name = str(row[idx]).strip()
+                if name:
+                    bill.add_subject(name)
+        # Handle array of objects format
+        elif isinstance(data, list):
+            for item in data:
+                if isinstance(item, dict):
+                    for key in ("TopicName", "TOPICNAME", "Topic", "Name"):
+                        if key in item and item[key]:
+                            bill.add_subject(str(item[key]).strip())
+                            break
+                elif isinstance(item, str) and item.strip():
+                    bill.add_subject(item.strip())
 
     def parse_bill_versions(self, bill, page):
         for row in page.xpath('//div[@id="section-pn"]/div'):
