@@ -1,4 +1,5 @@
 import re
+from collections import defaultdict
 
 import dateutil
 import json
@@ -38,6 +39,56 @@ class VaBillScraper(Scraper):
     }
 
     ref_num_map: object = {}
+    _subjects: object = defaultdict(list)
+
+    def scrape_subjects(self):
+        self._subjects = defaultdict(list)
+
+        # get the full subject reference list for this session
+        try:
+            subject_ref = requests.get(
+                f"{self.base_url}/LegislationSubject/api/GetSubjectReferencesAsync",
+                params={"sessionCode": self.session_code},
+                headers=self.headers,
+                verify=False,
+            ).json()
+        except Exception:
+            self.warning("Could not load subject references, skipping subjects.")
+            return
+
+        subjects = subject_ref.get("SubjectsReference", [])
+        self.info(f"Found {len(subjects)} subject categories")
+
+        # for each subject, find which bills are tagged with it
+        for subject_entry in subjects:
+            subject_name = subject_entry["Subject"]
+            subject_id = subject_entry["SubjectIndexID"]
+
+            try:
+                search_body = {
+                    "SessionCode": self.session_code,
+                    "SubjectIndexID": subject_id,
+                    "IncludeFailed": True,
+                }
+                result = requests.post(
+                    f"{self.base_url}/AdvancedLegislationSearch/api/GetLegislationListAsync",
+                    headers=self.headers,
+                    json=search_body,
+                    verify=False,
+                ).json()
+
+                for leg in result.get("Legislations", []):
+                    bill_id = leg["LegislationNumber"]
+                    self._subjects[bill_id].append(subject_name)
+            except Exception:
+                self.warning(
+                    f"Could not load bills for subject '{subject_name}', skipping."
+                )
+                continue
+
+        self.info(
+            f"Loaded subjects for {len(self._subjects)} bills"
+        )
 
     # we can also scrape a "chunk" of all available bills by specifying an integer 1-12 (inclusive)
     # chunks are available to split up this long, slow scrape into 12 smaller scrapes
@@ -61,6 +112,8 @@ class VaBillScraper(Scraper):
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
+
+        self.scrape_subjects()
 
         # If we don't IncludeFailed, we will only get a subset of legislation
         body = {"SessionCode": self.session_code, "IncludeFailed": True}
@@ -120,6 +173,9 @@ class VaBillScraper(Scraper):
                 bill.add_abstract(subtitle, note="title")
             if description is not None:
                 bill.add_abstract(description, row["SummaryVersion"])
+
+            for subject in self._subjects.get(row["LegislationNumber"], []):
+                bill.add_subject(subject)
 
             bill.extras["VA_LEG_ID"] = row["LegislationID"]
 
