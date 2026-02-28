@@ -39,10 +39,10 @@ class VaBillScraper(Scraper):
     }
 
     ref_num_map: object = {}
-    _subjects: object = defaultdict(list)
+    _subjects: object = defaultdict(set)
 
     def scrape_subjects(self):
-        self._subjects = defaultdict(list)
+        self._subjects = defaultdict(set)
 
         # get the full subject reference list for this session
         try:
@@ -79,16 +79,14 @@ class VaBillScraper(Scraper):
 
                 for leg in result.get("Legislations", []):
                     bill_id = leg["LegislationNumber"]
-                    self._subjects[bill_id].append(subject_name)
+                    self._subjects[bill_id].add(subject_name)
             except Exception:
                 self.warning(
                     f"Could not load bills for subject '{subject_name}', skipping."
                 )
                 continue
 
-        self.info(
-            f"Loaded subjects for {len(self._subjects)} bills"
-        )
+        self.info(f"Loaded subjects for {len(self._subjects)} bills")
 
     # we can also scrape a "chunk" of all available bills by specifying an integer 1-12 (inclusive)
     # chunks are available to split up this long, slow scrape into 12 smaller scrapes
