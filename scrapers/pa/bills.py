@@ -11,7 +11,6 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from . import utils
 from . import actions
 
-
 tz = pytz.timezone("America/New_York")
 
 
@@ -20,7 +19,7 @@ class PABillScraper(Scraper):
     session_year: str = ""
     verify = False
 
-    def scrape(self, chamber=None, session=None):
+    def scrape(self, chamber=None, session=None, scrape_subjects=True):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
 
         # Session Year code needed to fix committee vote URLs
@@ -32,11 +31,18 @@ class PABillScraper(Scraper):
         match = re.search(r"[S#](\d+)", session)
         for chamber in chambers:
             if match:
-                yield from self.scrape_session(chamber, session, int(match.group(1)))
+                yield from self.scrape_session(
+                    chamber,
+                    session,
+                    int(match.group(1)),
+                    scrape_subjects=scrape_subjects,
+                )
             else:
-                yield from self.scrape_session(chamber, session)
+                yield from self.scrape_session(
+                    chamber, session, scrape_subjects=scrape_subjects
+                )
 
-    def scrape_session(self, chamber, session, special=0):
+    def scrape_session(self, chamber, session, special=0, scrape_subjects=True):
         url = utils.bill_list_url(chamber, session, special)
         page = self.get_page(url)
 
@@ -51,7 +57,13 @@ class PABillScraper(Scraper):
                 try:
                     if link.attrib["href"] not in bill_urls_seen:
                         bill_urls_seen.append(link.attrib["href"])
-                        yield from self.parse_bill(chamber, session, special, link)
+                        yield from self.parse_bill(
+                            chamber,
+                            session,
+                            special,
+                            link,
+                            scrape_subjects=scrape_subjects,
+                        )
                     is_parsed = True
 
                     break
@@ -68,7 +80,7 @@ class PABillScraper(Scraper):
                     )
                 )
 
-    def parse_bill(self, chamber, session, special, link):
+    def parse_bill(self, chamber, session, special, link, scrape_subjects=True):
         bill_id = link.text.strip()
         type_abbr = re.search("(b|r)", link.attrib["href"].split("/")[-1]).group(1)
 
@@ -114,7 +126,8 @@ class PABillScraper(Scraper):
             page,
         )
 
-        self.parse_subjects(bill, session, special)
+        if scrape_subjects:
+            self.parse_subjects(bill, session, special)
 
         # only fetch votes if votes were seen in history
         yield from self.parse_votes(bill, page)
@@ -126,6 +139,17 @@ class PABillScraper(Scraper):
                 sources.remove(source)
 
         yield bill
+
+    # Pattern matching bill identifiers like "SB 10", "HB 1234", "HR 5", "SR 12"
+    _bill_id_re = re.compile(r"^[HS][BR]\s*\d+$")
+
+    def _add_subject(self, bill, name, seen):
+        """Add a subject to the bill if it's not a duplicate or a bill identifier."""
+        name = name.strip()
+        if not name or name in seen or self._bill_id_re.match(name):
+            return
+        seen.add(name)
+        bill.add_subject(name)
 
     def parse_subjects(self, bill, session, special):
         """Fetch subject/topic classifications for a bill from the topics CFC."""
@@ -155,6 +179,8 @@ class PABillScraper(Scraper):
         if not resp.text.strip():
             return
 
+        seen = set()
+
         # Try parsing as JSON (ColdFusion supports returnformat=json)
         try:
             data = resp.json()
@@ -163,9 +189,7 @@ class PABillScraper(Scraper):
             try:
                 page = lxml.html.fromstring(resp.text)
                 for link in page.xpath("//a"):
-                    name = link.text_content().strip()
-                    if name:
-                        bill.add_subject(name)
+                    self._add_subject(bill, link.text_content(), seen)
             except Exception:
                 self.warning(f"Could not parse subjects for {bill.identifier}")
             return
@@ -178,19 +202,17 @@ class PABillScraper(Scraper):
                 0,
             )
             for row in data["DATA"]:
-                name = str(row[idx]).strip()
-                if name:
-                    bill.add_subject(name)
+                self._add_subject(bill, str(row[idx]), seen)
         # Handle array of objects format
         elif isinstance(data, list):
             for item in data:
                 if isinstance(item, dict):
                     for key in ("TopicName", "TOPICNAME", "Topic", "Name"):
                         if key in item and item[key]:
-                            bill.add_subject(str(item[key]).strip())
+                            self._add_subject(bill, str(item[key]), seen)
                             break
-                elif isinstance(item, str) and item.strip():
-                    bill.add_subject(item.strip())
+                elif isinstance(item, str):
+                    self._add_subject(bill, item, seen)
 
     def parse_bill_versions(self, bill, page):
         for row in page.xpath('//div[@id="section-pn"]/div'):
