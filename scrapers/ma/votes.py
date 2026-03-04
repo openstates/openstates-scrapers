@@ -308,6 +308,12 @@ class SenateJournal(PdfPage):
                     f"Cannot accurately parse to determine margins for vote {index + 1} in {self.source.url}"
                 )
                 return {}
+        if bill_id[0] == "H":
+            bill_chamber = "lower"
+        elif bill_id[0] == "S":
+            bill_chamber = "upper"
+        else:
+            raise Exception(f"Unexpected bill ID to parse chamber: {bill_id}")
 
         vote_event = VoteEvent(
             chamber="upper",
@@ -317,6 +323,7 @@ class SenateJournal(PdfPage):
             bill=bill_id,
             result="pass" if vote_passed else "fail",
             classification=vote_classification,
+            bill_chamber=bill_chamber,
         )
 
         vote_event.add_source(self.source.url)
@@ -452,6 +459,13 @@ class HouseVoteRecordParser:
         if (match := self.bill_re.match(self.motion)) is not None:
             bill_id = f"{match.group(1)}{match.group(2)}"
 
+        if bill_id[0] == "H":
+            bill_chamber = "lower"
+        elif bill_id[0] == "S":
+            bill_chamber = "upper"
+        else:
+            raise Exception(f"Unexpected bill ID to parse chamber: {bill_id}")
+
         vote = VoteEvent(
             chamber="lower",
             legislative_session=self.session,
@@ -460,6 +474,7 @@ class HouseVoteRecordParser:
             bill=bill_id,
             result="pass" if vote_passed else "fail",
             classification="passage",
+            bill_chamber=bill_chamber,
         )
 
         vote.set_count("yes", self.total_yea)
