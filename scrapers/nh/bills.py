@@ -83,7 +83,7 @@ class NHBillScraper(Scraper):
             return
         for source in bill_with_sources.sources:
             source_url = source["url"]
-        bill_response = self.get(source_url)
+        bill_response = self.get(source_url, verify=False)
         bill_page = lxml.html.fromstring(bill_response.content)
 
         version_selector_options = bill_page.xpath(
@@ -108,7 +108,7 @@ class NHBillScraper(Scraper):
         bills = {}
 
         url = f"https://gc.nh.gov/rssFeeds/rssQueryResults.aspx?&sortoption=&txtsessionyear={session}"
-        feed = self.get(url).content
+        feed = self.get(url, verify=False).content
         feed = feedparser.parse(feed)
 
         for item in feed.entries:
@@ -150,6 +150,7 @@ class NHBillScraper(Scraper):
                         )
                     docket_content = self.get(
                         docket_url,
+                        verify=False,
                         allow_redirects=True,
                         headers={
                             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -298,7 +299,8 @@ class NHBillScraper(Scraper):
             last_line = []
             for line in (
                 self.get(
-                    f"https://gc.nh.gov/dynamicdatadump/LSRs.txt?x={self.cachebreaker}"
+                    f"https://gc.nh.gov/dynamicdatadump/LSRs.txt?x={self.cachebreaker}",
+                    verify=False,
                 )
                 .content.decode("utf-8")
                 .split("\n")
@@ -389,7 +391,8 @@ class NHBillScraper(Scraper):
             self.get(
                 "https://gc.nh.gov/dynamicdatadump/legislators.txt?x={}".format(
                     self.cachebreaker
-                )
+                ),
+                verify=False,
             )
             .content.decode("utf-8")
             .split("\n")
@@ -412,7 +415,8 @@ class NHBillScraper(Scraper):
         # sponsors
         for line in (
             self.get(
-                f"https://gc.nh.gov/dynamicdatadump/LsrSponsors.txt?x={self.cachebreaker}"
+                f"https://gc.nh.gov/dynamicdatadump/LsrSponsors.txt?x={self.cachebreaker}",
+                verify=False,
             )
             .content.decode("utf-8")
             .split("\n")
@@ -441,7 +445,8 @@ class NHBillScraper(Scraper):
         # actions
         action_lines = (
             self.get(
-                f"https://gc.nh.gov/dynamicdatadump/Docket.txt?x={self.cachebreaker}"
+                f"https://gc.nh.gov/dynamicdatadump/Docket.txt?x={self.cachebreaker}",
+                verify=False,
             )
             .content.decode("utf-8")
             .split("\n")
@@ -493,7 +498,8 @@ class NHBillScraper(Scraper):
             self.get(
                 "https://gc.nh.gov/dynamicdatadump/LsrsOnly.txt?x={}".format(
                     self.cachebreaker
-                )
+                ),
+                verify=False,
             )
             .content.decode("utf-8")
             .split("\n")
@@ -515,7 +521,8 @@ class NHBillScraper(Scraper):
             self.get(
                 "https://gc.nh.gov/dynamicdatadump/Docket.txt?x={}".format(
                     self.cachebreaker
-                )
+                ),
+                verify=False,
             )
             .content.decode("utf-8")
             .split("\n")
@@ -539,7 +546,7 @@ class NHBillScraper(Scraper):
         other_counts = defaultdict(int)
         last_line = []
         vote_url = f"https://gc.nh.gov/dynamicdatadump/RollCallSummary.txt?x={self.cachebreaker}"
-        lines = self.get(vote_url).content.decode("utf-8").splitlines()
+        lines = self.get(vote_url, verify=False).content.decode("utf-8").splitlines()
 
         for line in lines:
 
@@ -590,7 +597,8 @@ class NHBillScraper(Scraper):
 
         for line in (
             self.get(
-                f"https://gc.nh.gov/dynamicdatadump/RollCallHistory.txt?x={self.cachebreaker}"
+                f"https://gc.nh.gov/dynamicdatadump/RollCallHistory.txt?x={self.cachebreaker}",
+                verify=False,
             )
             .content.decode("utf-8")
             .splitlines()
