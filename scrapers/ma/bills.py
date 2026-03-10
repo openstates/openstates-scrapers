@@ -316,6 +316,8 @@ class MABillScraper(Scraper):
     def scrape_action_page(self, bill, page):
         action_rows = page.xpath("//tbody/tr")
         for row in action_rows:
+            if len(row.xpath("td[1]/text()")) == 0:
+                continue
             action_date = row.xpath("td[1]/text()")[0]
             action_date = datetime.strptime(action_date, "%m/%d/%Y")
             action_year = action_date.year
