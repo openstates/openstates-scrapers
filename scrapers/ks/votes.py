@@ -40,7 +40,7 @@ class KSVoteScraper(Scraper):
         except HTTPError as e:
             # 500 error on HCR 5011 for some reason
             # temporarily swallow this exception to allow scrape to finish
-            if bill == "HCR 5011":
+            if bill in ["HCR 5011", "HB 2737"]:
                 self.logger.warning(
                     f"Swallowing HTTPError for {bill} as a temporary fix: {e}"
                 )
