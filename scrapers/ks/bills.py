@@ -43,9 +43,10 @@ class KSBillScraper(Scraper):
         try:
             page = self.get(api_url).content
         except HTTPError as e:
-            # 500 error on HCR 5011 for some reason
+            # 500 error on HCR 5011, HB 2737 for some reason
+            # also
             # temporarily swallow this exception to allow scrape to finish
-            if bill_id == "HCR5011":
+            if bill_id in ["HCR5011", "HB2737"]:
                 self.logger.warning(
                     f"Swallowing HTTPError for {bill_id} as a temporary fix: {e}"
                 )
