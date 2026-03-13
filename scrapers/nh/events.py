@@ -41,6 +41,7 @@ class NHEventScraper(Scraper, LXMLMixin):
         page = self.get(
             url,
             headers={
+                "x-oxylabs-force-headers": "1",
                 "Accept": "Accept: application/json, text/javascript, */*; q=0.01",
                 "X-Requested-With": "XMLHttpRequest",
                 "Content-Type": "application/json; charset=utf-8",
