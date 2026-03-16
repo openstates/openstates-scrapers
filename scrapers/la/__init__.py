@@ -360,6 +360,5 @@ class Louisiana(State):
     def get_session_list(self):
         return url_xpath(
             "https://www.legis.la.gov/Legis/SessionInfo/SessionInfo.aspx",
-            '//table[@id="ctl00_ctl00_PageBody_DataListSessions"]//a[contains'
-            '(text(), "Session")]/text()',
+            '//select[@id="ctl00_ctl00_PageBody_ddlSessions"]/option/text()',
         )
