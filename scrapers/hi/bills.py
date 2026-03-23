@@ -92,9 +92,12 @@ class HIBillScraper(Scraper):
 
         ret = {}
         for tr in metainf_table.cssselect("tr"):
-            row = tr.xpath("td")
-            key = row[0].text_content().strip()
-            value = row[1].text_content().strip()
+            key_el = tr.xpath("th")
+            val_el = tr.xpath("td")
+            if not key_el or not val_el:
+                continue  # skip malformed rows
+            key = key_el[0].text_content().strip()
+            value = val_el[0].text_content().strip()
             if key[-1:] == ":":
                 key = key[:-1]
             if key in interceptors:
