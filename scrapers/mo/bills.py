@@ -128,26 +128,24 @@ class MOBillScraper(Scraper, LXMLMixin):
         else:
             self.error("Unrecognized Session Type")
 
-    def _scrape_senate_subjects(self, session):
+    def _scrape_senate_subjects(self, session: str):
         self.info("Collecting subject tags from upper house.")
 
         subject_list_url = f"https://www.senate.mo.gov/BillTracking/bills/keywords?year={session}&session={self.session_type(session)}"
-        subject_page = self.lxmlize(subject_list_url)
+        page = self.lxmlize(subject_list_url)
 
-        # Create a list of all possible bill subjects.
-        subjects = self.get_nodes(subject_page, "//h3")
-
-        for subject in subjects:
-            subject_text = self.get_node(
-                subject, "./a[string-length(text()) > 0]/text()[normalize-space()]"
+        for row in page.xpath(
+            "//div[contains(@class,'card') and contains(@class,'collapsed')]"
+        ):
+            subject = (
+                row.cssselect("div.card__header span.heading--label")[0]
+                .text_content()
+                .strip()
             )
-            subject_text = re.sub(r"([\s]*\([0-9]+\)$)", "", subject_text)
 
-            # Bills are in hidden spans after the subject labels.
-            bill_ids = subject.getnext().xpath("./b/a/text()[normalize-space()]")
-
-            for bill_id in bill_ids:
-                self._subjects[bill_id].append(subject_text)
+            for bill_id in row.xpath(".//a[contains(@href, 'BillInformation')]"):
+                bill_id = bill_id.text_content().strip()
+                self._subjects[bill_id].append(subject)
 
     def _parse_senate_billpage(self, bill_url, year):
         try:
