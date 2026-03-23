@@ -129,7 +129,10 @@ class HIEventScraper(Scraper):
                 a.add_bill(bill["bill_id"], note=bill["type"])
 
             if tds[5].xpath(".//a"):
-                video_url = tds[5].xpath(".//a/@href")[0]
+                video_url = tds[5].xpath(
+                    ".//a[contains(@class, 'video-btn')]/@data-src"
+                )
+                video_url = video_url[0] if video_url else None
                 self.info(video_url)
                 event.add_media_link("Hearing Stream", video_url, "text/html")
 
