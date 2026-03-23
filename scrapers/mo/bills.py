@@ -257,8 +257,11 @@ class MOBillScraper(Scraper, LXMLMixin):
         yield bill
 
     def _parse_senate_bill_versions(self, bill: Bill, url: str):
-
-        page = self.get(url).content
+        try:
+            page = self.get(url).content
+        except HTTPError:
+            self.error(f"500 Error, unable to fetch {url}")
+            return
         page = lxml.html.fromstring(page)
 
         for link in page.cssselect("div.link-card-stack a"):
@@ -276,19 +279,19 @@ class MOBillScraper(Scraper, LXMLMixin):
             )
 
     def _parse_senate_actions(self, bill: Bill, url: str):
-        page = self.get(url).content
+        try:
+            page = self.get(url).content
+        except HTTPError:
+            self.error(f"500 Error, unable to fetch {url}")
+            return
         page = lxml.html.fromstring(page)
         for row in page.cssselect("table tbody tr"):
-            print(row.text_content())
-            print(row.cssselect("td"))
             tds = row.cssselect("td")
             date = tds[0].text_content().strip()
-            print(date)
             date = dt.datetime.strptime(date, "%m/%d/%Y")
             action = tds[1].text_content().strip()
             actor = senate_get_actor_from_action(action)
             type_class = self._get_action(actor, action)
-            print(date, action)
             bill.add_action(
                 action,
                 TIMEZONE.localize(date),
@@ -297,10 +300,15 @@ class MOBillScraper(Scraper, LXMLMixin):
             )
 
     def _parse_senate_amends(self, bill: Bill, url: str):
-        page = self.get(url).text
-        if "No amendments available for this bill" in page:
+        try:
+            page = self.get(url)
+        except HTTPError:
+            self.error(f"500 Error, unable to fetch {url}")
             return
-        page = lxml.html.fromstring(page)
+        if "No amendments available for this bill" in page.text:
+            return
+
+        page = lxml.html.fromstring(page.content)
         for link in page.cssselect("div.link-card-stack a"):
             link_url = link.xpath("@href")[0]
             link_text = link.text_content().strip()
