@@ -338,7 +338,9 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         for link in index_page.cssselect("div.bill-number a"):
             bill_identifier = link.text_content().strip()
-            yield from self._parse_senate_billpage(link.xpath("@href")[0], bill_identifier, session)
+            yield from self._parse_senate_billpage(
+                link.xpath("@href")[0], bill_identifier, session
+            )
 
     def _scrape_lower_chamber(self, session):
         self.info("Scraping bills from lower chamber.")
