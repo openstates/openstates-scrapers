@@ -129,7 +129,7 @@ class MOBillScraper(Scraper, LXMLMixin):
             self.error("Unrecognized Session Type")
 
     def _scrape_senate_subjects(self, session: str):
-        self.info("Collecting subject tags from upper house.")
+        self.info("Collecting subject tags from upper chamber")
 
         subject_list_url = f"https://www.senate.mo.gov/BillTracking/bills/keywords?year={session}&session={self.session_type(session)}"
         page = self.lxmlize(subject_list_url)
@@ -147,7 +147,7 @@ class MOBillScraper(Scraper, LXMLMixin):
                 bill_id = bill_id.text_content().strip()
                 self._subjects[bill_id].append(subject)
 
-    def _parse_senate_billpage(self, bill_url, year):
+    def _parse_senate_billpage(self, bill_url, bill_identifier, year):
         try:
             bill_page = self.get(bill_url).content
         except HTTPError:
@@ -156,7 +156,7 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         bill_page = lxml.html.fromstring(bill_page)
 
-        bill_id = bill_page.xpath(
+        bill_id_and_meta_string = bill_page.xpath(
             '//div[contains(@class, "detail-grid__item") and contains(string(.), "Title")]/div[1]'
         )[0].text_content()
         bill_title = bill_page.xpath(
@@ -175,12 +175,12 @@ class MOBillScraper(Scraper, LXMLMixin):
         )[0].text_content()
 
         bill_type = "bill"
-        triplet = bill_id[:3]
+        triplet = bill_id_and_meta_string[:3]
         if triplet in bill_types:
             bill_type = bill_types[triplet]
 
         subs = []
-        bid = bill_id.replace(" ", "")
+        bid = bill_id_and_meta_string.replace(" ", "")
 
         if bid in self._subjects:
             subs = self._subjects[bid]
@@ -190,7 +190,7 @@ class MOBillScraper(Scraper, LXMLMixin):
             return
 
         bill = Bill(
-            bill_id,
+            bill_identifier,
             title=bill_desc,
             chamber="upper",
             legislative_session=self._session_id,
@@ -337,7 +337,10 @@ class MOBillScraper(Scraper, LXMLMixin):
         index_page = lxml.html.fromstring(index_page)
 
         for link in index_page.cssselect("div.bill-number a"):
-            yield from self._parse_senate_billpage(link.xpath("@href")[0], session)
+            bill_identifier = link.text_content().strip()
+            yield from self._parse_senate_billpage(
+                link.xpath("@href")[0], bill_identifier, session
+            )
 
     def _scrape_lower_chamber(self, session):
         self.info("Scraping bills from lower chamber.")
