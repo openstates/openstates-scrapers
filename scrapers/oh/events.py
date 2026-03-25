@@ -80,11 +80,10 @@ class OHEventScraper(Scraper):
         end = end.strftime("%Y-%m-%d")
 
         url = f"{self.base_url}calendar-data?start={start}&end={end}"
-        try:
-            self.info(f"Fetching {url}")
-            data = json.loads(self.scraper.get(url).content)
-        except Exception:
-            raise EmptyScrape
+        self.info(f"Fetching {url}")
+        result = self.get(url, verify=False)
+        result = result.content
+        data = json.loads(result)
 
         event_count = 0
         for item in data:
@@ -110,7 +109,7 @@ class OHEventScraper(Scraper):
 
             url = f"{self.base_url}{item['url']}"
 
-            page = self.scraper.get(url).content
+            page = self.get(url, verify=False).content
             page = lxml.html.fromstring(page)
 
             if "Internal Server Error" in page.text_content():
