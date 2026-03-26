@@ -123,6 +123,7 @@ class MNBillScraper(Scraper, LXMLMixin):
         bill_type=None,
         bill_num_start=None,
         bill_num_end=None,
+        bill_has_action_since=None,
     ):
         """
         Scrape all bills for a given chamber and a given session.
@@ -140,6 +141,8 @@ class MNBillScraper(Scraper, LXMLMixin):
             Useful for partial scrapes or resuming interrupted runs.
         :param bill_num_end: Last bill number to include (exclusive). Defaults in logic to 10000.
             Useful for partial scrapes or resuming interrupted runs.
+        :param bill_has_action_since: If provided, only bills with a last-action date on or
+            after this date are scraped. Format: "YYYY-MM-DD" (e.g. "2026-01-01").
         """
         # If testing, print a message
         if self.is_testing():
@@ -171,7 +174,12 @@ class MNBillScraper(Scraper, LXMLMixin):
             else:
                 # Find list of all bills
                 bills = self.get_full_bill_list(
-                    chamber, session, bill_type, bill_num_start, bill_num_end
+                    chamber,
+                    session,
+                    bill_type,
+                    bill_num_start,
+                    bill_num_end,
+                    bill_has_action_since,
                 )
 
                 # Get each bill
@@ -181,7 +189,13 @@ class MNBillScraper(Scraper, LXMLMixin):
                     )
 
     def get_full_bill_list(
-        self, chamber, session, bill_type=None, bill_num_start=None, bill_num_end=None
+        self,
+        chamber,
+        session,
+        bill_type=None,
+        bill_num_start=None,
+        bill_num_end=None,
+        bill_has_action_since=None,
     ):
         """
         Uses the legislator search to get a full list of bills.  Search page
@@ -196,6 +210,8 @@ class MNBillScraper(Scraper, LXMLMixin):
         :param bill_num_end: Last bill number in the range to fetch (exclusive).
             Defaults in logic to 10000. When both ``bill_num_start`` and ``bill_num_end`` are
             given, the search stride is capped to the size of that range.
+        :param bill_has_action_since: If provided, skip any bill whose last-action date is
+            before this date. Format: "YYYY-MM-DD" (e.g. "2026-01-01").
         :returns: List of dicts, each with ``bill_url`` and ``version_url`` keys.
         """
         search_chamber = self.search_chamber(chamber)
@@ -228,6 +244,11 @@ class MNBillScraper(Scraper, LXMLMixin):
         else:
             bill_types = [bill_type]
 
+        if bill_has_action_since is not None:
+            action_since_date = datetime.date.fromisoformat(bill_has_action_since)
+        else:
+            action_since_date = None
+
         # Get total list of rows
         for current_bill_type in bill_types:
             for start in range(bill_num_start, bill_num_end, stride):
@@ -256,6 +277,14 @@ class MNBillScraper(Scraper, LXMLMixin):
         # Go through each row found
         for row in total_rows:
             bill = {}
+
+            # Fourth column: bill last action date — filter if bill_has_action_since is set
+            if action_since_date is not None:
+                bill_last_action_string = row.xpath("td[4]/a/text()")
+                if bill_last_action_string:
+                    bill_last_action_date = self.parse_dates(bill_last_action_string[0])
+                    if bill_last_action_date < action_since_date:
+                        continue
 
             # Second column: status link
             bill_details_link = row.xpath("td[2]/a")[0]
