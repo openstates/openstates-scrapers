@@ -1,5 +1,6 @@
 import re
 import datetime
+import zoneinfo
 import urllib.parse
 import lxml.html
 from collections import defaultdict
@@ -142,7 +143,7 @@ class MNBillScraper(Scraper, LXMLMixin):
         :param bill_num_end: Last bill number to include (exclusive). Defaults in logic to 10000.
             Useful for partial scrapes or resuming interrupted runs.
         :param bill_has_action_since: If provided, only bills with a last-action date on or
-            after this date are scraped. Format: "YYYY-MM-DD" (e.g. "2026-01-01").
+            after this date are scraped. Format: "today" or "YYYY-MM-DD" (e.g. "2026-01-01").
         """
         # If testing, print a message
         if self.is_testing():
@@ -211,7 +212,7 @@ class MNBillScraper(Scraper, LXMLMixin):
             Defaults in logic to 10000. When both ``bill_num_start`` and ``bill_num_end`` are
             given, the search stride is capped to the size of that range.
         :param bill_has_action_since: If provided, skip any bill whose last-action date is
-            before this date. Format: "YYYY-MM-DD" (e.g. "2026-01-01").
+            before this date. Format: "today" or "YYYY-MM-DD" (e.g. "2026-01-01").
         :returns: List of dicts, each with ``bill_url`` and ``version_url`` keys.
         """
         search_chamber = self.search_chamber(chamber)
@@ -245,7 +246,13 @@ class MNBillScraper(Scraper, LXMLMixin):
             bill_types = [bill_type]
 
         if bill_has_action_since is not None:
-            action_since_date = datetime.date.fromisoformat(bill_has_action_since)
+            if bill_has_action_since == "today":
+                # special case value, we translate this to today's date
+                action_since_date = datetime.datetime.now(
+                    zoneinfo.ZoneInfo("America/Chicago")
+                ).date()
+            else:
+                action_since_date = datetime.date.fromisoformat(bill_has_action_since)
         else:
             action_since_date = None
 
