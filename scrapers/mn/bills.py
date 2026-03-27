@@ -154,11 +154,10 @@ class MNBillScraper(Scraper, LXMLMixin):
 
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
-            # Get bill topics for matching later
-            self.get_bill_topics(chamber, session)
-
             # If testing and certain bills to test, only test those
             if self.is_testing() and len(self.testing_bills) > 0:
+                # Get bill topics for matching later
+                self.get_bill_topics(chamber, session)
                 for b in self.testing_bills:
                     bill_url = BILL_DETAIL_URL % (
                         self.search_chamber(chamber),
@@ -182,6 +181,10 @@ class MNBillScraper(Scraper, LXMLMixin):
                     bill_num_end,
                     bill_has_action_since,
                 )
+
+                # Get bill topics for matching later, ONLY if we have bills to match them to
+                if len(bills) > 0:
+                    self.get_bill_topics(chamber, session)
 
                 # Get each bill
                 for b in bills:
@@ -253,6 +256,9 @@ class MNBillScraper(Scraper, LXMLMixin):
                 ).date()
             else:
                 action_since_date = datetime.date.fromisoformat(bill_has_action_since)
+            self.logger.info(
+                f"Scraping only bills with action equal to or greater than {action_since_date}"
+            )
         else:
             action_since_date = None
 
@@ -413,7 +419,8 @@ class MNBillScraper(Scraper, LXMLMixin):
             search_chamber,
             search_session,
         )
-        html = self.get(url, verify=False).text
+        topic_list_result = self.get(url, verify=False)
+        html = topic_list_result.text
         doc = lxml.html.fromstring(html)
 
         # For testing purposes, we don't really care about getting
@@ -432,7 +439,8 @@ class MNBillScraper(Scraper, LXMLMixin):
                 "&topic[]=%s&submit_topic=GO"
                 % (BILL_DETAIL_URL_BASE, search_chamber, search_session, value)
             )
-            opt_html = self.get(opt_url, verify=False).text
+            response = self.get(opt_url, verify=False)
+            opt_html = response.text
             opt_doc = lxml.html.fromstring(opt_html)
             for bill in opt_doc.xpath("//table/tbody/tr/td[2]/a/text()"):
                 bill = self.make_bill_id(bill)
