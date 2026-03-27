@@ -109,7 +109,7 @@ class VTBillScraper(Scraper, LXMLMixin):
             bill_url = "http://legislature.vermont.gov/bill/status/{0}/{1}".format(
                 year_slug, info["BillNumber"]
             )
-            doc = self.lxmlize(bill_url)
+            doc = self.lxmlize(bill_url, verify=False)
             bill.add_source(bill_url)
 
             # Capture sponsors
@@ -401,7 +401,7 @@ class VTBillScraper(Scraper, LXMLMixin):
                     year_slug, bill_id_original_format
                 )
             )
-            page = self.lxmlize(conferees_doc_link_url)
+            page = self.lxmlize(conferees_doc_link_url, verify=False)
             no_data = page.xpath('//div[@class="no-data"]/text()')
             if not no_data:
                 bill.add_document_link(
