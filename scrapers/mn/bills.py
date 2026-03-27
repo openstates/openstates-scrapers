@@ -256,7 +256,9 @@ class MNBillScraper(Scraper, LXMLMixin):
                 ).date()
             else:
                 action_since_date = datetime.date.fromisoformat(bill_has_action_since)
-            self.logger.info(f"Scraping only bills with action equal to or greater than {action_since_date}")
+            self.logger.info(
+                f"Scraping only bills with action equal to or greater than {action_since_date}"
+            )
         else:
             action_since_date = None
 
