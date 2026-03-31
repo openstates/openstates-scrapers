@@ -246,6 +246,15 @@ class Virginia(State):
             "active": True,
             "extras": {"session_code": "20261"},
         },
+        {
+            "_scraped_name": "2026 Special Session I",
+            "identifier": "2026S1",
+            "name": "2026, 1st Special Session",
+            "start_date": "2026-04-23",
+            "end_date": "2026-05-01",
+            "active": False,
+            "extras": {"session_code": "20262"},
+        },
     ]
     ignored_scraped_sessions = [
         "2025 Session",
@@ -299,7 +308,7 @@ class Virginia(State):
             "WebAPIKey": "FCE351B6-9BD8-46E0-B18F-5572F4CCA5B9",
             "sec-ch-ua": '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
             "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": '"Linux"',
+                "sec-ch-ua-platform": '"Linux"',
         }
         response = requests.get(
             "https://lis.virginia.gov/Session/api/GetSessionListAsync/",
