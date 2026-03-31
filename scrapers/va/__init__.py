@@ -246,6 +246,15 @@ class Virginia(State):
             "active": True,
             "extras": {"session_code": "20261"},
         },
+        {
+            "_scraped_name": "2026 Special Session I",
+            "identifier": "2026S1",
+            "name": "2026, 1st Special Session",
+            "start_date": "2026-04-23",
+            "end_date": "2026-05-01",
+            "active": False,
+            "extras": {"session_code": "20262"},
+        },
     ]
     ignored_scraped_sessions = [
         "2025 Session",
