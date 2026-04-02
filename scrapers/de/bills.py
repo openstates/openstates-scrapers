@@ -1,5 +1,6 @@
 import datetime as dt
 import json
+
 import requests
 from openstates.scrape import Scraper, Bill, VoteEvent
 from utils import LXMLMixin
@@ -7,6 +8,8 @@ from .actions import Categorizer
 
 
 class DEBillScraper(Scraper, LXMLMixin):
+    verify = False
+
     categorizer = Categorizer()
     chamber_codes = {"upper": 1, "lower": 2}
     chamber_codes_rev = {1: "upper", 2: "lower"}
@@ -31,8 +34,8 @@ class DEBillScraper(Scraper, LXMLMixin):
     }
 
     def scrape(self, session=None):
-
         self.headers = {
+            "x-oxylabs-force-headers": "1",
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "accept-language": "en-US,en;q=0.9",
             "dnt": "1",
@@ -60,7 +63,6 @@ class DEBillScraper(Scraper, LXMLMixin):
         # returns bills that are currently _active_ in a chamber,
         # and is not a search by chamber-of-origin
         per_page = 200
-        page = self.post_search(session, 1, per_page)
 
         bills_and_votes = []
         page_number = 1
@@ -164,18 +166,17 @@ class DEBillScraper(Scraper, LXMLMixin):
         html_url = f"https://legis.delaware.gov/BillDetail?LegislationId={row['LegislationId']}"
         bill.add_source(html_url, note="text/html")
 
-        html = self.lxmlize(html_url)
+        html = self.lxmlize(html_url, verify=False)
 
         additional_sponsors = html.xpath(
-            '//label[text()="Additional Sponsor(s):"]' "/following-sibling::div/a/@href"
+            '//label[text()="Additional Sponsor(s):"]/following-sibling::div/a/@href'
         )
-        sponsor_key = "PersonId"
 
         for sponsor_url in additional_sponsors:
             sponsor_key = "DistrictId"
             if sponsor_url.startswith("https://legis"):
                 sponsor_id = sponsor_url.replace(
-                    "https://legis.delaware.gov/LegislatorDetail?" "personId=", ""
+                    "https://legis.delaware.gov/LegislatorDetail?personId=", ""
                 )
                 sponsor_key = "PersonId"
             else:
@@ -186,13 +187,13 @@ class DEBillScraper(Scraper, LXMLMixin):
             self.add_sponsor_by_legislator_id(bill, sponsor_id, "primary", sponsor_key)
 
         cosponsors = html.xpath(
-            '//label[text()="Co-Sponsor(s):"]/' "following-sibling::div/a/@href"
+            '//label[text()="Co-Sponsor(s):"]/following-sibling::div/a/@href'
         )
         for sponsor_url in cosponsors:
             sponsor_key = "DistrictId"
             if sponsor_url.startswith("https://legis"):
                 sponsor_id = sponsor_url.replace(
-                    "https://legis.delaware.gov/LegislatorDetail?" "personId=", ""
+                    "https://legis.delaware.gov/LegislatorDetail?personId=", ""
                 )
                 sponsor_key = "PersonId"
             else:
@@ -220,8 +221,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             self.scrape_amendments(bill, row["LegislationId"])
 
         code_cite = html.xpath(
-            '//label[contains(text(),"Volume:Chapter")]'
-            "/following-sibling::div/text()"
+            '//label[contains(text(),"Volume:Chapter")]/following-sibling::div/text()'
         )
         if code_cite and "N/A" not in code_cite[0]:
             code_cite = code_cite[0].strip().split(":")
@@ -230,8 +230,7 @@ class DEBillScraper(Scraper, LXMLMixin):
                 "/following-sibling::div/text()"
             )[0].strip()
             exp_date = html.xpath(
-                '//label[contains(text(),"Sunset Date")]'
-                "/following-sibling::div/text()"
+                '//label[contains(text(),"Sunset Date")]/following-sibling::div/text()'
             )[0].strip()
 
             if html.xpath("//a[contains(@href,'SessionLaws/Chapter')]/@href"):
@@ -298,7 +297,11 @@ class DEBillScraper(Scraper, LXMLMixin):
         form = {"legislationId": legislation_id, "sort": "", "group": "", "filter": ""}
         self.info(f"Searching for votes for {bill.identifier}")
         response = self.session.post(
-            url=votes_url, data=form, allow_redirects=True, headers=self.headers
+            url=votes_url,
+            data=form,
+            allow_redirects=True,
+            verify=False,
+            headers=self.headers,
         )
         if response.content:
             page = json.loads(response.content.decode("utf-8"))
@@ -313,9 +316,15 @@ class DEBillScraper(Scraper, LXMLMixin):
         form = {"rollCallId": vote_id, "sort": "", "group": "", "filter": ""}
 
         self.info(f"Fetching vote {vote_id} for {bill.identifier}")
-        page = self.session.post(
-            url=vote_url, data=form, allow_redirects=True, headers=self.headers
-        ).json()
+        response = self.session.post(
+            url=vote_url,
+            data=form,
+            allow_redirects=True,
+            verify=False,
+            headers=self.headers,
+        )
+        page = response.json()
+
         if page:
             roll = page["Model"]
             vote_chamber = self.chamber_map[roll["ChamberName"]]
@@ -410,9 +419,14 @@ class DEBillScraper(Scraper, LXMLMixin):
         )
         form = {"legislationId": legislation_id, "sort": "", "group": "", "filter": ""}
         self.info(f"Fetching actions for {bill.identifier}")
-        page = self.session.post(
-            url=actions_url, data=form, allow_redirects=True, headers=self.headers
-        ).json()
+        response = self.session.post(
+            url=actions_url,
+            data=form,
+            allow_redirects=True,
+            verify=False,
+            headers=self.headers,
+        )
+        page = response.json()
         for row in page["Data"]:
             action_name = row["ActionDescription"]
             action_date = dt.datetime.strptime(
@@ -454,13 +468,17 @@ class DEBillScraper(Scraper, LXMLMixin):
         )
         form = {"sort": "", "group": "", "filter": ""}
         self.info(f"Fetching amendments for {bill.identifier}")
-        page = self.session.post(
-            url=amds_url, data=form, allow_redirects=True, headers=self.headers
+        response = self.session.post(
+            url=amds_url,
+            data=form,
+            allow_redirects=True,
+            verify=False,
+            headers=self.headers,
         )
-        if page.content == b"":
+        if response.content == b"":
             return
         else:
-            page = json.loads(page.content)
+            page = json.loads(response.content)
 
         for row in page["Data"]:
             if row["PublicStatusName"] == "Passed":
@@ -533,14 +551,14 @@ class DEBillScraper(Scraper, LXMLMixin):
             "toIntroDate": "",
         }
 
-        page = self.session.post(
+        response = self.session.post(
             url=search_form_url,
             data=form,
             allow_redirects=True,
             verify=False,
             headers=self.headers,
-        ).json()
-
+        )
+        page = response.json()
         return page
 
     def mime_from_link(self, link):
@@ -555,5 +573,7 @@ class DEBillScraper(Scraper, LXMLMixin):
 
     # set up our asp session and fetch cookies
     def init_asp(self):
-        self.session.get("https://legis.delaware.gov/", headers=self.headers).content
+        self.session.get(
+            "https://legis.delaware.gov/", verify=False, headers=self.headers
+        ).content
         return
