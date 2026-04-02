@@ -355,6 +355,7 @@ class MSBillScraper(Scraper):
         "Conference Report Filed": ("Conference Report Filed", True),
         "Conference Report Adopted": ("Adopt Conference Report", True),
         "Conference Report Failed": ("Adopt Conference Report", False),
+        "Tabled Failed": ("Motion to Table", False),
         "Motion to Reconsider Tabled": ("Table Motion to Reconsider", True),
         "Motion to Recnsdr Tabled Lost": ("Table Motion to Reconsider", False),
         "Veto Overridden": ("Override Veto", True),
