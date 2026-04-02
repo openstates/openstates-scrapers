@@ -118,7 +118,8 @@ class COBillScraper(Scraper, LXMLMixin):
         # Some bills do not have a summary shown on the page
         if len(summary_elems) > 0:
             summary = summary_elems[0].text_content().strip()
-            bill.add_abstract(summary, "summary")
+            if len(summary) > 0:
+                bill.add_abstract(summary, "summary")
 
         self.scrape_actions(bill, page)
         self.scrape_amendments(bill, page)
