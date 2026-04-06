@@ -343,7 +343,7 @@ class USEventScraper(Scraper, LXMLMixin):
         if os.environ.get("CONGRESS_GOV_API_KEY", None):
             url = f"https://api.congress.gov/v3/committee-meeting/{congress_num}/{chamber}/{congress_gov_id}"
             # using params instead of ? in the url to avoid logging api keys
-            params = {"api_key": os.environ["CONGRESS_GOV_API_KEY"]}
+            params = {"api_key": os.environ["CONGRESS_GOV_API_KEY"], "format": "json"}
 
             try:
                 data = self.get(url, params=params).json()
