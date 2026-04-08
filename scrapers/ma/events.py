@@ -31,7 +31,28 @@ class MAEventScraper(Scraper, LXMLMixin):
 
         end_date = end_date.strftime(self.date_format)
 
+        # This AJAX (ok AJAH) endpoint is used by the events list page found here:
+        # https://malegislature.gov/Events/Hearings/Joint/List/4-1-2026/4-30-2026/
+        # however as of April 2026 there is a token that must be first obtained
+        # from the page and submitted along with the request
         url = "https://malegislature.gov/Events/FilterEventResults"
+
+        now = datetime.datetime.now()
+        month_start = now.replace(day=1)
+        month_end = (month_start + datetime.timedelta(days=32)).replace(
+            day=1
+        ) - datetime.timedelta(days=1)
+        html_page_url = (
+            f"https://malegislature.gov/Events/Hearings/Joint/List/"
+            f"{month_start.month}-{month_start.day}-{month_start.year}/"
+            f"{month_end.month}-{month_end.day}-{month_end.year}/"
+        )
+
+        html_page = self.get(html_page_url, verify=False)
+        html_doc = lxml.html.fromstring(html_page.content)
+        verification_token = html_doc.xpath(
+            "string(//input[@name='__RequestVerificationToken']/@value)"
+        )
 
         params = {
             "EventType": "",
@@ -39,10 +60,15 @@ class MAEventScraper(Scraper, LXMLMixin):
             "EventRangeType": "",
             "StartDate": start_date,
             "EndDate": end_date,
+            "__RequestVerificationToken": verification_token,
+            "X-Requested-With": "XMLHttpRequest",
+        }
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
             "X-Requested-With": "XMLHttpRequest",
         }
 
-        page = self.post(url, params, verify=False)
+        page = self.post(url, params, headers=headers, verify=False)
         page = lxml.html.fromstring(page.content)
         page.make_links_absolute("https://malegislature.gov/")
 
