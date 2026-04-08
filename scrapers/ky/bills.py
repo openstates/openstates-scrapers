@@ -137,9 +137,8 @@ class KYBillScraper(Scraper, LXMLMixin):
             action_date = datetime.strptime(action_date, "%m/%d/%y")
             action_date = self._TZ.localize(action_date)
 
-            action_texts = row.xpath(
-                "td[1]/ul/li/text() | td[1]/ul/li/strong/text()"
-            )  # Eliminate spurious results that are just newline characters
+            action_texts = row.xpath("td[1]/ul/li/text() | td[1]/ul/li/strong/text()")
+            # Eliminate spurious results that are just newline characters
             # some action rows have multiple actions, but others just have one
             action_texts = [
                 action_text for action_text in action_texts if action_text.strip()
