@@ -215,7 +215,7 @@ class UTBillScraper(Scraper, LXMLMixin):
         api_url = (
             f"https://le.utah.gov/data/{session_slug}/{bill_filename}.json?_={now}"
         )
-        response = self.get(api_url)
+        response = self.get(api_url, verify=False)
         data = json.loads(response.content)
 
         # Sponsorships
@@ -494,7 +494,7 @@ class UTBillScraper(Scraper, LXMLMixin):
 
     def parse_html_vote(self, bill, actor, date, motion, url, uniqid):
         try:
-            page = self.get(url).text
+            page = self.get(url, verify=False).text
         except scrapelib.HTTPError:
             self.warning("A vote page not found for bill {}".format(bill.identifier))
             return
@@ -573,7 +573,7 @@ class UTBillScraper(Scraper, LXMLMixin):
         yield vote
 
     def parse_vote(self, bill, actor, date, motion, url, uniqid):
-        page = self.get(url).text
+        page = self.get(url, verify=False).text
         bill.add_source(url)
         vote_re = re.compile(
             r"YEAS -?\s?(\d+)(.*)NAYS -?\s?(\d+)"

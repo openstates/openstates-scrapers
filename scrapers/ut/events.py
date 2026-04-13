@@ -20,7 +20,7 @@ class UTEventScraper(Scraper, LXMLMixin):
         event_count = 0
 
         for i in range(0, 12):
-            page = self.get(url.format(i, year)).json()
+            page = self.get(url.format(i, year), verify=False).json()
             if "days" not in page:
                 continue
             for day_row in page["days"]:
@@ -86,7 +86,7 @@ class UTEventScraper(Scraper, LXMLMixin):
                         if re.findall(r"mtgID=(\d+)", row["mediaurl"]):
                             hearing_id = re.findall(r"mtgID=(\d+)", row["mediaurl"])[0]
                             docs_url = f"https://glen.le.utah.gov/committees/meeting/{hearing_id}/1234"
-                            docs_page = self.get(docs_url).json()
+                            docs_page = self.get(docs_url, verify=False).json()
                             if "meetingMaterials" in docs_page:
                                 for mat in docs_page["meetingMaterials"]:
                                     agenda = event.add_agenda_item(mat["description"])
@@ -115,7 +115,7 @@ class UTEventScraper(Scraper, LXMLMixin):
                             # bills_url = f"https://glen.le.utah.gov/agencal/{hearing_id}/1234"
                             # self.retry_attempts = 0
                             # try:
-                            #     bills_page = self.get(bills_url, timeout=3).json()
+                            #     bills_page = self.get(bills_url, timeout=3, verify=False).json()
                             #     if 'agendaitems' in bills_page:
                             #         for bill_row in bills_page['agendaitems']:
 
