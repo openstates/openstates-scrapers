@@ -452,5 +452,6 @@ class Utah(State):
         sessions = url_xpath(
             "https://le.utah.gov/bills/billSearch.jsp",
             "//select[@id='sess']/option/text()",
+            verify=False,
         )
         return [re.sub(r"\s+", " ", session.strip()) for session in sessions]
