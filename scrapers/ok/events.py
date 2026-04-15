@@ -41,6 +41,7 @@ class Agenda(PdfPage):
 class OKEventScraper(Scraper):
     _tz = pytz.timezone("CST6CDT")
     session = requests.Session()
+    verify = False
 
     # usage:
     # poetry run os-update ne \
@@ -61,7 +62,7 @@ class OKEventScraper(Scraper):
     def scrape_senate(self):
         # url = "https://oksenate.gov/committee-meetings"
         url = "https://accessible.oksenate.gov/committee-meetings"
-        page = self.get(url).content
+        page = self.get(url, verify=False).content
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -82,7 +83,7 @@ class OKEventScraper(Scraper):
             yield from self.scrape_senate_event(event_url)
 
     def scrape_senate_event(self, url):
-        page = lxml.html.fromstring(self.get(url).content)
+        page = lxml.html.fromstring(self.get(url, verify=False).content)
         page.make_links_absolute(url)
 
         title = page.xpath("//span[contains(@class,'field--name-title')]/text()")[0]
@@ -136,7 +137,11 @@ class OKEventScraper(Scraper):
         headers = {"origin": "https://www.okhouse.gov", "user-agent": "openstates.org"}
 
         page = requests.post(
-            url=url, data=json.dumps(post_data), headers=headers, allow_redirects=True
+            url=url,
+            data=json.dumps(post_data),
+            headers=headers,
+            allow_redirects=True,
+            verify=False,
         ).content
         page = json.loads(page)
 
