@@ -4,6 +4,7 @@ import collections
 import unicodedata
 
 from lxml import html
+import requests
 import scrapelib
 
 from urllib import parse
@@ -13,6 +14,7 @@ from .actions import Categorizer
 
 
 class OKBillScraper(Scraper):
+    verify = False
     bill_types = ["B", "JR", "CR", "R"]
     subject_map = collections.defaultdict(list)
 
@@ -57,7 +59,9 @@ class OKBillScraper(Scraper):
         self.scrape_subjects(chamber, session)
 
         url = "https://webapps.oklegislature.gov/WebApplication3/WebForm1.aspx"
-        form_page = html.fromstring(self.get(url).text)
+        requests_session = requests.Session()
+        requests_session.verify = False
+        form_page = html.fromstring(requests_session.get(url).text)
 
         if chamber == "upper":
             chamber_letter = "S"
@@ -81,7 +85,12 @@ class OKBillScraper(Scraper):
         for hidden in form_page.xpath("//input[@type='hidden']"):
             values[hidden.attrib["name"]] = hidden.attrib["value"]
 
-        page = self.post(url, data=values).text
+        headers = {
+            "Cookie": f"ASP.NET_SessionId={requests_session.cookies.get('ASP.NET_SessionId')}",
+            "x-oxylabs-force-headers": "1",
+        }
+        response = requests_session.post(url, data=values, headers=headers)
+        page = response.text
         page = html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -115,7 +124,7 @@ class OKBillScraper(Scraper):
 
     def scrape_bill(self, chamber, session, bill_id, url):
         try:
-            page = html.fromstring(self.get(url).text)
+            page = html.fromstring(self.get(url, verify=False).text)
         except scrapelib.HTTPError as e:
             self.warning("error (%s) fetching %s, skipping" % (e, url))
             return
@@ -253,7 +262,7 @@ class OKBillScraper(Scraper):
 
     def scrape_votes(self, bill, url):
         html_content = unicodedata.normalize(
-            "NFKD", self.get(url).text.replace("\r\n", " ")
+            "NFKD", self.get(url, verify=False).text.replace("\r\n", " ")
         )
         page = html.fromstring(html_content)
 
@@ -484,7 +493,7 @@ class OKBillScraper(Scraper):
 
     def scrape_subjects(self, chamber, session):
         form_url = "https://webapps.oklegislature.gov/WebApplication3/WebForm1.aspx"
-        form_html = self.get(form_url).text
+        form_html = self.get(form_url, verify=False).text
         fdoc = html.fromstring(form_html)
 
         # bill types
@@ -507,7 +516,7 @@ class OKBillScraper(Scraper):
             for hidden in fdoc.xpath("//input[@type='hidden']"):
                 values[hidden.attrib["name"]] = hidden.attrib["value"]
             # values = urllib.urlencode(values, doseq=True)
-            page_data = self.post(form_url, data=values).text
+            page_data = self.post(form_url, data=values, verify=False).text
             page_doc = html.fromstring(page_data)
 
             # all links after first are bill_ids
