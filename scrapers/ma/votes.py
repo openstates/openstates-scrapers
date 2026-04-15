@@ -308,12 +308,14 @@ class SenateJournal(PdfPage):
                     f"Cannot accurately parse to determine margins for vote {index + 1} in {self.source.url}"
                 )
                 return {}
-        if bill_id[0] == "H":
-            bill_chamber = "lower"
-        elif bill_id[0] == "S":
-            bill_chamber = "upper"
-        else:
-            raise Exception(f"Unexpected bill ID to parse chamber: {bill_id}")
+
+        if bill_id:
+            if bill_id[0] == "H":
+                bill_chamber = "lower"
+            elif bill_id[0] == "S":
+                bill_chamber = "upper"
+            else:
+                raise Exception(f"Unexpected bill ID to parse chamber: {bill_id}")
 
         vote_event = VoteEvent(
             chamber="upper",
@@ -456,15 +458,17 @@ class HouseVoteRecordParser:
 
         # Check for bill id in motion text
         bill_id = None
+        bill_chamber = None
         if (match := self.bill_re.match(self.motion)) is not None:
             bill_id = f"{match.group(1)}{match.group(2)}"
 
-        if bill_id[0] == "H":
-            bill_chamber = "lower"
-        elif bill_id[0] == "S":
-            bill_chamber = "upper"
-        else:
-            raise Exception(f"Unexpected bill ID to parse chamber: {bill_id}")
+        if bill_id:
+            if bill_id[0] == "H":
+                bill_chamber = "lower"
+            elif bill_id[0] == "S":
+                bill_chamber = "upper"
+            else:
+                raise Exception(f"Unexpected bill ID to parse chamber: {bill_id}")
 
         vote = VoteEvent(
             chamber="lower",
@@ -512,5 +516,7 @@ class HouseRollCall(PdfPage):
             else:
                 vote_parser.error_if_invalid()
                 vote_event = vote_parser.createVoteEvent()
+                if not vote_event.bill:
+                    continue
                 vote_event.add_source(self.source.url, note="Vote record pdf")
                 yield vote_event
