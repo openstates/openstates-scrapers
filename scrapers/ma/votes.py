@@ -398,6 +398,10 @@ class HouseVoteRecordParser:
             self.vote_number = int(match.group(1))
             self.motion = " ".join(self.motion_parts)
 
+            # derive bill_id immediately
+            if (bill_match := self.bill_re.match(self.motion)) is not None:
+                self.bill_id = f"{bill_match.group(1)}{bill_match.group(2)}"
+
         # Check for time
         elif ":" in line:
             when = dt.datetime.strptime(line, "%m/%d/%Y %I:%M %p")
@@ -445,19 +449,23 @@ class HouseVoteRecordParser:
             raise VoteTotalMismatch()
 
     def get_warning(self):
-        # Some votes may not have any motion listed
+        # Some votes may not have any motion listed or without bill_id
+        warning = None
         if not self.motion:
-            return (
+            warning = (
                 f"Found vote with no motion listed, skipping vote #{self.vote_number}"
             )
+        elif not self.bill_id:
+            warning = (
+                f"Vote without a bill identifier, skipping vote #{self.vote_number}"
+            )
+        return warning
 
     def createVoteEvent(self):
         vote_passed = self.total_yea > self.total_nay
 
         # Check for bill id in motion text
-        bill_id = None
-        if (match := self.bill_re.match(self.motion)) is not None:
-            bill_id = f"{match.group(1)}{match.group(2)}"
+        bill_id = self.bill_id
 
         if bill_id[0] == "H":
             bill_chamber = "lower"
