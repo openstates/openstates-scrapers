@@ -241,7 +241,7 @@ class Oklahoma(State):
         sessions = url_xpath(
             "https://webapps.oklegislature.gov/WebApplication3/WebForm1.aspx",
             "//select[@name='cbxSessionId']/option/text()",
-            verify=False
+            verify=False,
         )
         # OK Sometimes appends (Mainsys) to their session listings
         sessions = [s.replace("(Mainsys)", "").strip() for s in sessions]
