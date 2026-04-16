@@ -67,6 +67,10 @@ class TNEventScraper(Scraper, LXMLMixin):
         # If chamber is None, don't exclude any events from the results based on chamber
         chmbr = cal_chamber_text.get(chamber)
 
+        # TN has some duplicate events listed on the same day, so we need to dedupe
+        # (and some don't have a real dedupe key)
+        events_found = []
+
         cal_urls = [cal_weekly_events]
         today = dt.date.today()
         for i in range(1, 12):
@@ -137,6 +141,16 @@ class TNEventScraper(Scraper, LXMLMixin):
                         )
                         if when.tzinfo is None:
                             when = self._tz.localize(when)
+
+                    # Do a duplicate check (see note above)
+                    unofficial_dupe_key = f"{description}{when}{location}"
+                    if unofficial_dupe_key in events_found:
+                        self.logger.info(
+                            f"Skipping duplicate event {unofficial_dupe_key}"
+                        )
+                        continue
+                    else:
+                        events_found.append(unofficial_dupe_key)
 
                     event = Event(
                         name=description,
