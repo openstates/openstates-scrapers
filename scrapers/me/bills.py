@@ -20,13 +20,14 @@ class MEBillScraper(Scraper):
     categorizer = Categorizer()
     _tz = pytz.timezone("US/Eastern")
 
-    def scrape(self, chamber=None, session=None):
+    def scrape(self, chamber=None, session=None, first_item=1):
+        first_item = int(first_item)  # parse string arg from CLI to int
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
 
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber, session)
+            yield from self.scrape_chamber(chamber, session, first_item)
 
-    def scrape_chamber(self, chamber, session):
+    def scrape_chamber(self, chamber, session, first_item=1):
         # Create a Bill for each Paper of the chamber's session
         request_session = requests.Session()
         search_url = "https://legislature.maine.gov/LawMakerWeb/doadvancedsearch.asp"
@@ -51,7 +52,10 @@ class MEBillScraper(Scraper):
 
         self.seen = set()
         yield from self._recursively_process_bills(
-            request_session=request_session, chamber=chamber, session=session
+            request_session=request_session,
+            chamber=chamber,
+            session=session,
+            first_item=first_item,
         )
 
     def _recursively_process_bills(
@@ -62,6 +66,9 @@ class MEBillScraper(Scraper):
         Bill object for every Paper from the given chamber
         """
 
+        self.logger.info(
+            f"Searching bills in {chamber} starting with item {first_item}"
+        )
         url = "https://legislature.maine.gov/LawMakerWeb/searchresults.asp"
         r = request_session.get(url, params={"StartWith": first_item})
         r.raise_for_status()
@@ -71,6 +78,7 @@ class MEBillScraper(Scraper):
             for bill in bills:
                 bill_id_slug = bill.xpath("./@href")[0]
                 if bill_id_slug == "summary.asp?ID=280068396":
+                    self.logger.info("Skipping bill_id_slug ID=280068396")
                     continue
                 bill_url = "https://legislature.maine.gov/LawMakerWeb/{}".format(
                     bill_id_slug
@@ -82,6 +90,7 @@ class MEBillScraper(Scraper):
                     session in BLACKLISTED_BILL_IDS
                     and bill_id in BLACKLISTED_BILL_IDS[session]
                 ):
+                    self.logger.info(f"Skipping blacklisted bill ID {bill_id}")
                     continue
 
                 # avoid duplicates
@@ -108,6 +117,8 @@ class MEBillScraper(Scraper):
                 session=session,
                 first_item=first_item + PAGE_SIZE,
             )
+        else:
+            self.logger.info(f"Found no bills at search StartWith {first_item}")
 
     def scrape_bill(self, bill: Bill, chamber):
         url = bill.sources[0]["url"]
