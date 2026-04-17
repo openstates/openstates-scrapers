@@ -126,4 +126,5 @@ class COEventScraper(Scraper, LXMLMixin):
 
         for row in page.cssselect("section.hearing-items-block tbody tr"):
             item = self.clean(row.xpath("td[1]"))
-            event.add_agenda_item(item)
+            if len(item) > 0:
+                event.add_agenda_item(item)
