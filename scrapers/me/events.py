@@ -55,13 +55,18 @@ class MEEventScraper(Scraper, LXMLMixin):
         if len(page) == 0:
             raise EmptyScrape
         events = set()
+
+        skipped = 0
+
         for row in page:
             if row["Cancelled"] is True or row["Postponed"] is True:
+                skipped += 1
                 continue
             if row["EventType"] == "OTH":
                 # EventType OTH seems to always indicate a 3rd party "community" event
                 # like an advocacy group gathering supporters
                 # so we skip these
+                skipped += 1
                 continue
             if (row["EventType"] == "HS" and row["Host"] == "House") or (
                 row["EventType"] == "SS" and row["Host"] == "Senate"
@@ -69,6 +74,7 @@ class MEEventScraper(Scraper, LXMLMixin):
                 # EventType HS/SS seems to always indicate legislative session coming to order
                 # added check for Host=House/Senate to double check
                 # skip these
+                skipped += 1
                 continue
 
             start_date = self._TZ.localize(dateutil.parser.parse(row["FromDateTime"]))
@@ -160,6 +166,9 @@ class MEEventScraper(Scraper, LXMLMixin):
                 },
             )
             yield event
+
+        if skipped == len(page):
+            raise EmptyScrape
 
     def scrape_testimony_documents(self, bill, event, session):
         # testimony query looks gnary but breaks down to:
