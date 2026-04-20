@@ -97,6 +97,11 @@ class TNBillScraper(Scraper):
     def scrape(self, session=None, chamber=None):
         self._seen_votes = set()
         chambers = [chamber] if chamber else ["upper", "lower"]
+
+        # If you need to test an individual bill:
+        # yield from self.scrape_bill(session, "https://wapp.capitol.tn.gov/apps/BillInfo/Default?BillNumber=SB2624&ga=114")
+        # return
+
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
 

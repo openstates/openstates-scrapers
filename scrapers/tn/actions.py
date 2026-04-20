@@ -37,6 +37,16 @@ rules = (
     # Fix the chamber before moving on to the other rules.
     Rule(r"^H\.\s", stop=False, chamber="lower"),
     Rule(r"^S\.\s", stop=False, chamber="upper"),
+    Rule(
+        r"Passed on Second Consideration, refer to (?P<committees>Senate .+?Comm.+)",
+        ["referral-committee"],
+        chamber="upper",
+    ),
+    Rule(
+        r"Passed on Second Consideration, refer to (?P<committees>House .+?Comm.+)",
+        ["referral-committee"],
+        chamber="lower",
+    ),
     Rule(r"Signed by S(\.|enate) Speaker", chamber="upper"),
     Rule(r"Signed by H(\.|ouse) Speaker", chamber="lower"),
     # Extract the vote counts to help disambiguate chambers later.
@@ -115,6 +125,7 @@ rules = (
     Rule("Concurred, ", ["passage"]),
     Rule("Passed H., ", ["passage"]),
     Rule("Passed S., ", ["passage"]),
+    Rule("Passed on Second Consideration", ["referral-committee"]),
     Rule("Passed", "passage"),
     Rule("Second reading, adopted", ["passage", "reading-2"]),
     Rule("Second reading, failed", ["failure", "reading-2"]),
