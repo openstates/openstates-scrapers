@@ -22,7 +22,7 @@ class WABillScraper(Scraper, LXMLMixin):
     # https://app.leg.wa.gov/RCW/default.aspx?cite=4.48
     # API Docs: http://wslwebservices.leg.wa.gov/legislationservice.asmx
 
-    _base_url = "http://wslwebservices.leg.wa.gov/legislationservice.asmx"
+    _base_url = "https://wslwebservices.leg.wa.gov/legislationservice.asmx"
     categorizer = Categorizer()
     _subjects = defaultdict(list)
 
@@ -408,7 +408,7 @@ class WABillScraper(Scraper, LXMLMixin):
         # http://wslwebservices.leg.wa.gov/LegislationService.asmx?op=GetHearings&
         # biennium=2019-20&billNumber=5000
         url = (
-            "http://wslwebservices.leg.wa.gov/LegislationService.asmx/GetHearings"
+            "https://wslwebservices.leg.wa.gov/LegislationService.asmx/GetHearings"
             "?biennium={}&billNumber={}".format(self.biennium, bill_num)
         )
         try:
@@ -565,7 +565,7 @@ class WABillScraper(Scraper, LXMLMixin):
         bill_num = bill.identifier.split()[1]
 
         api_url = (
-            "http://wslwebservices.leg.wa.gov/legislationservice.asmx/"
+            "https://wslwebservices.leg.wa.gov/legislationservice.asmx/"
             f"GetLegislativeStatusChangesByBillNumber?billNumber={bill_num}"
             f"&biennium={self.biennium}"
             f"&beginDate={prefile_year}-11-01"
@@ -594,7 +594,7 @@ class WABillScraper(Scraper, LXMLMixin):
         bill_num = bill.identifier.split()[1]
 
         url = (
-            "http://wslwebservices.leg.wa.gov/legislationservice.asmx/"
+            "https://wslwebservices.leg.wa.gov/legislationservice.asmx/"
             "GetRollCalls?billNumber=%s&biennium=%s" % (bill_num, self.biennium)
         )
         page = self.get(url)
