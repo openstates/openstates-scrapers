@@ -257,7 +257,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2026-01-13",
             "end_date": "2026-03-13",
-            "active": True,
+            "active": False,
         },
         {
             "name": "2026 Special Session D",
@@ -265,6 +265,14 @@ class Florida(State):
             "classification": "special",
             "start_date": "2026-04-28",
             "end_date": "2026-05-01",
+            "active": True,
+        },
+        {
+            "name": "2026 Special Session E",
+            "identifier": "2026E",
+            "classification": "special",
+            "start_date": "2026-05-12",
+            "end_date": "2026-05-29",
             "active": False,
         },
     ]
