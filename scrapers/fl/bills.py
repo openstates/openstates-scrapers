@@ -766,12 +766,18 @@ class HouseSearchPage(HtmlListPage):
         # also can be a "request rejected" page that looks like
         # <html><head><title>Request Rejected</title></head>
         text_not_found_msg = page.xpath("//div[@class='page-404']")
-        request_rejected_msg = page.xpath("//title[contains(text(), 'Request Rejected')]")
+        request_rejected_msg = page.xpath(
+            "//title[contains(text(), 'Request Rejected')]"
+        )
         if len(text_not_found_msg) > 0:
-            self.logger.info(f"Encountered text-based Not Found message at {response.url}")
+            self.logger.info(
+                f"Encountered text-based Not Found message at {response.url}"
+            )
             return False
         elif len(request_rejected_msg) > 0:
-            self.logger.info(f"Encountered text-based Rejected message at {response.url}")
+            self.logger.info(
+                f"Encountered text-based Rejected message at {response.url}"
+            )
             return False
         else:
             return True
