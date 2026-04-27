@@ -163,7 +163,7 @@ class MOBillScraper(Scraper, LXMLMixin):
             '//div[contains(@class,"main-header-description")]'
         )[0].text_content()
 
-        bill_desc = None
+        bill_desc = ""
         # div with a child aria-controls=billSummaryBody, sibling with child .text-content--preformatted
         if bill_page.xpath(
             '//div[contains(@class,"card")][div[@aria-controls="billSummaryBody"]]//div[@class="text-content--preformatted"]'
