@@ -164,13 +164,19 @@ class MOBillScraper(Scraper, LXMLMixin):
         )[0].text_content()
 
         bill_desc = ""
-        # div with a child aria-controls=billSummaryBody, sibling with child .text-content--preformatted
-        if bill_page.xpath(
-            '//div[contains(@class,"card")][div[@aria-controls="billSummaryBody"]]//div[@class="text-content--preformatted"]'
-        ):
-            bill_desc = bill_page.xpath(
-                '//div[contains(@class,"card")][div[@aria-controls="billSummaryBody"]]//div[@class="text-content--preformatted"]'
-            )[0].text_content()
+        summary_nodes = bill_page.xpath(
+            '//div[contains(@class,"card")][.//div[@aria-controls="billSummaryBody"]]//div[contains(@class,"text-content--preformatted")]'
+        )
+
+        if summary_nodes:
+            bill_desc = summary_nodes[0].text_content().strip()
+        else:
+            # fallback: "No summary available" case
+            # example: SR 979 https://www.senate.mo.gov/BillTracking/Bills/BillInformation?year=2026&billid=15371923&handler=Amendments%27
+            fallback = bill_page.xpath(
+                '//div[contains(@class,"card")][.//div[@aria-controls="billSummaryBody"]]//div[contains(@class,"card__body")]//p/text()'
+            )
+            bill_desc = fallback[0].strip() if fallback else None
 
         bill_lr = bill_page.xpath(
             '//div[contains(@class, "detail-grid__item") and contains(string(.), "LR Number")]/div[1]'
