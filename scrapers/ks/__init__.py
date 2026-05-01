@@ -1,4 +1,3 @@
-from utils import url_xpath
 from openstates.scrape import State
 from .bills import KSBillScraper
 from .events import KSEventScraper
@@ -107,8 +106,15 @@ class Kansas(State):
     ignored_scraped_sessions = []
 
     def get_session_list(self):
-        url = url_xpath(
-            "https://www.kslegislature.org/li",
-            '//div[@id="nav"]//a[contains(text(), "Senate Bills")]/@href',
-        )[0]
-        return [url.split("/")[2]]
+        from scrapelib import Scraper as _S
+        import lxml.html
+
+        s = _S()
+        resp = s.get("https://www.kslegislature.gov/bills/SB1/")
+        doc = lxml.html.fromstring(resp.text)
+        # Extract session slug from a version download URL, e.g. /bills/download/?apn=b2025_26/...
+        apn_links = doc.xpath('//a[contains(@href,"download/?apn=")]/@href')
+        if apn_links:
+            slug = apn_links[0].split("apn=")[1].split("/")[0]
+            return [slug]
+        return ["b2025_26"]
