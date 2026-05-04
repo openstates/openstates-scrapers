@@ -155,6 +155,15 @@ class Tennessee(State):
             "end_date": "2025-01-31",
             "active": False,
         },
+        {
+            "_scraped_name": "Second Extraordinary Session (May 2026)",
+            "classification": "special",
+            "identifier": "114S2",
+            "name": "114th Second Extraordinary Session (May 2026)",
+            "start_date": "2026-05-05",
+            "end_date": "2026-05-08",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "107th General Assembly",
