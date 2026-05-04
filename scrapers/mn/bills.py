@@ -79,7 +79,7 @@ class MNBillScraper(Scraper, LXMLMixin):
     # For testing purposes, this will do a lite version of things.  If
     # testing_bills is set, only these bills will be scraped.  Use SF0077
     testing = False
-    testing_bills = ["HF2184"]
+    testing_bills = ["SR83"]
     testing_year = "2025"
 
     # Regular expressions to match category of actions
@@ -706,7 +706,7 @@ class MNBillScraper(Scraper, LXMLMixin):
 
     def extract_versions(self, bill, doc):
         # Get all versions of the bill.
-        version_rows = doc.xpath("//div[@id='versions']/table/tr[td]")
+        version_rows = doc.xpath("//div[@id='versions']/table//tr[td]")
 
         # If there is NOT a 'Version List' expander to show versions table,
         #  this gets versions from link on page that follows the label
@@ -759,7 +759,10 @@ class MNBillScraper(Scraper, LXMLMixin):
         for row in version_rows:
             html_link = row.xpath("td[1]/a")[0]
             version_title = html_link.text_content().strip().replace("  ", " ")
-            version_day = row.xpath("td[3]/text()")[0].strip()
+            # 'Posted on <date>' can be in td[2] or td[3]
+            version_day = row.xpath(".//td[contains(text(),'Posted')]/text()")[
+                0
+            ].strip()
             version_day = version_day.replace("Posted on", "").strip()
             version_day = datetime.datetime.strptime(version_day, "%m/%d/%Y").date()
             html_url = html_link.xpath("@href")[0]
