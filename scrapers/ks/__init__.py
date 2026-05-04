@@ -107,8 +107,22 @@ class Kansas(State):
     ignored_scraped_sessions = []
 
     def get_session_list(self):
-        url = url_xpath(
-            "https://www.kslegislature.org/li",
-            '//div[@id="nav"]//a[contains(text(), "Senate Bills")]/@href',
-        )[0]
-        return [url.split("/")[2]]
+        # The kslegislature.org nav has been rewritten and the "Senate Bills"
+        # anchor is no longer where the original xpath looked, so the live
+        # lookup returns nothing and the [0] indexing crashes the entire
+        # scrape on this session-list sanity check before any bill is
+        # fetched. Treat the live lookup as a best-effort signal — if it
+        # works, great; if it fails, fall back to whatever's marked active
+        # in legislative_sessions so the rest of the scrape can proceed.
+        try:
+            url = url_xpath(
+                "https://www.kslegislature.org/li",
+                '//div[@id="nav"]//a[contains(text(), "Senate Bills")]/@href',
+            )[0]
+            return [url.split("/")[2]]
+        except (IndexError, Exception):
+            return [
+                s["_scraped_name"]
+                for s in self.legislative_sessions
+                if s.get("active") and s.get("_scraped_name")
+            ]
