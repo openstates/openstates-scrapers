@@ -153,7 +153,7 @@ class Tennessee(State):
             "name": "114th First Extraordinary Session (January 2025)",
             "start_date": "2025-01-27",
             "end_date": "2025-01-31",
-            "active": False,
+            "active": True,
         },
         {
             "_scraped_name": "Second Extraordinary Session (May 2026)",

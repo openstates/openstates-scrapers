@@ -101,23 +101,28 @@ class TNBillScraper(Scraper):
         # If you need to test an individual bill:
         # yield from self.scrape_bill(session, "https://wapp.capitol.tn.gov/apps/BillInfo/Default?BillNumber=SB2624&ga=114")
         # return
+        session_details = self.jurisdiction.sessions_by_id[session]
+        if session_details["classification"] == "special":
+            yield from self.scrape_special(session)
+        else:
+            for chamber in chambers:
+                yield from self.scrape_chamber(chamber, session)
 
-        for chamber in chambers:
-            yield from self.scrape_chamber(chamber, session)
+    def scrape_special(self, session):
+        index_page = f"https://wapp.capitol.tn.gov/apps/Indexes/SpecialSessionBillIndex?ga={session[0:3]}&specsessNum={session[4]}"
+        page = self.get(index_page, verify=False).content
+        page = lxml.html.fromstring(page)
+
+        for bill_link in page.xpath("//a[contains(@href, '/BillInfo/Default')]"):
+            yield from self.scrape_bill(session, bill_link.xpath("@href")[0])
 
     def scrape_chamber(self, chamber, session):
-        session_details = self.jurisdiction.sessions_by_id[session]
-
+        print(f"SCRAPE CHAMBER {chamber} {session}")
         # The index page gives us links to the paginated bill pages
         index_page = (
             f"http://wapp.capitol.tn.gov/apps/indexes/BillsByIndex/?year={session}"
         )
-        if session_details["classification"] == "special":
-            xpath = '//a[contains(text(), "{}")]'.format(
-                session_details["_scraped_name"]
-            )
-        else:
-            xpath = '//td[contains(@class,"webindex")]/a'
+        xpath = '//td[contains(@class,"webindex")]/a'
 
         index_list_page = self.get(index_page).text
 
@@ -128,18 +133,10 @@ class TNBillScraper(Scraper):
 
             bill_listing = bill_listing.attrib["href"]
 
-            is_special = session_details["classification"] == "special"
-
-            if is_special and chamber == "lower":
-                self.logger.info(
-                    "special sessions do not support scraping by chamber, ignoring lower scrape"
-                )
-                return
-
             # This check was failing for the latest specials as they are just links to full
             # list of special legislation pages. The links themselves do not follow the prefix
             # pattern.
-            if not is_special and not listing_matches_chamber(bill_listing, chamber):
+            if not listing_matches_chamber(bill_listing, chamber):
                 self.logger.info(
                     "Skipping bill listing '{bill_listing}' "
                     "Does not match chamber '{chamber}'".format(
@@ -153,10 +150,7 @@ class TNBillScraper(Scraper):
             bill_list_page = lxml.html.fromstring(bill_list_page)
             bill_list_page.make_links_absolute(bill_listing)
 
-            if is_special:
-                bill_link_xpath = '//table//a[contains(@href, "BillNumber=")]/@href'
-            else:
-                bill_link_xpath = '//span[@id="content"]//a/@href'
+            bill_link_xpath = '//span[@id="content"]//a/@href'
             for bill_link in set(bill_list_page.xpath(bill_link_xpath)):
                 bill = self.scrape_bill(session, bill_link)
                 if bill:
