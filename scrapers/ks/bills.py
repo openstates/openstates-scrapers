@@ -63,9 +63,9 @@ class KSBillScraper(Scraper):
         while True:
             url = (
                 f"{BASE_URL}/measures/fragment/"
-                f"?per_page=10&types=bill&types=resolution"
+                f"?per_page=20&types=bill&types=resolution"
                 f"&chambers=House&chambers=Senate"
-                f"&sort=number&dir=asc&page={page}"
+                f"&page={page}"  # &sort=number&dir=asc
             )
             resp = self.get(url)
             doc = lxml.html.fromstring(resp.text)
@@ -175,6 +175,7 @@ class KSBillScraper(Scraper):
             for link in pdf_links:
                 href = link.get("href", "")
                 if not href:
+                    self.logger.warning(f"No URL found for pdf bill version/doc {label} on {bill}")
                     continue
                 full_url = BASE_URL + href if href.startswith("/") else href
                 aria = link.get("aria-label", "")
@@ -186,25 +187,43 @@ class KSBillScraper(Scraper):
                     doc_label = f"{label} {doc_name}" if doc_name else label
                     bill.add_document_link(doc_label, full_url, media_type="application/pdf")
 
+            html_links = version_row.xpath('.//a[@class="version-html-link"]')
+            for link in html_links:
+                href = link.get("href", "")
+                if not href:
+                    self.logger.warning(f"No URL found for html bill version/doc {label} on {bill}")
+                    continue
+                full_url = BASE_URL + href if href.startswith("/") else href
+                aria = link.get("aria-label", "")
+
+                if aria == "View HTML":
+                    bill.add_version_link(label, full_url, media_type="text/html")
+                else:
+                    doc_name = aria.replace(" (HTML)", "").strip()
+                    doc_label = f"{label} {doc_name}" if doc_name else label
+                    bill.add_document_link(doc_label, full_url, media_type="text/html")
+
     def _parse_actions(self, doc, bill):
         for row in doc.xpath('//tr[contains(@class,"history-row")]'):
+            msg_els = row.xpath('.//td[@class="col-primary"]')
+            if not msg_els:
+                continue
+            action = re.sub(r"\s+", " ", msg_els[0].text_content().strip())
+
             date_tds = row.xpath('.//td[@data-label="Date"]/text()')
             if not date_tds:
+                self.logger.warning(f"No date found for action row {action} for {bill}")
                 continue
             date_str = date_tds[0].strip()
             try:
                 date = dateutil.parser.parse(date_str).strftime("%Y-%m-%d")
             except Exception:
+                self.logger.warning(f"Failed to parse date {date_str} for action row {action} for {bill}")
                 continue
 
             chamber_els = row.xpath('.//span[contains(@class,"history-chamber")]/text()')
             chamber_text = chamber_els[0].strip() if chamber_els else ""
             actor = "upper" if chamber_text == "Senate" else "lower"
-
-            msg_els = row.xpath('.//td[@class="col-primary"]')
-            if not msg_els:
-                continue
-            action = re.sub(r"\s+", " ", msg_els[0].text_content().strip())
 
             atype = _classify_action(action)
             bill.add_action(action, date, chamber=actor, classification=atype)
