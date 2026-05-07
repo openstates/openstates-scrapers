@@ -11,10 +11,16 @@ ACTION_CLASSIFIERS = [
     (r"Received and Introduced", "introduction"),
     (r"Referred to.*Committee", "referral-committee"),
     (r"Rereferred to.*Committee", "referral-committee"),
-    (r"Committee Report recommending.*passed as amended", "committee-passage-favorable"),
+    (
+        r"Committee Report recommending.*passed as amended",
+        "committee-passage-favorable",
+    ),
     (r"Committee Report recommending.*be passed", "committee-passage-favorable"),
     (r"Committee Report recommending.*favorable", "committee-passage-favorable"),
-    (r"Committee Report recommending.*without recommendation", "committee-passage-unfavorable"),
+    (
+        r"Committee Report recommending.*without recommendation",
+        "committee-passage-unfavorable",
+    ),
     (r"Committee Report recommending.*unfavorable", "committee-passage-unfavorable"),
     (r"Committee Report.*reported out", "committee-passage"),
     (r"Committee of the Whole.*Be passed", "passage"),
@@ -37,11 +43,11 @@ def _clean_sponsor_name(name):
     name = name.strip()
     for prefix in ("Sen. ", "Rep. ", "Senator ", "Representative "):
         if name.startswith(prefix):
-            name = name[len(prefix):]
+            name = name[len(prefix) :]
             break
     for prefix in ("Senate Committee", "House Committee"):
         if name.startswith(prefix):
-            name = "Committee" + name[len(prefix):]
+            name = "Committee" + name[len(prefix) :]
             break
     return name.strip()
 
@@ -54,7 +60,6 @@ def _classify_action(action_text):
 
 
 class KSBillScraper(Scraper):
-
     def scrape(self, session=None):
         yield from self.scrape_bill_list(session)
 
@@ -70,7 +75,7 @@ class KSBillScraper(Scraper):
             resp = self.get(url)
             doc = lxml.html.fromstring(resp.text)
 
-            bill_rows = doc.xpath('//tr[@data-href]')
+            bill_rows = doc.xpath("//tr[@data-href]")
             if not bill_rows:
                 break
 
@@ -82,7 +87,9 @@ class KSBillScraper(Scraper):
                 if href:
                     yield from self.scrape_bill(session, href)
 
-            if not doc.xpath(f'//a[contains(@hx-get, "page={page + 1}") or contains(@href, "page={page + 1}")]'):
+            if not doc.xpath(
+                f'//a[contains(@hx-get, "page={page + 1}") or contains(@href, "page={page + 1}")]'
+            ):
                 break
             page += 1
 
@@ -130,7 +137,7 @@ class KSBillScraper(Scraper):
         section = bill_section[0]
 
         primary_names = set()
-        for h3 in section.xpath('.//h3'):
+        for h3 in section.xpath(".//h3"):
             heading = h3.text_content().strip()
             if heading in ("Original Sponsor", "Original Sponsors"):
                 primary = True
@@ -145,13 +152,15 @@ class KSBillScraper(Scraper):
             for sibling in h3.itersiblings():
                 if sibling.tag == "h3":
                     break
-                for link in sibling.xpath('.//a'):
+                for link in sibling.xpath(".//a"):
                     name = _clean_sponsor_name(link.text_content())
                     if not name:
                         continue
                     if not primary and name in primary_names:
                         continue
-                    entity_type = "organization" if "committee" in name.lower() else "person"
+                    entity_type = (
+                        "organization" if "committee" in name.lower() else "person"
+                    )
                     bill.add_sponsorship(
                         name=name,
                         entity_type=entity_type,
@@ -172,7 +181,9 @@ class KSBillScraper(Scraper):
             for link in pdf_links:
                 href = link.get("href", "")
                 if not href:
-                    self.logger.warning(f"No URL found for pdf bill version/doc {label} on {bill}")
+                    self.logger.warning(
+                        f"No URL found for pdf bill version/doc {label} on {bill}"
+                    )
                     continue
                 full_url = BASE_URL + href if href.startswith("/") else href
                 aria = link.get("aria-label", "")
@@ -182,13 +193,17 @@ class KSBillScraper(Scraper):
                 else:
                     doc_name = aria.replace(" (PDF)", "").strip()
                     doc_label = f"{label} {doc_name}" if doc_name else label
-                    bill.add_document_link(doc_label, full_url, media_type="application/pdf")
+                    bill.add_document_link(
+                        doc_label, full_url, media_type="application/pdf"
+                    )
 
             html_links = version_row.xpath('.//a[@class="version-html-link"]')
             for link in html_links:
                 href = link.get("href", "")
                 if not href:
-                    self.logger.warning(f"No URL found for html bill version/doc {label} on {bill}")
+                    self.logger.warning(
+                        f"No URL found for html bill version/doc {label} on {bill}"
+                    )
                     continue
                 full_url = BASE_URL + href if href.startswith("/") else href
                 aria = link.get("aria-label", "")
@@ -215,22 +230,30 @@ class KSBillScraper(Scraper):
 
                 date_tds = row.xpath('.//td[@data-label="Date"]/text()')
                 if not date_tds:
-                    self.logger.warning(f"No date found for action row {action} for {bill}")
+                    self.logger.warning(
+                        f"No date found for action row {action} for {bill}"
+                    )
                     continue
                 date_str = date_tds[0].strip()
                 try:
                     date = dateutil.parser.parse(date_str).strftime("%Y-%m-%d")
                 except Exception:
-                    self.logger.warning(f"Failed to parse date {date_str} for action row {action} for {bill}")
+                    self.logger.warning(
+                        f"Failed to parse date {date_str} for action row {action} for {bill}"
+                    )
                     continue
 
-                chamber_els = row.xpath('.//span[contains(@class,"history-chamber")]/text()')
+                chamber_els = row.xpath(
+                    './/span[contains(@class,"history-chamber")]/text()'
+                )
                 chamber_text = chamber_els[0].strip() if chamber_els else ""
                 actor = "upper" if chamber_text == "Senate" else "lower"
 
                 atype = _classify_action(action)
                 bill.add_action(action, date, chamber=actor, classification=atype)
 
-            if not doc.xpath('//nav[@aria-label="Pagination"]//a[normalize-space(text())="Next"]'):
+            if not doc.xpath(
+                '//nav[@aria-label="Pagination"]//a[normalize-space(text())="Next"]'
+            ):
                 break
             page += 1
