@@ -119,10 +119,7 @@ class KSBillScraper(Scraper):
         self._parse_sponsors(doc, bill)
         self._parse_versions(doc, bill)
 
-        history_url = BASE_URL + href.rstrip("/") + "/history/?per_page=500"
-        history_resp = self.get(history_url)
-        history_doc = lxml.html.fromstring(history_resp.text)
-        self._parse_actions(history_doc, bill)
+        self._parse_actions(href, bill)
 
         yield bill
 
@@ -203,27 +200,37 @@ class KSBillScraper(Scraper):
                     doc_label = f"{label} {doc_name}" if doc_name else label
                     bill.add_document_link(doc_label, full_url, media_type="text/html")
 
-    def _parse_actions(self, doc, bill):
-        for row in doc.xpath('//tr[contains(@class,"history-row")]'):
-            msg_els = row.xpath('.//td[@class="col-primary"]')
-            if not msg_els:
-                continue
-            action = re.sub(r"\s+", " ", msg_els[0].text_content().strip())
+    def _parse_actions(self, bill_url, bill):
+        history_base = BASE_URL + bill_url.rstrip("/") + "/history/"
+        page = 1
+        while True:
+            history_url = f"{history_base}?per_page=20&page={page}"
+            resp = self.get(history_url)
+            doc = lxml.html.fromstring(resp.text)
+            for row in doc.xpath('//tr[contains(@class,"history-row")]'):
+                msg_els = row.xpath('.//td[@class="col-primary"]')
+                if not msg_els:
+                    continue
+                action = re.sub(r"\s+", " ", msg_els[0].text_content().strip())
 
-            date_tds = row.xpath('.//td[@data-label="Date"]/text()')
-            if not date_tds:
-                self.logger.warning(f"No date found for action row {action} for {bill}")
-                continue
-            date_str = date_tds[0].strip()
-            try:
-                date = dateutil.parser.parse(date_str).strftime("%Y-%m-%d")
-            except Exception:
-                self.logger.warning(f"Failed to parse date {date_str} for action row {action} for {bill}")
-                continue
+                date_tds = row.xpath('.//td[@data-label="Date"]/text()')
+                if not date_tds:
+                    self.logger.warning(f"No date found for action row {action} for {bill}")
+                    continue
+                date_str = date_tds[0].strip()
+                try:
+                    date = dateutil.parser.parse(date_str).strftime("%Y-%m-%d")
+                except Exception:
+                    self.logger.warning(f"Failed to parse date {date_str} for action row {action} for {bill}")
+                    continue
 
-            chamber_els = row.xpath('.//span[contains(@class,"history-chamber")]/text()')
-            chamber_text = chamber_els[0].strip() if chamber_els else ""
-            actor = "upper" if chamber_text == "Senate" else "lower"
+                chamber_els = row.xpath('.//span[contains(@class,"history-chamber")]/text()')
+                chamber_text = chamber_els[0].strip() if chamber_els else ""
+                actor = "upper" if chamber_text == "Senate" else "lower"
 
-            atype = _classify_action(action)
-            bill.add_action(action, date, chamber=actor, classification=atype)
+                atype = _classify_action(action)
+                bill.add_action(action, date, chamber=actor, classification=atype)
+
+            if not doc.xpath('//nav[@aria-label="Pagination"]//a[normalize-space(text())="Next"]'):
+                break
+            page += 1
