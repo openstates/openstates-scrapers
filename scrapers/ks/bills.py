@@ -41,7 +41,7 @@ def _clean_sponsor_name(name):
             break
     for prefix in ("Senate Committee", "House Committee"):
         if name.startswith(prefix):
-            name = "Committee" + name[len("Senate Committee"):]
+            name = "Committee" + name[len(prefix):]
             break
     return name.strip()
 
