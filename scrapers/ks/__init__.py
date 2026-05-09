@@ -1,4 +1,3 @@
-import re
 from utils import url_xpath
 from openstates.scrape import State
 from .bills import KSBillScraper
