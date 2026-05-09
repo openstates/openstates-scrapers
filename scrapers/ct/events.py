@@ -1,6 +1,7 @@
 import datetime
 import json
 
+import lxml
 from openstates.scrape import Scraper, Event
 
 import pytz
@@ -37,13 +38,17 @@ class Agenda(PdfPage):
 
 class CTEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
+    events_web_lxml_cache = None
 
     def __init__(self, *args, **kwargs):
         super(CTEventScraper, self).__init__(*args, **kwargs)
 
     def scrape(self):
+        # Add a committee code in this array to just test a specific code
+        only_do_these_codes = []
         for code, name in self.get_comm_codes():
-            yield from self.scrape_committee_events(code, name)
+            if len(only_do_these_codes) == 0 or code in only_do_these_codes:
+                yield from self.scrape_committee_events(code, name)
 
     def scrape_committee_events(self, code, name):
         events_url = (
@@ -54,7 +59,10 @@ class CTEventScraper(Scraper):
         events_data = self.get(events_url, verify=False).text
 
         if not events_data:
-            self.info(f"No events from {code}")
+            self.info(f"No events from {code} from normal source, trying web backup")
+            # for some reason not getting this committee from original source
+            # try backup web scrape instead
+            yield from self.scrape_committee_events_web(name)
             return
         events = json.loads(events_data)
 
@@ -100,6 +108,71 @@ class CTEventScraper(Scraper):
                 full_url = f"https://www.cga.ct.gov{agenda_url}"
                 for bill in Agenda(source=URL(full_url, verify=False)).do_scrape():
                     event.add_bill(bill)
+
+            yield event
+
+    def scrape_committee_events_web(self, comm_name):
+        """A backup scraping method for when a committee like FIN stops appearing in the original source"""
+        if self.events_web_lxml_cache:
+            # use the cache so we're not hitting the same request multiple times
+            # code could be refactored here, but since this is a backup to the main method, leaving as is for now
+            events_html = self.events_web_lxml_cache
+        else:
+            today = datetime.datetime.today()
+            data = {
+                "sDate": datetime.datetime(today.year, 1, 1).strftime("%m/%d/%Y"),
+                "eDate": today.strftime("%m/%d/%Y"),
+            }
+            headers = {
+                "Content-Type": "application/x-www-form-urlencoded",
+            }
+            events_response = self.post(
+                "https://www.cga.ct.gov/in-events1x.asp",
+                data=data,
+                headers=headers,
+                verify=False,
+            )
+            events_html = lxml.html.fromstring(events_response.content)
+        event_rows = events_html.xpath("//tbody/tr")
+        for row in event_rows:
+            cells = row.xpath("td")
+            date_str = cells[0].text_content().strip()
+            time_str = cells[1].text_content().strip()
+            title_link = cells[2].xpath(".//a")
+            if len(title_link) == 0:
+                # we only consider events that have a link to an event agenda
+                continue
+            elif len(title_link) > 1:
+                raise Exception(
+                    f"Unexpected more than one link in event title cell for {date_str} {time_str}"
+                )
+            event_title = title_link[0].text_content().strip()
+            if comm_name.lower() not in event_title.lower():
+                # check if the committee name is in this list
+                continue
+            event_url_partial = title_link[0].get("href")
+            event_url = f"https://www.cga.ct.gov{event_url_partial}"
+            event_location_str = cells[3].text_content().strip()
+            event_datetime = datetime.datetime.strptime(
+                f"{date_str} {time_str}", "%m/%d/%Y %I:%M %p"
+            )
+
+            event = Event(
+                start_date=self._tz.localize(event_datetime),
+                location_name=event_location_str,
+                name=event_title,
+                description=event_title,
+            )
+            event.add_source("https://www.cga.ct.gov/")
+            event.add_committee(comm_name)
+            event.add_link(event_url, note="Agenda")
+            event.dedupe_key = (
+                f"{comm_name}#{event_title}#{event_datetime}#{event_location_str}"
+            )
+
+            # agenda handling
+            for bill in Agenda(source=URL(event_url, verify=False)).do_scrape():
+                event.add_bill(bill)
 
             yield event
 
