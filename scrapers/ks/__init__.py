@@ -1,3 +1,5 @@
+import re
+from utils import url_xpath
 from openstates.scrape import State
 from .bills import KSBillScraper
 from .events import KSEventScraper
@@ -27,7 +29,7 @@ class Kansas(State):
             "end_date": "2012-05-14",
         },
         {
-            "_scraped_name": "b2013_14",
+            "_scraped_name": "li_2014",
             "classification": "primary",
             "identifier": "2013-2014",
             "name": "2013-2014 Regular Session",
@@ -35,7 +37,7 @@ class Kansas(State):
             "end_date": "2014-05-30",
         },
         {
-            "_scraped_name": "b2015_16",
+            "_scraped_name": "li_2016",
             "classification": "primary",
             "identifier": "2015-2016",
             "name": "2015-2016 Regular Session",
@@ -43,7 +45,7 @@ class Kansas(State):
             "end_date": "2016-06-01",
         },
         {
-            "_scraped_name": "b2017_18",
+            "_scraped_name": "li_2018",
             "classification": "primary",
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
@@ -51,7 +53,7 @@ class Kansas(State):
             "end_date": "2018-04-07",
         },
         {
-            "_scraped_name": "b2019_20",
+            "_scraped_name": "li_2020",
             "classification": "primary",
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
@@ -59,7 +61,7 @@ class Kansas(State):
             "end_date": "2020-05-21",
         },
         {
-            "_scraped_name": "b2020s",
+            "_scraped_name": "li_2020s",
             "classification": "special",
             "identifier": "2020S1",
             "name": "2020 Special Session",
@@ -67,7 +69,7 @@ class Kansas(State):
             "end_date": "2020-06-04",
         },
         {
-            "_scraped_name": "b2021_22",
+            "_scraped_name": "li_2022",
             "classification": "primary",
             "identifier": "2021-2022",
             "name": "2021-2022 Regular Session",
@@ -76,7 +78,7 @@ class Kansas(State):
             "active": False,
         },
         {
-            "_scraped_name": "b2021s",
+            "_scraped_name": "li_2021s",
             "classification": "special",
             "identifier": "2021S1",
             "name": "2021 Special Session",
@@ -103,18 +105,31 @@ class Kansas(State):
             "active": True,
         },
     ]
-    ignored_scraped_sessions = []
+    ignored_scraped_sessions = [
+        "li_2012",
+        "li_2013s",
+        "li_2016s",
+        "li_2024s",
+    ]
 
     def get_session_list(self):
-        from scrapelib import Scraper as _S
-        import lxml.html
+        # KS post-redesign website is pretty rough, doesn't seem to be a single session list
+        # so we have to piece together from homepage display + archive page
+        # (probably this will change later, sigh)
+        homepage_url = "https://www.kslegislature.gov"
+        homepage_session_elems = url_xpath(homepage_url, "//a[@class='nav-logo']/@href")
+        current_session = homepage_session_elems[0].split("/")[-2]
 
-        s = _S()
-        resp = s.get("https://www.kslegislature.gov/bills/SB1/")
-        doc = lxml.html.fromstring(resp.text)
-        # Extract session slug from a version download URL, e.g. /bills/download/?apn=b2025_26/...
-        apn_links = doc.xpath('//a[contains(@href,"download/?apn=")]/@href')
-        if apn_links:
-            slug = apn_links[0].split("apn=")[1].split("/")[0]
-            return [slug]
-        return ["b2025_26"]
+        archive_url = "https://www.kslegislature.gov/b2025_26/archive/"
+        archive_session_urls = url_xpath(
+            archive_url, "//div[@class='card-grid']/a/@href"
+        )
+        sessions = []
+        for archive_session_url in archive_session_urls:
+            session_number = archive_session_url.split("/")[-2]
+            session_number = session_number.rstrip("/")
+            sessions.append(session_number)
+
+        sessions.append(current_session)
+
+        return sessions
