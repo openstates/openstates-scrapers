@@ -62,7 +62,7 @@ class DEBillScraper(Scraper, LXMLMixin):
         # Cannot scrape a particular chamber, since the search-by-chamber
         # returns bills that are currently _active_ in a chamber,
         # and is not a search by chamber-of-origin
-        per_page = 200
+        per_page = 20
 
         bills_and_votes = []
         page_number = 1
