@@ -404,6 +404,16 @@ class Utah(State):
             "end_date": "2026-03-06",
             "active": True,
         },
+        {
+            "_scraped_name": "2027 General Session",
+            "classification": "primary",
+            "identifier": "2027",
+            "name": "2027 General Session",
+            # TODO: correct dates when published
+            "start_date": "2027-01-20",
+            "end_date": "2027-03-06",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2023 First House Extraordinary Session",
