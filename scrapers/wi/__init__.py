@@ -191,6 +191,15 @@ class Wisconsin(State):
             "end_date": "2026-05-25",
             "active": True,
         },
+        {
+            "_scraped_name": "May 2026 Special Session",
+            "classification": "special",
+            "identifier": "2026S1",
+            "name": "May 2026 Special Session",
+            "start_date": "2026-05-13",
+            "end_date": "2026-05-25",
+            "active": True,
+        },
     ]
     ignored_scraped_sessions = [
         "January 2020 Special Session",
