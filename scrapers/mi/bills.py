@@ -41,7 +41,7 @@ class MIBillScraper(Scraper):
 
     # convert from MI's redirector to a bill permalink
     def make_bill_url(self, url: str) -> str:
-        match = re.search(r"objectName=(.*)&", url)
+        match = re.search(r"objectName=([^&]+)", url)
         return f"https://legislature.mi.gov/Bills/Bill?ObjectName={match.group(1)}"
 
     def scrape(self, session):
