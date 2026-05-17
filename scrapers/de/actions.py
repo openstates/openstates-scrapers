@@ -5,24 +5,24 @@ from utils.actions import Rule, BaseCategorizer
 rules = (
     Rule([r"Amendment (?P<bills>.+?) -\s+Laid On Table"], ["amendment-deferral"]),
     Rule(["Favorable"], ["committee-passage-favorable"]),
-    Rule(["(?i)Amendment (?P<bills>.+?) defeated"], ["amendment-failure"]),
-    Rule(["(?i)introduced and adopted in lieu of (?P<bills>.+)"], ["introduction"]),
+    Rule(["Amendment (?P<bills>.+?) defeated"], ["amendment-failure"]),
+    Rule(["introduced and adopted in lieu of (?P<bills>.+)"], ["introduction"]),
     Rule(
-        ["(?i)assigned to (?P<committees>.+?) Committee in"],
+        ["assigned to (?P<committees>.+?) Committee in"],
         ["referral-committee", "introduction"],
     ),
     Rule(["Signed by Governor"], ["executive-signature"]),
-    Rule([r"(?i)Amendment (?P<bills>[\w\s]+?) Introduced"], ["amendment-introduction"]),
+    Rule([r"Amendment (?P<bills>[\w\s]+?) Introduced"], ["amendment-introduction"]),
     Rule(["Amendment (?P<bills>.+?) -  Passed"], ["amendment-passage"]),
-    Rule(["(?i)^Passed by"], ["passage"]),
+    Rule(["^Passed by"], ["passage"]),
     Rule(["^Defeated"], ["failure"]),
-    Rule(["(?i)unfavorable"], ["committee-passage-unfavorable"]),
+    Rule(["unfavorable"], ["committee-passage-unfavorable"]),
     Rule([r"Reported Out of Committee \((?P<committees>.+?)\)"], ["committee-passage"]),
     Rule(["Vetoed by Governor"], ["executive-veto"]),
     Rule(
-        [r"(?i)Amendment (?P<bills>.+?)\s+-\s+Introduced"], ["amendment-introduction"]
+        [r"Amendment (?P<bills>.+?)\s+-\s+Introduced"], ["amendment-introduction"]
     ),
-    Rule([r"(?i)Amendment (?P<bills>[\w\s]+?) Passed"], ["amendment-passage"]),
+    Rule([r"Amendment (?P<bills>[\w\s]+?) Passed"], ["amendment-passage"]),
     Rule(
         [r"Amendment (?P<bills>.+?) -  Defeated by House of .+?\. Votes: Defeated"],
         ["amendment-failure"],
