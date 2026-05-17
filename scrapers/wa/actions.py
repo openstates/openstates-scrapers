@@ -61,51 +61,51 @@ _categorizer_rules = (
     Rule(r"Prefiled for introduction", "filing"),
     Rule(r"amendment adopted", "amendment-passage"),
     Rule(r"amendment not adopted", "amendment-failure"),
-    Rule(r"(?i)third reading, (?P<pass_fail>(passed|failed))", "reading-3"),
+    Rule(r"third reading, (?P<pass_fail>(passed|failed))", "reading-3"),
     Rule(r"Read first time", "reading-1"),
-    Rule(r"(?i)first reading, referred to (?P<committees>.*)\.", "reading-1"),
-    Rule(r"(?i)And refer to (?P<committees>.*)", "referral-committee"),
-    Rule(r"(?i).* substitute bill substituted.*", "substitution"),
-    Rule(r"(?i)chapter (((\d+),?)+) \d+ laws.( .+)?", ""),  # XXX: Thom: Code stuff?
-    Rule(r"(?i)effective date \d{1,2}/\d{1,2}/\d{4}.*", ""),
+    Rule(r"first reading, referred to (?P<committees>.*)\.", "reading-1"),
+    Rule(r"And refer to (?P<committees>.*)", "referral-committee"),
+    Rule(r".* substitute bill substituted.*", "substitution"),
+    Rule(r"chapter (((\d+),?)+) \d+ laws.( .+)?", ""),  # XXX: Thom: Code stuff?
+    Rule(r"effective date \d{1,2}/\d{1,2}/\d{4}.*", ""),
     Rule(
-        r"(?i)(?P<committees>\w+) - [Mm]ajority; do pass with amendment\(s\) \
+        r"(?P<committees>\w+) - [Mm]ajority; do pass with amendment\(s\) \
          (but without amendments\(s\))?.*\.",
         "committee-passage-favorable",
         "committee-passage",
     ),
     Rule(
-        r"(?i)Executive action taken in the (House|Senate) committee on (?P<committees>.*) \
+        r"Executive action taken in the (House|Senate) committee on (?P<committees>.*) \
          (at)? .*\.",
         "",
     ),
     Rule(
-        r"(?i)(?P<committees>\w+) \- [Mm]ajority; do pass .* \(Majority Report\)",
+        r"(?P<committees>\w+) \- [Mm]ajority; do pass .* \(Majority Report\)",
         "committee-passage-favorable",
     ),
-    Rule(r"(?i)Conference committee appointed.", ""),
-    Rule(r"(?i)Conference committee report;", ""),
+    Rule(r"Conference committee appointed.", ""),
+    Rule(r"Conference committee report;", ""),
     Rule(
-        r"(?i).+ - Majority; \d+.+ substitute bill be substituted, do pass",
+        r".+ - Majority; \d+.+ substitute bill be substituted, do pass",
         "substitution",
     ),
     Rule(r"President signed", "passage"),
     Rule(r"Speaker signed", "passage"),
     Rule(
-        r"(?i)Signed by (?P<signed_chamber>(Representatives|Senators)) (?P<legislators>.*)",
+        r"Signed by (?P<signed_chamber>(Representatives|Senators)) (?P<legislators>.*)",
         "passage",
     ),
-    Rule(r"(?i)Referred to (?P<committees>.*)(\.)?"),
+    Rule(r"Referred to (?P<committees>.*)(\.)?"),
     Rule(
-        r"(?i)(?P<from_committee>.*) relieved of further consideration. On motion, referred to \
+        r"(?P<from_committee>.*) relieved of further consideration. On motion, referred to \
          (?P<committees>.*)",
         "referral-committee",
     ),
-    Rule(r"(?i)Governor partially vetoed", "executive-veto-line-item"),
-    Rule(r"(?i)Governor vetoed", "executive-veto"),
-    Rule(r"(?i)Governor signed", "executive-signature"),
-    Rule(r"(?i)Passed final passage;", "passage"),
-    Rule(r"(?i)Failed final passage;", "failure"),
+    Rule(r"Governor partially vetoed", "executive-veto-line-item"),
+    Rule(r"Governor vetoed", "executive-veto"),
+    Rule(r"Governor signed", "executive-signature"),
+    Rule(r"Passed final passage;", "passage"),
+    Rule(r"Failed final passage;", "failure"),
     Rule(r"Effective date", "became-law"),
     Rule(r"Chapter .* Laws", "became-law"),
     Rule(r"Minority; do not pass.", "committee-passage-unfavorable"),
