@@ -1,5 +1,6 @@
 import re
-from collections import namedtuple, defaultdict, Iterable
+from collections import namedtuple, defaultdict
+from collections.abc import Iterable
 from six import string_types
 
 
