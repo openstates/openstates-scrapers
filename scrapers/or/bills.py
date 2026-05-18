@@ -88,7 +88,7 @@ class ORBillScraper(Scraper):
                     try:
                         legislator = legislators[legislator_code]
                     except KeyError:
-                        logger.warn(
+                        logger.warning(
                             "Legislator {} not found in session {}".format(
                                 legislator_code, session
                             )
@@ -118,7 +118,7 @@ class ORBillScraper(Scraper):
                         media_type="application/pdf",
                     )
                 except ValueError:
-                    logger.warn("Duplicate link found for {}".format(document_url))
+                    logger.warning("Duplicate link found for {}".format(document_url))
 
             for agenda_item in measure["CommitteeAgendaItems"]:
                 for document in agenda_item["CommitteeProposedAmendments"]:

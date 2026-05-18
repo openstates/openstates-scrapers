@@ -51,7 +51,7 @@ class NYBillScraper(Scraper):
         title = bill["title"].strip()
 
         if not title:
-            self.logger.warn("Bill missing title.")
+            self.logger.warning("Bill missing title.")
             return
 
         # Determine the chamber the bill originated from.
@@ -61,7 +61,7 @@ class NYBillScraper(Scraper):
             bill_chamber = "lower"
         else:
             warning = "Could not identify chamber for {}."
-            self.logger.warn(warning).format(bill_id)
+            self.logger.warning(warning).format(bill_id)
 
         senate_url = (
             "http://www.nysenate.gov/legislation/bills/{bill_session}/" "{bill_id}"
