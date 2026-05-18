@@ -86,8 +86,11 @@ class FlEventScraper(Scraper):
             start = self.tz.localize(start)
 
             end = row.cssselect("span.date")[1].text_content().strip()
-            end = dateutil.parser.parse(end)
-            end = self.tz.localize(end)
+            if end.lower() == "upon adjournment":
+                end = None
+            else:
+                end = dateutil.parser.parse(end)
+                end = self.tz.localize(end)
 
             location = row.xpath(
                 ".//span[contains(text(),'Location')]/following-sibling::span"
@@ -104,7 +107,7 @@ class FlEventScraper(Scraper):
             event = Event(
                 name=com,
                 start_date=start,
-                end_date=end,
+                **({"end_date": end} if end is not None else {"all_day": True}),
                 location_name=location,
                 description=summary,
                 status=status,
