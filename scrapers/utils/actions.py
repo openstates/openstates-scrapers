@@ -18,7 +18,13 @@ class Rule(namedtuple("Rule", "regexes types stop attrs")):
     """
 
     def __new__(
-        _cls, regexes, types=None, stop=False, flexible_whitespace=True, **kwargs
+        _cls,
+        regexes,
+        types=None,
+        stop=False,
+        flexible_whitespace=True,
+        flags=re.IGNORECASE,
+        **kwargs,
     ):
         "Create new instance of Rule(regex, types, attrs, stop)"
 
@@ -26,12 +32,16 @@ class Rule(namedtuple("Rule", "regexes types stop attrs")):
         if isinstance(regexes, string_types) or hasattr(regexes, "match"):
             regexes = (regexes,)
         compiled_regexes = []
-        # pre-compile any string regexes
+        # pre-compile any string regexes. Strings default to case-insensitive
+        # since action text from upstream tends to drift between
+        # "Passed"/"PASSED"/"passed"; pass flags=0 to a Rule to opt back into
+        # case-sensitive matching. Already-compiled regex objects pass through
+        # untouched.
         for regex in regexes:
             if isinstance(regex, string_types):
                 if flexible_whitespace:
                     c_regex = re.sub(r"\s{1,4}", r"\\s{,10}", regex)
-                compiled_regexes.append(re.compile(c_regex))
+                compiled_regexes.append(re.compile(c_regex, flags))
             else:
                 compiled_regexes.append(regex)
 
