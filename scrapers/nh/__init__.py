@@ -126,4 +126,4 @@ class NewHampshire(State):
 
     def get_session_list(self):
         # no session list on the site, just every year -- hack to force us to add new year
-        return [str(datetime.datetime.utcnow().year)]
+        return [str(datetime.datetime.now(datetime.timezone.utc).year)]
