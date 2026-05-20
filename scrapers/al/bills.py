@@ -68,7 +68,6 @@ class ALBillScraper(Scraper):
                 sessionYear
                 instrumentNbr
                 sponsor
-                sessionType
                 body
                 subject
                 shortTitle
@@ -100,7 +99,6 @@ class ALBillScraper(Scraper):
             engrossedFileUrl
             enrolledFileUrl
             companionInstrumentNbr
-            sessionType
             sessionYear
             instrumentNbr
             actSummary
@@ -211,7 +209,6 @@ class ALBillScraper(Scraper):
             ) {
                 id
                 instrumentNbr
-                sessionType
                 currentStatus
                 shortTitle
                 introducedFileUrl
@@ -246,7 +243,6 @@ class ALBillScraper(Scraper):
                 data {
                     instrumentNbr
                     sessionYear
-                    sessionType
                     calendarDate
                     body
                     matter
@@ -273,7 +269,6 @@ class ALBillScraper(Scraper):
                 data {
                     instrumentNbr
                     sessionYear
-                    sessionType
                     # birTitle
                     calendarDate
                     matter

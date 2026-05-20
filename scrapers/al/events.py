@@ -29,7 +29,7 @@ class ALEventScraper(Scraper, LXMLMixin):
         query = (
             'query meetings($body: OrganizationBody, $managedInLinx: Boolean, $autoScroll: Boolean!) {\n  meetings(\n    where: {body: {eq: $body}, startDate: {gte: "'
             + start
-            + '"}, managedInLinx: {eq: $managedInLinx}}\n  ) {\n    data {\n      id\n      startDate\n      startTime\n      location\n      title\n      description\n      body\n      hasPublicHearing\n      hasLiveStream\n      committee\n      agendaUrl\n      agendaItems @skip(if: $autoScroll) {\n        id\n        sessionType\n        sessionYear\n        instrumentNbr\n        shortTitle\n        matter\n        recommendation\n        hasPublicHearing\n        sponsor\n        __typename\n      }\n      __typename\n    }\n    count\n    __typename\n  }\n}'
+            + '"}, managedInLinx: {eq: $managedInLinx}}\n  ) {\n    data {\n      id\n      startDate\n      startTime\n      location\n      title\n      description\n      body\n      hasPublicHearing\n      hasLiveStream\n      committeeName\n      agendaUrl\n      agendaItems @skip(if: $autoScroll) {\n        id\n        instrumentNbr\n        shortTitle\n        matter\n        recommendation\n        hasPublicHearing\n        sponsor\n        __typename\n      }\n      __typename\n    }\n    count\n    __typename\n  }\n}'
         )
 
         json_data = {
@@ -93,7 +93,7 @@ class ALEventScraper(Scraper, LXMLMixin):
                     "Agenda", row["agendaUrl"], media_type=mime, on_duplicate="ignore"
                 )
 
-            com = row["committee"]
+            com = row["committeeName"]
             if com:
                 com = f"{row['body']} {com}"
                 com = (
