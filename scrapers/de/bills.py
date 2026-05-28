@@ -1,5 +1,10 @@
 import datetime as dt
 import json
+from json.decoder import JSONDecodeError
+
+from requests.exceptions import JSONDecodeError as RequestsJSONDecodeError
+import random
+import time
 
 import requests
 from openstates.scrape import Scraper, Bill, VoteEvent
@@ -32,6 +37,40 @@ class DEBillScraper(Scraper, LXMLMixin):
         "housedems": "https://housedems.delaware.gov/members/house-district-",
         "senatedems": "https://senatedems.delaware.gov/members/senate-district-",
     }
+
+    def decode_and_retry_request(
+        self, log_label, request_method, attempt=1, retries=3, raise_exception=True
+    ):
+        """
+        Delaware is giving us a lot of malformed responses that are HTTP OK nonetheless
+        Normally flakey requests could be handled by http-resilience mode, but because the HTTP response
+        is normal (just empty/not-decodable-to-JSON)
+        So we have several places where we need to retry the decode step
+        """
+        try:
+            response = request_method()
+            data = json.loads(response.content.decode("utf-8"))
+            return data
+        except (JSONDecodeError, RequestsJSONDecodeError) as error:
+            if attempt < retries:
+                min_seconds = 5
+                max_seconds = 10
+                delay = random.uniform(min_seconds, max_seconds)
+                self.warning(
+                    f"Failed to fetch {log_label} on attempt {attempt}, retrying w delay {delay}"
+                )
+                time.sleep(delay)
+                return self.decode_and_retry_request(
+                    log_label, request_method, attempt + 1, retries, raise_exception
+                )
+            else:
+                self.warning(
+                    f"Failed to fetch {log_label} on attempt {attempt} of {retries}, giving up"
+                )
+                if raise_exception:
+                    raise error
+                else:
+                    return None
 
     def scrape(self, session=None):
         self.headers = {
@@ -67,7 +106,8 @@ class DEBillScraper(Scraper, LXMLMixin):
         bills_and_votes = []
         page_number = 1
         while True:
-            page = self.post_search(session, page_number, per_page)
+            post_search = lambda: self.post_search(session, page_number, per_page)
+            page = self.decode_and_retry_request("post_search", post_search)
             if not page["Data"]:
                 self.info("Found no more bills in pagination")
                 break
@@ -296,18 +336,19 @@ class DEBillScraper(Scraper, LXMLMixin):
         )
         form = {"legislationId": legislation_id, "sort": "", "group": "", "filter": ""}
         self.info(f"Searching for votes for {bill.identifier}")
-        response = self.session.post(
+        request_method = lambda: self.session.post(
             url=votes_url,
             data=form,
             allow_redirects=True,
             verify=False,
             headers=self.headers,
         )
-        if response.content:
-            page = json.loads(response.content.decode("utf-8"))
-            if page["Total"] > 0:
-                for row in page["Data"]:
-                    yield from self.scrape_vote(bill, row["RollCallId"], session)
+        page = self.decode_and_retry_request(
+            "scrape_votes", request_method, retries=1, raise_exception=False
+        )
+        if page and page["Total"] > 0:
+            for row in page["Data"]:
+                yield from self.scrape_vote(bill, row["RollCallId"], session)
 
     def scrape_vote(self, bill, vote_id, session):
         vote_url = (
@@ -316,14 +357,16 @@ class DEBillScraper(Scraper, LXMLMixin):
         form = {"rollCallId": vote_id, "sort": "", "group": "", "filter": ""}
 
         self.info(f"Fetching vote {vote_id} for {bill.identifier}")
-        response = self.session.post(
+        request_method = lambda: self.session.post(
             url=vote_url,
             data=form,
             allow_redirects=True,
             verify=False,
             headers=self.headers,
         )
-        page = response.json()
+        page = self.decode_and_retry_request(
+            "scrape_vote", request_method, retries=1, raise_exception=False
+        )
 
         if page:
             roll = page["Model"]
@@ -419,14 +462,14 @@ class DEBillScraper(Scraper, LXMLMixin):
         )
         form = {"legislationId": legislation_id, "sort": "", "group": "", "filter": ""}
         self.info(f"Fetching actions for {bill.identifier}")
-        response = self.session.post(
+        request_method = lambda: self.session.post(
             url=actions_url,
             data=form,
             allow_redirects=True,
             verify=False,
             headers=self.headers,
         )
-        page = response.json()
+        page = self.decode_and_retry_request("scrape_actions", request_method)
         for row in page["Data"]:
             action_name = row["ActionDescription"]
             action_date = dt.datetime.strptime(
@@ -558,8 +601,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             verify=False,
             headers=self.headers,
         )
-        page = response.json()
-        return page
+        return response
 
     def mime_from_link(self, link):
         if "HtmlDocument" in link:
