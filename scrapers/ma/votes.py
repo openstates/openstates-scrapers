@@ -162,7 +162,7 @@ class SenateJournal(PdfPage):
         # If they disagree on number of matches, the scraper will not get
         # the data correctly so emit a warning and skip this pdf.
         if not (len(votes_mt) == len(votes_s) == len(votes_id)):
-            self.logger.warn(
+            self.logger.warning(
                 f"\nCould not accurately parse votes for "
                 f"{self.source.url}\n"
                 f"len(votes_mt):{len(votes_mt)}\n"
@@ -184,7 +184,7 @@ class SenateJournal(PdfPage):
     def parse_match(self, match, index):
         bill_id = self.get_bill_id(index)
         if not bill_id:
-            self.logger.warn(
+            self.logger.warning(
                 f"No valid bill id found preceding vote lines in {self.source.url}"
             )
             return {}
@@ -224,7 +224,7 @@ class SenateJournal(PdfPage):
         if motion_text:
             motion_text = motion_text.group(1)
         else:
-            self.logger.warn(
+            self.logger.warning(
                 f"No valid motion text found preceding vote lines in {self.source}"
             )
             return
@@ -239,7 +239,7 @@ class SenateJournal(PdfPage):
                 break
 
         if not vote_classification:
-            self.logger.warn(
+            self.logger.warning(
                 f"""
                 No vote_classification from {single_line_motion}" in journal at {self.source.url}
                 """
@@ -293,7 +293,7 @@ class SenateJournal(PdfPage):
         yea_mismatch = first_total_yea != total_yea
         nay_mismatch = first_total_nay != total_nay
         if yea_mismatch or nay_mismatch:
-            self.logger.warn(
+            self.logger.warning(
                 f"Cannot accurately parse to determine margins for vote {index + 1} in {self.source.url}"
             )
             return {}
@@ -304,7 +304,7 @@ class SenateJournal(PdfPage):
         for miscount in yea_matches_miscount, nay_matches_miscount:
             # Allows for minor miscount in cases of PDF formatting issues
             if abs(miscount) > determinative_margin:
-                self.logger.warn(
+                self.logger.warning(
                     f"Cannot accurately parse to determine margins for vote {index + 1} in {self.source.url}"
                 )
                 return {}
@@ -346,7 +346,7 @@ class SenateJournal(PdfPage):
             chamber, number = bill_id_match[-1]
             self.bill_id = f"{chamber[0]} {number}"
         if not self.bill_id:
-            self.logger.warn(
+            self.logger.warning(
                 f"No preceding bill id for vote {index + 1} in {self.source.url}"
             )
         return self.bill_id
@@ -516,7 +516,7 @@ class HouseRollCall(PdfPage):
         for vote in vote_text:
             vote_parser = HouseVoteRecordParser(vote, session=self.session)
             if (warning := vote_parser.get_warning()) is not None:
-                self.logger.warn(warning)
+                self.logger.warning(warning)
             else:
                 vote_parser.error_if_invalid()
                 vote_event = vote_parser.createVoteEvent()
