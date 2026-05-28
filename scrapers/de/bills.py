@@ -1,7 +1,7 @@
 import datetime as dt
+from functools import partial
 import json
 from json.decoder import JSONDecodeError
-
 from requests.exceptions import JSONDecodeError as RequestsJSONDecodeError
 import random
 import time
@@ -106,7 +106,12 @@ class DEBillScraper(Scraper, LXMLMixin):
         bills_and_votes = []
         page_number = 1
         while True:
-            post_search = lambda: self.post_search(session, page_number, per_page)
+            post_search = partial(
+                self.post_search,
+                session=session,
+                page_number=page_number,
+                per_page=per_page,
+            )
             page = self.decode_and_retry_request("post_search", post_search)
             if not page["Data"]:
                 self.info("Found no more bills in pagination")
@@ -336,7 +341,8 @@ class DEBillScraper(Scraper, LXMLMixin):
         )
         form = {"legislationId": legislation_id, "sort": "", "group": "", "filter": ""}
         self.info(f"Searching for votes for {bill.identifier}")
-        request_method = lambda: self.session.post(
+        request_method = partial(
+            self.session.post,
             url=votes_url,
             data=form,
             allow_redirects=True,
@@ -357,7 +363,8 @@ class DEBillScraper(Scraper, LXMLMixin):
         form = {"rollCallId": vote_id, "sort": "", "group": "", "filter": ""}
 
         self.info(f"Fetching vote {vote_id} for {bill.identifier}")
-        request_method = lambda: self.session.post(
+        request_method = partial(
+            self.session.post,
             url=vote_url,
             data=form,
             allow_redirects=True,
@@ -462,7 +469,8 @@ class DEBillScraper(Scraper, LXMLMixin):
         )
         form = {"legislationId": legislation_id, "sort": "", "group": "", "filter": ""}
         self.info(f"Fetching actions for {bill.identifier}")
-        request_method = lambda: self.session.post(
+        request_method = partial(
+            self.session.post,
             url=actions_url,
             data=form,
             allow_redirects=True,
