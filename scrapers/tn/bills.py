@@ -191,7 +191,7 @@ class TNBillScraper(Scraper):
         # secondary_chamber = 'upper' if primary_chamber == 'lower' else 'lower'
 
         title = page.cssselect("div.abstract-container")[0].text.strip()
-        if title is None:
+        if title is None or len(title) < 1:
             title = "[No title given by state]"
             subjects = []
             msg = "%s detail page was missing title info."
