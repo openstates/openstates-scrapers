@@ -458,7 +458,7 @@ class MNBillScraper(Scraper, LXMLMixin):
     def parse_dates(self, datestr):
         # Fixing a typo in source data on following URL
         # https://www.revisor.mn.gov/bills/bill.php?b=House&f=HF2184&ssn=0&y=2025
-        datestr = datestr.replace("/225", "/2025")
+        datestr = datestr.replace("/225", "/2025").replace("/226", "2026")
         date_formats = ["%m/%d/%Y", "%m/%d/%y"]
         for fmt in date_formats:
             try:
