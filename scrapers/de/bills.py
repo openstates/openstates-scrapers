@@ -72,7 +72,10 @@ class DEBillScraper(Scraper, LXMLMixin):
                 else:
                     return None
 
-    def scrape(self, session=None):
+    def scrape(self, session=None, start_page=1, end_page=None):
+        start_page = int(start_page)
+        if end_page:
+            end_page = int(end_page)
         self.headers = {
             "x-oxylabs-force-headers": "1",
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -104,7 +107,7 @@ class DEBillScraper(Scraper, LXMLMixin):
         per_page = 20
 
         bills_and_votes = []
-        page_number = 1
+        page_number = start_page
         while True:
             post_search = partial(
                 self.post_search,
@@ -119,6 +122,11 @@ class DEBillScraper(Scraper, LXMLMixin):
             for bill in page["Data"]:
                 bills_and_votes.extend(list(self.scrape_bill(bill, session)))
             page_number += 1
+            if end_page and page_number > end_page:
+                self.info(
+                    f"Stopping bills fetch at the specified ending page number {end_page}"
+                )
+                break
         yield from self.filter_bills(bills_and_votes)
 
     def filter_bills(self, items):
