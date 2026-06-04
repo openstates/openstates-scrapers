@@ -90,7 +90,9 @@ class COBillScraper(Scraper, LXMLMixin):
         self.page_number += 1
 
     def clean(self, text):
-        if type(text) is list:
+        if isinstance(text, list):
+            if not text:
+                return ""
             return text[0].text_content().strip()
         return text.text_content().strip()
 
@@ -212,9 +214,11 @@ class COBillScraper(Scraper, LXMLMixin):
 
     def scrape_laws(self, bill: Bill, page: lxml.html.HtmlElement):
         for row in page.cssselect("div#bill-activity-session-laws tbody tr"):
-            effective = dateutil.parser.parse(
-                self.clean(row.xpath("td[1]/span"))
-            ).date()
+            effective_text = self.clean(row.xpath("td[1]/span"))
+            effective = None
+            if effective_text:
+                effective = dateutil.parser.parse(effective_text).date()
+
             chapter = self.clean(row.xpath("td[2]/span"))
             title = self.clean(row.xpath("td[3]/span"))
             chapter = f"Chapter: {chapter} {title}"
