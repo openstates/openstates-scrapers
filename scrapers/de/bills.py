@@ -12,6 +12,12 @@ from utils import LXMLMixin
 from .actions import Categorizer
 
 
+class FailedBillFetch:
+    def __init__(self, bill_id, fetch_type):
+        self.bill_id = bill_id
+        self.fetch_type = fetch_type
+
+
 class DEBillScraper(Scraper, LXMLMixin):
     verify = False
 
@@ -115,7 +121,7 @@ class DEBillScraper(Scraper, LXMLMixin):
                 page_number=page_number,
                 per_page=per_page,
             )
-            page = self.decode_and_retry_request("post_search", post_search)
+            page = self.decode_and_retry_request("post_search", post_search, retries=6)
             if not page["Data"]:
                 self.info("Found no more bills in pagination")
                 break
@@ -145,6 +151,14 @@ class DEBillScraper(Scraper, LXMLMixin):
             # The generator also yields VoteEvent objects
             if isinstance(bill, VoteEvent):
                 yield bill
+                continue
+
+            # The generator also includes FailedBill objects representing failures to fetch
+            # we want to log these out at the end, so putting this logic here in filter_bills()
+            if isinstance(bill, FailedBillFetch):
+                self.logger.warning(
+                    f"Failed to fetch bill {bill.bill_id} on fetch {bill.fetch_type}"
+                )
                 continue
 
             if (
@@ -219,7 +233,13 @@ class DEBillScraper(Scraper, LXMLMixin):
         html_url = f"https://legis.delaware.gov/BillDetail?LegislationId={row['LegislationId']}"
         bill.add_source(html_url, note="text/html")
 
-        html = self.lxmlize(html_url, verify=False)
+        try:
+            html = self.lxmlize(html_url, verify=False)
+        except:  # noqa: E722
+            # Collecting bills we had to skip because of failure to fetch
+            failure = FailedBillFetch(bill_id, "fetch_bill_page")
+            yield failure
+            return
 
         additional_sponsors = html.xpath(
             '//label[text()="Additional Sponsor(s):"]/following-sibling::div/a/@href'
@@ -268,7 +288,13 @@ class DEBillScraper(Scraper, LXMLMixin):
         for fiscal in fiscals:
             self.scrape_fiscal_note(bill, fiscal)
 
-        self.scrape_actions(bill, row["LegislationId"])
+        try:
+            self.scrape_actions(bill, row["LegislationId"])
+        except:  # noqa: E722
+            # Collecting bills we had to skip because of failure to fetch
+            failure = FailedBillFetch(bill_id, "fetch_bill_page")
+            yield failure
+            return
 
         if row["HasAmendments"] is True:
             self.scrape_amendments(bill, row["LegislationId"])
