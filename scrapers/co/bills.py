@@ -47,6 +47,9 @@ class COBillScraper(Scraper, LXMLMixin):
     max_pages = 2
 
     def scrape(self, chamber=None, session=None):
+        # If you need to scrape an individual bill for testing
+        # yield from self.scrape_bill("https://leg.colorado.gov/bills/HB26-1362", "2026")
+
         # TODO: there's a better way to do this
         for i in self.jurisdiction.legislative_sessions:
             if i["identifier"] == session:
@@ -212,9 +215,12 @@ class COBillScraper(Scraper, LXMLMixin):
 
     def scrape_laws(self, bill: Bill, page: lxml.html.HtmlElement):
         for row in page.cssselect("div#bill-activity-session-laws tbody tr"):
-            effective = dateutil.parser.parse(
-                self.clean(row.xpath("td[1]/span"))
-            ).date()
+            if self.clean(row.xpath("td[1]/span")):
+                effective = dateutil.parser.parse(
+                    self.clean(row.xpath("td[1]/span"))
+                ).date()
+            else:
+                effective = None
             chapter = self.clean(row.xpath("td[2]/span"))
             title = self.clean(row.xpath("td[3]/span"))
             chapter = f"Chapter: {chapter} {title}"
