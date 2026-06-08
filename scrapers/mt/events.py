@@ -35,8 +35,12 @@ class MTEventScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
+        base_url = "https://sg001-harmony.sliq.net"
         for link in page.xpath("//div[@class='divEvent']/a[1]"):
-            self.scrape_event(link.xpath("@href")[0])
+            href = link.xpath("@href")[0]
+            match = re.search(r"setLocationUrl\('([^']+)'\)", href)
+            if match:
+                self.scrape_event(base_url + match.group(1))
 
     def scrape_cal_month(self, when: datetime.datetime.date):
         date_str = when.strftime("%Y%m01")
@@ -141,6 +145,8 @@ class MTEventScraper(Scraper):
     # versions and media are in the 'dataModel' js variable on the page
     def scrape_versions(self, event: Event, html: str):
         matches = re.search(r"Handouts:\s?(.*),", html)
+        if not matches:
+            return
         versions = json.loads(matches.group(1))
         for v in versions:
             event.add_document(
@@ -155,6 +161,8 @@ class MTEventScraper(Scraper):
         # these can be played only by certain players, for example:
         # https://livepush.io/hlsplayer/index.html
         matches = re.search(r"Media:\s?(.*),", html)
+        if not matches:
+            return
         media = json.loads(matches.group(1))
         if "children" in media and media["children"] is not None:
             for m in media["children"]:
