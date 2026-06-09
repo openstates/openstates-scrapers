@@ -4,6 +4,7 @@ import functools
 import lxml
 import pytz
 import re
+from scrapelib import HTTPError
 
 from openstates.scrape import Scraper, Event
 from openstates.exceptions import EmptyScrape
@@ -137,7 +138,12 @@ class KYEventScraper(Scraper):
 
         if page.xpath('//a[contains(text(), "Minutes")]/@href'):
             minutes_link = page.xpath('//a[contains(text(), "Minutes")]/@href')[0]
-            docs["minutes"] = self.scrape_minutes(minutes_link)
+            try:
+                docs["minutes"] = self.scrape_minutes(minutes_link)
+            except HTTPError as e:
+                # At least one committee minutes link is 404 as of 6/9/26
+                # So allowing this to skip as necessary
+                self.warning(f"Failed to fetch committee minutes at {url}, error: {e}")
 
         return docs
 
