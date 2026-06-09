@@ -317,6 +317,17 @@ class Florida(State):
             "active": True,
             "extras": {"session_number": "122"},
         },
+        {
+            "name": "2027 Regular Session",
+            "identifier": "2027",
+            "classification": "primary",
+            # TODO get real dates
+            "start_date": "2027-01-13",
+            "end_date": "2027-03-13",
+            "active": False,
+            # TODO get house session number from https://www.flhouse.gov/ (not posted as of 6/9/26)
+            # "extras": {"session_number": "113"},
+        },
     ]
     ignored_scraped_sessions = [
         *(str(each) for each in range(1997, 2010)),
