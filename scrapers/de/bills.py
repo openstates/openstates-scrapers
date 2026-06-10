@@ -553,17 +553,15 @@ class DEBillScraper(Scraper, LXMLMixin):
         )
         form = {"sort": "", "group": "", "filter": ""}
         self.info(f"Fetching amendments for {bill.identifier}")
-        response = self.session.post(
+        request_method = partial(
+            self.session.post,
             url=amds_url,
             data=form,
             allow_redirects=True,
             verify=False,
             headers=self.headers,
         )
-        if response.content == b"":
-            return
-        else:
-            page = json.loads(response.content)
+        page = self.decode_and_retry_request("scrape_amendments", request_method)
 
         for row in page["Data"]:
             if row["PublicStatusName"] == "Passed":
