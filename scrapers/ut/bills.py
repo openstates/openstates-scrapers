@@ -130,8 +130,7 @@ class UTBillScraper(Scraper, LXMLMixin):
             # starting 2025 seems UT is rendering bill data from an API/JSON
             # but prior years seem to have static-ish HTML
             # so we have two logic branches here
-            # TODO vote processing - need to see what data looks like
-            self.scrape_bill_details_from_api(bill, url, session_slug)
+            yield from self.scrape_bill_details_from_api(bill, url, session_slug)
         else:
             yield from self.parse_bill_details_from_html(
                 bill, bill_id, chamber, page, primary_info
@@ -377,6 +376,24 @@ class UTBillScraper(Scraper, LXMLMixin):
                         committee, entity_type="organization"
                     )
 
+                # Recorded votes (voiceVote=="1" are voice votes with no individual records)
+                if action_data.get("voteID") and action_data.get("voiceVote") == "0":
+                    vote_chamber = "lower" if action_data["voteHouse"] == "H" else "upper"
+                    vote_url = (
+                        f"https://le.utah.gov/DynaBill/svotes.jsp"
+                        f"?sessionid={session_slug}"
+                        f"&voteid={action_data['voteID']}"
+                        f"&house={action_data['voteHouse']}"
+                    )
+                    yield from self.parse_html_vote(
+                        bill,
+                        vote_chamber,
+                        date,
+                        action_data["description"],
+                        vote_url,
+                        action_data["voteID"],
+                    )
+
     def parse_status(self, bill, status_table, chamber):
         page = status_table
         uniqid = 0
@@ -531,7 +548,10 @@ class UTBillScraper(Scraper, LXMLMixin):
             self.warning(descr)
             raise NotImplementedError("Can't see if we passed or failed")
 
-        headings = page.xpath("//b")[1:]
+        # The "Yeas" heading uses <b><center><font ...> which lxml normalizes by
+        # promoting <center> out of <b>, leaving the <b> empty. Select the size=5
+        # Arial fonts directly — they appear in all three section headings.
+        headings = page.xpath('//font[@face="Arial"][@size="5"]')
         votes = page.xpath("//table")
         sets = zip(headings, votes)
         vdict = {}
