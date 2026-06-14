@@ -378,7 +378,9 @@ class UTBillScraper(Scraper, LXMLMixin):
 
                 # Recorded votes (voiceVote=="1" are voice votes with no individual records)
                 if action_data.get("voteID") and action_data.get("voiceVote") == "0":
-                    vote_chamber = "lower" if action_data["voteHouse"] == "H" else "upper"
+                    vote_chamber = (
+                        "lower" if action_data["voteHouse"] == "H" else "upper"
+                    )
                     vote_url = (
                         f"https://le.utah.gov/DynaBill/svotes.jsp"
                         f"?sessionid={session_slug}"
@@ -391,7 +393,7 @@ class UTBillScraper(Scraper, LXMLMixin):
                         date,
                         action_data["description"],
                         vote_url,
-                        action_data["voteID"],
+                        f"{action_data['voteID']}-{action_data['voteHouse']}",
                     )
 
     def parse_status(self, bill, status_table, chamber):
