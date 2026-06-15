@@ -194,7 +194,8 @@ class MIBillScraper(Scraper):
                 actor = "upper"
 
             # Process roll call votes
-            rcmatch = re.search(r"Roll Call # (\d+)", action, re.IGNORECASE)
+            # House format: "Roll Call #44" (no space); Senate: "ROLL CALL # 1" (space)
+            rcmatch = re.search(r"Roll Call #\s*(\d+)", action, re.IGNORECASE)
             if rcmatch:
                 rc_num = rcmatch.groups()[0]
                 vote_url = None
@@ -347,8 +348,8 @@ class MIBillScraper(Scraper):
             elif p.startswith("In The Chair:"):
                 break
             elif vtype:
-                # Split on multiple spaces not preceded by commas
-                for line in re.split(r"(?<!,)\s{2,}", p):
+                # Split on tabs (House journals) or multiple spaces (Senate journals)
+                for line in re.split(r"\t|(?<!,)\s{2,}", p):
                     if line.strip():
                         if session == "2017-2018":
                             for leg in line.split():
