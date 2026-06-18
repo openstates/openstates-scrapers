@@ -104,6 +104,14 @@ class Georgia(State):
             "name": "2025-2026 Regular Session",
             "start_date": "2025-01-13",
             "end_date": "2026-04-02",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2026 Special Session",
+            "identifier": "2026_ss",
+            "name": "2026 Special Session",
+            "start_date": "2026-06-17",
+            "end_date": "2026-12-13",  # TODO real end date
             "active": True,
         },
     ]
