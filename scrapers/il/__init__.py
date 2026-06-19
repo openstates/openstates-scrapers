@@ -192,7 +192,7 @@ class Illinois(State):
     def get_session_list(self):
         headers = {"User-Agent": "openstates.org"}
         response = requests.get(
-        "https://ilga.gov/API/Legislation/GetGeneralAssemblies", headers=headers
+            "https://ilga.gov/API/Legislation/GetGeneralAssemblies", headers=headers
         )
 
         response.raise_for_status()
