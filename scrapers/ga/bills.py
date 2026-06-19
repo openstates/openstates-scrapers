@@ -4,7 +4,14 @@ from collections import defaultdict
 
 from openstates.scrape import Scraper, Bill, VoteEvent
 
-from .util import get_client, get_url, backoff, get_token, SESSION_SITE_IDS
+from .util import (
+    get_client,
+    get_url,
+    backoff,
+    get_token,
+    SESSION_SITE_IDS,
+    SPECIAL_SESSION_SITE_URL_PARTS,
+)
 
 #         Methods (7):
 #            GetLegislationDetail(xs:int LegislationId, )
@@ -365,11 +372,13 @@ class GABillScraper(Scraper):
                     url = (
                         f"https://www.legis.ga.gov/api/legislation/document/{bill_bit}"
                     )
-                if session == "2023_ss":
-                    # gets url as 2023EX220573.pdf
-                    # so would be easier to put together using session & version id
-                    # to get https://www.legis.ga.gov/api/legislation/document/2023EX/220573
-                    url = f"https://www.legis.ga.gov/api/legislation/document/2023EX/{doc_id}"
+                if session in ["2023_ss", "2026_ss"]:
+                    # Last couple special sessions the url provided in instrument["Versions"]["DocumentDescription"]
+                    # is wrong, so it'll look like http://www.legis.ga.gov/Legislation/2026EX/249298.pdf
+                    # but that URL does not resolve (gets 404 on GA page)
+                    # the web UI actually gets to you to a path that uses a varient session ID and the doc_id
+                    # like https://www.legis.ga.gov/api/legislation/document/2026EX/249298
+                    url = f"https://www.legis.ga.gov/api/legislation/document/{SPECIAL_SESSION_SITE_URL_PARTS[session]}/{doc_id}"
                 link = bill.add_version_link(name, url, media_type="application/pdf")
                 link["extras"] = {
                     "_internal_document_id": doc_id,

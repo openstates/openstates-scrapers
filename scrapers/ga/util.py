@@ -67,6 +67,10 @@ SESSION_SITE_IDS = {
     "2011_ss": 22,
     "2011_12": 21,
 }
+SPECIAL_SESSION_SITE_URL_PARTS = {
+    "2026_ss": "2026EX",
+    "2023_ss": "2023EX",
+}
 
 
 def get_key(timestamp):
