@@ -304,12 +304,27 @@ class IlBillScraper(Scraper):
         for bill_url in doc.xpath("//table/tbody/tr/td[1]/a/@href"):
             yield bill_url
 
-    def scrape(self, session=None):
+    def scrape(self, session=None, chamber=None, bill_type_abbrv=None):
         session_id = session
         # scrape a single bill for debug
         # yield from self.scrape_bill(
         #     'upper', '104th', 'SB', 'https://ilga.gov/Legislation/BillStatus?GAID=18&DocNum=2111&DocTypeID=SB&LegId=161644&SessionID=114'
         # )
+
+        # Handle optional input parameters
+        if chamber and chamber not in ["lower", "upper"]:
+            self.error(f"Invalid chamber argument: {chamber}")
+        elif chamber:
+            chamber_list = [chamber]
+        else:
+            chamber_list = ["lower", "upper"]
+
+        if bill_type_abbrv and bill_type_abbrv not in DOC_TYPES.keys():
+            self.error(f"Invalid bill_type_abbrv: {bill_type_abbrv}")
+        elif bill_type_abbrv:
+            bill_type_list = {bill_type_abbrv: DOC_TYPES[bill_type_abbrv]}
+        else:
+            bill_type_list = DOC_TYPES
 
         # Sessions that run from 1997 - 2002. Last few sessiosn before bills were PDFs
         if session in ["90th", "91st", "92nd"]:
@@ -317,9 +332,9 @@ class IlBillScraper(Scraper):
         else:
             urls = {}
             # Identify all bill URLs first for easier debugging
-            for chamber in ["lower", "upper"]:
+            for chamber in chamber_list:
                 for doc_type in [
-                    chamber_slug(chamber) + doc_type for doc_type in DOC_TYPES
+                    chamber_slug(chamber) + doc_type for doc_type in bill_type_list
                 ]:
                     if chamber not in urls:
                         urls[chamber] = {doc_type: []}
@@ -337,11 +352,12 @@ class IlBillScraper(Scraper):
                             chamber, session_id, chamber_doc_type, bill_url
                         )
 
-            # special non-chamber cases
-            for bill_url in self.get_bill_urls(chamber, session_id, "AM"):
-                yield from self.scrape_bill(
-                    chamber, session_id, "AM", bill_url, "appointment"
-                )
+            # special non-chamber cases, if no bill type abbreviation is specified
+            if not bill_type_abbrv:
+                for bill_url in self.get_bill_urls(chamber, session_id, "AM"):
+                    yield from self.scrape_bill(
+                        chamber, session_id, "AM", bill_url, "appointment"
+                    )
 
     def scrape_archive_bills(self, session):
         session_abr = session[0:2]
