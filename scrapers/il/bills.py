@@ -319,7 +319,10 @@ class IlBillScraper(Scraper):
         else:
             chamber_list = ["lower", "upper"]
 
-        if bill_type_abbrv and bill_type_abbrv not in DOC_TYPES.keys():
+        # Note AM is the special case for Appointments
+        if bill_type_abbrv == "AM":
+            bill_type_list = []
+        elif bill_type_abbrv and bill_type_abbrv not in DOC_TYPES.keys():
             self.error(f"Invalid bill_type_abbrv: {bill_type_abbrv}")
         elif bill_type_abbrv:
             bill_type_list = {bill_type_abbrv: DOC_TYPES[bill_type_abbrv]}
@@ -353,7 +356,7 @@ class IlBillScraper(Scraper):
                         )
 
             # special non-chamber cases, if no bill type abbreviation is specified
-            if not bill_type_abbrv:
+            if not bill_type_abbrv or bill_type_abbrv == "AM":
                 for bill_url in self.get_bill_urls(chamber, session_id, "AM"):
                     yield from self.scrape_bill(
                         chamber, session_id, "AM", bill_url, "appointment"
