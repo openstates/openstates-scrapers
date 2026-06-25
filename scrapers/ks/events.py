@@ -1,6 +1,9 @@
 import datetime
+import json
+from collections import defaultdict
+
 import dateutil.parser
-import lxml
+import lxml.html
 import pytz
 
 from openstates.scrape import Scraper, Event
@@ -15,76 +18,191 @@ class KSEventScraper(Scraper):
         self.headers[
             "User-Agent"
         ] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36"
-        now = datetime.datetime.now()
-        if start is None:
-            start = now - datetime.timedelta(days=self.date_range)
-        else:
-            start = dateutil.parser.parse(start)
 
         meta = next(
             each
             for each in self.jurisdiction.legislative_sessions
             if each["identifier"] == session
         )
+
         slug = meta["_scraped_name"]
 
-        # ending slash matters...
-        url_root = f"http://www.kslegislature.org/li/{slug}/committees/hearings/"
+        url_root = f"https://www.kslegislature.gov/{slug}/hearings/"
+
+        self.warning(f"Using hearings URL: {url_root}")
+
+        landing_page = self.get(url_root).content
+        landing_page = lxml.html.fromstring(landing_page)
+
+        available_dates = landing_page.xpath(
+            "//div[@id='hearings-cal-root']/@data-available"
+        )
+
+        if not available_dates:
+            self.warning("No available hearing dates found")
+            raise EmptyScrape
+
+        available_dates = json.loads(available_dates[0])
+
+        grouped_events = defaultdict(list)
+
+        for date_str in available_dates:
+            page_num = 1
+
+            while True:
+                url = (
+                    f"{url_root}?page={page_num}"
+                    f"&date={date_str}"
+                    f"&sort=date"
+                    f"&dir=desc"
+                    f"&per_page=20"
+                )
+
+                self.warning(f"Fetching {url}")
+
+                page = self.get(url).content
+                page = lxml.html.fromstring(page)
+
+                hearings = page.xpath(
+                    "//table[contains(@class,'site-table')]/tbody/tr"
+                )
+
+                self.warning(
+                    f"Date {date_str}: found {len(hearings)} hearings"
+                )
+
+                if not hearings:
+                    break
+
+                for hearing in hearings:
+                    columns = hearing.xpath("./td")
+
+                    if len(columns) < 7:
+                        continue
+
+                    hearing_anchor = columns[0].xpath(".//a")
+                    if not hearing_anchor:
+                        continue
+
+                    hearing_url = (
+                        "https://www.kslegislature.gov"
+                        + hearing_anchor[0].attrib["href"]
+                    )
+
+                    hearing_date = (
+                        hearing_anchor[0].text_content().strip()
+                    )
+
+                    time_str = columns[1].text_content().strip()
+                    room = columns[2].text_content().strip()
+                    chamber = columns[3].text_content().strip()
+
+                    committee_anchor = columns[4].xpath(".//a")
+                    if not committee_anchor:
+                        continue
+
+                    committee = (
+                        committee_anchor[0].text_content().strip()
+                    )
+
+                    committee_url = (
+                        "https://www.kslegislature.gov"
+                        + committee_anchor[0].attrib["href"]
+                    )
+
+                    bill_id = None
+                    bill_url = None
+
+                    bill_anchor = columns[6].xpath(".//a")
+                    if bill_anchor:
+                        bill_id = (
+                            bill_anchor[0].text_content().strip()
+                        )
+
+                        bill_url = (
+                            "https://www.kslegislature.gov"
+                            + bill_anchor[0].attrib["href"]
+                        )
+
+                    when = self.tz.localize(
+                        dateutil.parser.parse(
+                            f"{hearing_date} {time_str}"
+                        )
+                    )
+
+                    group_key = (
+                        when,
+                        chamber,
+                        committee,
+                        room,
+                    )
+
+                    grouped_events[group_key].append(
+                        {
+                            "bill_id": bill_id,
+                            "bill_url": bill_url,
+                            "hearing_url": hearing_url,
+                            "committee_url": committee_url,
+                        }
+                    )
+
+                next_page = page.xpath(
+                    f"//a[contains(@href,'page={page_num + 1}')]"
+                )
+
+                if not next_page:
+                    break
+
+                page_num += 1
 
         event_count = 0
-        events = set()
-        for delta in range(self.date_range * 2):
-            date = (start + datetime.timedelta(days=delta)).strftime("%m/%d/%Y")
-            url = f"{url_root}?selected_date={date}"
-            page = self.get(url).content
-            page = lxml.html.fromstring(page)
-            """
-            Headers for each day look like
-            Committee 	Chamber 	Bill 	Short Title 	Time 	Room 	Status
-            """
-            for hearing in page.xpath("//table[@id='hearingsTable']/tbody/tr"):
-                columns = hearing.xpath("td")
-                com_name = columns[0].xpath("a")[0].text.strip()
-                com_link = f"http://www.kslegislature.org/{columns[0].xpath('a')[0].attrib['href']}"
-                chamber = columns[1].xpath("a")[0].text.strip()
-                try:
-                    bill_id = columns[2].xpath("a")[0].text.strip()
-                    bill_link = f"http://www.kslegislature.org/{columns[2].xpath('a')[0].attrib['href']}"
-                except Exception:
-                    bill_link = None
-                    bill_id = None
-                    self.warning(f"{hearing} missing bill details")
-                    pass
-                title = columns[3].text.strip()
-                time = columns[4].text.strip()
-                when = self.tz.localize(dateutil.parser.parse(f"{date} {time}"))
-                location = columns[5].text.strip()
-                if location == "":
-                    location = "Not listed"
-                event_name = f"{chamber}#{com_name}#{title}#{when}"[:500]
-                if event_name in events:
-                    self.warning(f"Skipping duplicate event {event_name}")
-                    continue
-                events.add(event_name)
-                event = Event(
-                    start_date=when,
-                    name=f"{chamber} {com_name}",
-                    location_name=location,
-                )
-                event.dedupe_key = event_name[:499]
-                event.add_participant(
-                    f"{chamber} {com_name}", type="committee", note="host"
-                )
-                event.add_source(url)
-                event.add_source(com_link)
-                agenda = None
-                if title:
-                    agenda = event.add_agenda_item(title)
-                if bill_link:
-                    event.add_source(bill_link)
-                if bill_id and agenda:
-                    agenda.add_bill(bill_id)
-                event_count += 1
-                yield event
+        seen = set()
+
+        for (
+            when,
+            chamber,
+            committee,
+            room,
+        ), bills in grouped_events.items():
+
+            event_name = (
+                f"{chamber}#{committee}#{room}#{when}"
+            )[:500]
+
+            if event_name in seen:
+                continue
+
+            seen.add(event_name)
+
+            event = Event(
+                start_date=when,
+                name=f"{chamber} {committee}",
+                location_name=room or "Not listed",
+            )
+
+            event.dedupe_key = event_name[:499]
+
+            event.add_participant(
+                f"{chamber} {committee}",
+                type="committee",
+                note="host",
+            )
+
+            for bill in bills:
+                event.add_source(bill["hearing_url"])
+                event.add_source(bill["committee_url"])
+
+                if bill["bill_url"]:
+                    event.add_source(bill["bill_url"])
+
+                if bill["bill_id"]:
+                    agenda = event.add_agenda_item(
+                        bill["bill_id"]
+                    )
+                    agenda.add_bill(bill["bill_id"])
+
+            event_count += 1
+            yield event
+
         if event_count < 1:
             raise EmptyScrape
