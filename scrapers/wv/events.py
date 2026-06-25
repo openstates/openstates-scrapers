@@ -13,15 +13,50 @@ class WVEventScraper(Scraper, LXMLMixin):
 
     def scrape(self):
         com_urls = [
-            ("Senate", "http://www.wvlegislature.gov/committees/senate/main.cfm"),
-            ("House", "http://www.wvlegislature.gov/committees/House/main.cfm"),
-            (
-                "Interim",
-                "http://www.wvlegislature.gov/committees/Interims/interims.cfm",
-            ),
-        ]
+        ("Senate", "http://www.wvlegislature.gov/committees/senate/main.cfm"),
+        ("House", "http://www.wvlegislature.gov/committees/House/main.cfm"),
+        (
+            "Interim",
+            "http://www.wvlegislature.gov/committees/Interims/interims.cfm",
+        ),
+    ]
         for chamber, url in com_urls:
             yield from self.scrape_committees(chamber, url)
+
+
+
+        yield from self._scrape_interim_committees_page(
+            "http://www.wvlegislature.gov/committees/Interims/interims.cfm"
+        )
+
+    def _scrape_interim_committees_page(self, url):
+        self.info(f"Scraping interim committees page: {url}")
+        page = self.lxmlize(url)
+        page.make_links_absolute(url)
+
+        committee_links = page.xpath('//div[@id="wrapleftcol"]/a[contains(@href, "committee.cfm")]/@href')
+        self.info(f"Found {len(committee_links)} interim committee links on {url}")
+        for link in committee_links:
+            yield from self._scrape_interim_committee_detail(link)
+
+    def _scrape_interim_committee_detail(self, committee_url):
+        self.info(f"Scraping interim committee detail page: {committee_url}")
+        page = self.lxmlize(committee_url)
+        page.make_links_absolute(committee_url)
+
+        agenda_archive_link = page.xpath('//div[@class="int-section"]/h2[text()="Agendas"]/following-sibling::a[contains(@href, "agenda.cfm?abb=")]/@href')
+        if agenda_archive_link:
+            yield from self._scrape_agenda_archive_page(agenda_archive_link[0])
+
+    def _scrape_agenda_archive_page(self, archive_url):
+        self.info(f"Scraping agenda archive page: {archive_url}")
+        page = self.lxmlize(archive_url)
+        page.make_links_absolute(archive_url)
+
+        agenda_links = page.xpath('//table[@class="tabborder"]//td[@class="tdborder"]/a[contains(@href, "agenda.cfm?recordid=")]/@href')
+        self.info(f"Found {len(agenda_links)} individual agenda links on {archive_url}")
+        for agenda_link in agenda_links:
+            yield from self.scrape_meeting_page(agenda_link)
 
     def scrape_committees(self, chamber, url):
         event_objects = set()
@@ -72,19 +107,46 @@ class WVEventScraper(Scraper, LXMLMixin):
                 yield from self.scrape_meeting_page(row.xpath("@href")[0])
 
     def scrape_meeting_page(self, url):
-        self.info(f"GET {url}")
+        self.info(f"Scraping meeting page: {url}")
         page = self.lxmlize(url)
         page.make_links_absolute(url)
 
         if page.xpath('//div[text()="Error"]'):
+            self.warning(f"Error page found for {url}")
             return
 
-        if not page.xpath('//div[@id="wrapleftcol"]/h3'):
+        # Try XPath for interim committee pages
+        com_xpath_interim = page.xpath('//div[@id="wrapleftcol"]/h3[1]/text()')
+        when_xpath_interim = page.xpath('//div[@id="wrapleftcol"]/h1[1]/text()')
+        where_xpath_interim = page.xpath('//div[@id="wrapleftcol"]/*[contains(text(), "Location")]/text()')
+        desc_xpath_interim = page.xpath('//div[@id="wrapleftcol"]/blockquote[1]')
+
+        # Try XPath for senate/house committee pages (alternate structure)
+        com_xpath_alternate = page.xpath('//div[@id="wrapleftcol"]/h1[1]/text()')
+        when_xpath_alternate = page.xpath('//div[@id="wrapleftcol"]/h2[1]/text()')
+        where_xpath_alternate = page.xpath('//div[@id="wrapleftcol"]/strong[1]/text()')
+        desc_xpath_alternate = page.xpath('//div[@id="wrapleftcol"]/blockquote[@class="textcontainer"][1]')
+
+
+        if com_xpath_interim and when_xpath_interim:
+            com = com_xpath_interim[0].strip()
+            when = when_xpath_interim[0].strip()
+            where = where_xpath_interim[0].strip() if where_xpath_interim else "N/A"
+            desc = desc_xpath_interim[0].text_content().strip() if desc_xpath_interim else "N/A"
+        elif com_xpath_alternate and when_xpath_alternate:
+            com = com_xpath_alternate[0].strip()
+            when = when_xpath_alternate[0].strip()
+            where = where_xpath_alternate[0].strip() if where_xpath_alternate else "N/A"
+            desc = desc_xpath_alternate[0].text_content().strip() if desc_xpath_alternate else "N/A"
+        else:
+            self.warning(f"Could not find committee header or when header for {url}. Skipping event creation.")
             return
 
-        com = page.xpath('//div[@id="wrapleftcol"]/h3[1]/text()')[0].strip()
+        self.info(f"Committee: {com} (from {url})")
         com = re.sub(r"[\s\-]+Agenda", "", com)
-        when = page.xpath('//div[@id="wrapleftcol"]/h1[1]/text()')[0].strip()
+        self.info(f"When: {when} (from {url})")
+        self.info(f"Location: {where} (from {url})")
+        self.info(f"Description: {desc[:100]}... (from {url})") # Truncate description for logs
 
         if when == "test, test" or when == ",":
             # Ignore test page
