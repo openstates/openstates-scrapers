@@ -1,152 +1,248 @@
-import re
 import datetime
-import requests
-import feedparser
+import re
+import time
 
 import lxml.html
-from scrapelib import HTTPError
+
 from openstates.scrape import Scraper, VoteEvent
 
-
 class KSVoteScraper(Scraper):
-    special_slugs = {"2020S1": "li_2020s", "2021S1": "li_2021s"}
+    BASE_URL = "https://www.kslegislature.gov"
 
     def scrape(self, session=None):
-        yield from self.scrape_bill_list(session)
-
-    def scrape_bill_list(self, session):
         meta = next(
             each
             for each in self.jurisdiction.legislative_sessions
             if each["identifier"] == session
         )
-        if meta["classification"] == "special":
-            list_slug = self.special_slugs[session]
-        else:
-            list_slug = "li"
 
-        list_url = f"https://kslegislature.org/{list_slug}/data/feeds/rss/bill_info.xml"
-        xml = self.get(list_url).content
-        feed = feedparser.parse(xml)
-        for item in feed.entries:
-            bill_re = re.compile(r"(?P<prefix>\D+)(?P<number>\d+)")
-            bill_data = bill_re.search(item.title).groupdict()
-            bill_id = f'{bill_data["prefix"]} {bill_data["number"]}'
-            yield from self.scrape_vote_from_bill(session, bill_id, item.guid)
+        # Kansas' redesigned site stores votes under biennium-specific
+        # URLs such as:
+        #   /b2025_26/votes/
+        #   /b2023_24/votes/
+        #
+        # Convert the OpenStates session identifier (2025-2026)
+        # into the site biennium format (b2025_26).
+        years = meta["identifier"].split("-")
+        biennium = f"b{years[0]}_{years[1][-2:]}"
 
-    def scrape_vote_from_bill(self, session, bill, url):
-        try:
-            vote_response = self.get(url, retry_on_404=True)
-        except HTTPError as e:
-            # 500 error on HCR 5011 for some reason
-            # temporarily swallow this exception to allow scrape to finish
-            if bill in ["HCR 5011", "HB 2737"]:
-                self.logger.warning(
-                    f"Swallowing HTTPError for {bill} as a temporary fix: {e}"
+        page = 1
+
+        while True:
+            # Vote listings are loaded via the HTMX fragment endpoint.
+            # Paginate until no vote rows are returned.
+            list_url = (
+                f"{self.BASE_URL}/{biennium}/votes/fragment/"
+                f"?page={page}&per_page=20"
+            )
+
+            self.info(f"Get {list_url}")
+
+            try:
+                response = self.get(list_url)
+            except Exception as e:
+                self.warning(
+                    f"Failed to fetch vote listing page {page}: {e}"
                 )
-                return
-            else:
-                raise e
-        doc = lxml.html.fromstring(vote_response.text)
-        doc.make_links_absolute(url)
-        all_links = doc.xpath(
-            "//table[@class='bottom']/tbody[@class='tab-content-sub']/tr/td/a/@href"
-        )
-        vote_members_urls = []
-        for i in all_links:
-            if "vote_view" in i:
-                vote_members_urls.append(str(i))
-        if len(vote_members_urls) > 0:
-            for link in vote_members_urls:
-                yield from self.parse_vote(bill, link, session)
+                break
+
+            doc = lxml.html.fromstring(response.text)
+
+            vote_rows = doc.xpath("//tr[@data-href]")
+
+            if not vote_rows:
+                break
+
+            for row in vote_rows:
+                bill = row.xpath(
+                    ".//td[@data-label='Measure']//a/text()"
+                )
+                bill = bill[0].strip() if bill else None
+
+                vote_url = row.attrib["data-href"]
+
+                if not vote_url.startswith("http"):
+                    vote_url = f"{self.BASE_URL}{vote_url}"
+
+                yield from self.parse_vote(
+                    bill,
+                    vote_url,
+                    session,
+                )
+
+            page += 1
 
     def parse_vote(self, bill, link, session):
-        # Server sometimes sends proper error headers,
-        # sometimes not
-        try:
-            self.info("Get {}".format(link))
-            response = requests.get(link)
-            text = response.text
-        except requests.exceptions.HTTPError as err:
-            self.warning("{} fetching vote {}, skipping".format(err, link))
-            return
+        self.info(f"Fetching vote {link}")
 
-        if "Varnish cache server" in text:
+        response = None
+
+        # Kansas occasionally resets SSL connections while processing
+        # large numbers of requests. Retry before skipping a vote.
+        for attempt in range(10):
+            try:
+                response = self.get(
+                    link,
+                    timeout=60,
+                )
+                break
+
+            except Exception as e:
+                self.warning(
+                    f"Attempt {attempt + 1}/10 failed for {link}: {e}"
+                )
+                time.sleep(10)
+
+        if response is None:
             self.warning(
-                "Scrape rate is too high, try re-scraping with "
-                "The --rpm set to a lower number"
+                f"Skipping vote after repeated failures: {link}"
             )
             return
 
+        text = response.text
+
         if "Page Not Found" in text or "Page Unavailable" in text:
-            self.warning("missing vote, skipping")
+            self.warning(f"Missing vote page: {link}")
             return
 
         if "502: Bad gateway" in text:
             self.warning(
-                f"cloudflare bad gateway error, probably transient, skipping {bill} at {link}"
+                f"Bad gateway error, skipping {bill} at {link}"
             )
             return
 
-        member_doc = lxml.html.fromstring(text)
-        motion = member_doc.xpath("//div[@id='main_content']/h4/text()")
-        chamber_date_line = "".join(
-            member_doc.xpath("//div[@id='main_content']/h3[1]//text()")
-        )
-        chamber_date_line_words = chamber_date_line.split()
-        vote_chamber = chamber_date_line_words[0]
-        vote_date = datetime.datetime.strptime(chamber_date_line_words[-1], "%m/%d/%Y")
-        vote_status = " ".join(chamber_date_line_words[2:-2])
-        opinions = member_doc.xpath(
-            "//div[@id='main_content']/h3[position() > 1]/text()"
-        )
-        if len(opinions) > 0:
-            vote_status = vote_status if vote_status.strip() else motion[0]
-            vote_chamber = "upper" if vote_chamber == "Senate" else "lower"
+        doc = lxml.html.fromstring(text)
 
-            for i in opinions:
-                try:
-                    count = int(i[i.find("(") + 1 : i.find(")")])
-                except ValueError:
-                    # This is likely not a vote-count text chunk
-                    # It's probably '`On roll call the vote was:`
-                    pass
-                else:
-                    if "yea" in i.lower():
-                        yes_count = count
-                    elif "nay" in i.lower():
-                        no_count = count
-                    elif "present" in i.lower():
-                        p_count = count
-                    elif "absent" in i.lower():
-                        a_count = count
+        motion_text = doc.xpath(
+            "string(//p[contains(@class,'list-hero-sub')])"
+        ).strip()
 
-            vote = VoteEvent(
-                bill=bill,
-                start_date=vote_date.strftime("%Y-%m-%d"),
-                chamber=vote_chamber,
-                motion_text=vote_status,
-                legislative_session=session,
-                result="pass" if yes_count > no_count else "fail",
-                classification="passage",
+        chamber_text = doc.xpath(
+            "string(//span[contains(@class,'list-kicker')])"
+        ).strip()
+
+        vote_date = None
+
+        # Vote metadata contains both icon text and actual date text,
+        # e.g. "event April 10, 2026". Extract only the date portion.
+        for item in doc.xpath(
+            "//span[contains(@class,'vote-hero-meta-item')]"
+        ):
+            item_text = " ".join(
+                item.xpath(".//text()")
+            ).strip()
+
+            match = re.search(
+                r"([A-Za-z]+ \d{1,2}, \d{4})",
+                item_text,
             )
-            vote.dedupe_key = link
 
-            vote.set_count("yes", yes_count)
-            vote.set_count("no", no_count)
-            vote.set_count("abstain", p_count)
-            vote.set_count("absent", a_count)
+            if match:
+                vote_date = datetime.datetime.strptime(
+                    match.group(1),
+                    "%B %d, %Y",
+                )
+                break
 
-            vote.add_source(link)
+        if vote_date is None:
+            self.warning(f"No date found for {link}")
+            return
 
-            a_links = member_doc.xpath("//div[@id='main_content']/a/text()")
-            for i in range(1, len(a_links)):
-                if i <= yes_count:
-                    vote.vote("yes", re.sub(",", "", a_links[i]).split()[0])
-                elif no_count != 0 and i > yes_count and i <= yes_count + no_count:
-                    vote.vote("no", re.sub(",", "", a_links[i]).split()[0])
-                else:
-                    vote.vote("other", re.sub(",", "", a_links[i]).split()[0])
-            yield vote
-        else:
-            self.warning("No Votes for: %s", link)
+        chamber = (
+            "upper"
+            if "Senate" in chamber_text
+            else "lower"
+        )
+
+        yes_count = 0
+        no_count = 0
+        absent_count = 0
+
+        # Kansas displays tally counts as:
+        #   Yea
+        #   Nay
+        #   Other
+        #
+        # The "Other" bucket currently corresponds to absent members.
+        for box in doc.xpath(
+            "//div[contains(@class,'vote-tally-num')]"
+        ):
+            label = box.xpath(
+                "string(.//span[contains(@class,'vote-tally-num-label')])"
+            ).strip().lower()
+
+            value_text = box.xpath(
+                "string(.//span[contains(@class,'vote-tally-num-value')])"
+            ).strip()
+
+            try:
+                count = int(value_text)
+            except ValueError:
+                continue
+
+            if label == "yea":
+                yes_count = count
+            elif label == "nay":
+                no_count = count
+            elif label == "other":
+                absent_count = count
+
+        members = doc.xpath(
+            "//li[contains(@class,'vote-member')]"
+        )
+
+        if not members:
+            self.warning(f"No votes found for {link}")
+            return
+
+        vote = VoteEvent(
+            bill=bill,
+            start_date=vote_date.strftime("%Y-%m-%d"),
+            chamber=chamber,
+            motion_text=motion_text,
+            legislative_session=session,
+            result="pass" if yes_count > no_count else "fail",
+            classification="passage",
+        )
+
+        vote.dedupe_key = link
+
+        vote.set_count("yes", yes_count)
+        vote.set_count("no", no_count)
+        vote.set_count("absent", absent_count)
+
+        vote.add_source(link)
+
+        # Individual member votes are stored as:
+        #   data-status="yea"
+        #   data-status="nay"
+        #   data-status="absent"
+        for member in members:
+            status = member.attrib.get(
+                "data-status",
+                "",
+            ).lower()
+
+            name = member.xpath(
+                "string(.//span[contains(@class,'vote-member-name')]//a)"
+            ).strip()
+
+            # Remove chamber prefix to match legislator names
+            # already present in OpenStates.
+            name = re.sub(
+                r"^(Rep\.|Sen\.)\s*",
+                "",
+                name,
+            )
+
+            if status == "yea":
+                vote.vote("yes", name)
+            elif status == "nay":
+                vote.vote("no", name)
+            elif status == "absent":
+                vote.vote("absent", name)
+            else:
+                vote.vote("other", name)
+
+        yield vote
+
