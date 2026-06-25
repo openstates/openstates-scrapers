@@ -85,7 +85,8 @@ class WVBillScraper(Scraper):
         #     "https://www.wvlegislature.gov/Bill_Status/Bills_history.cfm?input=500&year=2020&sessiontype=RS&btype=bill",
         # )
 
-        for link in page.xpath("//a[contains(@href, 'Bills_history')]"):
+        # First column in the results table contains a link to bill, text of link is bill ID
+        for link in page.xpath("//table[@id='results']//tr/td[1]/a"):
             bill_id = link.xpath("string()").strip()
             title = link.xpath("string(../../td[2])").strip()
             if not title:
