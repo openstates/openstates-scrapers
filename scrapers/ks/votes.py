@@ -6,6 +6,7 @@ import lxml.html
 
 from openstates.scrape import Scraper, VoteEvent
 
+
 class KSVoteScraper(Scraper):
     BASE_URL = "https://www.kslegislature.gov"
 
@@ -41,9 +42,7 @@ class KSVoteScraper(Scraper):
             try:
                 response = self.get(list_url)
             except Exception as e:
-                self.warning(
-                    f"Failed to fetch vote listing page {page}: {e}"
-                )
+                self.warning(f"Failed to fetch vote listing page {page}: {e}")
                 break
 
             doc = lxml.html.fromstring(response.text)
@@ -54,9 +53,7 @@ class KSVoteScraper(Scraper):
                 break
 
             for row in vote_rows:
-                bill = row.xpath(
-                    ".//td[@data-label='Measure']//a/text()"
-                )
+                bill = row.xpath(".//td[@data-label='Measure']//a/text()")
                 bill = bill[0].strip() if bill else None
 
                 vote_url = row.attrib["data-href"]
@@ -88,15 +85,11 @@ class KSVoteScraper(Scraper):
                 break
 
             except Exception as e:
-                self.warning(
-                    f"Attempt {attempt + 1}/10 failed for {link}: {e}"
-                )
+                self.warning(f"Attempt {attempt + 1}/10 failed for {link}: {e}")
                 time.sleep(10)
 
         if response is None:
-            self.warning(
-                f"Skipping vote after repeated failures: {link}"
-            )
+            self.warning(f"Skipping vote after repeated failures: {link}")
             return
 
         text = response.text
@@ -106,16 +99,12 @@ class KSVoteScraper(Scraper):
             return
 
         if "502: Bad gateway" in text:
-            self.warning(
-                f"Bad gateway error, skipping {bill} at {link}"
-            )
+            self.warning(f"Bad gateway error, skipping {bill} at {link}")
             return
 
         doc = lxml.html.fromstring(text)
 
-        motion_text = doc.xpath(
-            "string(//p[contains(@class,'list-hero-sub')])"
-        ).strip()
+        motion_text = doc.xpath("string(//p[contains(@class,'list-hero-sub')])").strip()
 
         chamber_text = doc.xpath(
             "string(//span[contains(@class,'list-kicker')])"
@@ -125,12 +114,8 @@ class KSVoteScraper(Scraper):
 
         # Vote metadata contains both icon text and actual date text,
         # e.g. "event April 10, 2026". Extract only the date portion.
-        for item in doc.xpath(
-            "//span[contains(@class,'vote-hero-meta-item')]"
-        ):
-            item_text = " ".join(
-                item.xpath(".//text()")
-            ).strip()
+        for item in doc.xpath("//span[contains(@class,'vote-hero-meta-item')]"):
+            item_text = " ".join(item.xpath(".//text()")).strip()
 
             match = re.search(
                 r"([A-Za-z]+ \d{1,2}, \d{4})",
@@ -148,11 +133,7 @@ class KSVoteScraper(Scraper):
             self.warning(f"No date found for {link}")
             return
 
-        chamber = (
-            "upper"
-            if "Senate" in chamber_text
-            else "lower"
-        )
+        chamber = "upper" if "Senate" in chamber_text else "lower"
 
         yes_count = 0
         no_count = 0
@@ -164,12 +145,12 @@ class KSVoteScraper(Scraper):
         #   Other
         #
         # The "Other" bucket currently corresponds to absent members.
-        for box in doc.xpath(
-            "//div[contains(@class,'vote-tally-num')]"
-        ):
-            label = box.xpath(
-                "string(.//span[contains(@class,'vote-tally-num-label')])"
-            ).strip().lower()
+        for box in doc.xpath("//div[contains(@class,'vote-tally-num')]"):
+            label = (
+                box.xpath("string(.//span[contains(@class,'vote-tally-num-label')])")
+                .strip()
+                .lower()
+            )
 
             value_text = box.xpath(
                 "string(.//span[contains(@class,'vote-tally-num-value')])"
@@ -187,9 +168,7 @@ class KSVoteScraper(Scraper):
             elif label == "other":
                 absent_count = count
 
-        members = doc.xpath(
-            "//li[contains(@class,'vote-member')]"
-        )
+        members = doc.xpath("//li[contains(@class,'vote-member')]")
 
         if not members:
             self.warning(f"No votes found for {link}")
@@ -245,4 +224,3 @@ class KSVoteScraper(Scraper):
                 vote.vote("other", name)
 
         yield vote
-
