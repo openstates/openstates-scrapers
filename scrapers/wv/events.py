@@ -128,18 +128,62 @@ class WVEventScraper(Scraper, LXMLMixin):
         desc_xpath_alternate = page.xpath('//div[@id="wrapleftcol"]/blockquote[@class="textcontainer"][1]')
 
 
-        if com_xpath_interim and when_xpath_interim:
-            com = com_xpath_interim[0].strip()
-            when = when_xpath_interim[0].strip()
-            where = where_xpath_interim[0].strip() if where_xpath_interim else "N/A"
-            desc = desc_xpath_interim[0].text_content().strip() if desc_xpath_interim else "N/A"
-        elif com_xpath_alternate and when_xpath_alternate:
-            com = com_xpath_alternate[0].strip()
-            when = when_xpath_alternate[0].strip()
-            where = where_xpath_alternate[0].strip() if where_xpath_alternate else "N/A"
-            desc = desc_xpath_alternate[0].text_content().strip() if desc_xpath_alternate else "N/A"
-        else:
-            self.warning(f"Could not find committee header or when header for {url}. Skipping event creation.")
+        # Initialize variables
+        com = None
+        when = None
+        where = "N/A"
+        desc = "N/A"
+
+        # --- Extract Committee Name ---
+        com_xpaths = [
+            '//div[@id="wrapleftcol"]/h1[1]/text()', # Interim agenda page style
+            '//div[@id="wrapleftcol"]/h3[1]/text()', # Other committee page style
+        ]
+        for xpath in com_xpaths:
+            found_com = page.xpath(xpath)
+            if found_com:
+                com = found_com[0].strip()
+                break
+
+        # --- Extract Date/Time ---
+        when_xpaths = [
+            '//div[@id="wrapleftcol"]/h2[1]/text()', # Interim agenda page style
+            '//div[@id="wrapleftcol"]/h1[1]/text()', # Other committee page style (check for "Agenda" to avoid re-capturing committee name)
+        ]
+        for xpath in when_xpaths:
+            found_when = page.xpath(xpath)
+            if found_when:
+                # Additional check for h1 to ensure it's not the committee name
+                if 'h1' in xpath and 'Agenda' in found_when[0]:
+                    continue
+                when = found_when[0].strip()
+                break
+
+        # --- Extract Location ---
+        where_xpaths = [
+            '//div[@id="wrapleftcol"]/strong[starts-with(text(), "Location")]/text()', # Interim agenda page style
+            '//div[@id="wrapleftcol"]/*[contains(text(), "Location")]/text()',        # Other committee page style
+        ]
+        for xpath in where_xpaths:
+            found_where = page.xpath(xpath)
+            if found_where:
+                where = found_where[0].replace("Location:", "").strip()
+                break
+
+        # --- Extract Description ---
+        desc_xpaths = [
+            '//div[@id="wrapleftcol"]/blockquote[@class="textcontainer"][1]', # Interim agenda page style
+            '//div[@id="wrapleftcol"]/blockquote[1]',                           # Other committee page style
+        ]
+        for xpath in desc_xpaths:
+            found_desc = page.xpath(xpath)
+            if found_desc:
+                desc = found_desc[0].text_content().strip()
+                break
+
+
+        if not com or not when:
+            self.warning(f"Could not find committee name or when information for {url}. Skipping event creation. Found com: '{com}', found when: '{when}'")
             return
 
         self.info(f"Committee: {com} (from {url})")
