@@ -19,6 +19,16 @@ class KSEventScraper(Scraper):
             "User-Agent"
         ] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36"
 
+        # By default only scrape recent and future events, ignoring older
+        # past events. Default the start date to 30 days ago, matching the
+        # behavior of the prior implementation.
+        if start is None:
+            start_date = datetime.date.today() - datetime.timedelta(
+                days=self.date_range
+            )
+        else:
+            start_date = dateutil.parser.parse(start).date()
+
         meta = next(
             each
             for each in self.jurisdiction.legislative_sessions
@@ -29,7 +39,7 @@ class KSEventScraper(Scraper):
 
         url_root = f"https://www.kslegislature.gov/{slug}/hearings/"
 
-        self.warning(f"Using hearings URL: {url_root}")
+        self.info(f"Using hearings URL: {url_root}")
 
         landing_page = self.get(url_root).content
         landing_page = lxml.html.fromstring(landing_page)
@@ -43,6 +53,13 @@ class KSEventScraper(Scraper):
             raise EmptyScrape
 
         available_dates = json.loads(available_dates[0])
+
+        # Only keep dates on or after the start date.
+        available_dates = [
+            date_str
+            for date_str in available_dates
+            if dateutil.parser.parse(date_str).date() >= start_date
+        ]
 
         grouped_events = defaultdict(list)
 
@@ -58,18 +75,12 @@ class KSEventScraper(Scraper):
                     f"&per_page=20"
                 )
 
-                self.warning(f"Fetching {url}")
-
                 page = self.get(url).content
                 page = lxml.html.fromstring(page)
 
-                hearings = page.xpath(
-                    "//table[contains(@class,'site-table')]/tbody/tr"
-                )
+                hearings = page.xpath("//table[contains(@class,'site-table')]/tbody/tr")
 
-                self.warning(
-                    f"Date {date_str}: found {len(hearings)} hearings"
-                )
+                self.info(f"Date {date_str}: found {len(hearings)} hearings")
 
                 if not hearings:
                     break
@@ -89,9 +100,7 @@ class KSEventScraper(Scraper):
                         + hearing_anchor[0].attrib["href"]
                     )
 
-                    hearing_date = (
-                        hearing_anchor[0].text_content().strip()
-                    )
+                    hearing_date = hearing_anchor[0].text_content().strip()
 
                     time_str = columns[1].text_content().strip()
                     room = columns[2].text_content().strip()
@@ -101,9 +110,7 @@ class KSEventScraper(Scraper):
                     if not committee_anchor:
                         continue
 
-                    committee = (
-                        committee_anchor[0].text_content().strip()
-                    )
+                    committee = committee_anchor[0].text_content().strip()
 
                     committee_url = (
                         "https://www.kslegislature.gov"
@@ -115,9 +122,7 @@ class KSEventScraper(Scraper):
 
                     bill_anchor = columns[6].xpath(".//a")
                     if bill_anchor:
-                        bill_id = (
-                            bill_anchor[0].text_content().strip()
-                        )
+                        bill_id = bill_anchor[0].text_content().strip()
 
                         bill_url = (
                             "https://www.kslegislature.gov"
@@ -125,9 +130,7 @@ class KSEventScraper(Scraper):
                         )
 
                     when = self.tz.localize(
-                        dateutil.parser.parse(
-                            f"{hearing_date} {time_str}"
-                        )
+                        dateutil.parser.parse(f"{hearing_date} {time_str}")
                     )
 
                     group_key = (
@@ -146,9 +149,7 @@ class KSEventScraper(Scraper):
                         }
                     )
 
-                next_page = page.xpath(
-                    f"//a[contains(@href,'page={page_num + 1}')]"
-                )
+                next_page = page.xpath(f"//a[contains(@href,'page={page_num + 1}')]")
 
                 if not next_page:
                     break
@@ -165,9 +166,7 @@ class KSEventScraper(Scraper):
             room,
         ), bills in grouped_events.items():
 
-            event_name = (
-                f"{chamber}#{committee}#{room}#{when}"
-            )[:500]
+            event_name = (f"{chamber}#{committee}#{room}#{when}")[:500]
 
             if event_name in seen:
                 continue
@@ -196,9 +195,7 @@ class KSEventScraper(Scraper):
                     event.add_source(bill["bill_url"])
 
                 if bill["bill_id"]:
-                    agenda = event.add_agenda_item(
-                        bill["bill_id"]
-                    )
+                    agenda = event.add_agenda_item(bill["bill_id"])
                     agenda.add_bill(bill["bill_id"])
 
             event_count += 1
