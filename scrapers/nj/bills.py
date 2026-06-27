@@ -456,6 +456,9 @@ class NJBillScraper(Scraper, MDBMixin):
                             f"Action string is empty, so cannot save VoteEvent for vote {vote_id}"
                         )
                     else:
+                        if bill_id not in bill_dict:
+                            self.warning("unknown bill %s in vote database" % bill_id)
+                            continue
                         if vote_id not in votes:
                             votes[vote_id] = VoteEvent(
                                 start_date=TIMEZONE.localize(date),
