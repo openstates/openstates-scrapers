@@ -5,7 +5,6 @@ import datetime
 import pytz
 import scrapelib
 import lxml.html
-import requests
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 
@@ -513,8 +512,7 @@ class IlBillScraper(Scraper):
 
     def scrape_bill(self, chamber, session, doc_type, url, bill_type=None):
         try:
-            html = requests.get(url, headers=headers).text
-            print(html)
+            html = self.get(url, headers=headers).text
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(url)
         except scrapelib.HTTPError as e:
