@@ -12,6 +12,11 @@ from openstates.utils import convert_pdf
 BASE_URL = "https://ilga.gov"
 central = pytz.timezone("US/Central")
 
+user_agent = os.getenv("USER_AGENT", "openstates")
+
+headers = {
+    "User-Agent": user_agent,
+}
 
 session_details = {
     # TODO, fill these in once appointed
@@ -297,7 +302,7 @@ class IlBillScraper(Scraper):
             doc_type,
             params["SessionId"],
         )
-        html = self.get(url).text
+        html = self.get(url, headers=headers).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -308,7 +313,7 @@ class IlBillScraper(Scraper):
         session_id = session
         # scrape a single bill for debug
         # yield from self.scrape_bill(
-        #     'upper', '104th', 'SB', 'https://ilga.gov/Legislation/BillStatus?GAID=18&DocNum=2111&DocTypeID=SB&LegId=161644&SessionID=114'
+        #     'upper', '104th', 'HB', 'https://ilga.gov/Legislation/BillStatus?DocNum=228&GAID=18&DocTypeID=HB&LegId=155905&SessionID=114'
         # )
 
         # Handle optional input parameters
@@ -365,7 +370,7 @@ class IlBillScraper(Scraper):
     def scrape_archive_bills(self, session):
         session_abr = session[0:2]
         url = f"{BASE_URL}/documents/legislation/legisnet{session_abr}/{session_abr}gatoc.html"
-        html = self.get(url).text
+        html = self.get(url, headers=headers).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         bill_numbers_sections = doc.xpath("//table//a/@href")
@@ -388,7 +393,7 @@ class IlBillScraper(Scraper):
             for bill_url in bills_urls:
                 bill_url = clean_archivebill_url(bill_url)
 
-                bill_html = self.get(bill_url).text
+                bill_html = self.get(bill_url, headers=headers).text
                 bill_doc = lxml.html.fromstring(bill_html)
                 bill_doc.make_links_absolute(bill_url)
 
@@ -414,7 +419,7 @@ class IlBillScraper(Scraper):
                         '//a[contains (., "Bill Summary")]/@href'
                     )[0]
                     summary_page_url = clean_archivebill_url(summary_page_url)
-                    summary_page_html = self.get(summary_page_url).text
+                    summary_page_html = self.get(summary_page_url, headers=headers).text
                     summary_page_doc = lxml.html.fromstring(summary_page_html)
                     summary_page_doc.make_links_absolute(summary_page_url)
                 else:
@@ -425,7 +430,7 @@ class IlBillScraper(Scraper):
                         0
                     ]
                     bill_url = clean_archivebill_url(bill_url)
-                    bill_html = self.get(bill_url).text
+                    bill_html = self.get(bill_url, headers=headers).text
                     bill_doc = lxml.html.fromstring(bill_html)
                     bill_doc.make_links_absolute(bill_url)
 
@@ -507,7 +512,7 @@ class IlBillScraper(Scraper):
 
     def scrape_bill(self, chamber, session, doc_type, url, bill_type=None):
         try:
-            html = self.get(url).text
+            html = self.get(url, headers=headers).text
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(url)
         except scrapelib.HTTPError as e:
@@ -606,7 +611,7 @@ class IlBillScraper(Scraper):
         yield from self.scrape_votes(session, bill, votes_url)
 
     def scrape_documents(self, bill, version_url):
-        html = self.get(version_url).text
+        html = self.get(version_url, headers=headers).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(version_url)
         pdf_only = False
@@ -630,7 +635,7 @@ class IlBillScraper(Scraper):
                     # eed to visit the version's page, and get PDF link from there
                     # otherwise get a faulty "latest version"/"LV" alias/duplicate
                     url = "{}&Print=1".format(url)
-                    version_page_html = self.get(url).text
+                    version_page_html = self.get(url, headers=headers).text
                     version_page_doc = lxml.html.fromstring(version_page_html)
                     version_page_doc.make_links_absolute(url)
                     pdf_link = version_page_doc.xpath('//a[contains(@href, "PDF")]')
@@ -668,7 +673,7 @@ class IlBillScraper(Scraper):
                 bill.add_document_link(name, url)
 
     def scrape_votes(self, session, bill, votes_url):
-        html = self.get(votes_url).text
+        html = self.get(votes_url, headers=headers).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(votes_url)
 
@@ -728,7 +733,7 @@ class IlBillScraper(Scraper):
     def fetch_pdf_lines(self, href):
         # download the file
         try:
-            fname, resp = self.urlretrieve(href)
+            fname, resp = self.urlretrieve(href, headers=headers)
             pdflines = [
                 line.decode("utf-8") for line in convert_pdf(fname, "text").splitlines()
             ]
