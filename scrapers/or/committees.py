@@ -41,7 +41,7 @@ class ORCommitteeScraper(Scraper):
                 try:
                     member_name = legislators[member["LegislatorCode"]]
                 except KeyError:
-                    logger.warn(
+                    logger.warning(
                         "Legislator {} not found in session {}".format(
                             member["LegislatorCode"], session_key
                         )
