@@ -207,7 +207,7 @@ class DCBillScraper(Scraper):
                             if act["attachment"]:
                                 mimetype = (
                                     "application/pdf"
-                                    if act["attachment"].endswith("pdf")
+                                    if ".pdf" in act["attachment"].lower()
                                     else get_media_type(act["attachment"])
                                 )
                                 is_version = False
