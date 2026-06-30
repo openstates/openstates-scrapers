@@ -287,7 +287,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2026-01-13",
             "end_date": "2026-03-13",
-            "active": False,
+            "active": True,
             "extras": {"session_number": "113"},
         },
         {

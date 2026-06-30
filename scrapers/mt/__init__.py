@@ -74,6 +74,7 @@ class Montana(State):
         },
     ]
     ignored_scraped_sessions = [
+        "20271",
         "20172",
         "20091",
         "20072",

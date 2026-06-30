@@ -22,4 +22,4 @@ def check_counts(vote, raise_error=False):
             if raise_error:
                 raise ValueError(msg)
             else:
-                logger.warn(msg)
+                logger.warning(msg)

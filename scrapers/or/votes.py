@@ -150,7 +150,7 @@ class ORVoteScraper(Scraper):
             try:
                 voter_name = self.legislators[voter["VoteName"]]
             except KeyError:
-                logger.warn(
+                logger.warning(
                     "Legislator {} not found in session {}".format(
                         voter["VoteName"], self.session_key
                     )
