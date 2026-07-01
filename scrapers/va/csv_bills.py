@@ -23,7 +23,7 @@ class VaCSVBillScraper(Scraper):
     _bills = defaultdict(list)
     _summaries = defaultdict(list)
 
-    _session_id: int
+    _session_id: str
     categorizer = Categorizer()
 
     def get_file(self, filename):
@@ -207,7 +207,8 @@ class VaCSVBillScraper(Scraper):
             is_special = True
 
         session_id = SESSION_SITE_IDS[session]
-        self._session_id = "20251"
+        self._session_id = session_id
+
         # self._init_sftp(session_id)
         bill_url_base = "https://lis.virginia.gov/cgi-bin/"
 
