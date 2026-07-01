@@ -86,7 +86,9 @@ class WVBillScraper(Scraper):
         # )
 
         # Bill links are in td.tdborder cells (table lost id="results" in 2026 redesign)
-        for link in page.xpath("//td[@class='tdborder']/a[contains(@href, 'Bills_history')]"):
+        for link in page.xpath(
+            "//td[@class='tdborder']/a[contains(@href, 'Bills_history')]"
+        ):
             bill_id = link.xpath("string()").strip()
             title = link.xpath("string(../../td[2])").strip()
             if not title:
@@ -130,7 +132,6 @@ class WVBillScraper(Scraper):
         url,
         strip_sponsors=re.compile(r"\s*\(.{,50}\)\s*").sub,
     ):
-
         html = self.get(url, verify=False).text
 
         page = lxml.html.fromstring(html)
