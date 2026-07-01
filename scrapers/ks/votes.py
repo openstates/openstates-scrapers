@@ -37,8 +37,6 @@ class KSVoteScraper(Scraper):
                 f"?page={page}&per_page=20"
             )
 
-            self.info(f"Get {list_url}")
-
             try:
                 response = self.get(list_url)
             except Exception as e:
@@ -70,8 +68,6 @@ class KSVoteScraper(Scraper):
             page += 1
 
     def parse_vote(self, bill, link, session):
-        self.info(f"Fetching vote {link}")
-
         response = None
 
         # Kansas occasionally resets SSL connections while processing
@@ -104,7 +100,24 @@ class KSVoteScraper(Scraper):
 
         doc = lxml.html.fromstring(text)
 
-        motion_text = doc.xpath("string(//p[contains(@class,'list-hero-sub')])").strip()
+        # The motion/short title lives in the vote hero's short-title span.
+        # Older/alternate layouts used a "list-hero-sub" paragraph, so fall
+        # back to that when the primary element is absent.
+        motion_text = doc.xpath(
+            "string(//span[contains(@class,'vote-hero-shorttitle')])"
+        ).strip()
+
+        if not motion_text:
+            motion_text = doc.xpath(
+                "string(//p[contains(@class,'list-hero-sub')])"
+            ).strip()
+
+        # Fall back to the roll call heading so votes are never emitted with
+        # an empty motion_text.
+        if not motion_text:
+            motion_text = doc.xpath(
+                "string(//h1[contains(@class,'list-hero-title')])"
+            ).strip()
 
         chamber_text = doc.xpath(
             "string(//span[contains(@class,'list-kicker')])"
