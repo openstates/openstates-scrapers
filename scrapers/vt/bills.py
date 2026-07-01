@@ -115,7 +115,7 @@ class VTBillScraper(Scraper, LXMLMixin):
             # Capture sponsors
             sponsors = doc.xpath(
                 '//dl[@class="summary-table"]/dt[text()="Sponsor(s)"]/'
-                "following-sibling::dd[1]/ul/li"
+                "following-sibling::dd[1]/ul/li[a]"
             )
             sponsor_type = "primary"
             for sponsor in sponsors:
