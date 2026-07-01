@@ -103,7 +103,7 @@ class Pennsylvania(State):
             "identifier": "2025-2026",
             "name": "2025-2026 Regular Session",
             "start_date": "2025-01-07",
-            "end_date": "2025-11-30",
+            "end_date": "2026-11-30",
             "active": True,
             "extras": {"session_year": "2025"},
         },
