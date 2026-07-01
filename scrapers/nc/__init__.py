@@ -370,7 +370,7 @@ class NorthCarolina(State):
             "identifier": "2025",
             "name": "2025-2026 Session",
             "start_date": "2025-01-11",
-            "end_date": "2025-07-01",
+            "end_date": "2026-07-01",
             "active": True,
         },
         {
