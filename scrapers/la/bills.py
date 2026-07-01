@@ -202,7 +202,7 @@ class LABillScraper(Scraper, LXMLMixin):
         else:
             type = []
 
-        (fd, temp_path) = tempfile.mkstemp()
+        fd, temp_path = tempfile.mkstemp()
         self.urlretrieve(url, temp_path)
 
         html = self.pdf_to_lxml(temp_path)
@@ -347,7 +347,7 @@ class LABillScraper(Scraper, LXMLMixin):
             pass
 
         for action in these_actions:
-            date, chamber, page, text, _ = [x.text for x in action.xpath(".//td")]
+            date, chamber, page, text, *_ = [x.text for x in action.xpath(".//td")]
             # Session is April -> June. Prefiles look like they're in
             # January at earliest.
             date += "/{}".format(self.start_year)
