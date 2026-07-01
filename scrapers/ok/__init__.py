@@ -244,5 +244,7 @@ class Oklahoma(State):
             verify=False,
         )
         # OK Sometimes appends (Mainsys) to their session listings
-        sessions = [s.replace("(Mainsys)", "").strip() for s in sessions]
+        sessions = [
+            s.replace("(Mainsys)", "").replace("(PROD)", "").strip() for s in sessions
+        ]
         return sessions
