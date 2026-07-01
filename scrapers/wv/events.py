@@ -11,52 +11,22 @@ class WVEventScraper(Scraper, LXMLMixin):
     verify = False
     _tz = pytz.timezone("US/Eastern")
 
+    interims_url = "http://www.wvlegislature.gov/committees/Interims/interims.cfm"
+
     def scrape(self):
         com_urls = [
-        ("Senate", "http://www.wvlegislature.gov/committees/senate/main.cfm"),
-        ("House", "http://www.wvlegislature.gov/committees/House/main.cfm"),
-        (
-            "Interim",
-            "http://www.wvlegislature.gov/committees/Interims/interims.cfm",
-        ),
-    ]
+            ("Senate", "http://www.wvlegislature.gov/committees/senate/main.cfm"),
+            ("House", "http://www.wvlegislature.gov/committees/House/main.cfm"),
+            ("Interim", self.interims_url),
+        ]
         for chamber, url in com_urls:
             yield from self.scrape_committees(chamber, url)
 
-
-
-        yield from self._scrape_interim_committees_page(
-            "http://www.wvlegislature.gov/committees/Interims/interims.cfm"
-        )
-
-    def _scrape_interim_committees_page(self, url):
-        self.info(f"Scraping interim committees page: {url}")
-        page = self.lxmlize(url)
-        page.make_links_absolute(url)
-
-        committee_links = page.xpath('//div[@id="wrapleftcol"]/a[contains(@href, "committee.cfm")]/@href')
-        self.info(f"Found {len(committee_links)} interim committee links on {url}")
-        for link in committee_links:
-            yield from self._scrape_interim_committee_detail(link)
-
-    def _scrape_interim_committee_detail(self, committee_url):
-        self.info(f"Scraping interim committee detail page: {committee_url}")
-        page = self.lxmlize(committee_url)
-        page.make_links_absolute(committee_url)
-
-        agenda_archive_link = page.xpath('//div[@class="int-section"]/h2[text()="Agendas"]/following-sibling::a[contains(@href, "agenda.cfm?abb=")]/@href')
-        if agenda_archive_link:
-            yield from self._scrape_agenda_archive_page(agenda_archive_link[0])
-
-    def _scrape_agenda_archive_page(self, archive_url):
-        self.info(f"Scraping agenda archive page: {archive_url}")
-        page = self.lxmlize(archive_url)
-        page.make_links_absolute(archive_url)
-
-        agenda_links = page.xpath('//table[@class="tabborder"]//td[@class="tdborder"]/a[contains(@href, "agenda.cfm?recordid=")]/@href')
-        self.info(f"Found {len(agenda_links)} individual agenda links on {archive_url}")
-        for agenda_link in agenda_links:
-            yield from self.scrape_meeting_page(agenda_link)
+        # The per-committee crawl above only follows "agendas.cfm" links, which
+        # misses meetings that are only published on the consolidated interim
+        # committee schedule (e.g. the June 14-16 Canaan Valley meetings).
+        # Scrape those schedule pages directly so those events are captured.
+        yield from self.scrape_interim_schedules(self.interims_url)
 
     def scrape_committees(self, chamber, url):
         event_objects = set()
@@ -76,6 +46,172 @@ class WVEventScraper(Scraper, LXMLMixin):
                 event_objects.add(event_name)
                 event.dedupe_key = event_name
                 yield event
+
+    def scrape_interim_schedules(self, url):
+        """Scrape the consolidated interim committee meeting schedule.
+
+        The interims landing page lists each interim meeting block (e.g.
+        "June 14-16") in its right-hand column, linking to an
+        ``intcomsched.cfm`` page that holds a per-day table of committee
+        meetings. These meetings are not always reachable via the per-
+        committee "agendas.cfm" crawl, so scrape the schedule directly.
+        """
+        page = self.lxmlize(url)
+        page.make_links_absolute(url)
+
+        current_year = datetime.datetime.today().year
+        event_objects = set()
+
+        sched_links = set(page.xpath('//a[contains(@href, "intcomsched.cfm")]/@href'))
+        for link in sched_links:
+            # Links look like intcomsched.cfm?day1=06/14/2026 - use the
+            # year in the query string to skip past meeting blocks.
+            match = re.search(r"day1=\d{1,2}/\d{1,2}/(\d{4})", link)
+            if match and int(match.group(1)) < current_year:
+                continue
+
+            for event in self.scrape_interim_schedule_page(link):
+                event_name = f"Interim#{event.name}#{event.start_date}#{event.end_date}#{event.location['name']}#{event.description}"[
+                    :500
+                ]
+                if event_name in event_objects:
+                    self.warning(f"Found duplicate {event_name}. Skipping.")
+                    continue
+                event_objects.add(event_name)
+                event.dedupe_key = event_name
+                yield event
+
+    def scrape_interim_schedule_page(self, url):
+        self.info(f"GET {url}")
+        page = self.lxmlize(url)
+        page.make_links_absolute(url)
+
+        if page.xpath('//div[text()="Error"]'):
+            return
+
+        # Each meeting day is an <h2> heading followed by a table of rows.
+        for heading in page.xpath('//main[@id="wrapper"]/h2'):
+            day_text = heading.text_content().strip()
+            if not day_text:
+                continue
+
+            # e.g. "Monday, June 15, 2026"
+            try:
+                day = dateutil.parser.parse(self.clean_date(day_text))
+            except (ValueError, OverflowError):
+                self.warning(f"Could not parse interim schedule date: {day_text}")
+                continue
+
+            # The table with the day's meetings immediately follows the h2.
+            table = heading.xpath("following-sibling::table[1]")
+            if not table:
+                continue
+
+            for row in table[0].xpath(".//tr[td]"):
+                yield from self.parse_interim_schedule_row(row, day, url)
+
+    def parse_interim_schedule_row(self, row, day, source_url):
+        cells = row.xpath("./td")
+        if len(cells) < 4:
+            return
+
+        convene = cells[0].text_content().strip()
+        adjourn = cells[1].text_content().strip()
+        where = cells[3].text_content().strip()
+
+        # The committee cell holds either a linked committee name plus a
+        # separate "- Agenda" link, or plain text for site tours/presentations
+        # (e.g. "Dolly Sods"). It may also carry a status suffix such as
+        # "- CANCELLED" or "- JOINT MEETING".
+        com_link = cells[2].xpath('.//a[contains(@href, "committee.cfm")]')
+        if com_link:
+            com = com_link[0].text_content().strip()
+        else:
+            com = cells[2].text_content().strip()
+
+        raw_com_text = cells[2].text_content()
+        status = "tentative"
+        if "cancel" in raw_com_text.lower():
+            status = "cancelled"
+
+        # Strip trailing annotations like "- CANCELLED" or "- JOINT MEETING"
+        # from the committee name (they're captured via status/description
+        # instead).
+        com = re.sub(
+            r"\s*[-–]\s*(CANCELLED|CANCELED|JOINT MEETING|POSTPONED|RESCHEDULED)\s*$",
+            "",
+            com,
+            flags=re.IGNORECASE,
+        )
+        com = re.sub(r"\s+", " ", com).strip()
+
+        if not com:
+            return
+
+        # Combine the meeting day with the convene time so events aren't
+        # incorrectly set to midnight.
+        start_date = self.combine_date_time(day, convene)
+
+        end_date = ""
+        if adjourn:
+            end_date = self.combine_date_time(day, adjourn)
+
+        agenda_link = cells[2].xpath('.//a[contains(@href, "genda.cfm")]/@href')
+
+        event = Event(
+            name=com,
+            start_date=start_date,
+            end_date=end_date,
+            location_name=where or "See agenda",
+            classification="committee-meeting",
+            status=status,
+        )
+        event.add_source(source_url)
+
+        # Only rows with a committee.cfm link are actual committees; the
+        # remaining rows are site tours or presentations, so don't attach a
+        # (bogus) committee entity to those.
+        if com_link:
+            event.add_committee(com, note="host")
+            event.add_source(com_link[0].get("href"))
+
+        if agenda_link:
+            self.scrape_interim_agenda_page(event, agenda_link[0])
+
+        yield event
+
+    def scrape_interim_agenda_page(self, event, url):
+        self.info(f"GET {url}")
+        page = self.lxmlize(url)
+        page.make_links_absolute(url)
+
+        if page.xpath('//div[text()="Error"]'):
+            return
+
+        event.add_source(url)
+
+        # The agenda body is the first blockquote under the main wrapper.
+        rows = page.xpath('//main[@id="wrapper"]/blockquote[1]/p')
+        self.parse_agenda_items(event, rows)
+
+    def combine_date_time(self, day, time_text):
+        """Combine a parsed date with a time string, localized to Eastern.
+
+        Falls back to the bare (midnight) date if the time can't be parsed,
+        but that should be rare for the interim schedule which always lists
+        an explicit convene time.
+        """
+        time_text = (time_text or "").strip()
+        if time_text:
+            try:
+                parsed = dateutil.parser.parse(
+                    f"{day.strftime('%Y-%m-%d')} {time_text}"
+                )
+                return self._tz.localize(parsed)
+            except (ValueError, OverflowError):
+                self.warning(f"Could not parse interim time: {time_text}")
+
+        return self._tz.localize(datetime.datetime(day.year, day.month, day.day))
 
     def scrape_committee_page(self, url):
         self.info(f"GET {url}")
@@ -107,90 +243,19 @@ class WVEventScraper(Scraper, LXMLMixin):
                 yield from self.scrape_meeting_page(row.xpath("@href")[0])
 
     def scrape_meeting_page(self, url):
-        self.info(f"Scraping meeting page: {url}")
+        self.info(f"GET {url}")
         page = self.lxmlize(url)
         page.make_links_absolute(url)
 
         if page.xpath('//div[text()="Error"]'):
-            self.warning(f"Error page found for {url}")
             return
 
-        # Try XPath for interim committee pages
-        com_xpath_interim = page.xpath('//div[@id="wrapleftcol"]/h3[1]/text()')
-        when_xpath_interim = page.xpath('//div[@id="wrapleftcol"]/h1[1]/text()')
-        where_xpath_interim = page.xpath('//div[@id="wrapleftcol"]/*[contains(text(), "Location")]/text()')
-        desc_xpath_interim = page.xpath('//div[@id="wrapleftcol"]/blockquote[1]')
-
-        # Try XPath for senate/house committee pages (alternate structure)
-        com_xpath_alternate = page.xpath('//div[@id="wrapleftcol"]/h1[1]/text()')
-        when_xpath_alternate = page.xpath('//div[@id="wrapleftcol"]/h2[1]/text()')
-        where_xpath_alternate = page.xpath('//div[@id="wrapleftcol"]/strong[1]/text()')
-        desc_xpath_alternate = page.xpath('//div[@id="wrapleftcol"]/blockquote[@class="textcontainer"][1]')
-
-
-        # Initialize variables
-        com = None
-        when = None
-        where = "N/A"
-        desc = "N/A"
-
-        # --- Extract Committee Name ---
-        com_xpaths = [
-            '//div[@id="wrapleftcol"]/h1[1]/text()', # Interim agenda page style
-            '//div[@id="wrapleftcol"]/h3[1]/text()', # Other committee page style
-        ]
-        for xpath in com_xpaths:
-            found_com = page.xpath(xpath)
-            if found_com:
-                com = found_com[0].strip()
-                break
-
-        # --- Extract Date/Time ---
-        when_xpaths = [
-            '//div[@id="wrapleftcol"]/h2[1]/text()', # Interim agenda page style
-            '//div[@id="wrapleftcol"]/h1[1]/text()', # Other committee page style (check for "Agenda" to avoid re-capturing committee name)
-        ]
-        for xpath in when_xpaths:
-            found_when = page.xpath(xpath)
-            if found_when:
-                # Additional check for h1 to ensure it's not the committee name
-                if 'h1' in xpath and 'Agenda' in found_when[0]:
-                    continue
-                when = found_when[0].strip()
-                break
-
-        # --- Extract Location ---
-        where_xpaths = [
-            '//div[@id="wrapleftcol"]/strong[starts-with(text(), "Location")]/text()', # Interim agenda page style
-            '//div[@id="wrapleftcol"]/*[contains(text(), "Location")]/text()',        # Other committee page style
-        ]
-        for xpath in where_xpaths:
-            found_where = page.xpath(xpath)
-            if found_where:
-                where = found_where[0].replace("Location:", "").strip()
-                break
-
-        # --- Extract Description ---
-        desc_xpaths = [
-            '//div[@id="wrapleftcol"]/blockquote[@class="textcontainer"][1]', # Interim agenda page style
-            '//div[@id="wrapleftcol"]/blockquote[1]',                           # Other committee page style
-        ]
-        for xpath in desc_xpaths:
-            found_desc = page.xpath(xpath)
-            if found_desc:
-                desc = found_desc[0].text_content().strip()
-                break
-
-
-        if not com or not when:
-            self.warning(f"Could not find committee name or when information for {url}. Skipping event creation. Found com: '{com}', found when: '{when}'")
+        if not page.xpath('//div[@id="wrapleftcol"]/h3'):
             return
 
-        self.info(f"Committee: {com} (from {url})")
+        com = page.xpath('//div[@id="wrapleftcol"]/h3[1]/text()')[0].strip()
         com = re.sub(r"[\s\-]+Agenda", "", com)
-        self.info(f"When: {when} (from {url})")
-        self.info(f"Location: {where} (from {url})")
-        self.info(f"Description: {desc[:100]}... (from {url})") # Truncate description for logs
+        when = page.xpath('//div[@id="wrapleftcol"]/h1[1]/text()')[0].strip()
 
         if when == "test, test" or when == ",":
             # Ignore test page
@@ -241,41 +306,55 @@ class WVEventScraper(Scraper, LXMLMixin):
 
         event.add_committee(com, note="host")
 
-        for row in page.xpath('//div[@id="wrapleftcol"]/blockquote[1]/p'):
-            if row.text_content().strip() != "":
-                agenda = event.add_agenda_item(
-                    row.text_content().strip().replace("\u25a1", "")
-                )
-
-                # Matches (SJR, HCR, HB, HR, SCR, SB, HJR, SR) + id
-                # Allows for house, senate, joint, or bill to be fully spelled out
-                # Allows for "." after H, S, J, C, and B
-                # Allows for up to two spaces before the id
-                bills = re.findall(
-                    r"((S\.?|Senate|H\.?|House)\s?((J|C|Joint)\.?\s?)?(B\.?|Bill|R\.?)\s?\s?(\d+))",
-                    row.text_content(),
-                    flags=re.IGNORECASE,
-                )
-
-                component_re = re.compile(r"([A-Z]+)\s*(\d+)", flags=re.IGNORECASE)
-                period_and_whitespace_re = re.compile(r"\.\s*", flags=re.IGNORECASE)
-                house_bill_re = re.compile(r"house bill", flags=re.IGNORECASE)
-                senate_bill_re = re.compile(r"senate bill", flags=re.IGNORECASE)
-
-                for bill in bills:
-                    bill_id = period_and_whitespace_re.sub("", bill[0])
-                    bill_id = house_bill_re.sub("HB", bill_id)
-                    bill_id = senate_bill_re.sub("SB", bill_id)
-
-                    # Final step to set correct number of spaces in the id
-                    components = component_re.search(bill_id)
-                    bill_id = f"{components.group(1)} {int(components.group(2))}"
-
-                    agenda.add_bill(bill_id)
+        self.parse_agenda_items(
+            event,
+            page.xpath('//div[@id="wrapleftcol"]/blockquote[1]/p'),
+        )
 
         event.add_source(url)
 
         yield event
+
+    def parse_agenda_items(self, event, rows):
+        """Add agenda items (and any linked bills) to an event.
+
+        ``rows`` should be an iterable of <p> elements from an agenda
+        blockquote. Bill references embedded in the text are parsed and
+        linked to the agenda item.
+        """
+        component_re = re.compile(r"([A-Z]+)\s*(\d+)", flags=re.IGNORECASE)
+        period_and_whitespace_re = re.compile(r"\.\s*", flags=re.IGNORECASE)
+        house_bill_re = re.compile(r"house bill", flags=re.IGNORECASE)
+        senate_bill_re = re.compile(r"senate bill", flags=re.IGNORECASE)
+
+        for row in rows:
+            if row.text_content().strip() == "":
+                continue
+
+            agenda = event.add_agenda_item(
+                row.text_content().strip().replace("\u25a1", "")
+            )
+
+            # Matches (SJR, HCR, HB, HR, SCR, SB, HJR, SR) + id
+            # Allows for house, senate, joint, or bill to be fully spelled out
+            # Allows for "." after H, S, J, C, and B
+            # Allows for up to two spaces before the id
+            bills = re.findall(
+                r"((S\.?|Senate|H\.?|House)\s?((J|C|Joint)\.?\s?)?(B\.?|Bill|R\.?)\s?\s?(\d+))",
+                row.text_content(),
+                flags=re.IGNORECASE,
+            )
+
+            for bill in bills:
+                bill_id = period_and_whitespace_re.sub("", bill[0])
+                bill_id = house_bill_re.sub("HB", bill_id)
+                bill_id = senate_bill_re.sub("SB", bill_id)
+
+                # Final step to set correct number of spaces in the id
+                components = component_re.search(bill_id)
+                bill_id = f"{components.group(1)} {int(components.group(2))}"
+
+                agenda.add_bill(bill_id)
 
     def clean_date(self, when):
         # Remove all text after the third comma to make sure no extra text
