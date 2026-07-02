@@ -392,6 +392,7 @@ class AZBillScraper(Scraper):
 
         # Get the bills page to start the session
         req = self.get("https://www.azleg.gov/bills/", timeout=80)
+        session_cookies = dict(req.cookies)
 
         session_form_url = "https://www.azleg.gov/azlegwp/setsession.php"
         form = {"sessionID": session_id}
@@ -404,14 +405,15 @@ class AZBillScraper(Scraper):
         req = self.post(
             url=session_form_url,
             data=form,
-            cookies=req.cookies,
+            cookies=session_cookies,
             headers=headers,
             allow_redirects=True,
         )
+        session_cookies.update(dict(req.cookies))
 
         bill_list_url = "https://www.azleg.gov/bills/"
 
-        page = self.get(bill_list_url, timeout=80, cookies=req.cookies).content
+        page = self.get(bill_list_url, timeout=80, cookies=session_cookies).content
         # There's an errant close-comment that browsers handle
         # but LXML gets really confused.
         page = page.replace(b"--!>", b"-->")
