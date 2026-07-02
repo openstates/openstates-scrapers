@@ -311,6 +311,8 @@ class VaCSVBillScraper(Scraper):
                 action = hist["history_description"]
                 action_date = hist["history_date"]
                 date = dateutil.parser.parse(action_date).date()
+                if action[0] not in chamber_types:
+                    continue
                 chamber = chamber_types[action[0]]
                 vote_id = hist["history_refid"]
                 cleaned_action = action[2:]
