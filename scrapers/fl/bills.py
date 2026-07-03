@@ -19,7 +19,6 @@ from .actions import Categorizer
 from .utils import (
     get_random_user_agent,
     add_random_delay,
-    retry_on_connection_error,
 )
 
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
