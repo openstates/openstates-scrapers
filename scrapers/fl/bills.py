@@ -916,12 +916,7 @@ class FlBillScraper(Scraper):
             )
             yield from self._process_bill_list(bill_list)
 
-        yield from retry_on_connection_error(
-            lambda: list(do_scrape_with_retry()),
-            max_retries=3,
-            initial_backoff=10,
-            max_backoff=120,
-        )
+        yield from do_scrape_with_retry()
 
     def _create_fresh_session(self):
         """
@@ -971,39 +966,52 @@ class FlBillScraper(Scraper):
         """
         Process the bill list with error handling and circuit breaker pattern.
         """
-        for item in bill_list.do_scrape():
-            try:
-                # Reset connection pool if needed
-                self._reset_connection_pool_if_needed()
+        try:
+            for item in bill_list.do_scrape():
+                try:
+                    # Reset connection pool if needed
+                    self._reset_connection_pool_if_needed()
 
-                # Add a random delay between processing items
-                add_random_delay(1, 3)
+                    # Add a random delay between processing items
+                    add_random_delay(1, 3)
 
-                # If we've had too many consecutive failures, pause for a while
-                if self._consecutive_failures >= self._max_consecutive_failures:
-                    self.logger.warning(
-                        f"Circuit breaker triggered after {self._consecutive_failures} consecutive failures. "
-                        f"Pausing for {self._circuit_breaker_timeout} seconds."
-                    )
-                    time.sleep(self._circuit_breaker_timeout)
+                    # If we've had too many consecutive failures, pause for a while
+                    if self._consecutive_failures >= self._max_consecutive_failures:
+                        self.logger.warning(
+                            f"Circuit breaker triggered after {self._consecutive_failures} consecutive failures. "
+                            f"Pausing for {self._circuit_breaker_timeout} seconds."
+                        )
+                        time.sleep(self._circuit_breaker_timeout)
+                        self._consecutive_failures = 0
+
+                        # Rotate user agent after circuit breaker timeout
+                        self.headers["User-Agent"] = get_random_user_agent()
+
+                    yield item
+
+                    # Reset consecutive failures counter on success
                     self._consecutive_failures = 0
 
-                    # Rotate user agent after circuit breaker timeout
-                    self.headers["User-Agent"] = get_random_user_agent()
+                except Exception as e:
+                    self._consecutive_failures += 1
+                    self.logger.error(f"Error processing item: {e}")
 
-                yield item
+                    # If it's a connection error, add a longer delay
+                    if isinstance(e, (ConnectionError, RemoteDisconnected)):
+                        self.logger.warning("Connection error. Adding longer delay.")
+                        add_random_delay(5, 15)
 
-                # Reset consecutive failures counter on success
-                self._consecutive_failures = 0
-
-            except Exception as e:
-                self._consecutive_failures += 1
-                self.logger.error(f"Error processing item: {e}")
-
-                # If it's a connection error, add a longer delay
-                if isinstance(e, (ConnectionError, RemoteDisconnected)):
-                    self.logger.warning("Connection error. Adding longer delay.")
-                    add_random_delay(5, 15)
-
-                    # Rotate user agent after connection error
-                    self.headers["User-Agent"] = get_random_user_agent()
+                        # Rotate user agent after connection error
+                        self.headers["User-Agent"] = get_random_user_agent()
+        except Exception as e:
+            # flhouse.gov uses application-layer bot detection: returns "Request Rejected"
+            # HTML with HTTP 200, causing spatula to raise a rejection error after 4 failed
+            # accept_response() checks. Catch it here so bills already yielded are saved
+            # rather than the entire scrape crashing with zero output.
+            if "reject" in str(type(e).__name__).lower() or "reject" in str(e).lower():
+                self.logger.warning(
+                    f"flhouse.gov bot detection triggered — stopping session early. "
+                    f"Bills processed before this point have been saved. ({e})"
+                )
+            else:
+                raise
