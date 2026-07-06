@@ -311,9 +311,23 @@ class VaCSVBillScraper(Scraper):
                 action = hist["history_description"]
                 action_date = hist["history_date"]
                 date = dateutil.parser.parse(action_date).date()
-                chamber = chamber_types[action[0]]
                 vote_id = hist["history_refid"]
-                cleaned_action = action[2:]
+
+                # Actions are prefixed with a chamber code followed by a space,
+                # e.g. "H Prefiled and ordered printed" or
+                # "S Constitutional reading dispensed".
+                # Executive (governor) actions such as "Approved by Governor" or
+                # "Vetoed by Governor" have no chamber letter and instead begin
+                # with a leading space. Default those to the executive chamber so
+                # they don't raise a KeyError (which previously halted the scrape
+                # and prevented signed/vetoed actions from being ingested).
+                chamber_code = action[0]
+                if chamber_code in chamber_types:
+                    chamber = chamber_types[chamber_code]
+                    cleaned_action = action[2:]
+                else:
+                    chamber = "executive"
+                    cleaned_action = action.strip()
 
                 if re.findall(r"\d{8}D", cleaned_action):
                     doc_actions[action_date].append(cleaned_action)
