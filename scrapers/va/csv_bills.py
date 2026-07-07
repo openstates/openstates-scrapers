@@ -166,6 +166,40 @@ class VaCSVBillScraper(Scraper):
         clean = re.compile("<.*?>")
         return re.sub(clean, "", text)
 
+    def chamber_for_action(self, action, chamber_types):
+        """Resolve the chamber for a history action and strip its prefix.
+
+        Actions are normally prefixed with a chamber code followed by a space,
+        e.g. "H Prefiled and ordered printed" or
+        "S Constitutional reading dispensed".
+
+        Some actions have no chamber letter and instead begin with a leading
+        space. Previously the scraper assumed every action started with a valid
+        chamber letter and did chamber_types[action[0]], which raised a KeyError
+        on these and halted the scrape -- dropping all signed/vetoed actions.
+
+        These prefix-less actions fall into two groups:
+          * Governor (executive) actions, e.g. "Approved by Governor" or
+            "Vetoed by Governor".
+          * Non-governor records such as "Acts of Assembly Chapter text
+            (CHAP...)" or "Conference Report released", which are legislative in
+            nature.
+
+        Only actions mentioning the Governor are treated as executive; everything
+        else falls back to "legislature" so we don't mislabel these records as
+        executive actions.
+
+        Returns a (chamber, cleaned_action) tuple.
+        """
+        chamber_code = action[0]
+        if chamber_code in chamber_types:
+            return chamber_types[chamber_code], action[2:]
+
+        cleaned_action = action.strip()
+        if "governor" in cleaned_action.lower():
+            return "executive", cleaned_action
+        return "legislature", cleaned_action
+
     def load_summaries(self):
         resp = self.get_file("Summaries.csv")
         reader = csv.reader(resp.splitlines(), delimiter=",")
@@ -313,33 +347,9 @@ class VaCSVBillScraper(Scraper):
                 date = dateutil.parser.parse(action_date).date()
                 vote_id = hist["history_refid"]
 
-                # Actions are normally prefixed with a chamber code followed by
-                # a space, e.g. "H Prefiled and ordered printed" or
-                # "S Constitutional reading dispensed".
-                # Some actions have no chamber letter and instead begin with a
-                # leading space. Previously the scraper assumed every action
-                # started with a valid chamber letter and did
-                # chamber_types[action[0]], which raised a KeyError on these and
-                # halted the scrape -- dropping all signed/vetoed actions.
-                # These prefix-less actions fall into two groups:
-                #   * Governor (executive) actions, e.g. "Approved by Governor"
-                #     or "Vetoed by Governor".
-                #   * Non-governor records such as "Acts of Assembly Chapter
-                #     text (CHAP...)" or "Conference Report released", which are
-                #     legislative in nature.
-                # Only treat actions mentioning the Governor as executive; fall
-                # back to "legislature" for everything else so we don't
-                # mislabel these records as executive actions.
-                chamber_code = action[0]
-                if chamber_code in chamber_types:
-                    chamber = chamber_types[chamber_code]
-                    cleaned_action = action[2:]
-                else:
-                    cleaned_action = action.strip()
-                    if "governor" in cleaned_action.lower():
-                        chamber = "executive"
-                    else:
-                        chamber = "legislature"
+                chamber, cleaned_action = self.chamber_for_action(
+                    action, chamber_types
+                )
 
                 if re.findall(r"\d{8}D", cleaned_action):
                     doc_actions[action_date].append(cleaned_action)
