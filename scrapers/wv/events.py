@@ -10,6 +10,11 @@ from utils import LXMLMixin
 class WVEventScraper(Scraper, LXMLMixin):
     verify = False
     _tz = pytz.timezone("US/Eastern")
+    # Matches a time of day such as "1:00 PM", "9 AM" or "10:30a.m."
+    _time_re = re.compile(
+        r"\d{1,2}(:\d{2})?\s*[ap]\.?m\.?",
+        re.IGNORECASE,
+    )
 
     def scrape(self):
         com_urls = [
@@ -48,8 +53,9 @@ class WVEventScraper(Scraper, LXMLMixin):
         page = self.lxmlize(url)
         page.make_links_absolute(url)
 
-        # if the page starts w/ a meeting
-        if page.xpath('//div[@id="wrapleftcol"]/h1'):
+        # if the page starts w/ a meeting. The h1 is always the committee title;
+        # a meeting's date/time lives in the h2, so use that to detect a meeting.
+        if page.xpath('//div[@id="wrapleftcol"]/h2'):
             yield from self.scrape_meeting_page(url)
 
         for row in page.xpath('//td/a[contains(@href, "agendas.cfm")]'):
@@ -79,12 +85,14 @@ class WVEventScraper(Scraper, LXMLMixin):
         if page.xpath('//div[text()="Error"]'):
             return
 
-        if not page.xpath('//div[@id="wrapleftcol"]/h3'):
+        if not page.xpath('//div[@id="wrapleftcol"]/h2'):
             return
 
-        com = page.xpath('//div[@id="wrapleftcol"]/h3[1]/text()')[0].strip()
-        com = re.sub(r"[\s\-]+Agenda", "", com)
-        when = page.xpath('//div[@id="wrapleftcol"]/h1[1]/text()')[0].strip()
+        # The committee name is in the h1 (e.g. "Senate Finance Committee - Agenda")
+        # and the meeting date/time is in the h2 (e.g. "March 12, 2026, 3:00 PM").
+        com = page.xpath('//div[@id="wrapleftcol"]/h1[1]/text()')[0].strip()
+        com = re.sub(r"\s*-\s*Agenda\s*$", "", com).strip()
+        when = page.xpath('//div[@id="wrapleftcol"]/h2[1]/text()')[0].strip()
 
         if when == "test, test" or when == ",":
             # Ignore test page
@@ -172,10 +180,20 @@ class WVEventScraper(Scraper, LXMLMixin):
         yield event
 
     def clean_date(self, when):
-        # Remove all text after the third comma to make sure no extra text
-        # is included in the date. Required to correctly parse text like this:
-        # "Friday, March 3, 2023, Following wrap up of morning agenda"
-        when = ",".join(when.split(",")[:3])
+        # Remove extra trailing text after the date so it parses cleanly, e.g.
+        # "Friday, March 3, 2023, Following wrap up of morning agenda".
+        # The date itself occupies the first three comma-separated segments
+        # (weekday, month/day, year). Naively keeping only those three segments
+        # would also discard the meeting time, which the source supplies as a
+        # later segment like "1:00 PM" -- that caused every event to default to
+        # midnight. So keep the first three segments plus any later segment that
+        # contains a time of day.
+        segments = when.split(",")
+        kept = segments[:3]
+        for segment in segments[3:]:
+            if self._time_re.search(segment):
+                kept.append(segment)
+        when = ",".join(kept)
 
         removals = [
             r"(\d+|Thirty) (min\.|mins\.|minutes) After (.*)",
