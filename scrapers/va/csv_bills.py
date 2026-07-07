@@ -313,21 +313,33 @@ class VaCSVBillScraper(Scraper):
                 date = dateutil.parser.parse(action_date).date()
                 vote_id = hist["history_refid"]
 
-                # Actions are prefixed with a chamber code followed by a space,
-                # e.g. "H Prefiled and ordered printed" or
+                # Actions are normally prefixed with a chamber code followed by
+                # a space, e.g. "H Prefiled and ordered printed" or
                 # "S Constitutional reading dispensed".
-                # Executive (governor) actions such as "Approved by Governor" or
-                # "Vetoed by Governor" have no chamber letter and instead begin
-                # with a leading space. Default those to the executive chamber so
-                # they don't raise a KeyError (which previously halted the scrape
-                # and prevented signed/vetoed actions from being ingested).
+                # Some actions have no chamber letter and instead begin with a
+                # leading space. Previously the scraper assumed every action
+                # started with a valid chamber letter and did
+                # chamber_types[action[0]], which raised a KeyError on these and
+                # halted the scrape -- dropping all signed/vetoed actions.
+                # These prefix-less actions fall into two groups:
+                #   * Governor (executive) actions, e.g. "Approved by Governor"
+                #     or "Vetoed by Governor".
+                #   * Non-governor records such as "Acts of Assembly Chapter
+                #     text (CHAP...)" or "Conference Report released", which are
+                #     legislative in nature.
+                # Only treat actions mentioning the Governor as executive; fall
+                # back to "legislature" for everything else so we don't
+                # mislabel these records as executive actions.
                 chamber_code = action[0]
                 if chamber_code in chamber_types:
                     chamber = chamber_types[chamber_code]
                     cleaned_action = action[2:]
                 else:
-                    chamber = "executive"
                     cleaned_action = action.strip()
+                    if "governor" in cleaned_action.lower():
+                        chamber = "executive"
+                    else:
+                        chamber = "legislature"
 
                 if re.findall(r"\d{8}D", cleaned_action):
                     doc_actions[action_date].append(cleaned_action)
