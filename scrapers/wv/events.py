@@ -180,14 +180,17 @@ class WVEventScraper(Scraper, LXMLMixin):
         yield event
 
     def clean_date(self, when):
-        # Remove extra trailing text after the date so it parses cleanly, e.g.
-        # "Friday, March 3, 2023, Following wrap up of morning agenda".
-        # The date itself occupies the first three comma-separated segments
-        # (weekday, month/day, year). Naively keeping only those three segments
-        # would also discard the meeting time, which the source supplies as a
-        # later segment like "1:00 PM" -- that caused every event to default to
-        # midnight. So keep the first three segments plus any later segment that
-        # contains a time of day.
+        """
+        Cleans the meeting date string by removing trailing non-date text while
+        preserving any valid meeting time.
+
+        The date occupies the first three comma-separated segments (weekday,
+        month/day, year). Some agenda pages include additional text such as
+        "Following wrap up of morning agenda", while others include the meeting
+        time (e.g. "1:00 PM") after the date. Preserve any segment containing a
+        valid time and discard other trailing text so the datetime is parsed
+        correctly.
+        """
         segments = when.split(",")
         kept = segments[:3]
         for segment in segments[3:]:
