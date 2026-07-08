@@ -347,9 +347,7 @@ class VaCSVBillScraper(Scraper):
                 date = dateutil.parser.parse(action_date).date()
                 vote_id = hist["history_refid"]
 
-                chamber, cleaned_action = self.chamber_for_action(
-                    action, chamber_types
-                )
+                chamber, cleaned_action = self.chamber_for_action(action, chamber_types)
 
                 if re.findall(r"\d{8}D", cleaned_action):
                     doc_actions[action_date].append(cleaned_action)
