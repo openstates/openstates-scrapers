@@ -1,6 +1,9 @@
 import pytz
 import datetime
 import json
+import re
+
+import lxml.html
 
 from openstates.scrape import Scraper, Bill, VoteEvent
 from .actions import Categorizer
@@ -231,8 +234,22 @@ class WYBillScraper(Scraper, LXMLMixin):
                 chamber=sp_chamber,
             )
 
-        if bill_json["summary"]:
-            bill.add_abstract(note="summary", abstract=bill_json["summary"])
+        # The API's "summary"/"digest" fields are only PDF paths (e.g.
+        # "2026/Summaries/HB0002.pdf"), not usable text. The actual text of
+        # each is served as HTML in the "digestHTML"/"summaryHTML" fields, so
+        # we extract the abstract text from those instead.
+        #
+        # The digest contains the "AN ACT ..." (or "A JOINT RESOLUTION ...")
+        # clause -- a concise description of the bill -- which we use as the
+        # primary abstract. The summary is a longer plain-language explanation
+        # that we add as a secondary abstract when available.
+        digest_abstract = self.extract_digest(bill_json.get("digestHTML"))
+        if digest_abstract:
+            bill.add_abstract(note="digest", abstract=digest_abstract)
+
+        summary_abstract = self.extract_summary(bill_json.get("summaryHTML"))
+        if summary_abstract:
+            bill.add_abstract(note="summary", abstract=summary_abstract)
 
         if bill_json["enrolledNumber"]:
             bill.extras["wy_enrolled_number"] = bill_json["enrolledNumber"]
@@ -312,6 +329,61 @@ class WYBillScraper(Scraper, LXMLMixin):
         v.add_source(source_url)
 
         yield v
+
+    @staticmethod
+    def _html_to_text(raw_html):
+        """Strip tags from an API HTML field and collapse whitespace."""
+        if not raw_html:
+            return ""
+        text = lxml.html.fromstring(raw_html).text_content()
+        return " ".join(text.split())
+
+    def extract_digest(self, digest_html):
+        """Pull the "AN ACT ..." clause out of the digest HTML.
+
+        The digest HTML contains the bill number, sponsors, the enacting
+        clause, and then the action history. We only want the enacting clause,
+        which starts with "AN ACT" (bills) or "A JOINT RESOLUTION"
+        (resolutions) and runs up to the first date in the action history.
+        """
+        text = self._html_to_text(digest_html)
+        if not text:
+            return None
+
+        match = re.search(
+            r"((?:AN ACT|A JOINT RESOLUTION).*?)(?=\s+\d{1,2}/\d{1,2}/\d{4})",
+            text,
+        )
+        if not match:
+            # No trailing action-history date to bound the clause; fall back to
+            # everything from the enacting clause onward.
+            match = re.search(r"(?:AN ACT|A JOINT RESOLUTION).*", text)
+            return match.group(0).strip() if match else None
+
+        return match.group(1).strip()
+
+    def extract_summary(self, summary_html):
+        """Pull the plain-language summary out of the summary HTML.
+
+        The summary HTML is a form with several labeled fields; the descriptive
+        text lives under the "Summary/Major Elements:" label. We also drop the
+        boilerplate disclaimer that the Legislative Service Office appends.
+        """
+        text = self._html_to_text(summary_html)
+        if not text:
+            return None
+
+        match = re.search(r"Summary/Major Elements:\s*(.*)", text)
+        if not match:
+            return None
+
+        summary = match.group(1).strip()
+        # Remove the trailing LSO disclaimer if present.
+        summary = re.split(
+            r"\s*The above summary is not an official publication",
+            summary,
+        )[0].strip()
+        return summary or None
 
     def parse_local_date(self, date_str):
         # provided dates are ISO 8601, but in mountain time
