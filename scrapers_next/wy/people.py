@@ -95,11 +95,19 @@ class LegList(JsonListPage):
         return LegDetail(p, source=URL(detail_link, timeout=30))
 
 
+# WY LSO API is keyed by the biennium's start year; bump this each new session.
+SESSION = "2025"
+
+
 class Senate(LegList):
-    source = URL("https://wyoleg.gov/LsoService/api/legislator/2023/S", timeout=30)
+    source = URL(
+        f"https://wyoleg.gov/LsoService/api/legislator/{SESSION}/S", timeout=30
+    )
     chamber = "upper"
 
 
 class House(LegList):
-    source = URL("https://wyoleg.gov/LsoService/api/legislator/2023/H", timeout=30)
+    source = URL(
+        f"https://wyoleg.gov/LsoService/api/legislator/{SESSION}/H", timeout=30
+    )
     chamber = "lower"
