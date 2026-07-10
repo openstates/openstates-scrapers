@@ -1,7 +1,6 @@
 import re
 from utils.actions import Rule, BaseCategorizer
 
-
 rules = (
     Rule([r"Amendment (?P<bills>.+?) -\s+Laid On Table"], ["amendment-deferral"]),
     Rule(["Favorable"], ["committee-passage-favorable"]),
@@ -19,9 +18,7 @@ rules = (
     Rule(["unfavorable"], ["committee-passage-unfavorable"]),
     Rule([r"Reported Out of Committee \((?P<committees>.+?)\)"], ["committee-passage"]),
     Rule(["Vetoed by Governor"], ["executive-veto"]),
-    Rule(
-        [r"Amendment (?P<bills>.+?)\s+-\s+Introduced"], ["amendment-introduction"]
-    ),
+    Rule([r"Amendment (?P<bills>.+?)\s+-\s+Introduced"], ["amendment-introduction"]),
     Rule([r"Amendment (?P<bills>[\w\s]+?) Passed"], ["amendment-passage"]),
     Rule(
         [r"Amendment (?P<bills>.+?) -  Defeated by House of .+?\. Votes: Defeated"],

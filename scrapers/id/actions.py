@@ -56,6 +56,8 @@ rules = (
     Rule(r"[Ee]nrolling", "enrolled"),
     Rule(r"Read third time in full – PASSED", "passage"),
     Rule(r"Read third time in full – FAILED", "failure"),
+    Rule(r"Session Law Chapter", "became-law"),
+    Rule(r"Line item vetoed", "executive-veto-line-item"),
 )
 
 
