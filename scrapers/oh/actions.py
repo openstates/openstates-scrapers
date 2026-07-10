@@ -23,6 +23,7 @@ _categorizer_rules = (
     Rule(r"Effective \d{1,2}\/\d{1,2}\/\d{2,2}", "became-law"),
     Rule(r"Effective", "became-law"),
     Rule(r"Signed By The Governor", "became-law"),
+    Rule(r"Veto receipt", "executive-veto"),
 )
 
 
