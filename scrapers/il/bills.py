@@ -555,7 +555,7 @@ class IlBillScraper(Scraper):
         )
         # don't add just yet; we can make them better using action data
         # actions
-        action_tds = doc.xpath('//h5[text()="Actions"]/../table//td')
+        action_tds = doc.xpath('//h2[text()="Actions"]/../table//td')
         for date, actor, action_elem in group(action_tds, 3):
             date = datetime.datetime.strptime(date.text_content().strip(), "%m/%d/%Y")
             date = date.date()
