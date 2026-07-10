@@ -16,14 +16,14 @@ _categorizer_rules = (
                 r"Remove Senator .+? as principal Senate author "
                 r"and substitute with Senator (?P<legislators>.+?)"
             ),
-            r"(?i)committee substitute (?P<committees>.+)",
-            r"(?i)remove\s{,10}as\s{,10}author\s{,10}(?P<legislators>.+);",
-            r"(?i)SCs\s{,10}named\s{,10}(?P<legislators>.+)",
+            r"committee substitute (?P<committees>.+)",
+            r"remove\s{,10}as\s{,10}author\s{,10}(?P<legislators>.+);",
+            r"SCs\s{,10}named\s{,10}(?P<legislators>.+)",
             (
                 r"Pending removal author Senator (?P<legislators>.+?) "
                 r"and replace with Senator"
             ),
-            r"(?i)Representative\(s\)\s{,10}(?P<legislators>.+)",
+            r"Representative\(s\)\s{,10}(?P<legislators>.+)",
             r"Withdrawn from Calendar; (?P<committees>.+)",
             (
                 r"Pending removal author Senator .+? and replace "
@@ -41,7 +41,7 @@ _categorizer_rules = (
             ),
             r"Pending removal principal author Representative .+? and "
             r"replace with Representative (?P<legislators>.+)",
-            r"(?i)(co)?authored\s{,10}by\s{,10}(?P<legislators>.+)",
+            r"(co)?authored\s{,10}by\s{,10}(?P<legislators>.+)",
             r"Second Reading referred to (?P<committees>.+? Committee)",
             r"Notice served to reconsider vote on measure (?P<legislators>.+)",
             (
@@ -60,8 +60,8 @@ _categorizer_rules = (
     Rule("Introduced", "introduction"),
     Rule(["Adopted"], ["passage"]),
     Rule(["HAs rejected"], ["amendment-failure"]),
-    Rule("(?i)Measure.+?passed", "passage"),
-    Rule("(?i)Measure.+?passed", "passage"),
+    Rule("Measure.+?passed", "passage"),
+    Rule("Measure.+?passed", "passage"),
     Rule("Engrossed", "passage"),
     Rule("Third Reading, Measure passed", ["passage", "reading-3"]),
     Rule(["^Amendment withdrawn"], ["amendment-withdrawal"]),
@@ -89,8 +89,8 @@ _categorizer_rules = (
         ["Second Reading referred to .+? then to (?P<committees>.+)"],
         ["referral-committee", "reading-2"],
     ),
-    Rule(["(?i)Placed on Third Reading"], ["reading-3"]),
-    Rule(["^(?i)Third Reading"], ["reading-3"]),
+    Rule(["Placed on Third Reading"], ["reading-3"]),
+    Rule(["^Third Reading"], ["reading-3"]),
     Rule(r"committee substitute (?P<committees>.+?);"),
     Rule(["Do Pass (as amended )?(?P<committees>.+)"], ["committee-passage"]),
     Rule(["Failed in Committee - (?P<committees>.+)"], ["committee-failure"]),
@@ -101,7 +101,7 @@ _categorizer_rules = (
         ["Reported Do Pass, amended by committee substitute (?P<committees>.+?);"],
         ["committee-passage"],
     ),
-    Rule(["^(?i)Reported Do Pass"], ["committee-passage"]),
+    Rule(["^Reported Do Pass"], ["committee-passage"]),
     Rule(
         ["Do pass, amended by committee substitute (?P<committees>)"],
         ["committee-passage"],
