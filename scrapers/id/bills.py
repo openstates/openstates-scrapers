@@ -106,6 +106,10 @@ class IDBillScraper(Scraper):
                 self.warning("Unable to load subjects.")
                 self._subjects = defaultdict(list)
 
+        # if you need to scrape a single bill
+        # yield from self.scrape_bill("lower", "2026", "H 0978")
+        # return
+
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_bill_url(chamber, session)
