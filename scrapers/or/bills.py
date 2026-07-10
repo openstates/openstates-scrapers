@@ -30,6 +30,7 @@ class ORBillScraper(Scraper):
     chamber_code = {"S": "upper", "H": "lower"}
 
     action_classifiers = (
+        (".*Governor vetoed.*", ["executive-veto"]),
         (".*Presession Released to the Public.*", ["filing"]),
         (".*Introduction and first reading.*", ["introduction", "reading-1"]),
         (".*First reading.*", ["introduction", "reading-1"]),
