@@ -216,6 +216,15 @@ class MaybeVote(BaseVote):
         r"read (second|third) time and was (passed to engrossment|passed|adopted)",
         re.IGNORECASE,
     )
+    # A journal's MESSAGE FROM THE HOUSE/SENATE section reports the other
+    # chamber's actions as bare "HB 1620 (129 Yeas, 9 Nays, 2 Present, not
+    # voting)" lines. Those votes belong to the other chamber and are
+    # scraped from its own journal, so they must not produce (wrongly
+    # attributed) events here.
+    other_chamber_report_pattern = re.compile(
+        r"^\s*(?:CS)?[HS][JC]?[BR][\s\xa0]+\d+[\s\xa0]*\(\d+[\s\xa0]+Yeas",
+        re.IGNORECASE,
+    )
 
     @property
     def is_valid(self):
@@ -223,7 +232,12 @@ class MaybeVote(BaseVote):
             super(MaybeVote, self).is_valid
             and self.yeas is not None
             and self.nays is not None
+            and not self.is_other_chamber_report
         )
+
+    @property
+    def is_other_chamber_report(self):
+        return self.other_chamber_report_pattern.match(self.text) is not None
 
     @property
     def is_amendment(self):
