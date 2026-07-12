@@ -5,14 +5,14 @@ description = ""
 authors = ["James Turk <dev@jamesturk.net>"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.13"
 xlrd = "<2"
 lxml = "^5.3.1"
 pytz = "^2024.1"
 feedparser = "^6.0"
 python-dateutil = "^2.8"
 spatula = "^0.9"
-chardet = "^3.0"
+chardet = "^7.4"
 suds-py3 = "^1.3"
 requests = {version = "^2.22", extras = ["security"]}
 mysqlclient = {version = "^1.4.6", optional=true}
@@ -23,7 +23,7 @@ cryptography = "^37.0.2"
 ics = "^0.7.2"
 pymupdf = "^1.23.8"
 pandas = "^2.1.4"
-openstates = "^6.25.1"
+openstates = {path = "../openstates-core", develop = true}
 
 [tool.poetry.extras]
 california = ["mysqlclient", "SQLAlchemy"]
