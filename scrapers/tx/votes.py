@@ -513,7 +513,11 @@ local_calendar_counts_regex = re.compile(
     # (31-0)  or  (30-1) "Nay" Middleton
     r"\((\d+)\s*-\s*(\d+)\)((?:[^(])*)"
 )
-local_calendar_bill_regex = re.compile(r"^\s*([HS][JC]?[BR][\s\xa0]+\d+)\s*\(")
+local_calendar_bill_regex = re.compile(
+    # bill-then-author, e.g. "SB 2474 (Hinojosa)"; committee substitutes
+    # appear as "CSSB 401 (Kolkhorst)"
+    r"^\s*((?:CS)?[HS][JC]?[BR][\s\xa0]+\d+)\s*\("
+)
 nay_names_regex = re.compile(r"[\"“]Nay[\"”]\s+([^()\"“]+)")
 
 
