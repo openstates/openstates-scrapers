@@ -65,7 +65,7 @@ class WVEventScraper(Scraper, LXMLMixin):
             # meeting pages show events going back years
             # so just grab this cal year and later
             when = row.xpath("text()")[0].strip()
-            when = when.split("-")[0]
+            when = self.strip_date_range(when)
             when = self.clean_date(when)
 
             # manual fix for un-yeared leap year meeting
@@ -114,7 +114,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         )
         when = re.sub(r",?\s+After Floor", "", when, flags=re.IGNORECASE)
 
-        when = when.split("-")[0]
+        when = self.strip_date_range(when)
         when = self.clean_date(when)
         when = dateutil.parser.parse(when)
         when = self._tz.localize(when)
@@ -178,6 +178,23 @@ class WVEventScraper(Scraper, LXMLMixin):
         event.add_source(url)
 
         yield event
+
+    def strip_date_range(self, when):
+        """
+        Strip a trailing date range and keep only the start date.
+
+        Agenda dates are occasionally expressed as a range using a hyphen
+        surrounded by whitespace (e.g. "March 3, 2023 - March 4, 2023"), in
+        which case we only want the first date.
+
+        We must NOT split on a bare hyphen because numeric dates use hyphens
+        as separators (e.g. "1-14-14", "2-11-20"). Splitting those on "-"
+        would leave just the month component (e.g. "1"), which dateutil then
+        parses using today's month/year as defaults, producing wildly wrong
+        dates. Only treat a hyphen surrounded by whitespace as a range
+        delimiter.
+        """
+        return re.split(r"\s+-\s+", when)[0].strip()
 
     def clean_date(self, when):
         """
