@@ -39,19 +39,33 @@ class MTEventScraper(Scraper):
     # api-public.legmt.gov service roots
     _committees_api = "https://api-public.legmt.gov/committees/v1"
     _docs_api = "https://api-public.legmt.gov/docs/v1"
-    _legislators_api = "https://api-public.legmt.gov/legislators/v1"
 
     _bill_re = re.compile(r"\b(?:SB|HB|SR|HR|SJ|HJ|LC)\s*\d+\b")
 
-    # cache of legislatureId -> ordinal (e.g. 2 -> "69")
-    _legislature_ordinals = {}
+    # How far in the future we'll trust the committee API's inline `agendaItems`
+    # when no published agenda PDF exists for the meeting. That field doubles as
+    # a staff working draft and can be fully populated for meetings months out
+    # that have no publicly visible agenda yet, so we only accept it for
+    # meetings that are imminent (or already past). See scrape_committee_meeting.
+    _agenda_trust_window_days = 14
+
     # cache of (committee_type, committee_id) -> committee detail dict
     _committee_cache = {}
     # cache of (committee_type, committee_id) -> list of meeting dicts
     _meetings_cache = {}
 
     def scrape(self):
-        self._load_legislatures()
+        # Build a legislatureId -> ordinal lookup from the session metadata in
+        # __init__.py, so we don't have to make an extra API request. The docs
+        # API keys on `legislatureId`, which matches the session's
+        # `newAPIIdentifier`.
+        self._legislature_ordinals = {
+            session["extras"]["newAPIIdentifier"]: session["extras"][
+                "legislatureOrdinal"
+            ]
+            for session in self.jurisdiction.legislative_sessions
+            if session.get("extras", {}).get("newAPIIdentifier") is not None
+        }
 
         # Scrape a window around today: recent past meetings (which may now have
         # minutes/agenda documents attached) plus all upcoming meetings.
@@ -70,13 +84,6 @@ class MTEventScraper(Scraper):
                 continue
             seen.add(key)
             yield event
-
-    def _load_legislatures(self):
-        """Build a legislatureId -> ordinal lookup used by the docs API."""
-        url = f"{self._legislators_api}/legislatures"
-        for leg in self.get(url).json():
-            # `ordinals` is a string like "69"
-            self._legislature_ordinals[leg["id"]] = leg["ordinals"]
 
     def scrape_events(self, start: datetime.date, end: datetime.date):
         """Page through the WordPress events REST API for the given window."""
@@ -210,20 +217,41 @@ class MTEventScraper(Scraper):
         if meeting is None:
             return
 
-        # Agenda items come back inline on the meeting record.
-        for item in meeting.get("agendaItems", []) or []:
-            text = self._clean_text(item.get("title", ""))
-            if not text:
-                continue
-            description = self._clean_text(item.get("description", ""))
-            agenda = event.add_agenda_item(description or text)
-            for bill in self._bill_re.findall(text):
-                agenda.add_bill(self._normalize_bill_id(bill))
-
-        # Agenda + minutes PDFs live in the docs service.
+        # Agenda + minutes PDFs live in the docs service. Scrape them first so we
+        # know whether a published agenda exists for this meeting.
+        has_published_agenda = False
         committee = self._get_committee(committee_type, committee_id)
         if committee is not None:
-            self._scrape_documents(event, committee, meeting)
+            has_published_agenda = self._scrape_documents(event, committee, meeting)
+
+        # The committee API also returns agenda items inline on the meeting
+        # record, but that field doubles as a staff working draft: it can be
+        # fully populated for meetings months in the future that have no publicly
+        # visible agenda yet, and it carries no "finalized" flag to distinguish
+        # the two. Only trust the inline items when a human web visitor could
+        # verify them, i.e. either a published agenda PDF exists, or the meeting
+        # is imminent/past (within the trust window) so the agenda is effectively
+        # final. Otherwise we still publish the event and any documents, but hold
+        # back the speculative agenda items.
+        if has_published_agenda or self._meeting_within_trust_window(when):
+            for item in meeting.get("agendaItems", []) or []:
+                text = self._clean_text(item.get("title", ""))
+                if not text:
+                    continue
+                description = self._clean_text(item.get("description", ""))
+                agenda = event.add_agenda_item(description or text)
+                for bill in self._bill_re.findall(text):
+                    agenda.add_bill(self._normalize_bill_id(bill))
+
+    def _meeting_within_trust_window(self, when: datetime.datetime) -> bool:
+        """
+        True if the meeting is already past or starts within
+        `_agenda_trust_window_days` from now. Past/imminent meetings have
+        effectively finalized agendas, so the inline agenda items are trustworthy
+        even when no published agenda PDF is available.
+        """
+        now = datetime.datetime.now(self._tz)
+        return when <= now + datetime.timedelta(days=self._agenda_trust_window_days)
 
     def _get_meetings(self, committee_type: str, committee_id: int):
         cache_key = (committee_type, committee_id)
@@ -306,19 +334,24 @@ class MTEventScraper(Scraper):
         self._committee_cache[cache_key] = committee
         return committee
 
-    def _scrape_documents(self, event: Event, committee: dict, meeting: dict):
-        """Fetch agenda + minutes PDFs for a meeting and attach them."""
+    def _scrape_documents(self, event: Event, committee: dict, meeting: dict) -> bool:
+        """
+        Fetch agenda + minutes PDFs for a meeting and attach them.
+
+        Returns True if a published agenda PDF was found for this meeting, which
+        the caller uses to decide whether to trust the API's inline agenda items.
+        """
         details = committee.get("committeeDetails") or {}
         code = details.get("committeeCode") or {}
         committee_code = code.get("code")
         type_code = (code.get("committeeType") or {}).get("code")
         if not committee_code or not type_code:
-            return
+            return False
 
         legislature_id = committee.get("legislatureId")
         ordinal = self._legislature_ordinals.get(legislature_id)
         if ordinal is None:
-            return
+            return False
 
         # standing committees carry a sessionId; interim committees do not
         committee_type = "STANDING" if "sessionId" in meeting else "NON-STANDING"
@@ -335,6 +368,7 @@ class MTEventScraper(Scraper):
             "meetingDateTime": meeting_time,
         }
 
+        found_agenda = False
         for kind, endpoint in (
             ("Agenda", "getMeetingAgendas"),
             ("Minutes", "getMeetingMinutes"),
@@ -347,6 +381,8 @@ class MTEventScraper(Scraper):
                 download_url = self._document_url(doc)
                 if not download_url:
                     continue
+                if kind == "Agenda":
+                    found_agenda = True
                 name = doc.get("fileName") or f"{kind} document"
                 event.add_document(
                     name,
@@ -354,6 +390,8 @@ class MTEventScraper(Scraper):
                     media_type="application/pdf",
                     on_duplicate="ignore",
                 )
+
+        return found_agenda
 
     @staticmethod
     def _normalize_bill_id(raw: str) -> str:
