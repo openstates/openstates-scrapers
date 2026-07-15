@@ -1,174 +1,392 @@
-from typing import Union
-
-from openstates.scrape import Scraper, Event
-from utils.events import match_coordinates
 import datetime
-import dateutil
-import json
-import lxml.html
-import pytz
+import html
 import re
+from typing import Optional
+
+import dateutil.parser
+import pytz
+from openstates.scrape import Event, Scraper
+
+from utils.events import match_coordinates
 
 
 class MTEventScraper(Scraper):
+    """Montana events.
+
+    MT shut down the old SLIQ/Harmony portal (sg001-harmony.sliq.net) in
+    mid-2025, so we now piece events together from three sources:
+
+    - the legmt.gov WordPress site ("The Events Calendar" plugin) for the event
+      list itself -- title, time, venue, and a link to the committee page
+    - api-public.legmt.gov committee endpoints for the matching meeting record,
+      which includes agenda items inline
+    - api-public.legmt.gov/docs for the agenda / minutes PDFs
+    """
+
     _tz = pytz.timezone("America/Denver")
-    # the same MT event can be listed more than once at the source URLs
-    # where each listing is an alternate media stream (video vs. audio)
-    # so we need to do some data combining before yielding
-    _events = []
+
+    _wp_events_url = "https://www.legmt.gov/wp-json/tribe/events/v1/events"
+    _committees_api = "https://api-public.legmt.gov/committees/v1"
+    _docs_api = "https://api-public.legmt.gov/docs/v1"
+
+    _bill_re = re.compile(r"\b(?:SB|HB|SR|HR|SJ|HJ|LC)\s*\d+\b")
+
+    # The committee API's inline agenda items double as a staff scratchpad, so a
+    # meeting a year out can already carry a full "agenda" that nobody's actually
+    # published yet. When there's no published agenda PDF to back it up, only
+    # trust those items if the meeting is within this many days (or already past).
+    _agenda_trust_window_days = 14
+
+    _committee_cache = {}  # (committee_type, committee_id) -> committee dict
+    _meetings_cache = {}  # (committee_type, committee_id) -> [meeting dict]
 
     def scrape(self):
+        # The docs API wants a legislature "ordinal" (e.g. 69). Rather than hit
+        # another endpoint for it, pull it from the session metadata we already
+        # keep in __init__.py. The API's legislatureId lines up with the
+        # session's newAPIIdentifier.
+        self._legislature_ordinals = {
+            session["extras"]["newAPIIdentifier"]: session["extras"][
+                "legislatureOrdinal"
+            ]
+            for session in self.jurisdiction.legislative_sessions
+            if session.get("extras", {}).get("newAPIIdentifier") is not None
+        }
 
-        self.scrape_upcoming()
-
-        # scrape events from this month, and last month
+        # Look back far enough to catch minutes/agendas that show up after a
+        # meeting, and forward far enough to cover the published schedule.
         today = datetime.date.today()
-        self.scrape_cal_month(today)
-        self.scrape_cal_month(today + dateutil.relativedelta.relativedelta(months=-1))
-        for event in self._events:
+        start = today - datetime.timedelta(days=45)
+        end = today + datetime.timedelta(days=365)
+
+        seen = set()
+        for event in self.scrape_events(start, end):
+            # the feed occasionally lists the same meeting twice
+            key = (event.name, event.start_date)
+            if key in seen:
+                continue
+            seen.add(key)
             yield event
 
-    def scrape_upcoming(self):
-        url = "https://sg001-harmony.sliq.net/00309/Harmony/en/View/UpcomingEvents"
+    def scrape_events(self, start: datetime.date, end: datetime.date):
+        """Page through the WordPress events REST API for the given window."""
+        page = 1
+        while True:
+            params = {
+                "start_date": start.strftime("%Y-%m-%d"),
+                "end_date": end.strftime("%Y-%m-%d"),
+                "per_page": 50,
+                "page": page,
+            }
+            resp = self.get(self._wp_events_url, params=params)
+            # paging past the last page returns a 400
+            if resp.status_code != 200:
+                break
+            data = resp.json()
+            events = data.get("events", [])
+            if not events:
+                break
+            for row in events:
+                event = self.scrape_event(row)
+                if event is not None:
+                    yield event
+            if page >= data.get("total_pages", page):
+                break
+            page += 1
 
-        page = self.get(url).content
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
+    def scrape_event(self, row: dict) -> Optional[Event]:
+        title = self._clean_text(row["title"])
 
-        base_url = "https://sg001-harmony.sliq.net"
-        for link in page.xpath("//div[@class='divEvent']/a[1]"):
-            href = link.xpath("@href")[0]
-            match = re.search(r"setLocationUrl\('([^']+)'\)", href)
-            if match:
-                self.scrape_event(base_url + match.group(1))
+        # skip placeholder/test events
+        if title.lower() in ("test", "other"):
+            return None
 
-    def scrape_cal_month(self, when: datetime.datetime.date):
-        date_str = when.strftime("%Y%m01")
-        self.info(f"Scraping month {date_str}")
-        #  https://sg001-harmony.sliq.net/00309/Harmony/en/View/Month/20240717/-1
-        url = f"https://sg001-harmony.sliq.net/00309/Harmony/en/api/Data/GetContentEntityByMonth/{date_str}/-1?lastModifiedTime=20000201050000000"
-        page = self.get(url).json()
-        for row in page["ContentEntityDatas"]:
-            when = dateutil.parser.parse(row["ScheduledStart"])
-            if when.date() < datetime.datetime.today().date():
-                event_id = str(row["Id"])
-                event_url = f"https://sg001-harmony.sliq.net/00309/Harmony/en/PowerBrowser/PowerBrowserV2/1/-1/{event_id}"
-                self.scrape_event(event_url)
-
-    def scrape_event(self, url: str):
-        html = self.get(url).text
-        page = lxml.html.fromstring(html)
-        page.make_links_absolute(url)
-
-        title = page.xpath("//span[@class='headerTitle']")[0].text_content().strip()
-        location = page.xpath("//span[@id='location']")[0].text_content().strip()
-
-        # handle edge case where event is named simply "Other"
-        # append the location name to force it into not being a duplicate
-        if title.lower() == "other":
-            title = f"{title} - {location}"
-
-        # handle edge case of "test" event, just ignore that
-        if title.lower() == "test":
-            return
-
-        if location.lower()[0:4] == "room":
-            location = f"{location}, 1301 E 6th Ave, Helena, MT 59601"
-
-        when_date = page.xpath("//div[@id='scheduleddate']")[0].text_content()
-        when_time = page.xpath("//span[@id='scheduledStarttime']")[0].text_content()
-
-        when = dateutil.parser.parse(f"{when_date} {when_time}")
+        when = dateutil.parser.parse(row["start_date"])
         when = self._tz.localize(when)
 
-        # Check if event already exists in the self._events list
-        # and if so, add data to that instead of creating duplicate
-        existing_event = self.check_for_existing_event(title, when)
-        if existing_event is None:
-            # No existing event found, create one
-            event = Event(
-                name=title,
-                location_name=location,
-                start_date=when,
-                classification="committee-meeting",
-            )
-        else:
-            event = existing_event
+        end = None
+        if row.get("end_date"):
+            end = self._tz.localize(dateutil.parser.parse(row["end_date"]))
 
-        self.scrape_versions(event, html)
-        self.scrape_media(event, html)
+        location = self._build_location(row)
 
-        if existing_event is None:
-            event.add_source(url)
+        event = Event(
+            name=title,
+            location_name=location,
+            start_date=when,
+            end_date=end,
+            classification="committee-meeting",
+            upstream_id=str(row["id"]),
+        )
+        event.add_source(row["url"])
 
-        if "HB" not in title.lower() and "SB" not in title.lower():
+        # bill hearings get titled after the bill, not a committee
+        if "HB" not in title and "SB" not in title:
             event.add_committee(title)
 
-        # Add agenda item
-        match = re.search(r"AgendaTree:\s*(\[\{.*?\}\])", html, re.DOTALL)
-        if match:
-            agenda_tree_json = match.group(1)
-            agenda_items = json.loads(agenda_tree_json)
-            for item in agenda_items:
-                agenda_text = item["text"]
-                agenda_text = re.sub(r"\s+\u2013\s+", " - ", agenda_text)
-
-                parts = agenda_text.split(" - ")
-                if len(parts) > 1:
-                    found_bills = re.findall(
-                        r"\b(?:SB|HB|SR|HR|SJ|HJ|LC)\s*\d+\b", parts[0]
-                    )
-                    if found_bills:
-                        item = event.add_agenda_item(parts[1])
-                        item.add_bill(found_bills[0])
+        # the event links back to a committee; use that to pull agenda + docs
+        committee_ref = self._parse_committee_ref(row.get("website"))
+        if committee_ref is not None:
+            committee_type, committee_id = committee_ref
+            self.scrape_committee_meeting(event, committee_type, committee_id, when)
 
         match_coordinates(
             event,
             {
                 "1301 E 6th Ave, Helena": ("46.5857", "-112.0184"),
+                "State Capitol": ("46.5857", "-112.0184"),
             },
         )
 
-        # Make sure we add any new event to the list
-        if existing_event is None:
-            self._events.append(event)
+        return event
 
-    def check_for_existing_event(
-        self, title: str, start_date: datetime.datetime.date
-    ) -> Union[Event, None]:
-        for event in self._events:
-            if event.name == title and event.start_date == start_date:
-                return event
+    def _build_location(self, row: dict) -> str:
+        """Build a location string from the venue plus the room custom field."""
+        parts = []
 
+        # room lives in a custom field, not the venue block
+        room = None
+        custom = row.get("custom_fields") or {}
+        for field in custom.values():
+            if field.get("label", "").lower() == "room" and field.get("value"):
+                room = field["value"]
+                break
+        if room:
+            parts.append(room)
+
+        venue = row.get("venue") or {}
+        if isinstance(venue, dict) and venue.get("venue"):
+            addr_bits = [
+                venue.get("venue"),
+                venue.get("address"),
+                venue.get("city"),
+                venue.get("state"),
+                venue.get("zip"),
+            ]
+            parts.append(", ".join(b for b in addr_bits if b))
+
+        location = ", ".join(parts).strip()
+        return location or "See source for location"
+
+    @staticmethod
+    def _parse_committee_ref(website: Optional[str]):
+        """
+        Parse a Committee Explorer link like
+        https://committees.legmt.gov/#/nonStandingCommittees/2
+        into ("nonStandingCommittees", 2).
+        """
+        if not website:
+            return None
+        match = re.search(
+            r"#/(nonStandingCommittees|standingCommittees)/(\d+)", website
+        )
+        if not match:
+            return None
+        return match.group(1), int(match.group(2))
+
+    def scrape_committee_meeting(
+        self,
+        event: Event,
+        committee_type: str,
+        committee_id: int,
+        when: datetime.datetime,
+    ):
+        """Attach agenda items and documents for the matching committee meeting."""
+        meetings = self._get_meetings(committee_type, committee_id)
+        if not meetings:
+            return
+
+        meeting = self._match_meeting(meetings, when)
+        if meeting is None:
+            return
+
+        # Grab the PDFs first -- whether a published agenda exists tells us
+        # whether the inline agenda items below can be trusted.
+        has_published_agenda = False
+        committee = self._get_committee(committee_type, committee_id)
+        if committee is not None:
+            has_published_agenda = self._scrape_documents(event, committee, meeting)
+
+        # The inline agenda items are only reliable once someone could actually
+        # go look them up: either there's a published agenda PDF, or the meeting
+        # is close enough that the agenda is effectively set. Otherwise we still
+        # keep the event and its documents, we just leave off the draft agenda.
+        if has_published_agenda or self._meeting_within_trust_window(when):
+            for item in meeting.get("agendaItems", []) or []:
+                text = self._clean_text(item.get("title", ""))
+                if not text:
+                    continue
+                description = self._clean_text(item.get("description", ""))
+                agenda = event.add_agenda_item(description or text)
+                for bill in self._bill_re.findall(text):
+                    agenda.add_bill(self._normalize_bill_id(bill))
+
+    def _meeting_within_trust_window(self, when: datetime.datetime) -> bool:
+        """Whether the meeting is past or close enough to trust its agenda."""
+        cutoff = datetime.datetime.now(self._tz) + datetime.timedelta(
+            days=self._agenda_trust_window_days
+        )
+        return when <= cutoff
+
+    def _get_meetings(self, committee_type: str, committee_id: int):
+        cache_key = (committee_type, committee_id)
+        if cache_key in self._meetings_cache:
+            return self._meetings_cache[cache_key]
+
+        if committee_type == "nonStandingCommittees":
+            url = f"{self._committees_api}/nonStandingCommitteeMeetings/search"
+            body = {"nonStandingCommitteeIds": [committee_id]}
+        else:
+            url = f"{self._committees_api}/standingCommitteeMeetings/search"
+            body = {"standingCommitteeIds": [committee_id]}
+
+        meetings = []
+        offset = 0
+        while True:
+            resp = self.post(
+                url,
+                json=body,
+                params={"limit": 150, "offset": offset},
+            )
+            if resp.status_code != 200:
+                break
+            data = resp.json()
+            if isinstance(data, dict):
+                content = data.get("content", [])
+                total_pages = data.get("totalPages", 1)
+            else:
+                content = data
+                total_pages = 1
+            meetings.extend(content)
+            offset += 1
+            if offset >= total_pages:
+                break
+
+        meetings = [
+            m for m in meetings if (m.get("status") or "").upper() != "CANCELED"
+        ]
+
+        self._meetings_cache[cache_key] = meetings
+        return meetings
+
+    def _match_meeting(self, meetings: list, when: datetime.datetime):
+        """Pick the meeting matching this event's start time.
+
+        meetingTime comes back as a naive local (America/Denver) string, so we
+        match on the date and then take whichever start time is closest.
+        """
+        target = when.replace(tzinfo=None)
+        candidates = []
+        for m in meetings:
+            mt = m.get("meetingTime")
+            if not mt:
+                continue
+            try:
+                m_dt = dateutil.parser.parse(mt)
+            except (ValueError, TypeError):
+                continue
+            if m_dt.date() == target.date():
+                candidates.append((abs((m_dt - target).total_seconds()), m))
+
+        if not candidates:
+            return None
+        candidates.sort(key=lambda c: c[0])
+        return candidates[0][1]
+
+    def _get_committee(self, committee_type: str, committee_id: int):
+        cache_key = (committee_type, committee_id)
+        if cache_key in self._committee_cache:
+            return self._committee_cache[cache_key]
+
+        if committee_type == "nonStandingCommittees":
+            url = f"{self._committees_api}/nonStandingCommittees/{committee_id}"
+        else:
+            url = f"{self._committees_api}/standingCommittees/{committee_id}"
+
+        resp = self.get(url)
+        committee = resp.json() if resp.status_code == 200 else None
+        self._committee_cache[cache_key] = committee
+        return committee
+
+    def _scrape_documents(self, event: Event, committee: dict, meeting: dict) -> bool:
+        """Attach agenda + minutes PDFs, returning whether an agenda was found.
+
+        The agenda result is what the caller uses to decide whether the inline
+        agenda items are trustworthy.
+        """
+        details = committee.get("committeeDetails") or {}
+        code = details.get("committeeCode") or {}
+        committee_code = code.get("code")
+        type_code = (code.get("committeeType") or {}).get("code")
+        if not committee_code or not type_code:
+            return False
+
+        legislature_id = committee.get("legislatureId")
+        ordinal = self._legislature_ordinals.get(legislature_id)
+        if ordinal is None:
+            return False
+
+        # standing committees carry a sessionId, interim committees don't
+        committee_type = "STANDING" if "sessionId" in meeting else "NON-STANDING"
+
+        chamber = committee.get("chamber", "") or ""
+        meeting_time = meeting.get("meetingTime", "")
+
+        params = {
+            "legislatureOrdinal": ordinal,
+            "committeeType": committee_type,
+            "committeeTypeCode": type_code,
+            "committeeCode": committee_code,
+            "chamber": chamber,
+            "meetingDateTime": meeting_time,
+        }
+
+        found_agenda = False
+        for kind, endpoint in (
+            ("Agenda", "getMeetingAgendas"),
+            ("Minutes", "getMeetingMinutes"),
+        ):
+            url = f"{self._docs_api}/documents/{endpoint}"
+            resp = self.get(url, params=params)
+            if resp.status_code != 200:
+                continue
+            for doc in resp.json():
+                download_url = self._document_url(doc)
+                if not download_url:
+                    continue
+                if kind == "Agenda":
+                    found_agenda = True
+                name = doc.get("fileName") or f"{kind} document"
+                event.add_document(
+                    name,
+                    download_url,
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
+
+        return found_agenda
+
+    @staticmethod
+    def _normalize_bill_id(raw: str) -> str:
+        """Turn "HB70" / "SB  191" into the canonical "HB 70" / "SB 191"."""
+        match = re.match(r"([A-Z]+)\s*(\d+)", raw.strip())
+        if not match:
+            return re.sub(r"\s+", " ", raw).strip()
+        return f"{match.group(1)} {match.group(2)}"
+
+    @staticmethod
+    def _document_url(doc: dict) -> Optional[str]:
+        """Extract the direct download URL from a docs-API document object."""
+        for attr in doc.get("attributes", []) or []:
+            if attr.get("name") == "DocumentLink" and attr.get("stringValue"):
+                return attr["stringValue"]
         return None
 
-    # versions and media are in the 'dataModel' js variable on the page
-    def scrape_versions(self, event: Event, html: str):
-        matches = re.search(r"Handouts:\s?(.*),", html)
-        if not matches:
-            return
-        versions = json.loads(matches.group(1))
-        for v in versions:
-            event.add_document(
-                v["Name"],
-                v["HandoutFileUrl"],
-                media_type="application/pdf",
-                on_duplicate="ignore",
-            )
-
-    def scrape_media(self, event: Event, html: str):
-        # MT has livestream archives available as m3u8 files
-        # these can be played only by certain players, for example:
-        # https://livepush.io/hlsplayer/index.html
-        matches = re.search(r"Media:\s?(.*),", html)
-        if not matches:
-            return
-        media = json.loads(matches.group(1))
-        if "children" in media and media["children"] is not None:
-            for m in media["children"]:
-                event.add_media_link(
-                    m["textTags"]["DESCRIPTION"]["text"],
-                    m["textTags"]["URL"]["text"],
-                    media_type="application/vnd",
-                    on_duplicate="ignore",  # we are combining links from duplicate "event" listings into one
-                )
+    @staticmethod
+    def _clean_text(text: str) -> str:
+        if not text:
+            return ""
+        # the WP API hands back HTML entities like &#8217;
+        text = html.unescape(text)
+        text = re.sub(r"\s+\u2013\s+", " - ", text)
+        return re.sub(r"\s+", " ", text).strip()
