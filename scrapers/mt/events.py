@@ -1,4 +1,5 @@
 import datetime
+import html
 import re
 from typing import Optional
 
@@ -10,55 +11,40 @@ from utils.events import match_coordinates
 
 
 class MTEventScraper(Scraper):
-    """
-    Montana events scraper.
+    """Montana events.
 
-    In mid-2025 Montana retired the old SLIQ/Harmony video portal
-    (sg001-harmony.sliq.net) that this scraper used to rely on. Event data now
-    lives across three separate JSON APIs, all of which are used here:
+    MT shut down the old SLIQ/Harmony portal (sg001-harmony.sliq.net) in
+    mid-2025, so we now piece events together from three sources:
 
-    1. The public WordPress site at www.legmt.gov exposes upcoming/past events
-       via "The Events Calendar" plugin REST API. This gives us the canonical
-       list of meetings with title, date/time, venue, and a `website` link that
-       points at the Committee Explorer SPA
-       (committees.legmt.gov/#/nonStandingCommittees/<id>).
-
-    2. The Committee Explorer is backed by api-public.legmt.gov, whose
-       committee-meetings search endpoints return each meeting's agenda items
-       inline (title + description), keyed by committee id and meeting time.
-
-    3. api-public.legmt.gov/docs exposes agenda and minutes PDF documents for a
-       meeting; each document carries a direct download URL.
+    - the legmt.gov WordPress site ("The Events Calendar" plugin) for the event
+      list itself -- title, time, venue, and a link to the committee page
+    - api-public.legmt.gov committee endpoints for the matching meeting record,
+      which includes agenda items inline
+    - api-public.legmt.gov/docs for the agenda / minutes PDFs
     """
 
     _tz = pytz.timezone("America/Denver")
 
-    # WordPress "The Events Calendar" REST API
     _wp_events_url = "https://www.legmt.gov/wp-json/tribe/events/v1/events"
-
-    # api-public.legmt.gov service roots
     _committees_api = "https://api-public.legmt.gov/committees/v1"
     _docs_api = "https://api-public.legmt.gov/docs/v1"
 
     _bill_re = re.compile(r"\b(?:SB|HB|SR|HR|SJ|HJ|LC)\s*\d+\b")
 
-    # How far in the future we'll trust the committee API's inline `agendaItems`
-    # when no published agenda PDF exists for the meeting. That field doubles as
-    # a staff working draft and can be fully populated for meetings months out
-    # that have no publicly visible agenda yet, so we only accept it for
-    # meetings that are imminent (or already past). See scrape_committee_meeting.
+    # The committee API's inline agenda items double as a staff scratchpad, so a
+    # meeting a year out can already carry a full "agenda" that nobody's actually
+    # published yet. When there's no published agenda PDF to back it up, only
+    # trust those items if the meeting is within this many days (or already past).
     _agenda_trust_window_days = 14
 
-    # cache of (committee_type, committee_id) -> committee detail dict
-    _committee_cache = {}
-    # cache of (committee_type, committee_id) -> list of meeting dicts
-    _meetings_cache = {}
+    _committee_cache = {}  # (committee_type, committee_id) -> committee dict
+    _meetings_cache = {}  # (committee_type, committee_id) -> [meeting dict]
 
     def scrape(self):
-        # Build a legislatureId -> ordinal lookup from the session metadata in
-        # __init__.py, so we don't have to make an extra API request. The docs
-        # API keys on `legislatureId`, which matches the session's
-        # `newAPIIdentifier`.
+        # The docs API wants a legislature "ordinal" (e.g. 69). Rather than hit
+        # another endpoint for it, pull it from the session metadata we already
+        # keep in __init__.py. The API's legislatureId lines up with the
+        # session's newAPIIdentifier.
         self._legislature_ordinals = {
             session["extras"]["newAPIIdentifier"]: session["extras"][
                 "legislatureOrdinal"
@@ -67,18 +53,15 @@ class MTEventScraper(Scraper):
             if session.get("extras", {}).get("newAPIIdentifier") is not None
         }
 
-        # Scrape a window around today: recent past meetings (which may now have
-        # minutes/agenda documents attached) plus all upcoming meetings.
+        # Look back far enough to catch minutes/agendas that show up after a
+        # meeting, and forward far enough to cover the published schedule.
         today = datetime.date.today()
         start = today - datetime.timedelta(days=45)
-        # The events calendar publishes meetings well into the future; grab a
-        # generous window so we don't miss anything on the schedule.
         end = today + datetime.timedelta(days=365)
 
         seen = set()
         for event in self.scrape_events(start, end):
-            # de-dupe on (name, start_date); the same meeting can occasionally
-            # appear more than once in the source feed
+            # the feed occasionally lists the same meeting twice
             key = (event.name, event.start_date)
             if key in seen:
                 continue
@@ -96,7 +79,7 @@ class MTEventScraper(Scraper):
                 "page": page,
             }
             resp = self.get(self._wp_events_url, params=params)
-            # The API returns a 400 once you page past the last page.
+            # paging past the last page returns a 400
             if resp.status_code != 200:
                 break
             data = resp.json()
@@ -114,7 +97,7 @@ class MTEventScraper(Scraper):
     def scrape_event(self, row: dict) -> Optional[Event]:
         title = self._clean_text(row["title"])
 
-        # ignore obvious test events
+        # skip placeholder/test events
         if title.lower() in ("test", "other"):
             return None
 
@@ -137,12 +120,11 @@ class MTEventScraper(Scraper):
         )
         event.add_source(row["url"])
 
-        # Only add a committee tag for real committee names, not bill hearings.
+        # bill hearings get titled after the bill, not a committee
         if "HB" not in title and "SB" not in title:
             event.add_committee(title)
 
-        # Attach agenda items and documents from the committee API, keyed by the
-        # committee referenced in the WP event's `website` field.
+        # the event links back to a committee; use that to pull agenda + docs
         committee_ref = self._parse_committee_ref(row.get("website"))
         if committee_ref is not None:
             committee_type, committee_id = committee_ref
@@ -159,9 +141,10 @@ class MTEventScraper(Scraper):
         return event
 
     def _build_location(self, row: dict) -> str:
-        """Assemble a human-readable location from venue + room custom field."""
+        """Build a location string from the venue plus the room custom field."""
         parts = []
 
+        # room lives in a custom field, not the venue block
         room = None
         custom = row.get("custom_fields") or {}
         for field in custom.values():
@@ -208,7 +191,7 @@ class MTEventScraper(Scraper):
         committee_id: int,
         when: datetime.datetime,
     ):
-        """Match this event to a committee meeting and attach agenda + docs."""
+        """Attach agenda items and documents for the matching committee meeting."""
         meetings = self._get_meetings(committee_type, committee_id)
         if not meetings:
             return
@@ -217,22 +200,17 @@ class MTEventScraper(Scraper):
         if meeting is None:
             return
 
-        # Agenda + minutes PDFs live in the docs service. Scrape them first so we
-        # know whether a published agenda exists for this meeting.
+        # Grab the PDFs first -- whether a published agenda exists tells us
+        # whether the inline agenda items below can be trusted.
         has_published_agenda = False
         committee = self._get_committee(committee_type, committee_id)
         if committee is not None:
             has_published_agenda = self._scrape_documents(event, committee, meeting)
 
-        # The committee API also returns agenda items inline on the meeting
-        # record, but that field doubles as a staff working draft: it can be
-        # fully populated for meetings months in the future that have no publicly
-        # visible agenda yet, and it carries no "finalized" flag to distinguish
-        # the two. Only trust the inline items when a human web visitor could
-        # verify them, i.e. either a published agenda PDF exists, or the meeting
-        # is imminent/past (within the trust window) so the agenda is effectively
-        # final. Otherwise we still publish the event and any documents, but hold
-        # back the speculative agenda items.
+        # The inline agenda items are only reliable once someone could actually
+        # go look them up: either there's a published agenda PDF, or the meeting
+        # is close enough that the agenda is effectively set. Otherwise we still
+        # keep the event and its documents, we just leave off the draft agenda.
         if has_published_agenda or self._meeting_within_trust_window(when):
             for item in meeting.get("agendaItems", []) or []:
                 text = self._clean_text(item.get("title", ""))
@@ -244,14 +222,11 @@ class MTEventScraper(Scraper):
                     agenda.add_bill(self._normalize_bill_id(bill))
 
     def _meeting_within_trust_window(self, when: datetime.datetime) -> bool:
-        """
-        True if the meeting is already past or starts within
-        `_agenda_trust_window_days` from now. Past/imminent meetings have
-        effectively finalized agendas, so the inline agenda items are trustworthy
-        even when no published agenda PDF is available.
-        """
-        now = datetime.datetime.now(self._tz)
-        return when <= now + datetime.timedelta(days=self._agenda_trust_window_days)
+        """Whether the meeting is past or close enough to trust its agenda."""
+        cutoff = datetime.datetime.now(self._tz) + datetime.timedelta(
+            days=self._agenda_trust_window_days
+        )
+        return when <= cutoff
 
     def _get_meetings(self, committee_type: str, committee_id: int):
         cache_key = (committee_type, committee_id)
@@ -287,7 +262,6 @@ class MTEventScraper(Scraper):
             if offset >= total_pages:
                 break
 
-        # Drop canceled meetings.
         meetings = [
             m for m in meetings if (m.get("status") or "").upper() != "CANCELED"
         ]
@@ -296,10 +270,10 @@ class MTEventScraper(Scraper):
         return meetings
 
     def _match_meeting(self, meetings: list, when: datetime.datetime):
-        """
-        Find the meeting whose start matches the event. The committee API
-        `meetingTime` is a naive local datetime string (America/Denver).
-        We match on date, then prefer the closest start time.
+        """Pick the meeting matching this event's start time.
+
+        meetingTime comes back as a naive local (America/Denver) string, so we
+        match on the date and then take whichever start time is closest.
         """
         target = when.replace(tzinfo=None)
         candidates = []
@@ -335,11 +309,10 @@ class MTEventScraper(Scraper):
         return committee
 
     def _scrape_documents(self, event: Event, committee: dict, meeting: dict) -> bool:
-        """
-        Fetch agenda + minutes PDFs for a meeting and attach them.
+        """Attach agenda + minutes PDFs, returning whether an agenda was found.
 
-        Returns True if a published agenda PDF was found for this meeting, which
-        the caller uses to decide whether to trust the API's inline agenda items.
+        The agenda result is what the caller uses to decide whether the inline
+        agenda items are trustworthy.
         """
         details = committee.get("committeeDetails") or {}
         code = details.get("committeeCode") or {}
@@ -353,7 +326,7 @@ class MTEventScraper(Scraper):
         if ordinal is None:
             return False
 
-        # standing committees carry a sessionId; interim committees do not
+        # standing committees carry a sessionId, interim committees don't
         committee_type = "STANDING" if "sessionId" in meeting else "NON-STANDING"
 
         chamber = committee.get("chamber", "") or ""
@@ -413,9 +386,7 @@ class MTEventScraper(Scraper):
     def _clean_text(text: str) -> str:
         if not text:
             return ""
-        # normalize HTML entities the WP API returns (e.g. &#8217;)
-        import html
-
+        # the WP API hands back HTML entities like &#8217;
         text = html.unescape(text)
         text = re.sub(r"\s+\u2013\s+", " - ", text)
         return re.sub(r"\s+", " ", text).strip()
