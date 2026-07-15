@@ -6,18 +6,18 @@ from openstates.scrape import Scraper
 from openstates.scrape import Event
 from utils import LXMLMixin
 
+INTERIMS_URL = "http://www.wvlegislature.gov/committees/Interims/interims.cfm"
+
 
 class WVEventScraper(Scraper, LXMLMixin):
     verify = False
     _tz = pytz.timezone("US/Eastern")
 
-    interims_url = "http://www.wvlegislature.gov/committees/Interims/interims.cfm"
-
     def scrape(self):
         com_urls = [
             ("Senate", "http://www.wvlegislature.gov/committees/senate/main.cfm"),
             ("House", "http://www.wvlegislature.gov/committees/House/main.cfm"),
-            ("Interim", self.interims_url),
+            ("Interim", INTERIMS_URL),
         ]
         for chamber, url in com_urls:
             yield from self.scrape_committees(chamber, url)
@@ -26,7 +26,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         # misses meetings that are only published on the consolidated interim
         # committee schedule (e.g. the June 14-16 Canaan Valley meetings).
         # Scrape those schedule pages directly so those events are captured.
-        yield from self.scrape_interim_schedules(self.interims_url)
+        yield from self.scrape_interim_schedules()
 
     def scrape_committees(self, chamber, url):
         event_objects = set()
@@ -47,7 +47,7 @@ class WVEventScraper(Scraper, LXMLMixin):
                 event.dedupe_key = event_name
                 yield event
 
-    def scrape_interim_schedules(self, url):
+    def scrape_interim_schedules(self):
         """Scrape the consolidated interim committee meeting schedule.
 
         The interims landing page lists each interim meeting block (e.g.
@@ -56,6 +56,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         meetings. These meetings are not always reachable via the per-
         committee "agendas.cfm" crawl, so scrape the schedule directly.
         """
+        url = INTERIMS_URL
         page = self.lxmlize(url)
         page.make_links_absolute(url)
 
@@ -82,7 +83,6 @@ class WVEventScraper(Scraper, LXMLMixin):
                 yield event
 
     def scrape_interim_schedule_page(self, url):
-        self.info(f"GET {url}")
         page = self.lxmlize(url)
         page.make_links_absolute(url)
 
@@ -119,15 +119,15 @@ class WVEventScraper(Scraper, LXMLMixin):
         adjourn = cells[1].text_content().strip()
         where = cells[3].text_content().strip()
 
-        # The committee cell holds either a linked committee name plus a
-        # separate "- Agenda" link, or plain text for site tours/presentations
-        # (e.g. "Dolly Sods"). It may also carry a status suffix such as
-        # "- CANCELLED" or "- JOINT MEETING".
+        # Only rows with a committee.cfm link are actual committee hearings;
+        # unlinked rows are site tours or presentations (e.g. "Dolly Sods",
+        # "Floor Session"), so skip them. The committee cell holds the linked
+        # committee name plus a separate "- Agenda" link, and may also carry a
+        # status suffix such as "- CANCELLED" or "- JOINT MEETING".
         com_link = cells[2].xpath('.//a[contains(@href, "committee.cfm")]')
-        if com_link:
-            com = com_link[0].text_content().strip()
-        else:
-            com = cells[2].text_content().strip()
+        if not com_link:
+            return
+        com = com_link[0].text_content().strip()
 
         raw_com_text = cells[2].text_content()
         status = "tentative"
@@ -167,13 +167,8 @@ class WVEventScraper(Scraper, LXMLMixin):
             status=status,
         )
         event.add_source(source_url)
-
-        # Only rows with a committee.cfm link are actual committees; the
-        # remaining rows are site tours or presentations, so don't attach a
-        # (bogus) committee entity to those.
-        if com_link:
-            event.add_committee(com, note="host")
-            event.add_source(com_link[0].get("href"))
+        event.add_committee(com, note="host")
+        event.add_source(com_link[0].get("href"))
 
         if agenda_link:
             self.scrape_interim_agenda_page(event, agenda_link[0])
@@ -181,7 +176,6 @@ class WVEventScraper(Scraper, LXMLMixin):
         yield event
 
     def scrape_interim_agenda_page(self, event, url):
-        self.info(f"GET {url}")
         page = self.lxmlize(url)
         page.make_links_absolute(url)
 
