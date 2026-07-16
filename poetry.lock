@@ -788,8 +788,8 @@ files = [
 google-auth = ">=2.14.1,<3.0.0"
 googleapis-common-protos = ">=1.63.2,<2.0.0"
 proto-plus = [
-    {version = ">=1.22.3,<2.0.0"},
     {version = ">=1.25.0,<2.0.0", markers = "python_version >= \"3.13\""},
+    {version = ">=1.22.3,<2.0.0", markers = "python_version < \"3.13\""},
 ]
 protobuf = ">=4.25.8,<8.0.0"
 requests = ">=2.20.0,<3.0.0"
@@ -997,7 +997,7 @@ description = "Lightweight in-process concurrent programming"
 optional = true
 python-versions = ">=3.7"
 groups = ["main"]
-markers = "extra == \"california\" and (platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\")"
+markers = "(platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\") and extra == \"california\""
 files = [
     {file = "greenlet-3.1.1-cp310-cp310-macosx_11_0_universal2.whl", hash = "sha256:0bbae94a29c9e5c7e4a2b7f0aae5c17e8e90acbfd3bf6270eeba60c39fce3563"},
     {file = "greenlet-3.1.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0fde093fb93f35ca72a556cf72c92ea3ebfda3d79fc35bb19fbe685853869a83"},
@@ -1730,14 +1730,14 @@ et-xmlfile = "*"
 
 [[package]]
 name = "openstates"
-version = "6.25.1"
+version = "6.25.3"
 description = "core infrastructure for the openstates project"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "openstates-6.25.1-py3-none-any.whl", hash = "sha256:c89a426470d13d74f41b1c543f72aa7e1a280e6132d7038b41ebf9dc21cb18c9"},
-    {file = "openstates-6.25.1.tar.gz", hash = "sha256:21d22bfc3fe8f942a64bfa9d06c5981e82241c0faac69667c415a5762494a74b"},
+    {file = "openstates-6.25.3-py3-none-any.whl", hash = "sha256:4bd52ad5e754ad352682628eb4c91779117e1878d7351229a1c7306f5a0f5e20"},
+    {file = "openstates-6.25.3.tar.gz", hash = "sha256:9378d31e79777aef8aaec82133bdd02e47a786a80cb2399d7018208817470fab"},
 ]
 
 [package.dependencies]
@@ -1828,9 +1828,9 @@ files = [
 
 [package.dependencies]
 numpy = [
+    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
     {version = ">=1.22.4", markers = "python_version < \"3.11\""},
     {version = ">=1.23.2", markers = "python_version == \"3.11\""},
-    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -3470,4 +3470,4 @@ california = ["SQLAlchemy", "mysqlclient"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.9"
-content-hash = "a0587d51a0851b92d3b7964feaa81183f2c213230cc1cd0732a77cb47457a50b"
+content-hash = "8f2fb048c2087af1e3f0cb26385cc94dcfad3c631c9fee45c305335d9ca860d5"
