@@ -240,7 +240,7 @@ class COBillScraper(Scraper, LXMLMixin):
         ):
             sponsor = self.clean(row)
             chamber = "upper" if "Sen." in sponsor else "lower"
-            sponsor = sponsor.replace("Sen.", "").replace("Rep.", "")
+            sponsor = sponsor.replace("Sen.", "").replace("Rep.", "").strip()
             bill.add_sponsorship(
                 sponsor,
                 classification="sponsor",
