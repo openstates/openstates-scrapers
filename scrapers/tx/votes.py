@@ -9,6 +9,38 @@ import lxml.html
 from openstates.scrape import Scraper, VoteEvent
 
 
+SPELLED_OUT_BILL_REGEX = re.compile(
+    # Section headings spell the bill type out, e.g.
+    # "HOUSE BILL 1620 ON THIRD READING" or
+    # "COMMITTEE SUBSTITUTESENATE BILL 1599 ON SECOND READING"
+    # (the missing space in SUBSTITUTESENATE is how the journal renders it)
+    r"(HOUSE|SENATE)\s+(BILL|JOINT\s+RESOLUTION|CONCURRENT\s+RESOLUTION|RESOLUTION)\s+(\d+)"
+)
+
+SPELLED_OUT_BILL_TYPES = {
+    "BILL": "B",
+    "JOINT RESOLUTION": "JR",
+    "CONCURRENT RESOLUTION": "CR",
+    "RESOLUTION": "R",
+}
+
+LOCAL_CALENDAR_VOTE_REGEX = re.compile(r"^\(viva voce vote\)", re.IGNORECASE)
+
+LOCAL_CALENDAR_COUNTS_REGEX = re.compile(
+    # count group optionally followed by named dissenters, e.g.
+    # (31-0)  or  (30-1) "Nay" Middleton
+    r"\((\d+)\s*-\s*(\d+)\)((?:[^(])*)"
+)
+
+LOCAL_CALENDAR_BILL_REGEX = re.compile(
+    # bill-then-author, e.g. "SB 2474 (Hinojosa)"; committee substitutes
+    # appear as "CSSB 401 (Kolkhorst)"
+    r"^\s*((?:CS)?[HS][JC]?[BR][\s\xa0]+\d+)\s*\("
+)
+
+NAY_NAMES_REGEX = re.compile(r"[\"“]Nay[\"”]\s+([^()\"“]+)")
+
+
 def next_tag(el):
     """
     Return next tag, skipping <br>s.
@@ -414,22 +446,6 @@ class MaybeShortCount(BaseVote):
         return {"nays": no_voter_names}
 
 
-spelled_out_bill_regex = re.compile(
-    # Section headings spell the bill type out, e.g.
-    # "HOUSE BILL 1620 ON THIRD READING" or
-    # "COMMITTEE SUBSTITUTESENATE BILL 1599 ON SECOND READING"
-    # (the missing space in SUBSTITUTESENATE is how the journal renders it)
-    r"(HOUSE|SENATE)\s+(BILL|JOINT\s+RESOLUTION|CONCURRENT\s+RESOLUTION|RESOLUTION)\s+(\d+)"
-)
-
-spelled_out_bill_types = {
-    "BILL": "B",
-    "JOINT RESOLUTION": "JR",
-    "CONCURRENT RESOLUTION": "CR",
-    "RESOLUTION": "R",
-}
-
-
 def get_bill(el):
     # allow for bill numbers like HB, SB, HR, SR, HJR, SJR, SCR followed by digits
     # \s space character is used because there are some non-space whitespaces
@@ -437,10 +453,10 @@ def get_bill(el):
     b = re.findall(r"[HS][JC]?[BR]\s+\d+", text)
     if b:
         return b[0]
-    spelled = spelled_out_bill_regex.search(text)
+    spelled = SPELLED_OUT_BILL_REGEX.search(text)
     if spelled:
         chamber, bill_type, number = spelled.groups()
-        bill_type = spelled_out_bill_types[" ".join(bill_type.split())]
+        bill_type = SPELLED_OUT_BILL_TYPES[" ".join(bill_type.split())]
         return f"{chamber[0]}{bill_type} {number}"
 
 
@@ -507,20 +523,6 @@ def record_votes_with_short_count_notation(root, session, chamber):
         yield v
 
 
-local_calendar_vote_regex = re.compile(r"^\(viva voce vote\)", re.IGNORECASE)
-local_calendar_counts_regex = re.compile(
-    # count group optionally followed by named dissenters, e.g.
-    # (31-0)  or  (30-1) "Nay" Middleton
-    r"\((\d+)\s*-\s*(\d+)\)((?:[^(])*)"
-)
-local_calendar_bill_regex = re.compile(
-    # bill-then-author, e.g. "SB 2474 (Hinojosa)"; committee substitutes
-    # appear as "CSSB 401 (Kolkhorst)"
-    r"^\s*((?:CS)?[HS][JC]?[BR][\s\xa0]+\d+)\s*\("
-)
-nay_names_regex = re.compile(r"[\"“]Nay[\"”]\s+([^()\"“]+)")
-
-
 def local_calendar_votes(root, session, chamber):
     # The senate's Local & Uncontested Calendar lists each bill with a
     # terse per-bill vote entry in the journal, e.g.:
@@ -531,7 +533,7 @@ def local_calendar_votes(root, session, chamber):
     # which the bill history lists as two record votes on the same day.
     for el in root.xpath('//div[@class = "textpara"]'):
         text = " ".join(el.text_content().split())
-        if not local_calendar_vote_regex.match(text):
+        if not LOCAL_CALENDAR_VOTE_REGEX.match(text):
             continue
 
         # The bill is the "SB 2474 (Author)" line a couple of elements
@@ -545,7 +547,7 @@ def local_calendar_votes(root, session, chamber):
                 break
             if prev.tag == "br":
                 continue
-            bill_match = local_calendar_bill_regex.match(prev.text_content())
+            bill_match = LOCAL_CALENDAR_BILL_REGEX.match(prev.text_content())
             if bill_match:
                 bill_id = clean_bill_id(bill_match.groups()[0])
                 break
@@ -554,7 +556,7 @@ def local_calendar_votes(root, session, chamber):
             continue
         bill_chamber = {"H": "lower", "S": "upper"}.get(bill_id[0])
 
-        count_groups = local_calendar_counts_regex.findall(text)
+        count_groups = LOCAL_CALENDAR_COUNTS_REGEX.findall(text)
         for i, (yeas, nays, trailing) in enumerate(count_groups):
             if len(count_groups) == 2:
                 motion_text = "passage to engrossment" if i == 0 else "final passage"
@@ -576,7 +578,7 @@ def local_calendar_votes(root, session, chamber):
             v.set_count("yes", yeas)
             v.set_count("no", nays)
 
-            nay_match = nay_names_regex.search(trailing)
+            nay_match = NAY_NAMES_REGEX.search(trailing)
             if nay_match:
                 name_list = re.sub(r",?\sand\s", ", ", nay_match.groups()[0])
                 for name in name_list.split(", "):
