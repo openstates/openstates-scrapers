@@ -288,13 +288,7 @@ class DEBillScraper(Scraper, LXMLMixin):
         for fiscal in fiscals:
             self.scrape_fiscal_note(bill, fiscal)
 
-        try:
-            self.scrape_actions(bill, row["LegislationId"])
-        except:  # noqa: E722
-            # Collecting bills we had to skip because of failure to fetch
-            failure = FailedBillFetch(bill_id, "fetch_bill_page")
-            yield failure
-            return
+        self.scrape_actions(bill, row["LegislationId"])
 
         if row["HasAmendments"] is True:
             self.scrape_amendments(bill, row["LegislationId"])
@@ -511,7 +505,16 @@ class DEBillScraper(Scraper, LXMLMixin):
             verify=False,
             headers=self.headers,
         )
-        page = self.decode_and_retry_request("scrape_actions", request_method)
+        page = self.decode_and_retry_request(
+            "scrape_actions", request_method, raise_exception=False
+        )
+        # DE sometimes returns an empty body for a bill's actions (notably for
+        # very recently introduced bills). Treat that as "no actions yet" rather
+        # than a fatal failure, so the bill is still imported. Actions will
+        # backfill automatically once DE's endpoint returns data.
+        if not page:
+            self.warning(f"No actions returned for {bill.identifier}")
+            return
         for row in page["Data"]:
             action_name = row["ActionDescription"]
             action_date = dt.datetime.strptime(
