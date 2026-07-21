@@ -261,7 +261,7 @@ class Virginia(State):
             "name": "2027 Regular Session",
             "start_date": "2027-01-13",
             "end_date": "2027-02-27",
-            "active": False,
+            "active": True,
             "extras": {"session_code": "20271"},
         },
     ]
