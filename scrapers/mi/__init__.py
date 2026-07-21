@@ -99,6 +99,7 @@ class Michigan(State):
             for s in url_xpath(
                 "https://www.legislature.mi.gov/Search/LegDocSearch",
                 "//option/text()",
+                verify=False,
             )
             if s.strip()
         ]
