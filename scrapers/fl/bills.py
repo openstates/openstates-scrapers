@@ -734,8 +734,13 @@ class HouseSearchPage(HtmlListPage):
             # occasionally accepts the connection but never finishes the response,
             # which without an explicit timeout hangs the whole scrape indefinitely
             # instead of raising the ConnectionError/Timeout our retry logic already
-            # handles (see patched_get_response above).
-            timeout=30,
+            # handles (see patched_get_response above). 10s applies separately to
+            # both the connect and read phases; every real request we observed in
+            # testing completed in 1-4s, so this is well clear of normal latency
+            # while still failing fast -- this fetch happens up to 3x per bill
+            # across ~1,900 bills, so a longer timeout compounds fast if a hang
+            # recurs. Tune freely if a different value fits better.
+            timeout=10,
         )
 
     def accept_response(self, response: requests.Response):
@@ -765,7 +770,7 @@ class HouseSearchPage(HtmlListPage):
             return True
 
     def process_item(self, item):
-        source = URL(f"{item}", verify=False, timeout=30)
+        source = URL(f"{item}", verify=False, timeout=10)
         return HouseBillPage(self.input, source=source)
 
     # Override so that we can handle occasional bill that does not show up in search
@@ -793,7 +798,7 @@ class HouseBillPage(HtmlListPage):
     )
 
     def process_item(self, item):
-        source = URL(f"{item}", verify=False, timeout=30)
+        source = URL(f"{item}", verify=False, timeout=10)
         return HouseComVote(self.input, source=source)
 
 
