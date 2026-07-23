@@ -30,10 +30,10 @@ class TXEventScraper(Scraper, LXMLMixin):
         event = str(event)
 
         if event in self.events_seen:
-            return False
+            return True
         else:
             self.events_seen.add(event)
-            return True
+            return False
 
     def scrape(self, session=None, chamber=None):
         event_count = 0
@@ -59,6 +59,7 @@ class TXEventScraper(Scraper, LXMLMixin):
                 if not self.is_duplicate(obj):
                     event_count += 1
                     yield obj
+
         if event_count < 1:
             raise EmptyScrape
 
@@ -150,10 +151,10 @@ class TXEventScraper(Scraper, LXMLMixin):
         time = None
 
         for row in page.xpath(".//tr"):
-            title = row.xpath(".//div[@class='sectionTitle']")
+            title = row.xpath(".//*[@data-label='Committee Meeting Date']")
             if len(title) > 0:
                 date = title[0].text_content()
-            time_elem = row.xpath(".//td/strong")
+            time_elem = row.xpath(".//*[@data-label='Committee Meeting Time']")
             if time_elem:
                 time = time_elem[0].text_content()
 
