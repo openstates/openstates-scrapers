@@ -1027,9 +1027,9 @@ class FlBillScraper(Scraper):
             # accept_response() checks. Only swallow it when allow_partial_scrape is set
             # (see scrape()) -- by default this still raises, so a blocked run fails loudly
             # instead of silently reporting a subset of bills as a complete dataset.
-            is_rejection = "reject" in str(type(e).__name__).lower() or "reject" in str(
-                e
-            ).lower()
+            is_rejection = (
+                "reject" in str(type(e).__name__).lower() or "reject" in str(e).lower()
+            )
             if is_rejection and self.allow_partial_scrape:
                 self.logger.warning(
                     f"flhouse.gov bot detection triggered — stopping session early. "
