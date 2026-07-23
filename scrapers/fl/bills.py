@@ -19,7 +19,6 @@ from .actions import Categorizer
 from .utils import (
     get_random_user_agent,
     add_random_delay,
-    retry_on_connection_error,
 )
 
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
@@ -731,6 +730,17 @@ class HouseSearchPage(HtmlListPage):
             },
             retries=3,
             verify=False,
+            # spatula's URL defaults to timeout=None (wait forever). flhouse.gov
+            # occasionally accepts the connection but never finishes the response,
+            # which without an explicit timeout hangs the whole scrape indefinitely
+            # instead of raising the ConnectionError/Timeout our retry logic already
+            # handles (see patched_get_response above). 10s applies separately to
+            # both the connect and read phases; every real request we observed in
+            # testing completed in 1-4s, so this is well clear of normal latency
+            # while still failing fast -- this fetch happens up to 3x per bill
+            # across ~1,900 bills, so a longer timeout compounds fast if a hang
+            # recurs. Tune freely if a different value fits better.
+            timeout=10,
         )
 
     def accept_response(self, response: requests.Response):
@@ -760,7 +770,7 @@ class HouseSearchPage(HtmlListPage):
             return True
 
     def process_item(self, item):
-        source = URL(f"{item}", verify=False)
+        source = URL(f"{item}", verify=False, timeout=10)
         return HouseBillPage(self.input, source=source)
 
     # Override so that we can handle occasional bill that does not show up in search
@@ -788,7 +798,7 @@ class HouseBillPage(HtmlListPage):
     )
 
     def process_item(self, item):
-        source = URL(f"{item}", verify=False)
+        source = URL(f"{item}", verify=False, timeout=10)
         return HouseComVote(self.input, source=source)
 
 
@@ -887,7 +897,15 @@ class FlBillScraper(Scraper):
             "scrapers/fl/__init__.py"
         )
 
-    def scrape(self, session=None):
+    def scrape(self, session=None, allow_partial=None):
+        # Off by default: a scrape that hits flhouse.gov bot detection mid-session
+        # fails loudly rather than quietly returning a subset of bills, matching
+        # every other scraper's assumption that a successful run means a complete
+        # dataset. Pass allow_partial=true on the command line (e.g.
+        # `fl bills --scrape allow_partial=true`, same style as VA's
+        # `csv_bills --scrape session=2026`) to opt into keeping whatever bills
+        # were saved before the block instead of failing the whole run.
+        self.allow_partial_scrape = str(allow_partial).lower() in ("1", "true", "yes")
         self.raise_errors = False
         self.retry_attempts = 5
         self.retry_wait_seconds = 5
@@ -916,12 +934,7 @@ class FlBillScraper(Scraper):
             )
             yield from self._process_bill_list(bill_list)
 
-        yield from retry_on_connection_error(
-            lambda: list(do_scrape_with_retry()),
-            max_retries=3,
-            initial_backoff=10,
-            max_backoff=120,
-        )
+        yield from do_scrape_with_retry()
 
     def _create_fresh_session(self):
         """
@@ -971,39 +984,56 @@ class FlBillScraper(Scraper):
         """
         Process the bill list with error handling and circuit breaker pattern.
         """
-        for item in bill_list.do_scrape():
-            try:
-                # Reset connection pool if needed
-                self._reset_connection_pool_if_needed()
+        try:
+            for item in bill_list.do_scrape():
+                try:
+                    # Reset connection pool if needed
+                    self._reset_connection_pool_if_needed()
 
-                # Add a random delay between processing items
-                add_random_delay(1, 3)
+                    # Add a random delay between processing items
+                    add_random_delay(1, 3)
 
-                # If we've had too many consecutive failures, pause for a while
-                if self._consecutive_failures >= self._max_consecutive_failures:
-                    self.logger.warning(
-                        f"Circuit breaker triggered after {self._consecutive_failures} consecutive failures. "
-                        f"Pausing for {self._circuit_breaker_timeout} seconds."
-                    )
-                    time.sleep(self._circuit_breaker_timeout)
+                    # If we've had too many consecutive failures, pause for a while
+                    if self._consecutive_failures >= self._max_consecutive_failures:
+                        self.logger.warning(
+                            f"Circuit breaker triggered after {self._consecutive_failures} consecutive failures. "
+                            f"Pausing for {self._circuit_breaker_timeout} seconds."
+                        )
+                        time.sleep(self._circuit_breaker_timeout)
+                        self._consecutive_failures = 0
+
+                        # Rotate user agent after circuit breaker timeout
+                        self.headers["User-Agent"] = get_random_user_agent()
+
+                    yield item
+
+                    # Reset consecutive failures counter on success
                     self._consecutive_failures = 0
 
-                    # Rotate user agent after circuit breaker timeout
-                    self.headers["User-Agent"] = get_random_user_agent()
+                except Exception as e:
+                    self._consecutive_failures += 1
+                    self.logger.error(f"Error processing item: {e}")
 
-                yield item
+                    # If it's a connection error, add a longer delay
+                    if isinstance(e, (ConnectionError, RemoteDisconnected)):
+                        self.logger.warning("Connection error. Adding longer delay.")
+                        add_random_delay(5, 15)
 
-                # Reset consecutive failures counter on success
-                self._consecutive_failures = 0
-
-            except Exception as e:
-                self._consecutive_failures += 1
-                self.logger.error(f"Error processing item: {e}")
-
-                # If it's a connection error, add a longer delay
-                if isinstance(e, (ConnectionError, RemoteDisconnected)):
-                    self.logger.warning("Connection error. Adding longer delay.")
-                    add_random_delay(5, 15)
-
-                    # Rotate user agent after connection error
-                    self.headers["User-Agent"] = get_random_user_agent()
+                        # Rotate user agent after connection error
+                        self.headers["User-Agent"] = get_random_user_agent()
+        except Exception as e:
+            # flhouse.gov uses application-layer bot detection: returns "Request Rejected"
+            # HTML with HTTP 200, causing spatula to raise a rejection error after 4 failed
+            # accept_response() checks. Only swallow it when allow_partial_scrape is set
+            # (see scrape()) -- by default this still raises, so a blocked run fails loudly
+            # instead of silently reporting a subset of bills as a complete dataset.
+            is_rejection = (
+                "reject" in str(type(e).__name__).lower() or "reject" in str(e).lower()
+            )
+            if is_rejection and self.allow_partial_scrape:
+                self.logger.warning(
+                    f"flhouse.gov bot detection triggered — stopping session early. "
+                    f"Bills processed before this point have been saved. ({e})"
+                )
+            else:
+                raise
