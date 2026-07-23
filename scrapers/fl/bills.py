@@ -730,6 +730,12 @@ class HouseSearchPage(HtmlListPage):
             },
             retries=3,
             verify=False,
+            # spatula's URL defaults to timeout=None (wait forever). flhouse.gov
+            # occasionally accepts the connection but never finishes the response,
+            # which without an explicit timeout hangs the whole scrape indefinitely
+            # instead of raising the ConnectionError/Timeout our retry logic already
+            # handles (see patched_get_response above).
+            timeout=30,
         )
 
     def accept_response(self, response: requests.Response):
@@ -759,7 +765,7 @@ class HouseSearchPage(HtmlListPage):
             return True
 
     def process_item(self, item):
-        source = URL(f"{item}", verify=False)
+        source = URL(f"{item}", verify=False, timeout=30)
         return HouseBillPage(self.input, source=source)
 
     # Override so that we can handle occasional bill that does not show up in search
@@ -787,7 +793,7 @@ class HouseBillPage(HtmlListPage):
     )
 
     def process_item(self, item):
-        source = URL(f"{item}", verify=False)
+        source = URL(f"{item}", verify=False, timeout=30)
         return HouseComVote(self.input, source=source)
 
 
@@ -886,7 +892,15 @@ class FlBillScraper(Scraper):
             "scrapers/fl/__init__.py"
         )
 
-    def scrape(self, session=None):
+    def scrape(self, session=None, allow_partial=None):
+        # Off by default: a scrape that hits flhouse.gov bot detection mid-session
+        # fails loudly rather than quietly returning a subset of bills, matching
+        # every other scraper's assumption that a successful run means a complete
+        # dataset. Pass allow_partial=true on the command line (e.g.
+        # `fl bills --scrape allow_partial=true`, same style as VA's
+        # `csv_bills --scrape session=2026`) to opt into keeping whatever bills
+        # were saved before the block instead of failing the whole run.
+        self.allow_partial_scrape = str(allow_partial).lower() in ("1", "true", "yes")
         self.raise_errors = False
         self.retry_attempts = 5
         self.retry_wait_seconds = 5
@@ -1005,9 +1019,13 @@ class FlBillScraper(Scraper):
         except Exception as e:
             # flhouse.gov uses application-layer bot detection: returns "Request Rejected"
             # HTML with HTTP 200, causing spatula to raise a rejection error after 4 failed
-            # accept_response() checks. Catch it here so bills already yielded are saved
-            # rather than the entire scrape crashing with zero output.
-            if "reject" in str(type(e).__name__).lower() or "reject" in str(e).lower():
+            # accept_response() checks. Only swallow it when allow_partial_scrape is set
+            # (see scrape()) -- by default this still raises, so a blocked run fails loudly
+            # instead of silently reporting a subset of bills as a complete dataset.
+            is_rejection = "reject" in str(type(e).__name__).lower() or "reject" in str(
+                e
+            ).lower()
+            if is_rejection and self.allow_partial_scrape:
                 self.logger.warning(
                     f"flhouse.gov bot detection triggered — stopping session early. "
                     f"Bills processed before this point have been saved. ({e})"
