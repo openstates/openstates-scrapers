@@ -41,7 +41,7 @@ class IlEventScraper(Scraper):
         ctty_name = committee_name_re.match(ctty_name).group(1)
 
         tables = doc.xpath(
-            '//div[contains(@class, "card")][.//h4[contains(., "Hearing Details")]]//table'
+            '//div[contains(@class, "card")][.//h2[contains(., "Hearing Details")]]//table'
         )
         if not tables:
             self.warning(f"Empty hearing data for {url}")
