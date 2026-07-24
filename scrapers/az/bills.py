@@ -413,7 +413,20 @@ class AZBillScraper(Scraper):
 
         bill_list_url = "https://www.azleg.gov/bills/"
 
-        page = self.get(bill_list_url, timeout=80, cookies=session_cookies).content
+        # scrapelib's FileCache keys purely on URL, ignoring cookies -- so under
+        # --fastmode (which flips cache_write_only to False, enabling cache *reads*),
+        # this GET to the same bill_list_url as the pre-session-set request above would
+        # be served from that earlier cached response instead of hitting the network,
+        # meaning it can never reflect the session cookie set by the POST just above.
+        # That produces a 100%-reproducible "Session ID not in bill list" assertion
+        # failure regardless of network path -- confirmed via direct reproduction
+        # against a fresh cache. Force a live fetch for this one request.
+        cache_write_only = self.cache_write_only
+        self.cache_write_only = True
+        try:
+            page = self.get(bill_list_url, timeout=80, cookies=session_cookies).content
+        finally:
+            self.cache_write_only = cache_write_only
         # There's an errant close-comment that browsers handle
         # but LXML gets really confused.
         page = page.replace(b"--!>", b"-->")
