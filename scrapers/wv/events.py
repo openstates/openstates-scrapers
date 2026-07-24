@@ -68,13 +68,23 @@ class WVEventScraper(Scraper, LXMLMixin):
             when = self.strip_date_range(when)
             when = self.clean_date(when)
 
+            if not when:
+                continue
+
             # manual fix for un-yeared leap year meeting
             # on Senate Interstate Cooperation Committee
             if when == "February 29":
                 continue
 
-            when = dateutil.parser.parse(when)
-            if when.year >= datetime.datetime.today().year:
+            # Only use the list-page date as a coarse filter.
+            # Do not let an ambiguous date string cause us to scrape a page
+            # that is actually a historical committee meeting.
+            try:
+                row_date = dateutil.parser.parse(when)
+            except ValueError:
+                continue
+
+            if row_date.year >= datetime.datetime.today().year:
                 yield from self.scrape_meeting_page(row.xpath("@href")[0])
 
     def scrape_meeting_page(self, url):
@@ -116,7 +126,15 @@ class WVEventScraper(Scraper, LXMLMixin):
 
         when = self.strip_date_range(when)
         when = self.clean_date(when)
-        when = dateutil.parser.parse(when)
+
+        if not when:
+            return
+
+        try:
+            when = dateutil.parser.parse(when)
+        except ValueError:
+            return
+
         when = self._tz.localize(when)
 
         # we check for this elsewhere, but just in case the very first event on a committee page is way in the past
@@ -198,21 +216,44 @@ class WVEventScraper(Scraper, LXMLMixin):
 
     def clean_date(self, when):
         """
-        Cleans the meeting date string by removing trailing non-date text while
-        preserving any valid meeting time.
-
-        The date occupies the first three comma-separated segments (weekday,
-        month/day, year). Some agenda pages include additional text such as
-        "Following wrap up of morning agenda", while others include the meeting
-        time (e.g. "1:00 PM") after the date. Preserve any segment containing a
-        valid time and discard other trailing text so the datetime is parsed
-        correctly.
+        Keep complete page dates intact and only remove trailing non-date noise.
+        Preserve explicit years and meeting times from the h2 heading.
         """
+        if not when:
+            return None
+
+        when = re.sub(r"\s+", " ", when).strip()
+        when = re.sub(r"\s*,\s*$", "", when).strip()
+
+        # WV agenda pages sometimes render dates with no space after a
+        # comma, e.g. "March 22,2017, 10:00 AM" (see PR review comment on
+        # the Senate Interstate Cooperation Committee page). dateutil
+        # silently drops the year in that case and defaults to the current
+        # year instead of raising, turning a 2017 meeting into a 2026 one.
+        # Force a space after every comma so the year token is always
+        # tokenized and parsed correctly.
+        when = re.sub(r",(?=\S)", ", ", when)
+
+        # Some pages join the day and year with a period instead of a comma,
+        # e.g. "March 13.2025" (seen live on the Senate Judiciary Committee
+        # page). dateutil treats "13.2025" as a single numeric token and
+        # drops the year the same way it does for the no-space comma case
+        # above. Only match day (1-2 digits) + "." + a 4-digit year, so this
+        # can't collide with "a.m."/"p.m." time abbreviations elsewhere in
+        # the string.
+        when = re.sub(r"(?<=\d)\.(?=\d{4}\b)", ", ", when)
+
+        # If the page already includes a year, preserve the full string.
+        # That avoids converting historical meetings into current-year events.
+        if re.search(r"\b\d{4}\b", when):
+            return when
+
         segments = when.split(",")
         kept = segments[:3]
         for segment in segments[3:]:
             if self._time_re.search(segment):
                 kept.append(segment)
+
         when = ",".join(kept)
 
         removals = [
@@ -253,5 +294,4 @@ class WVEventScraper(Scraper, LXMLMixin):
             when = "March 1, 2022, 1:00 PM"
 
         when = re.sub(r"\s+", " ", when)
-        return when
-    
+        return when.strip()
