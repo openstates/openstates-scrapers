@@ -13,7 +13,15 @@ import requests
 from openstates.scrape import Bill, VoteEvent, Scraper
 from openstates.utils import format_datetime
 from requests.exceptions import ConnectionError, Timeout, RequestException
-from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage, URL
+from spatula import (
+    HtmlPage,
+    HtmlListPage,
+    XPath,
+    SelectorError,
+    PdfPage,
+    URL,
+    HandledError,
+)
 
 from .actions import Categorizer
 from .utils import (
@@ -479,8 +487,52 @@ class BillDetail(HtmlPage):
             self.logger.warning("No vote table for {}".format(self.input.identifier))
 
 
-class FloorVote(PdfPage):
+class ResilientFetchPage:
+    """
+    Per-bill supplementary data -- House votes (HouseSearchPage -> HouseBillPage ->
+    HouseComVote, flhouse.gov) and floor/committee vote PDFs (FloorVote, UpperComVote,
+    flsenate.gov) -- is independent of every other bill. A single bill's fetch failing
+    here, even after patched_get_response above exhausts its own retries, must not
+    abort the other ~1,900 independent bills in the session. Converting the leftover
+    exception to spatula's own HandledError reuses the "nothing left to do with this
+    page, move on" handling spatula already applies to rejected responses, just for
+    transient network errors instead.
+
+    Deliberately NOT applied to BillList/BillDetail/SubjectPDF -- those are session-wide
+    or a bill's own core data, where silently swallowing a failure risks looking like a
+    complete, successful run when it isn't. This is only for data whose absence just
+    means "this one bill is missing some supplementary info," not "this bill or the
+    whole session is broken."
+
+    This scrape runs nightly, so a bill skipped tonight for a transient network blip
+    gets picked up again on the next run rather than staying missing. The "SKIPPED
+    BILL:" prefix is a stable marker govbot's actions/scrape/scrape.sh greps for to
+    surface a distinct "will retry next run" line in the GitHub Actions summary,
+    separate from its generic error detection -- keep this prefix in sync with that
+    grep if either side changes.
+    """
+
+    def _bill_identifier(self):
+        # Overridden by subclasses whose self.input isn't a Bill directly (e.g. the
+        # vote-PDF classes below, which take a dict with a "bill" key instead).
+        return self.input.identifier
+
+    def _fetch_data(self, scraper):
+        try:
+            super()._fetch_data(scraper)
+        except (ConnectionError, URLError, Timeout, RequestException) as e:
+            self.logger.warning(
+                f"SKIPPED BILL: {self._bill_identifier()} -- {self.__class__.__name__} "
+                f"failed after exhausting retries, will retry on next nightly run: {e}"
+            )
+            raise HandledError(e)
+
+
+class FloorVote(ResilientFetchPage, PdfPage):
     preserve_layout = True
+
+    def _bill_identifier(self):
+        return self.input["bill"].identifier
 
     def process_page(self):
         MOTION_INDEX = 4
@@ -585,8 +637,11 @@ class FloorVote(PdfPage):
         yield vote
 
 
-class UpperComVote(PdfPage):
+class UpperComVote(ResilientFetchPage, PdfPage):
     preserve_layout = True
+
+    def _bill_identifier(self):
+        return self.input["bill"].identifier
 
     def process_page(self):
         lines = self.text.splitlines()
@@ -688,7 +743,7 @@ class UpperComVote(PdfPage):
         yield vote
 
 
-class HouseSearchPage(HtmlListPage):
+class HouseSearchPage(ResilientFetchPage, HtmlListPage):
     """
     House committee roll calls are not available on the Senate's
     website. Furthermore, the House uses an internal ID system in
@@ -788,7 +843,7 @@ class HouseSearchPage(HtmlListPage):
             )
 
 
-class HouseBillPage(HtmlListPage):
+class HouseBillPage(ResilientFetchPage, HtmlListPage):
     selector = XPath('//a[text()="See Votes"]/@href', min_items=0)
     example_input = Bill(
         "HB 1", "2020", "title", chamber="upper", classification="bill"
@@ -802,7 +857,7 @@ class HouseBillPage(HtmlListPage):
         return HouseComVote(self.input, source=source)
 
 
-class HouseComVote(HtmlPage):
+class HouseComVote(ResilientFetchPage, HtmlPage):
     example_input = Bill(
         "HB 1", "2020", "title", chamber="upper", classification="bill"
     )
