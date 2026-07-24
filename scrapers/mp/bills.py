@@ -82,6 +82,15 @@ class MPBillScraper(Scraper):
             bill_id = f"{bill_type} {bill_id}"
 
         title = self.get_cell_text(page, "Subject/Title")
+        if not title:
+            # cnmileg.net genuinely has blank titles for some bills (e.g.
+            # HCommRes 24-6, legID=20113) -- OCD validation requires
+            # title minLength: 1, so this crashed the scraper on the exact
+            # same bill every run and silently dropped every bill after it
+            # in iteration order. Falling back to the bill's own identifier
+            # unblocks the rest of the session instead of losing it all.
+            self.warning(f"{bill_id} has no title on cnmileg.net, using identifier as a fallback")
+            title = bill_id
 
         bill_type = self.bill_type_map[bill_id.split(" ")[0]]
 
