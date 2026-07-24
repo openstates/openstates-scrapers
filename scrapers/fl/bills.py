@@ -21,6 +21,7 @@ from spatula import (
     PdfPage,
     URL,
     HandledError,
+    RejectedResponse,
 )
 
 from .actions import Categorizer
@@ -504,6 +505,21 @@ class ResilientFetchPage:
     means "this one bill is missing some supplementary info," not "this bill or the
     whole session is broken."
 
+    Also catches RejectedResponse -- flhouse.gov's application-layer bot detection
+    (a "Request Rejected" page returned with HTTP 200) after HouseSearchPage's own
+    retries (see its `retries=3` source config) are exhausted. This is deliberately
+    treated the same as a transient network error: skip just this bill's House data
+    and move on, rather than stopping the whole session the way `allow_partial_scrape`
+    in `_process_bill_list` does for a *session-wide* rejection (e.g. on BillList's own
+    flsenate.gov fetch, which is NOT wrapped by this mixin). If flhouse.gov starts
+    blanket-blocking every bill, this will grind through the rest of the session
+    logging a "SKIPPED BILL:" per bill rather than stopping early -- slower, but still
+    yields ~1,900 bills with their core data intact, with the skip count itself making
+    the scope of the block visible rather than just failing the whole run outright.
+    Confirmed happening for real on bill 411, 2026-07-24 -- a run that had already
+    scraped 400+ bills cleanly crashed here, losing ~14 minutes of not-yet-auto-saved
+    progress and burning the rest of the run's time on a failed restart-from-scratch.
+
     This scrape runs nightly, so a bill skipped tonight for a transient network blip
     gets picked up again on the next run rather than staying missing. The "SKIPPED
     BILL:" prefix is a stable marker govbot's actions/scrape/scrape.sh greps for to
@@ -524,6 +540,13 @@ class ResilientFetchPage:
             self.logger.warning(
                 f"SKIPPED BILL: {self._bill_identifier()} -- {self.__class__.__name__} "
                 f"failed after exhausting retries, will retry on next nightly run: {e}"
+            )
+            raise HandledError(e)
+        except RejectedResponse as e:
+            self.logger.warning(
+                f"SKIPPED BILL: {self._bill_identifier()} -- {self.__class__.__name__} "
+                f"was rejected (bot detection) after exhausting retries, will retry "
+                f"on next nightly run: {e}"
             )
             raise HandledError(e)
 
