@@ -416,3 +416,4 @@ class WVEventScraper(Scraper, LXMLMixin):
 
         when = re.sub(r"\s+", " ", when)
         return when
+    
