@@ -982,18 +982,47 @@ class FlBillScraper(Scraper):
         # spatula's logging is better than scrapelib's
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
 
-        def do_scrape_with_retry():
-            bill_list = BillList(
-                {"session": session, "house_session_number": house_session_number, "start": start_dt}
-            )
-            yield from self._process_bill_list(bill_list)
-
-        yield from retry_on_connection_error(
-            lambda: list(do_scrape_with_retry()),
-            max_retries=3,
-            initial_backoff=10,
-            max_backoff=120,
+        bill_list = BillList(
+            {"session": session, "house_session_number": house_session_number, "start": start_dt}
         )
+
+        # Retry the bill-list walk itself without collapsing every bill into a list first
+        # (fixed 2026-07-24 -- see PLAN-bill-document-provenance.md). The previous version wrapped
+        # the entire scrape in `retry_on_connection_error(lambda: list(do_scrape_with_retry()))`,
+        # which forced the whole session's bills to fully process in memory before any of them
+        # got yielded/saved -- a crash near the end of a long session lost all of its progress.
+        # That whole-session retry is no longer the primary safety net: _process_bill_list already
+        # catches and logs a failure on any ONE bill and moves on to the next (its own circuit
+        # breaker), and every individual HTTP request already retries via the patched_get_response
+        # monkeypatch above. This loop is now just a backstop for failures in the bill-list
+        # pagination walk itself (BillList.do_scrape()) -- retrying restarts that walk from the
+        # beginning, but bills already yielded/saved before the failure stay saved, and re-scraping
+        # them again is harmless (the importer already no-ops an unchanged bill).
+        retries = 0
+        max_retries, backoff, max_backoff = 3, 10, 120
+        while True:
+            try:
+                yield from self._process_bill_list(bill_list)
+                return
+            except (
+                ConnectionError,
+                RemoteDisconnected,
+                URLError,
+                Timeout,
+                RequestException,
+            ) as e:
+                retries += 1
+                if retries > max_retries:
+                    self.logger.error(
+                        f"Max retries ({max_retries}) exceeded scraping bill list: {e}"
+                    )
+                    raise
+                wait = min(backoff * (2 ** (retries - 1)), max_backoff)
+                self.logger.warning(
+                    f"Bill list scrape failed: {e}. Retrying in {wait}s "
+                    f"(attempt {retries}/{max_retries})"
+                )
+                time.sleep(wait)
 
     def _create_fresh_session(self):
         """
