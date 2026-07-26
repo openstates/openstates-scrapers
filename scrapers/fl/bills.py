@@ -227,9 +227,18 @@ class BillDetail(HtmlPage):
             self.process_amendments()
             self.process_summary()
             self.process_citations()
-        yield self.input  # the bill, now augmented
+        # self.input (the bill) is yielded LAST, after House/vote processing below,
+        # not first -- items are saved as they're yielded, so yielding it first (as
+        # this used to) would mean the bill's JSON is already written before
+        # ResilientFetchPage's classes get a chance to run, making it too late for
+        # a skip there to ever land in bill.extras["scrape_warnings"] (see
+        # ResilientFetchPage's docstring). Trade-off: if something *else* -- outside
+        # what ResilientFetchPage already catches -- fails unexpectedly in here, the
+        # bill's own core data (sponsors, versions, etc., already fully scraped
+        # above) is now also lost, not just saved-then-orphaned as before.
         yield HouseSearchPage(self.input)
         yield from self.process_votes()
+        yield self.input  # the bill, now augmented
 
     def process_sponsors(self):
         sponsor = self.root.xpath(
@@ -526,36 +535,56 @@ class ResilientFetchPage:
     surface a distinct "will retry next run" line in the GitHub Actions summary,
     separate from its generic error detection -- keep this prefix in sync with that
     grep if either side changes.
+
+    A log line alone isn't enough, though -- it tells someone reading scrape logs
+    that data is missing, but not a downstream consumer of the resulting bill JSON,
+    who has no way to distinguish "this bill genuinely has no House votes" from
+    "House votes were dropped after a fetch failure." So each skip is also recorded
+    in the bill's own `extras["scrape_warnings"]` (a plain list of strings) -- a
+    real, schema-validated field every OCD-style object has
+    (openstates.scrape.base.BaseModel sets `self.extras = {}`), not a log-only
+    signal. For this to actually land in the saved JSON, the bill itself must be
+    yielded *after* this mixin's classes have had a chance to run and record a
+    skip -- see the comment on BillDetail.process_page's yield order below.
     """
 
-    def _bill_identifier(self):
+    def _bill_object(self):
         # Overridden by subclasses whose self.input isn't a Bill directly (e.g. the
         # vote-PDF classes below, which take a dict with a "bill" key instead).
-        return self.input.identifier
+        return self.input
+
+    def _bill_identifier(self):
+        return self._bill_object().identifier
+
+    def _record_skip(self, message):
+        self._bill_object().extras.setdefault("scrape_warnings", []).append(message)
 
     def _fetch_data(self, scraper):
         try:
             super()._fetch_data(scraper)
         except (ConnectionError, URLError, Timeout, RequestException) as e:
-            self.logger.warning(
-                f"SKIPPED BILL: {self._bill_identifier()} -- {self.__class__.__name__} "
-                f"failed after exhausting retries, will retry on next nightly run: {e}"
+            message = (
+                f"{self.__class__.__name__} failed after exhausting retries, "
+                f"will retry on next nightly run: {e}"
             )
+            self.logger.warning(f"SKIPPED BILL: {self._bill_identifier()} -- {message}")
+            self._record_skip(message)
             raise HandledError(e)
         except RejectedResponse as e:
-            self.logger.warning(
-                f"SKIPPED BILL: {self._bill_identifier()} -- {self.__class__.__name__} "
-                f"was rejected (bot detection) after exhausting retries, will retry "
-                f"on next nightly run: {e}"
+            message = (
+                f"{self.__class__.__name__} was rejected (bot detection) after "
+                f"exhausting retries, will retry on next nightly run: {e}"
             )
+            self.logger.warning(f"SKIPPED BILL: {self._bill_identifier()} -- {message}")
+            self._record_skip(message)
             raise HandledError(e)
 
 
 class FloorVote(ResilientFetchPage, PdfPage):
     preserve_layout = True
 
-    def _bill_identifier(self):
-        return self.input["bill"].identifier
+    def _bill_object(self):
+        return self.input["bill"]
 
     def process_page(self):
         MOTION_INDEX = 4
@@ -663,8 +692,8 @@ class FloorVote(ResilientFetchPage, PdfPage):
 class UpperComVote(ResilientFetchPage, PdfPage):
     preserve_layout = True
 
-    def _bill_identifier(self):
-        return self.input["bill"].identifier
+    def _bill_object(self):
+        return self.input["bill"]
 
     def process_page(self):
         lines = self.text.splitlines()
