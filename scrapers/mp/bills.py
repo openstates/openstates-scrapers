@@ -80,6 +80,14 @@ class MPBillScraper(Scraper):
             bill_type = page.xpath("//tr[@class='stshead']/th/text()")[0].strip()
             bill_type = self.bill_types[bill_type]
             bill_id = f"{bill_type} {bill_id}"
+        else:
+            # cnmileg.net's lower-chamber "Number" cell sometimes renders without
+            # a space between the type prefix and number (e.g. "HCommRes24-6"
+            # instead of the normal "HB 123" spacing), which breaks
+            # bill_type_map[bill_id.split(" ")[0]] below with a KeyError since
+            # the whole string is treated as one unrecognized key. Normalize so
+            # there's always exactly one space between the letters and digits.
+            bill_id = re.sub(r"^([A-Za-z]+)(\d)", r"\1 \2", bill_id)
 
         title = self.get_cell_text(page, "Subject/Title")
         if not title:
