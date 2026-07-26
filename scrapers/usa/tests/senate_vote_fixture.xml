@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<roll_call_vote>
+  <vote_date>June 4, 2026, 05:30 PM</vote_date>
+  <vote_number>150</vote_number>
+  <document>
+    <document_type>S. 100</document_type>
+    <document_name>S. 100</document_name>
+  </document>
+  <vote_question_text>On Passage of the Bill</vote_question_text>
+  <vote_result>Passed</vote_result>
+  <count>
+    <yeas>60</yeas>
+    <nays>39</nays>
+    <absent>1</absent>
+    <present>0</present>
+  </count>
+  <members>
+    <member>
+      <lis_member_id>S307</lis_member_id>
+      <member_full>Smith (D-MN)</member_full>
+      <vote_cast>Yea</vote_cast>
+    </member>
+    <member>
+      <lis_member_id>S308</lis_member_id>
+      <member_full>Frankel, Lois (D-FL)</member_full>
+      <vote_cast>Nay</vote_cast>
+    </member>
+  </members>
+</roll_call_vote>

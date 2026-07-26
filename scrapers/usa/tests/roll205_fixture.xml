@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<rollcall-vote>
+  <vote-metadata>
+    <majority>D</majority>
+    <congress>119</congress>
+    <session>2nd</session>
+    <chamber>U.S. House of Representatives</chamber>
+    <rollcall-num>205</rollcall-num>
+    <legis-num>H R 8646</legis-num>
+    <vote-question>On Passage</vote-question>
+    <vote-type>RECORDED VOTE</vote-type>
+    <vote-result>Passed</vote-result>
+    <action-date>4-Jun-2026</action-date>
+    <action-time time-etz="22:08">10:08 PM</action-time>
+    <vote-totals>
+      <totals-by-party-header>
+        <party-header>Party</party-header>
+        <yea-header>Yeas</yea-header>
+        <nay-header>Nays</nay-header>
+        <present-header>Answered "Present"</present-header>
+        <not-voting-header>Not Voting</not-voting-header>
+      </totals-by-party-header>
+      <totals-by-vote>
+        <yea-total>213</yea-total>
+        <nay-total>210</nay-total>
+        <present-total>0</present-total>
+        <not-voting-total>7</not-voting-total>
+      </totals-by-vote>
+    </vote-totals>
+  </vote-metadata>
+  <vote-data>
+    <recorded-vote>
+      <legislator name-id="A000370" sort-field="Adams" unaccented-name="Adams" party="D" state="NC" role="legislator">Adams</legislator>
+      <vote>Nay</vote>
+    </recorded-vote>
+    <recorded-vote>
+      <legislator name-id="G000598" sort-field="Garcia (CA)" unaccented-name="Garcia (CA)" party="D" state="CA" role="legislator">Garcia (CA)</legislator>
+      <vote>Yea</vote>
+    </recorded-vote>
+    <recorded-vote>
+      <legislator name-id="G000587" sort-field="Garcia (TX)" unaccented-name="Garcia (TX)" party="D" state="TX" role="legislator">Garcia (TX)</legislator>
+      <vote>Nay</vote>
+    </recorded-vote>
+  </vote-data>
+</rollcall-vote>

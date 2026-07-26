@@ -213,7 +213,7 @@ class USVoteScraper(Scraper):
             name = row.xpath("legislator/@sort-field")[0]
             choice = row.xpath("vote/text()")[0]
 
-            vote.vote(self.vote_codes[choice], name, note=bioguide)
+            vote.vote(self.vote_codes[choice], name, note=bioguide, id=bioguide)
         return vote
 
     def scrape_senate_votes(self, session, start, year):
@@ -316,6 +316,6 @@ class USVoteScraper(Scraper):
             name = row.xpath("member_full/text()")[0]
             choice = row.xpath("vote_cast/text()")[0]
 
-            vote.vote(self.vote_codes[choice], name, note=lis_id)
+            vote.vote(self.vote_codes[choice], name, note=lis_id, id=lis_id)
 
         yield vote
