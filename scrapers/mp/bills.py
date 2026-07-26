@@ -50,7 +50,6 @@ class MPBillScraper(Scraper):
             yield from self.scrape_chamber(chamber, session)
 
     def scrape_chamber(self, chamber, session):
-
         sec_ids = {"upper": "2", "lower": "1"}
         data = {
             "legtypeID": "A",
@@ -97,7 +96,9 @@ class MPBillScraper(Scraper):
             # same bill every run and silently dropped every bill after it
             # in iteration order. Falling back to the bill's own identifier
             # unblocks the rest of the session instead of losing it all.
-            self.warning(f"{bill_id} has no title on cnmileg.net, using identifier as a fallback")
+            self.warning(
+                f"{bill_id} has no title on cnmileg.net, using identifier as a fallback"
+            )
             title = bill_id
 
         bill_type = self.bill_type_map[bill_id.split(" ")[0]]
@@ -227,7 +228,6 @@ class MPBillScraper(Scraper):
     def do_action(self, bill, page, text, chamber, classification):
         action_text = self.get_cell_text(page, text)
         if action_text:
-
             try:
                 action_date = re.findall(r"\d+\/\d+\/\d+", action_text)[0]
             except IndexError:
