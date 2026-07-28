@@ -136,10 +136,16 @@ class VaBillScraper(Scraper):
                         dateutil.parser.parse(d).replace(tzinfo=None) for d in event_dates
                     )
                     if latest <= start_dt:
-                        bill.add_source(
-                            f"https://lis.virginia.gov/bill-details/{self.session_code}/{row['LegislationNumber']}"
-                        )
-                        yield bill
+                        # Nothing's changed since our cutoff -- skip this bill entirely rather
+                        # than yielding a partially-populated one. Found 2026-07-28: yielding it
+                        # anyway (with only actions + source set) handed the importer a bill
+                        # with zero versions/sponsors/votes/abstracts, and openstates-core's
+                        # importer treats "scrape found zero of these" as "delete whatever's
+                        # already in the database" for that bill -- silently wiping every
+                        # unchanged VA bill's already-good data on each incremental run (same
+                        # bug as ut/bills.py, fixed the same way; see
+                        # ddp-open-states/PLAN-open-states.md for the full writeup). Not
+                        # yielding at all leaves the existing database row untouched.
                         continue
 
             self.add_versions(bill, row["LegislationID"])
