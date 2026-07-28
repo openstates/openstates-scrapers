@@ -20,14 +20,8 @@ class WVEventScraper(Scraper, LXMLMixin):
 
     def scrape(self):
         com_urls = [
-            (
-                "Senate",
-                "http://www.wvlegislature.gov/committees/senate/main.cfm",
-            ),
-            (
-                "House",
-                "http://www.wvlegislature.gov/committees/House/main.cfm",
-            ),
+            ("Senate", "http://www.wvlegislature.gov/committees/senate/main.cfm"),
+            ("House", "http://www.wvlegislature.gov/committees/House/main.cfm"),
             ("Interim", INTERIMS_URL),
         ]
         for chamber, url in com_urls:
@@ -43,18 +37,14 @@ class WVEventScraper(Scraper, LXMLMixin):
         event_objects = set()
         page = self.lxmlize(url)
         page.make_links_absolute(url)
-        # note house uses div#wrapleftcol and sen uses div#wrapleftcolr on
-        # some pages
+        # note house uses div#wrapleftcol and sen uses div#wrapleftcolr on some pages
         for link in page.xpath(
-            '//div[contains(@id,"wrapleftcol")]'
-            '/a[contains(@href,"agendas.cfm")]/@href'
+            '//div[contains(@id,"wrapleftcol")]/a[contains(@href,"agendas.cfm")]/@href'
         ):
             for event in self.scrape_committee_page(link):
-                event_name = (
-                    f"{chamber}#{event.name}#{event.start_date}#"
-                    f"{event.end_date}#{event.location['name']}#"
-                    f"{event.description}"
-                )[:500]
+                event_name = f"{chamber}#{event.name}#{event.start_date}#{event.end_date}#{event.location['name']}#{event.description}"[
+                    :500
+                ]
                 if event_name in event_objects:
                     self.warning(f"Found duplicate {event_name}. Skipping.")
                     continue
@@ -87,11 +77,9 @@ class WVEventScraper(Scraper, LXMLMixin):
                 continue
 
             for event in self.scrape_interim_schedule_page(link):
-                event_name = (
-                    f"Interim#{event.name}#{event.start_date}#"
-                    f"{event.end_date}#{event.location['name']}#"
-                    f"{event.description}"
-                )[:500]
+                event_name = f"Interim#{event.name}#{event.start_date}#{event.end_date}#{event.location['name']}#{event.description}"[
+                    :500
+                ]
                 if event_name in event_objects:
                     self.warning(f"Found duplicate {event_name}. Skipping.")
                     continue
@@ -155,8 +143,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         # from the committee name (they're captured via status/description
         # instead).
         com = re.sub(
-            r"\s*[-–]\s*(CANCELLED|CANCELED|JOINT MEETING|POSTPONED"
-            r"|RESCHEDULED)\s*$",
+            r"\s*[-–]\s*(CANCELLED|CANCELED|JOINT MEETING|POSTPONED|RESCHEDULED)\s*$",
             "",
             com,
             flags=re.IGNORECASE,
@@ -231,9 +218,8 @@ class WVEventScraper(Scraper, LXMLMixin):
         page = self.lxmlize(url)
         page.make_links_absolute(url)
 
-        # if the page starts w/ a meeting. The h1 is always the committee
-        # title; a meeting's date/time lives in the h2, so use that to
-        # detect a meeting.
+        # if the page starts w/ a meeting. The h1 is always the committee title;
+        # a meeting's date/time lives in the h2, so use that to detect a meeting.
         if page.xpath('//div[@id="wrapleftcol"]/h2'):
             yield from self.scrape_meeting_page(url)
 
@@ -277,9 +263,8 @@ class WVEventScraper(Scraper, LXMLMixin):
         if not page.xpath('//div[@id="wrapleftcol"]/h2'):
             return
 
-        # The committee name is in the h1 (e.g. "Senate Finance Committee -
-        # Agenda") and the meeting date/time is in the h2
-        # (e.g. "March 12, 2026, 3:00 PM").
+        # The committee name is in the h1 (e.g. "Senate Finance Committee - Agenda")
+        # and the meeting date/time is in the h2 (e.g. "March 12, 2026, 3:00 PM").
         com = page.xpath('//div[@id="wrapleftcol"]/h1[1]/text()')[0].strip()
         com = re.sub(r"\s*-\s*Agenda\s*$", "", com).strip()
         when = page.xpath('//div[@id="wrapleftcol"]/h2[1]/text()')[0].strip()
@@ -300,10 +285,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         when = re.sub(r"or\s+conclusion\s+(.*)", "", when, flags=re.IGNORECASE)
         when = re.sub(r", After Session Ends", ", 5:00 PM", when, flags=re.IGNORECASE)
         when = re.sub(
-            r", 30 Minutes Following House Floor Session",
-            "",
-            when,
-            flags=re.IGNORECASE,
+            r", 30 Minutes Following House Floor Session", "", when, flags=re.IGNORECASE
         )
         when = re.sub(r",?\s+After Floor", "", when, flags=re.IGNORECASE)
 
@@ -320,8 +302,7 @@ class WVEventScraper(Scraper, LXMLMixin):
 
         when = self._tz.localize(when)
 
-        # we check for this elsewhere, but just in case the very first
-        # event on a committee page is way in the past
+        # we check for this elsewhere, but just in case the very first event on a committee page is way in the past
         if when.year < datetime.datetime.today().year:
             return
 
@@ -379,8 +360,7 @@ class WVEventScraper(Scraper, LXMLMixin):
             # Allows for "." after H, S, J, C, and B
             # Allows for up to two spaces before the id
             bills = re.findall(
-                r"((S\.?|Senate|H\.?|House)\s?((J|C|Joint)\.?\s?)?"
-                r"(B\.?|Bill|R\.?)\s?\s?(\d+))",
+                r"((S\.?|Senate|H\.?|House)\s?((J|C|Joint)\.?\s?)?(B\.?|Bill|R\.?)\s?\s?(\d+))",
                 row.text_content(),
                 flags=re.IGNORECASE,
             )
@@ -415,8 +395,7 @@ class WVEventScraper(Scraper, LXMLMixin):
 
     def clean_date(self, when):
         """
-        Keep complete page dates intact and only remove trailing non-date
-        noise.
+        Keep complete page dates intact and only remove trailing non-date noise.
         Preserve explicit years and meeting times from the h2 heading.
         """
         if not when:
@@ -460,14 +439,12 @@ class WVEventScraper(Scraper, LXMLMixin):
             r"(\d+|Thirty) (min\.|mins\.|minutes) After (.*)",
             r"Immediately(.*)",
             r"Time Announced(.*)",
-            r"(?:Shortly| One Hour)?\s*(After|following)\s*(?:the)?"
-            r"\s*(?:second)?\s*Floor Session",
+            r"(?:Shortly| One Hour)?\s*(After|following)\s*(?:the)?\s*(?:second)?\s*Floor Session",
             r"Changed to",
             r"at end of floor session",
             r"TB(.*)",
             r"\*",
-            r"\d+ minutes following "
-            r"(the evening floor|conclusion of floor)?\s*session(.*)",
+            r"\d+ minutes following (the evening floor|conclusion of floor)?\s*session(.*)",
             r",?\s+following\s+floor\s+session",
             r"ONE HOUR BEFORE SENATE FLOOR SESSION(.*)",
             r",\s+\d+ mins following (.*)",
@@ -477,6 +454,7 @@ class WVEventScraper(Scraper, LXMLMixin):
         for removal in removals:
             when = re.sub(removal, "", when, flags=re.IGNORECASE)
 
+        # Feb is a tough one, isn't it?
         # After feburary, februarary, febuary, just give up and regex it
         when = re.sub(r"feb(.*?)y", "February", when, flags=re.IGNORECASE)
         when = re.sub(r"Tuesdat", "Tuesday", when, flags=re.IGNORECASE)
@@ -496,3 +474,4 @@ class WVEventScraper(Scraper, LXMLMixin):
 
         when = re.sub(r"\s+", " ", when)
         return when.strip()
+    
