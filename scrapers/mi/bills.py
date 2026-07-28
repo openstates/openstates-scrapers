@@ -29,6 +29,11 @@ _categorizers = {
     "vetoed by governor": "executive-veto",
 }
 BASE_URL = "https://legislature.mi.gov"
+# legislature.mi.gov's WAF blocks a generic/bare User-Agent (found 2026-07-28, via
+# ddp-open-states's bill-document archive step -- see that repo's PLAN-bill-document-
+# provenance.md). Module-level so it's a single source of truth other tools can import
+# directly instead of keeping their own hand-copied duplicate that can drift out of sync.
+USER_AGENT = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/118.0"
 
 
 def categorize_action(action: str) -> str:
@@ -46,9 +51,7 @@ class MIBillScraper(Scraper):
         return f"https://legislature.mi.gov/Bills/Bill?ObjectName={match.group(1)}"
 
     def scrape(self, session, start=None):
-        self.headers = {
-            "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/118.0"
-        }
+        self.headers = {"User-Agent": USER_AGENT}
         date_from = ""
         if start:
             try:
