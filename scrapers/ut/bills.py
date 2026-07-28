@@ -132,7 +132,18 @@ class UTBillScraper(Scraper, LXMLMixin):
             # starting 2025 seems UT is rendering bill data from an API/JSON
             # but prior years seem to have static-ish HTML
             # so we have two logic branches here
-            yield from self.scrape_bill_details_from_api(bill, url, session_slug)
+            #
+            # scrape_bill_details_from_api() returns True when it decided to skip this bill
+            # because nothing's changed since our incremental start= cutoff -- in that case it
+            # never populated versions/documents/actions/sponsorships. Found 2026-07-28: falling
+            # through to `yield bill` anyway handed the importer a bill with none of those, and
+            # the importer treats "scrape found zero of these" as "delete whatever's already in
+            # the database" -- silently wiping every UT bill's versions/documents/actions/
+            # sponsorships back out across incremental runs ever since this start= filtering was
+            # added (2026-06-30). Returning here instead leaves the existing data alone.
+            skip = yield from self.scrape_bill_details_from_api(bill, url, session_slug)
+            if skip:
+                return
         else:
             yield from self.parse_bill_details_from_html(
                 bill, bill_id, chamber, page, primary_info
@@ -224,7 +235,7 @@ class UTBillScraper(Scraper, LXMLMixin):
                 start_dt = datetime.datetime.strptime(self._start, "%Y-%m-%dT%H:%M:%S")
                 most_recent_date = parser.parse(data["actionHistoryList"][0]["actionDate"])
                 if most_recent_date.replace(tzinfo=None) <= start_dt:
-                    return
+                    return True
             except (ValueError, TypeError, KeyError):
                 pass
 
