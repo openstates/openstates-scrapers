@@ -12,6 +12,9 @@ from . import session_metadata
 
 
 BASE_URL = "https://www.azleg.gov/"
+# Module-level so other tools (e.g. ddp-open-states's bill-document archive step) can import
+# this directly instead of keeping their own hand-copied duplicate that can drift out of sync.
+USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36"
 
 
 class AZBillScraper(Scraper):
@@ -435,7 +438,7 @@ class AZBillScraper(Scraper):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
             "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
             "Referer": "https://www.azleg.gov/azlegwp/",
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36",
+            "User-Agent": USER_AGENT,
         }
         req = self.post(
             url=session_form_url,
