@@ -142,6 +142,12 @@ class LABillScraper(Scraper, LXMLMixin):
             session_id = self._session_ids[session]
         # Scan bill abbreviation list if necessary.
         self._bill_abbreviations = self._get_bill_abbreviations(session_id)
+
+        # If you want to test scrape a specific bill.
+        # yield from self.scrape_bill_page(
+        #     "lower", session, "https://www.legis.la.gov/Legis/BillInfo.aspx?i=250628", "HB"
+        # )
+
         # there are duplicates we need to skip
         seen_bill_urls = set()
         for chamber in chambers:
@@ -294,7 +300,6 @@ class LABillScraper(Scraper, LXMLMixin):
 
         title = page.xpath("//span[@id='ctl00_PageBody_LabelShortTitle']/text()")[0]
         title = title.replace("\u00a0\u00a0", " ")
-        these_actions = page.xpath("//tr[contains(@class, 'ResultsListDark')]")
 
         bill_id = page.xpath("//span[@id='ctl00_PageBody_LabelBillID']/text()")[0]
 
@@ -346,7 +351,7 @@ class LABillScraper(Scraper, LXMLMixin):
             # Some bills don't have any votes
             pass
 
-        for action in these_actions:
+        for action in page.xpath("//table[.//th[contains(text(),'Journal')]]//tr")[1:]:
             date, chamber, page, text, *_ = [x.text for x in action.xpath(".//td")]
             # Session is April -> June. Prefiles look like they're in
             # January at earliest.

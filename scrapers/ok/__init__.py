@@ -198,6 +198,15 @@ class Oklahoma(State):
             "end_date": "2026-05-29",
             "active": True,
         },
+        {
+            "_scraped_name": "2027 Regular Session",
+            "identifier": "2027",
+            "name": "2027 Regular Session",
+            # TODO real dates
+            "start_date": "2027-02-02",
+            "end_date": "2027-05-29",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2021 Regular Session - Web",

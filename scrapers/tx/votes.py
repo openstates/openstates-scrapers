@@ -9,6 +9,38 @@ import lxml.html
 from openstates.scrape import Scraper, VoteEvent
 
 
+SPELLED_OUT_BILL_REGEX = re.compile(
+    # Section headings spell the bill type out, e.g.
+    # "HOUSE BILL 1620 ON THIRD READING" or
+    # "COMMITTEE SUBSTITUTESENATE BILL 1599 ON SECOND READING"
+    # (the missing space in SUBSTITUTESENATE is how the journal renders it)
+    r"(HOUSE|SENATE)\s+(BILL|JOINT\s+RESOLUTION|CONCURRENT\s+RESOLUTION|RESOLUTION)\s+(\d+)"
+)
+
+SPELLED_OUT_BILL_TYPES = {
+    "BILL": "B",
+    "JOINT RESOLUTION": "JR",
+    "CONCURRENT RESOLUTION": "CR",
+    "RESOLUTION": "R",
+}
+
+LOCAL_CALENDAR_VOTE_REGEX = re.compile(r"^\(viva voce vote\)", re.IGNORECASE)
+
+LOCAL_CALENDAR_COUNTS_REGEX = re.compile(
+    # count group optionally followed by named dissenters, e.g.
+    # (31-0)  or  (30-1) "Nay" Middleton
+    r"\((\d+)\s*-\s*(\d+)\)((?:[^(])*)"
+)
+
+LOCAL_CALENDAR_BILL_REGEX = re.compile(
+    # bill-then-author, e.g. "SB 2474 (Hinojosa)"; committee substitutes
+    # appear as "CSSB 401 (Kolkhorst)"
+    r"^\s*((?:CS)?[HS][JC]?[BR][\s\xa0]+\d+)\s*\("
+)
+
+NAY_NAMES_REGEX = re.compile(r"[\"“]Nay[\"”]\s+([^()\"“]+)")
+
+
 def next_tag(el):
     """
     Return next tag, skipping <br>s.
@@ -117,6 +149,8 @@ def votes(root, session, chamber):
         yield vote
     for vote in record_votes_with_short_count_notation(root, session, chamber):
         yield vote
+    for vote in local_calendar_votes(root, session, chamber):
+        yield vote
 
 
 def first_int(res):
@@ -135,6 +169,17 @@ def identify_classification(motion_text: str, passed: bool) -> list[str]:
 
 
 class BaseVote(object):
+    # How many preceding elements to search for the bill a vote belongs to.
+    # Senate journals often put several paragraphs between the last bill
+    # mention and the vote itself, e.g.:
+    #   HOUSE BILL 1620 ON THIRD READING
+    #   Senator X moved that ... HB 1620 be placed on its third reading ...
+    #   The motion prevailed by the following vote: Yeas 30, Nays 0.
+    #   Absent-excused: Gutierrez.
+    #   The bill was read third time and was passed by the following
+    #   vote: Yeas 30, Nays 0. (Same as previous roll call)
+    bill_lookbehind = 10
+
     def __init__(self, el):
         self.el = el
 
@@ -156,7 +201,17 @@ class BaseVote(object):
 
     @property
     def bill_id(self):
-        bill_id = get_bill(self.el) or get_bill(self.previous)
+        bill_id = get_bill(self.el)
+        el = self.el
+        checked = 0
+        while bill_id is None and checked < self.bill_lookbehind:
+            el = el.getprevious()
+            if el is None:
+                break
+            if el.tag == "br":
+                continue
+            checked += 1
+            bill_id = get_bill(el)
         return clean_bill_id(bill_id)
 
     @property
@@ -183,8 +238,25 @@ class MaybeVote(BaseVote):
     passed_pattern = re.compile(r"(adopted|passed|prevailed)", re.IGNORECASE)
     check_prev_pattern = re.compile(r"the (motion|resolution)", re.IGNORECASE)
     votes_pattern = re.compile(r"^(yeas|nays|present|absent)", re.IGNORECASE)
-    amendment_pattern = re.compile(r"the amendment to", re.IGNORECASE)
-    motion_text_pattern = re.compile(r"moved that (.+)$", re.IGNORECASE)
+    amendment_pattern = re.compile(
+        r"the amendment to|amendment no\.?\s*\d+", re.IGNORECASE
+    )
+    motion_text_pattern = re.compile(r"moved (?:that|to|the) (.+)$", re.IGNORECASE)
+    # e.g. "The bill was read third time and was passed by the following
+    # vote: ..." or "... read second time and was passed to engrossment ..."
+    reading_motion_pattern = re.compile(
+        r"read (second|third) time and was (passed to engrossment|passed|adopted)",
+        re.IGNORECASE,
+    )
+    # A journal's MESSAGE FROM THE HOUSE/SENATE section reports the other
+    # chamber's actions as bare "HB 1620 (129 Yeas, 9 Nays, 2 Present, not
+    # voting)" lines. Those votes belong to the other chamber and are
+    # scraped from its own journal, so they must not produce (wrongly
+    # attributed) events here.
+    other_chamber_report_pattern = re.compile(
+        r"^\s*(?:CS)?[HS][JC]?[BR][\s\xa0]+\d+[\s\xa0]*\(\d+[\s\xa0]+Yeas",
+        re.IGNORECASE,
+    )
 
     @property
     def is_valid(self):
@@ -192,7 +264,12 @@ class MaybeVote(BaseVote):
             super(MaybeVote, self).is_valid
             and self.yeas is not None
             and self.nays is not None
+            and not self.is_other_chamber_report
         )
+
+    @property
+    def is_other_chamber_report(self):
+        return self.other_chamber_report_pattern.match(self.text) is not None
 
     @property
     def is_amendment(self):
@@ -242,6 +319,23 @@ class MaybeVote(BaseVote):
 
     @property
     def motion_text(self):
+        # The vote sentence itself is the most reliable source, e.g.
+        # "The bill was read third time and was passed by the following
+        # vote: Yeas 30, Nays 0."
+        reading = self.reading_motion_pattern.search(self.text)
+        if reading:
+            ordinal, action = (g.lower() for g in reading.groups())
+            if action == "adopted":
+                return "adoption"
+            if action == "passed to engrossment":
+                return "passage to engrossment"
+            return "final passage" if ordinal == "third" else "passage"
+
+        # e.g. "The amendment to HB 900 was read and failed of adoption
+        # by the following vote: Yeas 12, Nays 19."
+        if self.is_amendment:
+            return "adoption of amendment"
+
         previous_text = self.previous.text_content()
         match = self.motion_text_pattern.search(previous_text)
         if match:
@@ -255,11 +349,15 @@ class MaybeViva(BaseVote):
     amendment_pattern = re.compile(r"the amendment to", re.IGNORECASE)
     floor_amendment_pattern = re.compile(r"floor amendment no", re.IGNORECASE)
     passed_pattern = re.compile(
-        r"(all members are deemed to have voted \"yea\"|adopted|passed|prevailed)",
+        # 'voted "Yea"' is matched loosely because the "Yea" is sometimes
+        # rendered as white-on-white text, which clean_journal blanks out
+        r"(all members are deemed to have voted|adopted|passed|prevailed)",
         re.IGNORECASE,
     )
     viva_voce_pattern = re.compile(r"viva voce vote", re.IGNORECASE)
-    motion_pattern = re.compile(r"on the (.+) except as follows", re.IGNORECASE)
+    motion_pattern = re.compile(
+        r"on the (.+?)(?:\s+except as follows)?\s*[.:]?\s*$", re.IGNORECASE
+    )
 
     @property
     def is_valid(self):
@@ -277,11 +375,17 @@ class MaybeViva(BaseVote):
 
     @property
     def passed(self):
-        return bool(self.passed_pattern.search(self.text))
+        # The sentence announcing the vote ("The bill ... was passed to
+        # engrossment by a viva voce vote.") is as authoritative as the
+        # "All Members are deemed to have voted ..." line itself
+        return bool(
+            self.passed_pattern.search(self.text)
+            or self.passed_pattern.search(self.previous.text_content())
+        )
 
     @property
     def motion_text(self):
-        match = self.motion_pattern.search(self.text)
+        match = self.motion_pattern.search(self.text.strip())
         if match:
             return match.groups()[0]
         else:
@@ -345,9 +449,15 @@ class MaybeShortCount(BaseVote):
 def get_bill(el):
     # allow for bill numbers like HB, SB, HR, SR, HJR, SJR, SCR followed by digits
     # \s space character is used because there are some non-space whitespaces
-    b = re.findall(r"[HS][JC]?[BR]\s+\d+", el.text_content())
+    text = el.text_content()
+    b = re.findall(r"[HS][JC]?[BR]\s+\d+", text)
     if b:
         return b[0]
+    spelled = SPELLED_OUT_BILL_REGEX.search(text)
+    if spelled:
+        chamber, bill_type, number = spelled.groups()
+        bill_type = SPELLED_OUT_BILL_TYPES[" ".join(bill_type.split())]
+        return f"{chamber[0]}{bill_type} {number}"
 
 
 def clean_bill_id(bill_id):
@@ -411,6 +521,72 @@ def record_votes_with_short_count_notation(root, session, chamber):
             v.no(each)
 
         yield v
+
+
+def local_calendar_votes(root, session, chamber):
+    # The senate's Local & Uncontested Calendar lists each bill with a
+    # terse per-bill vote entry in the journal, e.g.:
+    #   SB 2474 (Hinojosa)
+    #   Relating to civil and administrative penalties ...
+    #   (viva voce vote) (30-1) "Nay" Middleton (30-1) "Nay" Middleton
+    # Two count groups are the second-reading and final-passage votes,
+    # which the bill history lists as two record votes on the same day.
+    for el in root.xpath('//div[@class = "textpara"]'):
+        text = " ".join(el.text_content().split())
+        if not LOCAL_CALENDAR_VOTE_REGEX.match(text):
+            continue
+
+        # The bill is the "SB 2474 (Author)" line a couple of elements
+        # up; the description line in between may mention other bills,
+        # so require the anchored bill-then-author format
+        bill_id = None
+        prev = el
+        for _ in range(4):
+            prev = prev.getprevious()
+            if prev is None:
+                break
+            if prev.tag == "br":
+                continue
+            bill_match = LOCAL_CALENDAR_BILL_REGEX.match(prev.text_content())
+            if bill_match:
+                bill_id = clean_bill_id(bill_match.groups()[0])
+                break
+
+        if bill_id is None:
+            continue
+        bill_chamber = {"H": "lower", "S": "upper"}.get(bill_id[0])
+
+        count_groups = LOCAL_CALENDAR_COUNTS_REGEX.findall(text)
+        for i, (yeas, nays, trailing) in enumerate(count_groups):
+            if len(count_groups) == 2:
+                motion_text = "passage to engrossment" if i == 0 else "final passage"
+            else:
+                motion_text = "passage"
+            yeas, nays = int(yeas), int(nays)
+            passed = yeas > nays
+
+            v = VoteEvent(
+                chamber=chamber,
+                start_date=None,
+                motion_text=motion_text,
+                result="pass" if passed else "fail",
+                classification=identify_classification(motion_text, passed),
+                legislative_session=session,
+                bill=bill_id,
+                bill_chamber=bill_chamber,
+            )
+            v.set_count("yes", yeas)
+            v.set_count("no", nays)
+
+            nay_match = NAY_NAMES_REGEX.search(trailing)
+            if nay_match:
+                name_list = re.sub(r",?\sand\s", ", ", nay_match.groups()[0])
+                for name in name_list.split(", "):
+                    name = name.strip().strip(".")
+                    if name:
+                        v.no(clean_vote_name(name))
+
+            yield v
 
 
 def record_votes_with_yeas(root, session, chamber):
@@ -526,6 +702,8 @@ def get_journal_session_url_file_part(session, chamber):
 
 class TXVoteScraper(Scraper):
     def scrape(self, session=None, chamber=None, url_match=None):
+        self._seen_vote_keys = set()
+
         if session == "821":
             self.warning("no journals for session 821")
             return
@@ -663,15 +841,37 @@ class TXVoteScraper(Scraper):
             )
             date = datetime.datetime.strptime(date_str, "%m-%d %Y").date()
 
-        for vn, vote in enumerate(votes(root, session, chamber)):
+        for vote in votes(root, session, chamber):
             vote.start_date = date
             vote.add_source(url)
 
-            # no good identifier on votes, so we'll try this.
-            # vote pages in journal shouldn't change so ordering should be OK
-            # but might cause an issue if they do change a journal page
-            vote.dedupe_key = "{}#{}".format(url, vn)
+            # A content-based key: the same vote can be described by two
+            # journal paragraphs (or appear in overlapping journal parts),
+            # and should produce a single VoteEvent. Two votes with the
+            # same counts on the same bill and day are kept when their
+            # motions differ (e.g. rule suspension then final passage).
+            vote.dedupe_key = self.build_vote_dedupe_key(vote, chamber)
+            if vote.dedupe_key in self._seen_vote_keys:
+                self.logger.debug(f"Skipping duplicate vote: {vote.dedupe_key}")
+                continue
+            self._seen_vote_keys.add(vote.dedupe_key)
             yield vote
+
+    @staticmethod
+    def build_vote_dedupe_key(vote, chamber) -> str:
+        counts = ",".join(
+            "{}:{}".format(count["option"], count["value"])
+            for count in sorted(vote.counts, key=lambda count: count["option"])
+        )
+        return "#".join(
+            [
+                vote.bill or "",
+                chamber,
+                str(vote.start_date),
+                vote.motion_text or "",
+                counts,
+            ]
+        )
 
     def get_session_start_date_string(self, session) -> str:
         session_instance = next(

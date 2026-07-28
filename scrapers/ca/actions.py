@@ -10,15 +10,15 @@ _categorizer_rules = (
         )
     ),
     Rule(r"^Introduced", "introduction"),
-    Rule(r"(?i)Referred to (?P<committees>.+)", "referral-committee"),
-    Rule(r"(?i)Referred to (?P<committees>.+?)(\.\s+suspense)", "referral-committee"),
+    Rule(r"Referred to (?P<committees>.+)", "referral-committee"),
+    Rule(r"Referred to (?P<committees>.+?)(\.\s+suspense)", "referral-committee"),
     Rule(r"re-refer to Standing (?P<committees>[^.]+)\.", "referral-committee"),
     Rule(r"Read first time\.", "reading-1"),
     Rule(r"Read second time and amended", ["reading-2"]),
     Rule(r"Read third time", "reading-3"),
     Rule(r"Read third time. Refused passage\.", "failure"),
     Rule(
-        [r"(?i)read third time.{,5}passed", r"(?i)Read third time.+?Passed"],
+        [r"read third time.{,5}passed", r"Read third time.+?Passed"],
         ["passage", "reading-3"],
     ),
     Rule(r"Approved by the Governor", "executive-signature"),
@@ -38,10 +38,10 @@ _categorizer_rules = (
         "failure",
     ),
     Rule(
-        r"(?i)From committee: ((?!Without further action))((?!Filed with the Chief Clerk pursuant to Joint Rule 56))",
+        r"From committee: ((?!Without further action))((?!Filed with the Chief Clerk pursuant to Joint Rule 56))",
         "committee-passage",
     ),
-    Rule(r"(?i)From committee: Do pass", "committee-passage-favorable"),
+    Rule(r"From committee: Do pass", "committee-passage-favorable"),
     Rule(r"From committee with author\'s amendments", "committee-passage"),
     # Resolutions
     Rule(r"Adopted", "passage"),

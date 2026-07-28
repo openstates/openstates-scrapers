@@ -85,7 +85,7 @@ rules = (
             "To (?P<committees>.+?) then",
         ]
     ),
-    Rule("(?i)voice vote", voice_vote=True),
+    Rule("voice vote", voice_vote=True),
     Rule(["Amendment rejected"], ["amendment-failure"]),
     Rule(["To Governor"], ["executive-receipt"]),
     Rule(["Passed House"], ["passage"]),
@@ -96,13 +96,13 @@ rules = (
     Rule(["^Introduced"], ["introduction"]),
     Rule(["To .+? then (?P<committees>.+)"], []),
     Rule(["^Filed for intro"], ["filing"]),
-    Rule(["(?i)referred to (?P<committees>.+)"], ["referral-committee"]),
+    Rule(["referred to (?P<committees>.+)"], ["referral-committee"]),
     Rule("Senator (?P<legislators>.+? )requests " "to be removed as sponsor of bill"),
     Rule(["To House (?P<committees>[A-Z].+)"], ["referral-committee"]),
     Rule(["Passed Senate"], ["passage"]),
-    Rule(["(?i)committed to (?P<committees>.+?) on"], []),
+    Rule(["committed to (?P<committees>.+?) on"], []),
     Rule(["Vetoed by Governor"], ["executive-veto"]),
-    Rule(["(?i)House concurred in senate amendment"], []),
+    Rule(["House concurred in senate amendment"], []),
     Rule(["Be rejected"], ["failure"]),
     Rule(["To .+? then (?P<committees>.+) then", "reading to (?P<committees>.+)"]),
     Rule(["Adopted by"], ["passage"]),
@@ -111,8 +111,8 @@ rules = (
     Rule(["Be adopted$"], ["passage"]),
     Rule(
         [
-            "(?i)originating in (House|Senate) (?P<committees>.+)",
-            "(?i)to house (?P<committees>.+)",
+            "originating in (House|Senate) (?P<committees>.+)",
+            "to house (?P<committees>.+)",
         ]
     ),
     Rule(["Read 1st time"], ["reading-1"]),
