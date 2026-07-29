@@ -63,7 +63,7 @@ class TXEventScraper(Scraper, LXMLMixin):
         if event_count < 1:
             raise EmptyScrape
 
-    def scrape_event_page(self, session, chamber, url, datetime):
+    def scrape_event_page(self, session, chamber, url, datetime, status=None):
         try:
             page = self.lxmlize(url)
         except scrapelib.HTTPError:
@@ -95,9 +95,17 @@ class TXEventScraper(Scraper, LXMLMixin):
         bills = bill_re.findall(plaintext)
 
         event = Event(
-            name=committee, start_date=self._tz.localize(datetime), location_name=where
+            name=committee, start_date=self._tz.localize(datetime), location_name=where, status=status
         )
         event.dedupe_key = url
+
+        pdf_document = url.replace("html", "pdf").replace("HTM", "pdf")
+
+        event.add_document(
+            note="Agenda PDF",  
+            url=pdf_document,
+            media_type="application/pdf",        
+        )
 
         event.add_source(url)
 
@@ -106,8 +114,28 @@ class TXEventScraper(Scraper, LXMLMixin):
         if chair is not None:
             event.add_participant(chair, type="legislator", note="chair")
 
-        # add a single agenda item, attach all bills
-        agenda = event.add_agenda_item(plaintext)
+        # add a agenda item, attach all bills
+
+        xpath = """
+        .//b[following-sibling::span[starts-with(normalize-space(), ':') or starts-with(normalize-space(), '-')]]//span
+
+        |
+
+        .//b//span[substring(normalize-space(), string-length(normalize-space()))=':' or substring(normalize-space(), string-length(normalize-space()))='-']
+
+        |
+
+        .//span/b[substring(normalize-space(), string-length(normalize-space()))=':']
+        """
+        results = []
+        for p_element in page.xpath("//p"):
+            for span in p_element.xpath(xpath):
+                text = " ".join("".join(span.itertext()).split())
+                if text and text not in results:
+                    results.append(text.rstrip(" :"))
+
+        results = ", ".join(results)
+        agenda = event.add_agenda_item(results if results else 'Agenda Not found')
 
         for alpha, num in bills:
             bill_id = f"{alpha} {num}"
@@ -158,6 +186,11 @@ class TXEventScraper(Scraper, LXMLMixin):
             if time_elem:
                 time = time_elem[0].text_content()
 
+            # cancelled = row.xpath("./td/span[contains(@class, 'redText')]").  # Can be used as a backup if the text changes in the future.
+            cancelled = row.xpath("./td/span[contains(text(), 'Canceled')]")
+            if cancelled:
+                print(f"Event on {date} at {time} is cancelled, skipping.")
+
             events = row.xpath(".//a[contains(@href, 'schedules/html')]")
             for event in events:
                 # Ignore text after the datetime proper (ie, after "AM" or "PM")
@@ -170,7 +203,7 @@ class TXEventScraper(Scraper, LXMLMixin):
                 datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y %I:%M %p")
 
                 yield from self.scrape_event_page(
-                    session, chamber, event.attrib["href"], datetime
+                    session, chamber, event.attrib["href"], datetime, status="cancelled" if cancelled else "confirmed"
                 )
 
     def scrape_committee_upcoming(self, session, chamber):
