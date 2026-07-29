@@ -101,11 +101,7 @@ class TXEventScraper(Scraper, LXMLMixin):
 
         pdf_document = url.replace("html", "pdf").replace("HTM", "pdf")
 
-        event.add_document(
-            note="Agenda PDF",  
-            url=pdf_document,
-            media_type="application/pdf",        
-        )
+        event.add_document(note="Agenda PDF", url=pdf_document, media_type="application/pdf")
 
         event.add_source(url)
 
