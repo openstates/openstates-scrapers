@@ -95,13 +95,18 @@ class TXEventScraper(Scraper, LXMLMixin):
         bills = bill_re.findall(plaintext)
 
         event = Event(
-            name=committee, start_date=self._tz.localize(datetime), location_name=where, status=status
+            name=committee,
+            start_date=self._tz.localize(datetime),
+            location_name=where,
+            status=status,
         )
         event.dedupe_key = url
 
         pdf_document = url.replace("html", "pdf").replace("HTM", "pdf")
 
-        event.add_document(note="Agenda PDF", url=pdf_document, media_type="application/pdf")
+        event.add_document(
+            note="Agenda PDF", url=pdf_document, media_type="application/pdf"
+        )
 
         event.add_source(url)
 
@@ -131,7 +136,7 @@ class TXEventScraper(Scraper, LXMLMixin):
                     results.append(text.rstrip(" :"))
 
         results = ", ".join(results)
-        agenda = event.add_agenda_item(results if results else 'Agenda Not found')
+        agenda = event.add_agenda_item(results if results else "Agenda Not found")
 
         for alpha, num in bills:
             bill_id = f"{alpha} {num}"
@@ -199,7 +204,11 @@ class TXEventScraper(Scraper, LXMLMixin):
                 datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y %I:%M %p")
 
                 yield from self.scrape_event_page(
-                    session, chamber, event.attrib["href"], datetime, status="cancelled" if cancelled else "confirmed"
+                    session,
+                    chamber,
+                    event.attrib["href"],
+                    datetime,
+                    status="cancelled" if cancelled else "confirmed",
                 )
 
     def scrape_committee_upcoming(self, session, chamber):
