@@ -104,6 +104,58 @@ class NHBillScraper(Scraper):
             except ValueError:
                 continue
 
+        # Fallback: scrape sponsors from the same bill page.
+        # NH's bulk-data legislators.txt was removed from /dynamicdatadump/ in 2026,
+        # so the bulk-data sponsor lookup no longer resolves employee IDs to names.
+        # The per-bill HTML page still lists sponsors reliably.
+        self.scrape_sponsors_from_bill_page(bill_with_sources, bill_page)
+
+    def scrape_sponsors_from_bill_page(self, bill, bill_page):
+        """
+        Parse sponsors from a NH bill status page (billinfo.aspx).
+
+        Sponsors live inside a div with id="dvSponosrs" (sic - misspelled in NH HTML).
+        Each sponsor is an <a> whose title attribute contains the fully qualified
+        name (e.g. "Rep. Michael Cahill (D)"). The prime sponsor is marked by
+        leading "(Prime)" text inside the <a>.
+        """
+        sponsor_links = bill_page.xpath(
+            "//div[@id='dvSponosrs']//a[contains(@class, 'Member')]"
+        )
+        added = 0
+        for link in sponsor_links:
+            # Prefer the title attribute; it has the clean "Rep./Sen. Name (Party)" form
+            title_attr = link.get("title", "").strip()
+            link_text = link.text_content().strip()
+
+            is_primary = "(Prime)" in link_text
+
+            if title_attr:
+                # Strip leading honorific ("Rep. " / "Sen. ") and any trailing " (D)" / " (R)" party marker
+                name = re.sub(r"^(Rep\.|Sen\.)\s+", "", title_attr)
+                name = re.sub(r"\s*\([A-Z]\)\s*$", "", name).strip()
+            else:
+                # Fallback: derive from link text, removing "(Prime)" and party marker
+                name = re.sub(r"\(Prime\)", "", link_text)
+                name = re.sub(r"\s*\([A-Z]\)\s*$", "", name).strip()
+
+            if not name:
+                continue
+
+            classification = "primary" if is_primary else "cosponsor"
+            bill.add_sponsorship(
+                classification=classification,
+                name=name,
+                entity_type="person",
+                primary=is_primary,
+            )
+            added += 1
+
+        if added == 0:
+            self.warning(
+                f"No sponsors found on bill page for {bill.identifier}"
+            )
+
     def scrape_from_web(self, session):
         bills = {}
 
@@ -240,6 +292,20 @@ class NHBillScraper(Scraper):
                     media_type="application/pdf",
                 )
 
+                # Add the modern bill info page as a source and scrape sponsors from it.
+                # The RSS/web branch previously did not scrape sponsors at all.
+                self.add_source(bills[lsr], version_id)
+                try:
+                    info_url = f"https://gc.nh.gov/bill_Status/billinfo.aspx?id={version_id}&inflect=2"
+                    info_page = lxml.html.fromstring(
+                        self.get(info_url, verify=False).content
+                    )
+                    self.scrape_sponsors_from_bill_page(bills[lsr], info_page)
+                except Exception as e:
+                    self.warning(
+                        f"Failed to scrape sponsors from bill page for {bill_id}: {e}"
+                    )
+
             self.bills_by_id[bill_id] = bills[lsr]
 
         return bills
@@ -296,15 +362,24 @@ class NHBillScraper(Scraper):
             self.bills = self.scrape_from_web(session)
         else:
 
-            last_line = []
-            for line in (
-                self.get(
-                    f"https://gc.nh.gov/dynamicdatadump/LSRs.txt?x={self.cachebreaker}",
-                    verify=False,
+            # Guardrail: NH's bulk data dump has been intermittently returning empty
+            # files (e.g. LSRs.txt returning 0 bytes). Detect that upfront so the run
+            # fails loudly rather than silently emitting an empty scrape.
+            lsrs_content = self.get(
+                f"https://gc.nh.gov/dynamicdatadump/LSRs.txt?x={self.cachebreaker}",
+                verify=False,
+            ).content.decode("utf-8")
+            # A healthy LSRs.txt is hundreds of KB. Anything under 1 KB is effectively empty.
+            if len(lsrs_content.strip()) < 1024:
+                raise RuntimeError(
+                    "NH LSRs.txt bulk-data file is empty or truncated "
+                    f"({len(lsrs_content)} bytes). NH's /dynamicdatadump/ endpoint "
+                    "appears to be degraded. Rerun later or fall back to "
+                    "scrape_from_web=True."
                 )
-                .content.decode("utf-8")
-                .split("\n")
-            ):
+
+            last_line = []
+            for line in lsrs_content.split("\n"):
                 # the first line in the file can contain a unicode zero width character \\ufeff
                 # maybe found in other lines? so just replace universally
                 line = line.replace("\ufeff", "")
