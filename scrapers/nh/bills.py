@@ -152,9 +152,7 @@ class NHBillScraper(Scraper):
             added += 1
 
         if added == 0:
-            self.warning(
-                f"No sponsors found on bill page for {bill.identifier}"
-            )
+            self.warning(f"No sponsors found on bill page for {bill.identifier}")
 
     def scrape_from_web(self, session):
         bills = {}
