@@ -63,7 +63,7 @@ class TXEventScraper(Scraper, LXMLMixin):
         if event_count < 1:
             raise EmptyScrape
 
-    def scrape_event_page(self, session, chamber, url, datetime, status=None):
+    def scrape_event_page(self, session, chamber, url, datetime, status=None, pdf_link=None):
         try:
             page = self.lxmlize(url)
         except scrapelib.HTTPError:
@@ -102,11 +102,10 @@ class TXEventScraper(Scraper, LXMLMixin):
         )
         event.dedupe_key = url
 
-        pdf_document = url.replace("html", "pdf").replace("HTM", "pdf")
-
-        event.add_document(
-            note="Agenda PDF", url=pdf_document, media_type="application/pdf"
-        )
+        if pdf_link:
+            event.add_document(
+                note="Agenda PDF", url=pdf_link, media_type="application/pdf"
+            )
 
         event.add_source(url)
 
@@ -133,10 +132,8 @@ class TXEventScraper(Scraper, LXMLMixin):
             for span in p_element.xpath(xpath):
                 text = " ".join("".join(span.itertext()).split())
                 if text and text not in results:
-                    results.append(text.rstrip(" :"))
-
-        results = ", ".join(results)
-        agenda = event.add_agenda_item(results if results else "Agenda Not found")
+                    agenda_text = text.rstrip(" :")
+                    agenda = event.add_agenda_item(agenda_text)
 
         for alpha, num in bills:
             bill_id = f"{alpha} {num}"
@@ -188,9 +185,15 @@ class TXEventScraper(Scraper, LXMLMixin):
                 time = time_elem[0].text_content()
 
             # cancelled = row.xpath("./td/span[contains(@class, 'redText')]").  # Can be used as a backup if the text changes in the future.
-            cancelled = row.xpath("./td/span[contains(text(), 'Canceled')]")
+            cancelled = row.xpath("./td/span[contains(text(), 'Cancel')]")
             if cancelled:
                 print(f"Event on {date} at {time} is cancelled, skipping.")
+            pdf_links = row.xpath(".//td[@data-label='Hearing Notice']//a")
+            for link in pdf_links:
+                href = link.get("href", "")
+                if href.lower().endswith(".pdf"):
+                    pdf_href = href
+                    break
 
             events = row.xpath(".//a[contains(@href, 'schedules/html')]")
             for event in events:
@@ -209,6 +212,7 @@ class TXEventScraper(Scraper, LXMLMixin):
                     event.attrib["href"],
                     datetime,
                     status="cancelled" if cancelled else "confirmed",
+                    pdf_link=pdf_href
                 )
 
     def scrape_committee_upcoming(self, session, chamber):
