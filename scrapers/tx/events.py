@@ -63,7 +63,9 @@ class TXEventScraper(Scraper, LXMLMixin):
         if event_count < 1:
             raise EmptyScrape
 
-    def scrape_event_page(self, session, chamber, url, datetime, status=None, pdf_link=None):
+    def scrape_event_page(
+        self, session, chamber, url, datetime, status=None, pdf_link=None
+    ):
         try:
             page = self.lxmlize(url)
         except scrapelib.HTTPError:
@@ -212,7 +214,7 @@ class TXEventScraper(Scraper, LXMLMixin):
                     event.attrib["href"],
                     datetime,
                     status="cancelled" if cancelled else "confirmed",
-                    pdf_link=pdf_href
+                    pdf_link=pdf_href,
                 )
 
     def scrape_committee_upcoming(self, session, chamber):
