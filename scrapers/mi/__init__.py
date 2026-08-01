@@ -1,7 +1,13 @@
-from utils import url_xpath
+import logging
+
+import requests
+import lxml.html
+
 from openstates.scrape import State
-from .bills import MIBillScraper
+from .bills import MIBillScraper, USER_AGENT
 from .events import MIEventScraper
+
+logger = logging.getLogger("openstates")
 
 
 class Michigan(State):
@@ -94,11 +100,28 @@ class Michigan(State):
     ]
 
     def get_session_list(self):
-        return [
-            s.strip()
-            for s in url_xpath(
-                "https://www.legislature.mi.gov/Search/LegDocSearch",
-                "//option/text()",
+        url = "https://www.legislature.mi.gov/Search/LegDocSearch"
+        sessions = []
+        try:
+            # legislature.mi.gov's WAF blocks a generic/bare User-Agent (see
+            # bills.py's USER_AGENT) and returns a CAPTCHA challenge page with no
+            # <option> elements instead of the real session list, so this must
+            # send the same WAF-safe UA that bills.py already sends.
+            response = requests.get(url, headers={"User-Agent": USER_AGENT})
+            response.raise_for_status()
+            doc = lxml.html.fromstring(response.text)
+            sessions = [s.strip() for s in doc.xpath("//option/text()") if s.strip()]
+        except requests.exceptions.RequestException:
+            sessions = []
+
+        if not sessions:
+            logger.warning(
+                f"MI get_session_list(): live scrape of {url} failed or returned "
+                "nothing; falling back to Michigan.legislative_sessions identifiers"
             )
-            if s.strip()
-        ]
+            sessions = [
+                s.get("_scraped_name", s["identifier"])
+                for s in Michigan.legislative_sessions
+            ]
+
+        return sessions
