@@ -103,10 +103,14 @@ class Michigan(State):
         url = "https://www.legislature.mi.gov/Search/LegDocSearch"
         sessions = []
         try:
-            # legislature.mi.gov's WAF blocks a generic/bare User-Agent (see
-            # bills.py's USER_AGENT) and returns a CAPTCHA challenge page with no
-            # <option> elements instead of the real session list, so this must
-            # send the same WAF-safe UA that bills.py already sends.
+            # A bare/generic User-Agent got a CAPTCHA challenge page here (zero
+            # <option> elements) rather than the real session list -- sending the
+            # same UA bills.py already uses helps sometimes, but legislature.mi.gov's
+            # bot-detection is inconsistent: live testing 2026-08-01 got a dropped
+            # connection (RemoteDisconnected) instead, the same symptom the MI
+            # archiver hits independently and often. This isn't a reliable fix for
+            # that blocking, just a best effort -- the fallback below, not this UA,
+            # is what actually keeps get_session_list() from raising CommandError.
             response = requests.get(url, headers={"User-Agent": USER_AGENT})
             response.raise_for_status()
             doc = lxml.html.fromstring(response.text)
@@ -117,7 +121,9 @@ class Michigan(State):
         if not sessions:
             logger.warning(
                 f"MI get_session_list(): live scrape of {url} failed or returned "
-                "nothing; falling back to Michigan.legislative_sessions identifiers"
+                "nothing; falling back to Michigan.legislative_sessions identifiers "
+                "(known-sessions safety net -- update this list when MI starts a "
+                "new session, since the live scrape can't be relied on to catch it)"
             )
             sessions = [
                 s.get("_scraped_name", s["identifier"])
