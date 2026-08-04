@@ -305,7 +305,7 @@ class Mississippi(State):
             "identifier": "20261E",
             "name": "2026 1st Extraordinary Session",
             "start_date": "2026-07-14",
-            "end_date": "2026-07-16",
+            "end_date": "2026-07-17",
             "active": True,
         },
     ]
