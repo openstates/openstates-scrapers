@@ -689,6 +689,32 @@ class UpperComVote(PdfPage):
         yield vote
 
 
+class _FLHouseWAFSource(URL):
+    """Source for flhouse.gov, which sits behind an F5 BIG-IP ASM WAF.
+
+    The WAF hands out a ``session_cookie_mfhp`` cookie that is valid for only
+    ~1 hour. spatula runs an entire scrape on a single persistent scrapelib
+    session, so any scrape lasting longer than that hour (a full FL regular
+    session takes 26+ hrs) keeps presenting the now-expired cookie. The WAF then
+    answers with a "Request Rejected" block page — served with HTTP 200 — for
+    *every* subsequent request, silently dropping all remaining House committee
+    votes for the rest of the run.
+
+    Dropping the stale flhouse.gov cookies before each request forces a fresh
+    WAF session; a cold request is served real content plus a new cookie in a
+    single response, so House lookups keep working for the whole scrape.
+    """
+
+    def get_response(self, scraper):
+        # scrapelib.Scraper subclasses requests.Session, so .cookies is the jar.
+        for cookie in [c for c in scraper.cookies if "flhouse.gov" in (c.domain or "")]:
+            try:
+                scraper.cookies.clear(cookie.domain, cookie.path, cookie.name)
+            except KeyError:
+                pass
+        return super().get_response(scraper)
+
+
 class HouseSearchPage(HtmlListPage):
     """
     House committee roll calls are not available on the Senate's
@@ -721,7 +747,7 @@ class HouseSearchPage(HtmlListPage):
             ) from e
 
         form = {"Chamber": "B", "SessionId": session_number, "BillNumber": bill_number}
-        return URL(
+        return _FLHouseWAFSource(
             url + "?" + urlencode(form),
             method="GET",
             headers={
