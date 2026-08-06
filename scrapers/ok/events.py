@@ -86,7 +86,14 @@ class OKEventScraper(Scraper):
         page = lxml.html.fromstring(self.get(url, verify=False).content)
         page.make_links_absolute(url)
 
-        title = page.xpath("//span[contains(@class,'field--name-title')]/text()")[0]
+        title_nodes = page.xpath(
+            "//span[contains(@class,'field--name-title')]/text()"
+        )
+        if not title_nodes or not title_nodes[0].strip():
+            self.warning(f"Skipping senate event with no title: {url}")
+            return
+        title = title_nodes[0]
+
         try:
             location = page.xpath(
                 "//a[contains(@class,'events_custom_timetable')]/text()"
@@ -100,10 +107,13 @@ class OKEventScraper(Scraper):
         if location.lower()[0:4] == "room":
             location = f"2300 N Lincoln Blvd., Oklahoma City, OK 73105 {location}"
 
-        when = page.xpath(
+        when_nodes = page.xpath(
             "//div[contains(@class,'pageIn__infoIt')]/strong/time/@datetime"
-        )[0]
-        when = dateutil.parser.parse(when)
+        )
+        if not when_nodes:
+            self.warning(f"Skipping senate event with no start datetime: {url}")
+            return
+        when = dateutil.parser.parse(when_nodes[0])
 
         event = Event(title, when, location)
         for row in page.xpath("//article//ol/li"):
@@ -151,6 +161,22 @@ class OKEventScraper(Scraper):
         for row in page["events"]["data"]:
             meta = row["attributes"]
 
+            # Upstream API occasionally returns events with null/empty title or
+            # startDatetime. Without these we can't build a valid Event, and
+            # attempting to would crash the whole scrape (e.g. Event.__str__
+            # calls self.name.strip() during save, raising AttributeError when
+            # name is None). Skip such records and log a warning instead.
+            if not meta.get("title"):
+                self.warning(
+                    f"Skipping house event with no title (slug={meta.get('slug')!r})"
+                )
+                continue
+            if not meta.get("startDatetime"):
+                self.warning(
+                    f"Skipping house event {meta.get('title')!r} with no startDatetime"
+                )
+                continue
+
             status = "tentative"
 
             if meta["isCancelled"] is True:
@@ -165,7 +191,7 @@ class OKEventScraper(Scraper):
                         f"{location} 2300 N Lincoln Blvd, Oklahoma City, OK 73105"
                     )
             else:
-                meta["location"] = "See agenda"
+                location = "See agenda"
 
             when = dateutil.parser.parse(meta["startDatetime"])
 
@@ -185,7 +211,7 @@ class OKEventScraper(Scraper):
                     meta["committee"]["data"]["attributes"]["name"], note="host"
                 )
 
-            for link in meta["links"]:
+            for link in meta["links"] or []:
                 event.add_document(
                     link["label"], link["route"], media_type="application/pdf"
                 )
@@ -198,7 +224,9 @@ class OKEventScraper(Scraper):
                 for bill in Agenda(source=URL(link["route"])).do_scrape():
                     event.add_bill(bill)
 
-            for agenda in meta["agenda"]:
+            for agenda in meta["agenda"] or []:
+                if not agenda.get("info"):
+                    continue
                 agenda_text = lxml.html.fromstring(agenda["info"])
                 agenda_text = " ".join(agenda_text.xpath("//text()"))
                 event.add_agenda_item(agenda_text)
