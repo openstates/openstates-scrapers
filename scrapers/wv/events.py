@@ -12,6 +12,11 @@ INTERIMS_URL = "http://www.wvlegislature.gov/committees/Interims/interims.cfm"
 class WVEventScraper(Scraper, LXMLMixin):
     verify = False
     _tz = pytz.timezone("US/Eastern")
+    # Matches a time of day such as "1:00 PM", "9 AM" or "10:30a.m."
+    _time_re = re.compile(
+        r"\d{1,2}(:\d{2})?\s*[ap]\.?m\.?",
+        re.IGNORECASE,
+    )
 
     def scrape(self):
         com_urls = [
@@ -213,8 +218,9 @@ class WVEventScraper(Scraper, LXMLMixin):
         page = self.lxmlize(url)
         page.make_links_absolute(url)
 
-        # if the page starts w/ a meeting
-        if page.xpath('//div[@id="wrapleftcol"]/h1'):
+        # if the page starts w/ a meeting. The h1 is always the committee title;
+        # a meeting's date/time lives in the h2, so use that to detect a meeting.
+        if page.xpath('//div[@id="wrapleftcol"]/h2'):
             yield from self.scrape_meeting_page(url)
 
         for row in page.xpath('//td/a[contains(@href, "agendas.cfm")]'):
@@ -224,16 +230,26 @@ class WVEventScraper(Scraper, LXMLMixin):
             # meeting pages show events going back years
             # so just grab this cal year and later
             when = row.xpath("text()")[0].strip()
-            when = when.split("-")[0]
+            when = self.strip_date_range(when)
             when = self.clean_date(when)
+
+            if not when:
+                continue
 
             # manual fix for un-yeared leap year meeting
             # on Senate Interstate Cooperation Committee
             if when == "February 29":
                 continue
 
-            when = dateutil.parser.parse(when)
-            if when.year >= datetime.datetime.today().year:
+            # Only use the list-page date as a coarse filter.
+            # Do not let an ambiguous date string cause us to scrape a page
+            # that is actually a historical committee meeting.
+            try:
+                row_date = dateutil.parser.parse(when)
+            except ValueError:
+                continue
+
+            if row_date.year >= datetime.datetime.today().year:
                 yield from self.scrape_meeting_page(row.xpath("@href")[0])
 
     def scrape_meeting_page(self, url):
@@ -244,12 +260,14 @@ class WVEventScraper(Scraper, LXMLMixin):
         if page.xpath('//div[text()="Error"]'):
             return
 
-        if not page.xpath('//div[@id="wrapleftcol"]/h3'):
+        if not page.xpath('//div[@id="wrapleftcol"]/h2'):
             return
 
-        com = page.xpath('//div[@id="wrapleftcol"]/h3[1]/text()')[0].strip()
-        com = re.sub(r"[\s\-]+Agenda", "", com)
-        when = page.xpath('//div[@id="wrapleftcol"]/h1[1]/text()')[0].strip()
+        # The committee name is in the h1 (e.g. "Senate Finance Committee - Agenda")
+        # and the meeting date/time is in the h2 (e.g. "March 12, 2026, 3:00 PM").
+        com = page.xpath('//div[@id="wrapleftcol"]/h1[1]/text()')[0].strip()
+        com = re.sub(r"\s*-\s*Agenda\s*$", "", com).strip()
+        when = page.xpath('//div[@id="wrapleftcol"]/h2[1]/text()')[0].strip()
 
         if when == "test, test" or when == ",":
             # Ignore test page
@@ -271,9 +289,17 @@ class WVEventScraper(Scraper, LXMLMixin):
         )
         when = re.sub(r",?\s+After Floor", "", when, flags=re.IGNORECASE)
 
-        when = when.split("-")[0]
+        when = self.strip_date_range(when)
         when = self.clean_date(when)
-        when = dateutil.parser.parse(when)
+
+        if not when:
+            return
+
+        try:
+            when = dateutil.parser.parse(when)
+        except ValueError:
+            return
+
         when = self._tz.localize(when)
 
         # we check for this elsewhere, but just in case the very first event on a committee page is way in the past
@@ -346,15 +372,72 @@ class WVEventScraper(Scraper, LXMLMixin):
 
                 # Final step to set correct number of spaces in the id
                 components = component_re.search(bill_id)
+                if components is None:
+                    # Shouldn't happen given the outer regex, but guard
+                    # against an AttributeError if the pattern doesn't match.
+                    continue
                 bill_id = f"{components.group(1)} {int(components.group(2))}"
 
                 agenda.add_bill(bill_id)
 
+    def strip_date_range(self, when):
+        """
+        Strip a trailing date range and keep only the start date.
+
+        Agenda dates are occasionally expressed as a range using a hyphen
+        surrounded by whitespace (e.g. "March 3, 2023 - March 4, 2023"), in
+        which case we only want the first date.
+
+        We must NOT split on a bare hyphen because numeric dates use hyphens
+        as separators (e.g. "1-14-14", "2-11-20"). Splitting those on "-"
+        would leave just the month component (e.g. "1"), which dateutil then
+        parses using today's month/year as defaults, producing wildly wrong
+        dates. Only treat a hyphen surrounded by whitespace as a range
+        delimiter.
+        """
+        return re.split(r"\s+-\s+", when)[0].strip()
+
     def clean_date(self, when):
-        # Remove all text after the third comma to make sure no extra text
-        # is included in the date. Required to correctly parse text like this:
-        # "Friday, March 3, 2023, Following wrap up of morning agenda"
-        when = ",".join(when.split(",")[:3])
+        """
+        Keep complete page dates intact and only remove trailing non-date noise.
+        Preserve explicit years and meeting times from the h2 heading.
+        """
+        if not when:
+            return None
+
+        when = re.sub(r"\s+", " ", when).strip()
+        when = re.sub(r"\s*,\s*$", "", when).strip()
+
+        # WV agenda pages sometimes render dates with no space after a
+        # comma, e.g. "March 22,2017, 10:00 AM" (see PR review comment on
+        # the Senate Interstate Cooperation Committee page). dateutil
+        # silently drops the year in that case and defaults to the current
+        # year instead of raising, turning a 2017 meeting into a 2026 one.
+        # Force a space after every comma so the year token is always
+        # tokenized and parsed correctly.
+        when = re.sub(r",(?=\S)", ", ", when)
+
+        # Some pages join the day and year with a period instead of a comma,
+        # e.g. "March 13.2025" (seen live on the Senate Judiciary Committee
+        # page). dateutil treats "13.2025" as a single numeric token and
+        # drops the year the same way it does for the no-space comma case
+        # above. Only match day (1-2 digits) + "." + a 4-digit year, so this
+        # can't collide with "a.m."/"p.m." time abbreviations elsewhere in
+        # the string.
+        when = re.sub(r"(?<=\d)\.(?=\d{4}\b)", ", ", when)
+
+        # If the page already includes a year, preserve the full string.
+        # That avoids converting historical meetings into current-year events.
+        if re.search(r"\b\d{4}\b", when):
+            return when
+
+        segments = when.split(",")
+        kept = segments[:3]
+        for segment in segments[3:]:
+            if self._time_re.search(segment):
+                kept.append(segment)
+
+        when = ",".join(kept)
 
         removals = [
             r"(\d+|Thirty) (min\.|mins\.|minutes) After (.*)",
@@ -394,4 +477,4 @@ class WVEventScraper(Scraper, LXMLMixin):
             when = "March 1, 2022, 1:00 PM"
 
         when = re.sub(r"\s+", " ", when)
-        return when
+        return when.strip()
