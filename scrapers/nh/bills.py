@@ -447,12 +447,8 @@ class NHBillScraper(Scraper):
                         version_id = self.versions_by_lsr[lsr]
                         self.add_source(self.bills[lsr], version_id)
                         bill_page = self.get_bill_page(version_id)
-                        self.scrape_versions_from_web_2026(
-                            self.bills[lsr], bill_page
-                        )
-                        self.scrape_sponsors_from_bill_page(
-                            self.bills[lsr], bill_page
-                        )
+                        self.scrape_versions_from_web_2026(self.bills[lsr], bill_page)
+                        self.scrape_sponsors_from_bill_page(self.bills[lsr], bill_page)
                     else:
                         self.warning(
                             f"Missing version_id for {bill_id}, can't build bill page"
@@ -520,9 +516,7 @@ class NHBillScraper(Scraper):
                 # table, regardless of whether we're adding the sponsorship
                 # itself: it's useful metadata for downstream consumers.
                 if employee in self.legislators:
-                    self.bills[lsr].extras["_code"] = self.legislators[employee][
-                        "seat"
-                    ]
+                    self.bills[lsr].extras["_code"] = self.legislators[employee]["seat"]
 
                 # Skip the fallback add if the HTML-page scrape already
                 # populated sponsors for this bill.
