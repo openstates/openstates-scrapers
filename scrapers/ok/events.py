@@ -87,7 +87,6 @@ class OKEventScraper(Scraper):
         page.make_links_absolute(url)
 
         title_nodes = page.xpath("//span[contains(@class,'field--name-title')]/text()")
-        
         if not title_nodes or not title_nodes[0].strip():
             self.warning(f"Skipping senate event with no title: {url}")
             return
@@ -241,4 +240,3 @@ class OKEventScraper(Scraper):
         current_max = offset + limit
         if page["events"]["meta"]["pagination"]["total"] > current_max:
             yield from self.scrape_page(start, end, offset + limit, limit)
-
