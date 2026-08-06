@@ -372,6 +372,10 @@ class WVEventScraper(Scraper, LXMLMixin):
 
                 # Final step to set correct number of spaces in the id
                 components = component_re.search(bill_id)
+                if components is None:
+                    # Shouldn't happen given the outer regex, but guard
+                    # against an AttributeError if the pattern doesn't match.
+                    continue
                 bill_id = f"{components.group(1)} {int(components.group(2))}"
 
                 agenda.add_bill(bill_id)
