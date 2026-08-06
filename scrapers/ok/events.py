@@ -241,3 +241,4 @@ class OKEventScraper(Scraper):
         current_max = offset + limit
         if page["events"]["meta"]["pagination"]["total"] > current_max:
             yield from self.scrape_page(start, end, offset + limit, limit)
+
