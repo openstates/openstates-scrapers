@@ -86,9 +86,8 @@ class OKEventScraper(Scraper):
         page = lxml.html.fromstring(self.get(url, verify=False).content)
         page.make_links_absolute(url)
 
-        title_nodes = page.xpath(
-            "//span[contains(@class,'field--name-title')]/text()"
-        )
+        title_nodes = page.xpath("//span[contains(@class,'field--name-title')]/text()")
+        
         if not title_nodes or not title_nodes[0].strip():
             self.warning(f"Skipping senate event with no title: {url}")
             return
