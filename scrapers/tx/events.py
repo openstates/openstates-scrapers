@@ -94,7 +94,7 @@ class TXEventScraper(Scraper, LXMLMixin):
             chair = re.sub(r"(Rep\. |Senator |Representative |Sen\. )", "", chair)
 
         plaintext = re.sub(r"\s+", " ", plaintext).strip()
-        bills = bill_re.findall(plaintext)
+        # bills = bill_re.findall(plaintext)
 
         event = Event(
             name=committee,
@@ -135,11 +135,11 @@ class TXEventScraper(Scraper, LXMLMixin):
                 text = " ".join("".join(span.itertext()).split())
                 if text and text not in results:
                     agenda_text = text.rstrip(" :")
-                    agenda = event.add_agenda_item(agenda_text)
+                    event.add_agenda_item(agenda_text)
 
-        for alpha, num in bills:
-            bill_id = f"{alpha} {num}"
-            agenda.add_bill(bill_id)
+        # for alpha, num in bills:
+        #     bill_id = f"{alpha} {num}"
+        #     agenda.add_bill(bill_id)
 
         day = datetime.strftime("%Y-%m-%d")
         videos = []
