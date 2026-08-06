@@ -4,6 +4,7 @@ import json
 from json.decoder import JSONDecodeError
 from requests.exceptions import JSONDecodeError as RequestsJSONDecodeError
 import random
+import re
 import time
 from urllib.parse import urljoin
 
@@ -280,6 +281,15 @@ class DEBillScraper(Scraper, LXMLMixin):
 
         self.scrape_actions(bill, row["LegislationId"])
 
+        # DE's actions API is sometimes empty even for bills that have clearly
+        # been introduced and referred to committee (see PR #5737 discussion).
+        # When that happens, fall back to the two data points that are still
+        # rendered on the bill detail HTML page: "Introduced on:" and "Status:".
+        # Doing this only when the API returned zero actions avoids duplicating
+        # anything the API already provided.
+        if not bill.actions:
+            self.scrape_fallback_actions_from_html(bill, html)
+
         if row["HasAmendments"] is True:
             self.scrape_amendments(bill, row["LegislationId"])
 
@@ -546,6 +556,98 @@ class DEBillScraper(Scraper, LXMLMixin):
                 action.add_related_entity(leg, "person")
             for c in categorization["committees"]:
                 action.add_related_entity(c, "organization")
+
+    def scrape_fallback_actions_from_html(self, bill, html):
+        """Add actions inferred from the bill detail HTML when the API is empty.
+
+        DE's ``GetRecentReportsByLegislationId`` endpoint occasionally returns
+        no rows for bills that have obviously been introduced and referred to a
+        committee. The bill detail page itself still shows this information
+        under the "Introduced on:" and "Status:" fields, so scrape those as a
+        fallback so users can at least see when the bill was introduced and
+        where it currently sits.
+
+        Only called when ``scrape_actions()`` did not add anything.
+        """
+        home_chamber = "upper" if bill.identifier.startswith("S") else "lower"
+
+        # "Introduced on: 6/30/26" -> description="Introduced", date=6/30/26
+        # Scope to class="info-label" so we don't accidentally pick up the
+        # hidden modal template on the page, which uses class="info-label-sm".
+        introduced_values = html.xpath(
+            '//label[@class="info-label" and '
+            'starts-with(normalize-space(text()), "Introduced on")]'
+            "/following-sibling::div[1]/text()"
+        )
+        if introduced_values:
+            intro_text = introduced_values[0].strip()
+            intro_date = self._parse_de_short_date(intro_text)
+            if intro_date:
+                bill.add_action(
+                    description="Introduced",
+                    date=intro_date,
+                    chamber=home_chamber,
+                    classification=["introduction"],
+                )
+
+        # "Status: House Natural Resources & Energy 6/30/26"
+        # -> description="House Natural Resources & Energy", date=6/30/26
+        # The status may not always end in a date (e.g. "In Committee"),
+        # in which case we skip it because Bill.add_action() requires a date.
+        status_values = html.xpath(
+            '//label[@class="info-label" and '
+            'normalize-space(text())="Status:"]'
+            "/following-sibling::div[1]/text()"
+        )
+        if status_values:
+            status_text = status_values[0].strip()
+            # Split off a trailing M/D/YY (or M/D/YYYY). We only need the last
+            # whitespace-separated token to be a date.
+            match = re.search(r"\s+(\d{1,2}/\d{1,2}/\d{2,4})\s*$", status_text)
+            if match:
+                status_date = self._parse_de_short_date(match.group(1))
+                description = status_text[: match.start()].strip()
+                if status_date and description:
+                    # Mirror the chamber-inference logic used in scrape_actions
+                    # so a status like "Senate Judiciary" is attributed to the
+                    # right chamber.
+                    if "Senate" in description:
+                        action_chamber = "upper"
+                    elif "House" in description:
+                        action_chamber = "lower"
+                    elif "Governor" in description:
+                        action_chamber = "executive"
+                    else:
+                        action_chamber = home_chamber
+
+                    categorization = self.categorizer.categorize(description)
+                    action = bill.add_action(
+                        description=description,
+                        date=status_date,
+                        chamber=action_chamber,
+                        classification=categorization["classification"],
+                    )
+                    for leg in categorization["legislators"]:
+                        action.add_related_entity(leg, "person")
+                    for c in categorization["committees"]:
+                        action.add_related_entity(c, "organization")
+
+    def _parse_de_short_date(self, text):
+        """Parse DE's short date strings (e.g. "6/30/26") into YYYY-MM-DD.
+
+        Returns ``None`` if the string can't be parsed, so callers can skip
+        adding a malformed action rather than crashing the whole scrape.
+        """
+        text = (text or "").strip()
+        if not text:
+            return None
+        for fmt in ("%m/%d/%y", "%m/%d/%Y"):
+            try:
+                return dt.datetime.strptime(text, fmt).strftime("%Y-%m-%d")
+            except ValueError:
+                continue
+        self.warning(f"Could not parse DE fallback action date: {text!r}")
+        return None
 
     def scrape_amendments(self, bill, legislation_id):
         # http://legis.delaware.gov/json/BillDetail/GetRelatedAmendmentsByLegislationId?legislationId=47185
