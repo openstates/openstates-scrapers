@@ -3,7 +3,6 @@ import pytz
 
 import lxml
 from openstates.scrape import Scraper, Event
-from openstates.exceptions import EmptyScrape
 
 from utils.events import match_coordinates
 from utils import LXMLMixin
@@ -78,12 +77,6 @@ class COEventScraper(Scraper, LXMLMixin):
                         yielded += 1
                         yield event
 
-        if yielded == 0:
-            # Neither layout matched or the schedule is genuinely empty
-            # (e.g. between interim and session). Raise EmptyScrape so
-            # openstates records a clean empty run instead of ScrapeError.
-            raise EmptyScrape
-
     def scrape_event_row(self, row: lxml.html.HtmlElement, start_day: str):
         start_time = self.clean(row.xpath("td[1]"))
 
@@ -95,17 +88,17 @@ class COEventScraper(Scraper, LXMLMixin):
             com_name = self.clean(row.xpath("td[2]"))
 
         if not com_name or not start_time:
+            self.warning(
+                f"Skipping event row with missing name or time: "
+                f"name={com_name!r}, time={start_time!r}"
+            )
             return
 
         location = self.clean(row.xpath("td[3]"))
         location = f"{location}, 200 E Colfax Ave, Denver, CO 80203"
 
         start = f"{start_day} {start_time}"
-        try:
-            start = dateutil.parser.parse(start, fuzzy=True)
-        except (ValueError, OverflowError):
-            self.warning(f"Could not parse date/time for {com_name}: {start!r}")
-            return
+        start = dateutil.parser.parse(start, fuzzy=True)
         start = self._tz.localize(start)
 
         event = Event(com_name, start, location, status="tentative")
