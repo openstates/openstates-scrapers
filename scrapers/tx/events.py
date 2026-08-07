@@ -63,7 +63,9 @@ class TXEventScraper(Scraper, LXMLMixin):
         if event_count < 1:
             raise EmptyScrape
 
-    def scrape_event_page(self, session, chamber, url, datetime):
+    def scrape_event_page(
+        self, session, chamber, url, datetime, status=None, pdf_link=None
+    ):
         try:
             page = self.lxmlize(url)
         except scrapelib.HTTPError:
@@ -92,12 +94,20 @@ class TXEventScraper(Scraper, LXMLMixin):
             chair = re.sub(r"(Rep\. |Senator |Representative |Sen\. )", "", chair)
 
         plaintext = re.sub(r"\s+", " ", plaintext).strip()
-        bills = bill_re.findall(plaintext)
+        # bills = bill_re.findall(plaintext)
 
         event = Event(
-            name=committee, start_date=self._tz.localize(datetime), location_name=where
+            name=committee,
+            start_date=self._tz.localize(datetime),
+            location_name=where,
+            status=status,
         )
         event.dedupe_key = url
+
+        if pdf_link:
+            event.add_document(
+                note="Agenda PDF", url=pdf_link, media_type="application/pdf"
+            )
 
         event.add_source(url)
 
@@ -106,12 +116,30 @@ class TXEventScraper(Scraper, LXMLMixin):
         if chair is not None:
             event.add_participant(chair, type="legislator", note="chair")
 
-        # add a single agenda item, attach all bills
-        agenda = event.add_agenda_item(plaintext)
+        # add a agenda item, attach all bills
 
-        for alpha, num in bills:
-            bill_id = f"{alpha} {num}"
-            agenda.add_bill(bill_id)
+        xpath = """
+        .//b[following-sibling::span[starts-with(normalize-space(), ':') or starts-with(normalize-space(), '-')]]//span
+
+        |
+
+        .//b//span[substring(normalize-space(), string-length(normalize-space()))=':' or substring(normalize-space(), string-length(normalize-space()))='-']
+
+        |
+
+        .//span/b[substring(normalize-space(), string-length(normalize-space()))=':']
+        """
+        results = []
+        for p_element in page.xpath("//p"):
+            for span in p_element.xpath(xpath):
+                text = " ".join("".join(span.itertext()).split())
+                if text and text not in results:
+                    agenda_text = text.rstrip(" :")
+                    event.add_agenda_item(agenda_text)
+
+        # for alpha, num in bills:
+        #     bill_id = f"{alpha} {num}"
+        #     agenda.add_bill(bill_id)
 
         day = datetime.strftime("%Y-%m-%d")
         videos = []
@@ -158,6 +186,17 @@ class TXEventScraper(Scraper, LXMLMixin):
             if time_elem:
                 time = time_elem[0].text_content()
 
+            # cancelled = row.xpath("./td/span[contains(@class, 'redText')]").  # Can be used as a backup if the text changes in the future.
+            cancelled = row.xpath("./td/span[contains(text(), 'Cancel')]")
+            if cancelled:
+                print(f"Event on {date} at {time} is cancelled, skipping.")
+            pdf_links = row.xpath(".//td[@data-label='Hearing Notice']//a")
+            for link in pdf_links:
+                href = link.get("href", "")
+                if href.lower().endswith(".pdf"):
+                    pdf_href = href
+                    break
+
             events = row.xpath(".//a[contains(@href, 'schedules/html')]")
             for event in events:
                 # Ignore text after the datetime proper (ie, after "AM" or "PM")
@@ -170,7 +209,12 @@ class TXEventScraper(Scraper, LXMLMixin):
                 datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y %I:%M %p")
 
                 yield from self.scrape_event_page(
-                    session, chamber, event.attrib["href"], datetime
+                    session,
+                    chamber,
+                    event.attrib["href"],
+                    datetime,
+                    status="cancelled" if cancelled else "confirmed",
+                    pdf_link=pdf_href,
                 )
 
     def scrape_committee_upcoming(self, session, chamber):
