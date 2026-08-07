@@ -9,6 +9,16 @@ from openstates.exceptions import EmptyScrape
 
 import pytz
 
+BILL_NORMALIZE = [
+    (re.compile(r"Senate Joint Resolution", re.IGNORECASE), "SJR"),
+    (re.compile(r"House Joint Resolution", re.IGNORECASE), "HJR"),
+    (re.compile(r"Senate Concurrent Resolution", re.IGNORECASE), "SCR"),
+    (re.compile(r"House Concurrent Resolution", re.IGNORECASE), "HCR"),
+    (re.compile(r"Senate Resolution", re.IGNORECASE), "SR"),
+    (re.compile(r"House Resolution", re.IGNORECASE), "HR"),
+    (re.compile(r"Senate Bill", re.IGNORECASE), "SB"),
+    (re.compile(r"House Bill", re.IGNORECASE), "HB"),
+]
 bill_re = re.compile(r"(SJR|HCR|HB|HR|SCR|SB|HJR|SR) (\d+)")
 
 
@@ -93,9 +103,6 @@ class TXEventScraper(Scraper, LXMLMixin):
             chair = metainfo["CHAIR"]
             chair = re.sub(r"(Rep\. |Senator |Representative |Sen\. )", "", chair)
 
-        plaintext = re.sub(r"\s+", " ", plaintext).strip()
-        # bills = bill_re.findall(plaintext)
-
         event = Event(
             name=committee,
             start_date=self._tz.localize(datetime),
@@ -117,16 +124,11 @@ class TXEventScraper(Scraper, LXMLMixin):
             event.add_participant(chair, type="legislator", note="chair")
 
         # add a agenda item, attach all bills
-
         xpath = """
         .//b[following-sibling::span[starts-with(normalize-space(), ':') or starts-with(normalize-space(), '-')]]//span
-
         |
-
         .//b//span[substring(normalize-space(), string-length(normalize-space()))=':' or substring(normalize-space(), string-length(normalize-space()))='-']
-
         |
-
         .//span/b[substring(normalize-space(), string-length(normalize-space()))=':']
         """
         results = []
@@ -135,11 +137,25 @@ class TXEventScraper(Scraper, LXMLMixin):
                 text = " ".join("".join(span.itertext()).split())
                 if text and text not in results:
                     agenda_text = text.rstrip(" :")
-                    event.add_agenda_item(agenda_text)
+                    agenda = event.add_agenda_item(agenda_text)
 
-        # for alpha, num in bills:
-        #     bill_id = f"{alpha} {num}"
-        #     agenda.add_bill(bill_id)
+                    siblings = [p_element] + p_element.xpath("following-sibling::p")
+                    seen_bills = set()
+                    for sibling in siblings:
+                        if sibling != p_element and sibling.xpath(xpath):
+                            break
+                        full_text = " ".join("".join(sibling.itertext()).split())
+
+                        normalized = full_text
+                        for pattern, abbr in BILL_NORMALIZE:
+                            normalized = pattern.sub(abbr, normalized)
+
+                        bills = bill_re.findall(normalized)
+                        for alpha, num in bills:
+                            bill_id = f"{alpha} {num}"
+                            if bill_id not in seen_bills:
+                                seen_bills.add(bill_id)
+                                agenda.add_bill(bill_id)
 
         day = datetime.strftime("%Y-%m-%d")
         videos = []
