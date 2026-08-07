@@ -1,4 +1,3 @@
-from scrapers.wa.utils import xpath
 from utils import LXMLMixin
 import re
 import datetime as dt
@@ -21,6 +20,7 @@ BILL_NORMALIZE = [
     (re.compile(r"House Bill", re.IGNORECASE), "HB"),
 ]
 bill_re = re.compile(r"(SJR|HCR|HB|HR|SCR|SB|HJR|SR) (\d+)")
+
 
 class TXEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Central")
@@ -103,7 +103,6 @@ class TXEventScraper(Scraper, LXMLMixin):
             chair = metainfo["CHAIR"]
             chair = re.sub(r"(Rep\. |Senator |Representative |Sen\. )", "", chair)
 
-
         event = Event(
             name=committee,
             start_date=self._tz.localize(datetime),
@@ -127,13 +126,9 @@ class TXEventScraper(Scraper, LXMLMixin):
         # add a agenda item, attach all bills
         xpath = """
         .//b[following-sibling::span[starts-with(normalize-space(), ':') or starts-with(normalize-space(), '-')]]//span
-
         |
-
         .//b//span[substring(normalize-space(), string-length(normalize-space()))=':' or substring(normalize-space(), string-length(normalize-space()))='-']
-
         |
-
         .//span/b[substring(normalize-space(), string-length(normalize-space()))=':']
         """
         results = []
@@ -157,13 +152,17 @@ class TXEventScraper(Scraper, LXMLMixin):
 
                         bills = bill_re.findall(normalized)
                         for alpha, num in bills:
-                            orig = re.search(rf"(Senate Bill|House Bill|SB|HB|SJR|HJR|SCR|HCR|SR|HR)\s+{num}", full_text, re.IGNORECASE)
-                            bill_id = f"{orig.group(1)} {num}" if orig else f"{alpha} {num}"
+                            orig = re.search(
+                                rf"(Senate Bill|House Bill|SB|HB|SJR|HJR|SCR|HCR|SR|HR)\s+{num}",
+                                full_text,
+                                re.IGNORECASE,
+                            )
+                            bill_id = (
+                                f"{orig.group(1)} {num}" if orig else f"{alpha} {num}"
+                            )
                             if bill_id not in seen_bills:
                                 seen_bills.add(bill_id)
                                 agenda.add_bill(bill_id)
-
-               
 
         day = datetime.strftime("%Y-%m-%d")
         videos = []
