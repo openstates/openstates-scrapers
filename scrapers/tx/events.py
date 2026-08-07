@@ -152,14 +152,7 @@ class TXEventScraper(Scraper, LXMLMixin):
 
                         bills = bill_re.findall(normalized)
                         for alpha, num in bills:
-                            orig = re.search(
-                                rf"(Senate Bill|House Bill|SB|HB|SJR|HJR|SCR|HCR|SR|HR)\s+{num}",
-                                full_text,
-                                re.IGNORECASE,
-                            )
-                            bill_id = (
-                                f"{orig.group(1)} {num}" if orig else f"{alpha} {num}"
-                            )
+                            bill_id = f"{alpha} {num}"
                             if bill_id not in seen_bills:
                                 seen_bills.add(bill_id)
                                 agenda.add_bill(bill_id)
