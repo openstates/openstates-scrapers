@@ -190,7 +190,14 @@ class WVEventScraper(Scraper, LXMLMixin):
         event.add_source(url)
 
         # The agenda body is the first blockquote under the main wrapper.
-        rows = page.xpath('//main[@id="wrapper"]/blockquote[1]/p')
+        # Agenda entries live in <p> elements, but administrative rules to be
+        # reviewed are sometimes rendered as an <ol>/<ul> list (each <li>
+        # holding a link to the rule text), so include those list items too.
+        rows = page.xpath(
+            '//main[@id="wrapper"]/blockquote[1]/p'
+            ' | //main[@id="wrapper"]/blockquote[1]/ol/li'
+            ' | //main[@id="wrapper"]/blockquote[1]/ul/li'
+        )
         self.parse_agenda_items(event, rows)
 
     def combine_date_time(self, day, time_text):
@@ -328,32 +335,77 @@ class WVEventScraper(Scraper, LXMLMixin):
 
         self.parse_agenda_items(
             event,
-            page.xpath('//div[@id="wrapleftcol"]/blockquote[1]/p'),
+            page.xpath(
+                '//div[@id="wrapleftcol"]/blockquote[1]/p'
+                ' | //div[@id="wrapleftcol"]/blockquote[1]/ol/li'
+                ' | //div[@id="wrapleftcol"]/blockquote[1]/ul/li'
+            ),
         )
 
         event.add_source(url)
 
         yield event
 
-    def parse_agenda_items(self, event, rows):
-        """Add agenda items (and any linked bills) to an event.
+    # Matches a WV administrative rule citation such as "191 CSR 03",
+    # "11 CSR 01A" or "110 CSR 13KK" (agency series number + "CSR" + rule
+    # number, which may carry a trailing letter suffix of one or more
+    # letters). These are existing administrative law items, NOT bills, so
+    # they must never be routed through add_bill().
+    _csr_re = re.compile(r"\b\d{1,3}\s*CSR\s*\d+[A-Z]*\b", flags=re.IGNORECASE)
 
-        ``rows`` should be an iterable of <p> elements from an agenda
-        blockquote. Bill references embedded in the text are parsed and
-        linked to the agenda item.
+    def parse_agenda_items(self, event, rows):
+        """Add agenda items (and any related entities) to an event.
+
+        ``rows`` should be an iterable of <p> (and <li>) elements from an
+        agenda blockquote. For each item we attach related entities:
+
+        * Bill references embedded in the text (e.g. "HB5675/SB939") are
+          parsed and linked via ``add_bill()``.
+        * WV administrative rules (e.g. "191 CSR 03 - ...") are existing law,
+          not bills, so they're attached as media links to the rule text via
+          ``add_media_link()`` when a link is present.
         """
         component_re = re.compile(r"([A-Z]+)\s*(\d+)", flags=re.IGNORECASE)
         period_and_whitespace_re = re.compile(r"\.\s*", flags=re.IGNORECASE)
         house_bill_re = re.compile(r"house bill", flags=re.IGNORECASE)
         senate_bill_re = re.compile(r"senate bill", flags=re.IGNORECASE)
 
+        seen_descriptions = set()
+
         for row in rows:
-            if row.text_content().strip() == "":
+            text = row.text_content().strip()
+            if text == "":
                 continue
 
-            agenda = event.add_agenda_item(
-                row.text_content().strip().replace("\u25a1", "")
-            )
+            description = text.replace("\u25a1", "")
+            # Guard against the same entry appearing as both a <p> and an
+            # <li> (or otherwise duplicated within the blockquote).
+            if description in seen_descriptions:
+                continue
+            seen_descriptions.add(description)
+
+            agenda = event.add_agenda_item(description)
+
+            # WV administrative rules (e.g. "191 CSR 03 - ...") are existing
+            # law rather than bills. Attach any linked rule text as a media
+            # link. We still fall through to bill parsing below so a row that
+            # mentions both a rule and a bill captures both.
+            if self._csr_re.search(text):
+                for link in row.xpath(".//a"):
+                    href = link.get("href")
+                    label = link.text_content().strip()
+                    if not href or not self._csr_re.search(label):
+                        continue
+                    agenda.add_media_link(
+                        note=label,
+                        url=href,
+                        media_type="text/html",
+                        on_duplicate="ignore",
+                    )
+
+            # Strip CSR citations before bill parsing so "CSR" tokens can't be
+            # misread as bills (e.g. "191 CSR 03" -> "SR 3").
+            bill_text = self._csr_re.sub("", text)
 
             # Matches (SJR, HCR, HB, HR, SCR, SB, HJR, SR) + id
             # Allows for house, senate, joint, or bill to be fully spelled out
@@ -361,7 +413,7 @@ class WVEventScraper(Scraper, LXMLMixin):
             # Allows for up to two spaces before the id
             bills = re.findall(
                 r"((S\.?|Senate|H\.?|House)\s?((J|C|Joint)\.?\s?)?(B\.?|Bill|R\.?)\s?\s?(\d+))",
-                row.text_content(),
+                bill_text,
                 flags=re.IGNORECASE,
             )
 
