@@ -235,21 +235,21 @@ class MOBillScraper(Scraper, LXMLMixin):
         if bill_lr:
             bill.extras["MO_BILL_LR"] = bill_lr
 
-        for cosponsor_link in bill_page.xpath(
-            '//div[contains(@class, "detail-grid__item") and contains(string(.), "Co-Sponsors")]/div[1]/a'
-        ):
-            if "Senators" in cosponsor_link.xpath("@href")[0]:
-                chamber = "upper"
-            else:
-                chamber = None
-
-            bill.add_sponsorship(
-                cosponsor_link.text_content(),
-                entity_type="person",
-                classification="cosponsor",
-                primary=False,
-                chamber=chamber,
-            )
+        # Based on the analysis of the MO website, co-sponsors are typically Senators,
+        # so we assume the chamber is "upper" for co-sponsor entities.
+        chamber = "upper"
+        co_spons = '//div[contains(@class, "detail-grid__item") and contains(string(.), "Co-Sponsors")]/div/span'
+        co_sponsors_elements = bill_page.xpath(co_spons)
+        if co_sponsors_elements:
+            for element in co_sponsors_elements:
+                name = element.text_content()
+                bill.add_sponsorship(
+                    name,
+                    entity_type="person",
+                    classification="cosponsor",
+                    primary=False,
+                    chamber=chamber
+                )
 
         # get the actions
         actions_url = f"{bill_url}&handler=Actions"
@@ -344,7 +344,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         index_page = lxml.html.fromstring(index_page)
 
         for card_header in index_page.cssselect("div.bill-card-header"):
-            bill_sponsor_handler = None
+            bill_sponsor_link = None
             bill_identifier_element = card_header.cssselect("div.bill-number a")
             if not bill_identifier_element:
                 self.warning("Missing bill identifier element. Skipping.")
@@ -357,7 +357,7 @@ class MOBillScraper(Scraper, LXMLMixin):
             # Extract sponsor handler link if present
             sponsor_elements = card_header.cssselect("div.bill-sponsor-handler div a")
             if sponsor_elements:
-                bill_sponsor_handler = sponsor_elements[0].get("href")
+                bill_sponsor_link = sponsor_elements[0].get("href")
 
             if bill_identifier_link is None:
                 self.warning(
@@ -366,7 +366,7 @@ class MOBillScraper(Scraper, LXMLMixin):
                 continue
 
             yield from self._parse_senate_billpage(
-                bill_identifier_link, bill_identifier, bill_sponsor_handler, session
+                bill_identifier_link, bill_identifier, bill_sponsor_link, session
             )
 
     def _scrape_lower_chamber(self, session):
