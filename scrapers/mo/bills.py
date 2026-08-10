@@ -248,7 +248,7 @@ class MOBillScraper(Scraper, LXMLMixin):
                     entity_type="person",
                     classification="cosponsor",
                     primary=False,
-                    chamber=chamber
+                    chamber=chamber,
                 )
 
         # get the actions
