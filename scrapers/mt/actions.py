@@ -127,7 +127,7 @@ _actions = {
         "mappings": ["executive-veto-line-item"],
     },
     # An amendment has been offered on the bill
-    "^(?i)amendment.{,200}introduced": {
+    "(?i)^amendment.{,200}introduced": {
         "type": "regex",
         "mappings": ["amendment-introduction"],
     },
