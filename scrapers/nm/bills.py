@@ -36,26 +36,53 @@ def url_session_slug(session):
 
 class NMBillScraper(Scraper):
     def _init_mdb(self, session):
-        ftp_base = "ftp://www.nmlegis.gov/other/"
+        # NM retired anonymous FTP. www.nmlegis.gov now resolves to AWS
+        # anycast addresses (3.33.166.71 / 13.248.161.41): a TCP connect to
+        # port 21 still SUCCEEDS at the accelerator edge and then hangs
+        # forever, because nothing is listening behind it. "Port 21 is open"
+        # is not evidence the service exists.
+        #
+        # The directory moved under the session tree, over HTTPS. NM's own
+        # Downloads page proves it: its "Downloads- FTP" menu item now links
+        # to https://www.nmlegis.gov/Sessions/<slug>/ and the old /other/
+        # returns 404 at the site root while /Sessions/<slug>/other/ serves
+        # the same LegInfo zips.
+        base = "https://www.nmlegis.gov/Sessions/{}/other/".format(
+            session_slug(session)
+        )
         fname = "LegInfo{}".format(session[2:])
+        # The IIS HTTPS listing renders dates as "4/29/2026 12:26 PM" -
+        # M/D/YYYY, one space before AM/PM. The FTP listing this replaces
+        # used "04-29-26  12:26PM" - zero-padded, two spaces, no space before
+        # the meridiem. Reusing the old pattern silently matches nothing and
+        # raises "contains no matching files", which reads like the file is
+        # gone rather than like the format changed.
         fname_re = (
-            r"(\d{{2}}-\d{{2}}-\d{{2}}  \d{{2}}:\d{{2}}(?:A|P)M) .* "
-            "({fname}.*zip)".format(fname=fname)
+            r"(\d{{1,2}}/\d{{1,2}}/\d{{4}} +\d{{1,2}}:\d{{2}} ?(?:AM|PM)) +\d+ +"
+            "({fname}.*?zip)".format(fname=fname)
         )
 
         # use listing to get latest modified LegInfo zip
-        listing = self.get(ftp_base).text
+        listing = self.get(base).text
+        # The FTP listing was plain text; the IIS one wraps each name in an
+        # anchor. Strip tags so the size/name columns sit adjacent again.
+        listing = re.sub(r"<[^>]+>", " ", listing)
         matches = re.findall(fname_re, listing)
         matches = sorted(
             [
-                (datetime.strptime(date, "%m-%d-%y  %H:%M%p"), filename)
+                (
+                    datetime.strptime(
+                        re.sub(r"\s+", " ", date).strip(), "%m/%d/%Y %I:%M %p"
+                    ),
+                    filename,
+                )
                 for date, filename in matches
             ]
         )
         if not matches:
-            raise ValueError("{} contains no matching files.".format(ftp_base))
+            raise ValueError("{} contains no matching files.".format(base))
 
-        remote_file = ftp_base + matches[-1][1]
+        remote_file = base + matches[-1][1]
 
         # all of the data is in this Access DB, download & retrieve it
         # for specials, zip file is 21S2 but included mbd is 21s2
