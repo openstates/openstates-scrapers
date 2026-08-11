@@ -216,14 +216,20 @@ class MOBillScraper(Scraper, LXMLMixin):
         bill_sponsor = bill_page.xpath(
             '//div[contains(@class, "detail-grid__item") and contains(string(.), "Sponsor")]/div[1]'
         )[0].text_content()
+        # The Senate site formerly rendered the sponsor as a hyperlink; it now
+        # renders a bare <span>, so this xpath legitimately matches nothing.
+        # Indexing [0] unconditionally raised IndexError and took down the whole
+        # upper-chamber scrape.
         bill_sponsor_link = bill_page.xpath(
             '//div[contains(@class, "detail-grid__item") and contains(string(.), "Sponsor")]/div[1]/a/@href'
-        )[0]
+        )
 
-        if "Senators" in bill_sponsor_link:
-            chamber = "upper"
+        if bill_sponsor_link:
+            chamber = "upper" if "Senators" in bill_sponsor_link[0] else None
         else:
-            chamber = None
+            # No link left to classify from. This is _parse_senate_billpage, so
+            # the sponsor of a Senate bill is a Senator.
+            chamber = "upper"
 
         bill.add_sponsorship(
             bill_sponsor,
