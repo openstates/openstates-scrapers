@@ -75,17 +75,17 @@ class NHBillScraper(Scraper):
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session, scrape_from_web)
 
-    def scrape_versions_from_web_2026(self, bill_with_sources):
-        if len(bill_with_sources.sources) == 0:
-            self.warning(
-                f"Bill {bill_with_sources} has no sources, cannot scrape versions"
-            )
-            return
-        for source in bill_with_sources.sources:
-            source_url = source["url"]
-        bill_response = self.get(source_url, verify=False)
-        bill_page = lxml.html.fromstring(bill_response.content)
+    def get_bill_page(self, version_id):
+        """
+        Fetch and parse the modern NH bill status page (billinfo.aspx).
+        Returned lxml tree is reused by both version and sponsor scrapers to
+        avoid double-fetching.
+        """
+        url = f"https://gc.nh.gov/bill_Status/billinfo.aspx?id={version_id}&inflect=2"
+        response = self.get(url, verify=False)
+        return lxml.html.fromstring(response.content)
 
+    def scrape_versions_from_web_2026(self, bill, bill_page):
         version_selector_options = bill_page.xpath(
             "//select[@name='ctl00$pageBody$ddlBillVersions']/option"
         )
@@ -95,7 +95,7 @@ class NHBillScraper(Scraper):
             try:
                 int(version_id_string)
                 # Parses as an integer, so this is a real ID and not a placeholder string like "Select version..."
-                bill_with_sources.add_version_link(
+                bill.add_version_link(
                     note=version_name_string,
                     url=f"https://gc.nh.gov/bill_Status/pdf.aspx?id={version_id_string}&q=billVersion",
                     media_type="application/pdf",
@@ -103,6 +103,53 @@ class NHBillScraper(Scraper):
                 )
             except ValueError:
                 continue
+
+    def scrape_sponsors_from_bill_page(self, bill, bill_page):
+        """
+        Parse sponsors from a NH bill status page (billinfo.aspx).
+
+        Sponsors live inside a div with id="dvSponosrs" (sic - misspelled in NH HTML).
+        Each sponsor is an <a> whose title attribute contains the fully qualified
+        name (e.g. "Rep. Michael Cahill (D)"). The prime sponsor is marked by
+        leading "(Prime)" text inside the <a>.
+        """
+        sponsor_links = bill_page.xpath(
+            "//div[@id='dvSponosrs']//a[contains(@class, 'Member')]"
+        )
+        added = 0
+        for link in sponsor_links:
+            # Prefer the title attribute; it has the clean "Rep./Sen. Name (Party)" form
+            title_attr = link.get("title", "").strip()
+            link_text = link.text_content().strip()
+
+            is_primary = "(Prime)" in link_text
+
+            if title_attr:
+                # Strip leading honorific ("Rep. " / "Sen. ") and any trailing
+                # party marker like " (D)" / " (R)". NH's HTML is inconsistent
+                # about casing on the party marker (occasionally " (r)"), so
+                # match case-insensitively.
+                name = re.sub(r"^(Rep\.|Sen\.)\s+", "", title_attr)
+                name = re.sub(r"\s*\([A-Za-z]\)\s*$", "", name).strip()
+            else:
+                # Fallback: derive from link text, removing "(Prime)" and party marker
+                name = re.sub(r"\(Prime\)", "", link_text)
+                name = re.sub(r"\s*\([A-Za-z]\)\s*$", "", name).strip()
+
+            if not name:
+                continue
+
+            classification = "primary" if is_primary else "cosponsor"
+            bill.add_sponsorship(
+                classification=classification,
+                name=name,
+                entity_type="person",
+                primary=is_primary,
+            )
+            added += 1
+
+        if added == 0:
+            self.warning(f"No sponsors found on bill page for {bill.identifier}")
 
     def scrape_from_web(self, session):
         bills = {}
@@ -240,6 +287,18 @@ class NHBillScraper(Scraper):
                     media_type="application/pdf",
                 )
 
+                # Add the modern bill info page as a source and scrape sponsors
+                # from it. The RSS/web branch previously did not scrape sponsors
+                # at all.
+                self.add_source(bills[lsr], version_id)
+                try:
+                    bill_page = self.get_bill_page(version_id)
+                    self.scrape_sponsors_from_bill_page(bills[lsr], bill_page)
+                except Exception as e:
+                    self.warning(
+                        f"Failed to scrape sponsors from bill page for {bill_id}: {e}"
+                    )
+
             self.bills_by_id[bill_id] = bills[lsr]
 
         return bills
@@ -296,15 +355,24 @@ class NHBillScraper(Scraper):
             self.bills = self.scrape_from_web(session)
         else:
 
-            last_line = []
-            for line in (
-                self.get(
-                    f"https://gc.nh.gov/dynamicdatadump/LSRs.txt?x={self.cachebreaker}",
-                    verify=False,
+            # Guardrail: NH's bulk data dump has been intermittently returning empty
+            # files (e.g. LSRs.txt returning 0 bytes). Detect that upfront so the run
+            # fails loudly rather than silently emitting an empty scrape.
+            lsrs_content = self.get(
+                f"https://gc.nh.gov/dynamicdatadump/LSRs.txt?x={self.cachebreaker}",
+                verify=False,
+            ).content.decode("utf-8")
+            # A healthy LSRs.txt is hundreds of KB. Anything under 1 KB is effectively empty.
+            if len(lsrs_content.strip()) < 1024:
+                raise RuntimeError(
+                    "NH LSRs.txt bulk-data file is empty or truncated "
+                    f"({len(lsrs_content)} bytes). NH's /dynamicdatadump/ endpoint "
+                    "appears to be degraded. Rerun later or fall back to "
+                    "scrape_from_web=True."
                 )
-                .content.decode("utf-8")
-                .split("\n")
-            ):
+
+            last_line = []
+            for line in lsrs_content.split("\n"):
                 # the first line in the file can contain a unicode zero width character \\ufeff
                 # maybe found in other lines? so just replace universally
                 line = line.replace("\ufeff", "")
@@ -370,13 +438,17 @@ class NHBillScraper(Scraper):
 
                     self.bills_by_id[bill_id] = self.bills[lsr]
 
+                    # Enrich from the modern billinfo.aspx page: fetch once,
+                    # reuse the parsed tree for both versions and sponsors.
+                    # The bulk-data legislators.txt was removed from NH's
+                    # /dynamicdatadump/ index in 2026, so the per-bill HTML
+                    # page is currently the only reliable sponsor source.
                     if lsr in self.versions_by_lsr:
                         version_id = self.versions_by_lsr[lsr]
                         self.add_source(self.bills[lsr], version_id)
-
-                        # since we have source, then we can scrape versions from web
-                        self.scrape_versions_from_web_2026(self.bills[lsr])
-
+                        bill_page = self.get_bill_page(version_id)
+                        self.scrape_versions_from_web_2026(self.bills[lsr], bill_page)
+                        self.scrape_sponsors_from_bill_page(self.bills[lsr], bill_page)
                     else:
                         self.warning(
                             f"Missing version_id for {bill_id}, can't build bill page"
@@ -413,6 +485,19 @@ class NHBillScraper(Scraper):
             # body = line[4]
 
         # sponsors
+        #
+        # The billinfo.aspx HTML page (scraped above via
+        # scrape_sponsors_from_bill_page) is the primary source of truth for
+        # sponsors as of 2026: it is more consistent than the bulk-data path,
+        # doesn't require an employee_id -> name lookup (which fails whenever
+        # NH's legislators.txt is stale or missing IDs), and matches what NH
+        # publicly shows on the bill page.
+        #
+        # The bulk-data LsrSponsors.txt path is kept as a fallback for bills
+        # whose HTML page happened to have no sponsors listed (e.g. very new
+        # bills, or a transient page render issue). It is intentionally SKIPPED
+        # for any bill that already has sponsors, to avoid adding duplicate
+        # sponsor entries under slightly-different name spellings.
         for line in (
             self.get(
                 f"https://gc.nh.gov/dynamicdatadump/LsrSponsors.txt?x={self.cachebreaker}",
@@ -427,6 +512,17 @@ class NHBillScraper(Scraper):
             session_yr, lsr, _seq, employee, primary = line.strip().split("|")
             lsr = lsr.zfill(4)
             if session_yr == session and lsr in self.bills:
+                # Always try to attach the NH "seat" code from the legislators
+                # table, regardless of whether we're adding the sponsorship
+                # itself: it's useful metadata for downstream consumers.
+                if employee in self.legislators:
+                    self.bills[lsr].extras["_code"] = self.legislators[employee]["seat"]
+
+                # Skip the fallback add if the HTML-page scrape already
+                # populated sponsors for this bill.
+                if self.bills[lsr].sponsorships:
+                    continue
+
                 sp_type = "primary" if primary == "1" else "cosponsor"
                 try:
                     # Removes extra spaces in names
@@ -438,7 +534,6 @@ class NHBillScraper(Scraper):
                         entity_type="person",
                         primary=True if sp_type == "primary" else False,
                     )
-                    self.bills[lsr].extras["_code"] = self.legislators[employee]["seat"]
                 except KeyError:
                     self.warning("Error, can't find person %s" % employee)
 

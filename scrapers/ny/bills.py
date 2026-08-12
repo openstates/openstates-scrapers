@@ -529,6 +529,16 @@ class NYBillScraper(Scraper):
                 nv_count = 0
                 other_count = 0
 
+                # vote-name divs are siblings of the table (not children),
+                # all wrapped in a shared floor-vote-container, so walk
+                # siblings until the next table to scope votes to this one
+                vote_name_divs = []
+                for sibling in table.itersiblings():
+                    if sibling.tag == "table":
+                        break
+                    if sibling.get("class") == "vote-name":
+                        vote_name_divs.append(sibling)
+
                 votes = [
                     (
                         div.xpath('string(div[@class="vote"])')
@@ -536,7 +546,7 @@ class NYBillScraper(Scraper):
                         .strip(),
                         div.xpath('string(div[@class="name"])').strip(),
                     )
-                    for div in table.xpath('//div[@class="vote-name"]')
+                    for div in vote_name_divs
                 ]
 
                 vote_dictionary = {

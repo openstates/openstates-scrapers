@@ -1,11 +1,9 @@
-from datetime import date, timedelta
 import dateutil
 import pytz
 
 import lxml
 from openstates.scrape import Scraper, Event
 
-# from openstates.exceptions import EmptyScrape
 from utils.events import match_coordinates
 from utils import LXMLMixin
 
@@ -18,19 +16,16 @@ class COEventScraper(Scraper, LXMLMixin):
     schedule_url = "https://leg.colorado.gov/schedule"
 
     def clean(self, text):
-        if type(text) is list:
-            return text[0].text_content().strip()
-        return text.text_content().strip()
-
-    def _get_next_week(self, page):
-        """
-        Returns the data-date of the next week, or None if there is no next week.
-        """
-        next_dates = page.cssselect("button#next-week-btn")
-        next_week_date_str = None
-        if "disabled" not in next_dates[0].attrib:
-            next_week_date_str = next_dates[0].attrib["data-date"]
-        return next_week_date_str
+        if isinstance(text, list):
+            if not text:
+                return ""
+            first = text[0]
+            if hasattr(first, "text_content"):
+                return first.text_content().strip()
+            return str(first).strip()
+        if hasattr(text, "text_content"):
+            return text.text_content().strip()
+        return str(text).strip()
 
     def scrape(self):
         yield from self.scrape_upcoming_events()
@@ -39,49 +34,66 @@ class COEventScraper(Scraper, LXMLMixin):
         # additional info when it's posted
 
     def scrape_upcoming_events(self):
-        # Start from today
-        cursor_date = date.today().strftime("%Y-%m-%d")
-        seen_weeks = set()
-        # Safety guard to prevent unbounded pagination / infinite loop
-        twelve_months_later = (date.today() + timedelta(days=367)).strftime("%Y%m%d")
-        while cursor_date and cursor_date <= twelve_months_later:
-            response = self.post(
-                self.schedule_url,
-                data={
-                    "view": "week",
-                    "chamber": "all",
-                    "date": cursor_date,
-                },
-            )
+        """
+        Fetches the schedule page (a single static page) and yields Events.
 
-            page = lxml.html.fromstring(response.content)
-            page.make_links_absolute(self.schedule_url)
+        The site has two known layouts:
 
-            # Check
-            heading = page.xpath(
-                '//h2[contains(@class,"schedule-date-range-heading")]//text()'
-            )
+        1. Interim layout (currently active): ``div.interim-schedule-table``
+           blocks, each with an ``h3`` date heading and a table of events with
+           columns Time / Activity / Location / Agenda / Audio.
+
+        2. In-session layout (used when the legislature is meeting):
+           ``div.tab-content.standard-table`` day blocks with an ``h3`` date
+           heading and a similar events table. This is the legacy layout the
+           previous scraper targeted, kept as a fallback.
+        """
+        response = self.get(self.schedule_url)
+        page = lxml.html.fromstring(response.content)
+        page.make_links_absolute(self.schedule_url)
+
+        yielded = 0
+
+        # 1) Interim schedule layout (single static page, no pagination)
+        for day_block in page.cssselect("div.interim-schedule-table"):
+            heading = day_block.cssselect("h3")
             if not heading:
-                break
+                continue
+            event_date = self.clean(heading)
+            for row in day_block.cssselect("table tbody tr"):
+                for event in self.scrape_event_row(row, event_date):
+                    yielded += 1
+                    yield event
 
-            # Safety guard to prevent unbounded pagination / infinite loop
-            week_key = "".join(heading).strip()
-            if week_key in seen_weeks:
-                break
-            seen_weeks.add(week_key)
-
-            # Scrape Events Row
+        # 2) In-session layout fallback (legacy structure)
+        if yielded == 0:
             for day_block in page.cssselect("div.tab-content.standard-table"):
-                if day_block.cssselect("h3"):
-                    event_date = self.clean(day_block.cssselect("h3"))
-                    for row in day_block.cssselect("tbody tr"):
-                        yield from self.scrape_event_row(row, event_date)
-            # Paginate
-            cursor_date = self._get_next_week(page)
+                heading = day_block.cssselect("h3")
+                if not heading:
+                    continue
+                event_date = self.clean(heading)
+                for row in day_block.cssselect("tbody tr"):
+                    for event in self.scrape_event_row(row, event_date):
+                        yielded += 1
+                        yield event
 
     def scrape_event_row(self, row: lxml.html.HtmlElement, start_day: str):
         start_time = self.clean(row.xpath("td[1]"))
-        com_name = self.clean(row.xpath("td[2]"))
+
+        # Committee/activity name: prefer the link text, fall back to cell text
+        com_link = row.xpath("td[2]//a")
+        if com_link:
+            com_name = self.clean(com_link)
+        else:
+            com_name = self.clean(row.xpath("td[2]"))
+
+        if not com_name or not start_time:
+            self.warning(
+                f"Skipping event row with missing name or time: "
+                f"name={com_name!r}, time={start_time!r}"
+            )
+            return
+
         location = self.clean(row.xpath("td[3]"))
         location = f"{location}, 200 E Colfax Ave, Denver, CO 80203"
 
@@ -90,21 +102,23 @@ class COEventScraper(Scraper, LXMLMixin):
         start = self._tz.localize(start)
 
         event = Event(com_name, start, location, status="tentative")
-
         event.add_committee(com_name)
 
-        agenda_link = row.xpath("td[4]//a[contains(text(), 'Agenda')]")
-
+        # Agenda cell (td[4]) may contain an HTML Agenda link and/or a PDF link
+        agenda_link = row.xpath(
+            "td[4]//a[contains(translate(text(), 'AGENDA', 'agenda'), 'agenda')]"
+        )
         if agenda_link:
             agenda_url = agenda_link[0].xpath("@href")[0]
             event.add_document(
                 "Agenda", agenda_url, media_type="text/html", classification="agenda"
             )
-
             self.scrape_agenda_page(event, agenda_url)
             event.add_source(agenda_url)
 
-        pdf_agenda_link = row.xpath("td[4]//a[contains(text(), 'PDF')]")
+        pdf_agenda_link = row.xpath(
+            "td[4]//a[contains(translate(text(), 'PDF', 'pdf'), 'pdf')]"
+        )
         if pdf_agenda_link:
             pdf_agenda_url = pdf_agenda_link[0].xpath("@href")[0]
             event.add_document(
@@ -113,6 +127,15 @@ class COEventScraper(Scraper, LXMLMixin):
                 media_type="application/pdf",
                 classification="agenda",
             )
+
+        # Audio/listen link (td[5]) — surfaced as a media link when present
+        audio_link = row.xpath("td[5]//a/@href")
+        if audio_link:
+            try:
+                event.add_media_link("Audio", audio_link[0], media_type="text/html")
+            except Exception:
+                # add_media_link signature/availability varies; ignore if unsupported
+                pass
 
         match_coordinates(event, {"200 E Colfax": (39.7393, -104.9645)})
 
@@ -124,7 +147,24 @@ class COEventScraper(Scraper, LXMLMixin):
         page = self.get(url).content
         page = lxml.html.fromstring(page)
 
-        for row in page.cssselect("section.hearing-items-block tbody tr"):
-            item = self.clean(row.xpath("td[1]"))
-            if len(item) > 0:
+        # New layout: vertical table where each hearing item is a row with
+        # <th>Hearing Item</th><td><span>text</span></td>.
+        rows = page.cssselect(
+            "section.hearing-items-block table.vertical-table tbody tr"
+        )
+        # Legacy layout fallback: horizontal table under the same section.
+        if not rows:
+            rows = page.cssselect("section.hearing-items-block tbody tr")
+
+        for row in rows:
+            # Prefer text inside the <td><span>...</span></td> cell
+            span_text = row.xpath("td//span")
+            if span_text:
+                item = self.clean(span_text)
+            else:
+                td = row.xpath("td")
+                if not td:
+                    continue
+                item = self.clean(td)
+            if item:
                 event.add_agenda_item(item)
