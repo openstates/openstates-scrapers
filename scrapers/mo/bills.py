@@ -235,8 +235,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         if bill_lr:
             bill.extras["MO_BILL_LR"] = bill_lr
 
-        # Based on the analysis of the MO website, co-sponsors are typically Senators,
-        # so we assume the chamber is "upper" for co-sponsor entities.
+        # MO Senate website lists Senate sponsors, so we assume chamber is upper
         chamber = "upper"
         co_spons = '//div[contains(@class, "detail-grid__item") and contains(string(.), "Co-Sponsors")]/div/span'
         co_sponsors_elements = bill_page.xpath(co_spons)
