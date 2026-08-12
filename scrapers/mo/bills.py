@@ -201,7 +201,7 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         bill = Bill(
             bill_identifier,
-            title=bill_desc,
+            title=bill_title,
             chamber="upper",
             legislative_session=self._session_id,
             classification=bill_type,
