@@ -281,12 +281,7 @@ class DEBillScraper(Scraper, LXMLMixin):
 
         self.scrape_actions(bill, row["LegislationId"])
 
-        # DE's actions API is sometimes empty even for bills that have clearly
-        # been introduced and referred to committee (see PR #5737 discussion).
-        # When that happens, fall back to the two data points that are still
-        # rendered on the bill detail HTML page: "Introduced on:" and "Status:".
-        # Doing this only when the API returned zero actions avoids duplicating
-        # anything the API already provided.
+        # Fall back to the bill detail HTML when the actions API is empty.
         if not bill.actions:
             self.scrape_fallback_actions_from_html(bill, html)
 
@@ -517,10 +512,6 @@ class DEBillScraper(Scraper, LXMLMixin):
         page = self.decode_and_retry_request(
             "scrape_actions", request_method, raise_exception=False
         )
-        # DE sometimes returns an empty body for a bill's actions (notably for
-        # very recently introduced bills). Treat that as "no actions yet" rather
-        # than a fatal failure, so the bill is still imported. Actions will
-        # backfill automatically once DE's endpoint returns data.
         if not page:
             self.warning(f"No actions returned for {bill.identifier}")
             return
@@ -558,22 +549,13 @@ class DEBillScraper(Scraper, LXMLMixin):
                 action.add_related_entity(c, "organization")
 
     def scrape_fallback_actions_from_html(self, bill, html):
-        """Add actions inferred from the bill detail HTML when the API is empty.
-
-        DE's ``GetRecentReportsByLegislationId`` endpoint occasionally returns
-        no rows for bills that have obviously been introduced and referred to a
-        committee. The bill detail page itself still shows this information
-        under the "Introduced on:" and "Status:" fields, so scrape those as a
-        fallback so users can at least see when the bill was introduced and
-        where it currently sits.
+        """Add actions from the bill detail HTML when the actions API is empty.
 
         Only called when ``scrape_actions()`` did not add anything.
         """
         home_chamber = "upper" if bill.identifier.startswith("S") else "lower"
 
         # "Introduced on: 6/30/26" -> description="Introduced", date=6/30/26
-        # Scope to class="info-label" so we don't accidentally pick up the
-        # hidden modal template on the page, which uses class="info-label-sm".
         introduced_values = html.xpath(
             '//label[@class="info-label" and '
             'starts-with(normalize-space(text()), "Introduced on")]'
@@ -592,8 +574,6 @@ class DEBillScraper(Scraper, LXMLMixin):
 
         # "Status: House Natural Resources & Energy 6/30/26"
         # -> description="House Natural Resources & Energy", date=6/30/26
-        # The status may not always end in a date (e.g. "In Committee"),
-        # in which case we skip it because Bill.add_action() requires a date.
         status_values = html.xpath(
             '//label[@class="info-label" and '
             'normalize-space(text())="Status:"]'
@@ -601,16 +581,12 @@ class DEBillScraper(Scraper, LXMLMixin):
         )
         if status_values:
             status_text = status_values[0].strip()
-            # Split off a trailing M/D/YY (or M/D/YYYY). We only need the last
-            # whitespace-separated token to be a date.
+            # Split off a trailing M/D/YY (or M/D/YYYY) date.
             match = re.search(r"\s+(\d{1,2}/\d{1,2}/\d{2,4})\s*$", status_text)
             if match:
                 status_date = self._parse_de_short_date(match.group(1))
                 description = status_text[: match.start()].strip()
                 if status_date and description:
-                    # Mirror the chamber-inference logic used in scrape_actions
-                    # so a status like "Senate Judiciary" is attributed to the
-                    # right chamber.
                     if "Senate" in description:
                         action_chamber = "upper"
                     elif "House" in description:
