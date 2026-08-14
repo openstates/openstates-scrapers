@@ -108,7 +108,9 @@ class UTBillScraper(Scraper, LXMLMixin):
         if len(bill_id) > 0:
             bill_id = bill_id[-1].text
         else:
-            raise Exception(f"Unexpected bill page content at {url}, truncated content {response.text[:500]}")
+            raise Exception(
+                f"Unexpected bill page content at {url}, truncated content {response.text[:500]}"
+            )
 
         (header,) = page.xpath(
             '//h3[@class="heading"]/text() | //h1[@class="heading"]/text()'
@@ -547,7 +549,9 @@ class UTBillScraper(Scraper, LXMLMixin):
 
         if len(descr) < 1:
             # neither element is present, might have an unexpected page response
-            raise Exception(f"Unexpected vote page content at {url}, truncated content {page_text[:500]}")
+            raise Exception(
+                f"Unexpected vote page content at {url}, truncated content {page_text[:500]}"
+            )
 
         if "on voice vote" in descr:
             return
