@@ -1,3 +1,4 @@
+import os
 import re
 import datetime
 from dateutil import parser
@@ -31,6 +32,12 @@ SPONSOR_HOUSE_TO_CHAMBER = {
     "S": "upper",
 }
 
+user_agent = os.getenv("USER_AGENT", "openstates.org <contact@openstates.org>")
+
+headers = {
+    "User-Agent": user_agent,
+}
+
 
 class UTBillScraper(Scraper, LXMLMixin):
     categorizer = Categorizer()
@@ -55,7 +62,7 @@ class UTBillScraper(Scraper, LXMLMixin):
         session_url = "https://le.utah.gov/billlist.jsp?session={}".format(session_slug)
 
         # For some sessions the link doesn't go straight to the bill list
-        doc = self.lxmlize(session_url)
+        doc = self.lxmlize(session_url, headers=headers)
 
         # Get all of the show/hide bill list elements
         # in order to get the IDs of the actual bill lists
@@ -93,9 +100,17 @@ class UTBillScraper(Scraper, LXMLMixin):
                     )
 
     def scrape_bill(self, chamber, session, url, session_slug):
-        page = self.lxmlize(url)
+        response = self.get(url, headers=headers)
+        page = lxml.html.fromstring(response.text)
+        page.make_links_absolute(url)
 
-        bill_id = page.cssselect("#breadcrumb li")[-1].text
+        bill_id = page.cssselect("#breadcrumb li")
+        if len(bill_id) > 0:
+            bill_id = bill_id[-1].text
+        else:
+            raise Exception(
+                f"Unexpected bill page content at {url}, truncated content {response.text[:500]}"
+            )
 
         (header,) = page.xpath(
             '//h3[@class="heading"]/text() | //h1[@class="heading"]/text()'
@@ -214,7 +229,7 @@ class UTBillScraper(Scraper, LXMLMixin):
         api_url = (
             f"https://le.utah.gov/data/{session_slug}/{bill_filename}.json?_={now}"
         )
-        response = self.get(api_url, verify=False)
+        response = self.get(api_url, verify=False, headers=headers)
         data = json.loads(response.content)
 
         # Sponsorships
@@ -513,20 +528,30 @@ class UTBillScraper(Scraper, LXMLMixin):
 
     def parse_html_vote(self, bill, actor, date, motion, url, uniqid):
         try:
-            page = self.get(url, verify=False).text
+            page_text = self.get(url, verify=False, headers=headers).text
         except scrapelib.HTTPError:
             self.warning("A vote page not found for bill {}".format(bill.identifier))
             return
         try:
-            page = lxml.html.fromstring(page)
+            page = lxml.html.fromstring(page_text)
         except ParserError:
             self.logger.warning(f"Could not parse HTML vote page {url}")
 
         page.make_links_absolute(url)
-        descr = page.xpath("//b")[0].text_content()
-        if descr == "":
-            # New page method
-            descr = page.xpath("//center")[0].text
+        descr = page.xpath("//b")
+        if len(descr) > 0:
+            descr = descr[0].text_content()
+        else:
+            # Try new page method
+            descr = page.xpath("//center")
+            if len(descr) > 0:
+                descr = descr[0].text
+
+        if len(descr) < 1:
+            # neither element is present, might have an unexpected page response
+            raise Exception(
+                f"Unexpected vote page content at {url}, truncated content {page_text[:500]}"
+            )
 
         if "on voice vote" in descr:
             return
@@ -595,7 +620,7 @@ class UTBillScraper(Scraper, LXMLMixin):
         yield vote
 
     def parse_vote(self, bill, actor, date, motion, url, uniqid):
-        page = self.get(url, verify=False).text
+        page = self.get(url, verify=False, headers=headers).text
         bill.add_source(url)
         vote_re = re.compile(
             r"YEAS -?\s?(\d+)(.*)NAYS -?\s?(\d+)"
