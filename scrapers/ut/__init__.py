@@ -1,8 +1,11 @@
+import os
 import re
 from utils import url_xpath
 from openstates.scrape import State
 from .events import UTEventScraper
 from .bills import UTBillScraper
+
+user_agent = os.getenv("USER_AGENT", "openstates.org <contact@openstates.org>")
 
 
 class Utah(State):
@@ -463,5 +466,6 @@ class Utah(State):
             "https://le.utah.gov/bills/billSearch.jsp",
             "//select[@id='sess']/option/text()",
             verify=False,
+            user_agent=user_agent,
         )
         return [re.sub(r"\s+", " ", session.strip()) for session in sessions]
