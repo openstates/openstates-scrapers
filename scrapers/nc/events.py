@@ -65,8 +65,6 @@ class NCEventScraper(Scraper, LXMLMixin):
                         'span[contains(@class, "text-dark font-weight-bold")]/text()'
                     )[0].strip()
                     chamber = chamber.replace(":", "")
-
-                
                 committee_links = event_row.xpath('a[contains(@href,"/Committees/")]')
                 is_committee = bool(committee_links)
                 if is_committee:
@@ -75,9 +73,7 @@ class NCEventScraper(Scraper, LXMLMixin):
                     com_name = f"{chamber} {com_name}".strip()
                     com_url = com_link.xpath("@href")[0]
                 else:
-                    details_links = row.xpath(
-                        './/a[@title="Event details"]'
-                    )
+                    details_links = row.xpath('.//a[@title="Event details"]')
                     if not details_links:
                         continue
                     com_link = details_links[0]
