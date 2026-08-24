@@ -5,6 +5,7 @@ from json.decoder import JSONDecodeError
 from requests.exceptions import JSONDecodeError as RequestsJSONDecodeError
 import random
 import time
+from urllib.parse import urljoin
 
 import requests
 from openstates.scrape import Scraper, Bill, VoteEvent
@@ -20,6 +21,8 @@ class FailedBillFetch:
 
 class DEBillScraper(Scraper, LXMLMixin):
     verify = False
+
+    base_url = "https://legis.delaware.gov"
 
     categorizer = Categorizer()
     chamber_codes = {"upper": 1, "lower": 2}
@@ -246,47 +249,34 @@ class DEBillScraper(Scraper, LXMLMixin):
         )
 
         for sponsor_url in additional_sponsors:
-            sponsor_key = "DistrictId"
-            if sponsor_url.startswith("https://legis"):
-                sponsor_id = sponsor_url.replace(
-                    "https://legis.delaware.gov/LegislatorDetail?personId=", ""
+            sponsor_id, sponsor_key = self.parse_sponsor_url(sponsor_url)
+            if sponsor_id is not None:
+                self.add_sponsor_by_legislator_id(
+                    bill, sponsor_id, "primary", sponsor_key
                 )
-                sponsor_key = "PersonId"
-            else:
-                for k, v in self.potential_sponsor_urls.items():
-                    if sponsor_url.startswith(f"https://{k}"):
-                        sponsor_id = sponsor_url.replace(v, "")
-                        break
-            self.add_sponsor_by_legislator_id(bill, sponsor_id, "primary", sponsor_key)
 
         cosponsors = html.xpath(
             '//label[text()="Co-Sponsor(s):"]/following-sibling::div/a/@href'
         )
         for sponsor_url in cosponsors:
-            sponsor_key = "DistrictId"
-            if sponsor_url.startswith("https://legis"):
-                sponsor_id = sponsor_url.replace(
-                    "https://legis.delaware.gov/LegislatorDetail?personId=", ""
+            sponsor_id, sponsor_key = self.parse_sponsor_url(sponsor_url)
+            if sponsor_id is not None:
+                self.add_sponsor_by_legislator_id(
+                    bill, sponsor_id, "primary", sponsor_key
                 )
-                sponsor_key = "PersonId"
-            else:
-                for k, v in self.potential_sponsor_urls.items():
-                    if sponsor_url.startswith(f"https://{k}"):
-                        sponsor_id = sponsor_url.replace(v, "")
-                        break
-            self.add_sponsor_by_legislator_id(bill, sponsor_id, "primary", sponsor_key)
 
         versions = html.xpath(
-            '//label[text()="Original Text:"]/following-sibling::div/a/@href'
+            '//label[text()="Original / Not Amended:"]/following-sibling::div/a/@href'
         )
         for version_url in versions:
+            version_url = urljoin(self.base_url, version_url)
             media_type = self.mime_from_link(version_url)
             version_name = "Bill Text"
             bill.add_version_link(version_name, version_url, media_type=media_type)
 
         fiscals = html.xpath('//div[contains(@class,"fiscalNote")]/a/@href')
         for fiscal in fiscals:
-            self.scrape_fiscal_note(bill, fiscal)
+            self.scrape_fiscal_note(bill, urljoin(self.base_url, fiscal))
 
         self.scrape_actions(bill, row["LegislationId"])
 
@@ -306,12 +296,8 @@ class DEBillScraper(Scraper, LXMLMixin):
                 '//label[contains(text(),"Sunset Date")]/following-sibling::div/text()'
             )[0].strip()
 
-            if html.xpath("//a[contains(@href,'SessionLaws/Chapter')]/@href"):
-                code_url = html.xpath(
-                    "//a[contains(@href,'SessionLaws/Chapter')]/@href"
-                )[0]
-            else:
-                code_url = None
+            code_urls = html.xpath("//a[contains(@href,'SessionLaws/Chapter')]/@href")
+            code_url = urljoin(self.base_url, code_urls[0]) if code_urls else None
 
             if "N/A" in eff_date or eff_date == "" or len(eff_date) > 9:
                 eff_date = None
@@ -464,6 +450,19 @@ class DEBillScraper(Scraper, LXMLMixin):
                     vote.vote("other", name)
 
             yield vote
+
+    def parse_sponsor_url(self, sponsor_url):
+        sponsor_url = urljoin(self.base_url, sponsor_url)
+        if sponsor_url.startswith(f"{self.base_url}/LegislatorDetail"):
+            sponsor_id = sponsor_url.replace(
+                f"{self.base_url}/LegislatorDetail?personId=", ""
+            )
+            return sponsor_id, "PersonId"
+        for k, v in self.potential_sponsor_urls.items():
+            if sponsor_url.startswith(f"https://{k}"):
+                return sponsor_url.replace(v, ""), "DistrictId"
+        self.warning(f"Could not parse sponsor url, skipping: {sponsor_url}")
+        return None, None
 
     def add_sponsor_by_legislator_id(
         self, bill, legislator_id, sponsor_type, sponsor_key="PersonId"
