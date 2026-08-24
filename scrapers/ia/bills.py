@@ -7,6 +7,20 @@ from openstates.scrape import Scraper, Bill
 from .actions import Categorizer
 
 _IA_ORGANIZATION_ENTITY_NAME_KEYWORDS = ["COMMITTEE", "RULES AND ADMINISTRATION"]
+_VERSION_HTML_URL_TEMPLATE = (
+    "https://www.legis.iowa.gov/docs/publications/LG{}/{}/attachments/{}.html"
+)
+_VERSION_PDF_URL_TEMPLATE = (
+    "https://www.legis.iowa.gov/docs/publications/LG{}/{}/{}.pdf"
+)
+
+
+def version_folder_code(version_abbrev):
+    """Map a billVersions <option value> (e.g. "eg", "e", "rm", "r", "i")
+    to the publication folder code legis.iowa.gov actually serves docs
+    from (LGE, LGR, LGI, ...). The site keys folders off only the first
+    letter of the version family, not the full option value."""
+    return version_abbrev[0].upper()
 
 
 # FYI: as of 2025 this should be run with --http-resilience
@@ -220,15 +234,6 @@ class IABillScraper(Scraper):
 
         bill.add_source(hist_url)
 
-        # base url for text version (version_abbrev, session_id, bill_id)
-        version_html_url_template = (
-            "https://www.legis.iowa.gov/docs/"
-            "publications/LG{}/{}/attachments/{}.html"
-        )
-        version_pdf_url_template = (
-            "https://www.legis.iowa.gov/docs/" "publications/LG{}/{}/{}.pdf"
-        )
-
         # get pieces of version_link
         vpieces = sidebar.xpath('//select[@id="billVersions"]/option')
         if vpieces:
@@ -236,9 +241,11 @@ class IABillScraper(Scraper):
                 version_name = version.text
                 version_abbrev = version.xpath("string(@value)")
 
+                folder_code = version_folder_code(version_abbrev)
+
                 # Get HTML document of bill version.
-                version_html_url = version_html_url_template.format(
-                    version_abbrev.upper(), session_id, bill_id.replace(" ", "")
+                version_html_url = _VERSION_HTML_URL_TEMPLATE.format(
+                    folder_code, session_id, bill_id.replace(" ", "")
                 )
 
                 bill.add_version_link(
@@ -246,8 +253,8 @@ class IABillScraper(Scraper):
                 )
 
                 # Get PDF document of bill version.
-                version_pdf_url = version_pdf_url_template.format(
-                    version_abbrev.upper(), session_id, bill_id.replace(" ", "")
+                version_pdf_url = _VERSION_PDF_URL_TEMPLATE.format(
+                    folder_code, session_id, bill_id.replace(" ", "")
                 )
 
                 if "Marked Up" in version_name:
