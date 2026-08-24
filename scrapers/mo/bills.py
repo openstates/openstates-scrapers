@@ -10,6 +10,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from utils import LXMLMixin
 
 from .utils import house_get_actor_from_action, senate_get_actor_from_action
+from functools import lru_cache
 
 bill_types = {
     "HB ": "bill",
@@ -35,6 +36,18 @@ class MOBillScraper(Scraper, LXMLMixin):
     _bad_urls = []
     _subjects = defaultdict(list)
     _session_id = ""
+
+    @lru_cache(maxsize=512)
+    def normalize_sponsor_name(self, name: str) -> str:
+        # Strip whitespace and newlines
+        name = name.strip()
+        # Strip district number e.g. '(16)'
+        name = re.sub(r"\s*\(\d+\)", "", name)
+        # Convert 'Last, First' -> 'First Last'
+        if "," in name:
+            parts = name.split(",", 1)
+            name = f"{parts[1].strip()} {parts[0].strip()}"
+        return name.strip()
 
     def custom_header_func(self, url):
         return {"user-agent": "openstates.org"}
@@ -219,6 +232,7 @@ class MOBillScraper(Scraper, LXMLMixin):
             '//div[contains(@class, "detail-grid__item") and contains(string(.), "Sponsor")]/div[1]'
         )[0].text_content()
 
+        bill_sponsor = self.normalize_sponsor_name(bill_sponsor)
         if "Senators" in bill_sponsor_link:
             chamber = "upper"
         else:
@@ -242,6 +256,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         if co_sponsors_elements:
             for element in co_sponsors_elements:
                 name = element.text_content()
+                name = self.normalize_sponsor_name(name)
                 bill.add_sponsorship(
                     name,
                     entity_type="person",
