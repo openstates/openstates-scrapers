@@ -341,6 +341,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             allow_redirects=True,
             verify=False,
             headers=self.headers,
+            timeout=self.timeout,
         ).content
 
         page = json.loads(page)
@@ -367,6 +368,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             allow_redirects=True,
             verify=False,
             headers=self.headers,
+            timeout=self.timeout,
         )
         page = self.decode_and_retry_request(
             "scrape_votes", request_method, retries=1, raise_exception=False
@@ -389,6 +391,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             allow_redirects=True,
             verify=False,
             headers=self.headers,
+            timeout=self.timeout,
         )
         page = self.decode_and_retry_request(
             "scrape_vote", request_method, retries=1, raise_exception=False
@@ -508,6 +511,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             allow_redirects=True,
             verify=False,
             headers=self.headers,
+            timeout=self.timeout,
         )
         page = self.decode_and_retry_request(
             "scrape_actions", request_method, raise_exception=False
@@ -640,6 +644,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             allow_redirects=True,
             verify=False,
             headers=self.headers,
+            timeout=self.timeout,
         )
         page = self.decode_and_retry_request("scrape_amendments", request_method)
 
@@ -720,6 +725,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             allow_redirects=True,
             verify=False,
             headers=self.headers,
+            timeout=self.timeout,
         )
         return response
 
