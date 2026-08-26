@@ -234,25 +234,42 @@ class VaBillScraper(Scraper):
         page = response.json()
 
         for row in page["TextsList"]:
-            if (row["PDFFile"] and len(row["PDFFile"]) > 1) or (
-                row["HTMLFile"] and len(row["HTMLFile"]) > 1
-            ):
-                self.error(json.dumps(row))
-                self.error("Add code to handle multiple files to VA Scraper")
-                raise Exception
-
-            if row["PDFFile"] and len(row["PDFFile"]) > 0:
+            # Since the 2025 LIS relaunch, a version can carry multiple
+            # PDF/HTML files (e.g. lis.blob.core.windows.net/files/*.PDF).
+            # Add a version link for each one instead of just the first.
+            for pdf in row["PDFFile"] or []:
                 bill.add_version_link(
                     row["Description"],
-                    row["PDFFile"][0]["FileURL"],
+                    pdf["FileURL"],
                     media_type="application/pdf",
+                    on_duplicate="ignore",
                 )
 
-            if row["HTMLFile"] and len(row["HTMLFile"]) > 0:
+            for html in row["HTMLFile"] or []:
                 bill.add_version_link(
                     row["Description"],
-                    row["HTMLFile"][0]["FileURL"],
+                    html["FileURL"],
                     media_type="text/html",
+                    on_duplicate="ignore",
+                )
+
+            # Some versions (commonly ones that never got a generated PDF,
+            # e.g. still-prefiled bills) have no PDFFile/HTMLFile at all --
+            # getlegislationtextbyidasync only returns their text inline as
+            # DraftText, which isn't a URL we can hand off. The old
+            # legacylis.virginia.gov site still serves a rendered HTML page
+            # of that same text, so fall back to it rather than dropping
+            # the version entirely.
+            if not row["PDFFile"] and not row["HTMLFile"] and row.get("DraftText"):
+                legacy_url = (
+                    "https://legacylis.virginia.gov/cgi-bin/legp604.exe?"
+                    f"{self.session_code[2:]}+ful+{bill.identifier}"
+                )
+                bill.add_version_link(
+                    row["Description"],
+                    legacy_url,
+                    media_type="text/html",
+                    on_duplicate="ignore",
                 )
 
             if row["ImpactFile"]:
