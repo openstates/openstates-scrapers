@@ -550,7 +550,7 @@ class MOBillScraper(Scraper, LXMLMixin):
                 vote = VoteEvent(
                     chamber=actor,
                     motion_text=action_title,
-                    result="pass" if rc_yes > rc_no else "fail",
+                    result="pass" if int(rc_yes or 0) > int(rc_no or 0) else "fail",
                     classification="passage",
                     start_date=TIMEZONE.localize(action_date),
                     bill=bill,
