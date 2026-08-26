@@ -606,7 +606,7 @@ class DEBillScraper(Scraper, LXMLMixin):
                         action_chamber = home_chamber
 
                     if chamber_word:
-                        committee_name = description[len(chamber_word):].strip()
+                        committee_name = description[len(chamber_word) :].strip()
                         if committee_name:
                             description = (
                                 f"Assigned to {committee_name} "
