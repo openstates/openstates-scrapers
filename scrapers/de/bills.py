@@ -591,14 +591,27 @@ class DEBillScraper(Scraper, LXMLMixin):
                 status_date = self._parse_de_short_date(match.group(1))
                 description = status_text[: match.start()].strip()
                 if status_date and description:
-                    if "Senate" in description:
+                    # Status text is "{Chamber} {Committee Name}". Rewrite it to
+                    # match the categorizer's referral-committee rule.
+                    chamber_word = None
+                    if description.startswith("Senate"):
                         action_chamber = "upper"
-                    elif "House" in description:
+                        chamber_word = "Senate"
+                    elif description.startswith("House"):
                         action_chamber = "lower"
+                        chamber_word = "House"
                     elif "Governor" in description:
                         action_chamber = "executive"
                     else:
                         action_chamber = home_chamber
+
+                    if chamber_word:
+                        committee_name = description[len(chamber_word):].strip()
+                        if committee_name:
+                            description = (
+                                f"Assigned to {committee_name} "
+                                f"Committee in {chamber_word}"
+                            )
 
                     categorization = self.categorizer.categorize(description)
                     action = bill.add_action(
