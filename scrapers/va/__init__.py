@@ -127,7 +127,7 @@ class Virginia(State):
         },
         {
             "_scraped_name": "2018 Special Session II",
-            "identifier": "2018specialI",
+            "identifier": "2018specialII",
             "name": "2018, 2nd Special Session",
             "start_date": "2018-08-30",
             "end_date": "2018-11-30",
