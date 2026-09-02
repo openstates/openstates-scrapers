@@ -590,15 +590,24 @@ class MNBillScraper(Scraper, LXMLMixin):
             elif len(page_links) > 0:
                 pages.append(page_links[0])
 
-            # TODO: add votes back in once not broken
             # Try to extract vote
             # senate vote only, house votes are scraped by the vote_event.py scraper
-            # if current_chamber == "upper":
-            #     vote = self.extract_vote_from_action(
-            #         bill, bill_action, current_chamber, row, pages
-            #     )
-            #     if vote:
-            #         votes.append(vote)
+            if current_chamber == "upper":
+                try:
+                    vote = self.extract_vote_from_action(
+                        bill, bill_action, current_chamber, row, pages
+                    )
+                except Exception as e:
+                    # Senate journal vote links/pages are occasionally malformed
+                    # or point at content that doesn't parse as expected. Don't let
+                    # one bad vote link take down the whole bill scrape for it.
+                    self.warning(
+                        f"{bill.identifier}: failed to extract Senate vote from "
+                        f"action {bill_action['action_text']!r}: {e}"
+                    )
+                    vote = None
+                if vote:
+                    votes.append(vote)
 
         return bill_actions, votes
 
@@ -820,7 +829,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                         f"No vote url in the page. trying to use the previous vote url: {vote_url}"
                     )
                     if not vote_url:
-                        return [None] * 2
+                        return None
                 else:
                     vote_url = vote_element.xpath(".//a[@href]/@href")[0]
 
