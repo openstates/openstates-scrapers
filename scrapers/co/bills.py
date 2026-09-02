@@ -345,6 +345,9 @@ class COBillScraper(Scraper, LXMLMixin):
                 bill=bill,
                 classification="passage",
             )
+            vote.set_count("yes", ct_yes)
+            vote.set_count("no", ct_no)
+            vote.set_count("other", ct_other)
 
             votes_url = row.xpath("td[5]/span/a/@href")[0]
             votes_page = self.get(votes_url, headers=HEADERS).content
