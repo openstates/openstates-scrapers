@@ -10,7 +10,7 @@ _categorizer_rules = (
     Rule(r"Proposed(.*) Amendment", "amendment-introduction"),
     Rule(r"Amendment .* Adopted", "amendment-passage"),
     Rule(r"Amendment .* Failed", "amendment-failure"),
-    Rule(r"Signed", "executive-signature"),
+    Rule(r"Signed by the Governor", "executive-signature"),
     Rule(r"Vetoed", "executive-veto"),
     Rule(r"^Introduced", "introduction"),
     Rule(r"Enrolled Adopted", "enrolled"),
