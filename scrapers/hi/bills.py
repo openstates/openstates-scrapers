@@ -1,4 +1,5 @@
 import datetime as dt
+import logging
 import lxml.html
 import re
 from openstates.scrape import Scraper, Bill, VoteEvent
@@ -68,6 +69,17 @@ def create_bill_report_url(chamber, year, bill_type):
     )
 
 
+logger = logging.getLogger(__name__)
+
+# A voter-name token that's really just a middle initial (e.g. "C." in
+# "Lee, C.") stranded by the blind ", ".split() below.
+MIDDLE_INITIAL_RE = re.compile(r"^[A-Z]\.?$")
+# A "Senator(s)"/"Representative(s)" role-prefix with no name attached,
+# including the garbled/truncated form missing the closing paren
+# (e.g. "Senator(s" with no name and no ")").
+PLACEHOLDER_VOTER_RE = re.compile(r"^(Senator|Representative)\(s\)?$", re.IGNORECASE)
+
+
 def split_specific_votes(voters):
     if voters is None or voters.startswith("none") or voters == "":
         return []
@@ -75,8 +87,31 @@ def split_specific_votes(voters):
         voters = voters.replace("Senator(s) ", "")
     elif voters.startswith("Representative(s)"):
         voters = voters.replace("Representative(s)", "")
+    elif voters.startswith("Senator(s"):
+        # malformed/truncated source data, e.g. "Senator(s" with no name and
+        # no closing paren -- nothing usable to parse out
+        voters = voters[len("Senator(s") :]
+    elif voters.startswith("Representative(s"):
+        voters = voters[len("Representative(s") :]
+
     # Remove trailing spaces and semicolons
-    return (v.rstrip(" ;") for v in voters.split(", "))
+    tokens = [v.rstrip(" ;") for v in voters.split(", ")]
+
+    # Re-merge middle-initial fragments (e.g. "Lee", "C." -> "Lee, C.") that
+    # the blind ", ".split() above breaks apart, and drop any leftover
+    # unparseable role placeholders instead of treating them as voters.
+    merged = []
+    for token in tokens:
+        token = token.strip()
+        if not token:
+            continue
+        if MIDDLE_INITIAL_RE.match(token) and merged:
+            merged[-1] = f"{merged[-1]}, {token}"
+        elif PLACEHOLDER_VOTER_RE.match(token):
+            logger.warning("Dropping unparseable placeholder voter name: %r", token)
+        else:
+            merged.append(token)
+    return merged
 
 
 class HIBillScraper(Scraper):
