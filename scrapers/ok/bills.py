@@ -12,6 +12,34 @@ from urllib import parse
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 from .actions import Categorizer
 
+# Matches one legislator name in a vote roll line: a word, optionally
+# followed by a parenthetical disambiguator ("West (T)"), or the special
+# "Mr. Speaker" entry (which spans two words).
+NAME_RE = re.compile(r"Mr\.\s+Speaker|[A-Za-z][\w'\-]*(?:\s+\([^)]+\))?")
+
+
+def extract_names(line, limit):
+    """Extract up to `limit` legislator names from a vote-roll line.
+
+    Names are rendered with single spaces between them (Word's
+    mso-spacerun columns collapse to one space each once lxml pulls
+    string()), so a fixed-width split is unreliable -- tokenize on name
+    shape instead. Stopping at `limit` (the declared count for this vote
+    type, read from the same block) keeps trailing free text -- e.g. a
+    "STRIKE THE TITLE - ADOPTED" outcome line that sometimes follows a
+    zero-count section before the "*****" separator -- from being
+    mistaken for votes.
+    """
+    names = []
+    for match in NAME_RE.finditer(line.replace("\n", " ")):
+        if len(names) >= limit:
+            break
+        name = match.group(0).strip()
+        if not name or "HOUSE" in name or "SENATE" in name:
+            continue
+        names.append(name)
+    return names
+
 
 class OKBillScraper(Scraper):
     verify = False
@@ -423,7 +451,7 @@ class OKBillScraper(Scraper):
                 if "*****" in line or "motion by" in line:
                     break
                 regex = (
-                    r"(YEAS|AYES|NAYS|EXCUSED|VACANT|CONSTITUTIONAL "
+                    r"(YEAS|AYES|NAYS|EXCUSED|VACANT|VACANCY|CONSTITUTIONAL "
                     r"PRIVILEGE|NOT VOTING|N/V)\s*:\s*(\d+)(.*)"
                 )
                 match = re.match(regex, line)
@@ -437,7 +465,7 @@ class OKBillScraper(Scraper):
                         vtype = "excused"
                     elif match.group(1) in ["NOT VOTING", "N/V"] and seen_yes:
                         vtype = "not voting"
-                    elif match.group(1) == "VACANT":
+                    elif match.group(1) in ["VACANT", "VACANCY"]:
                         continue  # skip these
                     elif seen_yes:
                         vtype = "other"
@@ -446,12 +474,9 @@ class OKBillScraper(Scraper):
                         bad_vote = True
                     counts[vtype] += int(match.group(2))
                 elif seen_yes:
-                    for name in line.split("   "):
-                        if not name:
-                            continue
-                        if "HOUSE" in name or "SENATE " in name:
-                            continue
-                        votes[vtype].append(name.strip())
+                    remaining = counts[vtype] - len(votes[vtype])
+                    if remaining > 0:
+                        votes[vtype].extend(extract_names(line, remaining))
 
             if bad_vote:
                 continue
