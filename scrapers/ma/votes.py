@@ -487,6 +487,7 @@ class HouseVoteRecordParser:
 
         vote.set_count("yes", self.total_yea)
         vote.set_count("no", self.total_nay)
+        vote.set_count("not voting", self.total_nv)
 
         vote_dictionary = {
             "Y": "yes",
