@@ -95,8 +95,15 @@ def names(el):
     text = (el.text or "") + (el.tail or "")
     split_name_list = text.split(";")
     if len(split_name_list) < 7:
-        # probably failed to properly split on semi-colons; try commas:
-        split_name_list = text.split(",")
+        # probably failed to properly split on semi-colons; try commas.
+        # But TX names legitimately use a comma to disambiguate shared
+        # surnames, e.g. "Davis, A." or "Lopez, J." -- don't split those
+        # apart. Only skip a comma when it's immediately followed by a
+        # lone initial that ends the name (semicolon or end of string);
+        # if a capitalized word follows the initial instead (senate lists
+        # disambiguate with a *leading* initial, e.g. "Hancock, A.
+        # Hinojosa, J. Hinojosa, Huffman"), the comma is a real separator.
+        split_name_list = re.split(r",(?!\s*[A-Z]\.(?:;|$))", text)
 
     names = []
     for name in split_name_list:
@@ -112,7 +119,11 @@ def names(el):
             for n in names_still_with_semicolon:
                 n = n.strip().replace(".", "")
                 if " — " in n:
-                    n = n.split()[-1]
+                    # Take everything after the label (e.g. "Absent —"),
+                    # not just the last whitespace token -- a comma-initial
+                    # name like "Jones, V" has a space in it and would
+                    # otherwise get shredded down to just "V".
+                    n = n.split(" — ")[-1]
                 names.append(n)
         else:
             names.append(name)
@@ -120,8 +131,11 @@ def names(el):
     if names:
         # First item in the list will have stuff to ignore before an mdash
         names[0] = clean_starting_name(names[0]).strip()
-        # Get rid of trailing '.'
-        names[-1] = names[-1][0:-1]
+        # Get rid of trailing '.', if there is one -- don't blindly chop
+        # the last character, or a real trailing character (e.g. the "l"
+        # in "Virdell") gets truncated.
+        if names[-1].endswith("."):
+            names[-1] = names[-1][:-1]
 
     return names
 
@@ -142,14 +156,31 @@ def clean_starting_name(name):
     return re.split(r"[\u2014:]", name)[-1]
 
 
+def paragraph_key(el):
+    """A stable identity for a journal paragraph, used to make sure the
+    four vote scanners below (whose trigger conditions aren't mutually
+    exclusive -- e.g. a paragraph can contain both "yeas"-style text and
+    a trailing "(N - N - N)" tally) don't each turn the same paragraph
+    into its own VoteEvent. Keyed on the element's position in the
+    document, not its text -- journal boilerplate ("The bill was read
+    third time and was passed by the following vote: Yeas 31, Nays 0.")
+    repeats verbatim for different bills."""
+    return el.getroottree().getpath(el)
+
+
 def votes(root, session, chamber):
-    for vote in record_votes_with_yeas(root, session, chamber):
+    # Shared across all four scanners so a paragraph already claimed by
+    # an earlier one is skipped by the rest.
+    claimed_paragraphs = set()
+    for vote in record_votes_with_yeas(root, session, chamber, claimed_paragraphs):
         yield vote
-    for vote in viva_voce_votes(root, session, chamber):
+    for vote in viva_voce_votes(root, session, chamber, claimed_paragraphs):
         yield vote
-    for vote in record_votes_with_short_count_notation(root, session, chamber):
+    for vote in record_votes_with_short_count_notation(
+        root, session, chamber, claimed_paragraphs
+    ):
         yield vote
-    for vote in local_calendar_votes(root, session, chamber):
+    for vote in local_calendar_votes(root, session, chamber, claimed_paragraphs):
         yield vote
 
 
@@ -473,7 +504,7 @@ short_count_notation_regex = re.compile(
 )
 
 
-def record_votes_with_short_count_notation(root, session, chamber):
+def record_votes_with_short_count_notation(root, session, chamber, claimed_paragraphs):
     # votes with short vote count notation may look like:
     # SB 422 (Cook, Patterson, and Thimesch - no) (135 - 3 - 1)
     # or
@@ -495,6 +526,10 @@ def record_votes_with_short_count_notation(root, session, chamber):
         if not mv.is_valid:
             continue
 
+        key = paragraph_key(mv.el)
+        if key in claimed_paragraphs:
+            continue
+
         if mv.passed:
             motion_text = "passage"
         else:
@@ -510,6 +545,7 @@ def record_votes_with_short_count_notation(root, session, chamber):
             bill=mv.bill_id,
             bill_chamber=mv.chamber,
         )
+        claimed_paragraphs.add(key)
 
         v.set_count("yes", mv.counts["yeas"] or 0)
         v.set_count("no", mv.counts["nays"] or 0)
@@ -523,7 +559,7 @@ def record_votes_with_short_count_notation(root, session, chamber):
         yield v
 
 
-def local_calendar_votes(root, session, chamber):
+def local_calendar_votes(root, session, chamber, claimed_paragraphs):
     # The senate's Local & Uncontested Calendar lists each bill with a
     # terse per-bill vote entry in the journal, e.g.:
     #   SB 2474 (Hinojosa)
@@ -534,6 +570,10 @@ def local_calendar_votes(root, session, chamber):
     for el in root.xpath('//div[@class = "textpara"]'):
         text = " ".join(el.text_content().split())
         if not LOCAL_CALENDAR_VOTE_REGEX.match(text):
+            continue
+
+        key = paragraph_key(el)
+        if key in claimed_paragraphs:
             continue
 
         # The bill is the "SB 2474 (Author)" line a couple of elements
@@ -555,6 +595,7 @@ def local_calendar_votes(root, session, chamber):
         if bill_id is None:
             continue
         bill_chamber = {"H": "lower", "S": "upper"}.get(bill_id[0])
+        claimed_paragraphs.add(key)
 
         count_groups = LOCAL_CALENDAR_COUNTS_REGEX.findall(text)
         for i, (yeas, nays, trailing) in enumerate(count_groups):
@@ -589,7 +630,7 @@ def local_calendar_votes(root, session, chamber):
             yield v
 
 
-def record_votes_with_yeas(root, session, chamber):
+def record_votes_with_yeas(root, session, chamber, claimed_paragraphs):
     # votes with "yeas" may look like:
     # SB 186 was passed by (Record 2040): 122 Yeas, 17 Nays, 1 Present, not voting.
     # or
@@ -606,6 +647,10 @@ def record_votes_with_yeas(root, session, chamber):
 
     for mv in maybe_votes:
         if not mv.is_valid:
+            continue
+
+        key = paragraph_key(mv.el)
+        if key in claimed_paragraphs:
             continue
 
         if mv.motion_text:
@@ -625,6 +670,7 @@ def record_votes_with_yeas(root, session, chamber):
             bill=mv.bill_id,
             bill_chamber=mv.chamber,
         )
+        claimed_paragraphs.add(key)
 
         v.set_count("yes", mv.yeas or 0)
         v.set_count("no", mv.nays or 0)
@@ -653,12 +699,16 @@ def clean_vote_name(name):
     return name
 
 
-def viva_voce_votes(root, session, chamber):
+def viva_voce_votes(root, session, chamber, claimed_paragraphs):
     vote_elements = root.xpath('//div[starts-with(., "All Members are deemed")]')
     maybe_votes = [MaybeViva(el) for el in vote_elements]
 
     for mv in maybe_votes:
         if not mv.is_valid:
+            continue
+
+        key = paragraph_key(mv.el)
+        if key in claimed_paragraphs:
             continue
 
         if mv.motion_text:
@@ -678,6 +728,7 @@ def viva_voce_votes(root, session, chamber):
             bill=mv.bill_id,
             bill_chamber=mv.chamber,
         )
+        claimed_paragraphs.add(key)
 
         v.set_count("yes", 0)
         v.set_count("no", 0)
