@@ -136,7 +136,12 @@ class TXEventScraper(Scraper, LXMLMixin):
             for span in p_element.xpath(xpath):
                 text = " ".join("".join(span.itertext()).split())
                 if text and text not in results:
-                    agenda_text = text.rstrip(" :")
+                    results.append(text)
+                    agenda_text = text.rstrip(" :-").strip()
+                    # Skip empty agenda descriptions, which fail schema
+                    # validation (agenda description requires minLength 1)
+                    if not agenda_text:
+                        continue
                     agenda = event.add_agenda_item(agenda_text)
 
                     siblings = [p_element] + p_element.xpath("following-sibling::p")
