@@ -5,7 +5,6 @@ import json
 import lxml
 import os
 import pytz
-import requests
 import urllib3
 
 from openstates.scrape import Scraper, Bill, VoteEvent
@@ -65,7 +64,7 @@ class VaBillScraper(Scraper):
         # If we don't IncludeFailed, we will only get a subset of legislation
         body = {"SessionCode": self.session_code, "IncludeFailed": True}
 
-        page = requests.post(
+        page = self.post(
             f"{self.base_url}/Legislation/api/getlegislationlistasync",
             headers=self.headers,
             json=body,
@@ -135,7 +134,7 @@ class VaBillScraper(Scraper):
             "legislationID": legislation_id,
         }
 
-        page = requests.get(
+        page = self.get(
             f"{self.base_url}/LegislationEvent/api/getlegislationeventbylegislationidasync",
             params=body,
             headers=self.headers,
@@ -200,7 +199,7 @@ class VaBillScraper(Scraper):
             bill.add_related_bill(bill.identifier, f"{prior_session}", "prior-session")
 
     def add_sponsors(self, bill: Bill, legislation_id: str):
-        page = requests.get(
+        page = self.get(
             f"{self.base_url}/LegislationPatron/api/GetLegislationPatronsByIdAsync/{legislation_id}",
             headers=self.headers,
             verify=False,
@@ -221,7 +220,7 @@ class VaBillScraper(Scraper):
             "sessionCode": self.session_code,
             "legislationID": legislation_id,
         }
-        response = requests.get(
+        response = self.get(
             f"{self.base_url}/LegislationText/api/getlegislationtextbyidasync",
             params=body,
             headers=self.headers,
@@ -293,7 +292,7 @@ class VaBillScraper(Scraper):
         }
 
         vote_page_url = f"{self.base_url}/Vote/api/getvotebyidasync"
-        page = requests.get(
+        page = self.get(
             vote_page_url,
             params=body,
             headers=self.headers,
