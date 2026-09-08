@@ -378,7 +378,9 @@ class AZBillScraper(Scraper):
                 )
 
                 for v in action["Votes"]:
-                    vote_type = {"Y": "yes", "N": "no"}.get(v["Vote"], "other")
+                    vote_type = {"Y": "yes", "N": "no", "NV": "not voting"}.get(
+                        v["Vote"], "other"
+                    )
                     vote.vote(vote_type, v["Legislator"]["FullName"])
                 vote.dedupe_key = f"{resp.url}{action['ReferralNumber']}"
                 yield vote
