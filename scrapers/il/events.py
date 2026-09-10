@@ -29,7 +29,7 @@ class IlEventScraper(Scraper):
     localize = pytz.timezone("America/Chicago").localize
 
     def scrape_page(self, url, chamber):
-        html = self.get(url).text
+        html = self.get(url, verify=False).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -109,7 +109,7 @@ class IlEventScraper(Scraper):
                 url = urls[chamber]
             except KeyError:
                 return  # Not for us.
-            html = self.get(url).text
+            html = self.get(url, verify=False).text
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(url)
 
