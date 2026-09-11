@@ -5,7 +5,6 @@ import json
 import lxml
 import os
 import pytz
-import requests
 import urllib3
 
 from openstates.scrape import Scraper, Bill, VoteEvent
@@ -65,7 +64,7 @@ class VaBillScraper(Scraper):
         # If we don't IncludeFailed, we will only get a subset of legislation
         body = {"SessionCode": self.session_code, "IncludeFailed": True}
 
-        page = requests.post(
+        page = self.post(
             f"{self.base_url}/Legislation/api/getlegislationlistasync",
             headers=self.headers,
             json=body,
@@ -135,7 +134,7 @@ class VaBillScraper(Scraper):
             "legislationID": legislation_id,
         }
 
-        page = requests.get(
+        page = self.get(
             f"{self.base_url}/LegislationEvent/api/getlegislationeventbylegislationidasync",
             params=body,
             headers=self.headers,
@@ -200,7 +199,7 @@ class VaBillScraper(Scraper):
             bill.add_related_bill(bill.identifier, f"{prior_session}", "prior-session")
 
     def add_sponsors(self, bill: Bill, legislation_id: str):
-        page = requests.get(
+        page = self.get(
             f"{self.base_url}/LegislationPatron/api/GetLegislationPatronsByIdAsync/{legislation_id}",
             headers=self.headers,
             verify=False,
@@ -221,7 +220,7 @@ class VaBillScraper(Scraper):
             "sessionCode": self.session_code,
             "legislationID": legislation_id,
         }
-        response = requests.get(
+        response = self.get(
             f"{self.base_url}/LegislationText/api/getlegislationtextbyidasync",
             params=body,
             headers=self.headers,
@@ -234,25 +233,42 @@ class VaBillScraper(Scraper):
         page = response.json()
 
         for row in page["TextsList"]:
-            if (row["PDFFile"] and len(row["PDFFile"]) > 1) or (
-                row["HTMLFile"] and len(row["HTMLFile"]) > 1
-            ):
-                self.error(json.dumps(row))
-                self.error("Add code to handle multiple files to VA Scraper")
-                raise Exception
-
-            if row["PDFFile"] and len(row["PDFFile"]) > 0:
+            # Since the 2025 LIS relaunch, a version can carry multiple
+            # PDF/HTML files (e.g. lis.blob.core.windows.net/files/*.PDF).
+            # Add a version link for each one instead of just the first.
+            for pdf in row["PDFFile"] or []:
                 bill.add_version_link(
                     row["Description"],
-                    row["PDFFile"][0]["FileURL"],
+                    pdf["FileURL"],
                     media_type="application/pdf",
+                    on_duplicate="ignore",
                 )
 
-            if row["HTMLFile"] and len(row["HTMLFile"]) > 0:
+            for html in row["HTMLFile"] or []:
                 bill.add_version_link(
                     row["Description"],
-                    row["HTMLFile"][0]["FileURL"],
+                    html["FileURL"],
                     media_type="text/html",
+                    on_duplicate="ignore",
+                )
+
+            # Some versions (commonly ones that never got a generated PDF,
+            # e.g. still-prefiled bills) have no PDFFile/HTMLFile at all --
+            # getlegislationtextbyidasync only returns their text inline as
+            # DraftText, which isn't a URL we can hand off. The old
+            # legacylis.virginia.gov site still serves a rendered HTML page
+            # of that same text, so fall back to it rather than dropping
+            # the version entirely.
+            if not row["PDFFile"] and not row["HTMLFile"] and row.get("DraftText"):
+                legacy_url = (
+                    "https://legacylis.virginia.gov/cgi-bin/legp604.exe?"
+                    f"{self.session_code[2:]}+ful+{bill.identifier}"
+                )
+                bill.add_version_link(
+                    row["Description"],
+                    legacy_url,
+                    media_type="text/html",
+                    on_duplicate="ignore",
                 )
 
             if row["ImpactFile"]:
@@ -276,7 +292,7 @@ class VaBillScraper(Scraper):
         }
 
         vote_page_url = f"{self.base_url}/Vote/api/getvotebyidasync"
-        page = requests.get(
+        page = self.get(
             vote_page_url,
             params=body,
             headers=self.headers,
