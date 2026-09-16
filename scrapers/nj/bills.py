@@ -394,6 +394,9 @@ class NJBillScraper(Scraper, MDBMixin):
         ]
         # keep votes clean globally, a few votes show up in multiple files
         votes = {}
+        # track (vote_id, leg) pairs already recorded so a legislator's vote
+        # isn't re-appended if the same vote_id recurs in a later file
+        recorded_votes = set()
 
         for filename in vote_info_list:
             s_vote_url = f"https://pub.njleg.state.nj.us/votes/{filename}.zip"
@@ -469,40 +472,43 @@ class NJBillScraper(Scraper, MDBMixin):
                                 bill=bill_dict[bill_id],
                             )
                             votes[vote_id].dedupe_key = vote_id
-                        if leg_vote == "Y":
-                            votes[vote_id].vote("yes", leg)
-                        elif leg_vote == "N":
-                            votes[vote_id].vote("no", leg)
-                        else:
-                            votes[vote_id].vote("other", leg)
+                        leg_key = (vote_id, leg)
+                        if leg_key not in recorded_votes:
+                            recorded_votes.add(leg_key)
+                            if leg_vote == "Y":
+                                votes[vote_id].vote("yes", leg)
+                            elif leg_vote == "N":
+                                votes[vote_id].vote("no", leg)
+                            else:
+                                votes[vote_id].vote("other", leg)
 
             # remove temp file
             os.remove(s_vote_zip)
 
-            # Counts yes/no/other votes and saves overall vote
-            for vote in votes.values():
-                counts = collections.defaultdict(int)
-                for count in vote.votes:
-                    counts[count["option"]] += 1
-                vote.set_count("yes", counts["yes"])
-                vote.set_count("no", counts["no"])
-                vote.set_count("other", counts["other"])
+        # Counts yes/no/other votes and saves overall vote
+        for vote in votes.values():
+            counts = collections.defaultdict(int)
+            for count in vote.votes:
+                counts[count["option"]] += 1
+            vote.set_count("yes", counts["yes"])
+            vote.set_count("no", counts["no"])
+            vote.set_count("other", counts["other"])
 
-                # Veto override.
-                if vote.motion_text == "OVERRIDE":
-                    # Per the NJ leg's glossary, a veto override requires
-                    # 2/3ds of each chamber. 27 in the senate, 54 in the house.
-                    # http://www.njleg.state.nj.us/legislativepub/glossary.asp
-                    if "lower" in vote.bill:
-                        vote.result = "pass" if counts["yes"] >= 54 else "fail"
-                    elif "upper" in vote.bill:
-                        vote.result = "pass" if counts["yes"] >= 27 else "fail"
-                else:
-                    # Regular vote.
-                    vote.result = "pass" if counts["yes"] > counts["no"] else "fail"
+            # Veto override.
+            if vote.motion_text == "OVERRIDE":
+                # Per the NJ leg's glossary, a veto override requires
+                # 2/3ds of each chamber. 27 in the senate, 54 in the house.
+                # http://www.njleg.state.nj.us/legislativepub/glossary.asp
+                if "lower" in vote.bill:
+                    vote.result = "pass" if counts["yes"] >= 54 else "fail"
+                elif "upper" in vote.bill:
+                    vote.result = "pass" if counts["yes"] >= 27 else "fail"
+            else:
+                # Regular vote.
+                vote.result = "pass" if counts["yes"] > counts["no"] else "fail"
 
-                vote.add_source("https://www.njleg.state.nj.us/downloads.asp")
-                yield vote
+            vote.add_source("https://www.njleg.state.nj.us/downloads.asp")
+            yield vote
 
         # Actions
         bill_action_csv = self.to_csv("BILLHIST.TXT")
