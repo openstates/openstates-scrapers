@@ -321,9 +321,11 @@ class TNBillScraper(Scraper):
                     or "Adopted" in raw_vote[1]
                 )
                 vote_regex = re.compile(r"\d+$")
-                aye_regex = re.compile(r"^.+voting aye were: (.+) -")
-                no_regex = re.compile(r"^.+voting no were: (.+) -")
-                not_voting_regex = re.compile(r"^.+present and not voting were: (.+) -")
+                aye_regex = re.compile(r"^.+voting aye were: (.+) -", re.IGNORECASE)
+                no_regex = re.compile(r"^.+voting no were: (.+) -", re.IGNORECASE)
+                not_voting_regex = re.compile(
+                    r"^.+present and not voting were: (.+) -", re.IGNORECASE
+                )
                 yes_count = 0
                 no_count = 0
                 not_voting_count = 0
