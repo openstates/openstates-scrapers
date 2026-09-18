@@ -251,11 +251,6 @@ COMMITTEE_CORRECTIONS = {
     "Community College Access & Affordability": "Community College Access & Afford.",
 }
 
-DUPE_VOTES = {
-    f"{BASE_URL}/legislation/votehistory/100/house/committeevotes/"
-    "10000HB2457_16401.pdf"
-}
-
 
 def group(lst, n):
     # from http://code.activestate.com/recipes/303060-group-a-list-into-sequential-n-tuples/
@@ -681,9 +676,12 @@ class IlBillScraper(Scraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(votes_url)
 
+        seen_votes = set()
         for link in doc.xpath('//a[contains(@href, "votehistory")]'):
-            if link.get("href") in DUPE_VOTES:
+            href = link.get("href")
+            if href in seen_votes:
                 continue
+            seen_votes.add(href)
 
             pieces = link.text.split(" - ")
             date = pieces[-1]
