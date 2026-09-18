@@ -268,6 +268,22 @@ class WYBillScraper(Scraper, LXMLMixin):
 
         yield bill
 
+    @staticmethod
+    def _split_voter_names(raw):
+        """Split WY's comma-joined voter list, re-merging a bare initial
+        (e.g. "Brown, G, Brown, L, Campbell, E") back onto the preceding
+        surname instead of treating it as its own voter."""
+        names = []
+        for token in (raw or "").split(","):
+            token = token.strip()
+            if not token:
+                continue
+            if names and re.match(r"^[A-Z]\.?$", token):
+                names[-1] = "{}, {}".format(names[-1], token)
+            else:
+                names.append(token)
+        return names
+
     def scrape_vote(self, bill, vote_json, session):
 
         if vote_json["amendmentNumber"]:
@@ -295,33 +311,23 @@ class WYBillScraper(Scraper, LXMLMixin):
         v.set_count("excused", vote_json["excusedVotesCount"])
         v.set_count("other", vote_json["conflictVotesCount"])
 
-        for name in vote_json["yesVotes"].split(","):
-            if name:
-                name = name.strip()
-                v.yes(name)
+        for name in self._split_voter_names(vote_json["yesVotes"]):
+            v.yes(name)
 
-        for name in vote_json["noVotes"].split(","):
-            if name:
-                name = name.strip()
-                v.no(name)
+        for name in self._split_voter_names(vote_json["noVotes"]):
+            v.no(name)
 
         # add votes with other classifications
         # option can be 'yes', 'no', 'absent',
         # 'abstain', 'not voting', 'paired', 'excused'
-        for name in vote_json["absentVotes"].split(","):
-            if name:
-                name = name.strip()
-                v.vote(option="absent", voter=name)
+        for name in self._split_voter_names(vote_json["absentVotes"]):
+            v.vote(option="absent", voter=name)
 
-        for name in vote_json["excusedVotes"].split(","):
-            if name:
-                name = name.strip()
-                v.vote(option="excused", voter=name)
+        for name in self._split_voter_names(vote_json["excusedVotes"]):
+            v.vote(option="excused", voter=name)
 
-        for name in vote_json["conflictVotes"].split(","):
-            if name:
-                name = name.strip()
-                v.vote(option="other", voter=name)
+        for name in self._split_voter_names(vote_json["conflictVotes"]):
+            v.vote(option="other", voter=name)
 
         source_url = "https://lso.wyoleg.gov/Legislation/{}/{}".format(
             session, vote_json["billNumber"]
