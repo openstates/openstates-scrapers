@@ -11,7 +11,6 @@ from utils import LXMLMixin
 from utils.media import get_media_type
 
 import pytz
-import math
 
 central = pytz.timezone("US/Central")
 
@@ -367,28 +366,29 @@ class KYBillScraper(Scraper, LXMLMixin):
 
             if line and ("ABSTAINED :" in line or "PASSES :" in line):
                 y = 2
-                next_line = 0
-                next_line = pdflines[x + y]
-                while "NOT VOTING :" not in next_line:
-                    next_line = next_line.split("  ")
-                    if next_line and (
-                        "ABSTAINED" not in next_line or "PASSES" not in next_line
-                    ):
-                        for v in next_line:
-                            if v:
-                                voters["abstain"].append(v.strip())
-                    next_line = pdflines[x + y]
+                while (x + y) < len(pdflines) and "NOT VOTING :" not in pdflines[x + y]:
+                    for v in pdflines[x + y].split("  "):
+                        if v.strip():
+                            voters["abstain"].append(v.strip())
                     y += 1
 
             if line and "NOT VOTING : " in line:
-                lines_to_go_through = math.ceil(not_voting / len(line.split()))
-                next_line = pdflines[x]
-                for y in range(lines_to_go_through):
-                    if len(pdflines) > (x + y + 2):
-                        next_line = pdflines[x + y + 2].split("  ")
-                        for v in next_line:
-                            if v:
-                                voters["not voting"].append(v.strip())
+                # Collect names until we've gathered `not_voting` of them, or hit the
+                # natural end of the section (a blank line, or end of the PDF text).
+                # We can't key off a trailing header like the YEAS/NAYS/ABSTAINED
+                # sections do, since NOT VOTING is the last section and is simply
+                # followed by the next page/vote (or EOF).
+                y = 2  # skip the "NOT VOTING : N" header line and the blank line after it
+                while len(voters["not voting"]) < not_voting and (x + y) < len(
+                    pdflines
+                ):
+                    next_line = pdflines[x + y]
+                    if not next_line.strip():
+                        break
+                    for v in next_line.split("  "):
+                        if v.strip() and len(voters["not voting"]) < not_voting:
+                            voters["not voting"].append(v.strip())
+                    y += 1
                 if yeas > (nays + abstained + not_voting):
                     passed = True
                 else:
