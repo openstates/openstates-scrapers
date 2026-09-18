@@ -97,6 +97,13 @@ class ORVoteScraper(Scraper):
             committee_history = measure["CommitteeAgendaItems"]
             for event in committee_history:
                 if event["CommitteeVotes"]:
+                    # Oregon's OData API returns CommitteeVotes doubled for some
+                    # committee agenda items (same VoteName/Meaning pairs repeated,
+                    # differing only by CommitteeVoteId/CommitteeReportId). Dedupe
+                    # by voter+meaning before tallying/recording individual votes.
+                    event["CommitteeVotes"] = self.dedupe_committee_votes(
+                        event["CommitteeVotes"]
+                    )
                     tally = self.tally_votes(event, "committee")
                     passed = self.passed_vote(tally)
 
@@ -139,6 +146,18 @@ class ORVoteScraper(Scraper):
                     )
 
                     yield vote
+
+    @staticmethod
+    def dedupe_committee_votes(committee_votes):
+        seen = set()
+        deduped = []
+        for v in committee_votes:
+            key = (v["VoteName"], v["Meaning"])
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(v)
+        return deduped
 
     def add_individual_votes(self, vote, vote_call, vote_type):
         if vote_type == "measure":
