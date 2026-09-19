@@ -313,7 +313,21 @@ class VaBillScraper(Scraper):
                 vote_date = dateutil.parser.parse(row["VoteDate"]).date()
 
                 # Our historical votes have mostly used the bill action descrioption, so we stick with this
-                motion_text = row["LegislationActionDescription"]
+                bill_action = row["LegislationActionDescription"]
+                if bill_action is None:
+                    # The top-level field is null on current LIS data; the bill's
+                    # action text lives on its VoteLegislation entry instead
+                    bill_action = next(
+                        (
+                            vl["LegislationActionDescription"]
+                            for vl in row.get("VoteLegislation") or []
+                            if vl["LegislationNumber"]
+                            == bill.identifier.replace(" ", "")
+                            and vl["LegislationActionDescription"]
+                        ),
+                        None,
+                    )
+                motion_text = bill_action
                 if motion_text is None and row["VoteActionDescription"]:
                     # VoteActionDescription doesn't seem as user friendly, when looking at the text values.
                     # A lot of "H Vote:" values
@@ -333,7 +347,7 @@ class VaBillScraper(Scraper):
                 v = VoteEvent(
                     start_date=vote_date,
                     motion_text=motion_text,
-                    bill_action=row["LegislationActionDescription"],
+                    bill_action=bill_action,
                     result="fail",  # placeholder for now
                     chamber=self.chamber_map[row["ChamberCode"]],
                     bill=bill,
