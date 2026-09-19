@@ -586,7 +586,7 @@ class FloorVote(PdfPage):
             for line in lines[VOTE_START_INDEX:]:
                 if not line.strip():
                     break
-                for member in re.findall(r"\s{8,}([A-Z][a-z\'].*?)-\d{1,3}", line):
+                for member in re.findall(r"\s{8,}([A-Z][a-zà-ÿ\'].*?)-\d{1,3}", line):
                     member = member.strip()
                     vote.vote("not voting", member)
         yield vote
@@ -684,11 +684,9 @@ class UpperComVote(PdfPage):
         # set voters
         for vtype, voters in votes.items():
             for voter in voters:
-                voter = voter.strip()
                 # Removes the few voter names with a ton of extra spaces with  VA at the end.
                 # Ex: Cruz                                                               VA
-                if "  VA" in voter:
-                    voter = " ".join(voter.split()[:-2])
+                voter = re.split(r"\s{2,}", voter.strip())[0]
                 if len(voter) > 0:
                     vote.vote(vtype, voter)
 
@@ -891,25 +889,24 @@ class HouseComVote(_FLHousePage, HtmlPage):
             vote.set_count("not voting", other_count)
 
             for member_vote in self.root.xpath(
-                '//ul[contains(@class, "vote-list")]/li'
+                '//div[contains(@class, "vote-list")]/div[@role="row"]'
+                '[not(contains(@class, "sr-only"))]'
             ):
-                if not member_vote.text_content().strip():
-                    continue
-
                 (member,) = member_vote.xpath("span[2]//text()")
-                (member_vote,) = member_vote.xpath("span[1]//text()")
+                (member_vote,) = member_vote.xpath(
+                    'span[1]/span[@aria-hidden="true"]/text()'
+                )
 
                 member = member.strip()
+                member_vote = member_vote.strip()
                 if member_vote == "Y":
                     vote.yes(member)
                 elif member_vote == "N":
                     vote.no(member)
-                elif member_vote == "-":
+                # Parenthetical votes are shown as "Did Not Vote" and are
+                # counted in Total Missed, same as "-"
+                elif member_vote == "-" or re.search(r"\([YN]\)", member_vote):
                     vote.vote("not voting", member)
-                # Parenthetical votes appear to not be counted in the
-                # totals for Yea, Nay, _or_ Missed
-                elif re.search(r"\([YN]\)", member_vote):
-                    continue
                 else:
                     raise ValueError("Unknown vote type found: {}".format(member_vote))
 
