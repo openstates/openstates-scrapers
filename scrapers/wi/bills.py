@@ -419,7 +419,8 @@ class WIBillScraper(Scraper):
                 elif vote_td.text_content() == "N":
                     vote.vote("no", name)
                     no_names_count += 1
-                elif vote_td.text_content() == "NV":
+                # the NV column is marked with a lowercase "x"
+                elif vote_td.text_content() in ("NV", "x"):
                     vote.vote("not voting", name)
 
         if yes_names_count != int(vote_counts[0][0]):
