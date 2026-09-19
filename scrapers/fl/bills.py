@@ -58,6 +58,10 @@ def patched_get_response(self, scraper):
     """
     Patch the URL.get_response method to add retry logic for connection errors.
     """
+    # spatula/scrapelib default to no timeout, so a stalled connection
+    # (seen on flhouse.gov) hangs the whole scrape instead of being retried
+    if self.timeout is None:
+        self.timeout = 60
 
     # Use our handle_remote_disconnected function to specifically handle RemoteDisconnected errors
     def get_response_with_retry():
