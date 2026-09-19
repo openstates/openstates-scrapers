@@ -71,7 +71,9 @@ class VaBillScraper(Scraper):
             verify=False,
         ).json()
 
-        bill_list = page["Legislations"]
+        # The list repeats a bill once per summary version (same LegislationID),
+        # which scraped it and its votes several times. Keep the latest row.
+        bill_list = list({r["LegislationID"]: r for r in page["Legislations"]}.values())
         # if scrape_chunk_number is specified, we are being asked to scrape
         # only a specific chunk of the total bills
         # let's use 1-based counting so we're not doing scrape_chunk_number=0
@@ -305,6 +307,7 @@ class VaBillScraper(Scraper):
         page = json.loads(page)
 
         vote_ids_processed = set()
+        votes_processed = set()
         for row in page["Votes"]:
             if row["VoteID"] in vote_ids_processed:
                 # there tends to be lots of duplicates of votes in this page["Votes"] list, no idea why
@@ -343,6 +346,24 @@ class VaBillScraper(Scraper):
                 motion_text = motion_text.replace(
                     "%NextSessionYear%", str(vote_date.year + 1)
                 )
+
+                # LIS sometimes records the same committee vote twice under two
+                # VoteIDs (same time, description and roll), so skip the repeat
+                vote_key = (
+                    row["VoteDate"],
+                    row["ChamberCode"],
+                    row["CommitteeName"],
+                    row["Description"],
+                    motion_text,
+                    frozenset(
+                        (m["MemberDisplayName"], m.get("ResponseCode"))
+                        for m in row["VoteMember"]
+                    ),
+                )
+                if vote_key in votes_processed:
+                    self.info(f"Skipping duplicate vote {row['VoteID']} for {bill}")
+                    continue
+                votes_processed.add(vote_key)
 
                 v = VoteEvent(
                     start_date=vote_date,
