@@ -21,11 +21,10 @@ headers = {
 }
 
 session_details = {
-    # TODO, fill these in once appointed
     # TODO: move this to session metadata
     "104th": {
-        "speaker": "",
-        "president": "",
+        "speaker": "Welch",
+        "president": "Harmon",
         "params": {"GA": "104", "SessionId": "114"},
     },
     "103rd": {
