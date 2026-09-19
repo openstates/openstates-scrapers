@@ -1,4 +1,6 @@
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 import lxml.html
 import logging
 import os
@@ -10,7 +12,10 @@ def url_xpath(url, path, verify=None, user_agent=None):
     if verify is None:
         verify = os.getenv("VERIFY_CERTS", "True").lower() == "true"
 
-    res = requests.get(url, verify=verify, headers=headers)
+    # retry transient connection/TLS errors, like scrapelib does for self.get()
+    session = requests.Session()
+    session.mount("https://", HTTPAdapter(max_retries=Retry(total=3, backoff_factor=2)))
+    res = session.get(url, verify=verify, headers=headers)
     try:
         doc = lxml.html.fromstring(res.text)
     except Exception:
