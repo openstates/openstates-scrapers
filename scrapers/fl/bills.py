@@ -721,7 +721,57 @@ class _FLHouseWAFSource(URL):
         return super().get_response(scraper)
 
 
-class HouseSearchPage(HtmlListPage):
+# The WAF rejects the default scrapelib User-Agent, and rotating the header
+# mid-run looks like a hijacked session, so every flhouse.gov request sends the
+# same browser headers.
+FLHOUSE_HEADERS = {
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+}
+
+
+class _FLHousePage:
+    """Shared flhouse.gov handling for the search, bill and vote pages.
+
+    The whole site sits behind the same WAF, so the bill detail and committee
+    vote pages need the same fresh WAF session and the same block-page check as
+    the search page. Without them a blocked page is a plain HTTP 200 whose
+    markup holds no vote links and no vote totals, so the scrape quietly drops
+    House committee votes instead of retrying.
+    """
+
+    @staticmethod
+    def house_source(url):
+        return _FLHouseWAFSource(url, headers=FLHOUSE_HEADERS, retries=3, verify=False)
+
+    def accept_response(self, response: requests.Response):
+        # Check if the page response is an annoying 404 error message in the HTML
+        # which sometimes happens despite a 200 HTTP code response
+        # which looks like:
+        # <div class="page-404">
+        # We're Sorry, the page you requested can not <br/> be located within FLHouse.gov
+        page = lxml.html.fromstring(response.content)
+        # also can be a "request rejected" page that looks like
+        # <html><head><title>Request Rejected</title></head>
+        text_not_found_msg = page.xpath("//div[@class='page-404']")
+        request_rejected_msg = page.xpath(
+            "//title[contains(text(), 'Request Rejected')]"
+        )
+        if len(text_not_found_msg) > 0:
+            self.logger.info(
+                f"Encountered text-based Not Found message at {response.url}"
+            )
+            return False
+        elif len(request_rejected_msg) > 0:
+            self.logger.info(
+                f"Encountered text-based Rejected message at {response.url}"
+            )
+            return False
+        else:
+            return True
+
+
+class HouseSearchPage(_FLHousePage, HtmlListPage):
     """
     House committee roll calls are not available on the Senate's
     website. Furthermore, the House uses an internal ID system in
@@ -753,47 +803,10 @@ class HouseSearchPage(HtmlListPage):
             ) from e
 
         form = {"Chamber": "B", "SessionId": session_number, "BillNumber": bill_number}
-        return _FLHouseWAFSource(
-            url + "?" + urlencode(form),
-            method="GET",
-            headers={
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-                "Host": "flhouse.gov",
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-            },
-            retries=3,
-            verify=False,
-        )
-
-    def accept_response(self, response: requests.Response):
-        # Check if the page response is an annoying 404 error message in the HTML
-        # which sometimes happens despite a 200 HTTP code response
-        # which looks like:
-        # <div class="page-404">
-        # We're Sorry, the page you requested can not <br/> be located within FLHouse.gov
-        page = lxml.html.fromstring(response.content)
-        # also can be a "request rejected" page that looks like
-        # <html><head><title>Request Rejected</title></head>
-        text_not_found_msg = page.xpath("//div[@class='page-404']")
-        request_rejected_msg = page.xpath(
-            "//title[contains(text(), 'Request Rejected')]"
-        )
-        if len(text_not_found_msg) > 0:
-            self.logger.info(
-                f"Encountered text-based Not Found message at {response.url}"
-            )
-            return False
-        elif len(request_rejected_msg) > 0:
-            self.logger.info(
-                f"Encountered text-based Rejected message at {response.url}"
-            )
-            return False
-        else:
-            return True
+        return self.house_source(url + "?" + urlencode(form))
 
     def process_item(self, item):
-        source = URL(f"{item}", verify=False)
-        return HouseBillPage(self.input, source=source)
+        return HouseBillPage(self.input, source=self.house_source(f"{item}"))
 
     # Override so that we can handle occasional bill that does not show up in search
     # by catching SelectorError
@@ -810,7 +823,7 @@ class HouseSearchPage(HtmlListPage):
             )
 
 
-class HouseBillPage(HtmlListPage):
+class HouseBillPage(_FLHousePage, HtmlListPage):
     selector = XPath('//a[text()="See Votes"]/@href', min_items=0)
     example_input = Bill(
         "HB 1", "2020", "title", chamber="upper", classification="bill"
@@ -820,11 +833,10 @@ class HouseBillPage(HtmlListPage):
     )
 
     def process_item(self, item):
-        source = URL(f"{item}", verify=False)
-        return HouseComVote(self.input, source=source)
+        return HouseComVote(self.input, source=self.house_source(f"{item}"))
 
 
-class HouseComVote(HtmlPage):
+class HouseComVote(_FLHousePage, HtmlPage):
     example_input = Bill(
         "HB 1", "2020", "title", chamber="upper", classification="bill"
     )
@@ -902,6 +914,8 @@ class HouseComVote(HtmlPage):
                     raise ValueError("Unknown vote type found: {}".format(member_vote))
 
             return vote
+        else:
+            self.logger.warning(f"No vote totals on {self.source.url}")
 
 
 class FlBillScraper(Scraper):
