@@ -314,8 +314,9 @@ class MIBillScraper(Scraper):
                 f"Could not fetch roll call document at {url}, unable to extract vote"
             )
             return
-        html = resp.text
-        vote_doc = lxml.html.fromstring(html)
+        # journals are UTF-8 but don't say so in the response headers, so parse
+        # the bytes and let lxml use the charset the document itself declares
+        vote_doc = lxml.html.fromstring(resp.content)
         vote_doc_textonly = vote_doc.text_content()
 
         if re.search("In\\s+The\\s+Chair", vote_doc_textonly) is None:
