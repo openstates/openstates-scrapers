@@ -90,9 +90,12 @@ def patched_get_response(self, scraper):
         lambda: handle_remote_disconnected(
             get_response_with_retry, max_retries=5, initial_backoff=10, max_backoff=120
         ),
-        max_retries=3,
-        initial_backoff=5,
-        max_backoff=60,
+        # a full session takes hours, so ride out a short outage on the state's
+        # sites (both have gone 500/503 for minutes at a time) instead of
+        # ending the run
+        max_retries=6,
+        initial_backoff=30,
+        max_backoff=600,
     )
 
 
