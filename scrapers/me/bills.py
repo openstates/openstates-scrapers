@@ -367,12 +367,19 @@ class MEBillScraper(Scraper):
         page.make_links_absolute(url)
 
         path = "//div/a[contains(@href, 'rollcall.asp')]"
+        seen_urls = set()
         for link in page.xpath(path):
             # skip blank motions, nothing we can do with these
             # seen on /LawMakerWeb/rollcalls.asp?ID=280039835
             if link.text:
                 motion = link.text.strip()
                 url = link.attrib["href"]
+
+                # some roll calls are listed twice on the same page
+                # seen on /LawMakerWeb/rollcalls.asp?ID=280097788
+                if url in seen_urls:
+                    continue
+                seen_urls.add(url)
 
                 yield from self.scrape_vote(bill, motion, url)
 
@@ -409,7 +416,10 @@ class MEBillScraper(Scraper):
         outcome_cell = page.xpath("//td[text()='Outcome:']")[0]
         outcome = outcome_cell.xpath("string(following-sibling::td)")
 
+        # same-day roll calls can share motion and roll, so keep the RC number
+        serial = re.search(r"serialnumber=(\d+)", url).group(1)
         vote = VoteEvent(
+            identifier=f"{'S' if chamber == 'upper' else 'H'}-RC {serial}",
             chamber=chamber,
             start_date=date.strftime("%Y-%m-%d"),
             motion_text=motion,
