@@ -333,7 +333,12 @@ class WIBillScraper(Scraper):
             classification=vtype,
             bill=bill,
         )
-        v.dedupe_key = f'{url.split("/")[-1]}-{bill.identifier}'
+        # a bill can have several roll calls on the same day with identical rolls
+        # (e.g. av0131 and av0132), so keep the roll call number to tell them apart
+        roll_call = url.split("/")[-1]
+        if re.match(r"^[as]v\d+$", roll_call):
+            v.identifier = roll_call
+        v.dedupe_key = f"{roll_call}-{bill.identifier}"
         v.set_count("yes", yes)
         v.set_count("no", no)
 
