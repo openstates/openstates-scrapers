@@ -335,6 +335,14 @@ class MIBillScraper(Scraper):
 
         vtype = None
         results = collections.defaultdict(list)
+        # The journal's own opening roll ("Albert—present") names every member,
+        # including the multi-word ones, and is the only way to tell where one
+        # name ends and the next begins in a collapsed line of names
+        roster = set()
+        for p in pieces:
+            member = re.match(r"(.+?)—(?:present|excused|absent)", p.strip(), re.I)
+            if member:
+                roster.add(member.group(1))
 
         # Once we find the roll call, go through voters
         for j, p in enumerate(pieces[i:]):
@@ -359,13 +367,33 @@ class MIBillScraper(Scraper):
                             for leg in line.split():
                                 results[vtype].append(leg)
                         else:
-                            results[vtype].append(line)
+                            results[vtype].extend(self.split_names(line, roster))
             else:
                 self.warning("piece without vtype set: %s", p)
             if chair:
                 break
 
         return results
+
+    @staticmethod
+    def split_names(line, roster):
+        """Senate journals collapse a row of names into one space-separated
+        line ("Albert Bellino Bumstead Daley"), and names themselves can
+        contain spaces ("McDonald Rivet"), so split on the journal's roster.
+        Anything that isn't entirely member names is left untouched."""
+        names = []
+        rest = line.strip()
+        while rest:
+            match = max(
+                (n for n in roster if rest == n or rest.startswith(f"{n} ")),
+                key=len,
+                default=None,
+            )
+            if not match:
+                return [line]
+            names.append(match)
+            rest = rest[len(match) :].strip()
+        return names
 
     def scrape_legal(self, bill: Bill, page: lxml.html.HtmlElement):
         for row in page.xpath(
