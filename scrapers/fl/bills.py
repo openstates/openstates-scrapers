@@ -19,7 +19,6 @@ from .actions import Categorizer
 from .utils import (
     get_random_user_agent,
     add_random_delay,
-    retry_on_connection_error,
 )
 
 # from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
@@ -940,18 +939,14 @@ class FlBillScraper(Scraper):
         # spatula's logging is better than scrapelib's
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
 
-        def do_scrape_with_retry():
-            bill_list = BillList(
-                {"session": session, "house_session_number": house_session_number}
-            )
-            yield from self._process_bill_list(bill_list)
-
-        yield from retry_on_connection_error(
-            lambda: list(do_scrape_with_retry()),
-            max_retries=3,
-            initial_backoff=10,
-            max_backoff=120,
+        # Yield bills as they are scraped: individual requests are already
+        # retried in patched_get_response, and buffering the whole session in a
+        # list() meant one exhausted request threw away hours of collected bills
+        # and started the session over from the first bill.
+        bill_list = BillList(
+            {"session": session, "house_session_number": house_session_number}
         )
+        yield from self._process_bill_list(bill_list)
 
     def _create_fresh_session(self):
         """
