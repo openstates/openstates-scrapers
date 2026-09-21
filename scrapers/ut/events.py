@@ -42,7 +42,7 @@ class UTEventScraper(Scraper, LXMLMixin):
                         where = f"{where}, Utah State Capitol, 350 State St, Salt Lake City, UT 84103"
 
                     when = dateutil.parser.parse(
-                        f"{day_row['year']}-{str(int(day_row['month'])+1)}-{day_row['day']} {row['time']}"
+                        f"{day_row['year']}-{str(int(day_row['month']) + 1)}-{day_row['day']} {row['time']}"
                     )
 
                     when = self._tz.localize(when)
