@@ -61,6 +61,11 @@ class IAEventScraper(Scraper):
             location = meeting_row.xpath("string(./td[3]/span/text())").strip()
             if location == "":
                 location = meeting_row.xpath("string(./td[3]/text())").strip()
+            # Upcoming meetings sometimes have no room assigned yet. An empty
+            # location fails Event schema validation (minLength: 1), so fall
+            # back to a placeholder.
+            if location == "":
+                location = "See Agenda"
 
             when = meeting_row.xpath("string(./td[1]/span[1]/text())").strip()
             if when == "":
@@ -158,6 +163,11 @@ class IAEventScraper(Scraper):
             location = sub_comm_row.xpath("string(./td[4]/span/text())").strip()
             if location == "":
                 location = sub_comm_row.xpath("string(./td[4]/text())").strip()
+            # Upcoming meetings sometimes have no room assigned yet. An empty
+            # location fails Event schema validation (minLength: 1), so fall
+            # back to a placeholder.
+            if location == "":
+                location = "See Agenda"
 
             when = sub_comm_row.xpath("string(./td[1]/span[1]/text())").strip()
             if when == "":
