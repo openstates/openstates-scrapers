@@ -34,7 +34,15 @@ BILL_CHAMBERS = {
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    # A browser-like Accept header is required: the CO site's bot protection
+    # returns HTTP 406 for detail-page GETs that omit it.
+    "Accept": (
+        "text/html,application/xhtml+xml,application/xml;q=0.9,"
+        "image/avif,image/webp,image/apng,*/*;q=0.8"
+    ),
     "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Upgrade-Insecure-Requests": "1",
 }
 
 
@@ -49,6 +57,11 @@ class COBillScraper(Scraper, LXMLMixin):
     def scrape(self, chamber=None, session=None):
         # If you need to scrape an individual bill for testing
         # yield from self.scrape_bill("https://leg.colorado.gov/bills/HB26-1362", "2026")
+
+        # Throttle requests to avoid tripping the CO site's rate limiting,
+        # which returns HTTP 429. Setting requests_per_minute makes scrapelib
+        # automatically space out requests (60 rpm == ~1 request/second).
+        self.requests_per_minute = 60
 
         # TODO: there's a better way to do this
         for i in self.jurisdiction.legislative_sessions:
