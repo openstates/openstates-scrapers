@@ -337,7 +337,12 @@ class MIBillScraper(Scraper):
         results = collections.defaultdict(list)
 
         # Once we find the roll call, go through voters
-        for p in pieces[i:]:
+        for j, p in enumerate(pieces[i:]):
+            # Stop at the next roll call so its voters aren't merged into this one
+            if j and p.startswith("Roll Call No."):
+                break
+            # "In The Chair:" can share a <p> with the last voter names
+            p, chair, _ = p.partition("In The Chair:")
             if "Yeas" in p:
                 vtype = "yes"
             elif "Nays" in p:
@@ -346,8 +351,6 @@ class MIBillScraper(Scraper):
                 vtype = "other"
             elif "Roll Call No" in p:
                 continue
-            elif p.startswith("In The Chair:"):
-                break
             elif vtype:
                 # Split on tabs (House journals) or multiple spaces (Senate journals)
                 for line in re.split(r"\t|(?<!,)\s{2,}", p):
@@ -359,6 +362,8 @@ class MIBillScraper(Scraper):
                             results[vtype].append(line)
             else:
                 self.warning("piece without vtype set: %s", p)
+            if chair:
+                break
 
         return results
 
