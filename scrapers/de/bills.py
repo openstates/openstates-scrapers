@@ -409,12 +409,9 @@ class DEBillScraper(Scraper, LXMLMixin):
             vote_motion = roll["RollCallVoteType"]
 
             vote_passed = "pass" if roll["RollCallStatus"] == "Passed" else "fail"
-            other_count = (
-                int(roll["NotVotingCount"])
-                + int(roll["VacantVoteCount"])
-                + int(roll["AbsentVoteCount"])
-                + int(roll["ConflictVoteCount"])
-            )
+            # VacantVoteCount is empty seats with no voter row, and
+            # NotVotingCount already includes ConflictVoteCount
+            other_count = int(roll["NotVotingCount"]) + int(roll["AbsentVoteCount"])
             vote = VoteEvent(
                 chamber=vote_chamber,
                 start_date=vote_date,
