@@ -1,5 +1,5 @@
-FROM python:3.9-slim
-LABEL maintainer="James Turk <dev@jamesturk.net>"
+FROM python:3.13-slim
+LABEL maintainer="Jesse Mortenson <Jesse.Mortenson@sai360.com>"
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -50,7 +50,7 @@ RUN poetry install --no-root \
     && rm -r /root/.cache/pypoetry/cache /root/.cache/pypoetry/artifacts/ \
     && apt-get remove -y -qq \
       build-essential \
-      libpq-dev \
+      libpq-dev \ 
     && apt-get autoremove -y -qq \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
