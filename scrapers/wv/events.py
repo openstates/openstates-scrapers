@@ -335,50 +335,102 @@ class WVEventScraper(Scraper, LXMLMixin):
 
         yield event
 
-    def parse_agenda_items(self, event, rows):
-        """Add agenda items (and any linked bills) to an event.
+    # Matches a WV administrative rule citation such as "191 CSR 03",
+    # "11 CSR 01A" or "110 CSR 13KK" (agency series number + "CSR" + rule
+    # number, which may carry a trailing letter suffix of one or more
+    # letters). These are existing administrative law items, NOT bills, so
+    # they must never be routed through add_bill().
+    _csr_re = re.compile(r"\b\d{1,3}\s*CSR\s*\d+[A-Z]*\b", flags=re.IGNORECASE)
 
-        ``rows`` should be an iterable of <p> elements from an agenda
-        blockquote. Bill references embedded in the text are parsed and
-        linked to the agenda item.
+    def parse_agenda_items(self, event, rows):
+        """Add agenda items (and any related entities) to an event.
+
+        ``rows`` should be an iterable of the top-level agenda item elements
+        from an agenda blockquote. Each becomes a single agenda item. Related
+        entities found in the item text or in any list that follows it are
+        associated with that parent item rather than promoted to their own
+        items (see ``add_related_entities``).
+        """
+        for row in rows:
+            text = row.text_content().strip()
+            if text == "":
+                continue
+
+            description = text.replace("\u25a1", "")
+            agenda = event.add_agenda_item(description)
+
+            # Related bills/rules for an item are listed in a list that
+            # follows the item, so gather those list entries (stopping at the
+            # next item) and associate their entities with this agenda item.
+            entity_elements = [row]
+            for sibling in row.xpath("following-sibling::*"):
+                if sibling.tag == "p":
+                    break
+                if sibling.tag in ("ol", "ul"):
+                    entity_elements.extend(sibling.xpath("./li"))
+
+            for element in entity_elements:
+                self.add_related_entities(agenda, element)
+
+    def add_related_entities(self, agenda, element):
+        """Attach any bills or administrative rules found in ``element``.
+
+        ``element`` is a single agenda item or list entry. Administrative
+        rules are added as media links; bill identifiers are added via
+        add_bill().
         """
         component_re = re.compile(r"([A-Z]+)\s*(\d+)", flags=re.IGNORECASE)
         period_and_whitespace_re = re.compile(r"\.\s*", flags=re.IGNORECASE)
         house_bill_re = re.compile(r"house bill", flags=re.IGNORECASE)
         senate_bill_re = re.compile(r"senate bill", flags=re.IGNORECASE)
 
-        for row in rows:
-            if row.text_content().strip() == "":
-                continue
+        text = element.text_content().strip()
 
-            agenda = event.add_agenda_item(
-                row.text_content().strip().replace("\u25a1", "")
-            )
-
-            # Matches (SJR, HCR, HB, HR, SCR, SB, HJR, SR) + id
-            # Allows for house, senate, joint, or bill to be fully spelled out
-            # Allows for "." after H, S, J, C, and B
-            # Allows for up to two spaces before the id
-            bills = re.findall(
-                r"((S\.?|Senate|H\.?|House)\s?((J|C|Joint)\.?\s?)?(B\.?|Bill|R\.?)\s?\s?(\d+))",
-                row.text_content(),
-                flags=re.IGNORECASE,
-            )
-
-            for bill in bills:
-                bill_id = period_and_whitespace_re.sub("", bill[0])
-                bill_id = house_bill_re.sub("HB", bill_id)
-                bill_id = senate_bill_re.sub("SB", bill_id)
-
-                # Final step to set correct number of spaces in the id
-                components = component_re.search(bill_id)
-                if components is None:
-                    # Shouldn't happen given the outer regex, but guard
-                    # against an AttributeError if the pattern doesn't match.
+        # Attach any linked administrative rule as a media link. We still fall
+        # through to bill parsing below so an item mentioning both a rule and a
+        # bill captures both.
+        if self._csr_re.search(text):
+            for link in element.xpath(".//a"):
+                href = link.get("href")
+                label = link.text_content().strip()
+                if not href or not self._csr_re.search(label):
                     continue
-                bill_id = f"{components.group(1)} {int(components.group(2))}"
+                agenda.add_media_link(
+                    note=label,
+                    url=href,
+                    media_type="text/html",
+                    on_duplicate="ignore",
+                )
 
-                agenda.add_bill(bill_id)
+        # Strip CSR citations before bill parsing so a rule number can't be
+        # misread as a bill. The regex matches the whole citation, so the
+        # substitution removes it entirely (e.g. "191 CSR 03" -> "").
+        bill_text = self._csr_re.sub("", text)
+
+        # Matches (SJR, HCR, HB, HR, SCR, SB, HJR, SR) + id
+        # Allows for house, senate, joint, or bill to be fully spelled out
+        # Allows for "." after H, S, J, C, and B
+        # Allows for up to two spaces before the id
+        bills = re.findall(
+            r"((S\.?|Senate|H\.?|House)\s?((J|C|Joint)\.?\s?)?(B\.?|Bill|R\.?)\s?\s?(\d+))",
+            bill_text,
+            flags=re.IGNORECASE,
+        )
+
+        for bill in bills:
+            bill_id = period_and_whitespace_re.sub("", bill[0])
+            bill_id = house_bill_re.sub("HB", bill_id)
+            bill_id = senate_bill_re.sub("SB", bill_id)
+
+            # Final step to set correct number of spaces in the id
+            components = component_re.search(bill_id)
+            if components is None:
+                # Shouldn't happen given the outer regex, but guard
+                # against an AttributeError if the pattern doesn't match.
+                continue
+            bill_id = f"{components.group(1)} {int(components.group(2))}"
+
+            agenda.add_bill(bill_id)
 
     def strip_date_range(self, when):
         """
