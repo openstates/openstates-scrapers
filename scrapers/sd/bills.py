@@ -257,7 +257,9 @@ class SDBillScraper(Scraper, LXMLMixin):
                     f"https://sdlegislature.gov/api/Votes/{action['Vote']['VoteId']}"
                 )
                 if vote_link not in self.seen_votes:
-                    yield from self.scrape_vote(bill, date, vote_link)
+                    yield from self.scrape_vote(
+                        bill, date, vote_link, action["Amendment"]
+                    )
                     self.seen_votes.add(vote_link)
                 if action_text != "Certified uncontested, placed on consent":
                     vote_action = (
@@ -333,7 +335,7 @@ class SDBillScraper(Scraper, LXMLMixin):
         for version in versions:
             self.add_bill_version(bill, version, api_id)
 
-    def scrape_vote(self, bill, date, url):
+    def scrape_vote(self, bill, date, url, amendment=None):
         page = self.get(url).json()
 
         location = page["actionLog"]["FullName"]
@@ -370,6 +372,22 @@ class SDBillScraper(Scraper, LXMLMixin):
             #     vtype = "veto-override"
             else:
                 vtype = []
+
+            # SD sometimes records one roll call under two VoteIds (e.g. a motion
+            # restated in the minutes after a failed substitute motion), so skip
+            # a vote identical to one already seen on this bill
+            roll = sorted((p["UniqueName"], p["Vote1"]) for p in page["RollCalls"])
+            vote_key = (
+                bill.identifier,
+                date,
+                location,
+                motion,
+                str(amendment),
+                str(roll),
+            )
+            if vote_key in self.seen_votes:
+                return
+            self.seen_votes.add(vote_key)
 
             vote = VoteEvent(
                 chamber=chamber,
