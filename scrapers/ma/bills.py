@@ -330,7 +330,23 @@ class MABillScraper(Scraper):
             action_name = row.xpath("string(td[3])")
 
             # House votes
-            if "Supplement" in action_name:
+            # Massachusetts stopped using "Supplement" in its action text, so this
+            # branch matched nothing and every House roll call was skipped before a
+            # single request was made. Across 24 bills sampled from the 194th session,
+            # "Supplement" occurs 0 times while "YEA and NAY" occurs 57 -- and the
+            # Senate branch below still matched reality ("Roll Call", 41), which is
+            # what disguised the symptom as "we have Senate votes but no House votes"
+            # rather than an obvious blank.
+            #
+            # Everything downstream already handles the modern format: scrape_house_vote()
+            # splits the roll-call PDF on "No. " + <n>, which is exactly how
+            # "(See YEA and NAY No. 62 )" numbers itself, and the motion/YEAS/NAYS
+            # regexes below parse the current text unchanged. Only the gate was stale.
+            #
+            # "Supplement" is kept rather than replaced so older sessions still match.
+            if "Supplement" in action_name or re.search(
+                r"YEA and NAY", action_name, re.IGNORECASE
+            ):
                 actor = "lower"
 
                 if not re.findall(r"(.+)-\s*\d+\s*YEAS", action_name):
@@ -359,9 +375,22 @@ class MABillScraper(Scraper):
                 cached_vote.set_count("yes", y)
                 cached_vote.set_count("no", n)
 
+                # The session goes into this URL WITHOUT its ordinal suffix.
+                # bill.legislative_session is e.g. "194th", which produced
+                # .../Journal/House/194th/2025/RollCalls -- a 404. The site wants the
+                # bare number: .../Journal/House/194/2025/RollCalls, which serves the
+                # real ~740KB year-aggregate PDF containing the "No. <n>" blocks
+                # scrape_house_vote() parses.
+                #
+                # The 404 was silent, which is why it survived: urlretrieve saved the
+                # error page, convert_pdf turned it into junk text, the "No. <n>" lookup
+                # missed, and that path returns None rather than False -- so the caller
+                # treated it as success and yielded a vote event with correct counts and
+                # zero voters. Tallies looked right while every individual House vote was
+                # dropped.
                 housevote_pdf = (
                     "https://malegislature.gov/Journal/House/{}/{}/RollCalls".format(
-                        bill.legislative_session, action_year
+                        re.sub(r"\D+$", "", bill.legislative_session), action_year
                     )
                 )
                 self.scrape_house_vote(cached_vote, housevote_pdf, n_supplement)
