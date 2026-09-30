@@ -1,6 +1,6 @@
+import concurrent.futures
 import datetime
 import re
-import time
 
 import lxml.html
 
@@ -9,6 +9,13 @@ from openstates.scrape import Scraper, VoteEvent
 
 class KSVoteScraper(Scraper):
     BASE_URL = "https://www.kslegislature.gov"
+
+    # Number of vote detail pages to fetch concurrently. The old scraper
+    # fetched every ~100 KB vote page one-at-a-time, which meant a full
+    # biennium took well over a day to complete. Fetching several pages in
+    # parallel dramatically cuts the wall-clock time without changing what
+    # gets parsed or the order in which votes are emitted.
+    VOTE_FETCH_WORKERS = 12
 
     def scrape(self, session=None):
         meta = next(
@@ -34,7 +41,7 @@ class KSVoteScraper(Scraper):
             # Paginate until no vote rows are returned.
             list_url = (
                 f"{self.BASE_URL}/{biennium}/votes/fragment/"
-                f"?page={page}&per_page=20"
+                f"?page={page}&per_page=100"
             )
 
             try:
@@ -50,6 +57,11 @@ class KSVoteScraper(Scraper):
             if not vote_rows:
                 break
 
+            # Collect all (bill, vote_url) pairs on this listing page first so
+            # the individual vote detail pages can be downloaded concurrently.
+            # The listing order is preserved below so the emitted output is
+            # identical to the previous sequential implementation.
+            page_votes = []
             for row in vote_rows:
                 bill = row.xpath(".//td[@data-label='Measure']//a/text()")
                 bill = bill[0].strip() if bill else None
@@ -59,36 +71,54 @@ class KSVoteScraper(Scraper):
                 if not vote_url.startswith("http"):
                     vote_url = f"{self.BASE_URL}{vote_url}"
 
+                page_votes.append((bill, vote_url))
+
+            # Fetch the vote detail pages in parallel. Fetching (network I/O)
+            # is the slow part; parsing stays on the main thread so the scrape
+            # generator continues to yield in the original listing order.
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=self.VOTE_FETCH_WORKERS
+            ) as pool:
+                fetched = list(
+                    pool.map(
+                        lambda bv: (bv[0], bv[1], self._fetch_vote(bv[1])),
+                        page_votes,
+                    )
+                )
+
+            for bill, vote_url, text in fetched:
                 yield from self.parse_vote(
                     bill,
                     vote_url,
                     session,
+                    text,
                 )
 
             page += 1
 
-    def parse_vote(self, bill, link, session):
-        response = None
+    def _fetch_vote(self, link):
+        # Download a single vote detail page. Returns the response text, or
+        # None if the page could not be fetched. Kept separate from parse_vote
+        # so many pages can be fetched concurrently.
+        #
+        # scrapelib (the base Scraper) already retries on connection errors
+        # with exponential backoff and HTTP resilience handling, so we no
+        # longer need a manual 10-attempt loop with fixed 10s sleeps that
+        # could waste up to 100 seconds on a single flaky vote.
+        try:
+            response = self.get(
+                link,
+                timeout=60,
+            )
+        except Exception as e:
+            self.warning(f"Skipping vote after repeated failures: {link}: {e}")
+            return None
 
-        # Kansas occasionally resets SSL connections while processing
-        # large numbers of requests. Retry before skipping a vote.
-        for attempt in range(10):
-            try:
-                response = self.get(
-                    link,
-                    timeout=60,
-                )
-                break
+        return response.text
 
-            except Exception as e:
-                self.warning(f"Attempt {attempt + 1}/10 failed for {link}: {e}")
-                time.sleep(10)
-
-        if response is None:
-            self.warning(f"Skipping vote after repeated failures: {link}")
+    def parse_vote(self, bill, link, session, text):
+        if text is None:
             return
-
-        text = response.text
 
         if "Page Not Found" in text or "Page Unavailable" in text:
             self.warning(f"Missing vote page: {link}")
