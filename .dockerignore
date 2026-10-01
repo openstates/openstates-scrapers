@@ -3,8 +3,11 @@
 data
 _data
 scrapers/_data
+scrapers/_cache
 cache
 _cache
 pubinfo_*
+*.accdb
 openstates-postgres/
 vm_data/
+
