@@ -1,5 +1,5 @@
-FROM python:3.9-slim
-LABEL maintainer="James Turk <dev@jamesturk.net>"
+FROM python:3.13-slim
+LABEL maintainer="Jesse Mortenson <Jesse.Mortenson@sai360.com>"
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -37,7 +37,8 @@ RUN apt-get update -qq \
 # add mysql configs once so we don't have to do them at every instantiation
 RUN sed -i "s/user                    = mysql/user                    = root/" /etc/mysql/mariadb.conf.d/50-server.cnf \
     &&  mysql_install_db --user=root \
-    && mkdir /run/mysqld
+    && mkdir /run/mysqld \
+    && printf "[client]\nskip-ssl\n" > /etc/mysql/conf.d/no-ssl.cnf
 RUN pip --no-cache-dir --disable-pip-version-check install wheel \
     && pip --no-cache-dir --disable-pip-version-check install crcmod poetry
 
