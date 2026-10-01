@@ -53,12 +53,33 @@ class PRBillScraper(Scraper):
     last_page = None
 
     bill_types = {
+        "PC": "bill",  # Proyecto de la Cámara (House bill)
+        "PS": "bill",  # Proyecto del Senado (Senate bill)
+        "RCC": "joint resolution",  # Resolución Conjunta de la Cámara
+        "RCS": "joint resolution",  # Resolución Conjunta del Senado
+        "RC": "joint resolution",  # Resolución Conjunta (generic)
+        "RK": "concurrent resolution",
+        "RS": "resolution",  # Resolución del Senado
+        "NM": "appointment",
+        # Fallback: bare "P" or "R" prefix (should not normally be needed)
         "P": "bill",
         "R": "resolution",
-        "RK": "concurrent resolution",
-        "RC": "joint resolution",
-        "NM": "appointment",
         # 'PR': 'plan de reorganizacion',
+    }
+
+    # Map bill ID prefix to chamber; used to assign bills to the correct chamber
+    # since SUTRA returns all bill types in a single undifferentiated listing.
+    bill_chambers = {
+        "PC": "lower",  # Proyecto de la Cámara
+        "RCC": "lower",  # Resolución Conjunta de la Cámara
+        "PS": "upper",  # Proyecto del Senado
+        "RS": "upper",  # Resolución del Senado
+        "RCS": "upper",  # Resolución Conjunta del Senado
+        "RC": "lower",  # Resolución Conjunta (joint - originates in lower by convention)
+        "RK": "lower",
+        "NM": "upper",  # Nominations confirmed by Senate
+        "P": "lower",
+        "R": "lower",
     }
 
     def clean_name(self, name):
@@ -75,13 +96,9 @@ class PRBillScraper(Scraper):
         self.seen_votes = set()
         self.seen_bills = set()
         self.seen_bill_identifiers = set()
-        chambers = [chamber] if chamber is not None else ["upper", "lower"]
-        for chamber in chambers:
-            yield from self.scrape_search_results(
-                chamber,
-                session,
-                page,
-            )
+        # SUTRA's listing is not filtered by chamber; scrape once and assign
+        # chamber per bill via classify_bill_chamber()
+        yield from self.scrape_search_results(chamber, session, page)
 
     def scrape_search_results(self, chamber, session, page=None):
         cuatrienio_id = session[0:4]
@@ -91,27 +108,31 @@ class PRBillScraper(Scraper):
             "upgrade-insecure-requests": "1",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         }
-        resp = self.s.get(
-            "https://sutra.oslpr.org/medidas?cuatrienio_id={}&autores=&comision_id=&page=1".format(
-                cuatrienio_id
-            ),
-            headers=headers,
-            verify=False,
-        )
-        page = lxml.html.fromstring(resp.text)
-        pagelist = page.xpath(
-            '//span[contains(@class,"items-baseline")]/a/@aria-label'
-        )[-1]
-        pages = re.findall(r"\d+", pagelist)[0]
-        for number in range(1, int(pages) + 1):
-            resps = self.s.get(
+
+        def get_page(number):
+            return self.s.get(
                 "https://sutra.oslpr.org/medidas?cuatrienio_id={}&autores=&comision_id=&page={}".format(
                     cuatrienio_id, number
                 ),
                 headers=headers,
                 verify=False,
             )
-            pagehtml = lxml.html.fromstring(resps.text)
+
+        def parse_total_pages(html):
+            pagelist = html.xpath(
+                '//span[contains(@class,"items-baseline")]/a/@aria-label'
+            )
+            if not pagelist:
+                return 1
+            return int(re.findall(r"\d+", pagelist[-1])[0])
+
+        first_page_html = lxml.html.fromstring(get_page(1).text)
+        total_pages = parse_total_pages(first_page_html)
+
+        number = 1
+        while number <= total_pages:
+            resp = get_page(number)
+            pagehtml = lxml.html.fromstring(resp.text)
 
             # note there's a typo in a css class, one set is DataGridItemSyle (syle)
             # and the other is DataGridAltItemStyle (style)
@@ -124,6 +145,11 @@ class PRBillScraper(Scraper):
                     yield from self.scrape_bill(chamber, session, bill_url)
                     self.seen_bills.add(bill_url)
 
+            # Re-check total pages on each iteration so bills added during
+            # the run (which shift the page count) are not missed
+            total_pages = parse_total_pages(pagehtml)
+            number += 1
+
     def classify_action(self, action_text):
         for pattern, action_actor, atype in _classifiers:
             if re.match(pattern, action_text):
@@ -135,6 +161,12 @@ class PRBillScraper(Scraper):
             if bill_id.startswith(abbr):
                 return value
         return None
+
+    def classify_bill_chamber(self, bill_id):
+        for abbr, chamber in self.bill_chambers.items():
+            if bill_id.startswith(abbr):
+                return chamber
+        return "lower"
 
     def classify_media_type(self, url):
         url = url.lower()
@@ -364,9 +396,14 @@ class PRBillScraper(Scraper):
         )
         if len(page_header_elems) > 0:
             page_header_text = page_header_elems[0].strip()
-            bill_id = re.findall(r"[A-Z]{2,3}\d{4}", page_header_text)[0]
+            bill_id_match = re.findall(r"[A-Z]{2,4}\d{4}", page_header_text)
+            if not bill_id_match:
+                self.logger.error(f"Could not parse bill ID from header at {url}")
+                return
+            bill_id = bill_id_match[0]
         else:
             self.logger.error(f"Bill found with no bill identifier at {url}")
+            return
 
         bill_title_elems = page.xpath(
             '//span/strong[text()="Título:"]/../following-sibling::span'
@@ -375,6 +412,7 @@ class PRBillScraper(Scraper):
             title = bill_title_elems[0].text_content().strip()
         else:
             self.logger.error(f"Bill found with no title at {url}")
+            return
 
         # PR occasionally repeats a bill at different URLs (????)
         # example:
@@ -386,11 +424,16 @@ class PRBillScraper(Scraper):
             self.seen_bill_identifiers.add(bill_id)
 
         bill_type = self.classify_bill_type(bill_id)
+        bill_chamber = self.classify_bill_chamber(bill_id)
+
+        # If a specific chamber was requested, skip bills belonging to the other
+        if chamber is not None and bill_chamber != chamber:
+            return
 
         bill = Bill(
             bill_id,
             legislative_session=session,
-            chamber=chamber,
+            chamber=bill_chamber,
             title=title,
             classification=bill_type,
         )
