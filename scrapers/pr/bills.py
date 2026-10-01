@@ -57,7 +57,7 @@ class PRBillScraper(Scraper):
         "PS": "bill",  # Proyecto del Senado (Senate bill)
         "RCC": "joint resolution",  # Resolución Conjunta de la Cámara
         "RCS": "joint resolution",  # Resolución Conjunta del Senado
-        "RC": "joint resolution",   # Resolución Conjunta (generic)
+        "RC": "joint resolution",  # Resolución Conjunta (generic)
         "RK": "concurrent resolution",
         "RS": "resolution",  # Resolución del Senado
         "NM": "appointment",
@@ -70,14 +70,14 @@ class PRBillScraper(Scraper):
     # Map bill ID prefix to chamber; used to assign bills to the correct chamber
     # since SUTRA returns all bill types in a single undifferentiated listing.
     bill_chambers = {
-        "PC": "lower",   # Proyecto de la Cámara
+        "PC": "lower",  # Proyecto de la Cámara
         "RCC": "lower",  # Resolución Conjunta de la Cámara
-        "PS": "upper",   # Proyecto del Senado
-        "RS": "upper",   # Resolución del Senado
+        "PS": "upper",  # Proyecto del Senado
+        "RS": "upper",  # Resolución del Senado
         "RCS": "upper",  # Resolución Conjunta del Senado
-        "RC": "lower",   # Resolución Conjunta (joint - originates in lower by convention)
+        "RC": "lower",  # Resolución Conjunta (joint - originates in lower by convention)
         "RK": "lower",
-        "NM": "upper",   # Nominations confirmed by Senate
+        "NM": "upper",  # Nominations confirmed by Senate
         "P": "lower",
         "R": "lower",
     }
