@@ -1,4 +1,8 @@
-from utils import url_xpath
+import time
+
+import lxml.html
+import requests
+
 from openstates.scrape import State
 from .bills import NEBillScraper
 from .events import NEEventScraper
@@ -113,9 +117,25 @@ class Nebraska(State):
     ]
 
     def get_session_list(self):
-        # SSL bad as of 2024-11-18
-        return url_xpath(
-            "https://nebraskalegislature.gov/bills/",
-            "//select[@name='Legislature']/option/text()",
-            verify=False,
-        )[:-1]
+        # SSL bad as of 2024-11-18, so verify=False.
+        # The site also intermittently times out on the connection, so retry
+        # a few times with backoff instead of failing the whole run.
+        url = "https://nebraskalegislature.gov/bills/"
+        xpath = "//select[@name='Legislature']/option/text()"
+
+        max_attempts = 3
+        timeout = 30
+        last_exception = None
+        for attempt in range(max_attempts):
+            try:
+                res = requests.get(url, verify=False, timeout=timeout)
+                res.raise_for_status()
+                doc = lxml.html.fromstring(res.text)
+                return doc.xpath(xpath)[:-1]
+            except requests.exceptions.RequestException as e:
+                last_exception = e
+                if attempt < max_attempts - 1:
+                    wait = 10 * (attempt + 1)
+                    time.sleep(wait)
+
+        raise last_exception
