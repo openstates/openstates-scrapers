@@ -27,9 +27,8 @@ class MEBillScraper(Scraper):
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session, first_item)
 
-    def scrape_chamber(self, chamber, session, first_item=1):
-        # Create a Bill for each Paper of the chamber's session
-        request_session = requests.Session()
+    def _start_search(self, request_session, chamber, session):
+        # the result pages belong to this search, held server side on the session
         search_url = "https://legislature.maine.gov/LawMakerWeb/doadvancedsearch.asp"
         session_number = str(int(session) - 116)
         paper_type = "HP" if chamber == "lower" else "SP"
@@ -49,6 +48,11 @@ class MEBillScraper(Scraper):
         }
         r = request_session.post(url=search_url, data=form_data)
         r.raise_for_status()
+
+    def scrape_chamber(self, chamber, session, first_item=1):
+        # Create a Bill for each Paper of the chamber's session
+        request_session = requests.Session()
+        self._start_search(request_session, chamber, session)
 
         self.seen = set()
         yield from self._recursively_process_bills(
@@ -70,10 +74,22 @@ class MEBillScraper(Scraper):
             f"Searching bills in {chamber} starting with item {first_item}"
         )
         url = "https://legislature.maine.gov/LawMakerWeb/searchresults.asp"
-        r = request_session.get(url, params={"StartWith": first_item})
-        r.raise_for_status()
-
-        bills = lxml.html.fromstring(r.text).xpath("//tr/td/b/a")
+        # a page of results occasionally comes back empty, or the connection
+        # drops, part way through a chamber: both end the scrape where it stands,
+        # so re-run the search and ask once more before believing either
+        bills = []
+        for attempt in range(2):
+            if attempt:
+                self._start_search(request_session, chamber, session)
+            try:
+                r = request_session.get(url, params={"StartWith": first_item})
+                r.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                self.warning(f"search results at item {first_item} failed: {e}")
+                continue
+            bills = lxml.html.fromstring(r.text).xpath("//tr/td/b/a")
+            if bills:
+                break
         if bills:
             for bill in bills:
                 bill_id_slug = bill.xpath("./@href")[0]
