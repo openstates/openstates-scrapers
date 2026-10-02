@@ -1,3 +1,4 @@
+import hashlib
 import re
 from datetime import datetime
 from io import BytesIO
@@ -34,6 +35,7 @@ class NMVoteScraper(Scraper):
         self.info("Getting doc at {}".format(doc_path))
         content = self.get(doc_path).text
         tree = html.fromstring(content)
+        seen_pdfs = set()
 
         # all links but first one
         for fname in tree.xpath("//a/text()")[1:]:
@@ -58,7 +60,7 @@ class NMVoteScraper(Scraper):
             if ("SVOTE" in suffix and chamber == "upper") or (
                 "HVOTE" in suffix and chamber == "lower"
             ):
-                sv_doc = self.scrape_document(doc_path + fname)
+                sv_doc = self.scrape_document(doc_path + fname, bill_id, seen_pdfs)
                 if not sv_doc:
                     continue
 
@@ -72,14 +74,23 @@ class NMVoteScraper(Scraper):
                 else:
                     yield vote
 
-    def scrape_document(self, filelocation):
+    def scrape_document(self, filelocation, bill_id, seen_pdfs):
         """Downloads PDF file content and converts into PyMuPDF object."""
         try:
             response = self.get(url=filelocation)
-            doc = fitz.open("pdf", BytesIO(response.content))
         except scrapelib.HTTPError:
             self.warning("Request failed: {}".format(filelocation))
             return
+
+        # NM posts some byte-identical vote PDFs under more than one filename
+        # (e.g. HB0034HVOTE.PDF and HB034HVOTE.PDF), so skip repeats. Keyed by
+        # bill too, since one roll call PDF can cover several bills.
+        key = (bill_id, hashlib.md5(response.content).hexdigest())
+        if key in seen_pdfs:
+            self.info("Skipping duplicate vote PDF: {}".format(filelocation))
+            return
+        seen_pdfs.add(key)
+        doc = fitz.open("pdf", BytesIO(response.content))
 
         return doc
 
