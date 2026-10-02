@@ -8,6 +8,7 @@ import requests
 import xml.etree.ElementTree as ET
 
 from openstates.scrape import Bill, Scraper, VoteEvent, Event
+from utils.votes import safe_lookup
 
 
 # NOTE: This is a US federal bill scraper designed to output bills in the
@@ -58,6 +59,7 @@ class USBillScraper(Scraper):
         "Cloture on the Motion to Proceed Rejected": "fail",
         "Cloture on the Motion to Proceed Agreed to": "pass",
         "Concurrent Resolution Agreed to": "pass",
+        "Concurrent Resolution Rejected": "fail",
         "Conference Report Agreed to": "pass",
         "Amendment Rejected": "fail",
         "Decision of Chair Sustained": "pass",
@@ -719,7 +721,14 @@ class USBillScraper(Scraper):
 
         result_text = page.xpath("//roll_call_vote/vote_result/text()")[0]
 
-        result = self.senate_statuses[result_text]
+        # A bare self.senate_statuses[result_text] crashed this whole chamber's remaining
+        # scrape the first time the Senate used a phrasing not yet in the dict (real case:
+        # "Concurrent Resolution Rejected"). Senate LIS publishes no schema/enum for this
+        # field -- new phrasing is only discoverable by encountering it -- so skip just this
+        # one vote (loudly) instead of crashing.
+        result = safe_lookup(self.senate_statuses, result_text, what="Senate vote result", context=url)
+        if result is None:
+            return
 
         vote = VoteEvent(
             start_date=when,
@@ -755,12 +764,28 @@ class USBillScraper(Scraper):
         vote.set_count("absent", int(absents))
         vote.set_count("abstain", int(presents))
 
+        skipped_voters = []
         for row in page.xpath("//roll_call_vote/members/member"):
             lis_id = row.xpath("lis_member_id/text()")[0]
             name = row.xpath("member_full/text()")[0]
             choice = row.xpath("vote_cast/text()")[0]
 
-            vote.vote(self.vote_codes[choice], name, note=lis_id)
+            # Same "no schema, don't crash on an unmapped value" guard as the vote-result
+            # lookup above -- here it's per-voter, so an unmapped choice skips just this one
+            # member's row rather than the whole vote.
+            option = safe_lookup(self.vote_codes, choice, what="vote choice", context=f"{name} ({lis_id}), {url}")
+            if option is None:
+                skipped_voters.append(name)
+                continue
+            vote.vote(option, name, note=lis_id)
+
+        # A single unmapped choice used by many voters (not just one) would otherwise look
+        # like a complete, trustworthy vote with a much smaller voter count than reality -- one
+        # summary line per affected vote, not just scattered per-voter warnings.
+        if skipped_voters:
+            self.warning(
+                f"{url}: {len(skipped_voters)} voter(s) skipped due to an unmapped vote choice: {skipped_voters}"
+            )
 
         yield vote
 
@@ -832,11 +857,23 @@ class USBillScraper(Scraper):
         vote.set_count("abstain", int(presents))
 
         # vote.yes vote.no vote.vote
+        skipped_voters = []
         for row in page.xpath("//rollcall-vote/vote-data/recorded-vote"):
             bioguide = row.xpath("legislator/@name-id")[0]
             name = row.xpath("legislator/@sort-field")[0]
             choice = row.xpath("vote/text()")[0]
 
-            vote.vote(self.vote_codes[choice], name, note=bioguide)
+            # Same per-voter "unmapped choice skips this row, not the whole vote" guard as
+            # scrape_senate_votes' vote_codes lookup above.
+            option = safe_lookup(self.vote_codes, choice, what="vote choice", context=f"{name} ({bioguide}), {url}")
+            if option is None:
+                skipped_voters.append(name)
+                continue
+            vote.vote(option, name, note=bioguide)
+
+        if skipped_voters:
+            self.warning(
+                f"{url}: {len(skipped_voters)} voter(s) skipped due to an unmapped vote choice: {skipped_voters}"
+            )
 
         return vote

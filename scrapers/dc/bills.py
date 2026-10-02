@@ -8,6 +8,7 @@ from openstates.scrape import Scraper, Bill, VoteEvent
 from .actions import Bill_Categorizer, Vote_Categorizer
 
 from utils.media import get_media_type
+from utils.votes import safe_lookup
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -245,7 +246,15 @@ class DCBillScraper(Scraper):
                             if act["voteDetails"]:
                                 result = act["voteDetails"]["voteResult"]
                                 if result:
-                                    status = self._vote_statuses[result.lower()]
+                                    # Same shape as usa/bills.py's senate_statuses bug -- a
+                                    # bare self._vote_statuses[...] crashes on any vote-result
+                                    # phrasing not yet seen. Skip just this one vote instead of
+                                    # the whole scrape.
+                                    status = safe_lookup(
+                                        self._vote_statuses, result.lower(), what="DC vote result", context=result
+                                    )
+                                    if status is None:
+                                        continue
                                     id_text = (
                                         str(leg["legislationNumber"])
                                         + "-"
