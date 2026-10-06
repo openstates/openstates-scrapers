@@ -58,6 +58,7 @@ class USBillScraper(Scraper):
         "Cloture on the Motion to Proceed Rejected": "fail",
         "Cloture on the Motion to Proceed Agreed to": "pass",
         "Concurrent Resolution Agreed to": "pass",
+        "Concurrent Resolution Rejected": "fail",
         "Conference Report Agreed to": "pass",
         "Amendment Rejected": "fail",
         "Decision of Chair Sustained": "pass",
