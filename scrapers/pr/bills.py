@@ -285,7 +285,12 @@ class PRBillScraper(Scraper):
         }
         html = self.s.get(authurl, headers=headers, verify=False).text
         page = lxml.html.fromstring(html)
-        name = page.xpath("//title/text()")[0].strip().replace(" - Sutra", "")
+        name = page.xpath("//title/text()")[0].strip()
+        # site renders titles like "Jane  Doe - Sistema Único de Trámite Legislativo"
+        # (sometimes with a double dash, e.g. "Jane Doe - - Sistema...")
+        name = re.sub(
+            r"[\s-]*Sistema Único de Trámite Legislativo\s*$", "", name
+        ).strip()
         # currently not saving sponsor party, but here's the xpath
         # sometimes there's an extra dummy row beyond the first
         if name != "Legislador":
