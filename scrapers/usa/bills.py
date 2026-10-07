@@ -122,7 +122,7 @@ class USBillScraper(Scraper):
         root = ET.fromstring(sitemaps)
 
         # if you want to test a bill:
-        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/119/hr/BILLSTATUS-119hr1968.xml')
+        # yield from self.parse_bill('https://www.govinfo.gov/bulkdata/BILLSTATUS/119/hconres/BILLSTATUS-119hconres89.xml')
 
         for link in root.findall("us:sitemap/us:loc", self.ns):
             # split by /, then check that "116s" matches the chamber
@@ -720,7 +720,12 @@ class USBillScraper(Scraper):
 
         result_text = page.xpath("//roll_call_vote/vote_result/text()")[0]
 
-        result = self.senate_statuses[result_text]
+        result = self.senate_statuses.get(result_text)
+
+        if result is None:
+            self.logger.warning("Unknown Senate vote result: %r",result_text,)
+            return
+
 
         vote = VoteEvent(
             start_date=when,
