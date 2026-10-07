@@ -723,9 +723,8 @@ class USBillScraper(Scraper):
         result = self.senate_statuses.get(result_text)
 
         if result is None:
-            self.logger.warning("Unknown Senate vote result: %r",result_text,)
+            self.logger.warning("Unknown Senate vote result: %r", result_text)
             return
-
 
         vote = VoteEvent(
             start_date=when,
