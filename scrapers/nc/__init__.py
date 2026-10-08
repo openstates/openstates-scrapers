@@ -374,13 +374,13 @@ class NorthCarolina(State):
             "active": True,
         },
         {
-            "_scraped_name": "2025 Special Session",
+            "_scraped_name": "2026 First Extra Session",
             "classification": "special",
             "identifier": "2025E1",
-            "name": "2025 Extra Session",
-            "start_date": "2025-11-17",
-            "end_date": "2025-12-01",
-            "active": False,
+            "name": "2026 Extra Session 1",
+            "start_date": "2026-10-07",
+            "end_date": "2026-10-08",
+            "active": True,
         },
     ]
     ignored_scraped_sessions = []
