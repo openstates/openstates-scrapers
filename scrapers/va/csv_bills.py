@@ -345,8 +345,7 @@ class VaCSVBillScraper(Scraper):
                     doc_link = fn["url"]
                 else:
                     doc_link = (
-                        bill_url_base
-                        + f"legp604.exe?{session_id}+oth+{fn['refid']}"
+                        bill_url_base + f"legp604.exe?{session_id}+oth+{fn['refid']}"
                     ).replace(".PDF", "+PDF")
                 b.add_document_link(
                     "Fiscal Impact Statement: " + fn["refid"],
