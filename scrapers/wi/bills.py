@@ -184,7 +184,9 @@ class WIBillScraper(Scraper):
                 "Record of Committee Proceedings",
             ):
                 extra_doc_url = a.get("href")
-                extra_doc = lxml.html.fromstring(self.get(extra_doc_url, verify=False).text)
+                extra_doc = lxml.html.fromstring(
+                    self.get(extra_doc_url, verify=False).text
+                )
                 extra_doc.make_links_absolute(extra_doc_url)
                 for extra_a in extra_doc.xpath('//ul[@class="docLinks"]/li//a'):
                     if extra_a.text:
