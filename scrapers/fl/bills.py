@@ -22,8 +22,6 @@ from .utils import (
     retry_on_connection_error,
 )
 
-# from https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
-
 SPONSOR_RE = re.compile(
     r"by\s+(?P<sponsors>[^(]+)(\(CO-INTRODUCERS\)\s+(?P<cosponsors>[\s\S]+))?"
 )
@@ -48,7 +46,6 @@ FL_ORGANIZATION_ENTITY_NAME_KEYWORDS = [
 ]
 
 requests.packages.urllib3.disable_warnings()
-requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
 
 # Patch the URL class to handle connection errors more gracefully
 original_get_response = URL.get_response
