@@ -12,6 +12,7 @@ def url_xpath(url, path, verify=None, user_agent=None):
 
     res = requests.get(url, verify=verify, headers=headers)
     try:
+        res.raise_for_status()
         doc = lxml.html.fromstring(res.text)
     except Exception:
         logging.error(
