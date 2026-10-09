@@ -58,6 +58,11 @@ class COBillScraper(Scraper, LXMLMixin):
         # If you need to scrape an individual bill for testing
         # yield from self.scrape_bill("https://leg.colorado.gov/bills/HB26-1362", "2026")
 
+        # Throttle requests to avoid HTTP 429 from leg.colorado.gov.
+        # The site rate-limits aggressive scrapers; 30 RPM keeps us well under
+        # the threshold observed in production (429s at ~60 RPM).
+        self.requests_per_minute = 30
+
         # TODO: there's a better way to do this
         for i in self.jurisdiction.legislative_sessions:
             if i["identifier"] == session:
