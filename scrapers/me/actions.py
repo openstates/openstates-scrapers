@@ -43,17 +43,38 @@ rules = (
     Rule(r"VETO was NOT SUSTAINED", "veto-override-passage"),
     Rule(r"VETO was OVERRIDDEN", "veto-override-passage"),
     Rule(r"VETO was SUSTAINED", "veto-override-failure"),
+    # amendment adoptions also end in "READ and ADOPTED."
     Rule(
-        r"(?<![Aa]mendment)READ and (PASSED|ADOPTED)(, in concurrence)?\.$", "passage"
+        r"^(?!.*Amendment \").*READ and (PASSED|ADOPTED)(, in concurrence)?\.$",
+        "passage",
     ),
     Rule(r"ENGROSSED", "reading-3"),
     Rule(r"Received by the ", "receipt"),
-    Rule(r"(?=.*Committee Amendment)(?=.*ADOPTED)", "committee-passage-favorable"),
+    # not a floor amendment to a committee amendment
+    Rule(
+        r"^(?:(?!(House|Senate) Amendment).)*Committee Amendment(?=.*ADOPTED)",
+        "committee-passage-favorable",
+    ),
     Rule(r"DEAD", "failure"),
-    Rule(r"(?=.*Committee Amendment)(?=.*FAILED)", "amendment-failure"),
+    # "the Bill FAILED PASSAGE TO BE ENGROSSED AS AMENDED by Committee Amendment"
+    # is the bill failing, not the amendment
+    Rule(
+        r"^(?!.*FAILED PASSAGE TO BE ENGROSSED)(?=.*Committee Amendment)(?=.*FAILED)",
+        "amendment-failure",
+    ),
+    Rule(
+        [
+            r"^(?!.*RECONSIDER).*FAIL(ED|URE)( of)? "
+            r"(PASSAGE TO BE ENACTED|ENACTMENT|FINAL PASSAGE)",
+            r"^(Subsequently, )?PASSAGE TO BE ENACTED.*FAILED",
+        ],
+        "failure",
+    ),
     Rule(r"Withdraw", "withdrawal"),
     Rule(r"REFER to the Committee", "referral-committee"),
-    Rule(r"Majority Ought Not to Pass Report was ACCEPTED", "committee-failure"),
+    # House "the Majority ... Report was ACCEPTED", Senate "... Report ACCEPTED",
+    # and lettered "REPORT A Ought Not to Pass was ACCEPTED"
+    Rule(r"Ought Not to Pass( Report)? (was )?ACCEPTED", "committee-failure"),
 )
 
 
