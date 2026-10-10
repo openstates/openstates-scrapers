@@ -38,6 +38,31 @@ SOURCE_URL = "https://www.legis.ga.gov/legislation/{bid}"
 vote_name_pattern = re.compile(r"(.*), (\d+(?:ST|ND|RD|TH))", re.IGNORECASE)
 
 
+def vote_classification(caption):
+    """Classify a vote from its Caption, the motion voted on."""
+    caption = caption.upper()
+    if re.search(
+        r"RECON|TABLE|ENGROSS|PREVIOUS QUESTION|WITHDRAW|COMMIT|RULING|SUSPEND"
+        r"|DISAGREE|INSIST|RECEDE|POSTPONE",
+        caption,
+    ):
+        return []
+    # "AGREE TO HOUSE SUBSTITUTE", "Agree to Senate Amendment"
+    if "AGREE" in caption:
+        return ["passage"]
+    if "VETO" in caption:
+        return ["veto-override"]
+    if re.search(r"AMEND|SUBSTITUTE", caption) and not re.search(
+        r"PASSAGE|CONSTITUTIONAL", caption
+    ):
+        return ["amendment"]
+    # "PASSAGE BY SUBSTITUTE", "ADOPTION OF CONSTITUTIONAL AMENDMENT",
+    # "Local Calendar"
+    if re.search(r"PASSAGE|ADOPT|LOCAL|CALENDAR", caption):
+        return ["passage"]
+    return []
+
+
 class GABillScraper(Scraper):
     lservice = get_client("Legislation").service
     vservice = get_client("Votes").service
@@ -154,13 +179,13 @@ class GABillScraper(Scraper):
             "HRAR": ["referral-committee"],
             "SRAR": ["referral-committee"],
             "STR": ["reading-3"],
-            "SAHAS": None,
+            "SAHAS": ["concurrence"],
             "SE": ["passage"],
             "SR": ["referral-committee"],
             "HTRL": ["reading-3", "failure"],
             "HTR": ["reading-3"],
             "S3RLT": ["reading-3", "failure"],
-            "HASAS": None,
+            "HASAS": ["concurrence"],
             "S3RPP": None,
             "STAB": None,
             "SRECO": None,
@@ -174,8 +199,9 @@ class GABillScraper(Scraper):
             "SNOM": None,
             "S2R": ["reading-2"],
             "H2R": ["reading-2"],
-            "SENG": ["passage"],
-            "HENG": ["passage"],
+            # engrossment closes a bill to amendment before third reading
+            "SENG": None,
+            "HENG": None,
             "HPOST": None,
             "HCAP": None,
             "SDSG": ["executive-signature"],
@@ -244,30 +270,64 @@ class GABillScraper(Scraper):
             bill.extras = {"guid": guid}
 
             if instrument["Votes"]:
-                vote_listing = instrument["Votes"]["VoteListing"]
-                for listed_vote in vote_listing:
+                listed_votes = [
+                    backoff(self.vservice.GetVote, v["VoteId"])
+                    for v in instrument["Votes"]["VoteListing"]
+                ]
 
-                    listed_vote = backoff(self.vservice.GetVote, listed_vote["VoteId"])
+                # GetVote has no result, and yeas > nays isn't enough to pass
+                # (HB 1324: 87-76, short of the 91 needed). A failed vote is
+                # followed by a "Lost" status ("House Third Reading Lost",
+                # "Senate Lost", ...) in the same chamber; mark the latest vote
+                # before each one as failed.
+                lost_votes = set()
+                for status in history:
+                    branch = {"H": "House", "S": "Senate"}.get(status["Code"][0])
+                    if not branch or "Lost" not in status["Description"]:
+                        continue
+                    earlier = [
+                        v
+                        for v in listed_votes
+                        if v["Branch"] == branch
+                        and v["Date"].date() == status["Date"].date()
+                        and v["Date"] <= status["Date"]
+                    ]
+                    if earlier:
+                        lost_votes.add(max(earlier, key=lambda v: v["Date"])["VoteId"])
+
+                for listed_vote in listed_votes:
                     date = listed_vote["Date"].strftime("%Y-%m-%d")
-                    text = listed_vote["Description"] or "Vote on Bill"
+                    # Description is the roll call ("House Vote #665 - ..."),
+                    # Caption the motion ("PASSAGE", "MOTION TO ENGROSS")
+                    identifier = listed_vote["Description"] or str(
+                        listed_vote["VoteId"]
+                    )
+                    caption = (listed_vote["Caption"] or "").strip()
+
+                    if listed_vote["VoteId"] in lost_votes:
+                        result = "fail"
+                    elif listed_vote["Yeas"] > listed_vote["Nays"]:
+                        result = "pass"
+                    else:
+                        result = "fail"
 
                     vote = VoteEvent(
                         start_date=date,
-                        motion_text=text,
+                        motion_text=caption or identifier,
+                        identifier=identifier,
                         chamber={"House": "lower", "Senate": "upper"}[
                             listed_vote["Branch"]
                         ],
-                        result="pass"
-                        if listed_vote["Yeas"] > listed_vote["Nays"]
-                        else "fail",
-                        classification="passage",
+                        result=result,
+                        classification=vote_classification(caption),
                         bill=bill,
                     )
                     vote.set_count("yes", listed_vote["Yeas"])
                     vote.set_count("no", listed_vote["Nays"])
 
                     vote.add_source(self.vsource, note="api")
-                    vote.dedupe_key = f"{bill}#{date}#{text}"
+                    # captions repeat on a bill and day, the roll call doesn't
+                    vote.dedupe_key = f"{bill}#{date}#{identifier}"
 
                     methods = {"Yea": "yes", "Nay": "no"}
 
