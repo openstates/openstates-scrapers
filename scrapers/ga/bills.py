@@ -37,6 +37,8 @@ SOURCE_URL = "https://www.legis.ga.gov/legislation/{bid}"
 
 vote_name_pattern = re.compile(r"(.*), (\d+(?:ST|ND|RD|TH))", re.IGNORECASE)
 
+OUTCOME_STATUS = r"Reconsidered|Passed|Adopted|Agreed|Lost"
+
 
 def vote_classification(caption):
     """Classify a vote from its Caption, the motion voted on."""
@@ -53,10 +55,11 @@ def vote_classification(caption):
     if "VETO" in caption:
         return ["veto-override"]
     if re.search(r"AMEND|SUBSTITUTE", caption) and not re.search(
-        r"PASSAGE|CONSTITUTIONAL", caption
+        r"PASSAGE|CONSTITUTIONAL|BY SUBSTITUTE", caption
     ):
         return ["amendment"]
-    # "PASSAGE BY SUBSTITUTE", "ADOPTION OF CONSTITUTIONAL AMENDMENT",
+    # "PASSAGE BY SUBSTITUTE", "ADOPTION BY SUBSTITUTE",
+    # "ADOPTION OF CONSTITUTIONAL AMENDMENT",
     # "Local Calendar"
     if re.search(r"PASSAGE|ADOPT|LOCAL|CALENDAR", caption):
         return ["passage"]
@@ -276,24 +279,37 @@ class GABillScraper(Scraper):
                 ]
 
                 # GetVote has no result, and yeas > nays isn't enough to pass
-                # (HB 1324: 87-76, short of the 91 needed). A failed vote is
-                # followed by a "Lost" status ("House Third Reading Lost",
-                # "Senate Lost", ...) in the same chamber; mark the latest vote
-                # before each one as failed.
+                # (HB 1324: 87-76, short of the 91 needed). The status history
+                # logs each outcome ("House Third Reading Lost", "House
+                # Reconsidered", "Senate Passed/Adopted") minutes to an hour
+                # after the vote, so pair a chamber's outcomes for the day, in
+                # order, with its passage votes for the day, in order, and fail
+                # the votes paired with a "Lost" status.
                 lost_votes = set()
-                for status in history:
-                    branch = {"H": "House", "S": "Senate"}.get(status["Code"][0])
-                    if not branch or "Lost" not in status["Description"]:
-                        continue
-                    earlier = [
+                unpaired = sorted(
+                    (
                         v
                         for v in listed_votes
-                        if v["Branch"] == branch
-                        and v["Date"].date() == status["Date"].date()
-                        and v["Date"] <= status["Date"]
-                    ]
-                    if earlier:
-                        lost_votes.add(max(earlier, key=lambda v: v["Date"])["VoteId"])
+                        if vote_classification(v["Caption"] or "") == ["passage"]
+                    ),
+                    key=lambda v: v["Date"],
+                )
+                for status in sorted(history, key=lambda s: s["Date"]):
+                    branch = {"H": "House", "S": "Senate"}.get(status["Code"][0])
+                    if not branch or not re.search(
+                        OUTCOME_STATUS, status["Description"]
+                    ):
+                        continue
+                    for v in unpaired:
+                        if (
+                            v["Branch"] == branch
+                            and v["Date"].date() == status["Date"].date()
+                            and v["Date"] <= status["Date"]
+                        ):
+                            unpaired.remove(v)
+                            if "Lost" in status["Description"]:
+                                lost_votes.add(v["VoteId"])
+                            break
 
                 for listed_vote in listed_votes:
                     date = listed_vote["Date"].strftime("%Y-%m-%d")
