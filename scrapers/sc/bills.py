@@ -41,6 +41,30 @@ def toggle_http_version(method):
     return wrapper
 
 
+def split_columns(pages):
+    """
+    Split the fixed-width name columns of a roll call page into names.
+    Splitting on runs of spaces drops a name whenever a long one leaves a
+    single space before the next column, so cut each line at the column
+    offsets that page uses.
+    :param pages: list of lists of lines, one list per page of a section
+    :return: generator of names
+    """
+    for lines in pages:
+        offsets = sorted(
+            {
+                match.start()
+                for line in lines
+                for match in re.finditer(r"(?:^|(?<=\s{2}))\S", line)
+            }
+        )
+        for line in lines:
+            for start, end in zip(offsets, offsets[1:] + [len(line)]):
+                name = line[start:end].strip()
+                if name:
+                    yield name
+
+
 def action_type(action):
     """
     Used to standardise the bill actions to the terms specified
@@ -303,44 +327,44 @@ class SCBillScraper(Scraper):
         pdflines = convert_pdf(path, "text")
         os.remove(path)
 
-        current_vfunc = None
-        option = None
+        # one (vote function, option, pages) per section of the roll call
+        sections = []
 
-        for line in pdflines.split(b"\n"):
-            line = line.strip().decode()
+        for raw_line in pdflines.split(b"\n"):
+            raw_line = raw_line.decode()
+            line = raw_line.strip()
 
             # change what is being recorded
             if line.startswith("YEAS") or line.startswith("AYES"):
-                current_vfunc = vote.yes
+                sections.append((vote.yes, None, [[]]))
             elif line.startswith("NAYS"):
-                current_vfunc = vote.no
+                sections.append((vote.no, None, [[]]))
             elif line.startswith("EXCUSED"):
-                current_vfunc = vote.vote
-                option = "excused"
+                sections.append((vote.vote, "excused", [[]]))
             elif line.startswith("NOT VOTING"):
-                current_vfunc = vote.vote
-                option = "excused"
+                sections.append((vote.vote, "excused", [[]]))
             elif line.startswith("ABSTAIN"):
-                current_vfunc = vote.vote
-                option = "excused"
+                sections.append((vote.vote, "excused", [[]]))
             elif line.startswith("PAIRED"):
-                current_vfunc = vote.vote
-                option = "paired"
+                sections.append((vote.vote, "paired", [[]]))
 
             # skip these
             elif not line or line.startswith("Page "):
                 continue
 
-            # if a vfunc is active
-            elif current_vfunc:
-                # split names apart by 3 or more spaces
-                names = re.split(r"\s{3,}", line)
-                for name in names:
-                    if name:
-                        if not option:
-                            current_vfunc(name.strip())
-                        else:
-                            current_vfunc(option=option, voter=name.strip())
+            # if a section is active
+            elif sections:
+                # a page break starts a fresh set of columns
+                if "\f" in raw_line:
+                    sections[-1][2].append([])
+                sections[-1][2][-1].append(raw_line.replace("\f", "").rstrip())
+
+        for current_vfunc, option, pages in sections:
+            for name in split_columns(pages):
+                if not option:
+                    current_vfunc(name)
+                else:
+                    current_vfunc(option=option, voter=name)
 
     def scrape_details(self, bill_detail_url, session, chamber, bill_id):
         """
