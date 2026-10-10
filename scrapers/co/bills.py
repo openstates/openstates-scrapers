@@ -348,7 +348,7 @@ class COBillScraper(Scraper, LXMLMixin):
 
         # one table per chamber, headed "House Votes (3)" / "Senate Votes (1)";
         # the rows don't name the chamber
-        for table in ("bill-votes-first-chamber",):
+        for table in ("bill-votes-first-chamber", "bill-votes-second-chamber"):
             heading = page.xpath(f"//button[@aria-controls='{table}']//h4")
             chamber = (
                 "upper"
