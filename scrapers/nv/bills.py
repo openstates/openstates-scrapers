@@ -505,7 +505,7 @@ class VoteList(Utf8HtmlMixin, HtmlPage):
         vote_url = input_data["url"]
         bill = input_data["bill"]
 
-        summaries = CSS("h2.h3", min_items=0).match(self.root)
+        summaries = CSS("h2.h3, h2.h4", min_items=0).match(self.root)
         if len(summaries) == 0:
             return
         summaries = [summary.text for summary in summaries]
