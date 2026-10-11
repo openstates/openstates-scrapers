@@ -361,7 +361,7 @@ class PABillScraper(Scraper):
         if lve_elements:
             other += int(lve_elements[0].text_content())
         nv_elements = page.xpath(
-            '//div[@id="voteSummary"]//div[contains(., " No Vote")]/div[2]'
+            '//div[@id="voteSummary"]//div[contains(., "No Vote")]/div[2]'
         )
         if nv_elements:
             other += int(nv_elements[0].text_content())
@@ -431,6 +431,14 @@ class PABillScraper(Scraper):
             'string(//div[contains(text(), "Type of Motion")]/following-sibling::div[1])'
         ).strip()
         motion = "Committee vote (%s): %s" % (committee, motion)
+        # Several amendments can be voted on at one meeting; the amendment
+        # number (e.g. "HB 1924 PN 2398 A01909") tells them apart
+        bill_info = doc.xpath(
+            'string(//div[contains(@class, "detailsLabel")][contains(., "Bill/Resolution")]/following-sibling::div)'
+        )
+        amendment = re.search(r"\bA\d+\b", bill_info)
+        if amendment:
+            motion = "%s %s" % (motion, amendment.group(0))
 
         # Roll call
         rollcall = self.parse_upper_committee_vote_rollcall(doc)
