@@ -655,6 +655,22 @@ class NHBillScraper(Scraper):
         other_counts = defaultdict(int)
         last_line = []
         vote_url = f"https://gc.nh.gov/dynamicdatadump/RollCallSummary.txt?x={self.cachebreaker}"
+
+        # legislators.txt omits some members (current and past),
+        # so their roll call rows would be dropped. This page names every
+        # current and past member by the member id in RollCallHistory.txt.
+        member_names = {}
+        members_page = lxml.html.fromstring(
+            self.get(
+                "https://gc.nh.gov/bill_Status/byAnyMember.aspx", verify=False
+            ).content
+        )
+        for option in members_page.xpath(
+            "//select[@name='ctl00$pageBody$lstMembers']/option"
+        ):
+            match = re.match(r"(?:Rep|Sen)\. (.+?), (.+?)\(", option.text_content())
+            if match:
+                member_names[option.get("value")] = f"{match[2]} {match[1]}"
         lines = self.get(vote_url, verify=False).content.decode("utf-8").splitlines()
 
         for line in lines:
@@ -718,9 +734,16 @@ class NHBillScraper(Scraper):
             # 2016|H|2|330795||Yea|
             # 2012    | H   | 2    | 330795  | 964 |  HB309  | Yea | 1/4/2012 8:27:03 PM
             try:
-                session_yr, body, v_num, _, employee, bill_id, vote, date = line.split(
-                    "|"
-                )
+                (
+                    session_yr,
+                    body,
+                    v_num,
+                    member,
+                    employee,
+                    bill_id,
+                    vote,
+                    date,
+                ) = line.split("|")
             except ValueError:
                 # not enough keys in the split
                 self.warning(f"Skipping {line}, didn't have all needed data for vote")
@@ -729,9 +752,11 @@ class NHBillScraper(Scraper):
                 continue
 
             if session_yr == session and bill_id.strip() in self.bills_by_id:
-                try:
+                if employee in self.legislators:
                     leg = " ".join(self.legislators[employee]["name"].split())
-                except KeyError:
+                elif member in member_names:
+                    leg = " ".join(member_names[member].split())
+                else:
                     self.warning(f"Error, can't find person {employee}")
                     continue
 
