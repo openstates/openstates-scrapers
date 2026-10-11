@@ -287,7 +287,12 @@ class IDBillScraper(Scraper):
                 for name in name_text.split(",")
                 if name
             ]
-            name_list = [name.split("(")[0] for name in name_list]
+            # keep district numbers like "Crane(12)" that tell same-surname
+            # members apart; drop other parentheticals like "Erickson(Larsen)"
+            name_list = [
+                name if re.search(r"\(\d+\)$", name) else name.split("(")[0]
+                for name in name_list
+            ]
             return name_list
         return []
 
@@ -301,12 +306,16 @@ class IDBillScraper(Scraper):
         passed, yes_count, no_count, other_count = (
             spans[0].text_content().rsplit("-", 3)
         )
-        yes_votes = self.get_names(spans[1].tail)
-        no_votes = self.get_names(spans[2].tail)
-
-        other_votes = []
-        for span in spans[3:]:
-            if span.text.startswith(("Absent", "Excused")):
+        # find each list by its label; extra spans like "Tie vote - President
+        # voted NAY" can appear before AYES
+        yes_votes, no_votes, other_votes = [], [], []
+        for span in spans[1:]:
+            label = span.text_content()
+            if label.startswith("AYES"):
+                yes_votes = self.get_names(span.tail)
+            elif label.startswith("NAYS"):
+                no_votes = self.get_names(span.tail)
+            elif label.startswith(("Absent", "Excused")):
                 other_votes += self.get_names(span.tail)
         for key, val in {"adopted": "pass", "passed": "pass", "failed": "fail"}.items():
             if key in passed.lower():
