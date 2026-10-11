@@ -265,25 +265,29 @@ class GABillScraper(Scraper):
                     )
                     vote.set_count("yes", listed_vote["Yeas"])
                     vote.set_count("no", listed_vote["Nays"])
-                    vote.set_count(
-                        "other", listed_vote["Excused"] + listed_vote["NotVoting"]
-                    )
 
                     vote.add_source(self.vsource, note="api")
                     vote.dedupe_key = f"{bill}#{date}#{text}"
 
                     methods = {"Yea": "yes", "Nay": "no"}
 
+                    # the source counts vacant seats as NotVoting
+                    vacant = 0
                     if listed_vote["Votes"] is not None:
                         for vdetail in listed_vote["Votes"][0]:
                             whom = vdetail["Member"]
                             how = vdetail["MemberVoted"]
                             if whom["Name"] == "VACANT":
+                                vacant += 1
                                 continue
                             name, district = vote_name_pattern.search(
                                 whom["Name"]
                             ).groups()
                             vote.vote(methods.get(how, "other"), name, note=district)
+                    vote.set_count(
+                        "other",
+                        listed_vote["Excused"] + listed_vote["NotVoting"] - vacant,
+                    )
 
                     yield vote
 
