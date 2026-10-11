@@ -274,15 +274,24 @@ class VaBillScraper(Scraper):
             if row["ImpactFile"]:
                 for impact in row["ImpactFile"]:
                     # map 241HB9F122 => HB9F122
-                    # however somtimes ReferenceNumber does NOT have a weird prefix
-                    if impact["ReferenceNumber"][3:] in self.ref_num_map:
-                        action = self.ref_num_map[impact["ReferenceNumber"][3:]]
-                    elif impact["ReferenceNumber"] in self.ref_num_map:
-                        action = self.ref_num_map[impact["ReferenceNumber"]]
+                    # however sometimes ReferenceNumber does NOT have a weird prefix
+                    ref = impact["ReferenceNumber"]
+                    if ref[3:] in self.ref_num_map:
+                        action_note = self.ref_num_map[ref[3:]]
+                    elif ref in self.ref_num_map:
+                        action_note = self.ref_num_map[ref]
                     else:
-                        action = "Unknown"
+                        action_note = ref
+                    # These are Fiscal Impact Statements hyperlinked into the
+                    # bill's action history. Label and classify them as fiscal
+                    # notes so Plural displays them in the Additional Documents
+                    # section (same pattern as csv_bills.py and OR amendments).
                     bill.add_document_link(
-                        action, impact["FileURL"], media_type="application/pdf"
+                        f"Fiscal Impact Statement: {action_note}",
+                        impact["FileURL"],
+                        media_type="application/pdf",
+                        classification="fiscal-note",
+                        on_duplicate="ignore",
                     )
 
     def add_votes(self, bill: Bill, legislation_id: str):
