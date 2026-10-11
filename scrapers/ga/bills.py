@@ -44,8 +44,8 @@ def vote_classification(caption):
     """Classify a vote from its Caption, the motion voted on."""
     caption = caption.upper()
     if re.search(
-        r"RECON|TABLE|ENGROSS|PREVIOUS QUESTION|WITHDRAW|COMMIT|RULING|SUSPEND"
-        r"|DISAGREE|INSIST|RECEDE|POSTPONE",
+        r"RECON|TABLE|ENGROSS|PREVIOUS QUESTION|WITHDRAW|\bCOMMIT\b|RULING|SUSPEND"
+        r"|DISAGREE|INSIST|RECEDE|POSTPONE|REMOVE",
         caption,
     ):
         return []
@@ -60,8 +60,8 @@ def vote_classification(caption):
         return ["amendment"]
     # "PASSAGE BY SUBSTITUTE", "ADOPTION BY SUBSTITUTE",
     # "ADOPTION OF CONSTITUTIONAL AMENDMENT",
-    # "Local Calendar"
-    if re.search(r"PASSAGE|ADOPT|LOCAL|CALENDAR", caption):
+    # "Local Calendar", "UNCONTESTED HOUSE RESOLUTIONS"
+    if re.search(r"PASSAGE|ADOPT|LOCAL|CALENDAR|UNCONTESTED", caption):
         return ["passage"]
     return []
 
