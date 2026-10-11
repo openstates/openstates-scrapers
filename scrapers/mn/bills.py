@@ -12,6 +12,7 @@ from utils import LXMLMixin
 
 import fitz
 import requests
+import scrapelib
 from urllib3.exceptions import InsecureRequestWarning
 
 
@@ -732,7 +733,12 @@ class MNBillScraper(Scraper, LXMLMixin):
                 "sc" in bill.identifier.lower() or "sr" in bill.identifier.lower()
             ):
                 current_html_url = self.rewrite_senate_resolution_url(current_html_url)
-            current_response = requests.get(current_html_url, verify=False)
+            # self.get retries transient connection/TLS errors; like the old bare
+            # requests.get, still parse whatever an error page returns
+            try:
+                current_response = self.get(current_html_url, verify=False)
+            except scrapelib.HTTPError as e:
+                current_response = e.response
             current_content = lxml.html.fromstring(current_response.content)
 
             other_page_version_rows = current_content.xpath(
