@@ -8,6 +8,7 @@ import re
 import time
 from urllib.parse import urljoin
 
+import fitz
 import requests
 from openstates.scrape import Scraper, Bill, VoteEvent
 from utils import LXMLMixin
@@ -405,16 +406,16 @@ class DEBillScraper(Scraper, LXMLMixin):
                 roll["TakenAtDateTime"], "%m/%d/%y %I:%M %p"
             ).strftime("%Y-%m-%d")
 
-            # TODO: What does this code mean?
-            vote_motion = roll["RollCallVoteType"]
-
             vote_passed = "pass" if roll["RollCallStatus"] == "Passed" else "fail"
-            other_count = (
-                int(roll["NotVotingCount"])
-                + int(roll["VacantVoteCount"])
-                + int(roll["AbsentVoteCount"])
-                + int(roll["ConflictVoteCount"])
+            # VacantVoteCount is empty seats with no voter row, and
+            # NotVotingCount already includes ConflictVoteCount
+            other_count = int(roll["NotVotingCount"]) + int(roll["AbsentVoteCount"])
+            vote_pdf_url = (
+                "https://legis.delaware.gov"
+                "/json/RollCallController/GenerateRollCallPdf"
+                f"?rollCallId={vote_id}&chamberId={self.chamber_codes[vote_chamber]}"
             )
+            vote_motion, vote_classification = self.scrape_vote_motion(vote_pdf_url)
             vote = VoteEvent(
                 chamber=vote_chamber,
                 start_date=vote_date,
@@ -422,13 +423,10 @@ class DEBillScraper(Scraper, LXMLMixin):
                 result=vote_passed,
                 bill=bill,
                 legislative_session=session,
-                classification=[],
+                classification=vote_classification,
             )
-            vote_pdf_url = (
-                "https://legis.delaware.gov"
-                "/json/RollCallController/GenerateRollCallPdf"
-                f"?rollCallId={vote_id}&chamberId={self.chamber_codes[vote_chamber]}"
-            )
+            # the vote requirement: SM (simple majority), 2/3, 3/4, 3/5
+            vote.extras["vote_requirement"] = roll["RollCallVoteType"]
             # Vote URL is just a generic search URL with POSTed data,
             # so provide a different link
             vote.add_source(vote_pdf_url)
@@ -458,6 +456,44 @@ class DEBillScraper(Scraper, LXMLMixin):
                     vote.vote("other", name)
 
             yield vote
+
+    def scrape_vote_motion(self, pdf_url):
+        """
+        The roll call JSON has no motion; the PDF header names one when the
+        vote isn't on the bill itself ("Motion: Veto Override", "Reason Taken:
+        motion to recess ..."), and its subject line says what was voted on
+        ("HA 1 to HB 53", "HB 445 w/HA 1"), or it is a consent calendar.
+        """
+        try:
+            pdf = self.get(pdf_url, verify=False).content
+            lines = fitz.open("pdf", pdf)[0].get_text().splitlines()
+        except Exception as e:
+            self.warning(f"could not read roll call PDF {pdf_url}: {e}")
+            return "Passage", ["passage"]
+
+        subject = ""
+        for line in lines:
+            line = line.strip()
+            motion = re.match(r"(Motion|Reason Taken):\s*(.+)", line)
+            if motion:
+                text = motion.group(2)
+                if re.search(r"veto override", text, re.I):
+                    return text, ["veto-override"]
+                # "HCR 83 revote after reconsideration" is still passage,
+                # "motion to recess to read amendment" isn't
+                if re.search(r"passage|adopt|revote|consent", text, re.I):
+                    return text, ["passage"]
+                return text, []
+            # followed by the list of bills on it
+            if re.match(r"((House|Senate) )?Consent (Calendar|Agenda)", line):
+                return line, ["passage"]
+            if line.startswith(("Long Title:", "Vote requirement:")):
+                break
+            subject = line
+
+        if re.match(r"[HS]A \d+.* to ", subject):
+            return subject, ["amendment"]
+        return "Passage", ["passage"]
 
     def parse_sponsor_url(self, sponsor_url):
         sponsor_url = urljoin(self.base_url, sponsor_url)
