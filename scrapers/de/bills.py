@@ -165,11 +165,12 @@ class DEBillScraper(Scraper, LXMLMixin):
         """
         # Map of {bill_id: bill}
         bills = {}
+        votes = []
 
         for bill in items:
             # The generator also yields VoteEvent objects
             if isinstance(bill, VoteEvent):
-                yield bill
+                votes.append(bill)
                 continue
 
             # The generator also includes FailedBill objects representing failures to fetch
@@ -205,6 +206,13 @@ class DEBillScraper(Scraper, LXMLMixin):
             else:
                 self.warning(f"Ignoring substituted bill `{bill.identifier}`")
 
+        # a vote on a bill later replaced by its substitute belongs to the
+        # bill that is kept, or it would point at a bill that isn't saved
+        for vote in votes:
+            kept = bills.get(vote.bill_identifier)
+            if kept and vote.bill != kept._id:
+                vote.set_bill(kept)
+            yield vote
         yield from bills.values()
 
     def scrape_bill(self, row, session):
