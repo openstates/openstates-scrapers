@@ -1,5 +1,6 @@
 import datetime as dt
 import lxml.html
+import pytz
 import re
 
 from openstates.scrape import Scraper, Bill, VoteEvent
@@ -87,6 +88,7 @@ class RIBillScraper(Scraper):
     # vote scrape
     _bill_id_by_type = {}
     categorizer = Categorizer()
+    _tz = pytz.timezone("US/Eastern")
 
     def parse_results_page(self, page):
         blocks = []
@@ -340,7 +342,7 @@ class RIBillScraper(Scraper):
 
                     v = VoteEvent(
                         chamber=chamber,
-                        start_date=vote["time"].strftime("%Y-%m-%d"),
+                        start_date=self._tz.localize(vote["time"]),
                         motion_text=vote["meta"]["extra"]["motion"],
                         result="pass" if count["passage"] else "fail",
                         classification="passage",
@@ -350,7 +352,11 @@ class RIBillScraper(Scraper):
                     )
                     v.set_count("yes", int(count["YEAS"]))
                     v.set_count("no", int(count["NAYS"]))
-                    v.set_count("other", int(count["NOT VOTING"]))
+                    # recused members are itemized as "other" too
+                    v.set_count(
+                        "other",
+                        int(count["NOT VOTING"]) + int(count.get("RECUSED", 0)),
+                    )
                     v.add_source(vote["source"])
                     v.dedupe_key = vote["source"]
 
