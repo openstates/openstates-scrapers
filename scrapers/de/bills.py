@@ -371,7 +371,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             timeout=self.timeout,
         )
         page = self.decode_and_retry_request(
-            "scrape_votes", request_method, retries=1, raise_exception=False
+            "scrape_votes", request_method, retries=3, raise_exception=False
         )
         if page and page["Total"] > 0:
             for row in page["Data"]:
@@ -394,7 +394,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             timeout=self.timeout,
         )
         page = self.decode_and_retry_request(
-            "scrape_vote", request_method, retries=1, raise_exception=False
+            "scrape_vote", request_method, retries=3, raise_exception=False
         )
 
         if page:
