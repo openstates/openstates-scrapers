@@ -8,7 +8,6 @@ import re
 import time
 from urllib.parse import urljoin
 
-import requests
 from openstates.scrape import Scraper, Bill, VoteEvent
 from utils import LXMLMixin
 from .actions import Categorizer
@@ -33,8 +32,6 @@ class DEBillScraper(Scraper, LXMLMixin):
     legislators_by_short = {}
     legislators_by_district = {}
 
-    session = requests.Session()
-
     """
     DE has caucus-specific sites that it now
     uses to identify bill sponsors...sometimes.
@@ -49,16 +46,25 @@ class DEBillScraper(Scraper, LXMLMixin):
     }
 
     def decode_and_retry_request(
-        self, log_label, request_method, attempt=1, retries=3, raise_exception=True
+        self,
+        log_label,
+        request_method,
+        attempt=1,
+        retries=3,
+        raise_exception=True,
+        empty_ok=False,
     ):
         """
-        Delaware is giving us a lot of malformed responses that are HTTP OK nonetheless
-        Normally flakey requests could be handled by http-resilience mode, but because the HTTP response
-        is normal (just empty/not-decodable-to-JSON)
-        So we have several places where we need to retry the decode step
+        Decode a JSON response, retrying the request if it isn't JSON.
+        HTTP errors (the site answers 403 when requests come too fast) are
+        retried by scrapelib. The JSON endpoints answer an empty 200 when there
+        is nothing to return (a bill with no votes or no actions); with
+        empty_ok that is returned as None without retrying.
         """
         try:
             response = request_method()
+            if empty_ok and response.status_code == 200 and not response.content:
+                return None
             data = json.loads(response.content.decode("utf-8"))
             return data
         except (JSONDecodeError, RequestsJSONDecodeError) as error:
@@ -71,7 +77,12 @@ class DEBillScraper(Scraper, LXMLMixin):
                 )
                 time.sleep(delay)
                 return self.decode_and_retry_request(
-                    log_label, request_method, attempt + 1, retries, raise_exception
+                    log_label,
+                    request_method,
+                    attempt + 1,
+                    retries,
+                    raise_exception,
+                    empty_ok,
                 )
             else:
                 self.warning(
@@ -103,8 +114,12 @@ class DEBillScraper(Scraper, LXMLMixin):
             "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
         }
 
-        self.retry_attempts = 10
-        self.retry_wait_seconds = 30
+        # legis.delaware.gov answers 403 to more than about 160 requests a
+        # minute and lifts the block within seconds, so throttle every
+        # request below that and retry 403s quickly (2, 4, 8, ... s)
+        self.requests_per_minute = 150
+        self.retry_attempts = 8
+        self.retry_wait_seconds = 2
         self.timeout = 130
         self.init_asp()
         self.headers["x-requested-with"] = "XMLHttpRequest"
@@ -335,7 +350,7 @@ class DEBillScraper(Scraper, LXMLMixin):
         }
 
         self.info("Fetching legislators")
-        page = self.session.post(
+        page = self.post(
             url=search_form_url,
             data=form,
             allow_redirects=True,
@@ -362,7 +377,7 @@ class DEBillScraper(Scraper, LXMLMixin):
         form = {"legislationId": legislation_id, "sort": "", "group": "", "filter": ""}
         self.info(f"Searching for votes for {bill.identifier}")
         request_method = partial(
-            self.session.post,
+            self.post,
             url=votes_url,
             data=form,
             allow_redirects=True,
@@ -370,8 +385,9 @@ class DEBillScraper(Scraper, LXMLMixin):
             headers=self.headers,
             timeout=self.timeout,
         )
+        # an empty answer means the bill has no roll calls
         page = self.decode_and_retry_request(
-            "scrape_votes", request_method, retries=3, raise_exception=False
+            "scrape_votes", request_method, empty_ok=True
         )
         if page and page["Total"] > 0:
             for row in page["Data"]:
@@ -385,7 +401,7 @@ class DEBillScraper(Scraper, LXMLMixin):
 
         self.info(f"Fetching vote {vote_id} for {bill.identifier}")
         request_method = partial(
-            self.session.post,
+            self.post,
             url=vote_url,
             data=form,
             allow_redirects=True,
@@ -393,9 +409,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             headers=self.headers,
             timeout=self.timeout,
         )
-        page = self.decode_and_retry_request(
-            "scrape_vote", request_method, retries=3, raise_exception=False
-        )
+        page = self.decode_and_retry_request("scrape_vote", request_method)
 
         if page:
             roll = page["Model"]
@@ -505,7 +519,7 @@ class DEBillScraper(Scraper, LXMLMixin):
         form = {"legislationId": legislation_id, "sort": "", "group": "", "filter": ""}
         self.info(f"Fetching actions for {bill.identifier}")
         request_method = partial(
-            self.session.post,
+            self.post,
             url=actions_url,
             data=form,
             allow_redirects=True,
@@ -514,7 +528,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             timeout=self.timeout,
         )
         page = self.decode_and_retry_request(
-            "scrape_actions", request_method, raise_exception=False
+            "scrape_actions", request_method, empty_ok=True
         )
         if not page:
             self.warning(f"No actions returned for {bill.identifier}")
@@ -651,7 +665,7 @@ class DEBillScraper(Scraper, LXMLMixin):
         form = {"sort": "", "group": "", "filter": ""}
         self.info(f"Fetching amendments for {bill.identifier}")
         request_method = partial(
-            self.session.post,
+            self.post,
             url=amds_url,
             data=form,
             allow_redirects=True,
@@ -732,7 +746,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             "toIntroDate": "",
         }
 
-        response = self.session.post(
+        response = self.post(
             url=search_form_url,
             data=form,
             allow_redirects=True,
@@ -754,7 +768,7 @@ class DEBillScraper(Scraper, LXMLMixin):
 
     # set up our asp session and fetch cookies
     def init_asp(self):
-        self.session.get(
+        self.get(
             "https://legis.delaware.gov/", verify=False, headers=self.headers
         ).content
         return
