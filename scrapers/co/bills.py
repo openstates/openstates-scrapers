@@ -357,7 +357,12 @@ class COBillScraper(Scraper, LXMLMixin):
             )
             for row in page.cssselect(f"div#{table} tbody tr"):
                 when = dateutil.parser.parse(self.clean(row.xpath("td[1]/span"))).date()
-                motion = self.clean(row.xpath("td[3]/span"))
+                # the motion can be blank ("MISC" calendar, HB26-1410 2026-04-28)
+                motion = (
+                    self.clean(row.xpath("td[3]/span"))
+                    or self.clean(row.xpath("td[2]/span"))
+                    or "Floor vote"
+                )
                 ct_yes = int(self.clean(row.cssselect(".bill-votes-count-yes")))
                 ct_no = int(self.clean(row.cssselect(".bill-votes-count-no")))
                 ct_other = int(self.clean(row.cssselect(".bill-votes-count-others")))
