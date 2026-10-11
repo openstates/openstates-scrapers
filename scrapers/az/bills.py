@@ -77,6 +77,11 @@ class AZBillScraper(Scraper):
         page = json.loads(
             self.get(versions_url, timeout=80, verify=False).content.decode("utf-8")
         )
+        # azleg reuses identical DocumentName values (e.g. multiple
+        # "HOUSE - Commerce - Strike Everything" drafts) for distinct documents
+        # (different Id / content), so track seen names to keep them as
+        # separate versions instead of collapsing into one.
+        seen_version_notes = set()
         for document_set in page:
             type_ = document_set["DocumentGroupName"]
             for doc in document_set["Documents"]:
@@ -91,16 +96,19 @@ class AZBillScraper(Scraper):
                     url = "https://apps.azleg.gov{}".format(url)
 
                 if type_ in version_types:
+                    note = doc["DocumentName"]
+                    if note in seen_version_notes:
+                        note = "{} ({})".format(note, doc["Id"])
+                    seen_version_notes.add(doc["DocumentName"])
+
                     if media_type == "text/html":
                         pdf_url = re.sub("(.docx)?.htm(l)?$", ".pdf", url.lower())
                         bill.add_version_link(
-                            note=doc["DocumentName"],
+                            note=note,
                             url=pdf_url,
                             media_type="application/pdf",
                         )
-                    bill.add_version_link(
-                        note=doc["DocumentName"], url=url, media_type=media_type
-                    )
+                    bill.add_version_link(note=note, url=url, media_type=media_type)
                 else:
                     bill.add_document_link(
                         note=doc["DocumentName"], url=url, media_type=media_type
@@ -378,7 +386,9 @@ class AZBillScraper(Scraper):
                 )
 
                 for v in action["Votes"]:
-                    vote_type = {"Y": "yes", "N": "no"}.get(v["Vote"], "other")
+                    vote_type = {"Y": "yes", "N": "no", "NV": "not voting"}.get(
+                        v["Vote"], "other"
+                    )
                     vote.vote(vote_type, v["Legislator"]["FullName"])
                 vote.dedupe_key = f"{resp.url}{action['ReferralNumber']}"
                 yield vote
