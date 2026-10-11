@@ -37,6 +37,34 @@ SOURCE_URL = "https://www.legis.ga.gov/legislation/{bid}"
 
 vote_name_pattern = re.compile(r"(.*), (\d+(?:ST|ND|RD|TH))", re.IGNORECASE)
 
+OUTCOME_STATUS = r"Reconsidered|Passed|Adopted|Agreed|Lost"
+
+
+def vote_classification(caption):
+    """Classify a vote from its Caption, the motion voted on."""
+    caption = caption.upper()
+    if re.search(
+        r"RECON|TABLE|ENGROSS|PREVIOUS QUESTION|WITHDRAW|\bCOMMIT\b|RULING|SUSPEND"
+        r"|DISAGREE|INSIST|RECEDE|POSTPONE|REMOVE",
+        caption,
+    ):
+        return []
+    # "AGREE TO HOUSE SUBSTITUTE", "Agree to Senate Amendment"
+    if "AGREE" in caption:
+        return ["passage"]
+    if "VETO" in caption:
+        return ["veto-override"]
+    if re.search(r"AMEND|SUBSTITUTE", caption) and not re.search(
+        r"PASSAGE|CONSTITUTIONAL|BY SUBSTITUTE", caption
+    ):
+        return ["amendment"]
+    # "PASSAGE BY SUBSTITUTE", "ADOPTION BY SUBSTITUTE",
+    # "ADOPTION OF CONSTITUTIONAL AMENDMENT",
+    # "Local Calendar", "UNCONTESTED HOUSE RESOLUTIONS"
+    if re.search(r"PASSAGE|ADOPT|LOCAL|CALENDAR|UNCONTESTED", caption):
+        return ["passage"]
+    return []
+
 
 class GABillScraper(Scraper):
     lservice = get_client("Legislation").service
@@ -154,13 +182,13 @@ class GABillScraper(Scraper):
             "HRAR": ["referral-committee"],
             "SRAR": ["referral-committee"],
             "STR": ["reading-3"],
-            "SAHAS": None,
+            "SAHAS": ["concurrence"],
             "SE": ["passage"],
             "SR": ["referral-committee"],
             "HTRL": ["reading-3", "failure"],
             "HTR": ["reading-3"],
             "S3RLT": ["reading-3", "failure"],
-            "HASAS": None,
+            "HASAS": ["concurrence"],
             "S3RPP": None,
             "STAB": None,
             "SRECO": None,
@@ -174,8 +202,9 @@ class GABillScraper(Scraper):
             "SNOM": None,
             "S2R": ["reading-2"],
             "H2R": ["reading-2"],
-            "SENG": ["passage"],
-            "HENG": ["passage"],
+            # engrossment closes a bill to amendment before third reading
+            "SENG": None,
+            "HENG": None,
             "HPOST": None,
             "HCAP": None,
             "SDSG": ["executive-signature"],
@@ -244,46 +273,97 @@ class GABillScraper(Scraper):
             bill.extras = {"guid": guid}
 
             if instrument["Votes"]:
-                vote_listing = instrument["Votes"]["VoteListing"]
-                for listed_vote in vote_listing:
+                listed_votes = [
+                    backoff(self.vservice.GetVote, v["VoteId"])
+                    for v in instrument["Votes"]["VoteListing"]
+                ]
 
-                    listed_vote = backoff(self.vservice.GetVote, listed_vote["VoteId"])
+                # GetVote has no result, and yeas > nays isn't enough to pass
+                # (HB 1324: 87-76, short of the 91 needed). The status history
+                # logs each outcome ("House Third Reading Lost", "House
+                # Reconsidered", "Senate Passed/Adopted") minutes to an hour
+                # after the vote, so pair a chamber's outcomes for the day, in
+                # order, with its passage votes for the day, in order, and fail
+                # the votes paired with a "Lost" status.
+                lost_votes = set()
+                unpaired = sorted(
+                    (
+                        v
+                        for v in listed_votes
+                        if vote_classification(v["Caption"] or "") == ["passage"]
+                    ),
+                    key=lambda v: v["Date"],
+                )
+                for status in sorted(history, key=lambda s: s["Date"]):
+                    branch = {"H": "House", "S": "Senate"}.get(status["Code"][0])
+                    if not branch or not re.search(
+                        OUTCOME_STATUS, status["Description"]
+                    ):
+                        continue
+                    for v in unpaired:
+                        if (
+                            v["Branch"] == branch
+                            and v["Date"].date() == status["Date"].date()
+                            and v["Date"] <= status["Date"]
+                        ):
+                            unpaired.remove(v)
+                            if "Lost" in status["Description"]:
+                                lost_votes.add(v["VoteId"])
+                            break
+
+                for listed_vote in listed_votes:
                     date = listed_vote["Date"].strftime("%Y-%m-%d")
-                    text = listed_vote["Description"] or "Vote on Bill"
+                    # Description is the roll call ("House Vote #665 - ..."),
+                    # Caption the motion ("PASSAGE", "MOTION TO ENGROSS")
+                    identifier = listed_vote["Description"] or str(
+                        listed_vote["VoteId"]
+                    )
+                    caption = (listed_vote["Caption"] or "").strip()
+
+                    if listed_vote["VoteId"] in lost_votes:
+                        result = "fail"
+                    elif listed_vote["Yeas"] > listed_vote["Nays"]:
+                        result = "pass"
+                    else:
+                        result = "fail"
 
                     vote = VoteEvent(
                         start_date=date,
-                        motion_text=text,
+                        motion_text=caption or identifier,
+                        identifier=identifier,
                         chamber={"House": "lower", "Senate": "upper"}[
                             listed_vote["Branch"]
                         ],
-                        result="pass"
-                        if listed_vote["Yeas"] > listed_vote["Nays"]
-                        else "fail",
-                        classification="passage",
+                        result=result,
+                        classification=vote_classification(caption),
                         bill=bill,
                     )
                     vote.set_count("yes", listed_vote["Yeas"])
                     vote.set_count("no", listed_vote["Nays"])
-                    vote.set_count(
-                        "other", listed_vote["Excused"] + listed_vote["NotVoting"]
-                    )
 
                     vote.add_source(self.vsource, note="api")
-                    vote.dedupe_key = f"{bill}#{date}#{text}"
+                    # captions repeat on a bill and day, the roll call doesn't
+                    vote.dedupe_key = f"{bill}#{date}#{identifier}"
 
                     methods = {"Yea": "yes", "Nay": "no"}
 
+                    # the source counts vacant seats as NotVoting
+                    vacant = 0
                     if listed_vote["Votes"] is not None:
                         for vdetail in listed_vote["Votes"][0]:
                             whom = vdetail["Member"]
                             how = vdetail["MemberVoted"]
                             if whom["Name"] == "VACANT":
+                                vacant += 1
                                 continue
                             name, district = vote_name_pattern.search(
                                 whom["Name"]
                             ).groups()
                             vote.vote(methods.get(how, "other"), name, note=district)
+                    vote.set_count(
+                        "other",
+                        listed_vote["Excused"] + listed_vote["NotVoting"] - vacant,
+                    )
 
                     yield vote
 
