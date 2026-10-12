@@ -122,7 +122,7 @@ class ApiClient(object):
         headers["x-api-key"] = self.apikey
         headers["Accept"] = "application/json"
         headers["User-Agent"] = self.user_agent
-        self.scraper.info("Api GET next page: %r, %r" % (url, headers))
+        self.scraper.info("Api GET next page: %r" % url)
         return self.scraper.get(url, headers=headers)
 
     @check_response
@@ -132,7 +132,7 @@ class ApiClient(object):
         headers["Accept"] = "application/pdf"
         headers["User-Agent"] = self.user_agent
         url = urljoin(self.root, url)
-        self.scraper.info("Api GET: %r, %r" % (url, headers))
+        self.scraper.info("Api GET: %r" % url)
         return self.scraper.get(url, headers=headers)
 
     # fetch an API url where we expect a redirect
@@ -177,8 +177,7 @@ class ApiClient(object):
         headers["User-Agent"] = self.user_agent
         requests_kwargs["headers"] = headers
 
-        args = (url, requests_args, requests_kwargs)
-        self.scraper.info("Api GET: %r, %r, %r" % args)
+        self.scraper.info("Api GET: %r" % url)
         resp = None
         tries = 0
         while resp is None and tries < num_bad_packets_allowed:
