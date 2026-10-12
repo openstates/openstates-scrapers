@@ -30,6 +30,9 @@ class WABillScraper(Scraper, LXMLMixin):
 
     _bill_id_list = []
     versions = {}
+    _legislation_by_year = {}
+    _legislation = None
+    _status_changes = None
 
     _TZ = pytz.timezone("US/Eastern")
 
@@ -271,14 +274,15 @@ class WABillScraper(Scraper, LXMLMixin):
         max_year = year if current < year + 1 else year + 1
         for y in (year, max_year):
             # self.build_subject_mapping(y)
-            url = "%s/GetLegislationByYear?year=%s" % (self._base_url, y)
+            if y not in self._legislation_by_year:
+                url = "%s/GetLegislationByYear?year=%s" % (self._base_url, y)
+                try:
+                    page = self.get(url)
+                except scrapelib.HTTPError:
+                    continue  # future years.
+                self._legislation_by_year[y] = lxml.etree.fromstring(page.content)
 
-            try:
-                page = self.get(url)
-            except scrapelib.HTTPError:
-                continue  # future years.
-
-            page = lxml.etree.fromstring(page.content)
+            page = self._legislation_by_year[y]
             for leg_info in xpath(page, "//wa:LegislationInfo"):
                 bill_id = xpath(leg_info, "string(wa:BillId)")
                 bill_num = xpath(leg_info, "number(wa:BillNumber)")
@@ -303,20 +307,50 @@ class WABillScraper(Scraper, LXMLMixin):
 
                 self._bill_id_list.append(bill_id_norm[0])
 
+    def _legislation_fields(self, leg):
+        return [
+            xpath(leg, "string(wa:OriginalAgency)"),
+            xpath(leg, "string(wa:LongDescription)"),
+            xpath(leg, "string(wa:ShortLegislationType/wa:LongLegislationType)"),
+        ]
+
     def scrape_bill(self, chamber, session, bill_id, year):
         bill_num = bill_id.split()[1]
         prefile_year = year - 1
         second_year = year + 1
 
-        url = "%s/GetLegislation?biennium=%s&billNumber" "=%s" % (
-            self._base_url,
-            self.biennium,
-            bill_num,
-        )
+        if self._legislation is None:
+            # the bulk and per-bill endpoints order a bill's versions differently,
+            # so only use the bulk record when all versions agree
+            self._legislation = {}
+            mixed = set()
+            url = "%s/GetLegislationIntroducedSince?sinceDate=%s-11-01" % (
+                self._base_url,
+                prefile_year,
+            )
+            page = lxml.etree.fromstring(self.get(url).content)
+            for leg in xpath(page, "//wa:Legislation"):
+                if xpath(leg, "string(wa:Biennium)") != self.biennium:
+                    continue
+                num = xpath(leg, "string(wa:BillNumber)")
+                first = self._legislation.setdefault(num, leg)
+                if self._legislation_fields(first) != self._legislation_fields(leg):
+                    mixed.add(num)
+            for num in mixed:
+                del self._legislation[num]
 
-        page = self.get(url)
-        page = lxml.etree.fromstring(page.content)
-        page = xpath(page, "//wa:Legislation")[0]
+        page = self._legislation.get(bill_num)
+        if page is None:
+            # resolutions are not in the bulk list
+            url = "%s/GetLegislation?biennium=%s&billNumber" "=%s" % (
+                self._base_url,
+                self.biennium,
+                bill_num,
+            )
+
+            page = self.get(url)
+            page = lxml.etree.fromstring(page.content)
+            page = xpath(page, "//wa:Legislation")[0]
 
         xml_chamber = xpath(page, "string(wa:OriginalAgency)")
         chamber = self._chamber_map[xml_chamber]
@@ -564,23 +598,33 @@ class WABillScraper(Scraper, LXMLMixin):
         api_actions = {}
         bill_num = bill.identifier.split()[1]
 
-        api_url = (
-            "https://wslwebservices.leg.wa.gov/legislationservice.asmx/"
-            f"GetLegislativeStatusChangesByBillNumber?billNumber={bill_num}"
-            f"&biennium={self.biennium}"
-            f"&beginDate={prefile_year}-11-01"
-            f"&endDate={second_year}-12-31"
+        if self._status_changes is None:
+            api_url = (
+                "https://wslwebservices.leg.wa.gov/legislationservice.asmx/"
+                f"GetLegislativeStatusChangesByDateRange?biennium={self.biennium}"
+                f"&beginDate={prefile_year}-11-01"
+                f"&endDate={second_year}-12-31"
+            )
+            page = lxml.etree.fromstring(self.get(api_url).content)
+            self._status_changes = defaultdict(list)
+            for row in xpath(page, "//wa:LegislativeStatus"):
+                number = xpath(row, "string(wa:BillId)").split()[-1]
+                self._status_changes[number].append(row)
+
+        # the per-bill call lists rows grouped by bill id (HB, SHB, ...) in order
+        # of first appearance, then by date; keep that order, since later
+        # duplicate action texts overwrite earlier ones below
+        rows = self._status_changes.get(bill_num, [])
+        bill_ids = list(dict.fromkeys(xpath(r, "string(wa:BillId)") for r in rows))
+        rows = sorted(
+            rows,
+            key=lambda r: (
+                bill_ids.index(xpath(r, "string(wa:BillId)")),
+                xpath(r, "string(wa:ActionDate)"),
+            ),
         )
 
-        # api drops 500 errors if there are no actions,
-        try:
-            page = self.get(api_url)
-        except requests.exceptions.HTTPError:
-            return {}
-
-        page = lxml.etree.fromstring(page.content)
-
-        for row in xpath(page, "//wa:LegislativeStatus"):
+        for row in rows:
             action_text = xpath(row, "string(wa:HistoryLine)")
             action_date = xpath(row, "string(wa:ActionDate)")
             action_date = datetime.datetime.strptime(
@@ -644,21 +688,40 @@ class WABillScraper(Scraper, LXMLMixin):
 
             yield vote
 
+    def _get_xml_once(self, url, expected_error=None):
+        # a 500 containing expected_error means no data
+        try:
+            resp = requests.get(url, timeout=self.timeout)
+            if expected_error and expected_error in resp.text:
+                return None
+            resp.raise_for_status()
+            return lxml.etree.fromstring(resp.content)
+        except (requests.exceptions.RequestException, lxml.etree.XMLSyntaxError):
+            pass
+        try:
+            return lxml.etree.fromstring(self.get(url).content)
+        except (scrapelib.HTTPError, lxml.etree.XMLSyntaxError) as e:
+            self.warning(f"Skipping {url}: {e}")
+            return None
+
     def scrape_chapter(self, bill):
         # https://wslwebservices.leg.wa.gov/legislationservice.asmx/GetSessionLawChapter
-        bill_id = bill.identifier.replace(" ", "%20")
+        # session laws are filed under the version that passed (e.g. ESSB 5167),
+        # which is the bill id on the "Chapter ..." status row
+        bill_ids = [
+            xpath(r, "string(wa:BillId)")
+            for r in self._status_changes.get(bill.identifier.split()[1], [])
+            if xpath(r, "string(wa:HistoryLine)").startswith("Chapter ")
+        ]
+        bill_id = (bill_ids[-1] if bill_ids else bill.identifier).replace(" ", "%20")
         url = (
             "https://wslwebservices.leg.wa.gov/legislationservice.asmx/"
             "GetSessionLawChapter?billId=%s&biennium=%s" % (bill_id, self.biennium)
         )
-        # manually using requests here instead of self (scrapelib)
-        # to avoid auto-retries
-        try:
-            self.info(url)
-            page = requests.get(url)
-            page = lxml.etree.fromstring(page.content)
-        except (requests.exceptions.HTTPError, lxml.etree.XMLSyntaxError):
-            # WA fires a 500 error if there's no sessions laws for a bill
+        # WA fires a 500 error if there's no sessions laws for a bill
+        self.info(url)
+        page = self._get_xml_once(url, "No session law data found")
+        if page is None:
             return
 
         year = xpath(page, "string(wa:Year)").strip()
@@ -685,15 +748,10 @@ class WABillScraper(Scraper, LXMLMixin):
             "GetRcwCitesAffected?billId=%s&biennium=%s" % (bill_id, self.biennium)
         )
 
-        # manually using requests here instead of self (scrapelib)
-        # to avoid auto-retries
-        try:
-            self.info(url)
-            page = requests.get(url)
-        except requests.exceptions.HTTPError:
-            # WA fires a 500 error if there's no sessions laws for a bill
+        self.info(url)
+        page = self._get_xml_once(url)
+        if page is None:
             return
-        page = lxml.etree.fromstring(page.content)
         for row in xpath(page, "//wa:RcwCiteAffected"):
             cite = xpath(row, "string(wa:RcwCite)").strip()
 

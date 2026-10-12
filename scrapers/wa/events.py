@@ -50,6 +50,9 @@ class WAEventScraper(Scraper, LXMLMixin):
 
     # Only need to fetch the XML once for both chambers
     def get_xml(self, start, end):
+        if self.meetings is not None:
+            return self.meetings
+
         event_url = (
             "https://wslwebservices.leg.wa.gov/CommitteeMeetingService.asmx"
             "/GetCommitteeMeetings?beginDate={}&endDate={}"
