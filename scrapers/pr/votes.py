@@ -5,6 +5,7 @@ import lxml.etree
 
 from openstates.utils import convert_pdf
 from openstates.scrape import Scraper, VoteEvent
+from openstates.exceptions import EmptyScrape
 
 _measure_classifiers = (
     ("Nombramiento", "NM"),
@@ -28,9 +29,10 @@ class PRVoteScraper(Scraper):
     def scrape(self, chamber=None, session=None):
         # only senate votes currently scraped
         if chamber and chamber != "upper":
-            return
+            raise EmptyScrape
+        # the Senate vote PDF page only covers 2021-2024
         if session != "2021-2024":
-            return
+            raise EmptyScrape
 
         yield from self.scrape_upper(session)
 

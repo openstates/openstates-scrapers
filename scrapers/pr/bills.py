@@ -2,7 +2,6 @@
 import re
 import lxml.html
 import datetime
-import requests
 import pytz
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 
@@ -45,7 +44,6 @@ _classifiers = (
 
 class PRBillScraper(Scraper):
     _TZ = pytz.timezone("America/Puerto_Rico")
-    s = requests.Session()
 
     # keep a reference to the last search results page
     # so we can scrape the right event validation code
@@ -75,6 +73,7 @@ class PRBillScraper(Scraper):
         self.seen_votes = set()
         self.seen_bills = set()
         self.seen_bill_identifiers = set()
+        self.author_names = {}
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_search_results(
@@ -91,7 +90,7 @@ class PRBillScraper(Scraper):
             "upgrade-insecure-requests": "1",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         }
-        resp = self.s.get(
+        resp = self.get(
             "https://sutra.oslpr.org/medidas?cuatrienio_id={}&autores=&comision_id=&page=1".format(
                 cuatrienio_id
             ),
@@ -104,7 +103,7 @@ class PRBillScraper(Scraper):
         )[-1]
         pages = re.findall(r"\d+", pagelist)[0]
         for number in range(1, int(pages) + 1):
-            resps = self.s.get(
+            resps = self.get(
                 "https://sutra.oslpr.org/medidas?cuatrienio_id={}&autores=&comision_id=&page={}".format(
                     cuatrienio_id, number
                 ),
@@ -283,14 +282,19 @@ class PRBillScraper(Scraper):
             "cookie": "_ga=GA1.2.2038047349.1736526892; _ga_VQ7KX9LLCG=GS1.1.1736526892.1.1.1736526940.0.0.0",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         }
-        html = self.s.get(authurl, headers=headers, verify=False).text
-        page = lxml.html.fromstring(html)
-        name = page.xpath("//title/text()")[0].strip()
-        # site renders titles like "Jane  Doe - Sistema Único de Trámite Legislativo"
-        # (sometimes with a double dash, e.g. "Jane Doe - - Sistema...")
-        name = re.sub(
-            r"[\s-]*Sistema Único de Trámite Legislativo\s*$", "", name
-        ).strip()
+        # author urls are legisladores/M-<legislator>-<bill>; the page only
+        # depends on the legislator
+        legislator = authurl.rsplit("-", 1)[0]
+        if legislator not in self.author_names:
+            html = self.get(authurl, headers=headers, verify=False).text
+            page = lxml.html.fromstring(html)
+            name = page.xpath("//title/text()")[0].strip()
+            # site renders titles like "Jane  Doe - Sistema Único de Trámite Legislativo"
+            # (sometimes with a double dash, e.g. "Jane Doe - - Sistema...")
+            self.author_names[legislator] = re.sub(
+                r"[\s-]*Sistema Único de Trámite Legislativo\s*$", "", name
+            ).strip()
+        name = self.author_names[legislator]
         # currently not saving sponsor party, but here's the xpath
         # sometimes there's an extra dummy row beyond the first
         if name != "Legislador":
@@ -361,7 +365,7 @@ class PRBillScraper(Scraper):
             "upgrade-insecure-requests": "1",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         }
-        html = self.s.get(url, headers=headers, verify=False).text
+        html = self.get(url, headers=headers, verify=False).text
         page = lxml.html.fromstring(html)
 
         page_header_elems = page.xpath(
