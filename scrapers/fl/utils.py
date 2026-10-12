@@ -72,6 +72,10 @@ def retry_on_connection_error(func, max_retries=5, initial_backoff=2, max_backof
             Timeout,
             RequestException,
         ) as e:
+            # a 4xx won't change on retry
+            status = getattr(getattr(e, "response", None), "status_code", None)
+            if status and 400 <= status < 500 and status not in (403, 429):
+                raise
             retries += 1
             if retries > max_retries:
                 logger.error(f"Max retries ({max_retries}) exceeded. Last error: {e}")
