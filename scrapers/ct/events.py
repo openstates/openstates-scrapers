@@ -110,7 +110,8 @@ class CTEventScraper(Scraper):
             agenda_url = info["url"]
             if agenda_url:
                 full_url = f"https://www.cga.ct.gov{agenda_url}"
-                for bill in Agenda(source=URL(full_url, verify=False)).do_scrape():
+                agenda = Agenda(source=URL(full_url, verify=False))
+                for bill in agenda.do_scrape(scraper=self):
                     event.add_bill(bill)
 
             yield event
