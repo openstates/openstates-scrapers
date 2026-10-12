@@ -145,9 +145,8 @@ class MTBillScraper(Scraper):
     def scrape_list_page(self, session, page_num: int):
         self.info(f"Scraping page {str(page_num)}")
         params = {
-            "limit": str(self.results_per_page),
+            "limit": "1000",
             "offset": str(page_num),
-            "includeCounts": "true",  # TODO do we need the "counts" part of response?
             "sort": ["billType.code,desc", "billNumber,asc", "draft.draftNumber,asc"],
         }
 
@@ -155,7 +154,7 @@ class MTBillScraper(Scraper):
             "sessionIds": [self.new_api_session_identifier],
         }
 
-        response = requests.post(
+        response = self.post(
             "https://api.legmt.gov/bills/v1/bills/search", params=params, json=json_data
         ).json()
 
@@ -217,10 +216,12 @@ class MTBillScraper(Scraper):
                         )
 
             yield bill
-            yield from self.scrape_votes(bill, str(row["id"]))
-            yield from self.scrape_committee_votes(bill, str(row["id"]))
+            # LC drafts have no floor or committee votes
+            if not is_draft:
+                yield from self.scrape_votes(bill, str(row["id"]))
+                yield from self.scrape_committee_votes(bill, str(row["id"]))
 
-        if response["totalPages"] > page_num:
+        if response["totalPages"] > page_num + 1:
             yield from self.scrape_list_page(session, page_num + 1)
 
     def scrape_actions(self, bill: Bill, row: dict):
