@@ -64,9 +64,6 @@ def patched_get_response(self, scraper):
 
     # Use our handle_remote_disconnected function to specifically handle RemoteDisconnected errors
     def get_response_with_retry():
-        # Add a small random delay before each request
-        add_random_delay(0.5, 2)
-
         try:
             return original_get_response(self, scraper)
         except (ConnectionError, URLError, Timeout, RequestException) as e:
@@ -145,7 +142,6 @@ class SubjectPDF(PdfPage):
 class BillList(HtmlListPage):
     selector = XPath("//th/a[contains(@href, '/Session/Bill/')]")
     next_page_selector = XPath("//a[@class='next']/@href")
-    dependencies = {"subjects": SubjectPDF}
 
     def get_source_from_input(self):
         # to test scrape an individual bill, add &billNumber=1351
@@ -199,7 +195,7 @@ class BillList(HtmlListPage):
 
         # normalize id from HB 0004 to H4
         subj_bill_id = re.sub(r"(H|S)\w+ 0*(\d+)", r"\1\2", bill_id)
-        bill.subject = list(self.subjects[subj_bill_id])
+        bill.subject = list(self.input["subjects"][subj_bill_id])
 
         return BillDetail(bill)
 
@@ -956,12 +952,18 @@ class FlBillScraper(Scraper):
         # spatula's logging is better than scrapelib's
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
 
+        subjects = next(iter(SubjectPDF({"session": session}).do_scrape()))
+
         # Yield bills as they are scraped: individual requests are already
         # retried in patched_get_response, and buffering the whole session in a
         # list() meant one exhausted request threw away hours of collected bills
         # and started the session over from the first bill.
         bill_list = BillList(
-            {"session": session, "house_session_number": house_session_number}
+            {
+                "session": session,
+                "house_session_number": house_session_number,
+                "subjects": subjects,
+            }
         )
         yield from self._process_bill_list(bill_list)
 
@@ -1017,9 +1019,6 @@ class FlBillScraper(Scraper):
             try:
                 # Reset connection pool if needed
                 self._reset_connection_pool_if_needed()
-
-                # Add a random delay between processing items
-                add_random_delay(1, 3)
 
                 # If we've had too many consecutive failures, pause for a while
                 if self._consecutive_failures >= self._max_consecutive_failures:
