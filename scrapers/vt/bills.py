@@ -186,14 +186,12 @@ class VTBillScraper(Scraper, LXMLMixin):
             actions_json = self.get(actions_url, verify=False)
 
             # Checks if page actually has json posted
+            these_actions = []
             if "json" in actions_json.headers.get("Content-Type"):
-                these_actions = json.loads(actions_json.text)["data"]
-                # Checks to see if any data is actually there
-                if these_actions == "":
-                    continue
+                these_actions = json.loads(actions_json.text)["data"] or []
+                bill.add_source(actions_url)
             else:
-                continue
-            bill.add_source(actions_url)
+                self.warning("No actions JSON for {}".format(info["BillNumber"]))
 
             chambers_passed = set()
             for action in these_actions:
@@ -294,19 +292,17 @@ class VTBillScraper(Scraper, LXMLMixin):
                 )
 
             # Capture votes
+            # roll calls are the actions that have a VoteHeaderID
             votes_url = (
                 "http://legislature.vermont.gov/bill/loadBillRollCalls/{0}/{1}".format(
                     year_slug, internal_bill_id
                 )
             )
-            votes_json = self.get(
-                votes_url,
-                verify=False,
-            ).text
-            votes = json.loads(votes_json)["data"]
             bill.add_source(votes_url)
 
-            for vote in votes:
+            for vote in these_actions:
+                if not vote.get("VoteHeaderID"):
+                    continue
                 roll_call_id = vote["VoteHeaderID"]
                 roll_call_url = (
                     "http://legislature.vermont.gov/bill/"
@@ -401,9 +397,7 @@ class VTBillScraper(Scraper, LXMLMixin):
                     year_slug, bill_id_original_format
                 )
             )
-            page = self.lxmlize(conferees_doc_link_url, verify=False)
-            no_data = page.xpath('//div[@class="no-data"]/text()')
-            if not no_data:
+            if doc.xpath('//div[@id="conference-members"]//li'):
                 bill.add_document_link(
                     note="Conference Committee Members",
                     url=conferees_doc_link_url,
