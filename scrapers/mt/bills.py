@@ -497,6 +497,22 @@ class MTBillScraper(Scraper):
             # https://api.legmt.gov/bills/v1/votes/findByBillId?billId=2308
             motion = row["motion"] if row["motion"] else "Unknown"
 
+            # the API sometimes repeats a legislator's vote under a new record id
+            # (e.g. executiveActions billId=724, id 4221 lists all 21 members twice)
+            # so keep only the first vote per legislator
+            seen = set()
+            legislator_votes = []
+            for v in row["legislatorVotes"]:
+                leg_id = (
+                    v["legislatorId"]
+                    if "legislatorId" in v
+                    else v["membership"]["legislatorId"]
+                )
+                if leg_id not in seen:
+                    seen.add(leg_id)
+                    legislator_votes.append(v)
+            row["legislatorVotes"] = legislator_votes
+
             counts = {
                 "YES": 0,
                 "NO": 0,
