@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import re
 import os
+import time
 import datetime
 import pytz
 import scrapelib
+import requests
 import lxml.html
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
@@ -19,11 +21,10 @@ headers = {
 }
 
 session_details = {
-    # TODO, fill these in once appointed
     # TODO: move this to session metadata
     "104th": {
-        "speaker": "",
-        "president": "",
+        "speaker": "Welch",
+        "president": "Harmon",
         "params": {"GA": "104", "SessionId": "114"},
     },
     "103rd": {
@@ -289,6 +290,20 @@ def chamber_slug(chamber):
 class IlBillScraper(Scraper):
     LEGISLATION_URL = f"{BASE_URL}/Legislation/"
     localize = pytz.timezone("America/Chicago").localize
+
+    def request(self, method, url, **kwargs):
+        # When throttling, ilga.gov usually answers 429 but sometimes just drops
+        # the TLS connection, and scrapelib never retries SSLError, so a single
+        # drop ends the whole run. Back off and try again instead.
+        for attempt in range(5):
+            try:
+                return super().request(method, url, **kwargs)
+            except requests.exceptions.SSLError as e:
+                if attempt == 4:
+                    raise
+                wait = 30 * 2**attempt
+                self.warning("SSL error on %s (%s), retrying in %ss" % (url, e, wait))
+                time.sleep(wait)
 
     def get_bill_urls(self, chamber, session, doc_type):
         params = session_details[session]["params"]
