@@ -191,7 +191,14 @@ class VTBillScraper(Scraper, LXMLMixin):
                 these_actions = json.loads(actions_json.text)["data"] or []
                 bill.add_source(actions_url)
             else:
-                self.warning("No actions JSON for {}".format(info["BillNumber"]))
+                # likely an error page: skip rather than save the bill with no
+                # actions, which would wipe its stored actions on import
+                self.warning(
+                    "Skipping {}: actions response is not JSON".format(
+                        info["BillNumber"]
+                    )
+                )
+                continue
 
             chambers_passed = set()
             for action in these_actions:
