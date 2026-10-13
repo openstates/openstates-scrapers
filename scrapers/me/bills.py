@@ -2,6 +2,7 @@ import re
 import html
 import pytz
 import socket
+import time
 import datetime
 import dateutil.parser
 
@@ -19,6 +20,17 @@ BLACKLISTED_BILL_IDS = {"128": ("SP 601", "SP 602"), "129": (), "130": ()}
 class MEBillScraper(Scraper):
     categorizer = Categorizer()
     _tz = pytz.timezone("US/Eastern")
+
+    def get(self, url, **kwargs):
+        # scrapelib never retries an SSLError, but the site now and then drops
+        # a connection mid TLS handshake (SSLEOFError), which ended the scrape
+        for attempt in range(self.retry_attempts):
+            try:
+                return super().get(url, **kwargs)
+            except requests.exceptions.SSLError as e:
+                self.warning(f"{e}, retrying")
+                time.sleep(self.retry_wait_seconds * 2**attempt)
+        return super().get(url, **kwargs)
 
     def scrape(self, chamber=None, session=None, first_item=1):
         first_item = int(first_item)  # parse string arg from CLI to int
@@ -46,7 +58,7 @@ class MEBillScraper(Scraper):
             "GovernorAction": "None",
             "FinalLawType": "None",
         }
-        r = request_session.post(url=search_url, data=form_data)
+        r = request_session.post(url=search_url, data=form_data, timeout=self.timeout)
         r.raise_for_status()
 
     def scrape_chamber(self, chamber, session, first_item=1):
@@ -82,7 +94,9 @@ class MEBillScraper(Scraper):
             if attempt:
                 self._start_search(request_session, chamber, session)
             try:
-                r = request_session.get(url, params={"StartWith": first_item})
+                r = request_session.get(
+                    url, params={"StartWith": first_item}, timeout=self.timeout
+                )
                 r.raise_for_status()
             except requests.exceptions.RequestException as e:
                 self.warning(f"search results at item {first_item} failed: {e}")
@@ -284,7 +298,9 @@ class MEBillScraper(Scraper):
         ver_url = ver_link.get("href")
 
         try:
-            ver_html = self.get(ver_url, retry_on_404=True).text
+            ver_html = self.get(
+                ver_url.replace("http://www.", "https://www.", 1), retry_on_404=True
+            ).text
         except (socket.timeout, requests.exceptions.HTTPError):
             pass
         else:
