@@ -228,8 +228,14 @@ class OKEventScraper(Scraper):
                     for bill in Agenda(source=URL(link["route"])).do_scrape():
                         event.add_bill(bill)
                 except requests.exceptions.TooManyRedirects:
-                    # missing PDFs redirect in a loop to the site's 404 page
-                    self.warning(f"Skipped missing agenda PDF {link['route']}")
+                    # Missing PDFs on webserver1.lsb.state.ok.us redirect in a
+                    # loop to the site's 404 page instead of returning HTTP 404.
+                    self.warning(f"Skipped missing agenda PDF (redirect loop): {link['route']}")
+                except requests.exceptions.SSLError:
+                    # SSL verification fails for some PDF hosts when running
+                    # behind the Oxylabs proxy (TLS interception)
+                    # https://www.oklegislature.gov/2025-26HB/CMN-JUDCIV-20260915-13000000.pdf. skipped
+                    self.warning(f"Skipped PDF due to SSL error: {link['route']}")
 
             for agenda in meta["agenda"] or []:
                 if not agenda.get("info"):
