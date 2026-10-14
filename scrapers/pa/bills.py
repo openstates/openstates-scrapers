@@ -42,16 +42,19 @@ class PABillScraper(Scraper):
 
         # PA website repeats some bills on the listing page
         # ex: resolutions that are also concurrent resolutions
-        bill_urls_seen = []
+        bill_urls_seen = set()
 
         RETRY_TIMES = 5
         for link in page.xpath('//a[@class="bill"]'):
+            if link.attrib["href"] in bill_urls_seen:
+                continue
+            bill_urls_seen.add(link.attrib["href"])
             is_parsed = False
             for retry_time in range(0, RETRY_TIMES):
                 try:
-                    if link.attrib["href"] not in bill_urls_seen:
-                        bill_urls_seen.append(link.attrib["href"])
-                        yield from self.parse_bill(chamber, session, special, link)
+                    # collect first so a failed attempt yields nothing
+                    objs = list(self.parse_bill(chamber, session, special, link))
+                    yield from objs
                     is_parsed = True
 
                     break
@@ -126,6 +129,7 @@ class PABillScraper(Scraper):
         yield bill
 
     def parse_bill_versions(self, bill, page):
+        amendment_pages = {}
         for row in page.xpath('//div[@id="section-pn"]/div'):
             printers_number = 0
             for a in row.xpath(
@@ -154,7 +158,9 @@ class PABillScraper(Scraper):
                 if "Amendments" in doc_title:
                     # House and Senate Amendments
                     amend_chamber = doc_title.replace("Amendments", "").strip()
-                    self.scrape_amendments(bill, doc_url, amend_chamber)
+                    self.scrape_amendments(
+                        bill, doc_url, amend_chamber, amendment_pages
+                    )
                 elif "Fiscal Note" in doc_title:
                     # Senate & House Fiscal Notes
                     mimetype = self.mimetype_from_class(a)
@@ -174,8 +180,10 @@ class PABillScraper(Scraper):
                         on_duplicate="ignore",
                     )
 
-    def scrape_amendments(self, bill, link, chamber_pretty):
-        page = self.get_page(link)
+    def scrape_amendments(self, bill, link, chamber_pretty, pages):
+        if link not in pages:
+            pages[link] = self.get_page(link)
+        page = pages[link]
 
         for row in page.xpath('//div[contains(@class, "card shadow")]'):
             version_name = "".join(
