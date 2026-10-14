@@ -74,10 +74,17 @@ class MIBillScraper(Scraper):
         #     bill_id = link.xpath("text()")[0].split(" of ")[0]
         #     yield from self.scrape_bill(session, bill_id, bill_url)
 
+        # The search results can repeat a bill at a pagination boundary. Keep
+        # the canonical detail URL so a repeated listing cannot produce a
+        # duplicate bill (and duplicate import record).
+        seen_bill_urls = set()
         for link in page.xpath(
             "//div[contains(@class,'tableScrollWrapper')]/table[1]/tbody/tr/td[1]/a"
         ):
             bill_url = self.make_bill_url(link.xpath("@href")[0])
+            if bill_url in seen_bill_urls:
+                continue
+            seen_bill_urls.add(bill_url)
             bill_id = link.xpath("text()")[0].split(" of ")[0]
             yield from self.scrape_bill(session, bill_id, bill_url)
 
