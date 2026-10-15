@@ -118,6 +118,14 @@ class NewHampshire(State):
             "end_date": "2026-06-30",
             "active": True,
         },
+        {
+            "identifier": "2027",
+            "classification": "primary",
+            "name": "2027 Regular Session",
+            "start_date": "2027-01-06",
+            "end_date": "2027-06-30",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2013 Session",
