@@ -65,6 +65,11 @@ class KSVoteScraper(Scraper):
                     session,
                 )
 
+            # Past the last page the site keeps returning the last page's
+            # rows, so stop when there is no link to the next page.
+            if not doc.xpath(f'//a[contains(@hx-get, "?page={page + 1}&")]'):
+                break
+
             page += 1
 
     def parse_vote(self, bill, link, session):
