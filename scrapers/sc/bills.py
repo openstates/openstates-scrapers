@@ -281,13 +281,13 @@ class SCBillScraper(Scraper):
 
             # obtain vote rollcall from pdf and add it to the VoteEvent object
             rollcall_pdf = vote_link.get("href")
-            self.scrape_rollcall(vote, rollcall_pdf)
-            vote.add_source(rollcall_pdf)
             if rollcall_pdf in self._seen_vote_ids:
                 self.warning("duplicate usage of %s, skipping", rollcall_pdf)
                 continue
             else:
                 self._seen_vote_ids.add(rollcall_pdf)
+            self.scrape_rollcall(vote, rollcall_pdf)
+            vote.add_source(rollcall_pdf)
             vote.dedupe_key = rollcall_pdf  # distinct KEY for each one
 
             yield vote
@@ -494,6 +494,8 @@ class SCBillScraper(Scraper):
         :param session:
         """
         self._seen_vote_ids = set()
+        # prefiled bills are listed on both the prefile and intro day pages
+        seen_bill_ids = set()
 
         # Subject scraping disabled Summer 2020, openstates/issues#77
         # Leaving the remnants of this around since it is very possible that SC will
@@ -539,7 +541,11 @@ class SCBillScraper(Scraper):
 
                 for bill_a in doc.xpath("//p/a[1]"):
                     bill_id = bill_a.text.replace(".", "")
-                    if bill_id.lower().startswith(chamber_letter):
+                    if (
+                        bill_id.lower().startswith(chamber_letter)
+                        and bill_id not in seen_bill_ids
+                    ):
+                        seen_bill_ids.add(bill_id)
                         yield from self.scrape_details(
                             bill_a.get("href"), session, chamber, bill_id
                         )
@@ -568,7 +574,11 @@ class SCBillScraper(Scraper):
 
                 for bill_a in doc.xpath("//p/a[1]"):
                     bill_id = bill_a.text.replace(".", "")
-                    if bill_id.lower().startswith(chamber_letter):
+                    if (
+                        bill_id.lower().startswith(chamber_letter)
+                        and bill_id not in seen_bill_ids
+                    ):
+                        seen_bill_ids.add(bill_id)
                         yield from self.scrape_details(
                             bill_a.get("href"), session, chamber, bill_id
                         )
