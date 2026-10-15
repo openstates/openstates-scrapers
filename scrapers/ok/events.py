@@ -225,12 +225,16 @@ class OKEventScraper(Scraper):
                 ):
                     continue
                 try:
-                    for bill in Agenda(source=URL(link["route"], verify=False)).do_scrape():
+                    for bill in Agenda(
+                        source=URL(link["route"], verify=False)
+                    ).do_scrape():
                         event.add_bill(bill)
                 except requests.exceptions.TooManyRedirects:
                     # Missing PDFs on webserver1.lsb.state.ok.us redirect in a
                     # loop to the site's 404 page instead of returning HTTP 404.
-                    self.warning(f"Skipped missing agenda PDF (redirect loop): {link['route']}")
+                    self.warning(
+                        f"Skipped missing agenda PDF (redirect loop): {link['route']}"
+                    )
 
             for agenda in meta["agenda"] or []:
                 if not agenda.get("info"):
