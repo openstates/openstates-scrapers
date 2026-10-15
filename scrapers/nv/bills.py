@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import dateutil.parser
 import lxml.html
 from openstates.scrape import Scraper, Bill, VoteEvent
-from .common import session_slugs
+from .common import get_session_slug
 from spatula import HtmlListPage, HtmlPage, CSS, XPath, SelectorError, SkipItem
 from scrapelib import HTTPError
 
@@ -123,15 +123,16 @@ class BillStub:
     source_url: str
     identifier: str
     session: str
+    session_slug: str
     subjects: list
 
 
 class SubjectMapping(Utf8HtmlMixin, HtmlPage):
-    example_input = {"session": "81"}
+    example_input = {"session": "81", "session_slug": "81st2021"}
 
     def get_source_from_input(self):
         session = self.input["session"]
-        slug = session_slugs[session]
+        slug = self.input["session_slug"]
         if "Special" in session:
             year = slug[4:8]
             url = f"https://www.leg.state.nv.us/App/NELIS/REL/{slug}/Bills/List"
@@ -172,12 +173,12 @@ class SubjectMapping(Utf8HtmlMixin, HtmlPage):
 
 
 class BillList(Utf8HtmlMixin, HtmlListPage):
-    example_input = {"session": "81"}
+    example_input = {"session": "81", "session_slug": "81st2021"}
     selector = CSS(".row a")
     dependencies = {"subject_mapping": SubjectMapping}
 
     def get_source_from_input(self):
-        slug = session_slugs[self.input["session"]]
+        slug = self.input["session_slug"]
         # PageSize 2**31 from their site
         return (
             f"https://www.leg.state.nv.us/App/NELIS/REL/{slug}/"
@@ -198,6 +199,7 @@ class BillList(Utf8HtmlMixin, HtmlListPage):
                 link,
                 identifier,
                 self.input["session"],
+                self.input["session_slug"],
                 list(self.subject_mapping[identifier]),
             )
         )
@@ -208,12 +210,13 @@ class BillTabDetail(Utf8HtmlMixin, HtmlPage):
         "https://www.leg.state.nv.us/App/NELIS/REL/81st2021/Bill/7262/Overview",
         "AB20",
         "81",
+        "81st2021",
         ["test subject"],
     )
 
     def get_source_from_input(self):
         bill_key = self.input.source_url.split("/")[-2]
-        slug = session_slugs[self.input.session]
+        slug = self.input.session_slug
         url = (
             f"https://www.leg.state.nv.us/App/NELIS/REL/{slug}/Bill/"
             f"FillSelectedBillTab?selectedTab=Overview&billKey={bill_key}"
@@ -596,5 +599,6 @@ class VoteMembers(Utf8HtmlMixin, HtmlPage):
 class NVBillScraper(Scraper):
     def scrape(self, session=None):
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
-        bill_list = BillList({"session": session})
+        session_slug = get_session_slug(self.jurisdiction, session)
+        bill_list = BillList({"session": session, "session_slug": session_slug})
         yield from bill_list.do_scrape()

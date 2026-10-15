@@ -17,6 +17,7 @@ class Nevada(State):
             "name": "26th Special Session (2010)",
             "start_date": "2010-02-23",
             "end_date": "2010-03-01",
+            "extras": {"session_slug": "26th2010Special"},
         },
         {
             "_scraped_name": "27th (2013) Special Session",
@@ -25,6 +26,7 @@ class Nevada(State):
             "name": "27th Special Session (2013)",
             "start_date": "2013-06-04",
             "end_date": "2013-06-04",
+            "extras": {"session_slug": "27th2013Special"},
         },
         {
             "_scraped_name": "28th (2014) Special Session",
@@ -33,6 +35,7 @@ class Nevada(State):
             "name": "28th Special Session (2014)",
             "start_date": "2014-09-10",
             "end_date": "2014-09-11",
+            "extras": {"session_slug": "28th2014Special"},
         },
         {
             "_scraped_name": "29th (2015) Special Session",
@@ -41,6 +44,7 @@ class Nevada(State):
             "name": "29th Special Session (2015)",
             "start_date": "2015-12-16",
             "end_date": "2015-12-19",
+            "extras": {"session_slug": "29th2015Special"},
         },
         {
             "_scraped_name": "30th (2016) Special Session",
@@ -49,6 +53,7 @@ class Nevada(State):
             "name": "30th Special Session (2016)",
             "start_date": "2016-10-10",
             "end_date": "2016-10-14",
+            "extras": {"session_slug": "30th2016Special"},
         },
         {
             "_scraped_name": "75th (2009) Session",
@@ -57,6 +62,7 @@ class Nevada(State):
             "name": "2009 Regular Session",
             "start_date": "2009-02-02",
             "end_date": "2009-06-02",
+            "extras": {"session_slug": "75th2009"},
         },
         {
             "_scraped_name": "76th (2011) Session",
@@ -65,6 +71,7 @@ class Nevada(State):
             "name": "2011 Regular Session",
             "start_date": "2011-02-07",
             "end_date": "2011-06-06",
+            "extras": {"session_slug": "76th2011"},
         },
         {
             "_scraped_name": "77th (2013) Session",
@@ -73,6 +80,7 @@ class Nevada(State):
             "name": "2013 Regular Session",
             "start_date": "2013-02-04",
             "end_date": "2013-06-03",
+            "extras": {"session_slug": "77th2013"},
         },
         {
             "_scraped_name": "78th (2015) Session",
@@ -81,6 +89,7 @@ class Nevada(State):
             "name": "2015 Regular Session",
             "start_date": "2015-02-15",
             "end_date": "2015-06-01",
+            "extras": {"session_slug": "78th2015"},
         },
         {
             "_scraped_name": "79th (2017) Session",
@@ -89,6 +98,7 @@ class Nevada(State):
             "name": "2017 Regular Session",
             "start_date": "2017-02-06",
             "end_date": "2017-06-06",
+            "extras": {"session_slug": "79th2017"},
         },
         {
             "_scraped_name": "80th (2019) Session",
@@ -97,6 +107,7 @@ class Nevada(State):
             "name": "2019 Regular Session",
             "start_date": "2019-02-04",
             "end_date": "2019-06-04",
+            "extras": {"session_slug": "80th2019"},
         },
         {
             "_scraped_name": "31st (2020) Special Session",
@@ -105,6 +116,7 @@ class Nevada(State):
             "name": "31st (2020) Special Session",
             "start_date": "2020-07-08",
             "end_date": "2020-07-19",
+            "extras": {"session_slug": "31st2020Special"},
         },
         {
             "_scraped_name": "32nd (2020) Special Session",
@@ -113,6 +125,7 @@ class Nevada(State):
             "name": "32nd (2020) Special Session",
             "start_date": "2020-07-31",
             "end_date": "2020-08-06",
+            "extras": {"session_slug": "32nd2020Special"},
         },
         {
             "_scraped_name": "81st (2021) Session",
@@ -122,6 +135,7 @@ class Nevada(State):
             "start_date": "2021-02-01",
             "end_date": "2021-06-01",
             "active": False,
+            "extras": {"session_slug": "81st2021"},
         },
         {
             "_scraped_name": "33rd (2021) Special Session",
@@ -131,6 +145,7 @@ class Nevada(State):
             "start_date": "2021-11-12",
             "end_date": "2021-11-16",
             "active": False,
+            "extras": {"session_slug": "33rd2021Special"},
         },
         {
             "_scraped_name": "82nd (2023) Session",
@@ -140,6 +155,7 @@ class Nevada(State):
             "start_date": "2023-02-01",
             "end_date": "2023-06-01",
             "active": False,
+            "extras": {"session_slug": "82nd2023"},
         },
         {
             "_scraped_name": "34th (2023) Special Session",
@@ -149,6 +165,7 @@ class Nevada(State):
             "start_date": "2023-06-06",
             "end_date": "2023-06-06",
             "active": False,
+            "extras": {"session_slug": "34th2023Special"},
         },
         {
             "_scraped_name": "35th (2023) Special Session",
@@ -158,6 +175,7 @@ class Nevada(State):
             "start_date": "2023-06-07",
             "end_date": "2023-06-14",
             "active": False,
+            "extras": {"session_slug": "35th2023Special"},
         },
         {
             "_scraped_name": "83rd (2025) Session",
@@ -168,6 +186,7 @@ class Nevada(State):
             "start_date": "2025-02-01",
             "end_date": "2025-06-01",
             "active": False,
+            "extras": {"session_slug": "83rd2025"},
         },
         {
             "_scraped_name": "36th (2026) Special Session",
@@ -177,6 +196,17 @@ class Nevada(State):
             "start_date": "2025-11-13",
             "end_date": "2025-11-21",
             "active": True,
+            "extras": {"session_slug": "36th2025Special"},
+        },
+        {
+            "_scraped_name": "84th (2027) Session",
+            "classification": "primary",
+            "identifier": "84",
+            "name": "2027 Regular Session",
+            "start_date": "2027-02-01",
+            "end_date": "2027-05-31",
+            "active": False,
+            "extras": {"session_slug": "84th2027"},
         },
     ]
     ignored_scraped_sessions = [
