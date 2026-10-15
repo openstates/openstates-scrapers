@@ -4,6 +4,8 @@ from openstates.scrape import Scraper, Organization
 
 import lxml.html
 
+from .common import get_session_slug
+
 nelis_root = "https://www.leg.state.nv.us/App/NELIS/REL"
 
 
@@ -13,11 +15,13 @@ class NVCommitteeScraper(Scraper):
             chambers = [chamber]
         else:
             chambers = ["upper", "lower"]
+        session_slug = get_session_slug(self.jurisdiction, session)
         for chamber in chambers:
-            insert = self.jurisdiction.session_slugs[session]
-
             chamber_names = {"lower": "Assembly", "upper": "Senate"}
-            list_url = "%s/%s/HomeCommittee/LoadCommitteeListTab" % (nelis_root, insert)
+            list_url = "%s/%s/HomeCommittee/LoadCommitteeListTab" % (
+                nelis_root,
+                session_slug,
+            )
             html = self.get(list_url).text
             doc = lxml.html.fromstring(html)
 
@@ -33,7 +37,7 @@ class NVCommitteeScraper(Scraper):
                 ).group("id")
                 com_url = (
                     "%s/%s/Committee/FillSelectedCommitteeTab?committeeOrSubCommitteeKey=%s"
-                    "&selectedTab=Overview" % (nelis_root, insert, com_id)
+                    "&selectedTab=Overview" % (nelis_root, session_slug, com_id)
                 )
                 org = Organization(
                     name=name, chamber=chamber, classification="committee"

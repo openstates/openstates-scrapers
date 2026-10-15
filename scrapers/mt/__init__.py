@@ -69,8 +69,17 @@ class Montana(State):
             "name": "2025 Regular Session",
             "start_date": "2025-01-06",
             "end_date": "2025-05-03",
-            "active": True,
+            "active": False,
             "extras": {"legislatureOrdinal": 69, "newAPIIdentifier": 2},
+        },
+        {
+            "_scraped_name": "20271",
+            "identifier": "2027",
+            "name": "2027 Regular Session",
+            "start_date": "2027-01-04",
+            "end_date": "2027-04-30",
+            "active": True,
+            "extras": {"legislatureOrdinal": 70, "newAPIIdentifier": 3},
         },
     ]
     ignored_scraped_sessions = [
