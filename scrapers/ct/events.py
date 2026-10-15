@@ -3,6 +3,7 @@ import json
 
 import lxml
 from openstates.scrape import Scraper, Event
+from scrapelib import HTTPError
 
 import pytz
 
@@ -62,7 +63,12 @@ class CTEventScraper(Scraper):
             self.info(f"No events from {code} from normal source, trying web backup")
             # for some reason not getting this committee from original source
             # try backup web scrape instead
-            yield from self.scrape_committee_events_web(name)
+            try:
+                yield from self.scrape_committee_events_web(name)
+            except HTTPError as e:
+                self.warning(
+                    f"Web backup for {code} ({name}) also failed: {e}. Skipping committee."
+                )
             return
         events = json.loads(events_data)
 
