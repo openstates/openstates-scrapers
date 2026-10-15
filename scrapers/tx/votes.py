@@ -692,6 +692,36 @@ def record_votes_with_yeas(root, session, chamber, claimed_paragraphs):
         yield v
 
 
+def senate_roll_call(root):
+    # The day's opening roll call, e.g.
+    #   The roll was called and the following Senators were present: Alvarado, ...
+    #   Absent-excused: West.
+    roll_call = root.xpath(
+        '//div[@class = "textpara"][contains(., "following Senators were present")]'
+    )
+    if not roll_call:
+        return []
+    members = names(roll_call[0])
+    el = next_tag(roll_call[0])
+    while el is not None and (el.text or "").startswith("Absent"):
+        members.extend(names(el))
+        el = next_tag(el)
+    return members
+
+
+def fill_implied_yeas(vote, members):
+    # Senate journals name only the members who didn't vote yea; every
+    # other senator on the day's roll call voted yea
+    if any(v["option"] == "yes" for v in vote.votes):
+        return
+    yeas = next(c["value"] for c in vote.counts if c["option"] == "yes")
+    listed = {v["voter_name"] for v in vote.votes}
+    implied = [m for m in members if m not in listed]
+    if yeas and listed <= set(members) and len(implied) == yeas:
+        for name in implied:
+            vote.yes(name)
+
+
 def clean_vote_name(name):
     # Removes extra text like Committee Meeting —  and Excused —
     if " — " in name:
@@ -754,6 +784,7 @@ def get_journal_session_url_file_part(session, chamber):
 class TXVoteScraper(Scraper):
     def scrape(self, session=None, chamber=None, url_match=None):
         self._seen_vote_keys = set()
+        self._senate_members = []
 
         if session == "821":
             self.warning("no journals for session 821")
@@ -892,7 +923,12 @@ class TXVoteScraper(Scraper):
             )
             date = datetime.datetime.strptime(date_str, "%m-%d %Y").date()
 
+        if chamber == "upper":
+            # a day continued after recess has no roll call of its own
+            self._senate_members = senate_roll_call(root) or self._senate_members
         for vote in votes(root, session, chamber):
+            if chamber == "upper" and self._senate_members:
+                fill_implied_yeas(vote, self._senate_members)
             vote.start_date = date
             vote.add_source(url)
 
