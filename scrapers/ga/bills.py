@@ -280,9 +280,9 @@ class GABillScraper(Scraper):
                             how = vdetail["MemberVoted"]
                             if whom["Name"] == "VACANT":
                                 continue
-                            name, district = vote_name_pattern.search(
-                                whom["Name"]
-                            ).groups()
+                            district = vote_name_pattern.search(whom["Name"]).group(2)
+                            member = self.get_member(whom["Id"])
+                            name = "{First} {Last}".format(**dict(member["Name"]))
                             vote.vote(methods.get(how, "other"), name, note=district)
 
                     yield vote
