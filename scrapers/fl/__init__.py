@@ -287,7 +287,7 @@ class Florida(State):
             "classification": "primary",
             "start_date": "2026-01-13",
             "end_date": "2026-03-13",
-            "active": True,
+            "active": False,
             "extras": {"session_number": "113"},
         },
         {
@@ -314,7 +314,7 @@ class Florida(State):
             "classification": "special",
             "start_date": "2026-06-01",
             "end_date": "2026-06-05",
-            "active": True,
+            "active": False,
             "extras": {"session_number": "122"},
         },
         {
@@ -324,9 +324,8 @@ class Florida(State):
             # TODO get real dates
             "start_date": "2027-01-13",
             "end_date": "2027-03-13",
-            "active": False,
-            # TODO get house session number from https://www.flhouse.gov/ (not posted as of 6/9/26)
-            # "extras": {"session_number": "113"},
+            "active": True,
+            "extras": {"session_number": "126"},
         },
     ]
     ignored_scraped_sessions = [
