@@ -40,6 +40,11 @@ class WVBillScraper(Scraper):
         "CR": "concurrent resolution",
         "JR": "joint resolution",
     }
+    # Senate rolls list the presiding officer as "MR PRESIDENT"
+    senate_presidents = {
+        "2025": "SMITH",
+        "2026": "SMITH",
+    }
 
     def get_year_and_stype(self, session):
         # Get year and session type from the given session
@@ -428,6 +433,10 @@ class WVBillScraper(Scraper):
                 # was catching 'A squatter cannot be considered a tenant in WV.' as an absent vote
                 # on https://www.wvlegislature.gov/legisdocs/2024/RS/votes/senate/03-05-0369.pdf
                 if name.isupper():
+                    if name == "MR PRESIDENT":
+                        name = self.senate_presidents.get(
+                            bill.legislative_session, name
+                        )
                     if vote_val == "Y":
                         # Fix for "Class Y special hunting" in
                         # http://www.wvlegislature.gov/legisdocs/2020/RS/votes/senate/01-27-0033.pdf
