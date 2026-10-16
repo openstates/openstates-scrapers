@@ -95,7 +95,6 @@ def listing_matches_chamber(listing, chamber):
 
 class TNBillScraper(Scraper):
     def scrape(self, session=None, chamber=None):
-        self._seen_votes = set()
         chambers = [chamber] if chamber else ["upper", "lower"]
 
         # If you need to test an individual bill:
@@ -284,13 +283,21 @@ class TNBillScraper(Scraper):
 
     def scrape_vote_events(self, bill, page, link):
         chamber_labels = (("lower", "pnlHouseVotes"), ("upper", "pnlSenateVotes"))
+        # Motions only need to be unique within a bill (the importer matches
+        # vote events by bill, motion, date and chamber). Tracking them across
+        # the whole run made the "(n)" suffix depend on bill scrape order,
+        # which varies between runs (bill links come from a set), so the same
+        # roll call got a different motion_text from one scrape to the next.
+        seen_motions = set()
         for chamber, element_id in chamber_labels:
             raw_vote_data = page.xpath(f"//*[@id='{element_id}']")[0].text_content()
-            votes = self.scrape_votes_for_chamber(chamber, raw_vote_data, bill, link)
+            votes = self.scrape_votes_for_chamber(
+                chamber, raw_vote_data, bill, link, seen_motions
+            )
             for vote in votes:
                 yield vote
 
-    def scrape_votes_for_chamber(self, chamber, vote_data, bill, link):
+    def scrape_votes_for_chamber(self, chamber, vote_data, bill, link, seen_motions):
         raw_vote_data = re.split(r"(\w+?) by [\w ]+?\s+-", vote_data.strip())[1:]
         bill_to_motion = zip(raw_vote_data[::2], raw_vote_data[1::2])
 
@@ -352,10 +359,10 @@ class TNBillScraper(Scraper):
 
                 motion = motion.strip()
                 motion = motion.replace("&AMP;", "&")  # un-escape ampersands
-                if motion in self._seen_votes:
+                if motion in seen_motions:
                     motion = "{} ({})".format(motion, motion_count)
                     motion_count += 1
-                self._seen_votes.add(motion)
+                seen_motions.add(motion)
 
                 vote = VoteEvent(
                     motion_text=motion,
