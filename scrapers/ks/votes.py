@@ -1,4 +1,3 @@
-import concurrent.futures
 import datetime
 import re
 
@@ -9,13 +8,6 @@ from openstates.scrape import Scraper, VoteEvent
 
 class KSVoteScraper(Scraper):
     BASE_URL = "https://www.kslegislature.gov"
-
-    # Number of vote detail pages to fetch concurrently. The old scraper
-    # fetched every ~100 KB vote page one-at-a-time, which meant a full
-    # biennium took well over a day to complete. Fetching several pages in
-    # parallel dramatically cuts the wall-clock time without changing what
-    # gets parsed or the order in which votes are emitted.
-    VOTE_FETCH_WORKERS = 12
 
     def scrape(self, session=None):
         meta = next(
@@ -57,11 +49,6 @@ class KSVoteScraper(Scraper):
             if not vote_rows:
                 break
 
-            # Collect all (bill, vote_url) pairs on this listing page first so
-            # the individual vote detail pages can be downloaded concurrently.
-            # The listing order is preserved below so the emitted output is
-            # identical to the previous sequential implementation.
-            page_votes = []
             for row in vote_rows:
                 bill = row.xpath(".//td[@data-label='Measure']//a/text()")
                 bill = bill[0].strip() if bill else None
@@ -71,53 +58,24 @@ class KSVoteScraper(Scraper):
                 if not vote_url.startswith("http"):
                     vote_url = f"{self.BASE_URL}{vote_url}"
 
-                page_votes.append((bill, vote_url))
+                yield from self.parse_vote(bill, vote_url, session)
 
-            # Fetch the vote detail pages in parallel. Fetching (network I/O)
-            # is the slow part; parsing stays on the main thread so the scrape
-            # generator continues to yield in the original listing order.
-            with concurrent.futures.ThreadPoolExecutor(
-                max_workers=self.VOTE_FETCH_WORKERS
-            ) as pool:
-                fetched = list(
-                    pool.map(
-                        lambda bv: (bv[0], bv[1], self._fetch_vote(bv[1])),
-                        page_votes,
-                    )
-                )
-
-            for bill, vote_url, text in fetched:
-                yield from self.parse_vote(
-                    bill,
-                    vote_url,
-                    session,
-                    text,
-                )
+            # The KS site returns the last page's rows again for any page
+            # number beyond the last real page, so we can't rely on an empty
+            # response to stop. Stop as soon as there is no link to the next
+            # page in the listing HTML.
+            next_page_link = doc.xpath(f"//a[contains(@href,'?page={page + 1}&')]")
+            if not next_page_link:
+                break
 
             page += 1
 
-    def _fetch_vote(self, link):
-        # Download a single vote detail page. Returns the response text, or
-        # None if the page could not be fetched. Kept separate from parse_vote
-        # so many pages can be fetched concurrently.
-        #
-        # scrapelib (the base Scraper) already retries on connection errors
-        # with exponential backoff and HTTP resilience handling, so we no
-        # longer need a manual 10-attempt loop with fixed 10s sleeps that
-        # could waste up to 100 seconds on a single flaky vote.
+    def parse_vote(self, bill, link, session):
         try:
-            response = self.get(
-                link,
-                timeout=60,
-            )
+            response = self.get(link, timeout=60)
+            text = response.text
         except Exception as e:
             self.warning(f"Skipping vote after repeated failures: {link}: {e}")
-            return None
-
-        return response.text
-
-    def parse_vote(self, bill, link, session, text):
-        if text is None:
             return
 
         if "Page Not Found" in text or "Page Unavailable" in text:
