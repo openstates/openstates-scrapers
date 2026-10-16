@@ -89,7 +89,15 @@ class MNVoteScraper(Scraper):
             # to get redirected to the source journal page (HTML) for this vote
             # with values like {PageNumber: "643", SessionKey: 302}
 
+            # several amendment votes can share a date, motion text and even a
+            # journal page, so the amendment number (e.g. H0025A5) tells them apart
+            amendment_number = (header_table_cells[2].text or "").strip()
+            identifier = f"Journal page {journal_page_number}"
+            if amendment_number:
+                identifier += f", {amendment_number}"
+
             vote = VoteEvent(
+                identifier=identifier,
                 chamber="lower",
                 start_date=date,
                 motion_text=motion_text,
@@ -105,6 +113,8 @@ class MNVoteScraper(Scraper):
             vote.dedupe_key = (
                 f"{session}-{bill_id}-{date_text}-{motion_text}-{journal_page_number}"
             )
+            if amendment_number:
+                vote.dedupe_key += f"-{amendment_number}"
 
             # parse individual votes
             # first table is the YES and second table is the NO
