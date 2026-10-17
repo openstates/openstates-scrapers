@@ -10,14 +10,19 @@ def actions_from_table(bill, actions_table):
     """"""
     action_rows = actions_table.cssselect("tr")
 
-    # first row will say "Actions Taken on S|H(B|R|CR)..."
-    if "Actions For S" in action_rows[0].text_content():
-        chamber = "upper"
+    # first row is the bill number and "Date", e.g. "SB0001 Date"
+    if action_rows[0].text_content().strip().startswith("S"):
+        default_chamber = "upper"
     else:
-        chamber = "lower"
+        default_chamber = "lower"
 
     for ar in action_rows[1:]:
         tds = ar.xpath("td")
+        # each row's class says which chamber took the action;
+        # a few rows (e.g. "Comp. became Pub. Ch.") have no class
+        chamber = {"house": "lower", "senate": "upper"}.get(
+            ar.get("class"), default_chamber
+        )
 
         action_taken = tds[0].text
 
@@ -105,8 +110,13 @@ class TNBillScraper(Scraper):
         if session_details["classification"] == "special":
             yield from self.scrape_special(session)
         else:
+            index_page = (
+                f"http://wapp.capitol.tn.gov/apps/indexes/BillsByIndex/?year={session}"
+            )
+            index_list_page = lxml.html.fromstring(self.get(index_page).text)
+            index_list_page.make_links_absolute(index_page)
             for chamber in chambers:
-                yield from self.scrape_chamber(chamber, session)
+                yield from self.scrape_chamber(chamber, session, index_list_page)
 
     def scrape_special(self, session):
         index_page = f"https://wapp.capitol.tn.gov/apps/Indexes/SpecialSessionBillIndex?ga={session[0:3]}&specsessNum={session[4]}"
@@ -116,18 +126,10 @@ class TNBillScraper(Scraper):
         for bill_link in page.xpath("//a[contains(@href, '/BillInfo/Default')]"):
             yield from self.scrape_bill(session, bill_link.xpath("@href")[0])
 
-    def scrape_chamber(self, chamber, session):
+    def scrape_chamber(self, chamber, session, index_list_page):
         print(f"SCRAPE CHAMBER {chamber} {session}")
         # The index page gives us links to the paginated bill pages
-        index_page = (
-            f"http://wapp.capitol.tn.gov/apps/indexes/BillsByIndex/?year={session}"
-        )
         xpath = '//td[contains(@class,"webindex")]/a'
-
-        index_list_page = self.get(index_page).text
-
-        index_list_page = lxml.html.fromstring(index_list_page)
-        index_list_page.make_links_absolute(index_page)
 
         for bill_listing in index_list_page.xpath(xpath):
 
