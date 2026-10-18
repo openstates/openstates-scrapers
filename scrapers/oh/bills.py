@@ -37,6 +37,7 @@ class OHBillScraper(Scraper):
     # floor passage, resolution adoption, and committee reports (including
     # reports that re-refer the bill to another committee)
     passing_results = {"Passed", "Adopted", "Favorable Passage", "Re-referred"}
+    failing_results = {"Failed"}
 
     def scrape(self, session=None, chambers=None):
         # Bills endpoint can sometimes take a very long time to load
@@ -262,9 +263,10 @@ class OHBillScraper(Scraper):
                 result = "pass"
             else:
                 result = "fail"
-                self.warning(
-                    f"Recording vote result {action['result']!r} as fail on {bill.identifier}"
-                )
+                if action["result"] not in self.failing_results:
+                    self.warning(
+                        f"Unknown vote result {action['result']!r} on {bill.identifier}, recording as fail"
+                    )
             vote = VoteEvent(
                 chamber=chamber,
                 motion_text=action["description"],
