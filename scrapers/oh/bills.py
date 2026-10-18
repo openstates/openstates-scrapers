@@ -33,6 +33,11 @@ class OHBillScraper(Scraper):
         "legislature": "legislature",
     }
 
+    # Values of an actions API vote's "result" that mean the motion carried:
+    # floor passage, resolution adoption, and committee reports (including
+    # reports that re-refer the bill to another committee)
+    passing_results = {"Passed", "Adopted", "Favorable Passage", "Re-referred"}
+
     def scrape(self, session=None, chambers=None):
         # Bills endpoint can sometimes take a very long time to load
         self.timeout = 300
@@ -253,12 +258,19 @@ class OHBillScraper(Scraper):
                 classifications.append("amendment")
             if len(classifications) == 0:
                 classifications.append("passage")
+            if action["result"] in self.passing_results:
+                result = "pass"
+            else:
+                result = "fail"
+                self.warning(
+                    f"Recording vote result {action['result']!r} as fail on {bill.identifier}"
+                )
             vote = VoteEvent(
                 chamber=chamber,
                 motion_text=action["description"],
                 start_date=date,
                 bill=bill,
-                result="pass" if action["result"] == "Passed" else "fail",
+                result=result,
                 classification=classifications,
             )
             vote.dedupe_key = f"vote-revno-{action['revno']}"
