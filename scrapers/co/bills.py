@@ -384,9 +384,18 @@ class COBillScraper(Scraper, LXMLMixin):
                 votes_page = lxml.html.fromstring(votes_page)
 
                 vote.add_source(votes_url)
-                for vote_row in votes_page.cssselect(
+                vote_rows = votes_page.cssselect(
                     "div.standard-table div.col-12:nth-of-type(2) table.table tr"
-                ):
+                )
+                for vote_row in vote_rows:
+                    voter = self.clean(vote_row.xpath("td[1]"))
+                    # Senate rolls list the President twice, under their own
+                    # name and again as "President" with the same vote
+                    # (bill_votes/28559: 36 rows for 35 senators)
+                    if voter == "President" and len(vote_rows) > (
+                        ct_yes + ct_no + ct_other
+                    ):
+                        continue
                     vote_option = self.clean(
                         vote_row.cssselect("span.vote-tag")
                     ).lower()
@@ -396,9 +405,6 @@ class COBillScraper(Scraper, LXMLMixin):
                                 f"Couldn't find {vote_option} in choices, setting to other."
                             )
                             vote_option = "other"
-                        vote.vote(
-                            vote_option,
-                            self.clean(vote_row.xpath("td[1]")),
-                        )
+                        vote.vote(vote_option, voter)
 
                 yield vote
