@@ -418,7 +418,7 @@ class WVBillScraper(Scraper):
         actual_vote = collections.defaultdict(int)
         yes_count = 0
         no_count = 0
-        other_count = 0
+        absent_count = 0
         for line in lines:
             vals = re.findall(r"(?<!\w)(Y|N|A)\s+((?:\S+ ?)+)", line)
             for vote_val, name in vals:
@@ -440,18 +440,18 @@ class WVBillScraper(Scraper):
                         vote.no(name)
                         no_count += 1
                     else:
-                        vote.vote("other", name)
-                        other_count += 1
+                        vote.vote("absent", name)
+                        absent_count += 1
                     actual_vote[vote_val] += 1
         vote.set_count("yes", yes_count)
         vote.set_count("no", no_count)
-        vote.set_count("not voting", other_count)
+        vote.set_count("absent", absent_count)
         # updating result with actual value
-        vote.result = "pass" if yes_count > (no_count + other_count) else "fail"
+        vote.result = "pass" if yes_count > (no_count + absent_count) else "fail"
 
         assert yes_count == int(counts["Yea"])
         assert no_count == int(counts["Nay"])
-        assert other_count == int(counts["Absent"])
+        assert absent_count == int(counts["Absent"])
 
         yield vote
 
