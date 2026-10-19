@@ -701,30 +701,22 @@ class IlBillScraper(Scraper):
             pieces = link.text.split(" - ")
             date = pieces[-1]
 
-            vote_type = link.xpath("../a/text()")[0]
+            # each table's <th> says whether it holds committee or floor votes
+            vote_type = link.xpath("ancestor::table[1]//th[1]/text()")[0].strip()
             if vote_type == "Committee Hearing Votes":
-                chamber = link.xpath("../following-sibling::td/text()")[0]
-                actor = "upper" if chamber == "SENATE" else "lower"
-
-                # depends on bill type
                 motion = "Do Pass"
-                if pieces[0].startswith(("SCA", "HCA")):
-                    amendment_num = int(re.split(r"SCA|HCA", pieces[0])[-1])
-                    amendment = ", Amendment %s" % amendment_num
-                    motion += amendment
+            elif len(pieces) == 3:
+                motion = pieces[1].strip()
             else:
-                if len(pieces) == 3:
-                    motion = pieces[1].strip()
-                else:
-                    motion = "Third Reading"
+                motion = "Third Reading"
 
-                if pieces[0].startswith(("SFA", "HFA")):
-                    amendment_num = int(re.split(r"SFA|HFA", pieces[0])[-1])
-                    amendment = ", Amendment %s" % amendment_num
-                    motion += amendment
+            # committees vote on floor amendments (SFA) too, so keep the
+            # number for any amendment type
+            if re.match(r"[SH][CF]A", pieces[0]):
+                motion += ", Amendment %s" % int(pieces[0][3:])
 
-                actor = link.xpath("../following-sibling::td/text()")[0]
-                actor = "upper" if actor.upper() == "SENATE" else "lower"
+            actor = link.xpath("../following-sibling::td/text()")[0]
+            actor = "upper" if actor.strip().upper() == "SENATE" else "lower"
 
             classification, _ = _categorize_action(motion)
 
