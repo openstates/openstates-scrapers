@@ -63,7 +63,10 @@ class CTVoteScraper(Scraper):
         bill_data = bill_number_match.groupdict()
         bill_id = bill_data["prefix"] + bill_data["number"]
 
-        voters_re = re.compile(r"(?P<type>Y|N|X|A)(\s+\d+)?\s+(?P<name>[^\n]+)")
+        # anchor to line start so words like "EMERGENCY" in the header aren't read as a "Y" vote
+        voters_re = re.compile(
+            r"^\s*(?P<type>Y|N|X|A)(\s+\d+)?\s+(?P<name>[^\n]+)", re.MULTILINE
+        )
         voters = [t.groupdict() for t in voters_re.finditer(pdf_text)]
 
         yes_re = re.compile(r"Those voting Yea[\s\.]+(?P<count>\d+)")
@@ -86,6 +89,11 @@ class CTVoteScraper(Scraper):
         date = date.replace(" ", "")
         date = datetime.datetime.strptime(date + " " + session, "%m/%d %Y").date()
         motion_text = "Senate Roll Call Vote" if "SV" in url else "House Roll Call Vote"
+        # a bill can have several roll calls on the same day with identical rolls,
+        # so include the roll call number to tell them apart
+        roll_call = re.search(r"[SH]V-0*(\d+)-", url)
+        if roll_call:
+            motion_text += f" {roll_call.group(1)}"
 
         vote = Vote(
             chamber=vote_chamber,
