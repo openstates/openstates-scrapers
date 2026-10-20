@@ -53,6 +53,13 @@ extended_type_map = {
 VERSION_URL = "https://gc.nh.gov/legislation/%s/%s.html"
 AMENDMENT_URL = "https://gc.nh.gov/legislation/amendments/%s.html"
 
+# RollCallHistory.txt codes other than Yea/Nay
+NON_VOTE_OPTIONS = {
+    "Not Voting/Excused": "excused",
+    "Not Voting/Not Excused": "absent",
+    "Presiding": "not voting",
+}
+
 
 def extract_amendment_id(action):
     piece = re.findall(r"Amendment #(\d{4}-\d+[hs])", action)
@@ -747,10 +754,15 @@ class NHBillScraper(Scraper):
                 elif vote == "Nay":
                     votes[body + v_num].no(leg)
                 else:
-                    votes[body + v_num].vote("other", leg)
+                    # "Presiding" is the chair, who is present but doesn't vote;
+                    # keep it apart from the two kinds of absence
+                    option = NON_VOTE_OPTIONS.get(vote, "other")
+                    votes[body + v_num].vote(option, leg)
                     # hack-ish, but will keep the vote count sync'd
-                    other_counts[body + v_num] += 1
-                    votes[body + v_num].set_count("other", other_counts[body + v_num])
+                    other_counts[body + v_num, option] += 1
+                    votes[body + v_num].set_count(
+                        option, other_counts[body + v_num, option]
+                    )
         for vote in votes.values():
             yield vote
 
