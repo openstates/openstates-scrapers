@@ -10,18 +10,15 @@ def actions_from_table(bill, actions_table):
     """"""
     action_rows = actions_table.cssselect("tr")
 
-    # first row is the bill number and "Date", e.g. "SB0001 Date"
-    if action_rows[0].text_content().strip().startswith("S"):
-        default_chamber = "upper"
-    else:
-        default_chamber = "lower"
-
+    # skip the header row, e.g. "SB0001 Date"
     for ar in action_rows[1:]:
         tds = ar.xpath("td")
-        # each row's class says which chamber took the action;
-        # a few rows (e.g. "Comp. became Pub. Ch.") have no class
+        # each row's class says which chamber took the action; rows with no
+        # class are governor and chapter actions ("Signed by Governor.",
+        # "Comp. became Pub. Ch. 123", "Effective date(s) 7/1/2025"), which
+        # don't belong to either chamber
         chamber = {"house": "lower", "senate": "upper"}.get(
-            ar.get("class"), default_chamber
+            ar.get("class"), "legislature"
         )
 
         action_taken = tds[0].text
