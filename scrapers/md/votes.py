@@ -9,6 +9,21 @@ from openstates.utils import convert_pdf
 
 class MDVoteScraper(Scraper, LXMLMixin):
     def scrape(self, chamber=None, session=None):
+        extras = next(
+            s.get("extras", {})
+            for s in self.jurisdiction.legislative_sessions
+            if s["identifier"] == session
+        )
+        self.presiding_officers = {
+            "Speaker": extras.get("speaker"),
+            "Mr. President": extras.get("senate_president"),
+        }
+        for title, officer in self.presiding_officers.items():
+            if not officer:
+                self.warning(
+                    f"no presiding officer name for {title!r} in {session} extras; "
+                    "roll calls will keep the title"
+                )
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
@@ -42,6 +57,7 @@ class MDVoteScraper(Scraper, LXMLMixin):
             self.warning(f"empty vote from {url}")
             return
         date = re.findall(r"Legislative Date: (\w+ \d+, \d{4})", text)[0]
+        presiding = re.findall(r"Presiding: (.+?)(?:\s{2,}|$)", text, re.M)
 
         section = "preamble"
         motion = None
@@ -130,9 +146,16 @@ class MDVoteScraper(Scraper, LXMLMixin):
         vote.set_count("not voting", nv_count)
         vote.set_count("excused", excused_count)
         vote.set_count("absent", absent_count)
+        listed = {n.strip().replace("*", "") for ns in voters.values() for n in ns}
         for how, names in voters.items():
             for name in names:
                 name = name.strip().replace("*", "")
+                # rolls list the Speaker or President by title; if they are also
+                # listed by name, the title is whoever presided ("Presiding: Clippinger")
+                officer = self.presiding_officers.get(name)
+                if officer in listed:
+                    officer = presiding[0] if presiding else None
+                name = officer or name
                 if name and "COPY" not in name and "Indicates Vote Change" not in name:
                     vote.vote(how, name)
         check_counts(vote, raise_error=True)
