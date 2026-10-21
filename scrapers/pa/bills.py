@@ -386,6 +386,9 @@ class PABillScraper(Scraper):
         # multiple bills see:
         # so we toss the bill id onto the end of the URL
         vote.dedupe_key = url + "#" + bill.identifier
+        rc_number = self.url_param(url, "rcnum")
+        if rc_number:
+            vote.identifier = "RC#%s" % rc_number
         vote.add_source(url)
         vote.set_count("yes", yeas)
         vote.set_count("no", nays)
@@ -460,6 +463,11 @@ class PABillScraper(Scraper):
             bill=bill,
         )
         vote.dedupe_key = url + "#" + bill.identifier
+        # Roll calls at one meeting can share motion, date and roll;
+        # PA's roll call id tells them apart
+        rollcall_id = self.url_param(url, "rollcallid")
+        if rollcall_id:
+            vote.identifier = "RCS#%s" % rollcall_id
         vote.set_count("yes", rollcall["yes_count"])
         vote.set_count("no", rollcall["no_count"])
         vote.set_count("other", rollcall["other_count"])
@@ -526,6 +534,12 @@ class PABillScraper(Scraper):
             if cls in mimetypes:
                 mimetype = mimetypes[cls]
                 return mimetype
+
+    def url_param(self, url, name):
+        query = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)
+        for key, values in query.items():
+            if key.lower() == name:
+                return values[0]
 
     def fix_url_domain(self, url):
         # Some vote urls have the old domain in the new website
