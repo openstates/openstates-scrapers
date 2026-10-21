@@ -248,6 +248,7 @@ class Louisiana(State):
             "start_date": "2024-01-15",
             "end_date": "2024-01-23",
             "active": False,
+            "extras": {"senate_president": "Henry", "house_speaker": "DeVillier"},
         },
         {
             "_scraped_name": "2024 Second Extraordinary Session",
@@ -257,6 +258,7 @@ class Louisiana(State):
             "start_date": "2024-02-19",
             "end_date": "2024-03-06",
             "active": False,
+            "extras": {"senate_president": "Henry", "house_speaker": "DeVillier"},
         },
         {
             "_scraped_name": "2024 Third Extraordinary Session",
@@ -266,6 +268,7 @@ class Louisiana(State):
             "start_date": "2024-11-01",
             "end_date": "2024-11-29",
             "active": False,
+            "extras": {"senate_president": "Henry", "house_speaker": "DeVillier"},
         },
         {
             "_scraped_name": "2024 Regular Session",
@@ -275,6 +278,7 @@ class Louisiana(State):
             "start_date": "2024-03-11",
             "end_date": "2024-06-03",
             "active": False,
+            "extras": {"senate_president": "Henry", "house_speaker": "DeVillier"},
         },
         {
             "_scraped_name": "2025 Regular Session",
@@ -284,6 +288,7 @@ class Louisiana(State):
             "start_date": "2025-04-14",
             "end_date": "2025-06-12",
             "active": False,
+            "extras": {"senate_president": "Henry", "house_speaker": "DeVillier"},
         },
         {
             "_scraped_name": "2025 First Extraordinary Session",
@@ -295,6 +300,8 @@ class Louisiana(State):
             "active": False,
             "extras": {
                 "session_id": "251ES",
+                "senate_president": "Henry",
+                "house_speaker": "DeVillier",
             },
         },
         {
@@ -305,6 +312,7 @@ class Louisiana(State):
             "start_date": "2026-03-09",
             "end_date": "2026-06-01",
             "active": True,
+            "extras": {"senate_president": "Henry", "house_speaker": "DeVillier"},
         },
     ]
     ignored_scraped_sessions = [
