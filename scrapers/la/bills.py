@@ -135,6 +135,11 @@ class LABillScraper(Scraper, LXMLMixin):
                 self.start_year = i["start_date"][0:4]
                 if "extras" in i and "session_id" in i["extras"]:
                     session_id = i["extras"]["session_id"]
+                # Floor rolls list the presiding officers by title, not by name
+                self.presiding_officers = {
+                    "Mr. President": i.get("extras", {}).get("senate_president"),
+                    "Mr. Speaker": i.get("extras", {}).get("house_speaker"),
+                }
 
         chambers = [chamber] if chamber else ["upper", "lower"]
 
@@ -238,6 +243,7 @@ class LABillScraper(Scraper, LXMLMixin):
             elif line in ("Total", "--"):
                 vote_type = None
             elif vote_type:
+                line = self.presiding_officers.get(line) or line
                 if vote_type == "yes":
                     d["yes"].append(line)
                 elif vote_type == "no":
