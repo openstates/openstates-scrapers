@@ -270,24 +270,24 @@ class DEBillScraper(Scraper, LXMLMixin):
             return
 
         additional_sponsors = html.xpath(
-            '//label[text()="Additional Sponsor(s):"]/following-sibling::div/a/@href'
+            '//label[text()="Additional Sponsor(s):"]/following-sibling::div/a'
         )
 
-        for sponsor_url in additional_sponsors:
-            sponsor_id, sponsor_key = self.parse_sponsor_url(sponsor_url)
+        for sponsor_link in additional_sponsors:
+            sponsor_id, sponsor_key = self.parse_sponsor_link(sponsor_link)
             if sponsor_id is not None:
                 self.add_sponsor_by_legislator_id(
                     bill, sponsor_id, "primary", sponsor_key
                 )
 
         cosponsors = html.xpath(
-            '//label[text()="Co-Sponsor(s):"]/following-sibling::div/a/@href'
+            '//label[text()="Co-Sponsor(s):"]/following-sibling::div/a'
         )
-        for sponsor_url in cosponsors:
-            sponsor_id, sponsor_key = self.parse_sponsor_url(sponsor_url)
+        for sponsor_link in cosponsors:
+            sponsor_id, sponsor_key = self.parse_sponsor_link(sponsor_link)
             if sponsor_id is not None:
                 self.add_sponsor_by_legislator_id(
-                    bill, sponsor_id, "primary", sponsor_key
+                    bill, sponsor_id, "cosponsor", sponsor_key
                 )
 
         versions = html.xpath(
@@ -373,7 +373,13 @@ class DEBillScraper(Scraper, LXMLMixin):
         for row in page["Data"]:
             self.legislators[str(row["PersonId"])] = row
             self.legislators_by_short[str(row["ShortName"])] = row
-            self.legislators_by_district[row["DistrictNumber"]] = row
+            # House and Senate both number their districts from 1, and a
+            # seat's former holder stays listed beside the current one
+            key = (row["ChamberId"], row["DistrictNumber"])
+            if key not in self.legislators_by_district or row[
+                "LegislatorDetailLink"
+            ].startswith("http"):
+                self.legislators_by_district[key] = row
 
     def scrape_fiscal_note(self, bill, link):
         media_type = self.mime_from_link(link)
@@ -517,6 +523,15 @@ class DEBillScraper(Scraper, LXMLMixin):
             return subject, ["amendment"]
         return "Passage", ["passage"]
 
+    def parse_sponsor_link(self, sponsor_link):
+        # The caucus district URL stays the same when a seat changes hands
+        # (a bill co-sponsored by the former member still links to it), so
+        # match on the link text, which is the member's ShortName
+        short_name = sponsor_link.text_content().strip()
+        if short_name in self.legislators_by_short:
+            return short_name, "ShortName"
+        return self.parse_sponsor_url(sponsor_link.get("href"))
+
     def parse_sponsor_url(self, sponsor_url):
         sponsor_url = urljoin(self.base_url, sponsor_url)
         if sponsor_url.startswith(f"{self.base_url}/LegislatorDetail"):
@@ -526,7 +541,8 @@ class DEBillScraper(Scraper, LXMLMixin):
             return sponsor_id, "PersonId"
         for k, v in self.potential_sponsor_urls.items():
             if sponsor_url.startswith(f"https://{k}"):
-                return sponsor_url.replace(v, ""), "DistrictId"
+                chamber_id = 2 if k.startswith("house") else 1
+                return (chamber_id, sponsor_url.replace(v, "")), "DistrictId"
         self.warning(f"Could not parse sponsor url, skipping: {sponsor_url}")
         return None, None
 
@@ -534,7 +550,9 @@ class DEBillScraper(Scraper, LXMLMixin):
         self, bill, legislator_id, sponsor_type, sponsor_key="PersonId"
     ):
         if sponsor_key == "DistrictId":
-            sponsor = self.legislators_by_district[str(legislator_id)]
+            sponsor = self.legislators_by_district[legislator_id]
+        elif sponsor_key == "ShortName":
+            sponsor = self.legislators_by_short[legislator_id]
         elif sponsor_key == "PersonId":
             sponsor = self.legislators[str(legislator_id)]
         sponsor_name = sponsor["DisplayName"]
