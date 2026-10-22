@@ -108,7 +108,7 @@ def get_sponsor_chamber(name: str) -> Literal["upper", "lower"]:
 
 def clean_sponsor_name(name: str) -> str:
     if name:
-        return (
+        name = (
             name.replace("Senator", "")
             .replace("Representative", "")
             .replace("Sen.", "")
@@ -116,5 +116,9 @@ def clean_sponsor_name(name: str) -> str:
             .strip()
             .title()
         )
+        # Bill pages put "Sponsor Withdrew" where a withdrawn sponsor's name was
+        if name == "Sponsor Withdrew":
+            return ""
+        return name
     else:
         return ""
