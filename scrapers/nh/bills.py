@@ -215,6 +215,9 @@ class NHBillScraper(Scraper):
             link_text = link.text_content().strip()
 
             is_primary = "(Prime)" in link_text
+            # Link text is usually just the surname, minus "(Prime)" and party marker
+            link_name = re.sub(r"\(Prime\)", "", link_text)
+            link_name = re.sub(r"\s*\([A-Za-z]\)\s*$", "", link_name).strip()
 
             if title_attr:
                 # Strip leading honorific ("Rep. " / "Sen. ") and any trailing
@@ -223,10 +226,18 @@ class NHBillScraper(Scraper):
                 # match case-insensitively.
                 name = re.sub(r"^(Rep\.|Sen\.)\s+", "", title_attr)
                 name = re.sub(r"\s*\([A-Za-z]\)\s*$", "", name).strip()
+                # NH single-quotes the title without escaping apostrophes
+                # (title='Rep. Terri O'Rorke (D)'), so it parses as "Rep. Terri O"
+                # and loses its party marker. Finish the name from the link text.
+                head, apostrophe, tail = link_name.partition("'")
+                if (
+                    apostrophe
+                    and not re.search(r"\([A-Za-z]\)$", title_attr)
+                    and name.endswith(head)
+                ):
+                    name = f"{name}'{tail}"
             else:
-                # Fallback: derive from link text, removing "(Prime)" and party marker
-                name = re.sub(r"\(Prime\)", "", link_text)
-                name = re.sub(r"\s*\([A-Za-z]\)\s*$", "", name).strip()
+                name = link_name
 
             if not name:
                 continue
