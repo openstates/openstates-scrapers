@@ -724,8 +724,12 @@ class NHBillScraper(Scraper):
                 time = pytz.timezone("America/New_York").localize(time).isoformat()
                 # TODO: stop faking passed somehow
                 passed = yeas > nays
+                # Senate rows are dated at midnight; the roll call number is what
+                # tells two same-day roll calls on one motion apart. The last
+                # column is when the roll was recorded, not when it was taken.
                 vote = Vote(
                     chamber=actor,
+                    identifier=vote_num,
                     start_date=time,
                     motion_text=motion,
                     result="pass" if passed else "fail",
