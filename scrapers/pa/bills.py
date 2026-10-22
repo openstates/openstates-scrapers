@@ -214,12 +214,13 @@ class PABillScraper(Scraper):
         )
         primary_sponsors = page.xpath(xpath)
         for sponsor in primary_sponsors:
-            sponsor = utils.clean_sponsor_name(sponsor.text_content())
+            raw_name = sponsor.text_content()
+            sponsor = utils.clean_sponsor_name(raw_name)
             if sponsor:
                 bill.add_sponsorship(
                     sponsor,
                     classification="primary",
-                    chamber=utils.get_sponsor_chamber(sponsor),
+                    chamber=utils.get_sponsor_chamber(raw_name),
                     primary=True,
                     entity_type="person",
                 )
@@ -231,12 +232,13 @@ class PABillScraper(Scraper):
         )
         co_sponsors = page.xpath(xpath)
         for sponsor in co_sponsors:
-            sponsor = utils.clean_sponsor_name(sponsor.text_content())
+            raw_name = sponsor.text_content()
+            sponsor = utils.clean_sponsor_name(raw_name)
             if sponsor:
                 bill.add_sponsorship(
                     sponsor,
                     classification="cosponsor",
-                    chamber=utils.get_sponsor_chamber(sponsor),
+                    chamber=utils.get_sponsor_chamber(raw_name),
                     primary=False,
                     entity_type="person",
                 )
@@ -244,12 +246,13 @@ class PABillScraper(Scraper):
         xpath = '//div[@id="coSponsAdd"]//strong'
         co_sponsors = page.xpath(xpath)
         for sponsor in co_sponsors:
-            sponsor = utils.clean_sponsor_name(sponsor.text_content())
+            raw_name = sponsor.text_content()
+            sponsor = utils.clean_sponsor_name(raw_name)
             if sponsor:
                 bill.add_sponsorship(
                     sponsor,
                     classification="cosponsor",
-                    chamber=utils.get_sponsor_chamber(sponsor),
+                    chamber=utils.get_sponsor_chamber(raw_name),
                     primary=False,
                     entity_type="person",
                 )
