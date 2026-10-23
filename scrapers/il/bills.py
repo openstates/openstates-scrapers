@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import re
 import os
+import time
 import datetime
 import pytz
 import scrapelib
+import requests
 import lxml.html
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
@@ -19,11 +21,10 @@ headers = {
 }
 
 session_details = {
-    # TODO, fill these in once appointed
     # TODO: move this to session metadata
     "104th": {
-        "speaker": "",
-        "president": "",
+        "speaker": "Welch",
+        "president": "Harmon",
         "params": {"GA": "104", "SessionId": "114"},
     },
     "103rd": {
@@ -289,6 +290,20 @@ def chamber_slug(chamber):
 class IlBillScraper(Scraper):
     LEGISLATION_URL = f"{BASE_URL}/Legislation/"
     localize = pytz.timezone("America/Chicago").localize
+
+    def request(self, method, url, **kwargs):
+        # When throttling, ilga.gov usually answers 429 but sometimes just drops
+        # the TLS connection, and scrapelib never retries SSLError, so a single
+        # drop ends the whole run. Back off and try again instead.
+        for attempt in range(5):
+            try:
+                return super().request(method, url, **kwargs)
+            except requests.exceptions.SSLError as e:
+                if attempt == 4:
+                    raise
+                wait = 30 * 2**attempt
+                self.warning("SSL error on %s (%s), retrying in %ss" % (url, e, wait))
+                time.sleep(wait)
 
     def get_bill_urls(self, chamber, session, doc_type):
         params = session_details[session]["params"]
@@ -686,30 +701,22 @@ class IlBillScraper(Scraper):
             pieces = link.text.split(" - ")
             date = pieces[-1]
 
-            vote_type = link.xpath("../a/text()")[0]
+            # each table's <th> says whether it holds committee or floor votes
+            vote_type = link.xpath("ancestor::table[1]//th[1]/text()")[0].strip()
             if vote_type == "Committee Hearing Votes":
-                chamber = link.xpath("../following-sibling::td/text()")[0]
-                actor = "upper" if chamber == "SENATE" else "lower"
-
-                # depends on bill type
                 motion = "Do Pass"
-                if pieces[0].startswith(("SCA", "HCA")):
-                    amendment_num = int(re.split(r"SCA|HCA", pieces[0])[-1])
-                    amendment = ", Amendment %s" % amendment_num
-                    motion += amendment
+            elif len(pieces) == 3:
+                motion = pieces[1].strip()
             else:
-                if len(pieces) == 3:
-                    motion = pieces[1].strip()
-                else:
-                    motion = "Third Reading"
+                motion = "Third Reading"
 
-                if pieces[0].startswith(("SFA", "HFA")):
-                    amendment_num = int(re.split(r"SFA|HFA", pieces[0])[-1])
-                    amendment = ", Amendment %s" % amendment_num
-                    motion += amendment
+            # committees vote on floor amendments (SFA) too, so keep the
+            # number for any amendment type
+            if re.match(r"[SH][CF]A", pieces[0]):
+                motion += ", Amendment %s" % int(pieces[0][3:])
 
-                actor = link.xpath("../following-sibling::td/text()")[0]
-                actor = "upper" if actor.upper() == "SENATE" else "lower"
+            actor = link.xpath("../following-sibling::td/text()")[0]
+            actor = "upper" if actor.strip().upper() == "SENATE" else "lower"
 
             classification, _ = _categorize_action(motion)
 

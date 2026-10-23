@@ -1,22 +1,7 @@
-session_slugs = {
-    "2010Special26": "26th2010Special",
-    "2013Special27": "27th2013Special",
-    "2014Special28": "28th2014Special",
-    "2015Special29": "29th2015Special",
-    "2016Special30": "30th2016Special",
-    "2020Special31": "31st2020Special",
-    "2020Special32": "32nd2020Special",
-    "2021Special33": "33rd2021Special",
-    "2023Special34": "34th2023Special",
-    "2023Special35": "35th2023Special",
-    "2025Special36": "36th2025Special",
-    "75": "75th2009",
-    "76": "76th2011",
-    "77": "77th2013",
-    "78": "78th2015",
-    "79": "79th2017",
-    "80": "80th2019",
-    "81": "81st2021",
-    "82": "82nd2023",
-    "83": "83rd2025",
-}
+def get_session_slug(jurisdiction, session):
+    session_details = next(
+        item
+        for item in jurisdiction.legislative_sessions
+        if item["identifier"] == session
+    )
+    return session_details["extras"]["session_slug"]

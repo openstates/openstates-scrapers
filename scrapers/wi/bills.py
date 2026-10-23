@@ -141,7 +141,7 @@ class WIBillScraper(Scraper):
 
     def scrape_bill_history(self, bill, url, chamber):
         seen_votes = set()
-        body = self.get(url).text
+        body = self.get(url, verify=False).text
         doc = lxml.html.fromstring(body)
         doc.make_links_absolute(url)
 
@@ -184,7 +184,9 @@ class WIBillScraper(Scraper):
                 "Record of Committee Proceedings",
             ):
                 extra_doc_url = a.get("href")
-                extra_doc = lxml.html.fromstring(self.get(extra_doc_url).text)
+                extra_doc = lxml.html.fromstring(
+                    self.get(extra_doc_url, verify=False).text
+                )
                 extra_doc.make_links_absolute(extra_doc_url)
                 for extra_a in extra_doc.xpath('//ul[@class="docLinks"]/li//a'):
                     if extra_a.text:
@@ -333,7 +335,12 @@ class WIBillScraper(Scraper):
             classification=vtype,
             bill=bill,
         )
-        v.dedupe_key = f'{url.split("/")[-1]}-{bill.identifier}'
+        # a bill can have several roll calls on the same day with identical rolls
+        # (e.g. av0131 and av0132), so keep the roll call number to tell them apart
+        roll_call = url.split("/")[-1]
+        if re.match(r"^[as]v\d+$", roll_call):
+            v.identifier = roll_call
+        v.dedupe_key = f"{roll_call}-{bill.identifier}"
         v.set_count("yes", yes)
         v.set_count("no", no)
 
@@ -350,7 +357,7 @@ class WIBillScraper(Scraper):
 
     def add_senate_votes(self, vote, url):
         try:
-            html = self.get(url).text
+            html = self.get(url, verify=False).text
         except scrapelib.HTTPError:
             self.warning("No Senate Votes found for %s" % url)
             return
@@ -389,7 +396,7 @@ class WIBillScraper(Scraper):
 
     def add_house_votes(self, vote, url):
         try:
-            html = self.get(url).content
+            html = self.get(url, verify=False).content
         except scrapelib.HTTPError:
             self.warning("No House Votes found for %s" % url)
             return
@@ -419,7 +426,8 @@ class WIBillScraper(Scraper):
                 elif vote_td.text_content() == "N":
                     vote.vote("no", name)
                     no_names_count += 1
-                elif vote_td.text_content() == "NV":
+                # the NV column is marked with a lowercase "x"
+                elif vote_td.text_content() in ("NV", "x"):
                     vote.vote("not voting", name)
 
         if yes_names_count != int(vote_counts[0][0]):

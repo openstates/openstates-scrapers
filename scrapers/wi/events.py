@@ -21,7 +21,7 @@ class WIEventScraper(Scraper, LXMLMixin):
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36",
         }
 
-        html = self.get(calurl, headers=headers).text
+        html = self.get(calurl, headers=headers, verify=False).text
         # events here are inline in the html as JS variables
         event_regex = r"({[\n\s]*title(.*?)}),\/\/end event object"
         event_rows = re.findall(event_regex, html, flags=re.MULTILINE | re.DOTALL)
@@ -33,7 +33,11 @@ class WIEventScraper(Scraper, LXMLMixin):
         for row in event_rows:
             row = row[0]
             title = self.extract_field(row, "title")
+            if title is None:
+                raise Exception(f"Failed to extract event title from {row}")
             start = self.extract_field(row, "start")
+            if start is None:
+                raise Exception(f"Failed to extract event start date from {row}")
 
             start = dateutil.parser.parse(start)
             start = self._tz.localize(start)
@@ -61,8 +65,8 @@ class WIEventScraper(Scraper, LXMLMixin):
 
             # rename from "Committee Name (Senate)" to "Senate Committee Name"
             chamber_regex = r"(.*)\((Senate|Assembly|Joint)\)"
-            if re.match(chamber_regex, title):
-                committee = re.sub(chamber_regex, r"\2 \1", title).strip()
+            if re.match(chamber_regex, title or ""):
+                committee = re.sub(chamber_regex, r"\2 \1", title or "").strip()
                 event.add_committee(committee)
 
             if agenda_url:
@@ -87,7 +91,7 @@ class WIEventScraper(Scraper, LXMLMixin):
     def extract_field(self, row: str, field: str):
         try:
             return re.findall(
-                rf"{field}:\s+'(.*?)'", row, flags=re.MULTILINE | re.DOTALL
+                rf"{field}:\s+['\"](.*?)['\"]", row, flags=re.MULTILINE | re.DOTALL
             )[0]
         except IndexError:
             return None

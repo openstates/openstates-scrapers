@@ -47,7 +47,10 @@ class OKEventScraper(Scraper):
     # poetry run os-update ne \
     # events --scrape start=2022-02-01 end=2022-03-02
     def scrape(self, start=None, end=None):
-        yield from self.scrape_senate()
+        found = False
+        for event in self.scrape_senate():
+            found = True
+            yield event
 
         if start is None:
             delta = datetime.timedelta(days=90)
@@ -57,7 +60,12 @@ class OKEventScraper(Scraper):
             end = datetime.date.today() + delta
             end = end.isoformat()
 
-        yield from self.scrape_page(start, end)
+        for event in self.scrape_page(start, end):
+            found = True
+            yield event
+
+        if not found:
+            raise EmptyScrape
 
     def scrape_senate(self):
         # url = "https://oksenate.gov/committee-meetings"
@@ -144,7 +152,7 @@ class OKEventScraper(Scraper):
 
         headers = {"origin": "https://www.okhouse.gov", "user-agent": "openstates.org"}
 
-        page = requests.post(
+        page = self.post(
             url=url,
             data=json.dumps(post_data),
             headers=headers,
@@ -152,9 +160,6 @@ class OKEventScraper(Scraper):
             verify=False,
         ).content
         page = json.loads(page)
-
-        if offset == 0 and len(page["events"]["data"]) == 0:
-            raise EmptyScrape
 
         for row in page["events"]["data"]:
             meta = row["attributes"]
@@ -219,8 +224,17 @@ class OKEventScraper(Scraper):
                     == "http://webserver1.lsb.state.ok.us/2023-24HB/CMN-AGRI-20241207-01000000.pdf"
                 ):
                     continue
-                for bill in Agenda(source=URL(link["route"])).do_scrape():
-                    event.add_bill(bill)
+                try:
+                    for bill in Agenda(
+                        source=URL(link["route"], verify=False)
+                    ).do_scrape():
+                        event.add_bill(bill)
+                except requests.exceptions.TooManyRedirects:
+                    # Missing PDFs on webserver1.lsb.state.ok.us redirect in a
+                    # loop to the site's 404 page instead of returning HTTP 404.
+                    self.warning(
+                        f"Skipped missing agenda PDF (redirect loop): {link['route']}"
+                    )
 
             for agenda in meta["agenda"] or []:
                 if not agenda.get("info"):

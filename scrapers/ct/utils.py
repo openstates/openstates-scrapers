@@ -1,14 +1,19 @@
 import re
 import datetime
 import collections
-import chardet
 import csv
 from io import StringIO
 
 
 def open_csv(data):
-    char_encoding = chardet.detect(data.content)["encoding"]
-    return csv.DictReader(StringIO(data.content.decode(char_encoding)))
+    # Don't rely on chardet here: it only samples the first 200KB by default,
+    # and CT's bulk CSVs are mostly ASCII with occasional Windows-1252 bytes
+    # (e.g. 0x96 en dash) deep in the file, so it misdetects them as ASCII.
+    try:
+        text = data.content.decode("utf-8")
+    except UnicodeDecodeError:
+        text = data.content.decode("cp1252", errors="replace")
+    return csv.DictReader(StringIO(text))
 
 
 Listing = collections.namedtuple("Listing", "mtime size filename")

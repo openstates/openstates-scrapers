@@ -272,6 +272,7 @@ class WestVirginia(State):
             "start_date": "2025-02-12",
             "end_date": "2025-04-12",
             "active": False,
+            "extras": {"senate_president": "SMITH"},
         },
         {
             "_scraped_name": "2026",
@@ -281,6 +282,7 @@ class WestVirginia(State):
             "start_date": "2026-01-14",
             "end_date": "2026-03-14",
             "active": True,
+            "extras": {"senate_president": "SMITH"},
         },
     ]
     ignored_scraped_sessions = [

@@ -280,7 +280,11 @@ class NCBillScraper(Scraper):
                 elif "Not Voting (" in row:
                     row = row.replace("\n", ";")
                     votes_names = row.replace(" ", "").strip().split(";")[2:-1]
-                    vote_type = "abstain"
+                    vote_type = "not voting"
+                elif "Excused Vote (" in row:
+                    row = row.replace("\n", ";")
+                    votes_names = row.replace(" ", "").strip().split(";")[2:-1]
+                    vote_type = "excused"
                 else:
                     vote_type = "Not a vote"
                 if votes_names:

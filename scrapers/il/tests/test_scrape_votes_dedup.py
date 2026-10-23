@@ -5,14 +5,12 @@ from il.bills import IlBillScraper
 
 
 DUPE_HTML = """
-<html><body><table><tr>
-<td>Third Reading</td>
-<td>
-  <a href="/legislation/votehistory/104/house/thirdreading/10400HB0001_1.pdf">HB1 - May 1, 2025</a>
-  <a href="/legislation/votehistory/104/house/thirdreading/10400HB0001_1.pdf">HB1 - May 1, 2025</a>
-</td>
-<td>HOUSE</td>
-</tr></table></body></html>
+<html><body><table>
+<thead><tr><th>Voting Record</th><th>Chamber</th></tr></thead>
+<tbody>
+<tr><td><a href="/legislation/votehistory/104/house/10400HB0001_1.pdf">HB0001 - Third Reading - May 01, 2025</a></td><td>House</td></tr>
+<tr><td><a href="/legislation/votehistory/104/house/10400HB0001_1.pdf">HB0001 - Third Reading - May 01, 2025</a></td><td>House</td></tr>
+</tbody></table></body></html>
 """
 
 

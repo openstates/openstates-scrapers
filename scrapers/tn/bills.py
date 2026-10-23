@@ -10,14 +10,16 @@ def actions_from_table(bill, actions_table):
     """"""
     action_rows = actions_table.cssselect("tr")
 
-    # first row will say "Actions Taken on S|H(B|R|CR)..."
-    if "Actions For S" in action_rows[0].text_content():
-        chamber = "upper"
-    else:
-        chamber = "lower"
-
+    # skip the header row, e.g. "SB0001 Date"
     for ar in action_rows[1:]:
         tds = ar.xpath("td")
+        # each row's class says which chamber took the action; rows with no
+        # class are governor and chapter actions ("Signed by Governor.",
+        # "Comp. became Pub. Ch. 123", "Effective date(s) 7/1/2025"), which
+        # don't belong to either chamber
+        chamber = {"house": "lower", "senate": "upper"}.get(
+            ar.get("class"), "legislature"
+        )
 
         action_taken = tds[0].text
 
@@ -95,7 +97,6 @@ def listing_matches_chamber(listing, chamber):
 
 class TNBillScraper(Scraper):
     def scrape(self, session=None, chamber=None):
-        self._seen_votes = set()
         chambers = [chamber] if chamber else ["upper", "lower"]
 
         # If you need to test an individual bill:
@@ -105,8 +106,13 @@ class TNBillScraper(Scraper):
         if session_details["classification"] == "special":
             yield from self.scrape_special(session)
         else:
+            index_page = (
+                f"http://wapp.capitol.tn.gov/apps/indexes/BillsByIndex/?year={session}"
+            )
+            index_list_page = lxml.html.fromstring(self.get(index_page).text)
+            index_list_page.make_links_absolute(index_page)
             for chamber in chambers:
-                yield from self.scrape_chamber(chamber, session)
+                yield from self.scrape_chamber(chamber, session, index_list_page)
 
     def scrape_special(self, session):
         index_page = f"https://wapp.capitol.tn.gov/apps/Indexes/SpecialSessionBillIndex?ga={session[0:3]}&specsessNum={session[4]}"
@@ -116,18 +122,10 @@ class TNBillScraper(Scraper):
         for bill_link in page.xpath("//a[contains(@href, '/BillInfo/Default')]"):
             yield from self.scrape_bill(session, bill_link.xpath("@href")[0])
 
-    def scrape_chamber(self, chamber, session):
+    def scrape_chamber(self, chamber, session, index_list_page):
         print(f"SCRAPE CHAMBER {chamber} {session}")
         # The index page gives us links to the paginated bill pages
-        index_page = (
-            f"http://wapp.capitol.tn.gov/apps/indexes/BillsByIndex/?year={session}"
-        )
         xpath = '//td[contains(@class,"webindex")]/a'
-
-        index_list_page = self.get(index_page).text
-
-        index_list_page = lxml.html.fromstring(index_list_page)
-        index_list_page.make_links_absolute(index_page)
 
         for bill_listing in index_list_page.xpath(xpath):
 
@@ -284,13 +282,21 @@ class TNBillScraper(Scraper):
 
     def scrape_vote_events(self, bill, page, link):
         chamber_labels = (("lower", "pnlHouseVotes"), ("upper", "pnlSenateVotes"))
+        # Motions only need to be unique within a bill (the importer matches
+        # vote events by bill, motion, date and chamber). Tracking them across
+        # the whole run made the "(n)" suffix depend on bill scrape order,
+        # which varies between runs (bill links come from a set), so the same
+        # roll call got a different motion_text from one scrape to the next.
+        seen_motions = set()
         for chamber, element_id in chamber_labels:
             raw_vote_data = page.xpath(f"//*[@id='{element_id}']")[0].text_content()
-            votes = self.scrape_votes_for_chamber(chamber, raw_vote_data, bill, link)
+            votes = self.scrape_votes_for_chamber(
+                chamber, raw_vote_data, bill, link, seen_motions
+            )
             for vote in votes:
                 yield vote
 
-    def scrape_votes_for_chamber(self, chamber, vote_data, bill, link):
+    def scrape_votes_for_chamber(self, chamber, vote_data, bill, link, seen_motions):
         raw_vote_data = re.split(r"(\w+?) by [\w ]+?\s+-", vote_data.strip())[1:]
         bill_to_motion = zip(raw_vote_data[::2], raw_vote_data[1::2])
 
@@ -352,10 +358,10 @@ class TNBillScraper(Scraper):
 
                 motion = motion.strip()
                 motion = motion.replace("&AMP;", "&")  # un-escape ampersands
-                if motion in self._seen_votes:
+                if motion in seen_motions:
                     motion = "{} ({})".format(motion, motion_count)
                     motion_count += 1
-                self._seen_votes.add(motion)
+                seen_motions.add(motion)
 
                 vote = VoteEvent(
                     motion_text=motion,

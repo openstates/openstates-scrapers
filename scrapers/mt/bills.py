@@ -145,9 +145,8 @@ class MTBillScraper(Scraper):
     def scrape_list_page(self, session, page_num: int):
         self.info(f"Scraping page {str(page_num)}")
         params = {
-            "limit": str(self.results_per_page),
+            "limit": "1000",
             "offset": str(page_num),
-            "includeCounts": "true",  # TODO do we need the "counts" part of response?
             "sort": ["billType.code,desc", "billNumber,asc", "draft.draftNumber,asc"],
         }
 
@@ -155,7 +154,7 @@ class MTBillScraper(Scraper):
             "sessionIds": [self.new_api_session_identifier],
         }
 
-        response = requests.post(
+        response = self.post(
             "https://api.legmt.gov/bills/v1/bills/search", params=params, json=json_data
         ).json()
 
@@ -217,10 +216,12 @@ class MTBillScraper(Scraper):
                         )
 
             yield bill
-            yield from self.scrape_votes(bill, str(row["id"]))
-            yield from self.scrape_committee_votes(bill, str(row["id"]))
+            # LC drafts have no floor or committee votes
+            if not is_draft:
+                yield from self.scrape_votes(bill, str(row["id"]))
+                yield from self.scrape_committee_votes(bill, str(row["id"]))
 
-        if response["totalPages"] > page_num:
+        if response["totalPages"] > page_num + 1:
             yield from self.scrape_list_page(session, page_num + 1)
 
     def scrape_actions(self, bill: Bill, row: dict):
@@ -496,6 +497,22 @@ class MTBillScraper(Scraper):
             # at least one example where this value is "null" in source
             # https://api.legmt.gov/bills/v1/votes/findByBillId?billId=2308
             motion = row["motion"] if row["motion"] else "Unknown"
+
+            # the API sometimes repeats a legislator's vote under a new record id
+            # (e.g. executiveActions billId=724, id 4221 lists all 21 members twice)
+            # so keep only the first vote per legislator
+            seen = set()
+            legislator_votes = []
+            for v in row["legislatorVotes"]:
+                leg_id = (
+                    v["legislatorId"]
+                    if "legislatorId" in v
+                    else v["membership"]["legislatorId"]
+                )
+                if leg_id not in seen:
+                    seen.add(leg_id)
+                    legislator_votes.append(v)
+            row["legislatorVotes"] = legislator_votes
 
             counts = {
                 "YES": 0,

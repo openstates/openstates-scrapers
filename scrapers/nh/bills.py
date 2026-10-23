@@ -53,6 +53,13 @@ extended_type_map = {
 VERSION_URL = "https://gc.nh.gov/legislation/%s/%s.html"
 AMENDMENT_URL = "https://gc.nh.gov/legislation/amendments/%s.html"
 
+# RollCallHistory.txt codes other than Yea/Nay
+NON_VOTE_OPTIONS = {
+    "Not Voting/Excused": "excused",
+    "Not Voting/Not Excused": "absent",
+    "Presiding": "not voting",
+}
+
 
 def extract_amendment_id(action):
     piece = re.findall(r"Amendment #(\d{4}-\d+[hs])", action)
@@ -208,6 +215,9 @@ class NHBillScraper(Scraper):
             link_text = link.text_content().strip()
 
             is_primary = "(Prime)" in link_text
+            # Link text is usually just the surname, minus "(Prime)" and party marker
+            link_name = re.sub(r"\(Prime\)", "", link_text)
+            link_name = re.sub(r"\s*\([A-Za-z]\)\s*$", "", link_name).strip()
 
             if title_attr:
                 # Strip leading honorific ("Rep. " / "Sen. ") and any trailing
@@ -216,10 +226,18 @@ class NHBillScraper(Scraper):
                 # match case-insensitively.
                 name = re.sub(r"^(Rep\.|Sen\.)\s+", "", title_attr)
                 name = re.sub(r"\s*\([A-Za-z]\)\s*$", "", name).strip()
+                # NH single-quotes the title without escaping apostrophes
+                # (title='Rep. Terri O'Rorke (D)'), so it parses as "Rep. Terri O"
+                # and loses its party marker. Finish the name from the link text.
+                head, apostrophe, tail = link_name.partition("'")
+                if (
+                    apostrophe
+                    and not re.search(r"\([A-Za-z]\)$", title_attr)
+                    and name.endswith(head)
+                ):
+                    name = f"{name}'{tail}"
             else:
-                # Fallback: derive from link text, removing "(Prime)" and party marker
-                name = re.sub(r"\(Prime\)", "", link_text)
-                name = re.sub(r"\s*\([A-Za-z]\)\s*$", "", name).strip()
+                name = link_name
 
             if not name:
                 continue
@@ -655,6 +673,22 @@ class NHBillScraper(Scraper):
         other_counts = defaultdict(int)
         last_line = []
         vote_url = f"https://gc.nh.gov/dynamicdatadump/RollCallSummary.txt?x={self.cachebreaker}"
+
+        # legislators.txt omits some members (current and past),
+        # so their roll call rows would be dropped. This page names every
+        # current and past member by the member id in RollCallHistory.txt.
+        member_names = {}
+        members_page = lxml.html.fromstring(
+            self.get(
+                "https://gc.nh.gov/bill_Status/byAnyMember.aspx", verify=False
+            ).content
+        )
+        for option in members_page.xpath(
+            "//select[@name='ctl00$pageBody$lstMembers']/option"
+        ):
+            match = re.match(r"(?:Rep|Sen)\. (.+?), (.+?)\(", option.text_content())
+            if match:
+                member_names[option.get("value")] = f"{match[2]} {match[1]}"
         lines = self.get(vote_url, verify=False).content.decode("utf-8").splitlines()
 
         for line in lines:
@@ -690,8 +724,12 @@ class NHBillScraper(Scraper):
                 time = pytz.timezone("America/New_York").localize(time).isoformat()
                 # TODO: stop faking passed somehow
                 passed = yeas > nays
+                # Senate rows are dated at midnight; the roll call number is what
+                # tells two same-day roll calls on one motion apart. The last
+                # column is when the roll was recorded, not when it was taken.
                 vote = Vote(
                     chamber=actor,
+                    identifier=vote_num,
                     start_date=time,
                     motion_text=motion,
                     result="pass" if passed else "fail",
@@ -718,9 +756,16 @@ class NHBillScraper(Scraper):
             # 2016|H|2|330795||Yea|
             # 2012    | H   | 2    | 330795  | 964 |  HB309  | Yea | 1/4/2012 8:27:03 PM
             try:
-                session_yr, body, v_num, _, employee, bill_id, vote, date = line.split(
-                    "|"
-                )
+                (
+                    session_yr,
+                    body,
+                    v_num,
+                    member,
+                    employee,
+                    bill_id,
+                    vote,
+                    date,
+                ) = line.split("|")
             except ValueError:
                 # not enough keys in the split
                 self.warning(f"Skipping {line}, didn't have all needed data for vote")
@@ -729,9 +774,11 @@ class NHBillScraper(Scraper):
                 continue
 
             if session_yr == session and bill_id.strip() in self.bills_by_id:
-                try:
+                if employee in self.legislators:
                     leg = " ".join(self.legislators[employee]["name"].split())
-                except KeyError:
+                elif member in member_names:
+                    leg = " ".join(member_names[member].split())
+                else:
                     self.warning(f"Error, can't find person {employee}")
                     continue
 
@@ -747,10 +794,15 @@ class NHBillScraper(Scraper):
                 elif vote == "Nay":
                     votes[body + v_num].no(leg)
                 else:
-                    votes[body + v_num].vote("other", leg)
+                    # "Presiding" is the chair, who is present but doesn't vote;
+                    # keep it apart from the two kinds of absence
+                    option = NON_VOTE_OPTIONS.get(vote, "other")
+                    votes[body + v_num].vote(option, leg)
                     # hack-ish, but will keep the vote count sync'd
-                    other_counts[body + v_num] += 1
-                    votes[body + v_num].set_count("other", other_counts[body + v_num])
+                    other_counts[body + v_num, option] += 1
+                    votes[body + v_num].set_count(
+                        option, other_counts[body + v_num, option]
+                    )
         for vote in votes.values():
             yield vote
 

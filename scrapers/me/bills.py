@@ -2,6 +2,7 @@ import re
 import html
 import pytz
 import socket
+import time
 import datetime
 import dateutil.parser
 
@@ -20,6 +21,17 @@ class MEBillScraper(Scraper):
     categorizer = Categorizer()
     _tz = pytz.timezone("US/Eastern")
 
+    def get(self, url, **kwargs):
+        # scrapelib never retries an SSLError, but the site now and then drops
+        # a connection mid TLS handshake (SSLEOFError), which ended the scrape
+        for attempt in range(self.retry_attempts):
+            try:
+                return super().get(url, **kwargs)
+            except requests.exceptions.SSLError as e:
+                self.warning(f"{e}, retrying")
+                time.sleep(self.retry_wait_seconds * 2**attempt)
+        return super().get(url, **kwargs)
+
     def scrape(self, chamber=None, session=None, first_item=1):
         first_item = int(first_item)  # parse string arg from CLI to int
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
@@ -27,9 +39,8 @@ class MEBillScraper(Scraper):
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session, first_item)
 
-    def scrape_chamber(self, chamber, session, first_item=1):
-        # Create a Bill for each Paper of the chamber's session
-        request_session = requests.Session()
+    def _start_search(self, request_session, chamber, session):
+        # the result pages belong to this search, held server side on the session
         search_url = "https://legislature.maine.gov/LawMakerWeb/doadvancedsearch.asp"
         session_number = str(int(session) - 116)
         paper_type = "HP" if chamber == "lower" else "SP"
@@ -47,8 +58,13 @@ class MEBillScraper(Scraper):
             "GovernorAction": "None",
             "FinalLawType": "None",
         }
-        r = request_session.post(url=search_url, data=form_data)
+        r = request_session.post(url=search_url, data=form_data, timeout=self.timeout)
         r.raise_for_status()
+
+    def scrape_chamber(self, chamber, session, first_item=1):
+        # Create a Bill for each Paper of the chamber's session
+        request_session = requests.Session()
+        self._start_search(request_session, chamber, session)
 
         self.seen = set()
         yield from self._recursively_process_bills(
@@ -70,10 +86,24 @@ class MEBillScraper(Scraper):
             f"Searching bills in {chamber} starting with item {first_item}"
         )
         url = "https://legislature.maine.gov/LawMakerWeb/searchresults.asp"
-        r = request_session.get(url, params={"StartWith": first_item})
-        r.raise_for_status()
-
-        bills = lxml.html.fromstring(r.text).xpath("//tr/td/b/a")
+        # a page of results occasionally comes back empty, or the connection
+        # drops, part way through a chamber: both end the scrape where it stands,
+        # so re-run the search and ask once more before believing either
+        bills = []
+        for attempt in range(2):
+            if attempt:
+                self._start_search(request_session, chamber, session)
+            try:
+                r = request_session.get(
+                    url, params={"StartWith": first_item}, timeout=self.timeout
+                )
+                r.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                self.warning(f"search results at item {first_item} failed: {e}")
+                continue
+            bills = lxml.html.fromstring(r.text).xpath("//tr/td/b/a")
+            if bills:
+                break
         if bills:
             for bill in bills:
                 bill_id_slug = bill.xpath("./@href")[0]
@@ -268,7 +298,9 @@ class MEBillScraper(Scraper):
         ver_url = ver_link.get("href")
 
         try:
-            ver_html = self.get(ver_url, retry_on_404=True).text
+            ver_html = self.get(
+                ver_url.replace("http://www.", "https://www.", 1), retry_on_404=True
+            ).text
         except (socket.timeout, requests.exceptions.HTTPError):
             pass
         else:
@@ -351,12 +383,19 @@ class MEBillScraper(Scraper):
         page.make_links_absolute(url)
 
         path = "//div/a[contains(@href, 'rollcall.asp')]"
+        seen_urls = set()
         for link in page.xpath(path):
             # skip blank motions, nothing we can do with these
             # seen on /LawMakerWeb/rollcalls.asp?ID=280039835
             if link.text:
                 motion = link.text.strip()
                 url = link.attrib["href"]
+
+                # some roll calls are listed twice on the same page
+                # seen on /LawMakerWeb/rollcalls.asp?ID=280097788
+                if url in seen_urls:
+                    continue
+                seen_urls.add(url)
 
                 yield from self.scrape_vote(bill, motion, url)
 
@@ -393,7 +432,10 @@ class MEBillScraper(Scraper):
         outcome_cell = page.xpath("//td[text()='Outcome:']")[0]
         outcome = outcome_cell.xpath("string(following-sibling::td)")
 
+        # same-day roll calls can share motion and roll, so keep the RC number
+        serial = re.search(r"serialnumber=(\d+)", url).group(1)
         vote = VoteEvent(
+            identifier=f"{'S' if chamber == 'upper' else 'H'}-RC {serial}",
             chamber=chamber,
             start_date=date.strftime("%Y-%m-%d"),
             motion_text=motion,

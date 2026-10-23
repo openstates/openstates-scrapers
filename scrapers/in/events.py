@@ -92,6 +92,8 @@ class INEventScraper(Scraper):
             event.add_source(link, note="API details")
             name_slug = re.sub("[^a-zA-Z0-9]+", "-", committee_name.lower())
 
+            event_document_urls_seen = set()
+
             document_url = f"https://iga.in.gov/pdf-documents/{session_no}/{self.session}/{committee_chamber}/committees/{committee_type}/{name_slug}/{_id}/meeting.pdf"
 
             event.add_source(
@@ -102,6 +104,7 @@ class INEventScraper(Scraper):
             event.add_document(
                 "Meeting Agenda", document_url, media_type="application/pdf"
             )
+            event_document_urls_seen.add(document_url)
             event.add_media_link("Video of Hearing", video_url, media_type="text/html")
 
             agendas = meeting["agenda"]
@@ -120,20 +123,23 @@ class INEventScraper(Scraper):
                 exhibit_pdf_url = self.apiclient.get_document_url(
                     exhibit["pdfDownloadLink"]
                 )
-                if exhibit_pdf_url:
+                if exhibit_pdf_url and exhibit_pdf_url not in event_document_urls_seen:
                     event.add_document(
                         exhibit["description"],
                         exhibit_pdf_url,
                         media_type="application/pdf",
                     )
+                    event_document_urls_seen.add(exhibit_pdf_url)
 
             for minute in meeting.get("minutes"):
                 if minute["link"]:
                     minute_pdf_url = f"https://iga.in.gov/pdf-documents/{session_no}/{self.session}/{committee_chamber}/committees/{committee_type}/{name_slug}/{_id}/{_id}_minutes.pdf"
-                    event.add_document(
-                        "Meeting Minutes",
-                        minute_pdf_url,
-                        media_type="application/pdf",
-                    )
+                    if minute_pdf_url not in event_document_urls_seen:
+                        event.add_document(
+                            "Meeting Minutes",
+                            minute_pdf_url,
+                            media_type="application/pdf",
+                        )
+                        event_document_urls_seen.add(minute_pdf_url)
 
             yield event

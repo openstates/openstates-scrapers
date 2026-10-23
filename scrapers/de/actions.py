@@ -14,10 +14,14 @@ rules = (
     Rule([r"Amendment (?P<bills>[\w\s]+?) Introduced"], ["amendment-introduction"]),
     Rule(["Amendment (?P<bills>.+?) -  Passed"], ["amendment-passage"]),
     Rule(["^Passed by"], ["passage"]),
-    Rule(["^Defeated"], ["failure"]),
+    # "Defeated By House. ... Reason Taken: motion to recess ..." is a motion
+    Rule(["^Defeated(?!.*Reason Taken: Motion)"], ["failure"]),
     Rule(["unfavorable"], ["committee-passage-unfavorable"]),
     Rule([r"Reported Out of Committee \((?P<committees>.+?)\)"], ["committee-passage"]),
     Rule(["Vetoed by Governor"], ["executive-veto"]),
+    Rule(["^Veto Override Passed"], ["veto-override-passage"]),
+    Rule(["^Veto Override Failed"], ["veto-override-failure"]),
+    Rule(["Enacted into Law", "Enact w/o Sign by Governor"], ["became-law"]),
     Rule([r"Amendment (?P<bills>.+?)\s+-\s+Introduced"], ["amendment-introduction"]),
     Rule([r"Amendment (?P<bills>[\w\s]+?) Passed"], ["amendment-passage"]),
     Rule(

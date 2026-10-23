@@ -62,7 +62,7 @@ class UTBillScraper(Scraper, LXMLMixin):
         session_url = "https://le.utah.gov/billlist.jsp?session={}".format(session_slug)
 
         # For some sessions the link doesn't go straight to the bill list
-        doc = self.lxmlize(session_url, headers=headers)
+        doc = self.lxmlize(session_url, headers=headers, verify=False)
 
         # Get all of the show/hide bill list elements
         # in order to get the IDs of the actual bill lists
@@ -100,7 +100,7 @@ class UTBillScraper(Scraper, LXMLMixin):
                     )
 
     def scrape_bill(self, chamber, session, url, session_slug):
-        response = self.get(url, headers=headers)
+        response = self.get(url, headers=headers, verify=False)
         page = lxml.html.fromstring(response.text)
         page.make_links_absolute(url)
 

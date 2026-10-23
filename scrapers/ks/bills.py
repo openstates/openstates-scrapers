@@ -64,10 +64,15 @@ class KSBillScraper(Scraper):
         yield from self.scrape_bill_list(session)
 
     def scrape_bill_list(self, session):
+        biennium = next(
+            each["_scraped_name"]
+            for each in self.jurisdiction.legislative_sessions
+            if each["identifier"] == session
+        )
         page = 1
         while True:
             url = (
-                f"{BASE_URL}/measures/fragment/"
+                f"{BASE_URL}/{biennium}/measures/fragment/"
                 f"?per_page=20&types=bill&types=resolution"
                 f"&chambers=House&chambers=Senate"
                 f"&page={page}"  # &sort=number&dir=asc
