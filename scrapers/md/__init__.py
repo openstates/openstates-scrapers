@@ -216,6 +216,7 @@ class Maryland(State):
             "start_date": "2026-01-14",
             "end_date": "2026-04-13",
             "active": True,
+            "extras": {"speaker": "Peña-Melnyk", "senate_president": "Ferguson"},
         },
     ]
     ignored_scraped_sessions = [
