@@ -82,9 +82,8 @@ class VaCSVBillScraper(Scraper):
         reader = csv.reader(resp.splitlines(), delimiter=",")
 
         # ['HST_BILNO', 'HST_REFID', 'HST_URL']
-        # Note: bill numbers here use the short form (e.g. "SB766", "HB1548"),
-        # not the zero-padded long form, so we key on the raw bill number.
         for row in reader:
+            # skip header and empty rows
             if not row or row[0].strip() in ("", "HST_BILNO"):
                 continue
             bill_num = row[0].strip()
@@ -336,11 +335,9 @@ class VaCSVBillScraper(Scraper):
                     media_type="text/html",
                 )
 
-            # fiscal notes (Fiscal Impact Statements)
-            # keyed on the short bill_id (e.g. "SB766"), matching the
-            # HST_BILNO column in FiscalImpactStatements.csv. These are the
-            # documents hyperlinked into the bill's action history.
+            # fiscal notes — CSV uses short bill_id (e.g. "HB1"), not long form
             for fn in self._fiscal_notes[bill_id]:
+                # prefer the direct blob URL; fall back to legacy legp604 URL
                 if fn["url"]:
                     doc_link = fn["url"]
                 else:

@@ -277,17 +277,19 @@ class VaBillScraper(Scraper):
                     # however sometimes ReferenceNumber does NOT have a weird prefix
                     ref = impact["ReferenceNumber"]
                     if ref[3:] in self.ref_num_map:
-                        action_note = self.ref_num_map[ref[3:]]
+                        action = self.ref_num_map[ref[3:]]
                     elif ref in self.ref_num_map:
-                        action_note = self.ref_num_map[ref]
+                        action = self.ref_num_map[ref]
                     else:
-                        action_note = ref
-                    # These are Fiscal Impact Statements hyperlinked into the
-                    # bill's action history. Label and classify them as fiscal
-                    # notes so Plural displays them in the Additional Documents
-                    # section (same pattern as csv_bills.py and OR amendments).
+                        action = "Fiscal Impact Statement"
+
+                    # Avoid double-prefixing if the action description already starts with
+                    # "Fiscal Impact Statement"
+                    if not action.lower().startswith("fiscal impact statement"):
+                        action = "Fiscal Impact Statement: " + action
+
                     bill.add_document_link(
-                        f"Fiscal Impact Statement: {action_note}",
+                        action,
                         impact["FileURL"],
                         media_type="application/pdf",
                         classification="fiscal-note",
