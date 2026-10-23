@@ -276,15 +276,26 @@ class VaBillScraper(Scraper):
             if row["ImpactFile"]:
                 for impact in row["ImpactFile"]:
                     # map 241HB9F122 => HB9F122
-                    # however somtimes ReferenceNumber does NOT have a weird prefix
-                    if impact["ReferenceNumber"][3:] in self.ref_num_map:
-                        action = self.ref_num_map[impact["ReferenceNumber"][3:]]
-                    elif impact["ReferenceNumber"] in self.ref_num_map:
-                        action = self.ref_num_map[impact["ReferenceNumber"]]
+                    # however sometimes ReferenceNumber does NOT have a weird prefix
+                    ref = impact["ReferenceNumber"]
+                    if ref[3:] in self.ref_num_map:
+                        action = self.ref_num_map[ref[3:]]
+                    elif ref in self.ref_num_map:
+                        action = self.ref_num_map[ref]
                     else:
-                        action = "Unknown"
+                        action = "Fiscal Impact Statement"
+
+                    # Avoid double-prefixing if the action description already starts with
+                    # "Fiscal Impact Statement"
+                    if not action.lower().startswith("fiscal impact statement"):
+                        action = "Fiscal Impact Statement: " + action
+
                     bill.add_document_link(
-                        action, impact["FileURL"], media_type="application/pdf"
+                        action,
+                        impact["FileURL"],
+                        media_type="application/pdf",
+                        classification="fiscal-note",
+                        on_duplicate="ignore",
                     )
 
     def add_votes(self, bill: Bill, legislation_id: str):

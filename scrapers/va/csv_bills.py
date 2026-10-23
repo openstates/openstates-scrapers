@@ -81,9 +81,15 @@ class VaCSVBillScraper(Scraper):
         resp = self.get_file("FiscalImpactStatements.csv")
         reader = csv.reader(resp.splitlines(), delimiter=",")
 
-        # ['BILL_NUMBER', 'HST_REFID']
+        # ['HST_BILNO', 'HST_REFID', 'HST_URL']
         for row in reader:
-            self._fiscal_notes[row[0].strip()].append({"refid": row[1].strip()})
+            # skip header and empty rows
+            if not row or row[0].strip() in ("", "HST_BILNO"):
+                continue
+            bill_num = row[0].strip()
+            refid = row[1].strip() if len(row) > 1 else ""
+            url = row[2].strip() if len(row) > 2 else ""
+            self._fiscal_notes[bill_num].append({"refid": refid, "url": url})
         self.info("Total Fiscal Notes Loaded: " + str(len(self._fiscal_notes)))
 
     def load_history(self):
@@ -329,13 +335,21 @@ class VaCSVBillScraper(Scraper):
                     media_type="text/html",
                 )
 
-            # fiscal notes
-            for fn in self._fiscal_notes[long_bill_id]:
-                doc_link = bill_url_base + f"legp604.exe?{session_id}+oth+{fn['refid']}"
+            # fiscal notes — CSV uses short bill_id (e.g. "HB1"), not long form
+            for fn in self._fiscal_notes[bill_id]:
+                # prefer the direct blob URL; fall back to legacy legp604 URL
+                if fn["url"]:
+                    doc_link = fn["url"]
+                else:
+                    doc_link = (
+                        bill_url_base + f"legp604.exe?{session_id}+oth+{fn['refid']}"
+                    ).replace(".PDF", "+PDF")
                 b.add_document_link(
                     "Fiscal Impact Statement: " + fn["refid"],
-                    doc_link.replace(".PDF", "+PDF"),
+                    doc_link,
                     media_type="application/pdf",
+                    classification="fiscal-note",
+                    on_duplicate="ignore",
                 )
 
             # actions with 8-digit number followed by D are version titles too
