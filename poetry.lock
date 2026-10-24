@@ -1696,14 +1696,14 @@ et-xmlfile = "*"
 
 [[package]]
 name = "openstates"
-version = "6.26.0"
+version = "6.26.4"
 description = "core infrastructure for the openstates project"
 optional = false
 python-versions = "<4.0,>=3.13"
 groups = ["main"]
 files = [
-    {file = "openstates-6.26.0-py3-none-any.whl", hash = "sha256:74d31b3e75b670d001ce549dd227f40ca266e85860ea730ffd76a913d87642ca"},
-    {file = "openstates-6.26.0.tar.gz", hash = "sha256:a49e351fe2d1ffc5d63ec5865e5f1b2c5613af455d7cc2fe34cb4c06a7f8edda"},
+    {file = "openstates-6.26.4-py3-none-any.whl", hash = "sha256:17b9ba12d6bf8de828f6eaad2a69ace0838d3df7740ae2f6adf1f744bbb2b792"},
+    {file = "openstates-6.26.4.tar.gz", hash = "sha256:4087cfbf7dd38e21783d10a4d84468f83ddac7be485545ea380e4b098e76f954"},
 ]
 
 [package.dependencies]
@@ -3192,4 +3192,4 @@ california = ["SQLAlchemy", "mysqlclient"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "719dcfed55bbfe6c96004d128a4e4bdc293e6b7f5bbd9cfd4cd3a7b37c01f020"
+content-hash = "ab9ffc8242671828631df052193d6c11185fad44ea019b3b23059fdeb13d2209"
