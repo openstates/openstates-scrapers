@@ -11,7 +11,7 @@ from urllib.parse import urljoin
 import fitz
 from openstates.scrape import Scraper, Bill, VoteEvent
 from utils import LXMLMixin
-from .actions import Categorizer
+from .actions import BILL_ID, Categorizer
 
 
 class FailedBillFetch:
@@ -32,6 +32,9 @@ class DEBillScraper(Scraper, LXMLMixin):
     legislators = {}
     legislators_by_short = {}
     legislators_by_district = {}
+    # roll call PDF url -> (motion, classification); consent calendars are
+    # shared by every bill on them
+    vote_motions = {}
 
     """
     DE has caucus-specific sites that it now
@@ -422,6 +425,10 @@ class DEBillScraper(Scraper, LXMLMixin):
 
         if page:
             roll = page["Model"]
+            # a rescinded roll call is void and is retaken as a new one
+            if roll["RollCallStatus"] == "Rescinded":
+                self.info(f"Skipping rescinded roll call {vote_id}")
+                return
             vote_chamber = self.chamber_map[roll["ChamberName"]]
             # "7/1/16 01:00 AM"
             vote_date = dt.datetime.strptime(
@@ -437,11 +444,13 @@ class DEBillScraper(Scraper, LXMLMixin):
                 "/json/RollCallController/GenerateRollCallPdf"
                 f"?rollCallId={vote_id}&chamberId={self.chamber_codes[vote_chamber]}"
             )
-            vote_motion, vote_classification = self.scrape_vote_motion(vote_pdf_url)
+            if vote_pdf_url not in self.vote_motions:
+                self.vote_motions[vote_pdf_url] = self.scrape_vote_motion(vote_pdf_url)
+            vote_motion, vote_classification = self.vote_motions[vote_pdf_url]
             vote = VoteEvent(
                 chamber=vote_chamber,
                 start_date=vote_date,
-                motion_text=vote_motion,
+                motion_text=vote_motion or roll["RollCallVoteType"],
                 result=vote_passed,
                 bill=bill,
                 legislative_session=session,
@@ -452,9 +461,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             # Vote URL is just a generic search URL with POSTed data,
             # so provide a different link
             vote.add_source(vote_pdf_url)
-            vote.dedupe_key = (
-                f"{bill}#{vote_id}#{vote_motion}#{vote_chamber}#{vote_date}"
-            )
+            vote.dedupe_key = f"{bill}#{vote_id}#{roll['RollCallVoteType']}#{vote_chamber}#{vote_date}"
             vote.set_count("yes", roll["YesVoteCount"])
             vote.set_count("no", roll["NoVoteCount"])
             vote.set_count("other", other_count)
@@ -479,43 +486,65 @@ class DEBillScraper(Scraper, LXMLMixin):
 
             yield vote
 
+    def should_cache_response(self, response):
+        # a missing roll call PDF redirects to an HTML error page that answers 200
+        url = (response.history or [response])[0].url
+        if "GenerateRollCallPdf" in url and not response.content.startswith(b"%PDF"):
+            return False
+        return super().should_cache_response(response)
+
     def scrape_vote_motion(self, pdf_url):
         """
         The roll call JSON has no motion; the PDF header names one when the
         vote isn't on the bill itself ("Motion: Veto Override", "Reason Taken:
-        motion to recess ..."), and its subject line says what was voted on
-        ("HA 1 to HB 53", "HB 445 w/HA 1"), or it is a consent calendar.
+        motion to recess ..."), or it is a consent calendar. Returns no motion
+        and no classification if the PDF can't be read.
         """
         try:
-            pdf = self.get(pdf_url, verify=False).content
-            lines = fitz.open("pdf", pdf)[0].get_text().splitlines()
+            for _ in range(3):
+                pdf = self.get(pdf_url, verify=False).content
+                if pdf.startswith(b"%PDF"):
+                    break
+                time.sleep(random.uniform(5, 10))
+            else:
+                raise ValueError("not a PDF")
+            blocks = fitz.open("pdf", pdf)[0].get_text("blocks")
         except Exception as e:
             self.warning(f"could not read roll call PDF {pdf_url}: {e}")
+            return None, []
+
+        motions = {}
+        for block in blocks:
+            label = None
+            for line in block[4].splitlines():
+                line = line.strip()
+                if line.startswith(("Long Title:", "Vote requirement:")):
+                    return self.classify_vote_motion(motions)
+                match = re.match(r"(Motion|Reason Taken):\s*(.*)", line, re.I)
+                if match:
+                    label = match.group(1).title()
+                    motions[label] = match.group(2)
+                # a wrapped reason, or a label with its text on the next line;
+                # "Motion: Veto Override" shares its block with the bill line
+                elif label and (label == "Reason Taken" or not motions[label]):
+                    motions[label] = f"{motions[label]} {line}".strip()
+                elif re.search(r"Consent (Calendar|Agenda)", line):
+                    return line, ["passage"]
+        return self.classify_vote_motion(motions)
+
+    def classify_vote_motion(self, motions):
+        motion = motions.get("Motion", "")
+        # "Motion: Other" is followed by the actual "Reason Taken:"
+        if motion in ("", "Other"):
+            motion = motions.get("Reason Taken") or motion
+        if not motion:
             return "Passage", ["passage"]
-
-        subject = ""
-        for line in lines:
-            line = line.strip()
-            motion = re.match(r"(Motion|Reason Taken):\s*(.+)", line)
-            if motion:
-                text = motion.group(2)
-                if re.search(r"veto override", text, re.I):
-                    return text, ["veto-override"]
-                # "HCR 83 revote after reconsideration" is still passage,
-                # "motion to recess to read amendment" isn't
-                if re.search(r"passage|adopt|revote|consent", text, re.I):
-                    return text, ["passage"]
-                return text, []
-            # followed by the list of bills on it
-            if re.match(r"((House|Senate) )?Consent (Calendar|Agenda)", line):
-                return line, ["passage"]
-            if line.startswith(("Long Title:", "Vote requirement:")):
-                break
-            subject = line
-
-        if re.match(r"[HS]A \d+.* to ", subject):
-            return subject, ["amendment"]
-        return "Passage", ["passage"]
+        if re.search(r"veto override|repass", motion, re.I):
+            return motion, ["veto-override"]
+        # "HB 160 Mulrooney Passed", "HCR 83 revote after reconsideration"
+        if re.match(BILL_ID, motion):
+            return "Passage", ["passage"]
+        return motion, []
 
     def parse_sponsor_url(self, sponsor_url):
         sponsor_url = urljoin(self.base_url, sponsor_url)

@@ -1,6 +1,12 @@
 import re
 from utils.actions import Rule, BaseCategorizer
 
+# a bill, not an amendment: HB 5, SCR 20, SS 1 for SB 33
+BILL_ID = r"[HS](?!A )[A-Z]* \d"
+# "Reason Taken:" naming anything but the bill ("Motion to Suspend Rules on
+# HB 245") means the roll call was on a motion
+ON_BILL = rf"(?!.*Reason Taken: (?!{BILL_ID}))"
+
 rules = (
     Rule([r"Amendment (?P<bills>.+?) -\s+Laid On Table"], ["amendment-deferral"]),
     Rule(["Favorable"], ["committee-passage-favorable"]),
@@ -13,14 +19,18 @@ rules = (
     Rule(["Signed by Governor"], ["executive-signature"]),
     Rule([r"Amendment (?P<bills>[\w\s]+?) Introduced"], ["amendment-introduction"]),
     Rule(["Amendment (?P<bills>.+?) -  Passed"], ["amendment-passage"]),
-    Rule(["^Passed by"], ["passage"]),
-    # "Defeated By House. ... Reason Taken: motion to recess ..." is a motion
-    Rule(["^Defeated(?!.*Reason Taken: Motion)"], ["failure"]),
+    # flexible whitespace would let "Taken:\s{,10}" stop short of the bill id
+    Rule([f"^Passed by{ON_BILL}"], ["passage"], flexible_whitespace=False),
+    Rule([f"^Defeated{ON_BILL}"], ["failure"], flexible_whitespace=False),
     Rule(["unfavorable"], ["committee-passage-unfavorable"]),
     Rule([r"Reported Out of Committee \((?P<committees>.+?)\)"], ["committee-passage"]),
     Rule(["Vetoed by Governor"], ["executive-veto"]),
     Rule(["^Veto Override Passed"], ["veto-override-passage"]),
-    Rule(["^Veto Override Failed"], ["veto-override-failure"]),
+    Rule(
+        ["^Veto Override Failed", "motion to Repass .+ Defeated"],
+        ["veto-override-failure"],
+    ),
+    Rule(["^Line-Item Veto"], ["executive-veto-line-item"]),
     Rule(["Enacted into Law", "Enact w/o Sign by Governor"], ["became-law"]),
     Rule([r"Amendment (?P<bills>.+?)\s+-\s+Introduced"], ["amendment-introduction"]),
     Rule([r"Amendment (?P<bills>[\w\s]+?) Passed"], ["amendment-passage"]),
