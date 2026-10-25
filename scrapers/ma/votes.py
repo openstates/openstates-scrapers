@@ -99,13 +99,7 @@ class SenateJournal(PdfPage):
         f"{motion_and_vote_total}.*?{vote_id}.*?{vote_section}", re.DOTALL
     )
 
-    not_name_re = re.compile(
-        r"^(\d|UNCORRECTED|Joint Rules|\.|Real ID,-- homeless"
-        r"|Pharmacists,-- PrEP\."
-        r"|Brewster,-- land\."
-        r"|Provincetown,-wastewater"
-        r")"
-    )
+    not_name_re = re.compile(r"^(\d|UNCORRECTED|Joint Rules|\.)")
 
     precise_motion = r"question on\s+(.+)\s+was determined"
     precise_motion_re = re.compile(precise_motion, re.DOTALL)
@@ -257,8 +251,6 @@ class SenateJournal(PdfPage):
         #     possible_total_nv = "0"
         # total_nv = int(possible_total_nv)
 
-        # vote_number = match.group("votenumber")
-
         # Get list of voter names for each section
         yea_voters = self.find_names(match.group("yealines"))
         nay_voters = self.find_names(match.group("naylines"))
@@ -324,7 +316,15 @@ class SenateJournal(PdfPage):
             result="pass" if vote_passed else "fail",
             classification=vote_classification,
             bill_chamber=bill_chamber,
+            identifier=match.group("votenumber"),
         )
+
+        vote_event.set_count("yes", total_yea)
+        vote_event.set_count("no", total_nay)
+        for name in yea_voters:
+            vote_event.yes(name)
+        for name in nay_voters:
+            vote_event.no(name)
 
         vote_event.add_source(self.source.url)
 
@@ -332,9 +332,14 @@ class SenateJournal(PdfPage):
 
     # Finds names in text, ignoring some common phrases and empty lines
     def find_names(self, text):
-        text = [x.strip() for x in text.split("\n")]
+        text = [x.strip().rstrip(" -") for x in text.split("\n")]
         text = [x for x in text if x != ""]
-        names = [x for x in text if not self.not_name_re.match(x) and "," in x]
+        # ",-" marks page headers like "Brewster,-- land."
+        names = [
+            x
+            for x in text
+            if not self.not_name_re.match(x) and "," in x and ",-" not in x
+        ]
 
         return names
 
