@@ -99,7 +99,7 @@ class CTVoteScraper(Scraper):
             chamber=vote_chamber,
             start_date=date,
             motion_text=motion_text,
-            result="pass" if yes_count > need_count else "fail",
+            result="pass" if yes_count >= need_count else "fail",
             classification="passage",
             bill=bill_id,
             bill_chamber="upper" if bill_id[0] == "S" else "lower",
