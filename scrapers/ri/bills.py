@@ -314,8 +314,10 @@ class RIBillScraper(Scraper):
         # subjects = self.get_subject_bill_dict(session)
         subjects = {}
 
+        # each chamber's vote pages include roll calls on the other chamber's bills
         for chamber in chambers:
             yield from self.scrape_bills(chamber, session, subjects)
+        for chamber in chambers:
             yield from self.scrape_chamber_votes(chamber, session)
 
     def scrape_chamber_votes(self, chamber, session):
@@ -330,13 +332,15 @@ class RIBillScraper(Scraper):
             for vote_dict in votes:
                 for vote in vote_dict.values():
                     count = vote["count"]
-                    chamber = {"H": "lower", "S": "upper"}[vote["meta"]["chamber"]]
+                    bill_chamber = {"H": "lower", "S": "upper"}[vote["meta"]["chamber"]]
 
                     try:
-                        bill_id = self._bill_id_by_type[(chamber, vote["meta"]["bill"])]
+                        bill_id = self._bill_id_by_type[
+                            (bill_chamber, vote["meta"]["bill"])
+                        ]
                     except KeyError:
                         self.warning(
-                            "no such bill_id %s %s", chamber, vote["meta"]["bill"]
+                            "no such bill_id %s %s", bill_chamber, vote["meta"]["bill"]
                         )
                         continue
 
@@ -348,7 +352,7 @@ class RIBillScraper(Scraper):
                         classification="passage",
                         legislative_session=session,
                         bill=bill_id,
-                        bill_chamber=chamber,
+                        bill_chamber=bill_chamber,
                     )
                     v.set_count("yes", int(count["YEAS"]))
                     v.set_count("no", int(count["NAYS"]))
