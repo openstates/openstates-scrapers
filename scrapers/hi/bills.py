@@ -565,7 +565,7 @@ class HIBillScraper(Scraper):
             for each in self.jurisdiction.legislative_sessions
             if each["_scraped_name"] == scraped_name
         )
-        return details["name"]
+        return details["identifier"]
 
     def classify_bill_type(self, bill: str) -> tuple:
         billtypes = {

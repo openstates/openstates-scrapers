@@ -18,14 +18,14 @@ rules = (
     Rule(".*Passed Third Reading", "passage"),
     Rule("Report and Resolution Adopted", "passage"),
     Rule("Enrolled to Governor", "executive-receipt"),
-    Rule(" Act ", "became-law"),
+    Rule(" Act ", "became-law", flags=0),
     # Note, occasionally the gov sends intent to veto then doesn't. So use Vetoed not Veto
     Rule("Vetoed .* line-item", "executive-veto-line-item"),
     Rule("Vetoed", "executive-veto"),
     Rule("Veto overridden", "veto-override-passage"),
     # these are for resolutions
-    Rule("Offered", "introduction"),
-    Rule("Adopted", "passage"),
+    Rule("Offered", "introduction", flags=0),
+    Rule("Adopted", "passage", flags=0),
     Rule("Received", "receipt"),
     Rule("Report adopted; Passed Second Reading", ["reading-2", "referral-committee"]),
     Rule("adopted in final form", "passage"),
