@@ -233,7 +233,7 @@ class NCBillScraper(Scraper):
                 chamber = "upper"
 
             date = eastern.localize(
-                dt.datetime.strptime(date.replace(".", ""), "%m/%d/%Y %H:%M %p")
+                dt.datetime.strptime(date.replace(".", ""), "%m/%d/%Y %I:%M %p")
             )
             date = date.isoformat()
 
@@ -245,7 +245,7 @@ class NCBillScraper(Scraper):
                 bill=bill,
                 classification="passage",  # TODO: classify votes
             )
-            ve.dedupe_key = rcs
+            ve.dedupe_key = result_link
             ve.set_count("yes", int(aye))
             ve.set_count("no", int(no))
             ve.set_count("not voting", int(nv))
@@ -430,7 +430,7 @@ class NCBillScraper(Scraper):
                             elif vote_location == noVt_location:
                                 how_voted = "other"
                             elif vote_location == exAb_location:
-                                how_voted == "absent"
+                                how_voted = "absent"
                             else:
                                 how_voted = "excused"
 
