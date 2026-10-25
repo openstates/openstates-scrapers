@@ -100,7 +100,7 @@ class USBillScraper(Scraper):
     # to scrape everything UPDATED after a given date/time, start="2020-01-01 22:01:01"
     def scrape(self, chamber=None, session=None, start=None, hearings=True):
         if start:
-            start = datetime.datetime.strptime(start, "%Y-%m-%d %H:%I:%S")
+            start = datetime.datetime.strptime(start, "%Y-%m-%d %H:%M:%S")
         else:
             start = datetime.datetime(1980, 1, 1, 0, 0, 1)
 
@@ -666,7 +666,7 @@ class USBillScraper(Scraper):
                 if "You don't have permission to access" in content.decode():
                     # sometimes clerk.house.gov serves an error page, but doesn't send a 403 header
                     self.info(f"Error fetching {url}, skipping")
-                    return
+                    continue
                 vote_xml = lxml.html.fromstring(content)
                 if chamber.lower() == "senate":
                     vote = self.scrape_senate_votes(vote_xml, url)
@@ -675,7 +675,7 @@ class USBillScraper(Scraper):
                 yield vote
             except (requests.exceptions.HTTPError, lxml.etree.XMLSyntaxError):
                 self.info(f"Error fetching {url}, skipping (used requests, no retries)")
-                return
+                continue
             except Exception as e:
                 self.warning(f"Error parsing vote at {url}: {e}")
                 if vote_xml:
@@ -692,7 +692,7 @@ class USBillScraper(Scraper):
         vote_date = page.xpath("//roll_call_vote/vote_date/text()")[0].strip()
 
         when = self._TZ.localize(
-            datetime.datetime.strptime(vote_date, "%B %d, %Y, %H:%M %p")
+            datetime.datetime.strptime(vote_date, "%B %d, %Y, %I:%M %p")
         )
 
         session = page.xpath("//roll_call_vote/congress/text()")[0]
@@ -793,7 +793,7 @@ class USBillScraper(Scraper):
 
         bill_id = page.xpath("//rollcall-vote/vote-metadata/legis-num/text()")[0]
         # for some reason these are "H R 123" which nobody uses, so fix to "HR 123"
-        bill_id = re.sub(r"([A-Z])\s([A-Z])", r"\1\2", bill_id)
+        bill_id = re.sub(r"(?<=[A-Z])\s+(?=[A-Z])", "", bill_id)
 
         roll_call = page.xpath("//rollcall-vote/vote-metadata/rollcall-num/text()")[0]
 

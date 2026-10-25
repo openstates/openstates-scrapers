@@ -177,12 +177,10 @@ class USEventScraper(Scraper, LXMLMixin):
 
             event.add_source("https://www.senate.gov/committees/hearings_meetings.htm")
 
-            if event_date.date() > datetime.date(
-                2025, 1, 3
-            ) and event_date.date() < datetime.date(2027, 1, 3):
-                congress_num = 119
-            else:
-                self.error("Code a congress number here.")
+            # a new Congress starts on January 3 of each odd year
+            congress_num = (
+                (event_date - datetime.timedelta(days=2)).year - 1789
+            ) // 2 + 1
 
             self.congress_gov_api(
                 congress_num, "senate", event, row.xpath("string(identifier)")
