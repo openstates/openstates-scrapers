@@ -232,8 +232,9 @@ class TNBillScraper(Scraper):
         #     .split("by")[-1]
         # )
 
-        sponsor = page.cssselect("div#udpBillInfo h2 small a")[0].text_content()
-        sponsor = sponsor.replace("*", "").strip()
+        # "by *Lamberth" in the first div; co-prime sponsors follow in #divCoPrimeSponsors
+        sponsor = page.cssselect("div#udpBillInfo h2 small div")[0].text_content()
+        sponsor = re.sub(r"^by\s+", "", sponsor.strip()).replace("*", "").strip()
         if sponsor:
             bill.add_sponsorship(
                 sponsor, classification="primary", entity_type="person", primary=True
