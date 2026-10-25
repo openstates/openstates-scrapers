@@ -295,7 +295,7 @@ class NEBillScraper(Scraper, LXMLMixin):
             date = datetime.strptime(date_td.text, "%b %d, %Y")
             motion_text = motion_td.text_content()
             vote_page = self.lxmlize(vote_url, verify=False)
-            # history text states the outcome ("AM2962 adopted", "MO130 failed")
+            # history text states the outcome ("AM2962 adopted", "MO46 prevailed")
             if re.search(r"\b(failed|lost)\b", motion_text, re.IGNORECASE):
                 passed = False
             elif re.search(
