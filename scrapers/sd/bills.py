@@ -185,7 +185,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                 full_action.insert(0, f'{action["ActionCommittee"]["Name"]}')
 
             if action["ShowPassed"] or action["ShowFailed"]:
-                if action["ShowPassed"]:
+                if action["ShowPassed"] and action["Result"] != "F":
                     binary = ", Passed,"
                 else:
                     binary = ", Failed,"
@@ -229,12 +229,10 @@ class SDBillScraper(Scraper, LXMLMixin):
                 if match:
                     committee = match.group(1)
 
-            match = re.match("First read in (Senate|House)", action_text)
-            if match:
-                if match.group(1) == "Senate":
-                    actor = "upper"
-                else:
-                    actor = "lower"
+            if action["ActionCommittee"]:
+                actor = {"H": "lower", "S": "upper"}.get(
+                    action["ActionCommittee"]["Body"], actor
+                )
 
             date_string = action["ActionDate"]
             date_match = re.match(r"\d{4}-\d{2}-\d{2}", date_string)
@@ -258,7 +256,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                 )
                 if vote_link not in self.seen_votes:
                     yield from self.scrape_vote(
-                        bill, date, vote_link, action["Amendment"]
+                        bill, date, vote_link, action["Amendment"], action["Result"]
                     )
                     self.seen_votes.add(vote_link)
                 if action_text != "Certified uncontested, placed on consent":
@@ -335,7 +333,7 @@ class SDBillScraper(Scraper, LXMLMixin):
         for version in versions:
             self.add_bill_version(bill, version, api_id)
 
-    def scrape_vote(self, bill, date, url, amendment=None):
+    def scrape_vote(self, bill, date, url, amendment=None, result=None):
         page = self.get(url).json()
 
         location = page["actionLog"]["FullName"]
@@ -361,7 +359,13 @@ class SDBillScraper(Scraper, LXMLMixin):
             excused_count = page["Excused"]
             absent_count = page["Absent"]
 
-            passed = yes_count > no_count
+            # Result reflects two-thirds thresholds (e.g. appropriations)
+            if result == "P":
+                passed = True
+            elif result in ("F", "D"):
+                passed = False
+            else:
+                passed = yes_count > no_count
 
             if motion.startswith("Do Pass"):
                 vtype = "passage"
