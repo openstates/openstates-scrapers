@@ -57,7 +57,7 @@ class ORVoteScraper(Scraper):
             for event in measure_history:
                 if event["MeasureVotes"]:
                     tally = self.tally_votes(event, "measure")
-                    passed = self.passed_vote(tally)
+                    passed = self.passed_vote(tally, event["ActionText"])
 
                     classification = self.determine_vote_classifiers(
                         event["ActionText"]
@@ -105,10 +105,10 @@ class ORVoteScraper(Scraper):
                         event["CommitteeVotes"]
                     )
                     tally = self.tally_votes(event, "committee")
-                    passed = self.passed_vote(tally)
 
                     # there is at least one event w/o an Action listed
                     action = event["Action"] or event["Comments"]
+                    passed = self.passed_vote(tally, action)
 
                     classification = self.determine_vote_classifiers(action)
                     when = datetime.datetime.strptime(
@@ -183,8 +183,13 @@ class ORVoteScraper(Scraper):
                 vote.vote("absent", voter_name)
 
     @staticmethod
-    def passed_vote(tally):
-        return float(tally["yes"]) / (tally["yes"] + tally["no"]) > 0.5
+    def passed_vote(tally, action_text):
+        # The action text states the outcome ("Bill failed.", "Motion to
+        # withdraw from Rules failed."), which the counts miss when a vote
+        # needs more than a simple majority.
+        if re.search(r"\bfailed\b", action_text, re.IGNORECASE):
+            return False
+        return tally["yes"] > tally["no"]
 
     def tally_votes(self, event, vote_type):
         if vote_type == "measure":
