@@ -8,7 +8,7 @@ import dateutil.parser
 import lxml.html
 from openstates.scrape import Scraper, Bill, VoteEvent
 from .common import get_session_slug
-from spatula import HtmlListPage, HtmlPage, CSS, XPath, SelectorError, SkipItem
+from spatula import HtmlListPage, HtmlPage, CSS, XPath, SelectorError
 from scrapelib import HTTPError
 
 TZ = pytz.timezone("PST8PDT")
@@ -227,7 +227,6 @@ class BillTabDetail(Utf8HtmlMixin, HtmlPage):
     def process_error_response(self, exception: Exception) -> None:
         message = f"Encountered error fetching Bill Overview for {self.input.identifier}, skipping {self.input.source_url}"
         self.logger.warning(message)
-        raise SkipItem(message)
 
     def get_column_div(self, name):
         # lots of places where we have a <div class='col-md-2 font-weight-bold'>
@@ -431,7 +430,6 @@ class ExhibitTabText(Utf8HtmlMixin, HtmlPage):
     def process_error_response(self, exception: Exception) -> None:
         message = f"Encountered error fetching Exhibits tab, skipping {self.source}"
         self.logger.warning(message)
-        raise SkipItem(message)
 
     def process_page(self):
         bill = self.input
@@ -518,6 +516,7 @@ class VoteList(Utf8HtmlMixin, HtmlPage):
             re.U | re.I,
         )
         date_re = re.compile(r"Date\s+(?P<date>.*)", re.U | re.I)
+        passed_re = re.compile(r"Passed\s+(?P<passed>Yes|No)\b", re.U | re.I)
         index = 0
 
         date_motion_counts = {}
@@ -532,6 +531,7 @@ class VoteList(Utf8HtmlMixin, HtmlPage):
 
             vote_options = {}
             start_date = None
+            passed = None
 
             for child_row in CSS("ul li", min_items=0).match(row):
                 content = child_row.text_content().strip()
@@ -546,6 +546,13 @@ class VoteList(Utf8HtmlMixin, HtmlPage):
                     start_date = date_match.groupdict()["date"]
                     start_date = parse_date(start_date)
 
+                passed_match = re.match(passed_re, content)
+                if passed_match:
+                    passed = passed_match.group("passed").lower() == "yes"
+
+            if passed is None:
+                passed = vote_options["yea"] > vote_options["nay"]
+
             # sometimes two votes with the same motion happen on the same day
             # hence we need to make motion text unique otherwise import fails
             date_motion = f"{start_date.date()}{summary}"
@@ -559,7 +566,7 @@ class VoteList(Utf8HtmlMixin, HtmlPage):
             vote = VoteEvent(
                 chamber=chamber,
                 motion_text=summary,
-                result="pass" if vote_options["yea"] > vote_options["nay"] else "fail",
+                result="pass" if passed else "fail",
                 classification="passage",
                 start_date=start_date,
                 bill=bill,
