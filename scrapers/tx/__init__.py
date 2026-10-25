@@ -117,6 +117,7 @@ class Texas(State):
             "name": "87th Legislature (2021)",
             "start_date": "2019-01-08",
             "active": False,
+            "extras": {"house_speaker": "Phelan"},
         },
         {
             "_scraped_name": "87(1) - 2021",
@@ -126,6 +127,7 @@ class Texas(State):
             "name": "87th Legislature, 1st Called Session (2021)",
             "start_date": "2021-07-08",
             "active": False,
+            "extras": {"house_speaker": "Phelan"},
         },
         {
             "_scraped_name": "87(2) - 2021",
@@ -135,6 +137,7 @@ class Texas(State):
             "name": "87th Legislature, 2nd Called Session (2021)",
             "start_date": "2021-08-07",
             "active": False,
+            "extras": {"house_speaker": "Phelan"},
         },
         {
             "_scraped_name": "87(3) - 2021",
@@ -144,6 +147,7 @@ class Texas(State):
             "name": "87th Legislature, 3rd Called Session (2021)",
             "start_date": "2021-09-20",
             "active": False,
+            "extras": {"house_speaker": "Phelan"},
         },
         # date source: https://lrl.texas.gov/sessions/sessionyears.cfm
         {
@@ -154,6 +158,7 @@ class Texas(State):
             "start_date": "2023-01-10",
             "end_date": "2023-05-29",
             "active": False,
+            "extras": {"house_speaker": "Phelan"},
         },
         {
             "_scraped_name": "88(1) - 2023",
@@ -163,6 +168,7 @@ class Texas(State):
             "start_date": "2023-05-29",
             "end_date": "2023-06-27",
             "active": False,
+            "extras": {"house_speaker": "Phelan"},
         },
         {
             "_scraped_name": "88(2) - 2023",
@@ -172,6 +178,7 @@ class Texas(State):
             "start_date": "2023-06-27",
             "end_date": "2023-07-13",
             "active": False,
+            "extras": {"house_speaker": "Phelan"},
         },
         {
             "_scraped_name": "88(3) - 2023",
@@ -181,6 +188,7 @@ class Texas(State):
             "start_date": "2023-10-09",
             "end_date": "2023-11-08",
             "active": False,
+            "extras": {"house_speaker": "Phelan"},
         },
         {
             "_scraped_name": "88(4) - 2023",
@@ -191,6 +199,7 @@ class Texas(State):
             # TODO: correct end date
             "end_date": "2023-11-17",
             "active": False,
+            "extras": {"house_speaker": "Phelan"},
         },
         {
             "_scraped_name": "89(R) - 2025",
@@ -200,6 +209,7 @@ class Texas(State):
             "start_date": "2025-01-10",
             "end_date": "2025-06-02",
             "active": False,
+            "extras": {"house_speaker": "Burrows"},
         },
         {
             "_scraped_name": "89(1) - 2025",
@@ -209,6 +219,7 @@ class Texas(State):
             "start_date": "2025-07-21",
             "end_date": "2025-08-15",
             "active": False,
+            "extras": {"house_speaker": "Burrows"},
         },
         {
             "_scraped_name": "89(2) - 2025",
@@ -218,6 +229,7 @@ class Texas(State):
             "start_date": "2025-08-18",
             "end_date": "2025-09-18",  # Estimated
             "active": True,
+            "extras": {"house_speaker": "Burrows"},
         },
         # TODO: Re-enable vote scraper when adding next regular session
     ]
