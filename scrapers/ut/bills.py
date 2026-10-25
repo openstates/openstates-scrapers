@@ -326,32 +326,14 @@ class UTBillScraper(Scraper, LXMLMixin):
         if "actionHistoryList" in data:
             cmte_match_re = re.compile(r"(committee|comm|to rules)", re.IGNORECASE)
             for action_data in data["actionHistoryList"]:
-                categorizer_result = self.categorizer.categorize(
-                    action_data["description"]
+                # "owner" is who holds the bill after the action, so use
+                # actionClass for the acting chamber
+                actor = {"H": "lower", "S": "upper", "G": "executive"}.get(
+                    action_data["actionClass"], "legislature"
                 )
-                actor = "legislature"
-                if action_data["owner"] == "Legislative Research and General Counsel":
-                    actor = "legislature"
-                elif "governor" in action_data["owner"].lower():
-                    actor = "executive"
-                elif "clerk of the house" in action_data["owner"].lower():
-                    actor = "lower"
-                elif "clerk of the senate" in action_data["owner"].lower():
-                    actor = "upper"
-                elif action_data["owner"].startswith("Senate"):
-                    actor = "upper"
-                elif action_data["owner"].startswith("House"):
-                    actor = "lower"
-                # we can also fall back in a few ways
-                # one is to use action description which often starts with House or Senate
-                elif action_data["description"].startswith("Senate"):
-                    actor = "upper"
-                elif action_data["description"].startswith("House"):
-                    actor = "lower"
-                else:
-                    self.warning(
-                        f"Found unexpected actor {action_data['owner']} at {api_url}"
-                    )
+                categorizer_result = self.categorizer.categorize(
+                    re.sub(r"^(House|Senate|LFA)/ ", "", action_data["description"])
+                )
 
                 if ":" in action_data["actionDate"]:
                     date = parser.parse(action_data["actionDate"])
