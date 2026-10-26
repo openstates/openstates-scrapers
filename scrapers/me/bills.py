@@ -2,7 +2,6 @@ import re
 import html
 import pytz
 import socket
-import time
 import datetime
 import dateutil.parser
 
@@ -11,26 +10,16 @@ import lxml.html
 import scrapelib
 
 from openstates.scrape import Scraper, Bill, VoteEvent
+from utils import SSLRetryMixin
 
 from .actions import Categorizer
 
 BLACKLISTED_BILL_IDS = {"128": ("SP 601", "SP 602"), "129": (), "130": ()}
 
 
-class MEBillScraper(Scraper):
+class MEBillScraper(SSLRetryMixin, Scraper):
     categorizer = Categorizer()
     _tz = pytz.timezone("US/Eastern")
-
-    def get(self, url, **kwargs):
-        # scrapelib never retries an SSLError, but the site now and then drops
-        # a connection mid TLS handshake (SSLEOFError), which ended the scrape
-        for attempt in range(self.retry_attempts):
-            try:
-                return super().get(url, **kwargs)
-            except requests.exceptions.SSLError as e:
-                self.warning(f"{e}, retrying")
-                time.sleep(self.retry_wait_seconds * 2**attempt)
-        return super().get(url, **kwargs)
 
     def scrape(self, chamber=None, session=None, first_item=1):
         first_item = int(first_item)  # parse string arg from CLI to int
