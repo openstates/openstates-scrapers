@@ -214,22 +214,19 @@ class WIBillScraper(Scraper):
             attrs = self.categorizer.categorize(action)
             atype = attrs["classification"]
 
-            kwargs = {}
-            if "referral-committee" in (atype or ""):
-                kwargs["related_entities"] = [
-                    {
-                        "entity_type": "committee",
-                        "name": re.sub(
-                            "R(ead (first time )?and r)?eferred to committee",
-                            "",
-                            action,
-                        ),
-                    }
-                ]
-
-            bill.add_action(
+            act = bill.add_action(
                 action, TIMEZONE.localize(date), chamber=actor, classification=atype
             )
+            committee = re.search(
+                r"referred to (joint (?:survey )?)?committee on (.+?)( pursuant to .*)?$",
+                action,
+                re.I,
+            )
+            if committee:
+                joint, name, _ = committee.groups()
+                if joint:
+                    name = f"{joint.title()}Committee on {name}"
+                act.add_related_entity(name, "organization")
 
             # Amendment links, only on passage
             if atype is not None and "amendment-passage" in atype:

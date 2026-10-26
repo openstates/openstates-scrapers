@@ -91,7 +91,7 @@ class WIEventScraper(Scraper, LXMLMixin):
     def extract_field(self, row: str, field: str):
         try:
             return re.findall(
-                rf"{field}:\s+['\"](.*?)['\"]", row, flags=re.MULTILINE | re.DOTALL
-            )[0]
+                rf"{field}:\s+(['\"])(.*?)\1", row, flags=re.MULTILINE | re.DOTALL
+            )[0][1]
         except IndexError:
             return None
