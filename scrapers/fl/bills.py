@@ -1,10 +1,8 @@
 import datetime
 import logging
 import re
-import time
 import typing
 from collections import defaultdict
-from http.client import RemoteDisconnected
 from urllib.error import URLError
 from urllib.parse import urlencode
 
@@ -16,10 +14,7 @@ from requests.exceptions import ConnectionError, Timeout, RequestException
 from spatula import HtmlPage, HtmlListPage, XPath, SelectorError, PdfPage, URL
 
 from .actions import Categorizer
-from .utils import (
-    get_random_user_agent,
-    add_random_delay,
-)
+from .utils import get_random_user_agent
 
 SPONSOR_RE = re.compile(
     r"by\s+(?P<sponsors>[^(]+)(\(CO-INTRODUCERS\)\s+(?P<cosponsors>[\s\S]+))?"
@@ -59,7 +54,6 @@ def patched_get_response(self, scraper):
     if self.timeout is None:
         self.timeout = 60
 
-    # Use our handle_remote_disconnected function to specifically handle RemoteDisconnected errors
     def get_response_with_retry():
         try:
             return original_get_response(self, scraper)
@@ -74,16 +68,10 @@ def patched_get_response(self, scraper):
 
             raise
 
-    # First, handle RemoteDisconnected errors specifically
-    from .utils import handle_remote_disconnected
-
-    # Then, handle other connection errors
     from .utils import retry_on_connection_error
 
     return retry_on_connection_error(
-        lambda: handle_remote_disconnected(
-            get_response_with_retry, max_retries=5, initial_backoff=10, max_backoff=120
-        ),
+        get_response_with_retry,
         # a full session takes hours, so ride out a short outage on the state's
         # sites (both have gone 500/503 for minutes at a time) instead of
         # ending the run
@@ -961,29 +949,16 @@ class FlBillScraper(Scraper):
         )
 
     def scrape(self, session=None):
-        self.raise_errors = False
-        self.retry_attempts = 5
-        self.retry_wait_seconds = 5
+        # patched_get_response already retries every spatula request
+        self.retry_attempts = 0
         house_session_number = self.get_house_session_number(session)
 
-        # Set up a circuit breaker to track consecutive failures
-        self._consecutive_failures = 0
-        self._max_consecutive_failures = 3
-        self._circuit_breaker_timeout = 120  # 2 minutes
-
         self.headers["User-Agent"] = get_random_user_agent()
-
-        # Set up connection pool reset
-        self._last_reset_time = time.time()
-        self._reset_interval = 600  # Reset connection pool every 10 minutes
-
-        # Create a fresh session
-        self._create_fresh_session()
 
         # spatula's logging is better than scrapelib's
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
 
-        subjects = next(iter(SubjectPDF({"session": session}).do_scrape()))
+        subjects = next(iter(SubjectPDF({"session": session}).do_scrape(scraper=self)))
 
         # Yield bills as they are scraped: individual requests are already
         # retried in patched_get_response, and buffering the whole session in a
@@ -996,86 +971,4 @@ class FlBillScraper(Scraper):
                 "subjects": subjects,
             }
         )
-        yield from self._process_bill_list(bill_list)
-
-    def _create_fresh_session(self):
-        """
-        Create a fresh session with appropriate settings.
-        """
-        if hasattr(self, "session"):
-            self.session.close()
-
-        # Create a new session
-        self.session = requests.Session()
-
-        # Set up retry mechanism
-        adapter = requests.adapters.HTTPAdapter(
-            max_retries=self.retry_attempts,
-            pool_connections=10,
-            pool_maxsize=10,
-            pool_block=False,
-        )
-        self.session.mount("http://", adapter)
-        self.session.mount("https://", adapter)
-
-        self.headers["User-Agent"] = get_random_user_agent()
-
-        self.logger.info(
-            f"Created fresh session with user agent: {self.headers['User-Agent']}"
-        )
-
-        return self.session
-
-    def _reset_connection_pool_if_needed(self):
-        """
-        Reset the connection pool if it's been too long since the last reset.
-        This helps prevent "Remote end closed connection without response" errors.
-        """
-        current_time = time.time()
-        if current_time - self._last_reset_time > self._reset_interval:
-            self.logger.info(
-                f"Resetting connection pool after {self._reset_interval} seconds"
-            )
-
-            # Create a fresh session
-            self._create_fresh_session()
-
-            self._last_reset_time = current_time
-
-    def _process_bill_list(self, bill_list):
-        """
-        Process the bill list with error handling and circuit breaker pattern.
-        """
-        for item in bill_list.do_scrape():
-            try:
-                # Reset connection pool if needed
-                self._reset_connection_pool_if_needed()
-
-                # If we've had too many consecutive failures, pause for a while
-                if self._consecutive_failures >= self._max_consecutive_failures:
-                    self.logger.warning(
-                        f"Circuit breaker triggered after {self._consecutive_failures} consecutive failures. "
-                        f"Pausing for {self._circuit_breaker_timeout} seconds."
-                    )
-                    time.sleep(self._circuit_breaker_timeout)
-                    self._consecutive_failures = 0
-
-                    # Rotate user agent after circuit breaker timeout
-                    self.headers["User-Agent"] = get_random_user_agent()
-
-                yield item
-
-                # Reset consecutive failures counter on success
-                self._consecutive_failures = 0
-
-            except Exception as e:
-                self._consecutive_failures += 1
-                self.logger.error(f"Error processing item: {e}")
-
-                # If it's a connection error, add a longer delay
-                if isinstance(e, (ConnectionError, RemoteDisconnected)):
-                    self.logger.warning("Connection error. Adding longer delay.")
-                    add_random_delay(5, 15)
-
-                    # Rotate user agent after connection error
-                    self.headers["User-Agent"] = get_random_user_agent()
+        yield from bill_list.do_scrape(scraper=self)
