@@ -90,12 +90,11 @@ class EventsTable(HtmlPage):
 
 
 class NDEventScraper(Scraper):
-    @staticmethod
-    def scrape():
+    def scrape(self):
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
         event_list = EventsTable()
         event_count = 0
-        for event in event_list.do_scrape():
+        for event in event_list.do_scrape(scraper=self):
             event_count += 1
             yield event
         if event_count < 1:
