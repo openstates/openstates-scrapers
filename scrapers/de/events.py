@@ -61,17 +61,17 @@ class DEEventScraper(Scraper, LXMLMixin):
         for item in page_data:
             a = event.add_agenda_item(description=str(item["ItemDescription"]))
             if item["LegislationDisplayText"] is not None:
-                bill_id = item["LegislationDisplayText"]
-                # e.g. HS 2 for HB 13
-                if "for" in bill_id:
-                    bill_id = bill_id.split(" for ")[1].strip()
+                # e.g. "HS 1 for HB 233 w/ HA 1"
+                bill_id = item["LegislationDisplayText"].split(" w/ ")[0]
+                bill_id = bill_id.split(" for ")[-1].strip()
                 a.add_bill(bill_id)
 
-            event.add_person(
-                name=str(item["PrimarySponsorShortName"]),
-                id=str(item["PrimarySponsorPersonId"]),
-                note="Sponsor",
-            )
+            if item["PrimarySponsorShortName"]:
+                event.add_person(
+                    name=item["PrimarySponsorShortName"],
+                    id=str(item["PrimarySponsorPersonId"]),
+                    note="Sponsor",
+                )
 
         yield event
 

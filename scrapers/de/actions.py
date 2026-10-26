@@ -3,7 +3,7 @@ from utils.actions import Rule, BaseCategorizer
 
 rules = (
     Rule([r"Amendment (?P<bills>.+?) -\s+Laid On Table"], ["amendment-deferral"]),
-    Rule(["Favorable"], ["committee-passage-favorable"]),
+    Rule([r"(?<!un)favorable"], ["committee-passage-favorable"]),
     Rule(["Amendment (?P<bills>.+?) defeated"], ["amendment-failure"]),
     Rule(["introduced and adopted in lieu of (?P<bills>.+)"], ["introduction"]),
     Rule(
