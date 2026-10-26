@@ -289,6 +289,8 @@ class VaBillScraper(Scraper):
                     # "Fiscal Impact Statement"
                     if not action.lower().startswith("fiscal impact statement"):
                         action = "Fiscal Impact Statement: " + action
+                    # one statement per version, all sharing the same event text
+                    action = f"{action} - {row['Description']}"
 
                     bill.add_document_link(
                         action,
@@ -426,7 +428,10 @@ class VaBillScraper(Scraper):
                     # some voice votes are miscoded so don't contain data
                     continue
 
-                if tally["Y"] > tally["N"]:
+                # PassFail reflects tie-breaks and supermajority thresholds
+                if row["PassFail"] in ("P", "F"):
+                    v.result = "pass" if row["PassFail"] == "P" else "fail"
+                elif tally["Y"] > tally["N"]:
                     v.result = "pass"
                 else:
                     v.result = "fail"
@@ -451,12 +456,12 @@ class VaBillScraper(Scraper):
                 self.info(f"Skipping vote {row['BatchNumber']} with no pass fail")
 
     def classify_bill(self, row: dict):
-        btype = "bill"
-
         if "constitutional amendment" in row["Description"].lower():
-            btype = "constitutional amendment"
-
-        return btype
+            return "constitutional amendment"
+        # HB/SB, HJ/SJ, HR/SR
+        return {"J": "joint resolution", "R": "resolution"}.get(
+            row["LegislationNumber"][1], "bill"
+        )
 
     def text_from_html(self, html: str):
         return lxml.html.fromstring(html).text_content()
