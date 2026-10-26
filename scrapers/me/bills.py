@@ -191,7 +191,7 @@ class MEBillScraper(Scraper):
         sponsors_page.make_links_absolute(sponsors_url)
 
         tr_text = sponsors_page.xpath("./body/table/td/table/tr/td//text()")
-        rgx = r"^\s*(Speaker|President|Senator|Representative) ([\w\s]+?)( of .+)\s*$"
+        rgx = r"^\s*(Speaker|President|Senator|Representative) (.+?)( of .+)\s*$"
 
         for text in tr_text:
             if "the Majority" in text:
