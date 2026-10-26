@@ -94,7 +94,7 @@ class Maine(State):
             "identifier": "132",
             "name": "132nd Legislature (2025-2026)",
             "start_date": "2024-12-04",
-            "end_date": "2025-06-18",
+            "end_date": "2026-04-29",
             "active": True,
         },
     ]
