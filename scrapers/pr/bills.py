@@ -50,13 +50,20 @@ class PRBillScraper(Scraper):
     # for paginating
     last_page = None
 
+    # measure codes from the site's "Tipo de Medida" list; a trailing C is the
+    # Cámara, a trailing S (and NM) the Senado
     bill_types = {
-        "P": "bill",
-        "R": "resolution",
-        "RK": "concurrent resolution",
-        "RC": "joint resolution",
+        "PC": "bill",
+        "PS": "bill",
+        "PRC": "bill",
+        "PRS": "bill",
+        "RC": "resolution",
+        "RS": "resolution",
+        "RCC": "joint resolution",
+        "RCS": "joint resolution",
+        "RKC": "concurrent resolution",
+        "RKS": "concurrent resolution",
         "NM": "appointment",
-        # 'PR': 'plan de reorganizacion',
     }
 
     def clean_name(self, name):
@@ -69,20 +76,14 @@ class PRBillScraper(Scraper):
     # window_start / window_end - Show bills updated between start and end. Format Y-m-d
     # window_end is optional, defaults to today if window_start is set
     # tipo is leg type: PC, PS, etc. See "Tipo de Medida" on the search form
-    def scrape(self, session=None, chamber=None, page=None):
+    def scrape(self, session=None):
         self.seen_votes = set()
         self.seen_bills = set()
         self.seen_bill_identifiers = set()
         self.author_names = {}
-        chambers = [chamber] if chamber is not None else ["upper", "lower"]
-        for chamber in chambers:
-            yield from self.scrape_search_results(
-                chamber,
-                session,
-                page,
-            )
+        yield from self.scrape_search_results(session)
 
-    def scrape_search_results(self, chamber, session, page=None):
+    def scrape_search_results(self, session):
         cuatrienio_id = session[0:4]
         headers = {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -120,7 +121,7 @@ class PRBillScraper(Scraper):
                 # bill_rid = '122472'
                 bill_url = "https://sutra.oslpr.org{}".format(row)
                 if bill_url not in self.seen_bills:
-                    yield from self.scrape_bill(chamber, session, bill_url)
+                    yield from self.scrape_bill(session, bill_url)
                     self.seen_bills.add(bill_url)
 
     def classify_action(self, action_text):
@@ -128,12 +129,6 @@ class PRBillScraper(Scraper):
             if re.match(pattern, action_text):
                 return [action_actor, atype]
         return ["", None]
-
-    def classify_bill_type(self, bill_id):
-        for abbr, value in self.bill_types.items():
-            if bill_id.startswith(abbr):
-                return value
-        return None
 
     def classify_media_type(self, url):
         url = url.lower()
@@ -358,7 +353,7 @@ class PRBillScraper(Scraper):
             # else:
             self.parse_version(bill, row)
 
-    def scrape_bill(self, chamber, session, url):
+    def scrape_bill(self, session, url):
         headers = {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "cache-control": "max-age=0",
@@ -394,7 +389,9 @@ class PRBillScraper(Scraper):
         else:
             self.seen_bill_identifiers.add(bill_id)
 
-        bill_type = self.classify_bill_type(bill_id)
+        code = re.match(r"[A-Z]+", bill_id).group()
+        bill_type = self.bill_types.get(code)
+        chamber = "lower" if code.endswith("C") else "upper"
 
         bill = Bill(
             bill_id,
