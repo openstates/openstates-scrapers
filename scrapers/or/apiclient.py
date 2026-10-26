@@ -71,12 +71,10 @@ class OregonLegislatorODataClient(object):
             try:
                 response = self.scraper.get(url, *requests_args, **requests_kwargs)
             except requests.exceptions.RequestException as e:
-                err, string = e.args
                 print("warn: retry")
                 tries += 1
                 if tries >= num_bad_packets_allowed:
-                    print(err, string)
-                    raise RuntimeError("Received too many bad packets from API.")
+                    raise RuntimeError("Received too many bad packets from API.") from e
 
         response = response.json()["value"]
         if page and len(response) > 0:
