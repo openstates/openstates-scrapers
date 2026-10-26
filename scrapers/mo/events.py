@@ -206,8 +206,7 @@ class MOEventScraper(Scraper, LXMLMixin):
 
         # some times have extra info after the AM/PM
         if "upon" in when_time:
-            when_time = when_time.split("AM", 1)[0]
-            when_time = when_time.split("PM", 1)[0]
+            when_time = re.sub(r"(AM|PM).*", r"\1", when_time)
 
         # fix '- Upcoming', '- In Progress'  in dates
         when_date = re.sub(r"- (.*)", "", when_date).strip()

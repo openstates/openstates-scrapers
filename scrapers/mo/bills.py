@@ -14,9 +14,11 @@ from functools import lru_cache
 
 bill_types = {
     "HB ": "bill",
+    "HR ": "resolution",
     "HJR": "joint resolution",
     "HCR": "concurrent resolution",
     "SB ": "bill",
+    "SR ": "resolution",
     "SJR": "joint resolution",
     "SCR": "concurrent resolution",
 }
@@ -54,7 +56,7 @@ class MOBillScraper(Scraper, LXMLMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        super(Scraper, self).__init__(header_func=self.custom_header_func)
+        self._header_func = self.custom_header_func
 
     def _get_action(self, actor, action):
         # Alright. This covers both chambers and everything else.
@@ -144,7 +146,7 @@ class MOBillScraper(Scraper, LXMLMixin):
     def _scrape_senate_subjects(self, session: str):
         self.info("Collecting subject tags from upper chamber")
 
-        subject_list_url = f"https://www.senate.mo.gov/BillTracking/bills/keywords?year={session}&session={self.session_type(session)}"
+        subject_list_url = f"https://www.senate.mo.gov/BillTracking/bills/keywords?year={session[:4]}&session={self.session_type(session)}"
         page = self.lxmlize(subject_list_url)
 
         for row in page.xpath(
@@ -197,16 +199,9 @@ class MOBillScraper(Scraper, LXMLMixin):
             '//div[contains(@class, "detail-grid__item") and contains(string(.), "LR Number")]/div[1]'
         )[0].text_content()
 
-        bill_type = "bill"
-        triplet = bill_id_and_meta_string[:3]
-        if triplet in bill_types:
-            bill_type = bill_types[triplet]
-
-        subs = []
+        bill_type = bill_types.get(bill_identifier[:3], "bill")
+        subs = self._subjects.get(bill_identifier, [])
         bid = bill_id_and_meta_string.replace(" ", "")
-
-        if bid in self._subjects:
-            subs = self._subjects[bid]
 
         if bid == "XXXXXX":
             self.warning(f"Skipping Junk Bill {bid}")
@@ -352,7 +347,7 @@ class MOBillScraper(Scraper, LXMLMixin):
     def _scrape_upper_chamber(self, session):
         self.info("Scraping bills from upper chamber.")
 
-        index_url = f"https://www.senate.mo.gov/BillTracking/Bills/BillList?year={session}&session={self.session_type(session)}"
+        index_url = f"https://www.senate.mo.gov/BillTracking/Bills/BillList?year={session[:4]}&session={self.session_type(session)}"
 
         index_page = self.get(index_url).text
         index_page = lxml.html.fromstring(index_page)
@@ -547,14 +542,25 @@ class MOBillScraper(Scraper, LXMLMixin):
                     rc_present = ""
                 action_title = f"{action_title} - AYES: {rc_yes} NOES: {rc_no} PRESENT: {rc_present}"
 
+                # the action text doesn't always say which chamber voted,
+                # e.g. "Truly Agreed To and Finally Passed" on a Senate roll call
+                if action.xpath("./SenateJournalStartPage"):
+                    vote_chamber = "upper"
+                elif action.xpath("./HouseJournalStartPage"):
+                    vote_chamber = "lower"
+                else:
+                    vote_chamber = actor
                 vote = VoteEvent(
-                    chamber=actor,
+                    chamber=vote_chamber,
                     motion_text=action_title,
                     result="pass" if int(rc_yes or 0) > int(rc_no or 0) else "fail",
                     classification="passage",
                     start_date=TIMEZONE.localize(action_date),
                     bill=bill,
                 )
+                vote.set_count("yes", int(rc_yes or 0))
+                vote.set_count("no", int(rc_no or 0))
+                vote.set_count("other", int(rc_present or 0))
 
                 vote.add_source(action_url)
                 votes.append(vote)
