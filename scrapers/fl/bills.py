@@ -119,15 +119,44 @@ class SubjectPDF(PdfPage):
         if a line contains (H|S)(\\d+) that bill gets current subject
         """
         subjects = defaultdict(set)
-        SUBJ_RE = re.compile("^[A-Z ,()]+$")
+        SUBJ_RE = re.compile(r"^[A-Z(][A-Z0-9 ,;()/'-]+$")
         BILL_RE = re.compile(r"[HS]\d+(?:-[A-Z])?")
+        # repeated on every page
+        PAGE_LINES = {"FLORIDA LEGISLATURE", "SUBJECT INDEX", "CONTINUED ON NEXT PAGE"}
+
+        def is_heading(line):
+            return (
+                SUBJ_RE.match(line)
+                and not BILL_RE.search(line)
+                and line not in PAGE_LINES
+            )
+
+        lines = [
+            line.strip().removesuffix(" (Cont.)") for line in self.text.splitlines()
+        ]
+        # Long headings wrap onto a second line, and where pdftotext interleaves
+        # two columns the halves are apart. Each heading is also listed whole,
+        # so map a first half to the whole heading and skip a second half.
+        headings = {line for line in lines if is_heading(line)}
+        halves = {}
+        for h in headings:
+            for i, c in enumerate(h):
+                if c == " " and h[:i] in headings and h[i + 1 :] in headings:
+                    halves[h[:i]] = h
+                    halves[h[i + 1 :]] = None
 
         subject = None
-
-        for line in self.text.splitlines():
-            if SUBJ_RE.match(line):
-                subject = line.lower().strip()
-            elif subject and BILL_RE.findall(line):
+        heading = None
+        for line in lines:
+            if is_heading(line):
+                heading = f"{heading} {line}" if heading else line
+                name = halves.get(heading, heading)
+                # a lone "(VETOED)" or "(ADOPTED)" ends a wrapped bill line
+                if name and not name.startswith("("):
+                    subject = name.lower()
+                continue
+            heading = None
+            if subject:
                 for bill in BILL_RE.findall(line):
                     # normalize bill id to [SH]#
                     bill = bill.replace("-", "")
@@ -208,6 +237,14 @@ class BillDetail(HtmlPage):
 
     def get_source_from_input(self):
         return URL(self.input.sources[0]["url"], verify=False)
+
+    def _to_items(self, scraper, **kwargs):
+        # spatula fetches this page and its vote pages inside the BillList
+        # generator, so an error here would end the whole session's scrape
+        try:
+            yield from super()._to_items(scraper, **kwargs)
+        except Exception as e:
+            self.logger.error(f"Skipping rest of {self.input.identifier}: {e!r}")
 
     def process_page(self):
         if self.root.xpath("//div[@id = 'tabBodyBillHistory']//table"):
@@ -445,7 +482,7 @@ class BillDetail(HtmlPage):
                     vote_date = tr.xpath("string(td[2])").strip()
                 try:
                     vote_date = datetime.datetime.strptime(
-                        vote_date, "%m/%d/%Y %H:%M %p"
+                        vote_date, "%m/%d/%Y %I:%M %p"
                     )
                 except ValueError:
                     self.logger.logger.warning("bad vote date: {}".format(vote_date))
