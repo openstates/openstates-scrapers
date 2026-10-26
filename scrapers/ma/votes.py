@@ -18,16 +18,25 @@ class VoteTotalMismatch(Exception):
 
 class MAVoteScraper(Scraper):
     def scrape(self, session=None):
-        yield from HouseJournalDirectory(session=session).do_scrape()
+        speaker = next(
+            (
+                s.get("extras", {}).get("house_speaker")
+                for s in self.jurisdiction.legislative_sessions
+                if s["identifier"] == session
+            ),
+            None,
+        )
+        yield from HouseJournalDirectory(session=session, speaker=speaker).do_scrape()
         yield from SenateJournalDirectory(session=session).do_scrape()
 
 
 class HouseJournalDirectory(HtmlPage):
     source = URL("https://malegislature.gov/Journal/House/", verify=False)
 
-    def __init__(self, source=None, session=None):
+    def __init__(self, source=None, session=None, speaker=None):
         super().__init__(source=source or self.source)
         self.session = session
+        self.speaker = speaker
 
     def process_page(self):
         # find all links to a file called RollCalls
@@ -37,7 +46,7 @@ class HouseJournalDirectory(HtmlPage):
         ]
         for rc in roll_calls:
             vote_events = HouseRollCall(
-                source=URL(rc, verify=False), session=self.session
+                source=URL(rc, verify=False), session=self.session, speaker=self.speaker
             ).do_scrape()
             for vote_event in vote_events:
                 vote_event.add_source(self.source.url, note="House journal listing")
@@ -375,7 +384,8 @@ class HouseVoteRecordParser:
     )
     time_re = re.compile(r"\d{2}/\d{2}/\d{4} \d{1,2}:\d{2} [AP]M")
 
-    def __init__(self, vote_text, session=None):
+    def __init__(self, vote_text, session=None, speaker=None):
+        self.speaker = speaker
         self.votes = []
         self.names = []
         self.time = None
@@ -422,8 +432,12 @@ class HouseVoteRecordParser:
         # Roll grid. "*" marks a vote cast after the roll closed, and some
         # names are printed as "--Name--". Neither mark is part of the name.
         for vote_val, name in self.cell_re.findall(line):
+            name = name.rstrip(" *").replace("--", "")
+            # The rolls list the presiding officer as "Mr. Speaker"
+            if name == "Mr. Speaker":
+                name = self.speaker or name
             self.votes.append(vote_val)
-            self.names.append(name.rstrip(" *").replace("--", ""))
+            self.names.append(name)
 
     # Raises an error or writes warning to logger. Returns true if data is valid
     def error_if_invalid(self):
@@ -492,9 +506,10 @@ class HouseRollCall(PdfPage):
     # which needs the columns kept in place.
     preserve_layout = True
 
-    def __init__(self, source, session=None):
+    def __init__(self, source, session=None, speaker=None):
         super().__init__(source=source)
         self.session = session
+        self.speaker = speaker
 
     def process_page(self):
         # Each bill vote starts with the same text, so use it as a separator.
@@ -504,7 +519,9 @@ class HouseRollCall(PdfPage):
         vote_text = self.text.split(separator)[1:]
 
         for vote in vote_text:
-            vote_parser = HouseVoteRecordParser(vote, session=self.session)
+            vote_parser = HouseVoteRecordParser(
+                vote, session=self.session, speaker=self.speaker
+            )
             if (warning := vote_parser.get_warning()) is not None:
                 self.logger.warning(warning)
             else:

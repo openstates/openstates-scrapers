@@ -127,6 +127,7 @@ class Massachusetts(State):
             "start_date": "2025-01-01",
             "end_date": "2026-07-31",
             "active": True,
+            "extras": {"house_speaker": "Mariano"},
         },
     ]
     ignored_scraped_sessions = ["185th"]
