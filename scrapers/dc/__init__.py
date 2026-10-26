@@ -1,5 +1,5 @@
 import os
-import requests
+import scrapelib
 from openstates.scrape import State
 from .bills import DCBillScraper
 from .events import DCEventScraper
@@ -93,12 +93,11 @@ class DistrictOfColumbia(State):
             "Accept": "application/json",
             "User-Agent": useragent,
         }
-        resp = requests.get(
+        resp = scrapelib.Scraper().get(
             "https://lims.dccouncil.gov/api/v2/PublicData/CouncilPeriods",
             headers=headers,
-            verify=False,
+            timeout=60,
         )
-        resp.raise_for_status()
         sessions = []
         for session in resp.json():
             sessions.append(str(session["councilPeriodId"]))

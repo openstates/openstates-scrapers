@@ -98,13 +98,14 @@ class DCBillScraper(Scraper):
                         is_version = False
                         # figure out if it's a version from type/name
                         possible_version_types = [
-                            "SignedAct",
+                            "Signed Act",
                             "Introduction",
                             "Enrollment",
                             "Engrossment",
                         ]
                         for vt in possible_version_types:
-                            if vt.lower() in download.lower():
+                            # URLs spell it "/Signed_Act/"
+                            if vt.replace(" ", "_").lower() in download.lower():
                                 is_version = True
                                 doc_type = vt
 
@@ -211,15 +212,19 @@ class DCBillScraper(Scraper):
                                     else get_media_type(act["attachment"])
                                 )
                                 is_version = False
+                                doc_type = action_name
                                 # figure out if it's a version from type/name
                                 possible_version_types = [
-                                    "SignedAct",
+                                    "Signed Act",
                                     "Introduction",
                                     "Enrollment",
                                     "Engrossment",
                                 ]
                                 for vt in possible_version_types:
-                                    if vt.lower() in act["attachment"].lower():
+                                    if (
+                                        vt.replace(" ", "_").lower()
+                                        in act["attachment"].lower()
+                                    ):
                                         is_version = True
                                         doc_type = vt
 
