@@ -218,11 +218,10 @@ class AKBillScraper(Scraper):
         doc_list_url = (
             f"https://www.akleg.gov/basis/Bill/Detail/{session}?Root={bill_id}#tab5_4"
         )
-        doc_list = lxml.html.fromstring(self.get(doc_list_url).text)
-        doc_list.make_links_absolute(doc_list_url)
         bill.add_source(doc_list_url)
         seen = set()
-        for href in doc_list.xpath('//a[contains(@href, "get_documents")][@onclick]'):
+        # the fragment isn't sent, so the documents tab is already in doc
+        for href in doc.xpath('//a[contains(@href, "get_documents")][@onclick]'):
             h_name = str(href.text_content()).replace(".pdf", "")
             doc_link_url = href.attrib["href"]
             if h_name.strip() and doc_link_url not in seen:
