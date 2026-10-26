@@ -100,7 +100,7 @@ class Vermont(State):
             "identifier": "2023-2024",
             "name": "2023-2024 Regular Session",
             "start_date": "2023-01-04",
-            "end_date": "2025-05-09",
+            "end_date": "2024-06-17",
             "active": False,
         },
         {
@@ -109,7 +109,7 @@ class Vermont(State):
             "identifier": "2025-2026",
             "name": "2025-2026 Regular Session",
             "start_date": "2025-01-08",
-            "end_date": "2025-05-08",
+            "end_date": "2026-05-29",
             "active": True,
         },
     ]
