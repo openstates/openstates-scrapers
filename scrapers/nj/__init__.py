@@ -1,4 +1,4 @@
-import requests
+import scrapelib
 from openstates.scrape import State
 from .bills import NJBillScraper
 from .events import NJEventScraper
@@ -101,7 +101,7 @@ class NewJersey(State):
     def get_session_list(self):
         return [
             s["display"]
-            for s in requests.get(
-                "https://www.njleg.state.nj.us/api/downloads/sessions", verify=False
-            ).json()
+            for s in scrapelib.Scraper(retry_attempts=3)
+            .get("https://www.njleg.state.nj.us/api/downloads/sessions", timeout=60)
+            .json()
         ]

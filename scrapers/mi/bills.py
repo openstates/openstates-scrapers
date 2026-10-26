@@ -43,7 +43,6 @@ def categorize_action(action: str) -> str:
 
 class MIBillScraper(Scraper):
     headers = {}
-    verify = False
 
     # convert from MI's redirector to a bill permalink
     def make_bill_url(self, url: str) -> str:

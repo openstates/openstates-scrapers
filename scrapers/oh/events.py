@@ -131,7 +131,7 @@ class OHEventScraper(Scraper):
                 try:
                     for bill_id in Agenda(
                         source=URL(agenda_url, headers=headers)
-                    ).do_scrape():
+                    ).do_scrape(scraper=self):
                         agenda_bill_ids.append(bill_id)
                 except HTTPError:
                     self.warning(

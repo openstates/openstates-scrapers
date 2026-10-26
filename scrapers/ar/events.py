@@ -89,7 +89,7 @@ class AREventScraper(Scraper):
                 event.add_document("Agenda", agenda_url, media_type="application/pdf")
 
                 # Scrape bill ids from agenda pdf
-                for bill in Agenda(source=URL(agenda_url)).do_scrape():
+                for bill in Agenda(source=URL(agenda_url)).do_scrape(scraper=self):
                     event.add_bill(bill)
 
             if row.xpath(".//a[@aria-label='Play Video']"):
