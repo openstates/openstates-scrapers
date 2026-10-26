@@ -59,7 +59,7 @@ class Alaska(State):
             "identifier": "34",
             "name": "34th Legislature (2025-2026)",
             "start_date": "2025-01-21",
-            "end_date": "2025-05-21",
+            "end_date": "2026-05-20",
             "active": True,
         },
     ]
