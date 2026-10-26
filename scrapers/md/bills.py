@@ -3,8 +3,7 @@ import datetime
 import pytz
 
 import lxml.html
-from openstates.scrape import Scraper, Bill, VoteEvent
-from openstates.utils import convert_pdf
+from openstates.scrape import Scraper, Bill
 
 # http://mgaleg.maryland.gov/mgawebsite/Legislation/Details/hb0060?ys=2019RS&search=True
 # # passed all
@@ -37,8 +36,6 @@ classifiers = {
     r"Became law": "became-law",
 }
 
-vote_classifiers = {r"third": "passage", r"fla|amend|amd": "amendment"}
-
 
 def _classify_action(action):
     if not action:
@@ -59,249 +56,6 @@ class MDBillScraper(Scraper):
     BASE_URL = "http://mgaleg.maryland.gov/mgawebsite/"
     CHAMBERS = {"upper": "senate", "lower": "house"}
 
-    SESSION_IDS = {"2020": "2020rs"}
-
-    def parse_bill_votes(self, doc, bill):
-        elems = doc.xpath("//a")
-
-        # MD has a habit of listing votes twice
-        seen_votes = set()
-
-        for elem in elems:
-            href = elem.get("href")
-            if (
-                href
-                and "votes" in href
-                and href.endswith("htm")
-                and href not in seen_votes
-            ):
-                seen_votes.add(href)
-                vote = self.parse_vote_page(href, bill)
-                vote.add_source(href)
-                yield vote
-
-    def parse_bill_votes_new(self, doc, bill):
-        elems = doc.xpath("//table[@class='billdocs']//a")
-        # MD has a habit of listing votes twice
-        seen_votes = set()
-
-        for elem in elems:
-            href = elem.get("href")
-            if (
-                href
-                and "votes" in href
-                and href.endswith("pdf")
-                and ("Senate" in href or "House" in href)
-                and href not in seen_votes
-            ):
-                seen_votes.add(href)
-                vote = self.parse_vote_pdf(href, bill)
-                vote.add_source(href)
-                yield vote
-
-    def parse_vote_pdf(self, vote_url, bill):
-
-        filename, response = self.urlretrieve(vote_url)
-
-        text = convert_pdf(filename, type="text").decode()
-        lines = text.splitlines()
-
-        if "Senate" in vote_url:
-            chamber = "upper"
-        else:
-            chamber = "lower"
-
-        date_string = lines[0].split("Calendar Date:")[1].strip()
-        date = datetime.datetime.strptime(date_string, "%b %d, %Y %I:%M (%p)")
-
-        page_index = None
-        for index, line in enumerate(lines):
-            if "Yeas" in line and "Nays" in line:
-                page_index = index
-                break
-
-        vote_counts = 5 * [0]
-        vote_types = ["yes", "no", "not voting", "excused", "absent"]
-
-        if page_index:
-
-            counts = re.split(r"\s{2,}", lines[page_index].strip())
-
-            for index, count in enumerate(counts):
-                number, string = count.split(" ", 1)
-                number = int(number)
-                vote_counts[index] = number
-        else:
-            raise ValueError("Vote Counts Not found at %s" % vote_url)
-
-        passed = vote_counts[0] > vote_counts[1]
-
-        # Consent calendar votes address multiple bills in one VoteEvent
-        # eg, http://mgaleg.maryland.gov/2018RS/votes/Senate/0478.pdf
-        is_consent_calendar = any(
-            ["Consent Calendar" in line for line in lines[:page_index]]
-        )
-        consent_calendar_bills = None
-        motion = ""
-        if is_consent_calendar:
-            motion = re.split(r"\s{2,}", lines[page_index - 4].strip())[0]
-            consent_calendar_bills = re.split(r"\s{2,}", lines[page_index - 1].strip())
-            assert (
-                consent_calendar_bills
-            ), "Could not find bills for consent calendar vote"
-
-        motion_keywords = [
-            "favorable",
-            "reading",
-            "amendment",
-            "motion",
-            "introduced",
-            "bill pass",
-            "committee",
-        ]
-        motion_lines = [
-            3,
-            2,
-            4,
-            5,
-        ]  # Relative LineNumbers to be checked for existence of motion
-
-        for i in motion_lines:
-            if any(
-                motion_keyword in motion.lower() for motion_keyword in motion_keywords
-            ):
-                break
-            motion = re.split(r"\s{2,}", lines[page_index - i].strip())[0]
-        else:
-            if not any(
-                motion_keyword in motion.lower() for motion_keyword in motion_keywords
-            ):
-                # This condition covers for the bad formatting in SB 1260
-                motion = lines[page_index - 3]
-            if not any(
-                motion_keyword in motion.lower() for motion_keyword in motion_keywords
-            ):
-                # Check this one for SB 747
-                motion = "No motion given"
-                self.warning("No motion given")
-
-        vote = VoteEvent(
-            bill=bill,
-            chamber=chamber,
-            start_date=date.strftime("%Y-%m-%d"),
-            motion_text=motion,
-            classification="passage",
-            result="pass" if passed else "fail",
-        )
-
-        # Include bill ID to avoid duplication for consent calendars
-        vote.dedupe_key = "{}#{}".format(vote_url, bill.identifier)
-
-        for index, vote_type in enumerate(vote_types):
-            vote.set_count(vote_type, vote_counts[index])
-        page_index = page_index + 2
-
-        # Keywords for identifying where names are located in the pdf
-        show_stoppers = [
-            "Voting Nay",
-            "Not Voting",
-            "COPY",
-            "Excused",
-            "indicates vote change",
-            "Indicates Vote Change",
-        ]
-        vote_index = 0
-
-        # For matching number of names extracted with vote counts(extracted independently)
-        vote_name_counts = 5 * [0]
-
-        while page_index < len(lines):
-
-            current_line = lines[page_index].strip()
-
-            if not current_line or "Voting Yea" in current_line:
-                page_index += 1
-                continue
-
-            if any(show_stopper in current_line for show_stopper in show_stoppers):
-                page_index += 1
-                vote_index = vote_index + 1
-                continue
-
-            names = re.split(r"\s{2,}", current_line)
-
-            vote_name_counts[vote_index] += len(names)
-
-            for name in names:
-                vote.vote(vote_types[vote_index], name)
-            page_index += 1
-
-        if vote_counts != vote_name_counts:
-            raise ValueError("Votes Count and Number of Names don't match")
-
-        return vote
-
-    def parse_vote_page(self, vote_url, bill):
-        vote_html = self.get(vote_url).text
-        doc = lxml.html.fromstring(vote_html)
-        # chamber
-        if "senate" in vote_url:
-            chamber = "upper"
-        else:
-            chamber = "lower"
-
-        # date in the following format: Mar 23, 2009
-        date = doc.xpath('//td[starts-with(text(), "Legislative")]')[0].text
-        date = date.replace("\xa0", " ")
-        date = datetime.datetime.strptime(date[18:], "%b %d, %Y")
-
-        # motion
-        motion = "".join(x.text_content() for x in doc.xpath('//td[@colspan="23"]'))
-        if motion == "":
-            motion = "No motion given"  # XXX: Double check this. See SJ 3.
-        motion = motion.replace("\xa0", " ")
-
-        # totals
-        tot_class = doc.xpath('//td[contains(text(), "Yeas")]')[0].get("class")
-        totals = doc.xpath('//td[@class="%s"]/text()' % tot_class)[1:]
-        yes_count = int(totals[0].split()[-1])
-        no_count = int(totals[1].split()[-1])
-        other_count = int(totals[2].split()[-1])
-        other_count += int(totals[3].split()[-1])
-        other_count += int(totals[4].split()[-1])
-        passed = yes_count > no_count
-
-        vote = VoteEvent(
-            bill=bill,
-            chamber=chamber,
-            start_date=date.strftime("%Y-%m-%d"),
-            motion_text=motion,
-            classification="passage",
-            result="pass" if passed else "fail",
-        )
-        vote.dedupe_key = vote_url  # contains sequence number
-        vote.set_count("yes", yes_count)
-        vote.set_count("no", no_count)
-        vote.set_count("other", other_count)
-
-        # go through, find Voting Yea/Voting Nay/etc. and next tds are voters
-        func = None
-        for td in doc.xpath("//td/text()"):
-            td = td.replace("\xa0", " ")
-            if td.startswith("Voting Yea"):
-                func = vote.yes
-            elif td.startswith("Voting Nay"):
-                func = vote.no
-            elif td.startswith("Not Voting"):
-                func = vote.other
-            elif td.startswith("Excused"):
-                func = vote.other
-            elif func:
-                td = td.rstrip("*")
-                func(td)
-
-        return vote
-
     def scrape_bill_actions(self, bill, page):
         chamber_map = {"Senate": "upper", "House": "lower", "Post Passage": "executive"}
         for row in page.xpath('//table[@id="detailsHistory"]/tbody/tr'):
@@ -314,18 +68,14 @@ class MDBillScraper(Scraper):
                 action_date = datetime.datetime.strptime(action_date, "%m/%d/%Y")
                 action_text = row.xpath("td[4]/text()")[0].strip()
                 atype, committee = _classify_action(action_text)
-                related = (
-                    [{"type": "committee", "name": committee}]
-                    if committee is not None
-                    else []
-                )
-                bill.add_action(
+                action = bill.add_action(
                     action_text,
                     action_date.strftime("%Y-%m-%d"),
                     chamber=chamber,
                     classification=atype,
-                    related_entities=related,
                 )
+                if committee:
+                    action.add_related_entity(committee, "organization")
             elif row.xpath("td[4]/a"):
                 link = row.xpath("td[4]/a")[0]
                 link_text = link.text_content().strip()
@@ -480,12 +230,7 @@ class MDBillScraper(Scraper):
                 relation_type="prior-session",
             )
 
-        # yield from self.parse_bill_votes_new(doc, bill)
         yield bill
-
-    def remove_leading_dash(self, string):
-        string = string[3:] if string.startswith(" - ") else string
-        return string.strip()
 
     def scrape(self, chamber=None, session=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
