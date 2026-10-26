@@ -6,6 +6,7 @@ from utils.events import match_coordinates
 from spatula import HtmlPage, URL, XPath, SelectorError, PdfPage
 
 import dateutil
+from dateutil import tz
 import pytz
 import re
 
@@ -37,7 +38,7 @@ class AgendaHtml(HtmlPage):
                 # Skip floor session
                 if "floor" in page.text_content().lower():
                     continue
-                yield from AgendaHtml(source=URL(page.get("href"))).do_scrape()
+                yield AgendaHtml(source=URL(page.get("href")))
 
         except SelectorError:
             # The page contains a list of bills and has
@@ -55,7 +56,7 @@ class AgendaPdf(PdfPage):
 class TNEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Central")
     _utc = pytz.timezone("UTC")
-    _tzmapping = {"CST": "US/Central"}
+    _tzmapping = {"CST": tz.gettz("US/Central"), "CDT": tz.gettz("US/Central")}
 
     def scrape(self, chamber=None):
         if chamber:
@@ -172,7 +173,9 @@ class TNEventScraper(Scraper, LXMLMixin):
                                 media_type="application/pdf",
                                 on_duplicate="ignore",
                             )
-                            for bill in AgendaPdf(source=agenda_url).do_scrape():
+                            for bill in AgendaPdf(source=agenda_url).do_scrape(
+                                scraper=self
+                            ):
                                 event.add_bill(bill)
                         else:
                             event.add_document(
@@ -184,7 +187,9 @@ class TNEventScraper(Scraper, LXMLMixin):
                             event.dedupe_key = re.search(
                                 r"ID=(\d*)&", agenda_url
                             ).group(1)
-                            for bill in AgendaHtml(source=agenda_url).do_scrape():
+                            for bill in AgendaHtml(source=agenda_url).do_scrape(
+                                scraper=self
+                            ):
                                 event.add_bill(bill)
 
                     match_coordinates(event, {"600 Dr. Martin": (36.16633, -86.78418)})
