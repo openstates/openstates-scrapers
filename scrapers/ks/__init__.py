@@ -100,7 +100,7 @@ class Kansas(State):
             "identifier": "2025-2026",
             "name": "2025-2026 Regular Session",
             "start_date": "2025-01-13",
-            "end_date": "2025-05-06",
+            "end_date": "2026-04-10",
             "active": True,
         },
     ]
