@@ -5,8 +5,8 @@ import lxml.html
 
 from ..bills import (
     version_folder_code,
-    version_html_url_template,
-    version_pdf_url_template,
+    _VERSION_HTML_URL_TEMPLATE as version_html_url_template,
+    _VERSION_PDF_URL_TEMPLATE as version_pdf_url_template,
 )
 
 here = os.path.dirname(__file__)

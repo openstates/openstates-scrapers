@@ -21,6 +21,19 @@ SITE_IDS = {
 }
 
 
+def classify_motion(motion):
+    motion = motion.lower()
+    if "rules be suspended" in motion:
+        return []
+    if "notwithstanding" in motion:
+        return ["veto-override"]
+    if "amendment" in motion or "concur" in motion:
+        return ["amendment"]
+    if "pass?" in motion or "resolution be adopted" in motion:
+        return ["passage"]
+    return []
+
+
 class IAVoteScraper(Scraper):
     def scrape(self, chamber=None, session=None):
         event_count = 0
@@ -103,22 +116,25 @@ class IAVoteScraper(Scraper):
         # Do not process headers or completely empty lines
         header_date_re = re.compile(r"\d+\w{2} Day\s+\w+DAY, \w+ \d{1,2}, \d{4}\s+\d+")
         header_journal_re = re.compile(r"\d+\s+JOURNAL OF THE \w+\s+\d+\w{2} Day")
-        lines = iter(
-            [
-                line
-                for line in lines
-                if not (
-                    line == ""
-                    or header_date_re.match(line)
-                    or header_journal_re.match(line)
-                )
-            ]
-        )
+        bill_re = re.compile(r"\(\s*([A-Z\.]+\s\d+)\s*\)")
+        merged = []
+        for line in lines:
+            if (
+                line == ""
+                or header_date_re.match(line)
+                or header_journal_re.match(line)
+            ):
+                continue
+            # A long House motion can push its "(H.F. 123)" onto the next line
+            if merged and bill_re.fullmatch(line):
+                merged[-1] += " " + line
+            else:
+                merged.append(line)
+        lines = iter(merged)
 
         # bill_id -> motion -> count
         motions_per_bill = collections.defaultdict(collections.Counter)
 
-        bill_re = re.compile(r"\(\s*([A-Z\.]+\s\d+)\s*\)")
         chamber_motion_re = {
             "upper": re.compile(r".* the vote was:\s*"),
             "lower": re.compile(r'.*Shall.*(?:\?"?|")(\s{bill_re.pattern})?\s*'),
@@ -206,7 +222,7 @@ class IAVoteScraper(Scraper):
                 start_date=date,
                 motion_text=motion_text,
                 result=result,
-                classification="passage",
+                classification=classify_motion(motion_text),
                 legislative_session=session,
                 bill=bill_id,
                 bill_chamber=bill_chamber,
