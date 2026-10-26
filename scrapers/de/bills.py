@@ -21,8 +21,6 @@ class FailedBillFetch:
 
 
 class DEBillScraper(Scraper, LXMLMixin):
-    verify = False
-
     base_url = "https://legis.delaware.gov"
 
     categorizer = Categorizer()
@@ -149,7 +147,12 @@ class DEBillScraper(Scraper, LXMLMixin):
                 self.info("Found no more bills in pagination")
                 break
             for bill in page["Data"]:
-                bills_and_votes.extend(list(self.scrape_bill(bill, session)))
+                try:
+                    bills_and_votes.extend(list(self.scrape_bill(bill, session)))
+                except (JSONDecodeError, RequestsJSONDecodeError):
+                    bills_and_votes.append(
+                        FailedBillFetch(bill["LegislationDisplayCode"], "json")
+                    )
             page_number += 1
             if end_page and page_number > end_page:
                 self.info(
