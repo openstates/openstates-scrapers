@@ -450,6 +450,13 @@ class OKBillScraper(Scraper):
                 line = sib.xpath("string()").strip()
                 if "*****" in line or "motion by" in line:
                     break
+                # House headers state the result above the tally, e.g.
+                # "FAILED" / "EMERGENCY" when a two-thirds vote falls short.
+                if not seen_yes and passed is None:
+                    if re.search(r"\bFAILED\b", line):
+                        passed = False
+                    elif re.search(r"\bPASSED\b", line):
+                        passed = True
                 regex = (
                     r"(YEAS|AYES|NAYS|EXCUSED|VACANT|VACANCY|CONSTITUTIONAL "
                     r"PRIVILEGE|NOT VOTING|N/V)\s*:\s*(\d+)(.*)"
