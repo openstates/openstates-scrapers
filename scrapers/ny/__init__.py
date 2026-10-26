@@ -1,5 +1,6 @@
 import os
 import requests
+import scrapelib
 
 from datetime import datetime
 from openstates.scrape import State
@@ -91,11 +92,18 @@ class NewYork(State):
         end_year = current_year if current_year % 2 == 1 else current_year + 1
 
         listed_sessions = []
-        api_key = os.environ["NEW_YORK_API_KEY"]
+        params = {"key": os.environ["NEW_YORK_API_KEY"]}
+        scraper = scrapelib.Scraper(raise_errors=False)
         for start_year in range(2007, end_year + 1, 2):
-            response = requests.get(
-                f"https://legislation.nysenate.gov/api/3/bills/{start_year}?limit=1&offset=1&full=True&sort=&key={api_key}"
-            )
+            try:
+                response = scraper.get(
+                    f"https://legislation.nysenate.gov/api/3/bills/{start_year}?limit=1&offset=1&full=True&sort=",
+                    params=params,
+                    timeout=60,
+                )
+            except requests.RequestException as e:
+                # error messages include the full URL, key and all
+                raise RuntimeError(str(e).replace(params["key"], "<key>")) from None
             if response.status_code == 200:
                 data = response.json()["result"]["items"]
                 if len(data) >= 1:
