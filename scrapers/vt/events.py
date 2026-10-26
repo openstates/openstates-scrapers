@@ -103,7 +103,7 @@ class VTEventScraper(Scraper):
             source_url = URL(source, verify=False)
             events = VTAgendaOfWeek(source=source_url)
             try:
-                yield from events.do_scrape()
+                yield from events.do_scrape(scraper=self)
             except Exception as e:
                 self.warning(e)
                 continue
