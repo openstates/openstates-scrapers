@@ -228,6 +228,7 @@ class IAEventScraper(Scraper):
                         "location": location,
                         "status": status,
                     },
+                    "comm": comm,
                     "agenda_list": [{"agenda_item": agenda_desc, "bill": bill_id}],
                 }
             else:
@@ -256,6 +257,8 @@ class IAEventScraper(Scraper):
                 agenda.add_bill(agenda_detail["bill"])
 
             sub_comm_event.add_source(url)
-            sub_comm_event.add_participant(comm, note="host", type="committee")
+            sub_comm_event.add_participant(
+                sub_comm_meeting["comm"], note="host", type="committee"
+            )
 
             yield sub_comm_event
