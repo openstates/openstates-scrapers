@@ -168,7 +168,7 @@ class Illinois(State):
             "name": "104th Regular Session",
             "identifier": "104th",
             "start_date": "2025-01-08",
-            "end_date": "2025-05-31",
+            "end_date": "2027-01-12",
             "classification": "primary",
             "active": True,
         },

@@ -733,7 +733,7 @@ class IlBillScraper(Scraper):
 
             # manual fix for bad bill. TODO: better error catching here
             vote = self.scrape_pdf_for_votes(
-                session, actor, date, motion.strip(), link.get("href")
+                session, actor, date, motion.strip(), link.get("href"), bill.actions
             )
             if vote:
                 vote.set_bill(bill)
@@ -753,7 +753,7 @@ class IlBillScraper(Scraper):
             self.warning("404 error for vote; skipping vote")
             return False
 
-    def scrape_pdf_for_votes(self, session, actor, date, motion, href):
+    def scrape_pdf_for_votes(self, session, actor, date, motion, href, actions=()):
         warned = False
         # vote indicator, a few spaces, a name, newline or multiple spaces
         # VOTE_RE = re.compile('(Y|N|E|NV|A|P|-)\s{2,5}(\w.+?)(?:\n|\s{2})')
@@ -762,7 +762,7 @@ class IlBillScraper(Scraper):
         )
         PASS_FAIL_WORDS = {
             "PASSED": "pass",
-            "PREVAILED": "fail",
+            "PREVAILED": "pass",
             "ADOPTED": "pass",
             "CONCURRED": "pass",
             "FAILED": "fail",
@@ -853,6 +853,26 @@ class IlBillScraper(Scraper):
                     % (no_count, len(no_votes))
                 )
                 warned = True
+
+        if passed is None:
+            # Senate roll calls print no result word, so use the bill action
+            # that records the same tally, e.g. "Third Reading - Passed; 052-000-000"
+            tally = "%03d-%03d-%03d" % (yes_count, no_count, present_count)
+            results = set()
+            for action in actions:
+                text = action["description"]
+                if (
+                    str(action["date"]) != str(date)
+                    or tally not in text
+                    or actor not in action["organization_id"]
+                ):
+                    continue
+                if re.search(r"\b(Lost|Failed)\b|Non-Concur", text):
+                    results.add("fail")
+                elif re.search(r"\b(Passed|Prevailed|Adopted|Concurs)\b", text):
+                    results.add("pass")
+            if len(results) == 1:
+                passed = results.pop()
 
         if passed is None:
             if actor == "lower":  # senate doesn't have these lines
