@@ -295,8 +295,8 @@ class Mississippi(State):
             "classification": "primary",
             "identifier": "2026",
             "name": "2026 Regular Session",
-            "start_date": "2025-01-06",
-            "end_date": "2025-04-05",
+            "start_date": "2026-01-06",
+            "end_date": "2026-04-15",
             "active": True,
         },
         {
