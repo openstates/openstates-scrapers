@@ -76,14 +76,10 @@ class NMEventScraper(Scraper):
                             f"//span[@id='MainContent_{ch_name}Content_repeaterCommittees_repeaterDates_{i}_lblHearingDate_{j}']/b/text()"
                         )[0].strip()
 
-                        if page.xpath(
-                            f"//span[@id='MainContent_{ch_name}Content_repeaterCommittees_repeaterDates_{i}_lblHearingTime_0']/b/text()"
-                        ):
-                            time = page.xpath(
-                                f"//span[@id='MainContent_{ch_name}Content_repeaterCommittees_repeaterDates_{i}_lblHearingTime_{j}']/b/text()"
-                            )[0].strip()
-                        else:
-                            time = ""
+                        time = page.xpath(
+                            f"//span[@id='MainContent_{ch_name}Content_repeaterCommittees_repeaterDates_{i}_lblHearingTime_{j}']/b/text()"
+                        )
+                        time = time[0].strip() if time else ""
                         where = page.xpath(
                             f"//span[@id='MainContent_{ch_name}Content_repeaterCommittees_repeaterDates_{i}_lblRoomNumber_{j}']/b/text()"
                         )[0].strip()
