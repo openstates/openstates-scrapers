@@ -37,7 +37,7 @@ class ARBillScraper(Scraper):
         leg_chambers = [chamber] if chamber else ["upper", "lower"]
 
         for leg_chamber in leg_chambers:
-            self.scrape_bill(leg_chamber, session)
+            yield from self.scrape_bill(leg_chamber, session)
 
         self.scrape_actions()
 
@@ -100,9 +100,7 @@ class ARBillScraper(Scraper):
                 version_url = f"https://www.arkleg.state.ar.us/assembly/{year}/{self.slug}/Bills/{bill_url}.pdf"
             bill.add_version_link(bill_id, version_url, media_type="application/pdf")
 
-            # scrape_bill_page: this function is a generator so can't run this generator by simple call.
-            for _ in self.scrape_bill_page(bill):
-                pass
+            yield from self.scrape_bill_page(bill)
 
             self.bills[bill_id] = bill
 
