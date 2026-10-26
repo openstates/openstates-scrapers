@@ -77,7 +77,7 @@ class SouthCarolina(State):
             "identifier": "2025-2026",
             "name": "2025-2026 Regular Session",
             "start_date": "2025-01-14",
-            "end_date": "2025-05-08",
+            "end_date": "2026-11-08",
             "active": True,
         },
     ]
