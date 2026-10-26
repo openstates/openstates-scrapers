@@ -11,7 +11,6 @@ from utils import LXMLMixin
 class MAEventScraper(Scraper, LXMLMixin):
     _TZ = pytz.timezone("US/Eastern")
     date_format = "%m/%d/%Y"
-    verify = False
     non_session_count = 0
 
     def scrape(self, chamber=None, start=None, end=None):

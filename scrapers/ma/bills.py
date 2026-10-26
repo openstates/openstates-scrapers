@@ -15,8 +15,6 @@ requests.packages.urllib3.disable_warnings()
 
 
 class MABillScraper(Scraper):
-    verify = False
-
     categorizer = Categorizer()
     session_filters = {}
     chamber_filters = {}
@@ -34,10 +32,8 @@ class MABillScraper(Scraper):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # forcing these values so that 500s come back as skipped bills
+        # 500s come back as skipped bills
         self.raise_errors = False
-        self.verify = False
-        self.retry_attempts = 0
 
     def format_bill_number(self, raw):
         return raw.replace("Bill ", "").replace(".", " ").strip()

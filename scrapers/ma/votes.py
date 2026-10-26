@@ -26,8 +26,10 @@ class MAVoteScraper(Scraper):
             ),
             None,
         )
-        yield from HouseJournalDirectory(session=session, speaker=speaker).do_scrape()
-        yield from SenateJournalDirectory(session=session).do_scrape()
+        yield from HouseJournalDirectory(session=session, speaker=speaker).do_scrape(
+            scraper=self
+        )
+        yield from SenateJournalDirectory(session=session).do_scrape(scraper=self)
 
 
 class HouseJournalDirectory(HtmlPage):
@@ -45,12 +47,12 @@ class HouseJournalDirectory(HtmlPage):
             x for x in XPath("//a/@href").match(self.root) if x.endswith("RollCalls")
         ]
         for rc in roll_calls:
-            vote_events = HouseRollCall(
-                source=URL(rc, verify=False), session=self.session, speaker=self.speaker
-            ).do_scrape()
-            for vote_event in vote_events:
-                vote_event.add_source(self.source.url, note="House journal listing")
-                yield vote_event
+            yield HouseRollCall(
+                source=URL(rc, verify=False),
+                session=self.session,
+                speaker=self.speaker,
+                listing_url=self.source.url,
+            )
 
 
 class SenateJournalDirectory(HtmlListPage):
@@ -65,14 +67,11 @@ class SenateJournalDirectory(HtmlListPage):
         # Find all link to each month
         month_links = XPath("//a[@aria-controls='journalList']/@href").match(self.root)
         for month_link in month_links:
-            vote_events = SenateJournalMonth(
+            yield SenateJournalMonth(
                 source=URL(month_link, verify=False),
                 votes_list=self.votes_list,
                 session=self.session,
-            ).do_scrape()
-            for vote_event in vote_events:
-                # vote_event.add_source(self.source.url, note="Senate jouenal listing")
-                yield vote_event
+            )
 
 
 class SenateJournalMonth(HtmlListPage):
@@ -506,10 +505,11 @@ class HouseRollCall(PdfPage):
     # which needs the columns kept in place.
     preserve_layout = True
 
-    def __init__(self, source, session=None, speaker=None):
+    def __init__(self, source, session=None, speaker=None, listing_url=None):
         super().__init__(source=source)
         self.session = session
         self.speaker = speaker
+        self.listing_url = listing_url
 
     def process_page(self):
         # Each bill vote starts with the same text, so use it as a separator.
@@ -528,4 +528,5 @@ class HouseRollCall(PdfPage):
                 vote_parser.error_if_invalid()
                 vote_event = vote_parser.createVoteEvent()
                 vote_event.add_source(self.source.url, note="Vote record pdf")
+                vote_event.add_source(self.listing_url, note="House journal listing")
                 yield vote_event
