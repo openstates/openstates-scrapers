@@ -234,4 +234,4 @@ def categorize_actions(act_desc):
             if action_key in act_desc.lower():
                 atype.extend(a for a in data["mappings"])
 
-    return atype
+    return list(dict.fromkeys(atype))
