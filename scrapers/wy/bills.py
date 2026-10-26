@@ -93,7 +93,7 @@ class WYBillScraper(Scraper, LXMLMixin):
         except scrapelib.HTTPError:
             return None
 
-        chamber = "lower" if bill_json["bill"][0] else "upper"
+        chamber = self.chamber_abbrev_map[bill_json["bill"][0]]
 
         bill = Bill(
             identifier=bill_json["bill"],
