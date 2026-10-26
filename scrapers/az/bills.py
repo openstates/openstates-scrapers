@@ -337,13 +337,18 @@ class AZBillScraper(Scraper):
                 Some example votes don't have every key we expect, either,
                 so we should try to handle comparisons cleanly
                 """
-                result = "fail"
-                if (
-                    action.get("UnanimouslyAdopted", False)
-                    or ayes > nays
-                    or action["Action"] == "Passed"
-                ):
+                # Committee of the Whole voice votes ("do pass", "do pass amended")
+                # have no counts, and "failed to pass" can have more ayes than nays
+                # when a two-thirds vote was needed, so trust the stated action first
+                action_text = action["Action"].lower()
+                if action_text.startswith(("passed", "do pass")):
                     result = "pass"
+                elif action_text.startswith(("failed", "retained")):
+                    result = "fail"
+                elif action.get("UnanimouslyAdopted", False) or ayes > nays:
+                    result = "pass"
+                else:
+                    result = "fail"
 
                 vote = VoteEvent(
                     chamber={"S": "upper", "H": "lower"}[header["LegislativeBody"]],
@@ -372,7 +377,7 @@ class AZBillScraper(Scraper):
                     "excused",
                     (
                         action["Excused"]
-                        if "Present" in action and action["Present"]
+                        if "Excused" in action and action["Excused"]
                         else 0
                     ),
                 )
