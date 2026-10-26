@@ -96,7 +96,7 @@ _categorizer_rules = (
     Rule(["Failed in Committee - (?P<committees>.+)"], ["committee-failure"]),
     Rule(["CR; Do not pass (?P<committees>.+)"], ["committee-failure"]),
     Rule(["rereferred to (?P<committees>.+)"], ["referral-committee"]),
-    Rule(["Referred to (?P<committees>.+?)"], ["referral-committee"]),
+    Rule(["Referred to (?P<committees>.+)"], ["referral-committee"]),
     Rule(
         ["Reported Do Pass, amended by committee substitute (?P<committees>.+?);"],
         ["committee-passage"],
@@ -122,12 +122,16 @@ class Categorizer(BaseCategorizer):
         res = set()
         if "legislators" in attrs:
             for text in attrs["legislators"]:
-                text = text.replace("Representative(s)", "")
-                text = text.replace("(principal House author) ", "")
+                text = re.sub(
+                    r"\b(Senator|Representative)(\(s\))?\s*|^\(s\)\s*"
+                    r"|\s*\(principal (House|Senate) author\)",
+                    "",
+                    text,
+                )
                 rgx = r"(,\s+(?![a-z]\.)|\s+and\s+)"
                 legs = re.split(rgx, text)
                 legs = filter(lambda x: x not in [", ", " and "], legs)
-                res |= set(legs)
+                res |= {x.strip() for x in legs}
         attrs["legislators"] = list(res)
 
         res = set()
@@ -136,7 +140,11 @@ class Categorizer(BaseCategorizer):
                 text = text.replace("by committee substitute", "")
                 text = text.replace("CR filed;", "")
                 text = text.replace("; pending CR", "")
-                text = text.strip()
-                res.add(text)
+                text = re.sub(
+                    r"^(, (as )?amended,?|committee substitute)\s+|\s+committee; CR filed$",
+                    "",
+                    text.strip(),
+                )
+                res |= {x.strip() for x in text.split(" then to ")}
         attrs["committees"] = list(res)
         return attrs
