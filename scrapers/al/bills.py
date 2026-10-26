@@ -117,7 +117,7 @@ class ALBillScraper(Scraper):
             },
         }
 
-        page = requests.post(self.gql_url, headers=self.gql_headers, json=json_data)
+        page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
         page = json.loads(page.content)
 
         if page["data"]["instruments"]["count"] < 1:
@@ -125,11 +125,13 @@ class ALBillScraper(Scraper):
 
         for row in page["data"]["instruments"]["data"]:
             chamber = self.chamber_map[row["body"]]
-            title = row["shortTitle"].strip()
-
-            # some recently filed bills have no title, but a good subject which is close
-            if title == "":
-                title = row["Subject"]
+            # some bills have no title, but a good subject which is close
+            title = (row["shortTitle"] or "").strip() or (row["subject"] or "").strip()
+            if not title:
+                self.warning(
+                    f"No title or subject for {row['instrumentNbr']}, skipping"
+                )
+                continue
 
             # prevent duplicates
             bill_id = row["instrumentNbr"]
@@ -456,7 +458,7 @@ class ALBillScraper(Scraper):
             "variables": {},
         }
 
-        page = requests.post(self.gql_url, headers=self.gql_headers, json=json_data)
+        page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
         page = json.loads(page.content)
 
         # occasionally there's a vote number, but no data for it.
