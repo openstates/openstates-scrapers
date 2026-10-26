@@ -213,6 +213,7 @@ class WVBillScraper(Scraper):
         for link in page.xpath("//a[contains(@href, 'votes/house')]"):
             yield from self.scrape_house_vote(bill, link.attrib["href"])
 
+        senate_votes = set()
         for tr in reversed(
             page.xpath("//table[@class='tabborder']/descendant::tr")[1:]
         ):
@@ -228,23 +229,22 @@ class WVBillScraper(Scraper):
             date = datetime.datetime.strptime(date, "%m/%d/%y").date()
 
             action = tds[1].text_content().strip()
-            if action.lower().startswith("passed senate"):
-                for href in tds[1].xpath("a/@href"):
-                    yield from self.scrape_senate_vote(bill, href, date)
+            for href in tds[1].xpath("a/@href"):
+                if "votes/senate" in href and href not in senate_votes:
+                    senate_votes.add(href)
+                    yield from self.scrape_senate_vote(bill, href, date, action)
 
-            attrs = dict(
-                chamber=chamber, description=action, date=date.strftime("%Y-%m-%d")
-            )
             temp = self.categorizer.categorize(action)
-            related_entities = []
-            for key, values in temp.items():
-                if key != "classification":
-                    for value in values:
-                        related_entities.append({"type": key, "name": value})
-            attrs.update(
-                classification=temp["classification"], related_entities=related_entities
+            act = bill.add_action(
+                action,
+                date.strftime("%Y-%m-%d"),
+                chamber=chamber,
+                classification=temp["classification"],
             )
-            bill.add_action(**attrs)
+            for name in temp["committees"]:
+                act.add_related_entity(name, "organization")
+            for name in temp["legislators"]:
+                act.add_related_entity(name.strip(), "person")
 
         yield bill
 
@@ -351,20 +351,33 @@ class WVBillScraper(Scraper):
         else:
             self.warning("Syntax Error/Warning using 'convert_pdf'")
 
-    def scrape_senate_vote(self, bill, url, date):
+    def scrape_senate_vote(self, bill, url, date, action):
         try:
             filename, resp = self.urlretrieve(url, verify=False)
         except scrapelib.HTTPError:
             self.warning("missing vote file %s" % url)
             return
 
+        if action.lower().startswith("passed senate"):
+            motion, classification = "Passage", "passage"
+        else:
+            # e.g. "Senate concurred in House amendments and passed bill",
+            # "Effective from passage", "Tarr amends to House amends rejected"
+            motion = re.sub(r"\s*\(Roll No\. \d+\)", "", action)
+            if "passed" in motion.lower():
+                classification = "passage"
+            elif "amend" in motion.lower():
+                classification = "amendment"
+            else:
+                classification = []
+
         vote = VoteEvent(
             chamber="upper",
             start_date=date.strftime("%Y-%m-%d"),
-            motion_text="Passage",
+            motion_text=motion,
             # setting 'fail' for now.
             result="fail",
-            classification="passage",
+            classification=classification,
             bill=bill,
         )
         vote.add_source(url)
