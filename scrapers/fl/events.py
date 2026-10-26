@@ -212,24 +212,19 @@ class FlEventScraper(Scraper):
             ]
 
             for agenda_class in agenda_classes:
-                if row.xpath(f"//a[@class='{agenda_class}']"):
-                    url = row.xpath(f"//a[@class='{agenda_class}']/@href")[0]
-                    doc_name = (
-                        row.xpath(f"//a[@class='{agenda_class}']")[0]
-                        .text_content()
-                        .strip()
+                for link in row.xpath(f".//a[@class='{agenda_class}']"):
+                    doc_name = link.text_content().strip()
+                    event.add_document(
+                        doc_name, link.get("href"), media_type="application/pdf"
                     )
-                    event.add_document(doc_name, url, media_type="application/pdf")
 
             for link in row.xpath("td[7]/a"):
-                url = link.xpath("@href")[0]
                 doc_name = link.text_content().strip()
-                event.add_media_link(doc_name, url, "audio/mpeg")
+                event.add_media_link(doc_name, link.get("href"), "audio/mpeg")
 
             for link in row.xpath("td[9]/a"):
-                url = link.xpath("@href")[0]
                 doc_name = link.text_content().strip()
-                event.add_media_link(doc_name, url, "text/html")
+                event.add_media_link(doc_name, link.get("href"), "text/html")
 
             event.add_source(url)
 
