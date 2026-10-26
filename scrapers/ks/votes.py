@@ -37,11 +37,7 @@ class KSVoteScraper(Scraper):
                 f"?page={page}&per_page=20"
             )
 
-            try:
-                response = self.get(list_url)
-            except Exception as e:
-                self.warning(f"Failed to fetch vote listing page {page}: {e}")
-                break
+            response = self.get(list_url)
 
             doc = lxml.html.fromstring(response.text)
 
@@ -105,16 +101,18 @@ class KSVoteScraper(Scraper):
 
         doc = lxml.html.fromstring(text)
 
-        # The motion/short title lives in the vote hero's short-title span.
-        # Older/alternate layouts used a "list-hero-sub" paragraph, so fall
-        # back to that when the primary element is absent.
-        motion_text = doc.xpath(
-            "string(//span[contains(@class,'vote-hero-shorttitle')])"
-        ).strip()
+        # The motion ("Motion to advance to Emergency Final Action failed;")
+        # is the hero's "list-hero-sub" paragraph; the short-title span holds
+        # the bill's title.
+        motion_text = (
+            doc.xpath("string(//p[contains(@class,'list-hero-sub')])")
+            .strip()
+            .rstrip(";")
+        )
 
         if not motion_text:
             motion_text = doc.xpath(
-                "string(//p[contains(@class,'list-hero-sub')])"
+                "string(//span[contains(@class,'vote-hero-shorttitle')])"
             ).strip()
 
         # Fall back to the roll call heading so votes are never emitted with
@@ -198,7 +196,12 @@ class KSVoteScraper(Scraper):
             chamber=chamber,
             motion_text=motion_text,
             legislative_session=session,
-            result="pass" if yes_count > no_count else "fail",
+            result=(
+                "fail"
+                if re.search(r"\bfailed\b", motion_text, re.IGNORECASE)
+                or yes_count <= no_count
+                else "pass"
+            ),
             classification="passage",
         )
 
