@@ -572,21 +572,14 @@ class WABillScraper(Scraper, LXMLMixin):
 
                 temp = self.categorizer.categorize(action_text)
                 classification = temp["classification"]
-                try:
-                    committees = temp["committees"]
-                except KeyError:
-                    committees = []
-                related_entities = []
-                for committee in committees:
-                    related_entities.append({"type": "committee", "name": committee})
-
-                bill.add_action(
+                action = bill.add_action(
                     description=action_text,
                     date=action_date,
                     chamber=actor,
                     classification=classification,
-                    related_entities=related_entities,
                 )
+                for committee in temp.get("committees", []):
+                    action.add_related_entity(committee, "organization")
 
                 if "chapter" in action_text.lower():
                     became_law = True
