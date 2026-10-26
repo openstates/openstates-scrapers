@@ -3,7 +3,7 @@ import datetime
 
 import lxml.html
 
-from openstates.scrape import Scraper, VoteEvent
+from openstates.scrape import VoteEvent
 
 
 SESSION_SOURCE_IDS = {
@@ -22,16 +22,20 @@ SESSION_SOURCE_IDS = {
 }
 
 
-# Please note: this only supports the MN House, not the Senate. Senate votes are scraped in bills.py
-class MNVoteScraper(Scraper):
+# House roll calls from house.mn.gov. Senate votes are scraped in bills.py,
+# which also yields these, so one import carries both chambers: the vote
+# importer deletes a bill's stored votes that the current import doesn't
+# carry, so importing each chamber separately wipes the other's.
+class HouseVotesMixin:
 
     bill_link_number_re = re.compile(r"([A-Z]+)0*([1-9]+[0-9]*)")
 
-    def scrape(self, session=None):
+    def house_vote_bills(self, session):
+        """Map each bill with House roll calls ("HF 3") to its URL form ("HF0003")."""
         session_internal_id = SESSION_SOURCE_IDS.get(session)
         if not session_internal_id:
             self.warning("no session internal ID recorded for %s", session)
-            return
+            return {}
         votes_summary_endpoint = "https://www.house.mn.gov/Votes/GetVoteSummary"
         votes = self.post(
             votes_summary_endpoint,
@@ -41,11 +45,13 @@ class MNVoteScraper(Scraper):
             },
         ).json()
         # JSON has a Date property that looks like '/Date(-62135575200000)/' - useful?
+        bills = {}
         for vote in votes:
             bill_id_with_leading = vote["Number"]
             bill_id_match = self.bill_link_number_re.search(bill_id_with_leading)
             bill_id = f"{bill_id_match.group(1)} {bill_id_match.group(2)}"
-            yield from self.scrape_votes(session, bill_id, bill_id_with_leading)
+            bills[bill_id] = bill_id_with_leading
+        return bills
 
     def scrape_votes(self, session, bill_id, bill_id_for_url):
         # URL looks like https://www.house.mn.gov/Votes/Details?SessionKey=302&BillNumber=HF0003

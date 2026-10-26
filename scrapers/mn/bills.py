@@ -10,6 +10,7 @@ from io import BytesIO
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 
 from utils import LXMLMixin, SSLRetryMixin
+from .vote_events import HouseVotesMixin
 
 import fitz
 import requests
@@ -77,7 +78,7 @@ def ensure_url_fully_qualified(url):
     return url
 
 
-class MNBillScraper(SSLRetryMixin, Scraper, LXMLMixin):
+class MNBillScraper(HouseVotesMixin, SSLRetryMixin, Scraper, LXMLMixin):
     # For testing purposes, this will do a lite version of things.  If
     # testing_bills is set, only these bills will be scraped.  Use SF0077
     testing = False
@@ -153,6 +154,8 @@ class MNBillScraper(SSLRetryMixin, Scraper, LXMLMixin):
 
         # SSL broken as of Jan 2020
         self.verify = False
+
+        self._house_vote_bills = self.house_vote_bills(session)
 
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
@@ -406,6 +409,11 @@ class MNBillScraper(SSLRetryMixin, Scraper, LXMLMixin):
 
         for vote in votes:
             yield vote
+
+        if bill.identifier in self._house_vote_bills:
+            yield from self.scrape_votes(
+                session, bill.identifier, self._house_vote_bills[bill.identifier]
+            )
 
         yield bill
 
