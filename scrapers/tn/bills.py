@@ -107,7 +107,7 @@ class TNBillScraper(Scraper):
             yield from self.scrape_special(session)
         else:
             index_page = (
-                f"http://wapp.capitol.tn.gov/apps/indexes/BillsByIndex/?year={session}"
+                f"http://wapp.capitol.tn.gov/apps/indexes/BillsByIndex/?ga={session}"
             )
             index_list_page = lxml.html.fromstring(self.get(index_page).text)
             index_list_page.make_links_absolute(index_page)
