@@ -12,7 +12,7 @@ _categorizer_rules = (
     Rule(r"Concurred in (Senate|House) amendments", "amendment-passage"),
     Rule(r"Refused to concur in (Senate|House) amendments", "amendment-failure"),
     Rule(r"Adopted", "passage"),
-    Rule(r"Passed", "passage"),
+    Rule(r"Passed", "passage", flags=0),
     Rule(r"Sent to Governor", "passage"),
     Rule(r"Sent To The Governor", "passage"),
     Rule(r"line item veto receipt", "executive-veto"),
