@@ -285,4 +285,4 @@ class NDBillScraper(Scraper):
                 session_year = i["start_date"][:4]
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
         bill_list = BillList({"assembly_id": session, "session_year": session_year})
-        yield from bill_list.do_scrape()
+        yield from bill_list.do_scrape(scraper=self)
