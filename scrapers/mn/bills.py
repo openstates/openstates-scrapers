@@ -1,4 +1,5 @@
 import re
+import time
 import datetime
 import zoneinfo
 import urllib.parse
@@ -117,6 +118,17 @@ class MNBillScraper(Scraper, LXMLMixin):
         (" re-referred ", "referral-committee"),
         ("Received from", "introduction"),
     )
+
+    def get(self, url, **kwargs):
+        # scrapelib never retries an SSLError, and revisor.mn.gov now and then
+        # fails a TLS handshake (BAD_SIGNATURE), which ended the scrape
+        for attempt in range(self.retry_attempts):
+            try:
+                return super().get(url, **kwargs)
+            except requests.exceptions.SSLError as e:
+                self.warning(f"{e}, retrying")
+                time.sleep(self.retry_wait_seconds * 2**attempt)
+        return super().get(url, **kwargs)
 
     def scrape(
         self,
@@ -268,12 +280,13 @@ class MNBillScraper(Scraper, LXMLMixin):
             for start in range(bill_num_start, bill_num_end, stride):
                 # body: "House" or "Senate"
                 # session: legislative session id
-                # bill: Range start-end (e.g. 1-10)
+                # bill: Range start-end (e.g. 1-10), inclusive. The search caps at
+                # 500 rows sorted high to low, so a 501-wide range drops its first bill
                 url = BILL_SEARCH_URL % (
                     search_chamber,
                     search_session,
                     start,
-                    start + stride,
+                    start + stride - 1,
                     current_bill_type,
                 )
                 # Parse HTML
@@ -733,8 +746,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                 "sc" in bill.identifier.lower() or "sr" in bill.identifier.lower()
             ):
                 current_html_url = self.rewrite_senate_resolution_url(current_html_url)
-            # self.get retries transient connection/TLS errors; like the old bare
-            # requests.get, still parse whatever an error page returns
+            # like the old bare requests.get, still parse whatever an error page returns
             try:
                 current_response = self.get(current_html_url, verify=False)
             except scrapelib.HTTPError as e:
