@@ -46,6 +46,14 @@ class MSBillScraper(Scraper):
     )
 
     def scrape(self, chamber=None, session=None):
+        self.house_speaker = next(
+            (
+                s.get("extras", {}).get("house_speaker")
+                for s in self.jurisdiction.legislative_sessions
+                if s["identifier"] == session
+            ),
+            None,
+        )
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_bills(chamber, session)
@@ -108,9 +116,11 @@ class MSBillScraper(Scraper):
             bill.extras["summary"] = longtitle
             bill.add_source(main_doc_url)
             # sponsors
-            main_sponsor = details_root.xpath("string(//P_NAME)").split()
+            # "*" sometimes trails the name; it isn't part of it
+            main_sponsor = " ".join(
+                details_root.xpath("string(//P_NAME)").replace("*", "").split()
+            )
             if main_sponsor:
-                main_sponsor = main_sponsor[0]
                 main_sponsor_link = details_root.xpath("string(//P_LINK)").replace(
                     " ", "_"
                 )
@@ -368,7 +378,7 @@ class MSBillScraper(Scraper):
         "Decline to Concur/Invite Conf": ("Decline to Concur", True),
         "Decline Concur/Inv Conf Lost": ("Decline to Concur", False),
         "Failed to Suspend Rules": ("Motion to Suspend Rules", False),
-        "Motion to Recommit Lost": ("Motion to Recommit", True),
+        "Motion to Recommit Lost": ("Motion to Recommit", False),
         "Reconsidered": ("Reconsideration", True),
         "Motion to Concur Failed": ("Motion to Concur", False),
         "Recommitted to Committee": ("Recommit to Committee", True),
@@ -410,6 +420,9 @@ class MSBillScraper(Scraper):
         lines = _combine_lines(text.decode().split("\n"))
 
         for line in lines:
+            # House rolls list the presiding officer as "Mr. Speaker"
+            if self.house_speaker:
+                line = line.replace("Mr. Speaker", self.house_speaker)
 
             # check if the line starts with a precursor, switch to that array
             for pc, arr in precursors:
