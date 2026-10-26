@@ -157,12 +157,12 @@ class DCBillScraper(Scraper):
                     # Co-sponsor
                     if leg_details["coSponsors"]:
                         for cs in leg_details["coSponsors"]:
-                            name = i["memberName"]
+                            name = cs["memberName"]
                             bill.add_sponsorship(
                                 name,
                                 classification="cosponsor",
                                 entity_type="person",
-                                primary=True,
+                                primary=False,
                             )
 
                     # Committee Hearing Doc
