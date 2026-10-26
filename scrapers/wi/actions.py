@@ -27,7 +27,7 @@ rules = (
     Rule(r"Report vetoed by the Governor", "executive-veto"),
     Rule(r"R(ead (first time )?and r)?eferred to committee", "referral-committee"),
     Rule(r"Read a third time and (passed|concurred)", "passage"),
-    Rule(r"Adopted", "passage"),
+    Rule(r"Adopted", "passage", flags=0),
     Rule(r"Presented to the Governor", "executive-receipt"),
     Rule(r"Introduced by", "introduction"),
     Rule(r"Read a second time", "reading-2"),

@@ -47,29 +47,32 @@ class WIBillScraper(Scraper):
             # get the 'Down' url
             next_url = doc.xpath('//a[text()="Down"]/@href')[0]
 
-            # slug is upper case in links for special sessions
-            if site_id != "reg":
-                site_id = site_id.upper()
-            a_path = "/document/session/%s/%s/" % (year, site_id)
+            # slug is upper case in links, including "REG"
+            a_path = "/document/session/%s/%s/" % (year, site_id.upper())
 
             # find all bill links to bills in this session
             for bill_a in doc.xpath('//a[contains(@href, "%s")]' % a_path):
                 bill_id = bill_a.text_content().split()[-1]
 
-                # subject is in the immediately preceding span
+                # subject is the first text of the nearest preceding subject div
                 preceding_subject = bill_a.xpath(
-                    './preceding::div[contains(@class,"qsSubject")]/text()'
+                    './preceding::div[contains(@class,"qsSubject")][1]/text()'
                 )
                 # there wasn't a subject get the one from end of the prior page
                 if not preceding_subject:
-                    preceding_subject = last_subject[0]
+                    preceding_subject = last_subject
                 else:
-                    preceding_subject = preceding_subject[-1]
-                preceding_subject = preceding_subject.replace("\xe2\x80\x94", "")
+                    preceding_subject = preceding_subject[0]
+                # "Road, see also <links>" still lists its own bills under "Road"
+                preceding_subject = re.sub(
+                    r",\s*see\b.*$", "", preceding_subject.strip()
+                )
                 self.subjects[bill_id].append(preceding_subject)
 
             # last subject on the page, in case we get a bill_id on next page
-            last_subject_div = doc.xpath('//div[contains(@class,"qsSubject")]/text()')
+            last_subject_div = doc.xpath(
+                '(//div[contains(@class,"qsSubject")])[last()]/text()'
+            )
             if last_subject_div:
                 last_subject = last_subject_div[0]
 
@@ -270,8 +273,8 @@ class WIBillScraper(Scraper):
 
         for line in lines:
             match = re.match(
-                "(Introduced|Cosponsored) by (?:joint )?(Senator|Representative|committee|Joint Legislative Council|Law Revision Committee)s?(.*)",  # noqa
-                line,
+                "(Introduced|[Cc]osponsored) by (?:joint )?(Senator|Representative|committee|Joint Legislative Council|Law Revision Committee)s?(.*)",  # noqa
+                line.strip(),
             )
             if not match:
                 # So far, the only one that doesn't match is
@@ -291,7 +294,7 @@ class WIBillScraper(Scraper):
 
             if type == "Introduced":
                 sponsor_type = "primary"
-            elif type == "Cosponsored":
+            else:
                 sponsor_type = "cosponsor"
 
             entity_type = "person"
