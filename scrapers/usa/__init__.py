@@ -2,8 +2,6 @@ from openstates.scrape import State
 from .events import USEventScraper
 from .bills import USBillScraper
 
-# from .votes import USVoteScraper
-
 settings = {
     "SCRAPELIB_RETRY_ATTEMPTS": 6,
 }
@@ -13,7 +11,6 @@ class UnitedStates(State):
     scrapers = {
         "events": USEventScraper,
         "bills": USBillScraper,
-        # "votes": USVoteScraper,
     }
     legislative_sessions = [
         {
