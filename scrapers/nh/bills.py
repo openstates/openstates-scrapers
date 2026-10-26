@@ -1,5 +1,6 @@
 import re
 import datetime as dt
+import functools
 from collections import defaultdict
 
 import pytz
@@ -37,7 +38,7 @@ extended_type_map = {
     "HCR": "concurrent resolution",
     "SCR": "concurrent resolution",
     "HR": "resolution",
-    "SR": "resolutoin",
+    "SR": "resolution",
     "JR": "resolution",
     "HJR": "joint resolution",
     "SJR": "joint resolution",
@@ -47,7 +48,7 @@ extended_type_map = {
     "SSSB": "bill",
     "SSHB": "bill",
     "CACR": "constitutional amendment",
-    "PET": "petition,",
+    "PET": "petition",
 }
 
 VERSION_URL = "https://gc.nh.gov/legislation/%s/%s.html"
@@ -385,10 +386,7 @@ class NHBillScraper(Scraper):
             # Guardrail: NH's bulk data dump has been intermittently returning empty
             # files (e.g. LSRs.txt returning 0 bytes). Detect that upfront so the run
             # fails loudly rather than silently emitting an empty scrape.
-            lsrs_content = self.get(
-                f"https://gc.nh.gov/dynamicdatadump/LSRs.txt?x={self.cachebreaker}",
-                verify=False,
-            ).content.decode("utf-8")
+            lsrs_content = self.get_dump("LSRs.txt")
             # A healthy LSRs.txt is hundreds of KB. Anything under 1 KB is effectively empty.
             if len(lsrs_content.strip()) < 1024:
                 raise RuntimeError(
@@ -491,16 +489,7 @@ class NHBillScraper(Scraper):
 
         # load legislators
         self.legislators = {}
-        for line in (
-            self.get(
-                "https://gc.nh.gov/dynamicdatadump/legislators.txt?x={}".format(
-                    self.cachebreaker
-                ),
-                verify=False,
-            )
-            .content.decode("utf-8")
-            .split("\n")
-        ):
+        for line in self.get_dump("legislators.txt").split("\n"):
             if len(line) < 2:
                 continue
 
@@ -530,14 +519,7 @@ class NHBillScraper(Scraper):
         # bills, or a transient page render issue). It is intentionally SKIPPED
         # for any bill that already has sponsors, to avoid adding duplicate
         # sponsor entries under slightly-different name spellings.
-        for line in (
-            self.get(
-                f"https://gc.nh.gov/dynamicdatadump/LsrSponsors.txt?x={self.cachebreaker}",
-                verify=False,
-            )
-            .content.decode("utf-8")
-            .split("\n")
-        ):
+        for line in self.get_dump("LsrSponsors.txt").split("\n"):
             if len(line) < 1:
                 continue
 
@@ -570,14 +552,7 @@ class NHBillScraper(Scraper):
                     self.warning("Error, can't find person %s" % employee)
 
         # actions
-        action_lines = (
-            self.get(
-                f"https://gc.nh.gov/dynamicdatadump/Docket.txt?x={self.cachebreaker}",
-                verify=False,
-            )
-            .content.decode("utf-8")
-            .split("\n")
-        )
+        action_lines = self.get_dump("Docket.txt").split("\n")
         for line in action_lines:
             if len(line) < 1:
                 continue
@@ -615,22 +590,21 @@ class NHBillScraper(Scraper):
         for bill in self.bills:
             yield self.bills[bill]
 
+    @functools.cache
+    def get_dump(self, name):
+        # both chambers read the same bulk files; fetch each once per run
+        return self.get(
+            f"https://gc.nh.gov/dynamicdatadump/{name}?x={self.cachebreaker}",
+            verify=False,
+        ).content.decode("utf-8")
+
     def add_source(self, bill: Bill, id: str):
         bill_url = f"https://gc.nh.gov/bill_Status/billinfo.aspx?id={id}&inflect=2"
         bill.add_source(bill_url)
 
     def scrape_version_ids(self):
 
-        for line in (
-            self.get(
-                "https://gc.nh.gov/dynamicdatadump/LsrsOnly.txt?x={}".format(
-                    self.cachebreaker
-                ),
-                verify=False,
-            )
-            .content.decode("utf-8")
-            .split("\n")
-        ):
+        for line in self.get_dump("LsrsOnly.txt").split("\n"):
             if len(line) < 1:
                 continue
             # a few blank/irregular lines, irritating
@@ -644,16 +618,7 @@ class NHBillScraper(Scraper):
             self.versions_by_lsr[lsr] = file_id
 
     def scrape_amendments(self):
-        for line in (
-            self.get(
-                "https://gc.nh.gov/dynamicdatadump/Docket.txt?x={}".format(
-                    self.cachebreaker
-                ),
-                verify=False,
-            )
-            .content.decode("utf-8")
-            .split("\n")
-        ):
+        for line in self.get_dump("Docket.txt").split("\n"):
             if len(line) < 1:
                 continue
             # a few blank/irregular lines, irritating
@@ -689,7 +654,7 @@ class NHBillScraper(Scraper):
             match = re.match(r"(?:Rep|Sen)\. (.+?), (.+?)\(", option.text_content())
             if match:
                 member_names[option.get("value")] = f"{match[2]} {match[1]}"
-        lines = self.get(vote_url, verify=False).content.decode("utf-8").splitlines()
+        lines = self.get_dump("RollCallSummary.txt").splitlines()
 
         for line in lines:
 
@@ -742,14 +707,7 @@ class NHBillScraper(Scraper):
                 vote.dedupe_key = session_yr + body + vote_num  # unique ID for vote
                 votes[body + vote_num] = vote
 
-        for line in (
-            self.get(
-                f"https://gc.nh.gov/dynamicdatadump/RollCallHistory.txt?x={self.cachebreaker}",
-                verify=False,
-            )
-            .content.decode("utf-8")
-            .splitlines()
-        ):
+        for line in self.get_dump("RollCallHistory.txt").splitlines():
             if len(line) < 2:
                 continue
 
