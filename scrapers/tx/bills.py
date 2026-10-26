@@ -2,16 +2,14 @@ import datetime
 import ftplib
 import re
 import time
-from urllib import parse as urlparse
 import xml.etree.cElementTree as etree
 
 from openstates.scrape import Scraper, Bill
 from openstates.scrape.base import ScrapeError
-from utils import LXMLMixin
 from .actions import Categorizer
 
 
-class TXBillScraper(Scraper, LXMLMixin):
+class TXBillScraper(Scraper):
     _FTP_ROOT = "ftp.legis.state.tx.us"
     CHAMBERS = {"H": "lower", "S": "upper"}
     NAME_SLUGS = {
@@ -21,9 +19,6 @@ class TXBillScraper(Scraper, LXMLMixin):
         "H": "House Committee Report",
         "F": "Enrolled",
     }
-    companion_url = (
-        "https://capitol.texas.gov/BillLookup/Companions.aspx" "?LegSess={}&Bill={}"
-    )
 
     categorizer = Categorizer()
 
@@ -240,32 +235,25 @@ class TXBillScraper(Scraper, LXMLMixin):
                     primary=False,
                 )
 
-        if root.findtext("companions"):
-            self._get_companion(bill)
+        # e.g. "SB 17 by Kolkhorst, Similar | HB 1849 by Hefner, Duplicate"
+        for companion in (root.findtext("companions") or "").split(" | "):
+            companion_id = re.match(r"[A-Z]+ \d+", companion.strip())
+            if companion_id:
+                # a "Duplicate" is filed in the same chamber, so not a companion
+                if companion.rsplit(",", 1)[-1].strip() == "Duplicate":
+                    relation_type = "related"
+                else:
+                    relation_type = "companion"
+                bill.add_related_bill(
+                    identifier=companion_id.group(),
+                    legislative_session=session,
+                    relation_type=relation_type,
+                )
 
         yield bill
-
-    def _get_companion(self, bill):
-        url = self.companion_url.format(
-            self._format_session(bill.legislative_session),
-            self._format_bill_id(bill.identifier),
-        )
-        page = self.lxmlize(url)
-        links = page.xpath('//table[@id="Table6"]//a')
-        for link in links:
-            parsed = urlparse.urlparse(link.attrib["href"])
-            query = urlparse.parse_qs(parsed.query)
-            bill.add_related_bill(
-                identifier=query["Bill"][0],
-                legislative_session=query["LegSess"][0].replace("R", ""),
-                relation_type="companion",
-            )
 
     def _format_session(self, session):
         if len(session) == 2:
             session = session + "R"
         assert len(session) == 3, "Unable to handle the session name"
         return session
-
-    def _format_bill_id(self, bill_id):
-        return bill_id.replace(" ", "")
