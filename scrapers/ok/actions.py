@@ -58,11 +58,11 @@ _categorizer_rules = (
         ]
     ),
     Rule("Introduced", "introduction"),
-    Rule(["Adopted"], ["passage"]),
+    Rule(["Adopted"], ["passage"], flags=0),
     Rule(["HAs rejected"], ["amendment-failure"]),
     Rule("Measure.+?passed", "passage"),
     Rule("Measure.+?passed", "passage"),
-    Rule("Engrossed", "passage"),
+    Rule("Engrossed", "passage", flags=0),
     Rule("Third Reading, Measure passed", ["passage", "reading-3"]),
     Rule(["^Amendment withdrawn"], ["amendment-withdrawal"]),
     Rule(["^Amended$"], ["amendment-passage"]),
