@@ -420,6 +420,9 @@ class NJBillScraper(Scraper, MDBMixin):
                     continue
 
                 vdict_file = csv.DictReader(vote_file)
+                # the files have no roll call number; a legislator showing up
+                # again under the same bill/action/date means another roll call
+                roll_counts = collections.Counter()
                 if filename.startswith("A") or filename.startswith("CA"):
                     chamber = "lower"
                 else:
@@ -452,7 +455,13 @@ class NJBillScraper(Scraper, MDBMixin):
                         vote_parts = (bill_id, chamber, action, committee)
 
                     date = datetime.strptime(date, "%m/%d/%Y")
-                    vote_id = "_".join(vote_parts).replace(" ", "_")
+                    vote_id = "_".join(
+                        vote_parts + (date.strftime("%Y-%m-%d"),)
+                    ).replace(" ", "_")
+                    roll = roll_counts[(vote_id, leg)]
+                    roll_counts[(vote_id, leg)] += 1
+                    if roll:
+                        vote_id += f"_{roll + 1}"
 
                     if len(action) == 0:
                         self.warning(
