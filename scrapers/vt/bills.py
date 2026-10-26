@@ -200,7 +200,6 @@ class VTBillScraper(Scraper, LXMLMixin):
                 )
                 continue
 
-            chambers_passed = set()
             for action in these_actions:
                 action = {k: v for k, v in action.items() if v is not None}
 
@@ -218,6 +217,11 @@ class VTBillScraper(Scraper, LXMLMixin):
                     action["FullStatus"].lower()
                 )
 
+                passed = actor in ("lower", "upper") and any(
+                    x.strip().lower().startswith("aspassed")
+                    for x in action.get("keywords", "").split(";")
+                )
+
                 # If both an action type and actor were assigned
                 if action_classification:
                     action_type = action_classification
@@ -225,23 +229,16 @@ class VTBillScraper(Scraper, LXMLMixin):
                     # if len(action_classification) > 1:
                     # actor = action_classification[1]
 
+                    # third readings are classified above, but also mark passage
+                    if passed and "reading-3" in action_type:
+                        action_type.append("passage")
+
                 # More action categorization
                 # These classifications are done separately because they require more rules
                 # in order to correctly classify
 
-                elif actor == "lower" and any(
-                    x.lower().startswith("aspassed")
-                    for x in action["keywords"].split(";")
-                ):
+                elif passed:
                     action_type = "passage"
-                    chambers_passed.add("H")
-                elif actor == "upper" and any(
-                    x.lower().startswith(" aspassed")
-                    or x.lower().startswith("aspassed")
-                    for x in action["keywords"].split(";")
-                ):
-                    action_type = "passage"
-                    chambers_passed.add("S")
 
                 elif (
                     "favorable report" in action["FullStatus"].lower()
