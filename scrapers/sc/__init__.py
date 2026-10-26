@@ -1,8 +1,8 @@
 from .bills import SCBillScraper
 from .events import SCEventScraper
 from openstates.scrape import State
-import requests
 import lxml.html
+import scrapelib
 
 settings = {"SCRAPELIB_RPM": 30}
 
@@ -106,5 +106,5 @@ class SouthCarolina(State):
         """Get session list from billsearch page using xpath"""
         url = "https://www.scstatehouse.gov/billsearch.php"
         path = "//select[@id='session']/option/text()"
-        doc = lxml.html.fromstring(requests.get(url).text)
+        doc = lxml.html.fromstring(scrapelib.Scraper().get(url, timeout=30).text)
         return doc.xpath(path)

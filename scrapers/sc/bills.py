@@ -137,8 +137,10 @@ def get_index_url(session, chamber, chamber_letter):
         "2019-2020-upper": "20201101152857",
         "2021-2022-lower": "20221110101038",
         "2021-2022-upper": "20221110101352",
+        "2023-2024-lower": "20241005102943",
+        "2023-2024-upper": "20241012085424",
         # TODO: Add archive id values for both chambers for outgoing session
-        #  during transition between sessions (Upcoming: Nov or Dec 2024).
+        #  during transition between sessions (Upcoming: Nov or Dec 2026).
     }
 
     web_archive_id = web_archive_ids.get(f"{session}-{chamber}", None)
@@ -342,9 +344,9 @@ class SCBillScraper(Scraper):
             elif line.startswith("EXCUSED"):
                 sections.append((vote.vote, "excused", [[]]))
             elif line.startswith("NOT VOTING"):
-                sections.append((vote.vote, "excused", [[]]))
+                sections.append((vote.vote, "not voting", [[]]))
             elif line.startswith("ABSTAIN"):
-                sections.append((vote.vote, "excused", [[]]))
+                sections.append((vote.vote, "abstain", [[]]))
             elif line.startswith("PAIRED"):
                 sections.append((vote.vote, "paired", [[]]))
 
