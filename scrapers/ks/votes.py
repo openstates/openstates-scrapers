@@ -3,6 +3,8 @@ import re
 import time
 
 import lxml.html
+import requests
+import scrapelib
 
 from openstates.scrape import Scraper, VoteEvent
 
@@ -81,7 +83,14 @@ class KSVoteScraper(Scraper):
                 )
                 break
 
-            except Exception as e:
+            except scrapelib.HTTPError as e:
+                # a 404 or a 5xx scrapelib already retried won't come good
+                self.warning(f"Skipping vote: {e}")
+                return
+            except (
+                requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout,
+            ) as e:
                 self.warning(f"Attempt {attempt + 1}/10 failed for {link}: {e}")
                 time.sleep(10)
 
