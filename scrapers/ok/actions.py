@@ -7,14 +7,14 @@ _categorizer_rules = (
         [
             # Add a bajilion links to entities.
             r"SCs (changed|removed) (?P<legislators>.+)",
-            r"Conference Committee on (?P<committees>.+)",
+            r"(?<!Special\s)Conference Committee on (?P<committees>.+)",
             r"Conference granted, naming:?\s+Conference Committee on (?P<committees>.+)",
             r"vote by Representative(?P<legislators>.+)",
             r"amended (?P<committees>.+?) committee",
             r"coauthored by (?P<legislators>.+)",
             (
                 r"Remove Senator .+? as principal Senate author "
-                r"and substitute with Senator (?P<legislators>.+?)"
+                r"and substitute with Senator (?P<legislators>.+)"
             ),
             r"committee substitute (?P<committees>.+)",
             r"remove\s{,10}as\s{,10}author\s{,10}(?P<legislators>.+);",
@@ -24,7 +24,6 @@ _categorizer_rules = (
                 r"and replace with Senator"
             ),
             r"Representative\(s\)\s{,10}(?P<legislators>.+)",
-            r"Withdrawn from Calendar; (?P<committees>.+)",
             (
                 r"Pending removal author Senator .+? and replace "
                 r"with Senator (?P<legislators>.+)"
@@ -32,7 +31,7 @@ _categorizer_rules = (
             r"Ayes:\s+(?P<yes_votes>\d+)\s+Nays:\s+(?P<no_votes>\d+)",
             (
                 r"remove as principal author Representative .+? and substitute "
-                r"with Representative (?P<legislators>.+?)"
+                r"with Representative (?P<legislators>.+)"
             ),
             r"Pending coauthorship Senator\(s\) (?P<legislators>.+)",
             (
@@ -42,7 +41,6 @@ _categorizer_rules = (
             r"Pending removal principal author Representative .+? and "
             r"replace with Representative (?P<legislators>.+)",
             r"(co)?authored\s{,10}by\s{,10}(?P<legislators>.+)",
-            r"Second Reading referred to (?P<committees>.+? Committee)",
             r"Notice served to reconsider vote on measure (?P<legislators>.+)",
             (
                 r"Pending removal principal author Representative (?P<legislators>.+) "
@@ -71,10 +69,6 @@ _categorizer_rules = (
     Rule("First Reading", ("introduction", "reading-1")),
     Rule(
         ["Second Reading referred to (?P<committees>.+)"],
-        ["referral-committee", "reading-2"],
-    ),
-    Rule(
-        ["Second Reading referred to (?P<committees>.+? Committee)"],
         ["referral-committee", "reading-2"],
     ),
     Rule(
@@ -122,6 +116,8 @@ class Categorizer(BaseCategorizer):
         res = set()
         if "legislators" in attrs:
             for text in attrs["legislators"]:
+                if text.lower().startswith("all other"):
+                    continue
                 text = re.sub(
                     r"\b(Senator|Representative)(\(s\))?\s*|^\(s\)\s*"
                     r"|\s*\(principal (House|Senate) author\)",
@@ -141,10 +137,10 @@ class Categorizer(BaseCategorizer):
                 text = text.replace("CR filed;", "")
                 text = text.replace("; pending CR", "")
                 text = re.sub(
-                    r"^(, (as )?amended,?|committee substitute)\s+|\s+committee; CR filed$",
+                    r"^(, (as )?amended,?|committee substitute)\s+|\s+committee(; J?CR filed)?$",
                     "",
                     text.strip(),
                 )
-                res |= {x.strip() for x in text.split(" then to ")}
+                res |= {x.strip() for x in text.split(" then to ")} - {"conference"}
         attrs["committees"] = list(res)
         return attrs
