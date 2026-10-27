@@ -16,10 +16,6 @@ _actions = {
         "type": "compare",
         "mappings": ["committee-passage-favorable"],
     },
-    "rules suspended & messaged to house forthwith": {
-        "type": "compare",
-        "mappings": ["passage"],
-    },
     "delivered to governor": {"type": "compare", "mappings": ["executive-receipt"]},
     "signed by governor": {"type": "compare", "mappings": ["executive-signature"]},
     "vetoed by the governor": {"type": "compare", "mappings": ["executive-veto"]},
@@ -56,4 +52,4 @@ def categorize_actions(action_description):
             if action_key in action_description.lower():
                 atype.extend(a for a in data["mappings"])
 
-    return atype
+    return list(dict.fromkeys(atype))
