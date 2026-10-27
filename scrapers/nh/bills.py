@@ -80,6 +80,9 @@ class NHBillScraper(Scraper):
             self.warning("NH bans scraping between 6am and 9pm. This may fail.")
 
         chambers = [chamber] if chamber else ["upper", "lower"]
+        if scrape_from_web:
+            # the RSS feed lists every bill regardless of chamber; read it once
+            chambers = chambers[:1]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session, scrape_from_web)
 
@@ -277,7 +280,7 @@ class NHBillScraper(Scraper):
 
             bills[lsr] = Bill(
                 legislative_session=session,
-                chamber=chamber_map[item.billnumber[0:1]],
+                chamber=chamber_map.get(item.billnumber[0:1], "legislature"),
                 identifier=bill_id,
                 title=item.lsrtitle.replace("\n", ""),
                 classification=bill_type,
