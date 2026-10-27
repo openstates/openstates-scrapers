@@ -1,7 +1,6 @@
 from openstates.scrape import Scraper, Bill, VoteEvent
 
 from .actions import categorize_actions
-import requests
 import scrapelib
 import dateutil
 import pytz
@@ -54,7 +53,7 @@ class MTBillScraper(Scraper):
     def scrape_legislators(self):
         self.legislators = []
         url = "https://api.legmt.gov/legislators/v1/legislators"
-        response = requests.get(url).json()
+        response = self.get(url).json()
 
         for legislator in response:
             self.legislators.append(
@@ -95,7 +94,7 @@ class MTBillScraper(Scraper):
     def scrape_requesting_agencies(self):
         self.requesting_agencies = []
         url = "https://api.legmt.gov/legislators/v1/organizations"
-        response = requests.get(url).json()
+        response = self.get(url).json()
 
         for agency in response:
             self.requesting_agencies.append(
@@ -111,7 +110,7 @@ class MTBillScraper(Scraper):
         url = "https://api.legmt.gov/committees/v1/nonStandingCommittees/search"
         params = {"limit": 500, "offset": 0}
         json_data = {"legislatureIds": [self.new_api_session_identifier]}
-        response = requests.post(url, params=params, json=json_data).json()
+        response = self.post(url, params=params, json=json_data).json()
 
         for committee in response["content"]:
             cmte_code = committee["committeeDetails"]["committeeCode"]
@@ -128,7 +127,7 @@ class MTBillScraper(Scraper):
     def scrape_standing_committees(self):
         self.standing_committees = []
         url = f"https://api.legmt.gov/committees/v1/standingCommittees/findBySessionId?sessionId={self.new_api_session_identifier}"
-        response = requests.get(url).json()
+        response = self.get(url).json()
 
         for committee in response:
             cmte_code = committee["committeeDetails"]["committeeCode"]
@@ -304,7 +303,7 @@ class MTBillScraper(Scraper):
             # "sortBy": "billNumber", # it appears that giving no sort defaults to revcron
         }
 
-        page = requests.post(
+        page = self.post(
             "https://api.legmt.gov/archive/v1/bills/search",
             params=params,
             json=json_data,
