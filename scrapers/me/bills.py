@@ -28,7 +28,7 @@ class MEBillScraper(SSLRetryMixin, Scraper):
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session, first_item)
 
-    def _start_search(self, request_session, chamber, session):
+    def _start_search(self, request_session, chamber, session, **filters):
         # the result pages belong to this search, held server side on the session
         search_url = "https://legislature.maine.gov/LawMakerWeb/doadvancedsearch.asp"
         session_number = str(int(session) - 116)
@@ -46,6 +46,7 @@ class MEBillScraper(SSLRetryMixin, Scraper):
             "ActionChamber": "None",
             "GovernorAction": "None",
             "FinalLawType": "None",
+            **filters,
         }
         r = request_session.post(url=search_url, data=form_data, timeout=self.timeout)
         r.raise_for_status()
@@ -56,12 +57,48 @@ class MEBillScraper(SSLRetryMixin, Scraper):
         self._start_search(request_session, chamber, session)
 
         self.seen = set()
+        self.rollcall_papers = self._papers_with_rollcalls(chamber, session)
         yield from self._recursively_process_bills(
             request_session=request_session,
             chamber=chamber,
             session=session,
             first_item=first_item,
         )
+
+    def _papers_with_rollcalls(self, chamber, session):
+        # most papers have no roll calls, and the docket doesn't name every one,
+        # so ask the search which papers have them; None means fetch them all
+        url = "https://legislature.maine.gov/LawMakerWeb/searchresults.asp"
+        ids = set()
+        for rollcall_chamber in ("H", "S"):
+            request_session = requests.Session()
+            self._start_search(
+                request_session,
+                chamber,
+                session,
+                RollcallChamber=rollcall_chamber,
+                RollcallFromDate="01/01/1990",
+                RollcallToDate="12/31/2100",
+            )
+            found, total, start = 0, None, 1
+            while True:
+                r = request_session.get(
+                    url, params={"StartWith": start}, timeout=self.timeout
+                )
+                r.raise_for_status()
+                doc = lxml.html.fromstring(r.text)
+                links = doc.xpath("//tr/td/b/a/@href")
+                if not links:
+                    break
+                total = re.search(r"\(of (\d+)\)", doc.text_content())
+                ids.update(link.split("ID=")[1] for link in links)
+                found += len(links)
+                start += 25
+            # result pages now and then come back empty, so trust only a full count
+            if not total or found != int(total.group(1)):
+                self.info(f"{rollcall_chamber} roll call search incomplete")
+                return None
+        return ids
 
     def _recursively_process_bills(
         self, request_session, chamber, session, first_item=1
@@ -268,9 +305,11 @@ class MEBillScraper(SSLRetryMixin, Scraper):
                     classification=["became-law"],
                 )
 
-        xpath = "//a[contains(@href, 'rollcalls.asp')]"
-        votes_link = page.xpath(xpath)[0]
-        yield from self.scrape_votes(bill, votes_link.attrib["href"])
+        paper_id = url.split("ID=")[1]
+        if self.rollcall_papers is None or paper_id in self.rollcall_papers:
+            xpath = "//a[contains(@href, 'rollcalls.asp')]"
+            votes_link = page.xpath(xpath)[0]
+            yield from self.scrape_votes(bill, votes_link.attrib["href"])
 
         spon_link = page.xpath("//a[contains(@href, 'subjects.asp')]")[0]
         spon_url = spon_link.get("href")
