@@ -10,7 +10,6 @@ INTERIMS_URL = "http://www.wvlegislature.gov/committees/Interims/interims.cfm"
 
 
 class WVEventScraper(Scraper, LXMLMixin):
-    verify = False
     _tz = pytz.timezone("US/Eastern")
     # Matches a time of day such as "1:00 PM", "9 AM" or "10:30a.m."
     _time_re = re.compile(
