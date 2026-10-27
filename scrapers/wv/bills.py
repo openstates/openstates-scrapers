@@ -210,8 +210,13 @@ class WVBillScraper(Scraper):
                             primary=False,
                         )
 
-        for link in page.xpath("//a[contains(@href, 'votes/house')]"):
-            yield from self.scrape_house_vote(bill, link.attrib["href"])
+        # each House roll call is linked from both the history table and the
+        # bill bundle list
+        house_votes = dict.fromkeys(
+            page.xpath("//a[contains(@href, 'votes/house')]/@href")
+        )
+        for href in house_votes:
+            yield from self.scrape_house_vote(bill, href)
 
         senate_votes = set()
         for tr in reversed(
