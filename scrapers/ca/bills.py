@@ -91,19 +91,20 @@ class CABillScraper(Scraper, LXMLMixin):
         self.engine = create_engine(conn_str)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
-        self._committee_names = {}
+        self._committee_codes = {}
         self._unmatched_abbrs = set()
 
-    def committee_names(self, session):
-        """Committee names by chamber from location_code_tbl (codes CS*/CX*)."""
-        if session not in self._committee_names:
-            names = {"upper": set(), "lower": set()}
-            for loc in self.session.query(CALocation).filter_by(session_year=session):
-                if re.fullmatch(r"C[SX]\d+", loc.location_code or ""):
-                    chamber = "upper" if loc.location_code[1] == "S" else "lower"
-                    names[chamber].add(loc.long_description.strip())
-            self._committee_names[session] = names
-        return self._committee_names[session]
+    def committee_codes(self, session):
+        """Committee names by code from location_code_tbl (codes CS*/CX*)."""
+        if session not in self._committee_codes:
+            self._committee_codes[session] = {
+                loc.location_code: loc.long_description.strip()
+                for loc in self.session.query(CALocation).filter_by(
+                    session_year=session
+                )
+                if re.fullmatch(r"C[SX]\d+", loc.location_code or "")
+            }
+        return self._committee_codes[session]
 
     def match_committee_list(self, pieces, names):
         """Match ", "-separated pieces to names; commas also occur inside
@@ -120,13 +121,10 @@ class CABillScraper(Scraper, LXMLMixin):
 
     def action_committees(self, action, session):
         """Return (committee names, unmatched abbreviations) for an action."""
-        by_chamber = self.committee_names(session)
-        chamber = {"Senate": "upper", "Assembly": "lower"}.get(action.primary_location)
-        names = (
-            by_chamber[chamber]
-            if chamber
-            else by_chamber["upper"] | by_chamber["lower"]
-        )
+        prefix = {"Senate": "CS", "Assembly": "CX"}.get(action.primary_location, "C")
+        names = {
+            n for c, n in self.committee_codes(session).items() if c.startswith(prefix)
+        }
         matched, unmatched = [], []
         text = re.sub(r"\s+", " ", action.action)
         for m in committee_abbr_re.finditer(text):
@@ -338,7 +336,10 @@ class CABillScraper(Scraper, LXMLMixin):
                 # fsbill.sponsorships[-1]['extras'] = {'official_type': author.contribution}
 
             seen_actions = set()
+            codes = self.committee_codes(session)
+            prev_code = code = None
             for action in bill.actions:
+                prev_code, code = code, action.ternary_location
                 if not action.action:
                     # NULL action text seems to be an error on CA's part,
                     # unless it has some meaning I'm missing
@@ -375,6 +376,15 @@ class CABillScraper(Scraper, LXMLMixin):
                     if abbr not in self._unmatched_abbrs:
                         self._unmatched_abbrs.add(abbr)
                         self.warning("no committee matches %r in %r", abbr, act_str)
+                if not committees and not unmatched:
+                    # The row's location code is the committee the bill is in
+                    # after the action; "From committee" rows that send it to
+                    # the floor have none, so take the previous row's.
+                    if act_str.startswith("In committee"):
+                        committees = [codes[code]] if code in codes else []
+                    elif act_str.startswith("From committee"):
+                        loc = code if code in codes else prev_code
+                        committees = [codes[loc]] if loc in codes else []
                 if unmatched or not committees:
                     committees += kwargs.get("committees", [])
 
