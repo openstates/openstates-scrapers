@@ -448,20 +448,31 @@ class USBillScraper(Scraper):
             )
 
         # ex: https://rules.house.gov/bill/116/hr-3884
-        if chamber == "lower":
-            rules_url = (
-                f"https://rules.house.gov/bill/{session}/{bill_id.replace(' ', '-')}"
+        # Most House measures have no Rules page and 404. Those that do are on a
+        # House/Union Calendar or have a Rules Committee action.
+        rules_hint = re.compile(
+            r"Rules Committee|Committee on Rules|rule H\. ?Res|"
+            r"Placed on the (Union|House) Calendar",
+            re.I,
+        )
+        if chamber == "lower" and (
+            any(rules_hint.search(t.text or "") for t in xml.iter("text"))
+            or any(c.text == "hsru00" for c in xml.iter("systemCode"))
+        ):
+            # the site's slugs are hr-, h-res-, hj-res- and h-con-res-
+            bill_type, bill_num = bill_id.split()
+            slug = {"HRES": "h-res", "HJRES": "hj-res", "HCONRES": "h-con-res"}.get(
+                bill_type, bill_type.lower()
             )
-            # FYI: this request may be inefficient, because many bills do not have a page at the generated URL
-            # so we may be making a lot of requests that just go to 404
-            # additionally, the server occasionally returns 403, and that triggers a backoff/retry which wastes minutes
+            rules_url = f"https://rules.house.gov/bill/{session}/{slug}-{bill_num}"
+            # the server occasionally returns 403, and that triggers a backoff/retry which wastes minutes
             # accordingly, we use requests directly and avoid retries
             try:
-                page = lxml.html.fromstring(requests.get(rules_url).content)
+                page = lxml.html.fromstring(
+                    requests.get(rules_url, timeout=self.timeout).content
+                )
                 page.make_links_absolute(rules_url)
-                for row in page.xpath(
-                    '//article[contains(@class, "field-name-field-amendment-table")]/div/div/table/tr'
-                ):
+                for row in page.xpath('//article[@id="amendments"]//tbody/tr'):
                     if row.xpath("td[3]/a"):
                         amdt_num = row.xpath("td[1]/text()")[0].strip()
                         amdt_sponsor = row.xpath("td[3]/a/text()")[0].strip()
@@ -478,8 +489,8 @@ class USBillScraper(Scraper):
             except (requests.exceptions.HTTPError, lxml.etree.XMLSyntaxError):
                 # Not every bill has a rules committee page
                 return
-            except requests.exceptions.ProxyError:
-                self.warning(f"ProxyError exception was swallowed for {rules_url}")
+            except requests.exceptions.RequestException as e:
+                self.warning(f"Skipping {rules_url}: {e}")
                 return
 
     # CBO cost estimates
@@ -659,9 +670,11 @@ class USBillScraper(Scraper):
                         "https": os.environ.get("HTTPS_PROXY_SELECTIVE"),
                         "http": os.environ.get("HTTP_PROXY_SELECTIVE"),
                     }
-                    content = requests.get(url, proxies=proxies, verify=False).content
+                    content = requests.get(
+                        url, proxies=proxies, verify=False, timeout=self.timeout
+                    ).content
                 else:
-                    content = requests.get(url).content
+                    content = requests.get(url, timeout=self.timeout).content
 
                 if "You don't have permission to access" in content.decode():
                     # sometimes clerk.house.gov serves an error page, but doesn't send a 403 header
@@ -675,6 +688,9 @@ class USBillScraper(Scraper):
                 yield vote
             except (requests.exceptions.HTTPError, lxml.etree.XMLSyntaxError):
                 self.info(f"Error fetching {url}, skipping (used requests, no retries)")
+                continue
+            except requests.exceptions.Timeout:
+                self.warning(f"Timed out fetching {url}, skipping")
                 continue
             except Exception as e:
                 self.warning(f"Error parsing vote at {url}: {e}")
