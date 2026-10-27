@@ -76,7 +76,7 @@ class Meetings(HtmlPage):
                 "X-Requested-With": "XMLHttpRequest",
             },
         )
-        yield CurrentMeetings(source=session_link)
+        yield CurrentMeetings(self.input, source=session_link)
 
 
 class CurrentMeetings(HtmlPage):
@@ -135,10 +135,12 @@ class CurrentMeetings(HtmlPage):
                 ).match_one(i[1])
 
                 # Check PDF for start time
-                agenda_start_time = next(AgendaStartTime(source=agenda).do_scrape())
+                agenda_start_time = next(
+                    AgendaStartTime(source=agenda).do_scrape(scraper=self.input)
+                )
 
                 # Add bills from PDF
-                for bill in Agenda(source=agenda).do_scrape():
+                for bill in Agenda(source=agenda).do_scrape(scraper=self.input):
                     agenda_bills.append(bill)
 
             # NV seems to have a lot of problems with these event agenda URLs
@@ -227,4 +229,4 @@ class CurrentMeetings(HtmlPage):
 
 class NVEventScraper(Scraper, LXMLMixin):
     def scrape(self):
-        yield from Meetings().do_scrape()
+        yield from Meetings(self).do_scrape(scraper=self)
