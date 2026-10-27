@@ -380,7 +380,7 @@ class CABillScraper(Scraper, LXMLMixin):
                     # The row's location code is the committee the bill is in
                     # after the action; "From committee" rows that send it to
                     # the floor have none, so take the previous row's.
-                    if act_str.startswith("In committee"):
+                    if act_str.startswith(("In committee", "Set for hearing")):
                         committees = [codes[code]] if code in codes else []
                     elif act_str.startswith("From committee"):
                         loc = code if code in codes else prev_code
