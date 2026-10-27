@@ -21,6 +21,7 @@ bill_types = {
     "SR ": "resolution",
     "SJR": "joint resolution",
     "SCR": "concurrent resolution",
+    "SRM": "resolution",
 }
 
 TIMEZONE = pytz.timezone("America/Chicago")
