@@ -1,15 +1,13 @@
 import os
 import re
 import pytz
-import operator
-import itertools
 import datetime
 from lxml import etree, html
 from utils import LXMLMixin
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from openstates.scrape import Scraper, Bill, VoteEvent
-from .models import CABill
+from .models import CABill, CALocation
 from .actions import CACategorizer
 
 SPONSOR_TYPES = {
@@ -40,160 +38,33 @@ def clean_title(s):
     return s
 
 
-# Committee codes used in action chamber text.
-committee_data_upper = [
-    (
-        "Standing Committee on Governance and Finance",
-        "CS73",
-        ["GOV. & F.", "Gov. & F."],
-    ),
-    (
-        "Standing Committee on Energy, Utilities and Communications",
-        "CS71",
-        ["E., U., & C."],
-    ),
-    ("Standing Committee on Education", "CS44", ["ED."]),
-    ("Standing Committee on Appropriations", "CS61", ["APPR."]),
-    ("Standing Committee on Labor and Industrial Relations", "CS51", ["L. & I.R."]),
-    (
-        "Standing Committee on Elections and Constitutional Amendments",
-        "CS45",
-        ["E. & C.A."],
-    ),
-    ("Standing Committee on Environmental Quality", "CS64", ["E.Q."]),
-    ("Standing Committee on Natural Resources And Water", "CS55", ["N.R. & W."]),
-    ("Standing Committee on Public Employment and Retirement", "CS56", ["P.E. & R."]),
-    ("Standing Committee on Governmental Organization", "CS48", ["G.O."]),
-    ("Standing Committee on Insurance", "CS70", ["INS."]),
-    ("Standing Committee on Public Safety", "CS72", ["PUB. S."]),
-    ("Standing Committee on Judiciary", "CS53", ["JUD."]),
-    ("Standing Committee on Health", "CS60", ["HEALTH"]),
-    ("Standing Committee on Transportation and Housing", "CS59", ["T. & H."]),
-    (
-        "Standing Committee on Business, Professions and Economic Development",
-        "CS42",
-        ["B., P. & E.D."],
-    ),
-    ("Standing Committee on Agriculture", "CS40", ["AGRI."]),
-    ("Standing Committee on Banking and Financial Institutions", "CS69", ["B. & F.I."]),
-    ("Standing Committee on Veterans Affairs", "CS66", ["V.A."]),
-    ("Standing Committee on Budget and Fiscal Review", "CS62", ["B. & F.R."]),
-    ("Standing Committee on Human Services", "CS74", ["HUM. S.", "HUMAN S."]),
-    ("Standing Committee on Rules", "CS58", ["RLS."]),
-    (
-        "Extraordinary Committee on Transportation and Infrastructure Development",
-        "CS67",
-        ["T. & I.D."],
-    ),
-]
-
-committee_data_lower = [
-    ("Standing Committee on Rules", "CX20", ["RLS."]),
-    ("Standing Committee on Revenue and Taxation", "CX19", ["REV. & TAX"]),
-    ("Standing Committee on Natural Resources", "CX16", ["NAT. RES."]),
-    ("Standing Committee on Appropriations", "CX25", ["APPR."]),
-    ("Standing Committee on Insurance", "CX28", ["INS."]),
-    ("Standing Committee on Utilities and Commerce", "CX23", ["U. & C."]),
-    ("Standing Committee on Education", "CX03", ["ED."]),
-    ("Standing Committee on Public Safety", "CX18", ["PUB. S."]),
-    ("Standing Committee on Elections and Redistricting", "CX04", ["E. & R."]),
-    ("Standing Committee on Judiciary", "CX13", ["JUD."]),
-    ("Standing Committee on Higher Education", "CX09", ["HIGHER ED."]),
-    ("Standing Committee on Health", "CX08", ["HEALTH"]),
-    ("Standing Committee on Human Services", "CX11", ["HUM. S.", "HUMAN S."]),
-    (
-        "Standing Committee on Arts, Entertainment, Sports, Tourism, and Internet Media",
-        "CX37",
-        ["A., E., S., T., & I.M."],
-    ),
-    ("Standing Committee on Transportation", "CX22", ["TRANS."]),
-    (
-        "Standing Committee on Business, Professions and Consumer Protection",
-        "CX33",
-        ["B., P., & C.P.", "B. & P."],
-    ),
-    ("Standing Committee on Water, Parks and Wildlife", "CX24", ["W., P., & W."]),
-    ("Standing Committee on Local Government", "CX15", ["L. GOV.", "L. Gov."]),
-    ("Standing Committee on Aging and Long Term Care", "CX31", ["AGING & L.T.C."]),
-    ("Standing Committee on Labor and Employment", "CX14", ["L. & E."]),
-    ("Standing Committee on Governmental Organization", "CX07", ["G.O."]),
-    (
-        "Standing Committee on Public Employees, Retirement and Social Security",
-        "CX17",
-        ["P.E., R., & S.S."],
-    ),
-    ("Standing Committee on Veterans Affairs", "CX38", ["V.A."]),
-    ("Standing Committee on Housing and Community Development", "CX10", ["H. & C.D."]),
-    (
-        "Standing Committee on Environmental Safety and Toxic Materials",
-        "CX05",
-        ["E.S. & T.M."],
-    ),
-    ("Standing Committee on Agriculture", "CX01", ["AGRI."]),
-    ("Standing Committee on Banking and Finance", "CX27", ["B. & F."]),
-    (
-        "Standing Committee on Jobs, Economic Development and the Economy",
-        "CX34",
-        ["J., E.D., & E."],
-    ),
-    (
-        "Standing Committee on Accountability and Administrative Review",
-        "CX02",
-        ["A. & A.R."],
-    ),
-    ("Standing Committee on Budget", "CX29", ["BUDGET"]),
-    ("Standing Committee on Privacy and Consumer Protection", "CX32", ["P. & C.P."]),
-    ("Extraordinary Committee on Finance", "CX35", ["FINANCE"]),
-    (
-        "Extraordinary Committee on Public Health and Developmental Services",
-        "CX30",
-        ["P.H. & D.S."],
-    ),
-]
-
-committee_data_both = committee_data_upper + committee_data_lower
+# Committee abbreviations in action text, e.g. "Com. on APPR.",
+# "Coms. on L. GOV. and PUB. S.", "Referred to APPR. suspense file."
+_abbr_token = r"[A-Z0-9&.,'/-]+(?![a-z])"
+_abbr = rf"{_abbr_token}(?: {_abbr_token})*"
+committee_abbr_re = re.compile(
+    rf"(?:Coms?\. on|Referred to|re-refer(?:red)? to|in) ({_abbr}(?: and {_abbr})*)"
+)
 
 
-def slugify(s):
-    return re.sub(r"[ ,.]", "", s)
-
-
-def get_committee_code_data():
-    return dict((t[1], t[0]) for t in committee_data_both)
-
-
-def get_committee_abbr_data():
-    _committee_abbr_to_name_upper = {}
-    _committee_abbr_to_name_lower = {}
-    for name, code, abbrs in committee_data_upper:
-        for abbr in abbrs:
-            _committee_abbr_to_name_upper[slugify(abbr).lower()] = name
-
-    for name, code, abbrs in committee_data_lower:
-        for abbr in abbrs:
-            _committee_abbr_to_name_lower[slugify(abbr).lower()] = name
-
-    committee_data = {
-        "upper": _committee_abbr_to_name_upper,
-        "lower": _committee_abbr_to_name_lower,
-    }
-
-    return committee_data
-
-
-def get_committee_name_regex():
-    # Builds a list of all committee abbreviations.
-    _committee_abbrs = map(operator.itemgetter(2), committee_data_both)
-    _committee_abbrs = itertools.chain.from_iterable(_committee_abbrs)
-    _committee_abbrs = sorted(_committee_abbrs, reverse=True, key=len)
-
-    _committee_abbr_regex = [
-        "%s" % r"[\s,]*".join(abbr.replace(",", "").split(" "))
-        for abbr in _committee_abbrs
+def abbr_matches_name(abbr, name):
+    """Each part of the abbreviation spells, in order, letters of the
+    corresponding word of the name: "B. & F. R." / "Budget and Fiscal Review",
+    "RLS." / "Rules", "L., P.E. & R." / "Labor, Public Employment and Retirement".
+    """
+    parts = [p for p in re.split(r"[\s.,&/]+", abbr.upper()) if p and p != "AND"]
+    words = [
+        w
+        for w in re.split(r"[\s,&]+", name.upper())
+        if w and w not in ("AND", "OF", "THE")
     ]
-    _committee_abbr_regex = re.compile("(%s)" % "|".join(_committee_abbr_regex))
-
-    return _committee_abbr_regex
+    if not parts or len(parts) != len(words):
+        return False
+    for part, word in zip(parts, words):
+        letters = iter(word)
+        if part[0] != word[0] or not all(c in letters for c in part):
+            return False
+    return True
 
 
 class CABillScraper(Scraper, LXMLMixin):
@@ -220,29 +91,57 @@ class CABillScraper(Scraper, LXMLMixin):
         self.engine = create_engine(conn_str)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
+        self._committee_names = {}
+        self._unmatched_abbrs = set()
 
-    def committee_code_to_name(
-        self, code, committee_code_to_name=get_committee_code_data()
-    ):
-        """Need to map committee codes to names."""
-        return committee_code_to_name[code]
+    def committee_names(self, session):
+        """Committee names by chamber from location_code_tbl (codes CS*/CX*)."""
+        if session not in self._committee_names:
+            names = {"upper": set(), "lower": set()}
+            for loc in self.session.query(CALocation).filter_by(session_year=session):
+                if re.fullmatch(r"C[SX]\d+", loc.location_code or ""):
+                    chamber = "upper" if loc.location_code[1] == "S" else "lower"
+                    names[chamber].add(loc.long_description.strip())
+            self._committee_names[session] = names
+        return self._committee_names[session]
 
-    def committee_abbr_to_name(
-        self,
-        chamber,
-        abbr,
-        committee_abbr_to_name=get_committee_abbr_data(),
-        slugify=slugify,
-    ):
-        abbr = slugify(abbr).lower()
-        try:
-            return committee_abbr_to_name[chamber][slugify(abbr)]
-        except KeyError:
-            try:
-                other_chamber = {"upper": "lower", "lower": "upper"}[chamber]
-            except KeyError:
-                raise KeyError
-            return committee_abbr_to_name[other_chamber][slugify(abbr)]
+    def match_committee_list(self, pieces, names):
+        """Match ", "-separated pieces to names; commas also occur inside
+        abbreviations ("L., P.E. & R."), so try the longest pieces first."""
+        if not pieces:
+            return []
+        for i in range(len(pieces), 0, -1):
+            found = {n for n in names if abbr_matches_name(", ".join(pieces[:i]), n)}
+            if len(found) == 1:
+                rest = self.match_committee_list(pieces[i:], names)
+                if rest is not None:
+                    return [found.pop()] + rest
+        return None
+
+    def action_committees(self, action, session):
+        """Return (committee names, unmatched abbreviations) for an action."""
+        by_chamber = self.committee_names(session)
+        chamber = {"Senate": "upper", "Assembly": "lower"}.get(action.primary_location)
+        names = (
+            by_chamber[chamber]
+            if chamber
+            else by_chamber["upper"] | by_chamber["lower"]
+        )
+        matched, unmatched = [], []
+        text = re.sub(r"\s+", " ", action.action)
+        for m in committee_abbr_re.finditer(text):
+            for abbr in m.group(1).split(" and "):
+                abbr = abbr.strip(" ,")
+                if not re.search(r"[A-Z]{2}|[A-Z]\.", abbr) or re.fullmatch(
+                    r"[A-Z]{1,2}\d+|\d.*", abbr
+                ):
+                    continue
+                found = self.match_committee_list(abbr.split(", "), names)
+                if found is None:
+                    unmatched.append(abbr)
+                else:
+                    matched.extend(found)
+        return matched, unmatched
 
     def scrape(self, chamber=None, session=None):
         if session is None:
@@ -281,7 +180,6 @@ class CABillScraper(Scraper, LXMLMixin):
         session,
         bill_type,
         type_abbr,
-        committee_abbr_regex=get_committee_name_regex(),
     ):
         bills = (
             self.session.query(CABill)
@@ -471,43 +369,14 @@ class CABillScraper(Scraper, LXMLMixin):
 
                 attrs = self.categorizer.categorize(act_str)
 
-                # Add in the committee strings of the related committees, if any.
                 kwargs = attrs
-                matched_abbrs = committee_abbr_regex.findall(action.action)
-
-                if re.search(r"Com[s]?. on", action.action) and not matched_abbrs:
-                    msg = "Failed to extract committee abbr from %r."
-                    self.logger.warning(msg % action.action)
-
-                if matched_abbrs:
-                    committees = []
-                    for abbr in matched_abbrs:
-                        try:
-                            name = self.committee_abbr_to_name(chamber, abbr)
-                            committees.append(name)
-                        except KeyError:
-                            msg = (
-                                "Mapping contains no committee name for "
-                                "abbreviation %r. Action text was %r."
-                            )
-                            args = (abbr, action.action)
-                            self.warning(msg % args)
-
-                    committees = filter(None, committees)
-                    kwargs["committees"] = committees
-
-                    code = re.search(r"C[SXZ]\d+", actor)
-                    if code is not None:
-                        code = code.group()
-                        kwargs["actor_info"] = {"committee_code": code}
-                    if not_archive_year:
-                        assert len(list(committees)) == len(matched_abbrs)
-                    for committee, abbr in zip(committees, matched_abbrs):
-                        act_str = act_str.replace("Coms. on ", "")
-                        act_str = act_str.replace("Com. on " + abbr, committee)
-                        act_str = act_str.replace(abbr, committee)
-                        if not act_str.endswith("."):
-                            act_str = act_str + "."
+                committees, unmatched = self.action_committees(action, session)
+                for abbr in unmatched:
+                    if abbr not in self._unmatched_abbrs:
+                        self._unmatched_abbrs.add(abbr)
+                        self.warning("no committee matches %r in %r", abbr, act_str)
+                if unmatched or not committees:
+                    committees += kwargs.get("committees", [])
 
                 # Determine which chamber the action originated from.
                 changed = False
@@ -536,15 +405,13 @@ class CABillScraper(Scraper, LXMLMixin):
                 if (actor, act_str, date) in seen_actions:
                     continue
 
-                kwargs.update(self.categorizer.categorize(act_str))
-
                 action = fsbill.add_action(
                     act_str,
                     date.strftime("%Y-%m-%d"),
                     chamber=actor,
                     classification=kwargs["classification"],
                 )
-                for committee in kwargs.get("committees", []):
+                for committee in dict.fromkeys(committees):
                     action.add_related_entity(committee, entity_type="organization")
                 seen_actions.add((actor, act_str, date))
 
