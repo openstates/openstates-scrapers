@@ -52,9 +52,9 @@ _categorizer_rules = (
         r"absent, (?P<absent_voters>\d+); excused, (?P<excused_voters>\d+)"
     ),
     Rule(r"Committee on (?P<committees>.+?) at \d"),
-    Rule(r"(?P<committees>.+?) relieved of further"),
-    Rule(r"Passed to (?P<committees>.+?) for \S+ reading"),
-    Rule(r"by (?P<committees>.+?) Committee"),
+    Rule(r"(?P<committees>.+?) Committee relieved of further"),
+    Rule(r"Passed to (?P<committees>.+?)( Committee)? for \S+ reading"),
+    Rule(r"by (?P<committees>Rules) Committee"),
     Rule(r"^Adopted", "passage"),
     Rule(r"^Introduced", "introduction"),
     Rule(r"Third reading, adopted", ["reading-3", "passage"]),
@@ -63,8 +63,11 @@ _categorizer_rules = (
     Rule(r"amendment not adopted", "amendment-failure"),
     Rule(r"third reading, (?P<pass_fail>(passed|failed))", "reading-3"),
     Rule(r"Read first time", "reading-1"),
-    Rule(r"first reading, referred to (?P<committees>.*)\.", "reading-1"),
-    Rule(r"And refer to (?P<committees>.*)", "referral-committee"),
+    Rule(
+        r"first reading, referred to (?P<committees>.+?)( \(Not Officially.*)?\.",
+        "reading-1",
+    ),
+    Rule(r"And refer to (?P<committees>.+?)\.?$", "referral-committee"),
     Rule(r".* substitute bill substituted.*", "substitution"),
     Rule(r"chapter (((\d+),?)+) \d+ laws.( .+)?", ""),  # XXX: Thom: Code stuff?
     Rule(r"effective date \d{1,2}/\d{1,2}/\d{4}.*", ""),
@@ -95,7 +98,9 @@ _categorizer_rules = (
         r"Signed by (?P<signed_chamber>(Representatives|Senators)) (?P<legislators>.*)",
         "passage",
     ),
-    Rule(r"Referred to (?P<committees>.*)(\.)?"),
+    Rule(
+        r"Referred to (?P<committees>.+?)( Committee)?( \(Not Officially.*| for \S+ reading)?\.?$"
+    ),
     Rule(
         r"(?P<from_committee>.*) relieved of further consideration. On motion, referred to \
          (?P<committees>.*)",
