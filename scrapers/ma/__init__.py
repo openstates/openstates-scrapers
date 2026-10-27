@@ -135,7 +135,7 @@ class Massachusetts(State):
     def get_session_list(self):
         url = "https://malegislature.gov/Bills/Search"
         try:
-            response = requests.get(url, verify=False)
+            response = requests.get(url, verify=False, timeout=60)
             if response.status_code == 500:
                 sessions = get_fallback_hardcoded_sessions(url)
             else:
@@ -154,7 +154,7 @@ class Massachusetts(State):
                         ],
                     )
                 )
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             sessions = get_fallback_hardcoded_sessions(url)
 
         return sessions
