@@ -1,5 +1,4 @@
 import re
-import time
 import datetime
 import zoneinfo
 import urllib.parse
@@ -9,7 +8,7 @@ from io import BytesIO
 
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 
-from utils import LXMLMixin
+from utils import LXMLMixin, SSLRetryMixin
 
 import fitz
 import requests
@@ -77,7 +76,7 @@ def ensure_url_fully_qualified(url):
     return url
 
 
-class MNBillScraper(Scraper, LXMLMixin):
+class MNBillScraper(SSLRetryMixin, Scraper, LXMLMixin):
     # For testing purposes, this will do a lite version of things.  If
     # testing_bills is set, only these bills will be scraped.  Use SF0077
     testing = False
@@ -118,17 +117,6 @@ class MNBillScraper(Scraper, LXMLMixin):
         (" re-referred ", "referral-committee"),
         ("Received from", "introduction"),
     )
-
-    def get(self, url, **kwargs):
-        # scrapelib never retries an SSLError, and revisor.mn.gov now and then
-        # fails a TLS handshake (BAD_SIGNATURE), which ended the scrape
-        for attempt in range(self.retry_attempts):
-            try:
-                return super().get(url, **kwargs)
-            except requests.exceptions.SSLError as e:
-                self.warning(f"{e}, retrying")
-                time.sleep(self.retry_wait_seconds * 2**attempt)
-        return super().get(url, **kwargs)
 
     def scrape(
         self,

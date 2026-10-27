@@ -1,10 +1,41 @@
 import re
+import ssl
+import time
 
+import requests
 from openstates.scrape import Scraper
 from .lxmlize import LXMLMixin  # noqa
 from .lxmlize import url_xpath  # noqa
 import hashlib
 import uuid
+
+
+class SSLRetryMixin:
+    """Retry requests that fail with an SSLError, which scrapelib re-raises
+    without retrying (e.g. a server dropping the connection mid-handshake).
+
+    Certificate verification failures are raised at once, so callers like
+    LXMLMixin.lxmlize can still fall back to verify=False.
+    """
+
+    def request(self, method, url, **kwargs):
+        for attempt in range(self.retry_attempts + 1):
+            try:
+                return super().request(method, url, **kwargs)
+            except requests.exceptions.SSLError as e:
+                if attempt == self.retry_attempts or _is_cert_error(e):
+                    raise
+                wait = self.retry_wait_seconds * 2**attempt
+                self.warning(f"{e}, retrying in {wait}s")
+                time.sleep(wait)
+
+
+def _is_cert_error(e):
+    while e is not None:
+        if isinstance(e, ssl.SSLCertVerificationError):
+            return True
+        e = e.__cause__ or e.__context__
+    return False
 
 
 def get_session_meta(scraper: Scraper, identifier: str):
