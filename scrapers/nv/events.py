@@ -19,33 +19,23 @@ date_re = re.compile(r"([a-z]+ \d{1,2}, .* (am|pm))", flags=re.IGNORECASE)
 start_time_re = re.compile(r"Start\s*Time\s*(\d+)\s*(AM|PM)", flags=re.IGNORECASE)
 
 
-class AgendaStartTime(PdfPage):
-    def process_page(self):
-        # Simplify text to make regex simpler
-        text = self.text.replace(". ", "").replace(".", "")
-
-        start = start_time_re.search(text)
-        if not start:
-            # Default to 12am if no start time is found
-            return "12:00 AM"
-        time, am_pm = start.groups(1)
-        return f"{time}:00 {am_pm}"
-
-
 class Agenda(PdfPage):
     def process_page(self):
         # Simplify text to make regex simpler
         text = self.text.replace(". ", "").replace(".", "")
 
+        start = start_time_re.search(text)
+        if start:
+            time, am_pm = start.groups(1)
+            start_time = f"{time}:00 {am_pm}"
+        else:
+            # Default to 12am if no start time is found
+            start_time = "12:00 AM"
+
         # Find all bill ids
-        bills = bills_re.findall(text)
+        bills = {f"{alpha.upper()} {num}" for alpha, num in bills_re.findall(text)}
 
-        # Format bills before yielding
-        formatted_bills = set()
-        for alpha, num in bills:
-            formatted_bills.add(f"{alpha.upper()} {num}")
-
-        yield from formatted_bills
+        return start_time, bills
 
 
 class Meetings(HtmlPage):
@@ -134,14 +124,10 @@ class CurrentMeetings(HtmlPage):
                     './/a[@title="View the agenda for this meeting"]/@href'
                 ).match_one(i[1])
 
-                # Check PDF for start time
-                agenda_start_time = next(
-                    AgendaStartTime(source=agenda).do_scrape(scraper=self.input)
+                # Start time and bills from the agenda PDF
+                agenda_start_time, agenda_bills = next(
+                    Agenda(source=agenda).do_scrape(scraper=self.input)
                 )
-
-                # Add bills from PDF
-                for bill in Agenda(source=agenda).do_scrape(scraper=self.input):
-                    agenda_bills.append(bill)
 
             # NV seems to have a lot of problems with these event agenda URLs
             # 404 is not uncommon, or weird failing redirects
