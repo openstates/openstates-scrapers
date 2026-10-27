@@ -15,7 +15,6 @@ TIMEZONE = pytz.timezone("US/Central")
 class NEBillScraper(Scraper, LXMLMixin):
     priority_bills = {}
     # SSL bad as of 2024-11-18
-    verify = False
 
     def scrape(self, session=None):
         if session is None:

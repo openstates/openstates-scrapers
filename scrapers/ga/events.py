@@ -79,7 +79,9 @@ class GAEventScraper(Scraper):
                 event.dedupe_key = f'{row["agendaUri"]}#{start}'
                 # Scrape bill ids from agenda pdf
                 try:
-                    for bill_id in Agenda(source=URL(row["agendaUri"])).do_scrape():
+                    for bill_id in Agenda(source=URL(row["agendaUri"])).do_scrape(
+                        scraper=self
+                    ):
                         event.add_bill(bill_id)
                 except Exception as e:
                     self.warning(f"{row['agendaUri']} failed to scrape: {e}")

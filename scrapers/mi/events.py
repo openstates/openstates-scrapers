@@ -12,7 +12,6 @@ from openstates.exceptions import EmptyScrape
 class MIEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
     current_page = None
-    verify = False
 
     def scrape(self):
         url = "https://legislature.mi.gov/Committees/Meetings?sortBy=Calendar"
