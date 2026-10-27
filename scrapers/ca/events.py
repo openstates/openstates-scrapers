@@ -1,4 +1,3 @@
-import os
 import re
 import pytz
 from collections import defaultdict
@@ -9,32 +8,16 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
 from .models import CACommitteeHearing, CALocation
-
-MYSQL_HOST = os.environ.get("MYSQL_HOST", "localhost")
-MYSQL_USER = os.environ.get("MYSQL_USER", "root")
-MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "")
+from .database import get_database_url
 
 
 class CAEventScraper(Scraper):
     _tz = pytz.timezone("US/Pacific")
 
     def __init__(self, *args, **kwargs):
+        database_url = get_database_url(kwargs)
         super().__init__(*args, **kwargs)
-
-        host = kwargs.pop("host", MYSQL_HOST)
-        user = kwargs.pop("user", MYSQL_USER)
-        pw = kwargs.pop("pw", MYSQL_PASSWORD)
-
-        if (user is not None) and (pw is not None):
-            conn_str = "mysql://%s:%s@" % (user, pw)
-        else:
-            conn_str = "mysql://"
-        conn_str = "%s%s/%s?charset=utf8" % (
-            conn_str,
-            host,
-            kwargs.pop("db", "capublic"),
-        )
-        self.engine = create_engine(conn_str)
+        self.engine = create_engine(database_url)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
 
@@ -109,7 +92,7 @@ class CAEventScraper(Scraper):
 # to hearing locations that resemble committee names in
 # the location_code_tbl in the db dump.
 #
-# if you hit a key error here, enter the mysql db and do
+# If you hit a key error here, inspect location_code_tbl and do
 # SELECT * FROM location_code_tbl WHERE location_code LIKE '%82';
 # replacing 82 with your missing index.
 _committee_nr = {
@@ -179,4 +162,6 @@ _committee_nr = {
     83: "Senate Revenue and Taxation",
     84: "Assembly Utilities and Energy",
     85: "Senate Fuel Supply and Price Spikes",
+    86: "Senate Emergency Management",
+    87: "Senate Privacy, Digital Technologies, and Consumer Protection",
 }
