@@ -18,7 +18,6 @@ tz = pytz.timezone("America/New_York")
 # FYI: as of 2025 this should be run with --http-resilience
 class PABillScraper(Scraper):
     session_year: str = ""
-    verify = False
 
     def scrape(self, chamber=None, session=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]

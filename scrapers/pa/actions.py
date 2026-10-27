@@ -28,7 +28,10 @@ _categorizer_rules = (
 
 
 def categorize(action):
+    seen = set()
     for pattern, labels in _categorizer_rules:
         if re.search(pattern, action):
             for label in labels if isinstance(labels, list) else [labels]:
-                yield label
+                if label not in seen:
+                    seen.add(label)
+                    yield label

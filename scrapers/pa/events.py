@@ -10,9 +10,8 @@ from . import utils
 # FYI: as of 2025 this should be run with --http-resilience
 class PAEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
-    verify = False
 
-    def scrape(self, chamber=None):
+    def scrape(self, chamber=None, session=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber)
