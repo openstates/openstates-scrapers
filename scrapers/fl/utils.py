@@ -33,19 +33,6 @@ def get_random_user_agent():
     return random.choice(user_agents)
 
 
-def add_random_delay(min_seconds=1, max_seconds=3):
-    """
-    Add a random delay to simulate human behavior.
-
-    Args:
-        min_seconds: Minimum delay in seconds
-        max_seconds: Maximum delay in seconds
-    """
-    delay = random.uniform(min_seconds, max_seconds)
-    logger.debug(f"Adding random delay of {delay:.2f} seconds")
-    time.sleep(delay)
-
-
 def retry_on_connection_error(func, max_retries=5, initial_backoff=2, max_backoff=60):
     """
     Retry a function call on connection errors with exponential backoff.
@@ -92,54 +79,6 @@ def retry_on_connection_error(func, max_retries=5, initial_backoff=2, max_backof
 
             # Increase backoff for next retry
             backoff = min(backoff * 2, max_backoff)
-
-            # Rotate user agent for next attempt
-            if hasattr(func, "__self__") and hasattr(func.__self__, "headers"):
-                func.__self__.headers.update({"User-Agent": get_random_user_agent()})
-
-
-def handle_remote_disconnected(func, max_retries=5, initial_backoff=5, max_backoff=120):
-    """
-    Specifically handle the RemoteDisconnected error, which occurs when the server
-    abruptly closes the connection without a response.
-
-    Args:
-        func: Function to call
-        max_retries: Maximum number of retries
-        initial_backoff: Initial backoff time in seconds
-        max_backoff: Maximum backoff time in seconds
-
-    Returns:
-        The result of the function call
-    """
-    retries = 0
-    backoff = initial_backoff
-
-    while True:
-        try:
-            return func()
-        except RemoteDisconnected as e:
-            retries += 1
-            if retries > max_retries:
-                logger.error(
-                    f"Max retries ({max_retries}) exceeded for RemoteDisconnected. Last error: {e}"
-                )
-                raise
-
-            # For RemoteDisconnected, use a longer backoff with more jitter
-            jitter = random.uniform(0.7, 1.3)
-            current_backoff = min(backoff * jitter, max_backoff)
-
-            logger.warning(
-                f"RemoteDisconnected error: {e}. This usually means the server is blocking us. "
-                f"Waiting {current_backoff:.2f} seconds before retry (attempt {retries}/{max_retries})"
-            )
-
-            # For RemoteDisconnected, we need a longer pause
-            time.sleep(current_backoff)
-
-            # Increase backoff more aggressively for this specific error
-            backoff = min(backoff * 3, max_backoff)
 
             # Rotate user agent for next attempt
             if hasattr(func, "__self__") and hasattr(func.__self__, "headers"):
