@@ -14,15 +14,6 @@ tz = pytz.timezone("America/New_York")
 
 class VaCSVBillScraper(Scraper):
 
-    _members = defaultdict(list)
-    _sponsors = defaultdict(list)
-    _amendments = defaultdict(list)
-    _fiscal_notes = defaultdict(list)
-    _history = defaultdict(list)
-    _votes = defaultdict(list)
-    _bills = defaultdict(list)
-    _summaries = defaultdict(list)
-
     _session_id: str
     categorizer = Categorizer()
 
@@ -248,6 +239,14 @@ class VaCSVBillScraper(Scraper):
 
         session_id = SESSION_SITE_IDS[session]
         self._session_id = session_id
+        self._members = defaultdict(list)
+        self._sponsors = defaultdict(list)
+        self._amendments = defaultdict(list)
+        self._fiscal_notes = defaultdict(list)
+        self._history = defaultdict(list)
+        self._votes = defaultdict(list)
+        self._bills = defaultdict(list)
+        self._summaries = defaultdict(list)
 
         # self._init_sftp(session_id)
         bill_url_base = "https://lis.virginia.gov/cgi-bin/"
@@ -375,7 +374,7 @@ class VaCSVBillScraper(Scraper):
                         cleaned_action, date, chamber=chamber, classification=atype
                     )
 
-                if len(vote_id) > 0:
+                if vote_id in self._votes:
                     total_yes = 0
                     total_no = 0
                     total_not_voting = 0

@@ -4,7 +4,7 @@ from .csv_bills import VaCSVBillScraper
 from .events import VaEventScraper
 from .bills import VaBillScraper
 
-import requests
+import scrapelib
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -319,11 +319,15 @@ class Virginia(State):
             "sec-ch-ua-mobile": "?0",
             "sec-ch-ua-platform": '"Linux"',
         }
-        response = requests.get(
-            "https://lis.virginia.gov/Session/api/GetSessionListAsync/",
-            verify=False,
-            headers=headers,
-        ).json()
+        response = (
+            scrapelib.Scraper()
+            .get(
+                "https://lis.virginia.gov/Session/api/GetSessionListAsync/",
+                headers=headers,
+                timeout=60,
+            )
+            .json()
+        )
         session_list = []
         for row in response["Sessions"]:
             session_list.append(f"{row['SessionYear']} {row['DisplayName']}")

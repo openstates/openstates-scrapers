@@ -21,7 +21,6 @@ class VaBillScraper(Scraper):
     base_url: str = "https://lis.virginia.gov"
     session_code: str = ""
     categorizer = Categorizer()
-    verify = False
 
     chamber_map = {
         "S": "upper",
@@ -250,25 +249,6 @@ class VaBillScraper(Scraper):
                 bill.add_version_link(
                     row["Description"],
                     html["FileURL"],
-                    media_type="text/html",
-                    on_duplicate="ignore",
-                )
-
-            # Some versions (commonly ones that never got a generated PDF,
-            # e.g. still-prefiled bills) have no PDFFile/HTMLFile at all --
-            # getlegislationtextbyidasync only returns their text inline as
-            # DraftText, which isn't a URL we can hand off. The old
-            # legacylis.virginia.gov site still serves a rendered HTML page
-            # of that same text, so fall back to it rather than dropping
-            # the version entirely.
-            if not row["PDFFile"] and not row["HTMLFile"] and row.get("DraftText"):
-                legacy_url = (
-                    "https://legacylis.virginia.gov/cgi-bin/legp604.exe?"
-                    f"{self.session_code[2:]}+ful+{bill.identifier}"
-                )
-                bill.add_version_link(
-                    row["Description"],
-                    legacy_url,
                     media_type="text/html",
                     on_duplicate="ignore",
                 )
