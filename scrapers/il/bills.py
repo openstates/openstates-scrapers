@@ -574,13 +574,14 @@ class IlBillScraper(SSLRetryMixin, Scraper):
             #     except ValueError:
             #         self.warning("Can't resolve committee for %s" % classification)
 
-            bill.add_action(
+            act = bill.add_action(
                 action,
                 date,
                 chamber=actor_id,
                 classification=classification,
-                related_entities=related_orgs,
             )
+            for org in filter(None, related_orgs):
+                act.add_related_entity(org, "organization")
 
             # if action.lower().find("sponsor") != -1:
             #     self.refine_sponsor_list(actor, action, sponsor_list, bill_id)
@@ -603,9 +604,12 @@ class IlBillScraper(SSLRetryMixin, Scraper):
         self.scrape_documents(bill, version_url)
         yield bill
 
-        # temporarily remove vote processing due to pdf issues
-        votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
-        yield from self.scrape_votes(session, bill, votes_url)
+        # Every roll call on the Votes tab also shows its tally in an action
+        # ("Third Reading - Short Debate - Passed 108-000-000"), so most bills
+        # can skip that page
+        if any(re.search(r"\d{3}-\d{3}-\d{3}", a["description"]) for a in bill.actions):
+            votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
+            yield from self.scrape_votes(session, bill, votes_url)
 
     def scrape_documents(self, bill, version_url):
         html = self.get(version_url, headers=headers, verify=False).text
@@ -665,7 +669,7 @@ class IlBillScraper(SSLRetryMixin, Scraper):
                 bill.add_version_link(name, url, media_type=mimetype)
             elif name in FULLTEXT_DOCUMENT_TYPES:
                 bill.add_document_link(name, url)
-            elif "Printer-Friendly" or "Printer Friendly" in name:
+            elif "Printer-Friendly" in name or "Printer Friendly" in name:
                 pass
             else:
                 self.warning("unknown document type %s - adding as document" % name)
