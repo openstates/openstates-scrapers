@@ -48,9 +48,6 @@ class ApiClient(object):
         self.scraper = scraper
         self.apikey = os.environ["INDIANA_API_KEY"]
         self.user_agent = os.getenv("USER_AGENT", "openstates")
-        # On 2025-06-12 IN TLS certificate expired, so we need to use verify=False
-        # If this is fixed in the future, this can be changed to True here and in __init__
-        self.verify = False
 
     def get_session_no(self, session):
         session_no = ""
@@ -60,9 +57,7 @@ class ApiClient(object):
         headers["User-Agent"] = self.user_agent
         url = urljoin(self.root, f"/{session}")
 
-        resp = requests.get(
-            url, headers=headers, verify=self.verify, timeout=self.scraper.timeout
-        ).json()
+        resp = requests.get(url, headers=headers, timeout=self.scraper.timeout).json()
         if "message" in resp:
             raise Exception(resp["message"])
         session_no_regex = re.search(r"Session\s+(\d+).+", resp["name"])
@@ -83,7 +78,6 @@ class ApiClient(object):
             url,
             headers=headers,
             allow_redirects=False,
-            verify=self.verify,
             timeout=self.scraper.timeout,
         )
         if "Location" in resp.headers:
@@ -112,7 +106,6 @@ class ApiClient(object):
                 url,
                 headers=headers,
                 allow_redirects=False,
-                verify=self.verify,
                 timeout=self.scraper.timeout,
             )
         except requests.RequestException as e:
@@ -147,9 +140,7 @@ class ApiClient(object):
         requests_kwargs["headers"] = headers
 
         self.scraper.info("Api GET: %r" % url)
-        return self.scraper.get(
-            url, *requests_args, verify=self.verify, **requests_kwargs
-        ).json()
+        return self.scraper.get(url, *requests_args, **requests_kwargs).json()
 
     def unpaginate(self, result):
         for data in result["items"]:
