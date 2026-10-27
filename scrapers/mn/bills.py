@@ -1,6 +1,7 @@
 import re
 import time
 import datetime
+import functools
 import zoneinfo
 import urllib.parse
 import lxml.html
@@ -474,7 +475,7 @@ class MNBillScraper(Scraper, LXMLMixin):
         # https://www.revisor.mn.gov/bills/bill.php?b=House&f=HF2184&ssn=0&y=2025
         datestr = (
             datestr.replace("/225", "/2025")
-            .replace("/226", "2026")
+            .replace("/226", "/2026")
             .replace("05/272026", "05/27/2026")
         )
         date_formats = ["%m/%d/%Y", "%m/%d/%y"]
@@ -816,6 +817,11 @@ class MNBillScraper(Scraper, LXMLMixin):
 
         return bill
 
+    # one Senate journal PDF (1-2.4MB) holds every roll call of that day
+    @functools.cache
+    def get_journal_pdf(self, url):
+        return self.get(url).content
+
     def extract_vote_from_action(self, bill, action, chamber, action_row, pages):
         """
         Gets vote data.  For the Senate, we can only get yes and no
@@ -875,8 +881,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                 vote.set_count("yes", yeas)
                 vote.set_count("no", nays)
 
-                pdf_response = self.get(pdf_url)
-                doc = fitz.open("pdf", BytesIO(pdf_response.content))
+                doc = fitz.open("pdf", BytesIO(self.get_journal_pdf(pdf_url)))
 
                 first_page = max(0, page_number - 2)
                 last_page = min(page_number, doc.page_count - 1)

@@ -25,8 +25,6 @@ def get_bill_ids(text):
 
 
 class MNEventScraper(Scraper, LXMLMixin):
-    # bad SSL as of August 2017
-    verify = False
     _tz = pytz.timezone("US/Central")
 
     def scrape(self):
@@ -119,7 +117,7 @@ class MNEventScraper(Scraper, LXMLMixin):
                 # if they don't provide a name just use the filename
                 if doc_name == "":
                     parsed_url = urlparse(doc_url)
-                    doc_name = os.path.basename(parsed_url)
+                    doc_name = os.path.basename(parsed_url.path)
 
                 # sometimes broken links to .msg files (emails?) are attached,
                 # they always 404.
