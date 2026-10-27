@@ -6,7 +6,7 @@ import pytz
 from spatula import JsonPage
 from .actions import NDCategorizer
 import lxml.html
-import requests
+import scrapelib
 
 
 class BillList(JsonPage):
@@ -22,6 +22,10 @@ class BillList(JsonPage):
         super().__init__()
         self.input = input_data
         self.source = self.create_source_url()
+        # the bill-actions and biography pages skip the scraper's 5 RPM
+        # limit (meant for the API), which would make a session take hours
+        self.html_scraper = scrapelib.Scraper(retry_attempts=3, retry_wait_seconds=10)
+        self.html_scraper.timeout = 60
 
     def create_source_url(self):
         """
@@ -49,11 +53,11 @@ class BillList(JsonPage):
         if url in self.members_cache:
             return self.members_cache[url]
 
-        html_content = requests.get(url).content
-        doc = lxml.html.fromstring(html_content)
-        doc.make_links_absolute(url)
-
-        fullname = doc.xpath("string(//h1)").strip()
+        try:
+            doc = lxml.html.fromstring(self.html_scraper.get(url).content)
+            fullname = doc.xpath("string(//h1)").strip()
+        except scrapelib.HTTPError:
+            fullname = ""
 
         if fullname == "":
             # at least one ND biography page is returning 404 as of 1/15/25
@@ -175,7 +179,11 @@ class BillList(JsonPage):
                 .replace("bill-overview", "bill-actions")
             )
 
-            html_content = requests.get(action_url).content
+            try:
+                html_content = self.html_scraper.get(action_url).content
+            except scrapelib.HTTPError as e:
+                self.logger.warning(f"Skipping votes for {bill_id}: {e}")
+                continue
             doc = lxml.html.fromstring(html_content)
             doc.make_links_absolute(action_url)
             votes_list = doc.xpath(
