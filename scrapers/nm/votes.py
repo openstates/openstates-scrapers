@@ -9,6 +9,8 @@ from lxml import html
 
 from openstates.scrape import Scraper, VoteEvent
 
+from .bills import session_slug
+
 # Senate vote header
 s_vote_header = re.compile(r"(YES)|(NO)|(ABS)|(EXC)|(REC)")
 # House vote header
@@ -28,7 +30,7 @@ class NMVoteScraper(Scraper):
     def scrape_vote(self, chamber, session):
         """most document types (+ Votes) are in this common directory go
         through it and attach them to their related bills"""
-        session_path = self.session_slug(session)
+        session_path = session_slug(session)
 
         doc_path = "https://www.nmlegis.gov/Sessions/{}/votes/".format(session_path)
 
@@ -193,10 +195,6 @@ class NMVoteScraper(Scraper):
                 new_header.append(header_map.get(first_letter, "other"))
 
         return new_header
-
-    def session_slug(self, session):
-        session_type = "Special" if session.endswith("S") else "Regular"
-        return "{}%20{}".format(session[2:4], session_type)
 
     def build_vote(self, session, bill_id, url, vote_record, chamber, motion_text):
         # When they vote in a substitute they mark it as XHB
