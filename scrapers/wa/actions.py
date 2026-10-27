@@ -133,6 +133,7 @@ class Categorizer(BaseCategorizer):
         if "committees" in attrs:
             committees = attrs["committees"]
             for committee in re.findall(committees_rgx, text, re.I):
-                if committee not in committees:
+                # "Environment" also matches inside "Environment & Energy"
+                if not any(committee in c for c in committees):
                     committees.append(committee)
         return attrs
