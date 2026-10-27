@@ -15,14 +15,12 @@ class AREventScraper(Scraper):
     date_format = "%Y-%m-%d"
 
     def scrape(self, start=None, end=None):
-        if start is None:
-            start_date = datetime.datetime.now().strftime(self.date_format)
+        start_date = start or datetime.datetime.now().strftime(self.date_format)
 
         # default to 90 days if no end
-        if end is None:
-            dtdelta = datetime.timedelta(days=90)
-            end_date = datetime.datetime.now() + dtdelta
-            end_date = end_date.strftime(self.date_format)
+        end_date = end or (
+            datetime.datetime.now() + datetime.timedelta(days=90)
+        ).strftime(self.date_format)
 
         url = f"https://www.arkleg.state.ar.us/Calendars/Meetings?tbType=&meetingStartDate={start_date}&meetingEndDate={end_date}"
 
@@ -84,16 +82,20 @@ class AREventScraper(Scraper):
             )
             event.add_source("https://www.arkleg.state.ar.us/Calendars/Meetings")
 
-            if row.xpath(".//a[@aria-label='Agenda']"):
-                agenda_url = row.xpath(".//a[@aria-label='Agenda']/@href")[0]
+            if row.xpath(".//a[starts-with(@aria-label,'Agenda PDF')]"):
+                agenda_url = row.xpath(
+                    ".//a[starts-with(@aria-label,'Agenda PDF')]/@href"
+                )[0]
                 event.add_document("Agenda", agenda_url, media_type="application/pdf")
 
                 # Scrape bill ids from agenda pdf
                 for bill in Agenda(source=URL(agenda_url)).do_scrape():
                     event.add_bill(bill)
 
-            if row.xpath(".//a[@aria-label='Play Video']"):
-                video_url = row.xpath(".//a[@aria-label='Play Video']/@href")[0]
+            if row.xpath(".//a[starts-with(@aria-label,'Play Video')]"):
+                video_url = row.xpath(
+                    ".//a[starts-with(@aria-label,'Play Video')]/@href"
+                )[0]
                 event.add_media_link(
                     "Video of Hearing", video_url, media_type="text/html"
                 )
