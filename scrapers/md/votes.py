@@ -16,7 +16,8 @@ class MDVoteScraper(Scraper, LXMLMixin):
     def scrape_chamber(self, chamber, session):
         chamber_name = "senate" if chamber == "upper" else "house"
         # despite visible pagination on page, the HTML seems to contain everything
-        url = "http://mgaleg.maryland.gov/mgawebsite/FloorActions/Index/" + chamber_name
+        session_slug = session if "s" in session else session + "RS"
+        url = f"http://mgaleg.maryland.gov/mgawebsite/FloorActions/Index/{chamber_name}?ys={session_slug}"
         doc = self.lxmlize(url)
         links = doc.xpath("//table[1]/tbody/tr/td[3]/a/@href")
 
