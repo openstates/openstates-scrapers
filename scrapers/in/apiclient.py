@@ -1,8 +1,6 @@
 import os
 import re
-import time
 from urllib.parse import urljoin
-import functools
 import requests
 
 """
@@ -15,37 +13,6 @@ need to install a header-modifying extension to do this, on firefox:
 https://addons.mozilla.org/en-US/firefox/addon/modify-headers/
 """
 settings = dict(SCRAPELIB_TIMEOUT=300)
-
-
-class BadApiResponse(Exception):
-    """Raised if the service returns a service code higher than 400,
-    other than 429. Makes the response object available as exc.resp
-    """
-
-    def __init__(self, resp, *args):
-        super(BadApiResponse, self).__init__(self, *args)
-        self.resp = resp
-
-
-def check_response(method):
-    """Decorated functions will run, and if they come back
-    with a 429 and retry-after header, will wait and try again.
-    """
-
-    @functools.wraps(method)
-    def wrapped(self, *args, **kwargs):
-        resp = method(self, *args, **kwargs)
-        status = resp.status_code
-        if 400 < status:
-            if resp.status_code == 429:
-                self.handle_429(resp, *args, **kwargs)
-                return method(self, *args, **kwargs).json()
-            msg_args = (resp, resp.text, resp.headers)
-            msg = "Bad api response: %r %r %r" % msg_args
-            raise BadApiResponse(resp, msg)
-        return resp.json()
-
-    return wrapped
 
 
 class ApiClient(object):
@@ -81,9 +48,6 @@ class ApiClient(object):
         self.scraper = scraper
         self.apikey = os.environ["INDIANA_API_KEY"]
         self.user_agent = os.getenv("USER_AGENT", "openstates")
-        # On 2025-06-12 IN TLS certificate expired, so we need to use verify=False
-        # If this is fixed in the future, this can be changed to True here and in __init__
-        self.verify = False
 
     def get_session_no(self, session):
         session_no = ""
@@ -93,7 +57,7 @@ class ApiClient(object):
         headers["User-Agent"] = self.user_agent
         url = urljoin(self.root, f"/{session}")
 
-        resp = requests.get(url, headers=headers, verify=self.verify).json()
+        resp = requests.get(url, headers=headers, timeout=self.scraper.timeout).json()
         if "message" in resp:
             raise Exception(resp["message"])
         session_no_regex = re.search(r"Session\s+(\d+).+", resp["name"])
@@ -111,21 +75,14 @@ class ApiClient(object):
         headers["User-Agent"] = self.user_agent
         url = urljoin(self.root, url)
         resp = requests.get(
-            url, headers=headers, allow_redirects=False, verify=self.verify
+            url,
+            headers=headers,
+            allow_redirects=False,
+            timeout=self.scraper.timeout,
         )
         if "Location" in resp.headers:
             return resp.headers["Location"]
 
-    @check_response
-    def geturl(self, url):
-        headers = {}
-        headers["x-api-key"] = self.apikey
-        headers["Accept"] = "application/json"
-        headers["User-Agent"] = self.user_agent
-        self.scraper.info("Api GET next page: %r" % url)
-        return self.scraper.get(url, headers=headers)
-
-    @check_response
     def get_relurl(self, url):
         headers = {}
         headers["x-api-key"] = self.apikey
@@ -133,7 +90,7 @@ class ApiClient(object):
         headers["User-Agent"] = self.user_agent
         url = urljoin(self.root, url)
         self.scraper.info("Api GET: %r" % url)
-        return self.scraper.get(url, headers=headers)
+        return self.scraper.get(url, headers=headers).json()
 
     # fetch an API url where we expect a redirect
     # return the new redirect URL (do not fetch it yet)
@@ -144,13 +101,20 @@ class ApiClient(object):
         headers["x-api-key"] = self.apikey
         headers["Accept"] = "application/json"
         headers["User-Agent"] = self.user_agent
-        response = requests.get(
-            url, headers=headers, allow_redirects=False, verify=self.verify
-        )
+        try:
+            response = requests.get(
+                url,
+                headers=headers,
+                allow_redirects=False,
+                timeout=self.scraper.timeout,
+            )
+        except requests.RequestException as e:
+            self.scraper.warning(f"Failed to fetch {url}: {e}")
+            return None
         if response.status_code in (301, 302):
             return response.headers["Location"]
         else:
-            self.scraper.error(f"Failed to get expected redirect URL from {url}")
+            self.scraper.warning(f"Failed to get expected redirect URL from {url}")
             return None
 
     def make_url(self, resource_name, **url_format_args):
@@ -160,12 +124,10 @@ class ApiClient(object):
         url = urljoin(self.root, url)
         return url
 
-    @check_response
     def get(
         self, resource_name, requests_args=None, requests_kwargs=None, **url_format_args
     ):
         """Resource is a self.resources dict key."""
-        num_bad_packets_allowed = 10
         url = self.make_url(resource_name, **url_format_args)
 
         # Add in the api key.
@@ -178,13 +140,7 @@ class ApiClient(object):
         requests_kwargs["headers"] = headers
 
         self.scraper.info("Api GET: %r" % url)
-        resp = None
-        tries = 0
-        while resp is None and tries < num_bad_packets_allowed:
-            resp = self.scraper.get(
-                url, *requests_args, verify=self.verify, **requests_kwargs
-            )
-        return resp
+        return self.scraper.get(url, *requests_args, **requests_kwargs).json()
 
     def unpaginate(self, result):
         for data in result["items"]:
@@ -202,19 +158,3 @@ class ApiClient(object):
                     yield data
             else:
                 return
-
-    def handle_429(self, resp, *args, **kwargs):
-        """According to the docs:
-
-        "If the rate limit is exceeded, we will respond with a HTTP 429 Too Many
-        Requests response code and a body that details the reason for the rate
-        limiter kicking in. Further, the response will have a Retry-After
-        header that tells you for how many seconds to sleep before retrying.
-        You should anticipate this in your API client for the smoothest user
-        experience."
-        """
-        seconds = int(resp.headers["retry-after"])
-        self.scraper.info(
-            "Got a 429: Sleeping %s seconds per retry-after header." % seconds
-        )
-        time.sleep(seconds)
