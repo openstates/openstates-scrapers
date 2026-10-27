@@ -21,7 +21,7 @@ class MPBillScraper(Scraper):
         "Senate Legislative initiatives:": "SLI",
         "Senate Joint Resolutions:": "SJR",
         "Senate Local Bills:": "SLB",
-        "Senate Commemorative Resolutions:": "SR",
+        "Senate Commemorative Resolutions:": "SCommRes",
     }
 
     bill_type_map = {
@@ -39,6 +39,7 @@ class MPBillScraper(Scraper):
         "HLB": "bill",
         "SLB": "bill",
         "HCommRes": "resolution",
+        "SCommRes": "resolution",
     }
 
     def scrape(self, chamber=None, session=None):
