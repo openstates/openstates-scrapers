@@ -848,14 +848,14 @@ class TXVoteScraper(Scraper):
                 )
                 if url_match is None or url_match.lower() in journal_url.lower():
                     try:
-                        self.get(journal_url)
+                        resp = self.get(journal_url)
                     except scrapelib.HTTPError:
                         urls_failed_on_exception.append(journal_url)
                         pass
                     else:
                         urls_scraped.append(journal_url)
                         yield from self.scrape_journal(
-                            journal_url, "lower", session, session_url_part
+                            journal_url, resp.text, "lower", session, session_url_part
                         )
 
                 # Check if this "legislative day" has a Continuing journal entry
@@ -863,14 +863,18 @@ class TXVoteScraper(Scraper):
                 continuing_url = journal_url.replace("FINAL", "CFINAL")
                 if url_match is None or url_match.lower() in continuing_url.lower():
                     try:
-                        self.get(continuing_url)
+                        resp = self.get(continuing_url)
                     except scrapelib.HTTPError:
                         urls_failed_on_exception.append(continuing_url)
                         pass
                     else:
                         urls_scraped.append(continuing_url)
                         yield from self.scrape_journal(
-                            continuing_url, "lower", session, session_url_part
+                            continuing_url,
+                            resp.text,
+                            "lower",
+                            session,
+                            session_url_part,
                         )
 
             if "upper" in chambers:
@@ -885,14 +889,14 @@ class TXVoteScraper(Scraper):
                 )
                 if url_match is None or url_match.lower() in journal_url.lower():
                     try:
-                        self.get(journal_url)
+                        resp = self.get(journal_url)
                     except scrapelib.HTTPError:
                         urls_failed_on_exception.append(journal_url)
                         pass
                     else:
                         urls_scraped.append(journal_url)
                         yield from self.scrape_journal(
-                            journal_url, "upper", session, session_url_part
+                            journal_url, resp.text, "upper", session, session_url_part
                         )
 
                 # Check if this "legislative day" has a Continuing journal entry
@@ -900,14 +904,18 @@ class TXVoteScraper(Scraper):
                 continuing_url = journal_url.replace("F.", "F1.")
                 if url_match is None or url_match.lower() in continuing_url.lower():
                     try:
-                        self.get(continuing_url)
+                        resp = self.get(continuing_url)
                     except scrapelib.HTTPError:
                         urls_failed_on_exception.append(continuing_url)
                         pass
                     else:
                         urls_scraped.append(continuing_url)
                         yield from self.scrape_journal(
-                            continuing_url, "upper", session, session_url_part
+                            continuing_url,
+                            resp.text,
+                            "upper",
+                            session,
+                            session_url_part,
                         )
 
             journal_day += datetime.timedelta(days=1)
@@ -920,9 +928,7 @@ class TXVoteScraper(Scraper):
         self.logger.debug(f"Scraped urls: {urls_tried}")
         self.logger.debug(f"Failed urls: {urls_failed_on_exception}")
 
-    def scrape_journal(self, url, chamber, session, session_url_filename_part):
-        page = self.get(url).text
-
+    def scrape_journal(self, url, page, chamber, session, session_url_filename_part):
         root = lxml.html.fromstring(page)
         clean_journal(root, self.logger)
 
