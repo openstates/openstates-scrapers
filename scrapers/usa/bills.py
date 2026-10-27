@@ -459,9 +459,12 @@ class USBillScraper(Scraper):
             any(rules_hint.search(t.text or "") for t in xml.iter("text"))
             or any(c.text == "hsru00" for c in xml.iter("systemCode"))
         ):
-            rules_url = (
-                f"https://rules.house.gov/bill/{session}/{bill_id.replace(' ', '-')}"
+            # the site's slugs are hr-, h-res-, hj-res- and h-con-res-
+            bill_type, bill_num = bill_id.split()
+            slug = {"HRES": "h-res", "HJRES": "hj-res", "HCONRES": "h-con-res"}.get(
+                bill_type, bill_type.lower()
             )
+            rules_url = f"https://rules.house.gov/bill/{session}/{slug}-{bill_num}"
             # the server occasionally returns 403, and that triggers a backoff/retry which wastes minutes
             # accordingly, we use requests directly and avoid retries
             try:
@@ -469,9 +472,7 @@ class USBillScraper(Scraper):
                     requests.get(rules_url, timeout=self.timeout).content
                 )
                 page.make_links_absolute(rules_url)
-                for row in page.xpath(
-                    '//article[contains(@class, "field-name-field-amendment-table")]/div/div/table/tr'
-                ):
+                for row in page.xpath('//article[@id="amendments"]//tbody/tr'):
                     if row.xpath("td[3]/a"):
                         amdt_num = row.xpath("td[1]/text()")[0].strip()
                         amdt_sponsor = row.xpath("td[3]/a/text()")[0].strip()
