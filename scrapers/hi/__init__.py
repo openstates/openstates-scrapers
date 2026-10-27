@@ -1,5 +1,5 @@
 import lxml.html
-import requests
+import scrapelib
 from openstates.scrape import State
 from .events import HIEventScraper
 from .bills import HIBillScraper
@@ -142,9 +142,13 @@ class Hawaii(State):
     ]
 
     def get_session_list(self):
-        response = requests.get(
-            "https://data.capitol.hawaii.gov/session/archives/main.aspx", verify=False
-        ).content
+        response = (
+            scrapelib.Scraper(retry_attempts=3)
+            .get(
+                "https://data.capitol.hawaii.gov/session/archives/main.aspx", timeout=60
+            )
+            .content
+        )
         page = lxml.html.fromstring(response)
         # page doesn't include current session, we need to add it
         sessions = page.xpath("//*[@name='ctl00$MainContent$yearList']/option/text()")
