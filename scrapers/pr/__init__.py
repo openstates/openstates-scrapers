@@ -1,9 +1,9 @@
-import requests
 from openstates.scrape import State
 from .bills import PRBillScraper
 from .votes import PRVoteScraper
 import re
 import json
+import scrapelib
 
 
 settings = dict(SCRAPELIB_TIMEOUT=600)
@@ -72,7 +72,7 @@ class PuertoRico(State):
         get_sessions_dynamically = False
 
         if get_sessions_dynamically:
-            s = requests.Session()
+            s = scrapelib.Scraper()
             # this URL should work even for future sessions
             url = "https://sutra.oslpr.org/"
 
@@ -89,7 +89,11 @@ class PuertoRico(State):
             }
             data = '["/cuatrienios"]'
             data = s.post(
-                "https://sutra.oslpr.org/", headers=headers, data=data, verify=False
+                "https://sutra.oslpr.org/",
+                headers=headers,
+                data=data,
+                verify=False,
+                timeout=30,
             )
             sdata = re.search(r"1:(.*?}])", data.text).group(1)
             json_data = json.loads(sdata)
