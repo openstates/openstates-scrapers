@@ -250,6 +250,7 @@ class Mississippi(State):
             "start_date": "2024-01-02",
             "end_date": "2024-05-05",
             "active": False,
+            "extras": {"house_speaker": "White"},
         },
         {
             "_scraped_name": "2024 First Extraordinary Session",
@@ -260,6 +261,7 @@ class Mississippi(State):
             # TODO: real end date
             "end_date": "2024-01-26",
             "active": False,
+            "extras": {"house_speaker": "White"},
         },
         {
             "_scraped_name": "2024 Second Extraordinary Session",
@@ -270,6 +272,7 @@ class Mississippi(State):
             # TODO: real end date
             "end_date": "2024-02-02",
             "active": False,
+            "extras": {"house_speaker": "White"},
         },
         {
             "_scraped_name": "2025 Regular Session",
@@ -279,6 +282,7 @@ class Mississippi(State):
             "start_date": "2025-01-07",
             "end_date": "2025-04-06",
             "active": False,
+            "extras": {"house_speaker": "White"},
         },
         {
             "_scraped_name": "2025 1st Extraordinary Session",
@@ -289,6 +293,7 @@ class Mississippi(State):
             # TODO: real end date
             "end_date": "2025-06-06",
             "active": False,
+            "extras": {"house_speaker": "White"},
         },
         {
             "_scraped_name": "2026 Regular Session",
@@ -298,6 +303,7 @@ class Mississippi(State):
             "start_date": "2025-01-06",
             "end_date": "2025-04-05",
             "active": True,
+            "extras": {"house_speaker": "White"},
         },
         {
             "_scraped_name": "2026 1st Extraordinary Session",
@@ -307,6 +313,7 @@ class Mississippi(State):
             "start_date": "2026-07-14",
             "end_date": "2026-07-17",
             "active": True,
+            "extras": {"house_speaker": "White"},
         },
     ]
     ignored_scraped_sessions = [

@@ -34,7 +34,7 @@ class SenateAgenda(HtmlPage):
             "https://legislature.ms.gov/media/1151/2025_SENATE_COMMITTEE_AGENDAS.pdf",
             verify=False,
         )
-        yield from SenateAgendaPdf(source=pdf_link).do_scrape()
+        yield SenateAgendaPdf(source=pdf_link)
 
 
 # Parses events from a pdf
@@ -146,7 +146,7 @@ class MSEventScraper(Scraper):
         yield from self.scrape_senate()
 
     def scrape_senate(self):
-        return SenateAgenda().do_scrape()
+        return SenateAgenda().do_scrape(scraper=self)
 
     def scrape_house(self):
         event_url = "https://billstatus.ls.state.ms.us/htms/h_sched.htm"
