@@ -40,8 +40,6 @@ class Agenda(PdfPage):
 
 class OKEventScraper(Scraper):
     _tz = pytz.timezone("CST6CDT")
-    session = requests.Session()
-    verify = False
 
     # usage:
     # poetry run os-update ne \
@@ -107,6 +105,13 @@ class OKEventScraper(Scraper):
         except IndexError:
             location = "Senate"
 
+        # cancelled meetings are titled like "Agriculture and Wildlife C A N C E L L E D"
+        status = "confirmed"
+        cancelled_re = r"\bC\s?A\s?N\s?C\s?E\s?L\s?(L\s?)?E\s?D\b"
+        if re.search(cancelled_re, title, flags=re.I):
+            status = "cancelled"
+            title = re.sub(cancelled_re, "", title, flags=re.I)
+
         title = f"Senate {title}"
         title = re.sub(r"(2ND|3RD|4TH)* REVISED", "", title).strip()
 
@@ -121,7 +126,7 @@ class OKEventScraper(Scraper):
             return
         when = dateutil.parser.parse(when_nodes[0])
 
-        event = Event(title, when, location)
+        event = Event(title, when, location, status=status)
         for row in page.xpath("//article//ol/li"):
             item_text = row.xpath("string(.)").strip()
             if item_text:
@@ -227,7 +232,7 @@ class OKEventScraper(Scraper):
                 try:
                     for bill in Agenda(
                         source=URL(link["route"], verify=False)
-                    ).do_scrape():
+                    ).do_scrape(scraper=self):
                         event.add_bill(bill)
                 except requests.exceptions.TooManyRedirects:
                     # Missing PDFs on webserver1.lsb.state.ok.us redirect in a

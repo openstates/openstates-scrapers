@@ -4,7 +4,6 @@ import collections
 import unicodedata
 
 from lxml import html
-import requests
 import scrapelib
 
 from urllib import parse
@@ -42,7 +41,6 @@ def extract_names(line, limit):
 
 
 class OKBillScraper(Scraper):
-    verify = False
     bill_types = ["B", "JR", "CR", "R"]
     subject_map = collections.defaultdict(list)
 
@@ -88,9 +86,7 @@ class OKBillScraper(Scraper):
         self.scrape_subjects(chamber, session)
 
         url = "https://webapps.oklegislature.gov/WebApplication3/WebForm1.aspx"
-        requests_session = requests.Session()
-        requests_session.verify = False
-        form_page = html.fromstring(requests_session.get(url).text)
+        form_page = html.fromstring(self.get(url).text)
 
         if chamber == "upper":
             chamber_letter = "S"
@@ -115,10 +111,10 @@ class OKBillScraper(Scraper):
             values[hidden.attrib["name"]] = hidden.attrib["value"]
 
         headers = {
-            "Cookie": f"ASP.NET_SessionId={requests_session.cookies.get('ASP.NET_SessionId')}",
+            "Cookie": f"ASP.NET_SessionId={self.cookies.get('ASP.NET_SessionId')}",
             "x-oxylabs-force-headers": "1",
         }
-        response = requests_session.post(url, data=values, headers=headers)
+        response = self.post(url, data=values, headers=headers)
         page = response.text
         page = html.fromstring(page)
         page.make_links_absolute(url)
@@ -219,18 +215,16 @@ class OKBillScraper(Scraper):
                 actor = "upper"
 
             attrs = self.categorizer.categorize(action)
-            related_entities = []
-            for item in attrs["committees"]:
-                related_entities.append({"type": "committee", "name": item})
-            for item in attrs["legislators"]:
-                related_entities.append({"type": "legislator", "name": item})
-            bill.add_action(
+            act = bill.add_action(
                 description=action,
                 date=date.strftime("%Y-%m-%d"),
                 chamber=actor,
                 classification=attrs["classification"],
-                related_entities=related_entities,
             )
+            for item in sorted(attrs["committees"]):
+                act.add_related_entity(item, "organization")
+            for item in sorted(attrs["legislators"]):
+                act.add_related_entity(item, "person")
 
         version_table = page.xpath("//table[contains(@id, 'Versions')]")[0]
         # Keep track of already seen versions to prevent processing duplicates.
