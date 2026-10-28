@@ -104,6 +104,24 @@ _categorizer_rules = (
     Rule(["Amendment #\\d+ rejected"], ["amendment-failure"]),
     Rule(["Amendment \\d+ adopted"], ["amendment-passage"]),
     Rule(["Committee of Conference appointed \\((?P<legislator>.+?)\\)"], []),
+    # Conference committee — non-concurrence
+    # Matches House/Senate non-concurrence actions.
+    Rule(["(?i)NON-concurred"], ["non-concurrence"]),
+    # Conference committee — concurrence / resolution
+    # Match conference appointment or report-accepted actions
+    # that include "in concurrence".
+    Rule(
+        ["(?i)Committee of conference.+in concurrence"],
+        ["concurrence"],
+    ),
+
+    # Conference committee report back:
+    # "Reported by H####", "Reported by S####",
+    # "Reported, in part, by H####", etc.
+    Rule(
+        ["(?i)Reported(?:, in part,)? by [HS]\\d+"],
+        ["concurrence"],
+    ),
 )
 
 
