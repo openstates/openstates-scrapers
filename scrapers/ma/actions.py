@@ -114,7 +114,6 @@ _categorizer_rules = (
         ["(?i)Committee of conference.+in concurrence"],
         ["concurrence"],
     ),
-
     # Conference committee report back:
     # "Reported by H####", "Reported by S####",
     # "Reported, in part, by H####", etc.
