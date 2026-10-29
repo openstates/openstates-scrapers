@@ -671,7 +671,7 @@ class NVBillScraper(Scraper):
             bill.add_source(list_url)
             bill.add_action(
                 description="Filed",
-                date=parse_date(filed_date),
+                date=parse_date(filed_date).date(),
                 chamber="legislature",
                 classification="filing",
             )
