@@ -153,7 +153,7 @@ class Tennessee(State):
             "name": "114th First Extraordinary Session (January 2025)",
             "start_date": "2025-01-27",
             "end_date": "2025-01-31",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "Second Extraordinary Session (May 2026)",
@@ -162,7 +162,7 @@ class Tennessee(State):
             "name": "114th Second Extraordinary Session (May 2026)",
             "start_date": "2026-05-05",
             "end_date": "2026-05-08",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
