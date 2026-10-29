@@ -195,7 +195,7 @@ class Nevada(State):
             "name": "36th (2026) Special Session",
             "start_date": "2025-11-13",
             "end_date": "2025-11-21",
-            "active": True,
+            "active": False,
             "extras": {"session_slug": "36th2025Special"},
         },
         {
@@ -205,7 +205,7 @@ class Nevada(State):
             "name": "2027 Regular Session",
             "start_date": "2027-02-01",
             "end_date": "2027-05-31",
-            "active": False,
+            "active": True,
             "extras": {"session_slug": "84th2027"},
         },
     ]

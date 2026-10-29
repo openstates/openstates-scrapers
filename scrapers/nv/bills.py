@@ -392,7 +392,7 @@ class BillTabDetail(Utf8HtmlMixin, HtmlPage):
 
         bdr = extract_bdr(short_title)
         if bdr:
-            bdr = bdr.replace(" ", "")
+            bdr = f"BDR {bdr}"
             bill.extras["BDR"] = bdr
             add_bdr_relationship(bill, bdr, self.input.session)
 
@@ -612,8 +612,94 @@ class VoteMembers(Utf8HtmlMixin, HtmlPage):
 
 
 class NVBillScraper(Scraper):
-    def scrape(self, session=None):
+    def scrape_bdrs(self, session, session_slug):
+        list_url = f"https://www.leg.state.nv.us/App/NELIS/REL/{session_slug}/Bdrs/List"
+        data_url = (
+            f"https://www.leg.state.nv.us/App/NELIS/REL/{session_slug}/"
+            "HomeBdr/SearchBdrs"
+        )
+        response = self.get(
+            data_url,
+            params={"searchText": "", "orderByNumber": "true", "returnAll": "true"},
+        )
+        root = lxml.html.fromstring(response.content, parser=UTF8_PARSER)
+
+        rows = root.xpath(
+            '//div[contains(concat(" ", normalize-space(@class), " "), '
+            '" bdr-container ")]/div[contains(concat(" ", '
+            'normalize-space(@class), " "), " row ")]'
+        )
+        for row in rows:
+            columns = row.xpath("./div")
+            number_column, detail_column, date_column = (
+                columns[0],
+                columns[1],
+                columns[-1],
+            )
+
+            # Once a BDR has an introduced bill, the regular bill scraper has
+            # richer data and should be the only source for that item.
+            linked_bill = number_column.xpath(".//a//text()[normalize-space()]")
+            if linked_bill:
+                continue
+
+            bdr_number = " ".join(
+                number_column.xpath("./text()[normalize-space()]")[0].split()
+            )
+            bdr_number = f"BDR {bdr_number}"
+            sponsor_node = detail_column.xpath(
+                './/span[contains(concat(" ", normalize-space(@class), " "), '
+                '" font-weight-bold ")]'
+            )[0]
+            sponsor = " ".join(sponsor_node.text_content().split())
+            title = " ".join(
+                detail_column.xpath(
+                    "./br[1]/following-sibling::text()[normalize-space()]"
+                )[0].split()
+            )
+            filed_date = " ".join(
+                date_column.xpath("./text()[normalize-space()]")[0].split()
+            )
+
+            bill = Bill(
+                identifier=bdr_number,
+                legislative_session=session,
+                title=title,
+                chamber="legislature",
+                classification="proposed bill",
+            )
+            bill.add_source(list_url)
+            bill.add_action(
+                description="Filed",
+                date=parse_date(filed_date).date(),
+                chamber="legislature",
+                classification="filing",
+            )
+
+            if sponsor.lower().startswith("assemblymember "):
+                sponsor = re.sub(r"^assemblymember\s+", "", sponsor, flags=re.I)
+                entity_type = "person"
+                chamber = "lower"
+            elif sponsor.lower().startswith("senator "):
+                sponsor = re.sub(r"^senator\s+", "", sponsor, flags=re.I)
+                entity_type = "person"
+                chamber = "upper"
+            else:
+                entity_type = "organization"
+                chamber = None
+            bill.add_sponsorship(
+                name=sponsor,
+                classification="sponsor",
+                entity_type=entity_type,
+                primary=True,
+                chamber=chamber,
+            )
+            yield bill
+
+    def scrape(self, session=None, prefiles=True):
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
         session_slug = get_session_slug(self.jurisdiction, session)
         bill_list = BillList({"session": session, "session_slug": session_slug})
+        if prefiles:
+            yield from self.scrape_bdrs(session, session_slug)
         yield from bill_list.do_scrape(scraper=self)
