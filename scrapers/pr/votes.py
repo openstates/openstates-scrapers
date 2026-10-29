@@ -1,176 +1,93 @@
-# -*- coding: utf-8 -*-
-from datetime import datetime, time, timezone, timedelta
-import re
-import lxml.etree
-
-from openstates.utils import convert_pdf
 from openstates.scrape import Scraper, VoteEvent
 from openstates.exceptions import EmptyScrape
 
-_measure_classifiers = (
-    ("Nombramiento", "NM"),
-    ("R. del S.", "RS"),
-    ("R. Conc. del S.", "RS"),
-    ("P. del S.", "PS"),
-    ("P. de la C.", "PC"),
-    ("R. C. del S.", "RCS"),
-)
+API = "https://public.senado.evotepr.com/api"
 
-_vote_classifiers = (
-    ("A favor", "yes"),
-    ("En contra", "no"),
-    ("Ausente", "absent"),
-    ("Abstenido", "abstain"),
-    ("Confirmado", "yes"),
-)
+_measure_types = {
+    "P. del S.": "PS",
+    "P. de la C.": "PC",
+    "R. del S.": "RS",
+    "R. de la C.": "RC",
+    "R. C. del S.": "RCS",
+    "R. C. de la C.": "RCC",
+    "R. Conc. del S.": "RKS",
+    "R. Conc. de la C.": "RKC",
+    "Nombramiento": "NM",
+}
+
+_vote_types = {
+    "infavor": "yes",
+    "against": "no",
+    "abstention": "abstain",
+    "absent": "absent",
+}
 
 
 class PRVoteScraper(Scraper):
+    # Senate roll calls from its e-vote reports app,
+    # https://votaciones.senado.evotepr.com/measures
     def scrape(self, chamber=None, session=None):
-        # only senate votes currently scraped
+        # only the Senate publishes roll calls
         if chamber and chamber != "upper":
             raise EmptyScrape
-        # the Senate vote PDF page only covers 2021-2024
-        if session != "2021-2024":
-            raise EmptyScrape
 
-        yield from self.scrape_upper(session)
-
-    def scrape_upper(self, session):
-        url = "https://www.senado.pr.gov/Pages/VotacionMedidas.aspx"
-        chamber = "upper"
-        html = self.get(url).content
-
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
-
-        urls = [x for x in doc.xpath("//a[@href]/@href") if x.endswith(".pdf")][::-1]
-
-        for url in urls:
-            date = re.match(r"^(.*)/(?P<datestring>\d*).pdf", url).groupdict()[
-                "datestring"
-            ]
-            date = datetime.strptime(date, "%Y%m%d")
-            date = datetime.combine(date, time(tzinfo=timezone(timedelta(hours=-5))))
-            yield self.scrape_journal(url, chamber, session, date)
-
-    def scrape_journal(self, url, chamber, session, date):
-        filename = self.urlretrieve(url)[0]
-        self.logger.info("Saved journal to %r", filename)
-        all_text = convert_pdf(filename, type="text")
-
-        lines = all_text.split(b"\n")
-        lines = [line.decode("utf-8") for line in lines]
-        lines = [line.strip() for line in lines]
-
-        for index, line in enumerate(lines):
-            if "Resultado de la Votación para la Medida" not in line:
-                continue
-            name_line = lines[index + 1]
-            result_line = lines[index + 2]
-            nomination_result_line = lines[index + 3]
-
-            name_match = re.match(
-                r"^(?P<type>.*) (?P<num>\d*) (?P<ref>.*)$", name_line
-            ).groupdict()
-
-            bill = self.classify_measure_type(name_match)
-            if not bill:
-                continue
-
-            if re.match("^NM", bill):
-                # Nomination
-                if re.match(r"(.*)Confirmado", nomination_result_line):
-                    result = "pass"
-                else:
-                    msg = "Unhandled nomination result of: {}. Skipping.".format(
-                        nomination_result_line
-                    )
-                    self.logger.warning(msg)
-                    continue
-                name_line = result_line
-
-            else:
-                # Not a Nomination
-                if re.match(r"(.*)Recibido", result_line):
-                    msg = "Result was 'Recibido': {}. Skipping.".format(result_line)
-                    self.logger.warning(msg)
-                    continue
-                try:
-                    vote_result = re.match(
-                        r".* (?P<yes>\d*)X(?P<no>\d*)X(?P<abstain>\d*)X(?P<absent>\d*) (?P<result>\w*)",
-                        result_line,
-                    ).groupdict()
-                except AttributeError:
-                    msg = "Could not determine voting result of: {}. Skipping.".format(
-                        result_line
-                    )
-                    self.logger.warning(msg)
-                    continue
-
-                if vote_result["result"] == "Aprobada":
-                    result = "pass"
-                else:
-                    result = "fail"
-                    msg = "Voting result {} not guaranteed to be 'fail'. Take a look.".format(
-                        vote_result["result"]
-                    )
-                    self.logger.warning(msg)
-
-            vote = VoteEvent(
-                chamber=chamber,
-                start_date=date,
-                motion_text=name_line,
-                result=result,
-                classification="passage",
-                legislative_session=session,
-                bill=bill,
-                bill_chamber=chamber,
-            )
-
-            vote_index = index + 3
-
-            while not re.match("^Votante", lines[vote_index]):
-                vote_index = vote_index + 1
-
-            vote_index = vote_index + 1
-
-            votes = {
-                "yes": 0,
-                "no": 0,
-                "absent": 0,
-                "abstain": 0,
-            }
-
-            while lines[vote_index].strip() and not re.match(
-                r"Senado de", lines[vote_index]
-            ):
-                name, vtype = parse_vote(lines[vote_index])
-                votes[vtype] += 1
-                vote.vote(vtype, name)
-                vote_index = vote_index + 1
-
-            for vtype in ("yes", "no", "absent", "abstain"):
-                vote.set_count(vtype, votes[vtype])
-
-            vote.add_source(url)
-            yield vote
-
-    def classify_measure_type(self, name_match):
-        for pattern, mtype in _measure_classifiers:
-            if re.match(pattern, name_match["type"]):
-                bill = mtype + name_match["num"]
-                return bill
-        msg = "Could not determine category of result: {}. Skipping.".format(
-            name_match["type"]
+        assemblies = self.get(f"{API}/assemblies?loadLastDate=true").json()
+        assembly = next(
+            a["idAssembly"] for a in assemblies if a["startDate"][:4] == session[:4]
         )
-        self.logger.warning(msg)
-        return None
+        measures = self.post(
+            f"{API}/reports/measures", json={"filter": {"assemblyId": assembly}}
+        ).json()
+        ids = [m["id"] for m in measures]
+        # the API times out returning a whole session's votes at once
+        for i in range(0, len(ids), 200):
+            batch = self.post(
+                f"{API}/reports/measures?loadVotes=true",
+                json={"filter": {"measureIds": ids[i : i + 200]}},
+            ).json()
+            for measure in batch:
+                yield from self.scrape_vote(session, measure)
 
+    def scrape_vote(self, session, measure):
+        code = _measure_types.get(measure["measureType"])
+        # measureName can name two measures voted together, e.g. "1173 y 1183"
+        if not code or not measure["measureName"].isdigit():
+            self.warning(
+                "Skipping vote on %s %s",
+                measure["measureType"],
+                measure["measureName"],
+            )
+            return
 
-def parse_vote(line):
-    result = re.match(r"^(?P<re_name>.*),(.*)    (?P<re_vote>.*)$", line).groupdict()
-    for pattern, vtype in _vote_classifiers:
-        if re.match(pattern, result["re_vote"]):
-            vote = vtype
-    return result["re_name"], vote
+        motion = " ".join(
+            x.strip()
+            for x in (
+                measure["measureType"],
+                measure["measureName"],
+                measure["measureReference"],
+                measure["measureAmendment"],
+            )
+            if x.strip()
+        )
+        vote = VoteEvent(
+            chamber="upper",
+            # every vote is timestamped 12:xx UTC; only the date is real
+            start_date=measure["date"][:10],
+            motion_text=motion,
+            result="pass" if measure["measureStatus"] == "approved" else "fail",
+            classification="passage",
+            legislative_session=session,
+            bill=f"{code}{int(measure['measureName']):04d}",
+            bill_chamber="lower" if code.endswith("C") else "upper",
+        )
+        vote.dedupe_key = f"{API}/reports/measures#{measure['id']}"
+        vote.set_count("yes", measure["inFavor"])
+        vote.set_count("no", measure["against"])
+        vote.set_count("abstain", measure["abstention"])
+        vote.set_count("absent", measure["absent"])
+        for v in measure["votes"]:
+            # names are "Last,  First"
+            last, _, first = v["name"].partition(",")
+            vote.vote(_vote_types[v["vote"]], f"{first.strip()} {last.strip()}")
+        vote.add_source("https://votaciones.senado.evotepr.com/measures")
+        yield vote
