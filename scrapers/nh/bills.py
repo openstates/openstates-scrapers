@@ -53,6 +53,7 @@ extended_type_map = {
 
 VERSION_URL = "https://gc.nh.gov/legislation/%s/%s.html"
 AMENDMENT_URL = "https://gc.nh.gov/legislation/amendments/%s.html"
+PREFILES_URL = "https://gc.nh.gov/lsr_search/LSR_Results.aspx"
 
 # RollCallHistory.txt codes other than Yea/Nay
 NON_VOTE_OPTIONS = {
@@ -68,16 +69,32 @@ def extract_amendment_id(action):
         return piece[0]
 
 
+def add_lsr_relationship(bill, lsr, legislative_session):
+    """Add an LSR relationship without applying bill ID normalization."""
+    bill.related_bills.append(
+        {
+            "identifier": lsr,
+            "legislative_session": legislative_session,
+            "relation_type": "replaces",
+        }
+    )
+
+
 class NHBillScraper(Scraper):
     cachebreaker = dt.datetime.now().strftime("%Y%d%d%H%I%s")
     categorizer = Categorizer()
 
-    def scrape(self, chamber=None, session=None, scrape_from_web=None):
+    def scrape(self, chamber=None, session=None, scrape_from_web=None, prefiles=True):
         est = pytz.timezone("America/New_York")
         time_est = dt.datetime.now(est)
 
         if time_est.hour > 6 and time_est.hour < 21:
             self.warning("NH bans scraping between 6am and 9pm. This may fail.")
+
+        if isinstance(prefiles, str):
+            prefiles = prefiles.strip().lower() not in {"0", "false", "no"}
+        if prefiles:
+            yield from self.scrape_prefiles(session)
 
         chambers = [chamber] if chamber else ["upper", "lower"]
         if scrape_from_web:
@@ -85,6 +102,56 @@ class NHBillScraper(Scraper):
             chambers = chambers[:1]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session, scrape_from_web)
+
+    def scrape_prefiles(self, session):
+        """Scrape LSRs that have not yet been introduced as bills."""
+        response = self.get(PREFILES_URL, verify=False)
+        page = lxml.html.fromstring(response.content)
+        session_year = str(session)[:4]
+
+        for row in page.xpath('//tr[td[@rowspan="2"]]'):
+            cells = row.xpath("./td")
+            if len(cells) < 4:
+                self.warning("Skipping an unexpected row on the NH LSR page")
+                continue
+
+            identifier = " ".join(cells[0].text_content().split())
+            if not identifier.startswith(f"{session_year}-"):
+                continue
+
+            identifier = f"LSR {identifier}"
+
+            bill_type = " ".join(cells[1].text_content().split()).upper()
+            chamber = chamber_map.get(bill_type[:1])
+            if chamber is None:
+                self.warning(
+                    f"Skipping {identifier}: unknown NH bill type {bill_type!r}"
+                )
+                continue
+
+            title = " ".join(cells[-1].text_content().split())
+            bill = Bill(
+                identifier=identifier,
+                legislative_session=session,
+                title=title,
+                chamber=chamber,
+                classification="proposed bill",
+            )
+            bill.add_source(PREFILES_URL)
+
+            sponsor_row = row.getnext()
+            sponsor_links = sponsor_row.xpath(".//a") if sponsor_row is not None else []
+            for sponsor_link in sponsor_links:
+                sponsor = " ".join(sponsor_link.text_content().split())
+                if sponsor:
+                    bill.add_sponsorship(
+                        name=sponsor,
+                        classification="sponsor",
+                        entity_type="person",
+                        primary=True,
+                    )
+
+            yield bill
 
     def get_bill_page(self, version_id):
         """
@@ -459,7 +526,8 @@ class NHBillScraper(Scraper):
                         classification=bill_type,
                     )
 
-                    self.bills[lsr].extras["LSR"] = lsr
+                    self.bills[lsr].extras["LSR"] = f"LSR {lsr}"
+                    add_lsr_relationship(self.bills[lsr], f"LSR {lsr}", session)
 
                     # if lsr in self.amendments_by_lsr:
                     #     self.add_version(lsr, "latest version from amend")
