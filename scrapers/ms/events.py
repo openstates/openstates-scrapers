@@ -65,6 +65,10 @@ class SenateAgendaPdf(PdfPage):
                 # AR is after recess, which is undefined
                 # so remove AR, AR+, AR+5, AR+ 5
                 time = re.sub(r"AR\s*\+?\s*(\d+)?", "", time)
+                # Interim layout has a "Time" column header instead of a time,
+                # so there is no time to set; fall back to the date alone
+                if time.strip().lower() == "time":
+                    time = ""
                 start_time = f"{date} {time}"
                 # manual fix, turn "9: AM" into "9:00 AM"
                 start_time = re.sub(r"(\d+): (A|P)", r"\g<1>:00 \g<2>", start_time)
