@@ -157,6 +157,15 @@ class Wyoming(State):
             "name": "2026 Regular Session",
             "start_date": "2026-02-09",
             "end_date": "2026-03-06",
+            "active": False,
+        },
+        {
+            "_scraped_name": "2027",
+            "classification": "primary",
+            "identifier": "2027",
+            "name": "2027 Regular Session",
+            "start_date": "2027-01-12",
+            "end_date": "2027-03-12",
             "active": True,
         },
     ]
