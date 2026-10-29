@@ -10,10 +10,6 @@ from openstates.utils import convert_pdf
 from utils import LXMLMixin
 from utils.media import get_media_type
 
-import pytz
-
-central = pytz.timezone("US/Central")
-
 
 def chamber_abbr(chamber):
     if chamber == "upper":
@@ -43,7 +39,7 @@ class KYBillScraper(Scraper, LXMLMixin):
         ("1st reading", "reading-1"),
         ("2nd reading", "reading-2"),
         ("3rd reading", "reading-3"),
-        ("passed", "passage"),
+        (r"passed \d", "passage"),
         (r"bill passed", "passage"),
         ("line items vetoed", "executive-veto-line-item"),
         ("delivered to secretary of state", "became-law"),
@@ -128,6 +124,7 @@ class KYBillScraper(Scraper, LXMLMixin):
         action_rows = page.xpath(
             '//div[preceding-sibling::a[@id="actions"]][1]/table[1]/tbody/tr'
         )
+        current_chamber = chamber
         for row in action_rows:
             action_date = row.xpath("th[1]/text()")[0].strip()
 
@@ -147,12 +144,17 @@ class KYBillScraper(Scraper, LXMLMixin):
 
             for action_text in action_texts:
                 action_text = action_text.strip()
+                received = re.match(r"received in (House|Senate)", action_text)
+                if received:
+                    current_chamber = (
+                        "lower" if received.group(1) == "House" else "upper"
+                    )
                 if action_text.endswith("House") or action_text.endswith("(H)"):
                     actor = "lower"
                 elif action_text.endswith("Senate") or action_text.endswith("(S)"):
                     actor = "upper"
                 else:
-                    actor = chamber
+                    actor = current_chamber
 
                 classifications = self.classify_action(action_text)
                 bill.add_action(
@@ -304,9 +306,14 @@ class KYBillScraper(Scraper, LXMLMixin):
         os.remove(filename)
 
         vote_date = 0
+        vote_chamber = chamber
         voters = defaultdict(list)
         for x in range(len(pdflines)):
             line = pdflines[x]
+            if line.strip() == "House of Representatives":
+                vote_chamber = "lower"
+            elif line.strip() == "COMMONWEALTH OF KENTUCKY SENATE":
+                vote_chamber = "upper"
             if re.search(r"(\d+/\d+/\d+)", line):
                 initial_date = line.strip()
             if ("AM" in line) or ("PM" in line):
@@ -320,7 +327,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                             time = "".join(time)
                         dt = initial_date + " " + time
                         dt = datetime.strptime(dt, "%m/%d/%Y %I:%M:%S%p")
-                        vote_date = central.localize(dt)
+                        vote_date = self._TZ.localize(dt)
                         vote_date = vote_date.isoformat()
                         # In rare case that no motion is provided
                         if len(motion) < 1:
@@ -393,7 +400,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                     passed = False
 
                 ve = VoteEvent(
-                    chamber=chamber,
+                    chamber=vote_chamber,
                     start_date=vote_date,
                     motion_text=motion,
                     result="pass" if passed else "fail",
