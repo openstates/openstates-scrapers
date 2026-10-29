@@ -397,9 +397,17 @@ class COBillScraper(Scraper, LXMLMixin):
                 votes_page = lxml.html.fromstring(votes_page)
 
                 vote.add_source(votes_url)
-                vote_rows = votes_page.cssselect(
-                    "div.standard-table div.col-12:nth-of-type(2) table.table tr"
-                )
+                # A vacant seat is listed as a voter named "District 21"
+                # (Senate, Feb 2026); the vote-count box leaves it out
+                vote_rows = [
+                    vote_row
+                    for vote_row in votes_page.cssselect(
+                        "div.standard-table div.col-12:nth-of-type(2) table.table tr"
+                    )
+                    if not re.fullmatch(
+                        r"District \d+", self.clean(vote_row.xpath("td[1]"))
+                    )
+                ]
                 for vote_row in vote_rows:
                     voter = self.clean(vote_row.xpath("td[1]"))
                     # Senate rolls list the President twice, under their own
