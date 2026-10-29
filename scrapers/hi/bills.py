@@ -22,24 +22,24 @@ vote_re_list = [
         (:\s+(?P<yes>.*?))?;\s+  # Yes members
         Aye\(?s\)?\swith\sreservations:\s+(?P<yes_resv>.*?);?
         (?P<n_no>\d*)\sNo\(?es\)?:\s+(?P<no>.*?);?
-        (\s+and\s+)?
-        (?P<n_excused>\d*)\sExcused:\s(?P<excused>.*)\.?
+        (\s+and)?\s*
+        (?P<n_excused>\d*)\s?Excused:\s(?P<excused>.*?)\.?$
         """,
     r"""
         Ayes,?\s(?P<n_yes>\d+)  # Capture number of Ayes
         (?:;\s*(?P<yes>[^.;]*))?  # Capture Yes members if present
         [.;]?\s*Aye\(s\)?\swith\sreservations:?\s(?P<yes_resv>[^.;]*)?  # Capture Ayes with reservations
         [.;]?\s*Noes?,?\s(?P<n_no>\d+)  # Capture number of Noes
-        (?:\s?\((?P<no>[^)]*)\))?  # Optional: Noes details in parentheses
+        (?:\s?\((?P<no>(?:[^()]|\([^)]*\))*)\))?  # Optional: Noes details in parentheses
         [.;]?\s*Excused,?\s(?P<n_excused>\d+)  # Capture number of Excused
-        (?:\s?\((?P<excused>[^)]*)\))?  # Optional: Excused details in parentheses
+        (?:\s?\((?P<excused>(?:[^()]|\([^)]*\))*)\))?  # Optional: Excused details in parentheses
         [.;]?  # Optional end punctuation
         """,
     r"""
     (?P<n_yes>\d+)\sAyes?:\s(?:Representative|Senator)\(s\)\s(?P<yes>.*?);
     \s*Ayes?\swith\sreservations:\s+(?P<yes_resv>.*?);
     \s*(?P<n_no>\d*)\sNoes?:\s(?:Representative\(s\)|Senator\(s\)|)\s?(?P<no>.*?);?
-    \s*and\s*(?P<n_excused>\d*)\sExcused:\s(?P<excused>.*)\.?
+    \s*and\s*(?P<n_excused>\d*)\sExcused:\s(?P<excused>.*?)\.?$
 """,
     r"""
     Passed.*?Reading.*?  # Match "Passed...Reading" including amendments
@@ -473,6 +473,7 @@ class HIBillScraper(Scraper):
 
     def parse_vote(self, action):
         # Try regex for a couple of edge cases
+        action = action.strip()
         result = None
         for vote_re in vote_re_list:
             result = re.search(vote_re, action, re.VERBOSE)
