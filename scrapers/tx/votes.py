@@ -273,8 +273,10 @@ class BaseVote(object):
 class MaybeVote(BaseVote):
     yeas_pattern = re.compile(r"yeas[\s\xa0]+(\d+)|(\d+)[\s\xa0]+yeas", re.IGNORECASE)
     nays_pattern = re.compile(r"nays[\s\xa0]+(\d+)|(\d+)[\s\xa0]+nays", re.IGNORECASE)
+    # House: "1 Present, not voting"; Senate: "Present-not voting 1"
     present_pattern = re.compile(
-        r"present[\s\xa0]+(\d+)|(\d+)[\s\xa0]+present", re.IGNORECASE
+        r"present(?:-not[\s\xa0]+voting)?[\s\xa0]+(\d+)|(\d+)[\s\xa0]+present",
+        re.IGNORECASE,
     )
     record_pattern = re.compile(r"\(record[\s\xa0]+(\d+)\)", re.IGNORECASE)
     result_pattern = re.compile(
