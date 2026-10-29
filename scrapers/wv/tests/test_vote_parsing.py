@@ -27,6 +27,7 @@ def _vote():
     date = datetime.date(2026, 2, 21)
     with tempfile.TemporaryDirectory() as tmp:
         scraper = WVBillScraper({"name": "West Virginia"}, tmp, strict_validation=False)
+        scraper.senate_president = None  # normally set from the session in scrape()
         bill = Bill("SB 200", legislative_session="2026", chamber="upper", title="test")
         vote = VoteEvent(
             chamber="upper",
