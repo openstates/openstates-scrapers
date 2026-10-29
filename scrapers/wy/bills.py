@@ -2,6 +2,7 @@ import pytz
 import datetime
 import json
 import re
+from urllib.parse import urljoin
 
 import lxml.html
 
@@ -13,6 +14,12 @@ from utils import LXMLMixin
 
 
 TIMEZONE = pytz.timezone("US/Mountain")
+LSO_RE = re.compile(r"\b\d{2}LSO-\d{4,5}\b", re.IGNORECASE)
+PREFILE_RE = re.compile(
+    r"^(?P<identifier>\d{2}LSO-\d{4,5})\s+"
+    r"v(?P<version>\d+(?:\.\d+)*)\s+(?P<title>.+?)\s*$",
+    re.IGNORECASE,
+)
 _COMMITTEE_NAME_MAPPING = {
     "Agriculture": "Agriculture, State and Public Lands and Water Resources",
     "BlockChain/Technology": "Blockchain, Financial Technology and Digital Innovation Technology Select",
@@ -32,15 +39,134 @@ _COMMITTEE_NAME_MAPPING = {
 }
 
 
+def extract_lso(bill_text_html):
+    """Extract an LSO number from the HTML version of a bill's text."""
+    if not bill_text_html:
+        return None
+
+    page = lxml.html.fromstring(bill_text_html)
+    candidates = page.xpath("//title/text()")
+    candidates.extend(
+        span.text_content()
+        for span in page.xpath("//span[@style]")
+        if re.search(r"font-weight\s*:\s*bold", span.get("style"), re.IGNORECASE)
+    )
+    for candidate in candidates:
+        match = LSO_RE.search(candidate)
+        if match:
+            return match.group(0).upper()
+    return None
+
+
+def add_lso_relationship(bill, lso, legislative_session):
+    """Add an LSO relationship without applying bill ID normalization."""
+    bill.related_bills.append(
+        {
+            "identifier": lso,
+            "legislative_session": legislative_session,
+            "relation_type": "replaces",
+        }
+    )
+
+
 class WYBillScraper(Scraper, LXMLMixin):
     categorizer = Categorizer()
     chamber_abbrev_map = {"H": "lower", "S": "upper"}
     is_special = False
 
-    def scrape(self, chamber=None, session=None):
+    def scrape(self, chamber=None, session=None, prefiles=True):
+        if isinstance(prefiles, str):
+            prefiles = prefiles.lower() not in {"0", "false", "no"}
+        session_details = next(
+            each
+            for each in self.jurisdiction.legislative_sessions
+            if each["identifier"] == session
+        )
+        if prefiles:
+            session_year = session_details["start_date"][:4]
+            yield from self.scrape_prefiles(session, session_year)
+
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
+
+    @staticmethod
+    def _draft_documents(committee_data):
+        for meeting in committee_data.get("meetingDraftBills", []):
+            for agenda in meeting.get("meetingAgendas", []):
+                documents = list(agenda.get("meetingDocuments", []))
+                for sub_agenda in agenda.get("subAgendaItems", []):
+                    documents.extend(sub_agenda.get("meetingDocuments", []))
+                for document in documents:
+                    if document.get("isCommitteeBillDraft"):
+                        yield document
+
+    def scrape_prefiles(self, session, session_year):
+        source_url = f"https://wyoleg.gov/Legislation/committeeBills/{session_year}"
+        data_url = (
+            "https://api.wyoleg.gov/v1/BillInformation/"
+            f"GetCommitteeBills/{session_year}"
+        )
+        response = self.get(data_url)
+        committee_groups = json.loads(response.content.decode("utf-8"))
+        prefiles = {}
+
+        for committee_data in committee_groups:
+            sponsor = committee_data["committeeDetail"]["fullName"].strip()
+            for document in self._draft_documents(committee_data):
+                match = PREFILE_RE.match(document.get("title", "").strip())
+                if not match:
+                    self.warning(
+                        "Skipping unrecognized Wyoming prefile title: %s",
+                        document.get("title"),
+                    )
+                    continue
+
+                values = match.groupdict()
+                identifier = values["identifier"].upper()
+                version = values["version"]
+                version_order = tuple(int(part) for part in version.split("."))
+                title = values["title"].strip()
+
+                if identifier not in prefiles:
+                    bill = Bill(
+                        identifier=identifier,
+                        legislative_session=session,
+                        title=title,
+                        chamber="legislature",
+                        classification="proposed bill",
+                    )
+                    bill.add_source(source_url)
+                    prefiles[identifier] = {
+                        "bill": bill,
+                        "sponsors": set(),
+                        "latest_version": version_order,
+                    }
+
+                prefile = prefiles[identifier]
+                bill = prefile["bill"]
+                if version_order > prefile["latest_version"]:
+                    bill.title = title
+                    prefile["latest_version"] = version_order
+
+                if sponsor not in prefile["sponsors"]:
+                    bill.add_sponsorship(
+                        name=sponsor,
+                        classification="sponsor",
+                        entity_type="organization",
+                        primary=True,
+                    )
+                    prefile["sponsors"].add(sponsor)
+
+                bill.add_version_link(
+                    note=f"LSO v{version}",
+                    url=urljoin("https://wyoleg.gov/", document["documentUrl"]),
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
+
+        for prefile in prefiles.values():
+            yield prefile["bill"]
 
     def scrape_chamber(self, chamber, session):
         chamber_abbrev = {"upper": "S", "lower": "H"}[chamber]
@@ -117,6 +243,11 @@ class WYBillScraper(Scraper, LXMLMixin):
             )
 
         bill.add_source(source_url)
+
+        lso = extract_lso(bill_json.get("currentBillHTML"))
+        if lso:
+            bill.extras["LSO"] = lso
+            add_lso_relationship(bill, lso, session)
 
         for action_json in bill_json["billActions"]:
             utc_action_date = self.parse_local_date(action_json["statusDate"])
