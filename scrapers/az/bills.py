@@ -391,9 +391,16 @@ class AZBillScraper(Scraper):
                 )
 
                 for v in action["Votes"]:
-                    vote_type = {"Y": "yes", "N": "no", "NV": "not voting"}.get(
-                        v["Vote"], "other"
-                    )
+                    # "V" marks a vacant seat, listed under the member who
+                    # last held it; it's counted in "Vacant", not as a vote
+                    if v["Vote"] == "V":
+                        continue
+                    vote_type = {
+                        "Y": "yes",
+                        "N": "no",
+                        "NV": "not voting",
+                        "E": "excused",
+                    }.get(v["Vote"], "other")
                     vote.vote(vote_type, v["Legislator"]["FullName"])
                 vote.dedupe_key = f"{resp.url}{action['ReferralNumber']}"
                 yield vote
