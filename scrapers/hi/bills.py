@@ -473,6 +473,7 @@ class HIBillScraper(Scraper):
 
     def parse_vote(self, action):
         # Try regex for a couple of edge cases
+        action = action.strip()
         result = None
         for vote_re in vote_re_list:
             result = re.search(vote_re, action, re.VERBOSE)
