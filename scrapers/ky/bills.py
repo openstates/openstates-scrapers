@@ -225,16 +225,20 @@ class KYBillScraper(Scraper, LXMLMixin):
 
             bill.add_document_link("Fiscal Note", source_url, media_type=mimetype)
 
-        # only grab links in the first table, because proposed amendments have sponsors that are not bill sponsors.
-        for link in page.xpath(
-            "//div[contains(@class,'bill-table')][1]//td/span/a[contains(@href, 'Legislator-Profile')]"
+        # Grab sponsors from the first bill-table only (excludes proposed amendment sponsors).
+        # The website previously linked sponsor names via <a href="...Legislator-Profile...">,
+        # but now renders them as plain <span> elements under a "Sponsors" row.
+        for span in page.xpath(
+            '//div[contains(@class,"bill-table")][1]//tr[th[text()="Sponsors"]]/td/span'
         ):
-            bill.add_sponsorship(
-                link.text.strip(),
-                classification="primary",
-                entity_type="person",
-                primary=True,
-            )
+            name = span.text_content().strip().rstrip(",").strip()
+            if name:
+                bill.add_sponsorship(
+                    name,
+                    classification="primary",
+                    entity_type="person",
+                    primary=True,
+                )
 
         if page.xpath("//th[contains(text(),'Votes')]"):
             vote_url = page.xpath("//a[contains(text(),'Vote History')]/@href")[0]
