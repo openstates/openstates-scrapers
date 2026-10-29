@@ -89,12 +89,14 @@ class MDBillScraper(Scraper):
                     )
 
     def scrape_bill_subjects(self, bill, page):
-        # TODO: this xpath gets both 'subjects' and 'file codes'
-        # they both link to subjects on the site and seem to fit the definition of subject
+        # matches both the "File Code" and "Subjects" sections, which all link to the subject index
         for row in page.xpath(
-            '//a[contains(@href, "/Legislation/SubjectIndex/annotac")]/text()'
+            '//a[contains(@href, "/Legislation/SubjectIndex/")]/text()'
         ):
-            bill.add_subject(row[0])
+            # drop cross-references, e.g. "Hunting -see also- Trapping"
+            subject = re.split(r"\s*-\s*see also-", row)[0].strip()
+            if subject and subject not in bill.subject:
+                bill.add_subject(subject)
 
     def scrape_bill_sponsors(self, bill, page):
         sponsors_title = "".join(
