@@ -19,6 +19,10 @@ rules = (
     Rule("Report and Resolution Adopted", "passage"),
     Rule("Enrolled to Governor", "executive-receipt"),
     Rule(" Act ", "became-law", flags=0),
+    # Signed acts read "Act 107, on 06/08/2026 (Gov. Msg. No. 1207)."; unsigned
+    # ("Became law without the Governor's signature, Act ...") and veto-override
+    # ("Act 001, Special Session 2021, ...") acts don't start with "Act N, <date>".
+    Rule(r"^Act \d+, (on )?\d+/\d+/\d{4} ", "executive-signature", flags=0),
     # Note, occasionally the gov sends intent to veto then doesn't. So use Vetoed not Veto
     Rule("Vetoed .* line-item", "executive-veto-line-item"),
     Rule("Vetoed", "executive-veto"),
