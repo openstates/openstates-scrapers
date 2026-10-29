@@ -84,6 +84,17 @@ def extract_bdr(title):
     return bdr
 
 
+def add_bdr_relationship(bill, bdr, legislative_session):
+    """Add a BDR relationship without applying bill identifier normalization, which was adding a space"""
+    bill.related_bills.append(
+        {
+            "identifier": bdr,
+            "legislative_session": legislative_session,
+            "relation_type": "replaces",
+        }
+    )
+
+
 def shorten_bill_title(title):
     """
     Used in cases where the bill title exceeds the
@@ -381,7 +392,9 @@ class BillTabDetail(Utf8HtmlMixin, HtmlPage):
 
         bdr = extract_bdr(short_title)
         if bdr:
+            bdr = bdr.replace(" ", "")
             bill.extras["BDR"] = bdr
+            add_bdr_relationship(bill, bdr, self.input.session)
 
         text_url = self.source.url.replace("Overview", "Text")
         yield BillTabText(bill, source=text_url)
