@@ -4,8 +4,8 @@ from sqlalchemy import (
     String,
     ForeignKey,
     DateTime,
-    Numeric,
     UnicodeText,
+    LargeBinary,
 )
 from sqlalchemy.dialects import mysql
 from sqlalchemy.sql import and_
@@ -111,12 +111,12 @@ class CABillVersion(Base):
 class CABillVersionAuthor(Base):
     __tablename__ = "bill_version_authors_tbl"
 
-    # Note: the primary_keys here are a lie - the actual table has no pk
-    # but SQLAlchemy seems to demand one. Furthermore, I get strange
-    # exceptions when trying to use bill_version_id as part of a
-    # composite primary key.
+    # The source table has no primary key, but SQLAlchemy requires one.
+    # These three fields uniquely identify every row in the current dump.
 
-    bill_version_id = Column(String(30), ForeignKey(CABillVersion.bill_version_id))
+    bill_version_id = Column(
+        String(30), ForeignKey(CABillVersion.bill_version_id), primary_key=True
+    )
     type = Column(String(15))
     house = Column(String(100))
     name = Column(String(100), primary_key=True)
@@ -133,7 +133,7 @@ class CABillVersionAuthor(Base):
 class CABillAnalysis(Base):
     __tablename__ = "bill_analysis_tbl"
 
-    analysis_id = Column(Numeric, primary_key=True)
+    analysis_id = Column(Integer, primary_key=True)
     bill_id = Column(String(20), ForeignKey(CABill.bill_id))
     house = Column(String(1))
     analysis_type = Column(String(100))
@@ -142,8 +142,8 @@ class CABillAnalysis(Base):
     amendment_author = Column(String(100))
     analysis_date = Column(DateTime)
     amendment_date = Column(DateTime)
-    page_num = Column(Numeric)
-    source_doc = Column(mysql.LONGBLOB)
+    page_num = Column(Integer)
+    source_doc = Column(LargeBinary().with_variant(mysql.LONGBLOB, "mysql"))
     released_floor = Column(String(1))
     active_flg = Column(String(1), default="Y")
     trans_uid = Column(String(20))
@@ -154,7 +154,7 @@ class CABillAction(Base):
     __tablename__ = "bill_history_tbl"
 
     bill_id = Column(String(20), ForeignKey(CABill.bill_id))
-    bill_history_id = Column(Numeric, primary_key=True)
+    bill_history_id = Column(Integer, primary_key=True)
     action_date = Column(DateTime)
     action = Column(String(2000))
     trans_uid = Column(String(20))
@@ -222,7 +222,7 @@ class CALocation(Base):
     session_year = Column(String(8), primary_key=True)
     location_code = Column(String(6), primary_key=True)
     location_type = Column(String(1), primary_key=True)
-    consent_calendar_code = Column(String(2), primary_key=True)
+    consent_calendar_code = Column(String(2), primary_key=True, nullable=True)
     description = Column(String(60))
     long_description = Column(String(200))
     active_flg = Column(String(1))
@@ -303,7 +303,7 @@ class CAVoteDetail(Base):
             CAVoteSummary.vote_date_seq == vote_date_seq,
             CAVoteSummary.motion_id == motion_id,
         ),
-        backref=backref("votes"),
+        backref=backref("votes", overlaps="bill,detail_votes"),
         overlaps="bill,detail_votes",
     )
 

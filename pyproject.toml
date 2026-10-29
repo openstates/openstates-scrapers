@@ -17,7 +17,7 @@ chardet = "^7.4"
 suds-py3 = "^1.3"
 requests = {version = "^2.34", extras = ["security"]}
 mysqlclient = {version = "^1.4.6", optional=true}
-SQLAlchemy = {version = "^1.3", optional=true}
+SQLAlchemy = "^1.3"
 cloudscraper = "^1.2.58"
 paramiko = "^2.9.2"
 cryptography = "^37.0.2"
@@ -27,7 +27,7 @@ pandas = "^2.1.4"
 openstates = "^6.26.4"
 
 [tool.poetry.extras]
-california = ["mysqlclient", "SQLAlchemy"]
+california = ["mysqlclient"]
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^6.0.0"

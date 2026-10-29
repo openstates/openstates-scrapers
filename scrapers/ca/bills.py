@@ -1,4 +1,3 @@
-import os
 import re
 import pytz
 import datetime
@@ -8,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from openstates.scrape import Scraper, Bill, VoteEvent
 from .models import CABill, CALocation
+from .database import get_database_url
 from .actions import CACategorizer
 
 SPONSOR_TYPES = {
@@ -15,10 +15,6 @@ SPONSOR_TYPES = {
     "COAUTHOR": "coauthor",
     "PRINCIPAL_COAUTHOR": "principal coauthor",
 }
-
-MYSQL_HOST = os.environ.get("MYSQL_HOST", "localhost")
-MYSQL_USER = os.environ.get("MYSQL_USER", "root")
-MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "")
 
 
 def clean_title(s):
@@ -73,22 +69,9 @@ class CABillScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone("US/Pacific")
 
     def __init__(self, *args, **kwargs):
+        database_url = get_database_url(kwargs)
         super().__init__(*args, **kwargs)
-
-        host = kwargs.pop("host", MYSQL_HOST)
-        user = kwargs.pop("user", MYSQL_USER)
-        pw = kwargs.pop("pw", MYSQL_PASSWORD)
-
-        if (user is not None) and (pw is not None):
-            conn_str = "mysql://%s:%s@" % (user, pw)
-        else:
-            conn_str = "mysql://"
-        conn_str = "%s%s/%s?charset=utf8" % (
-            conn_str,
-            host,
-            kwargs.pop("db", "capublic"),
-        )
-        self.engine = create_engine(conn_str)
+        self.engine = create_engine(database_url)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
         self._committee_codes = {}
