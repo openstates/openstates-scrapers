@@ -2,13 +2,10 @@ from openstates.scrape import State
 from .bills import MOBillScraper
 from .events import MOEventScraper
 
-# from .votes import MOVoteScraper
-
 
 class Missouri(State):
     scrapers = {
         "bills": MOBillScraper,
-        # 'votes': MOVoteScraper,
         "events": MOEventScraper,
     }
     legislative_sessions = [
