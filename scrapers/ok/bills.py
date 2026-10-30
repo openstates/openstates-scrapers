@@ -122,8 +122,12 @@ class OKBillScraper(Scraper):
         for hidden in form_page.xpath("//input[@type='hidden']"):
             values[hidden.attrib["name"]] = hidden.attrib["value"]
 
+        # bill pages on www.oklegislature.gov set their own ASP.NET_SessionId
+        session_cookie = self.cookies.get(
+            "ASP.NET_SessionId", domain="webapps.oklegislature.gov"
+        )
         headers = {
-            "Cookie": f"ASP.NET_SessionId={self.cookies.get('ASP.NET_SessionId')}",
+            "Cookie": f"ASP.NET_SessionId={session_cookie}",
             "x-oxylabs-force-headers": "1",
         }
         response = self.post(url, data=values, headers=headers)
