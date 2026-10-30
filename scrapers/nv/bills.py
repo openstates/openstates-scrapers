@@ -9,7 +9,6 @@ import lxml.html
 from openstates.scrape import Scraper, Bill, VoteEvent
 from .common import get_session_slug
 from spatula import HtmlListPage, HtmlPage, CSS, XPath, SelectorError
-from scrapelib import HTTPError
 
 TZ = pytz.timezone("PST8PDT")
 ACTION_CLASSIFIERS = (
@@ -424,13 +423,7 @@ class BillTabText(Utf8HtmlMixin, HtmlPage):
                 on_duplicate="ignore",
             )
         ex_url = self.source.url.replace("Text", "Exhibits")
-
-        try:
-            return ExhibitTabText(bill, source=ex_url)
-        except HTTPError:
-            self.warning(f"Failure on exhibit url {ex_url}")
-            am_url = self.source.url.replace("Text", "Amendments")
-            return AmendmentTabText(bill, source=am_url)
+        return ExhibitTabText(bill, source=ex_url)
 
 
 class ExhibitTabText(Utf8HtmlMixin, HtmlPage):
@@ -451,25 +444,6 @@ class ExhibitTabText(Utf8HtmlMixin, HtmlPage):
             bill.add_document_link(
                 title, link, media_type="application/pdf", on_duplicate="ignore"
             )
-        am_url = self.source.url.replace("Text", "Amendments")
-        return AmendmentTabText(bill, source=am_url)
-
-
-class AmendmentTabText(Utf8HtmlMixin, HtmlPage):
-    example_source = (
-        "https://www.leg.state.nv.us/App/NELIS/REL/82nd2023/Bill/"
-        "FillSelectedBillTab?selectedTab=Amendments&billKey=10039"
-    )
-
-    def process_page(self):
-        bill = self.input
-        for row in CSS("col-11 col-md").match(self.root, min_items=0):
-            title = row.text_content()
-            link = row.get("href")
-            bill.add_version_link(
-                title, link, media_type="application/pdf", on_duplicate="ignore"
-            )
-
         fn_url = self.source.url.replace("Text", "FiscalNotes")
         return FiscalTabText(bill, source=fn_url)
 
