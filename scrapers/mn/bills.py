@@ -10,7 +10,6 @@ from io import BytesIO
 from openstates.scrape import Scraper, Bill, VoteEvent as Vote
 
 from utils import LXMLMixin, SSLRetryMixin
-from .vote_events import HouseVotesMixin
 
 import fitz
 import requests
@@ -69,6 +68,24 @@ SITE_IDS = {
     "2025s1": "1942025",
 }
 
+# house.mn.gov SessionKey values, used to look up House roll calls
+HOUSE_VOTE_SESSION_KEYS = {
+    "2019-2020": "249",
+    "2020s1": "252",
+    "2020s2": "253",
+    "2020s3": "254",
+    "2020s4": "255",
+    "2020s5": "256",
+    "2020s6": "258",
+    "2020s7": "259",
+    "2021-2022": "257",
+    "2023-2024": "300",
+    "2025-2026": "302",
+    "2025s1": "304",
+}
+
+bill_link_number_re = re.compile(r"([A-Z]+)0*([1-9]+[0-9]*)")
+
 version_date_re = re.compile(r"Posted on\s+(.+)")
 
 
@@ -78,7 +95,7 @@ def ensure_url_fully_qualified(url):
     return url
 
 
-class MNBillScraper(HouseVotesMixin, SSLRetryMixin, Scraper, LXMLMixin):
+class MNBillScraper(SSLRetryMixin, Scraper, LXMLMixin):
     # For testing purposes, this will do a lite version of things.  If
     # testing_bills is set, only these bills will be scraped.  Use SF0077
     testing = False
@@ -602,7 +619,7 @@ class MNBillScraper(HouseVotesMixin, SSLRetryMixin, Scraper, LXMLMixin):
                 pages.append(page_links[0])
 
             # Try to extract vote
-            # senate vote only, house votes are scraped by the vote_event.py scraper
+            # senate vote only, house votes come from house.mn.gov (scrape_votes)
             if current_chamber == "upper":
                 try:
                     vote = self.extract_vote_from_action(
@@ -824,7 +841,7 @@ class MNBillScraper(HouseVotesMixin, SSLRetryMixin, Scraper, LXMLMixin):
         counts, but for the House, we can get details on who voted
         what.
         For only Senate vote.
-        For House vote, refer to vote_events.py.
+        For House vote, refer to scrape_votes.
         """
         # Check if there is vote at all
         has_vote = action_row.xpath(
@@ -950,6 +967,120 @@ class MNBillScraper(HouseVotesMixin, SSLRetryMixin, Scraper, LXMLMixin):
                 return vote
 
         return None
+
+    # House roll calls come from house.mn.gov and are yielded alongside the
+    # Senate votes above, so one import carries both chambers: the vote
+    # importer deletes a bill's stored votes that the current import doesn't
+    # carry, so importing each chamber separately wipes the other's.
+    def house_vote_bills(self, session):
+        """Map each bill with House roll calls ("HF 3") to its URL form ("HF0003")."""
+        session_internal_id = HOUSE_VOTE_SESSION_KEYS.get(session)
+        if not session_internal_id:
+            self.warning("no session internal ID recorded for %s", session)
+            return {}
+        votes_summary_endpoint = "https://www.house.mn.gov/Votes/GetVoteSummary"
+        votes = self.post(
+            votes_summary_endpoint,
+            {
+                "SessionKey": session_internal_id,
+                "sortOption": "BillNumber",
+            },
+        ).json()
+        # JSON has a Date property that looks like '/Date(-62135575200000)/' - useful?
+        bills = {}
+        for vote in votes:
+            bill_id_with_leading = vote["Number"]
+            bill_id_match = bill_link_number_re.search(bill_id_with_leading)
+            bill_id = f"{bill_id_match.group(1)} {bill_id_match.group(2)}"
+            bills[bill_id] = bill_id_with_leading
+        return bills
+
+    def scrape_votes(self, session, bill_id, bill_id_for_url):
+        # URL looks like https://www.house.mn.gov/Votes/Details?SessionKey=302&BillNumber=HF0003
+        link_url = f"https://www.house.mn.gov/Votes/Details?SessionKey={HOUSE_VOTE_SESSION_KEYS.get(session)}&BillNumber={bill_id_for_url}"
+        html = self.get(link_url).text
+        doc = lxml.html.fromstring(html)
+        for vote_container in doc.xpath('//div[contains(@class, "collapsible-panel")]'):
+            # Parse Vote Event metadata
+            header_table_cells = vote_container.xpath(
+                './/div[contains(@class, "panel-header")]//tbody//td'
+            )
+            motion_text_line_breaks = header_table_cells[1].xpath("./br")
+            motion_text = motion_text_line_breaks[-1].tail
+            yes_votes = int(header_table_cells[3].text_content())
+            no_votes = int(header_table_cells[4].text_content())
+
+            is_amendment = False
+            amendment_br_elems = header_table_cells[2].xpath("./br")
+            if len(amendment_br_elems) > 0:
+                if amendment_br_elems[0].tail and amendment_br_elems[0].tail.strip():
+                    is_amendment = True
+
+            if is_amendment:
+                motion_classification = "amendment"
+            else:
+                motion_classification = "passage"
+
+            date_text = f"{header_table_cells[6].text_content()}"
+            date = datetime.datetime.strptime(date_text, "%m/%d/%Y").date()
+
+            if bill_id[0] == "H":
+                bill_chamber = "lower"
+            elif bill_id[0] == "S":
+                bill_chamber = "upper"
+            else:
+                raise Exception(f"Unexpected bill ID to parse chamber: {bill_id}")
+
+            journal_page_number = header_table_cells[5].xpath("./a")[0].text_content()
+            # TODO add source journal URL
+            # You can make a POST request to https://www.house.mn.gov/Votes/GetPage
+            # to get redirected to the source journal page (HTML) for this vote
+            # with values like {PageNumber: "643", SessionKey: 302}
+
+            # several amendment votes can share a date, motion text and even a
+            # journal page, so the amendment number (e.g. H0025A5) tells them apart
+            amendment_number = (header_table_cells[2].text or "").strip()
+            identifier = f"Journal page {journal_page_number}"
+            if amendment_number:
+                identifier += f", {amendment_number}"
+
+            vote = Vote(
+                identifier=identifier,
+                chamber="lower",
+                start_date=date,
+                motion_text=motion_text,
+                result="pass" if yes_votes > no_votes else "fail",
+                classification=motion_classification,
+                legislative_session=session,
+                bill=bill_id,
+                bill_chamber=bill_chamber,
+            )
+            vote.set_count("yes", yes_votes)
+            vote.set_count("no", no_votes)
+            vote.add_source(link_url)
+            vote.dedupe_key = (
+                f"{session}-{bill_id}-{date_text}-{motion_text}-{journal_page_number}"
+            )
+            if amendment_number:
+                vote.dedupe_key += f"-{amendment_number}"
+
+            # parse individual votes
+            # first table is the YES and second table is the NO
+            # plenty of "spacer" TDs in here that are just whitespace for no good reason
+            content_vote_tables = vote_container.xpath(
+                ".//div[contains(@class, 'panel-content')]//table"
+            )
+            for i, vote_table in enumerate(content_vote_tables):
+                content_vote_cells = vote_table.xpath(".//td")
+                for content_vote_cell in content_vote_cells:
+                    voter = content_vote_cell.text_content()
+                    if voter.strip():
+                        if i == 0:
+                            vote.yes(voter)
+                        else:
+                            vote.no(voter)
+
+            yield vote
 
     def make_bill_id(self, bill):
         """
