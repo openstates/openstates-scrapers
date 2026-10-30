@@ -17,7 +17,7 @@ from .actions import Categorizer
 NAME_RE = re.compile(r"Mr\.\s+Speaker|[A-Za-z][\w'\-]*(?:\s+\([^)]+\))?")
 
 
-def extract_names(line, limit):
+def extract_names(line, limit, speaker=None):
     """Extract up to `limit` legislator names from a vote-roll line.
 
     Names are rendered with single spaces between them (Word's
@@ -36,6 +36,8 @@ def extract_names(line, limit):
         name = match.group(0).strip()
         if not name or "HOUSE" in name or "SENATE" in name:
             continue
+        if speaker and name.startswith("Mr."):
+            name = speaker
         names.append(name)
     return names
 
@@ -77,6 +79,16 @@ class OKBillScraper(Scraper):
     }
 
     def scrape(self, chamber=None, session=None, only_bills=None):
+        extras = next(
+            s.get("extras", {})
+            for s in self.jurisdiction.legislative_sessions
+            if s["identifier"] == session
+        )
+        self.speaker = extras.get("house_speaker")
+        if not self.speaker:
+            self.warning(
+                f"No house_speaker in {session} extras; roll calls will list the title"
+            )
         chambers = [chamber] if chamber else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session, only_bills)
@@ -110,8 +122,12 @@ class OKBillScraper(Scraper):
         for hidden in form_page.xpath("//input[@type='hidden']"):
             values[hidden.attrib["name"]] = hidden.attrib["value"]
 
+        # bill pages on www.oklegislature.gov set their own ASP.NET_SessionId
+        session_cookie = self.cookies.get(
+            "ASP.NET_SessionId", domain="webapps.oklegislature.gov"
+        )
         headers = {
-            "Cookie": f"ASP.NET_SessionId={self.cookies.get('ASP.NET_SessionId')}",
+            "Cookie": f"ASP.NET_SessionId={session_cookie}",
             "x-oxylabs-force-headers": "1",
         }
         response = self.post(url, data=values, headers=headers)
@@ -490,7 +506,9 @@ class OKBillScraper(Scraper):
                 elif seen_yes:
                     remaining = counts[vtype] - len(votes[vtype])
                     if remaining > 0:
-                        votes[vtype].extend(extract_names(line, remaining))
+                        votes[vtype].extend(
+                            extract_names(line, remaining, self.speaker)
+                        )
 
             if bad_vote:
                 continue
