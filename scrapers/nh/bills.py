@@ -1,7 +1,7 @@
 import re
 import datetime as dt
 import functools
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 import pytz
 
@@ -66,6 +66,64 @@ def extract_amendment_id(action):
     piece = re.findall(r"Amendment #(\d{4}-\d+[hs])", action)
     if piece:
         return piece[0]
+
+
+JOURNAL_CITE = re.compile(r"(\d{1,2}/\d{1,2}/(\d{4}))[;,]?\s+([HS]J \d+)")
+
+
+def journal_cite(action):
+    match = JOURNAL_CITE.search(action)
+    if match and "recess" not in action.lower():
+        return match.group(1), (match.group(3), match.group(2))
+    return None, None
+
+
+def journal_dates(actions):
+    """Most-cited date for each journal, keyed like ("HJ 8", "2026")."""
+    counts = defaultdict(Counter)
+    for action in actions:
+        date, journal = journal_cite(action)
+        if date:
+            counts[journal][date] += 1
+    return {journal: c.most_common(1)[0][0] for journal, c in counts.items()}
+
+
+def action_date(action, timestamp, journals=None):
+    """
+    Docket.txt's timestamp is when the entry was posted, which can be days
+    before or after the floor action. Prefer the date cited with the journal
+    page ("03/11/2026  HJ 7", "05/14/2026;  SJ 12"), except on "in recess"
+    entries, where that is the date of the recessed session, and on journal
+    dates weeks after posting, which are clerk typos ("09/19/2026  HJ 16").
+    A floor vote (MA/MF) takes its journal's date, since the clerk's date is
+    sometimes a day off ("03/13/2026  HJ 8" on the 03/12 journal).
+    """
+    posted = dt.datetime.strptime(timestamp, "%m/%d/%Y %H:%M:%S %p")
+    date, journal = journal_cite(action)
+    if date:
+        if re.search(r"\b(MA|MF)\b", action):
+            date = (journals or {}).get(journal, date)
+        journal = dt.datetime.strptime(date, "%m/%d/%Y")
+        if journal <= posted + dt.timedelta(days=14):
+            return journal
+    return posted
+
+
+def unmark_referred_passage(actions):
+    """
+    A House floor vote on an Ought to Pass report that is then referred to
+    Finance or Ways and Means (House Rule 47) isn't passage; the floor vote
+    after that committee reports is.
+    """
+    for vote, referral in zip(actions, actions[1:]):
+        if (
+            "passage" in vote["classification"]
+            and '"lower"' in vote["organization_id"]
+            and re.match(
+                r"Referred to (Finance|Ways and Means)", referral["description"]
+            )
+        ):
+            vote["classification"].remove("passage")
 
 
 class NHBillScraper(Scraper):
@@ -149,7 +207,7 @@ class NHBillScraper(Scraper):
 
         docket_page = lxml.html.fromstring(docket_content)
         version_elems = docket_page.xpath(
-            "//table[@id='Table1']//a[contains(@href, 'billtext.aspx') or contains(@href, 'billText.aspx')]"
+            "//table[contains(@class, 'docket-table')]//a[contains(@href, 'billtext.aspx') or contains(@href, 'billText.aspx')]"
         )
         version_urls_seen = []
         for version_elem in version_elems:
@@ -159,7 +217,10 @@ class NHBillScraper(Scraper):
                 continue
             else:
                 version_urls_seen.append(version_url)
-            version_text = version_elem.xpath(".//text()")[0]
+            version_text = version_elem.text_content().replace(
+                "(opens in new window)", ""
+            )
+            version_text = re.sub(r"#\s+", "#", version_text).strip()
             if "txtFormat=html" in version_url:
                 # "normal" version (maybe always Introduced?)
                 bill.add_version_link(
@@ -199,6 +260,12 @@ class NHBillScraper(Scraper):
                 self.logger.warning(
                     f"Found an unexpected version URL on {docket_url}, version URL: {version_url}"
                 )
+
+        # the bill text links carry the bill's billinfo.aspx id
+        for version_url in version_urls_seen:
+            match = re.search(r"[?&]id=(\d+)(&|$)", version_url)
+            if "txtFormat=html" in version_url and match:
+                return match.group(1)
 
     def scrape_sponsors_from_bill_page(self, bill, bill_page):
         """
@@ -257,6 +324,24 @@ class NHBillScraper(Scraper):
 
         if added == 0:
             self.warning(f"No sponsors found on bill page for {bill.identifier}")
+
+    def scrape_sponsors_from_legacy_page(self, bill, lsr, session):
+        """
+        Some bill pages list no sponsors, e.g. when the prime sponsor has left
+        the House and dropped out of legislators.txt. The legacy bill status
+        page still names them.
+        """
+        url = f"https://gc.nh.gov/bill_status/legacy/bs2016/bill_status.aspx?lsr={lsr}&sy={session}&sortoption=&txtsessionyear={session}"
+        page = lxml.html.fromstring(self.get(url, verify=False).content)
+        for sponsor in page.xpath("//ul[@class='sponsor-list']/li"):
+            name = sponsor.xpath("./span[1]")[0].text_content().strip()
+            is_primary = bool(sponsor.xpath(".//*[contains(@class, 'prime')]"))
+            bill.add_sponsorship(
+                classification="primary" if is_primary else "cosponsor",
+                name=name,
+                entity_type="person",
+                primary=is_primary,
+            )
 
     def scrape_from_web(self, session):
         bills = {}
@@ -478,17 +563,26 @@ class NHBillScraper(Scraper):
                         self.scrape_versions_from_web_2026(self.bills[lsr], bill_page)
                         self.scrape_sponsors_from_bill_page(self.bills[lsr], bill_page)
                     else:
-                        self.warning(
-                            f"Missing version_id for {bill_id}, can't build bill page"
-                        )
-                        self.bills[lsr].add_source(
-                            "https://gc.nh.gov/bill_Status/advanced.aspx"
-                        )
                         # Bill's LSR is missing from the bulk-data dump (e.g. a
                         # carryover bill from a prior session year) — fall back
                         # to the docket page, which can be queried by LSR + session
                         # year directly, to still capture version/document links.
-                        self.scrape_versions_from_docket(self.bills[lsr], lsr, session)
+                        version_id = self.scrape_versions_from_docket(
+                            self.bills[lsr], lsr, session
+                        )
+                        if version_id:
+                            self.add_source(self.bills[lsr], version_id)
+                            bill_page = self.get_bill_page(version_id)
+                            self.scrape_sponsors_from_bill_page(
+                                self.bills[lsr], bill_page
+                            )
+                        else:
+                            self.warning(
+                                f"Missing version_id for {bill_id}, can't build bill page"
+                            )
+                            self.bills[lsr].add_source(
+                                "https://gc.nh.gov/bill_Status/advanced.aspx"
+                            )
 
         # load legislators
         self.legislators = {}
@@ -556,6 +650,11 @@ class NHBillScraper(Scraper):
 
         # actions
         action_lines = self.get_dump("Docket.txt").split("\n")
+        journals = journal_dates(
+            line.split("|")[5]
+            for line in action_lines
+            if line.count("|") == 6 and line.split("|")[0].lstrip("\ufeff") == session
+        )
         for line in action_lines:
             if len(line) < 1:
                 continue
@@ -567,8 +666,8 @@ class NHBillScraper(Scraper):
 
             if session_yr == session and lsr in self.bills:
                 actor = "lower" if body == "H" else "upper"
-                time = dt.datetime.strptime(timestamp, "%m/%d/%Y %H:%M:%S %p")
                 action = action.strip()
+                time = action_date(action, timestamp, journals)
                 action_attr = self.categorizer.categorize(action)
                 classification = action_attr["classification"]
 
@@ -591,6 +690,16 @@ class NHBillScraper(Scraper):
 
         # save all bills
         for bill in self.bills:
+            if not self.bills[bill].sponsorships:
+                try:
+                    self.scrape_sponsors_from_legacy_page(
+                        self.bills[bill], bill, session
+                    )
+                except Exception as e:
+                    self.warning(
+                        f"Failed to scrape sponsors from legacy page for LSR {bill}: {e}"
+                    )
+            unmark_referred_passage(self.bills[bill].actions)
             yield self.bills[bill]
 
     @functools.cache
