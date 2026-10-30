@@ -176,11 +176,7 @@ def get_short_codes(scraper):
         }
 
 
-# Appointments the roster page shows without an "Appointed" date
-APPOINTED = {"Ratcliffe": "04/14/2026"}
-
-
-def get_members(scraper, session):
+def get_members(scraper, session, appointed):
     # The roster page only shows the current session (it ignores ?year=), so
     # it can't be used for any other session. Mid-session changes are noted
     # as "Appointed MM/DD/YYYY" or "Term of Office Ended: MM/DD/YYYY".
@@ -204,13 +200,13 @@ def get_members(scraper, session):
             last = re.sub(r"\s+(I+|Jr\.?)$", "", parts[0])
             text = card.text_content()
             start = re.search(r"Appointed (\d+/\d+/\d+)", text)
-            start = start.group(1) if start else APPOINTED.get(last)
+            start = _iso(start.group(1)) if start else appointed.get(last)
             end = re.search(r"Term of Office Ended: (\d+/\d+/\d+)", text)
             members[chamber].append(
                 (
                     last,
                     parts[-1][0],
-                    _iso(start) if start else session[:4],
+                    start or session[:4],
                     _iso(end.group(1)) if end else "9999",
                 )
             )

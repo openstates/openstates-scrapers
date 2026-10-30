@@ -543,7 +543,12 @@ class HIBillScraper(Scraper):
 
     def scrape(self, chamber=None, session=None, scrape_since=None):
         get_short_codes(self)
-        self.members = get_members(self, session)
+        extras = next(
+            s.get("extras", {})
+            for s in self.jurisdiction.legislative_sessions
+            if s["identifier"] == session
+        )
+        self.members = get_members(self, session, extras.get("appointed", {}))
 
         if scrape_since is None:
             bill_types = ["bill", "cr", "r"]

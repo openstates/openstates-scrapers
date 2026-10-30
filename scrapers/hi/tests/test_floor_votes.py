@@ -61,7 +61,8 @@ ROSTERS = {
     + CARD.format("Holt, Daniel (D)", "Term of Office Ended: 02/13/2026"),
     "S": CARD.format("Lee, Chris (D)", "")
     + CARD.format("Ihara, Jr., Les (D)", "")
-    + CARD.format("Lamosao, Rachele (D)", "Appointed 12/3/2025"),
+    + CARD.format("Lamosao, Rachele (D)", "Appointed 12/3/2025")
+    + CARD.format("Ratcliffe, Ben (D)", ""),
 }
 
 
@@ -71,12 +72,13 @@ class FakeScraper:
 
 
 def test_get_members():
-    assert get_members(FakeScraper(), "2026") == {
+    assert get_members(FakeScraper(), "2026", {"Ratcliffe": "2026-04-14"}) == {
         "lower": [("Lee, M", "2026", "9999"), ("Holt", "2026", "2026-02-13")],
         "upper": [
             ("Lee, C", "2026", "9999"),
             ("Ihara", "2026", "9999"),
             ("Lamosao", "2025-12-03", "9999"),
+            ("Ratcliffe", "2026-04-14", "9999"),
         ],
     }
-    assert get_members(FakeScraper(), "2025") == {}
+    assert get_members(FakeScraper(), "2025", {}) == {}
