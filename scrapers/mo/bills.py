@@ -328,7 +328,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         page = lxml.html.fromstring(page.content)
         for link in page.cssselect("div.link-card-stack a"):
             link_url = link.xpath("@href")[0]
-            link_text = link.text_content().strip()
+            link_text = " ".join(link.text_content().split())
 
             if "adopted" in link_text.lower():
                 bill.add_version_link(
