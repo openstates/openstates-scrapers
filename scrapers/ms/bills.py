@@ -283,11 +283,16 @@ class MSBillScraper(Scraper):
                     bill.add_version_link(
                         name,
                         pdf_url,
+                        classification="amendment",
                         on_duplicate="ignore",
                         media_type="application/pdf",
                     )
                     bill.add_version_link(
-                        name, html_url, on_duplicate="ignore", media_type="text/html"
+                        name,
+                        html_url,
+                        classification="amendment",
+                        on_duplicate="ignore",
+                        media_type="text/html",
                     )
 
             # avoid duplicate votes
