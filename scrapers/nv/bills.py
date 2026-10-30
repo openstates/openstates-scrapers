@@ -417,7 +417,11 @@ class BillTabText(Utf8HtmlMixin, HtmlPage):
             title = row.text_content()
             link = row.get("href")
             bill.add_version_link(
-                title, link, media_type="application/pdf", on_duplicate="ignore"
+                title,
+                link,
+                classification="amendment" if "/Amendments/" in link else "",
+                media_type="application/pdf",
+                on_duplicate="ignore",
             )
         ex_url = self.source.url.replace("Text", "Exhibits")
 
