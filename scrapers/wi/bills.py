@@ -237,11 +237,14 @@ class WIBillScraper(Scraper):
                     amd_link = amd_link_elems[0]
                     version_name = amd_link.text_content()
                     version_url = amd_link.get("href")
+                    # substitute amendments are full bill text
+                    classification = "" if "Substitute" in version_name else "amendment"
                     bill.add_version_link(
                         version_name,
                         version_url,
                         media_type="text/html",
                         on_duplicate="ignore",
+                        classification=classification,
                     )
                     pdf_url = "{}.pdf".format(version_url)
                     bill.add_version_link(
@@ -249,6 +252,7 @@ class WIBillScraper(Scraper):
                         pdf_url,
                         media_type="application/pdf",
                         on_duplicate="ignore",
+                        classification=classification,
                     )
 
             # if this is a vote, add a Vote to the bill
