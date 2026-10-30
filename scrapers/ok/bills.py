@@ -279,8 +279,21 @@ class OKBillScraper(Scraper):
         for link in page.xpath(amd_xpath):
             version_url = link.xpath("@href")[0]
             version_name = link.xpath("string(.)").strip()
+            # committee/floor substitutes (PCS, FS) and committee recommendations
+            # (POLREC, SUBREC) are full bill text; FULLPCS/POLPCS/...AMD are amendments
+            codes = set(
+                re.findall(r"\b([A-Z]+)\d*\b", parse.unquote(version_url).upper())
+            )
+            is_full_text = (
+                "FS" in codes
+                or "PCS" in codes
+                or ({"POLREC", "SUBREC"} & codes and "AMD" not in codes)
+            )
             bill.add_version_link(
-                version_name, version_url, media_type="application/pdf"
+                version_name,
+                version_url,
+                classification="" if is_full_text else "amendment",
+                media_type="application/pdf",
             )
 
     def scrape_votes(self, bill, url):
