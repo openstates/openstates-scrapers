@@ -308,7 +308,7 @@ class IAVoteScraper(Scraper):
                 passed = False
                 # This text can appear in a line
                 # "Amendment H–1011 lost. Harris of Appanoose moved that House Resolution 3 be adopted".
-                if not ("lost" in passage_line) and any(
+                if "lost" not in passage_line and any(
                     p in passage_line for p in passage_strings
                 ):
                     passed = True

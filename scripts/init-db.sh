@@ -15,4 +15,4 @@ set -e
 docker compose up --wait db
 
 # migrate and populate db
-DATABASE_URL=postgis://openstates:openstates@db/openstatesorg docker compose run --rm --entrypoint "poetry run os-initdb" scrape
+DATABASE_URL=postgis://openstates:openstates@db/openstatesorg docker compose run --rm --entrypoint "os-initdb" scrape

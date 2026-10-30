@@ -9,7 +9,7 @@ from spatula import PdfPage, URL
 
 
 # usage:
-#  PYTHONPATH=scrapers poetry run os-update va events --scrape start=YYYY-mm-dd end=YYYY-mm-dd
+#  PYTHONPATH=scrapers uv run os-update va events --scrape start=YYYY-mm-dd end=YYYY-mm-dd
 class AREventScraper(Scraper):
     _tz = pytz.timezone("America/Chicago")
     date_format = "%Y-%m-%d"
