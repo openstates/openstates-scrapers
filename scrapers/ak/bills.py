@@ -1,5 +1,6 @@
 import re
 import datetime
+from collections import Counter
 
 import lxml.html
 
@@ -10,6 +11,17 @@ SPONSOR_CHAMBER_MAP = {
     "REPRESENTATIVE": "lower",
     "SENATOR": "upper",
 }
+
+# journal pages are plain text in a <pre>; a name list can continue past a page
+# header, which only happens when the line before it ends in a comma
+JOURNAL_PAGE_HEADER = re.compile(
+    r"(,?)[ \t]*(\n[ \t]*)*\n\d{4}-\d{2}-\d{2}[ \t]+\w+ Journal[ \t]+Page \d+[ \t]*(?=\n)"
+)
+JOURNAL_TALLY = re.compile(
+    r"YEAS:\s+(\d+)\s+NAYS:\s+(\d+)\s+EXCUSED:\s+(\d+)\s+ABSENT:\s+(\d+)"
+)
+JOURNAL_NAMES = re.compile(r"^(Yeas|Nays|Excused|Absent):\s+(.*?)\n\s*\n", re.M | re.S)
+VOTE_OPTIONS = {"Yeas": "yes", "Nays": "no", "Excused": "other", "Absent": "other"}
 
 
 class AKBillScraper(Scraper):
@@ -155,6 +167,7 @@ class AKBillScraper(Scraper):
 
         # Get actions
         actions._current_comm = None
+        rolls_used = Counter()
         act_rows = doc.xpath("//div[@id='tab6_4']//tr")[1:]
         for row in act_rows:
             date, journal, action = row.xpath("td")
@@ -181,6 +194,7 @@ class AKBillScraper(Scraper):
                         act_chamber,
                         act_date,
                         vote_href,
+                        rolls_used,
                     )
 
             action, atype = actions.clean_action(action)
@@ -249,10 +263,8 @@ class AKBillScraper(Scraper):
         yield bill
 
     def parse_vote(
-        self, bill, journal_entry_number, action, act_chamber, act_date, url
+        self, bill, journal_entry_number, action, act_chamber, act_date, url, rolls_used
     ):
-        # html = self.get(url).text
-        # doc = lxml.html.fromstring(html)
         yes = no = other = 0
         result = ""
         vote_counts = action.split()
@@ -285,5 +297,33 @@ class AKBillScraper(Scraper):
         vote.set_count("no", no)
         vote.set_count("other", other)
         vote.add_source(url)
+
+        # the action only gives the tally, so take the roll on the journal page with
+        # the same tally, in order when several match (e.g. passage and CBR votes)
+        tally = tuple(
+            int(m.group(1)) if m else 0
+            for m in (re.search(rf"\b{t}(\d+)\b", action) for t in "YNEA")
+        )
+        page = url.split("#")[0]
+        nth = rolls_used[page, tally]
+        rolls_used[page, tally] += 1
+        doc = lxml.html.fromstring(self.get(url).text)
+        text = JOURNAL_PAGE_HEADER.sub(
+            lambda m: m.group(1) or "\n",
+            "".join(doc.xpath("//pre//text()")).replace("\r\n", "\n"),
+        )
+        parts = JOURNAL_TALLY.split(text)
+        rolls = [
+            parts[i + 4]
+            for i in range(1, len(parts), 5)
+            if tuple(map(int, parts[i : i + 4])) == tally
+        ]
+        if nth < len(rolls):
+            for m in JOURNAL_NAMES.finditer(rolls[nth] + "\n\n"):
+                for name in " ".join(m.group(2).split()).split(","):
+                    if name.strip():
+                        vote.vote(VOTE_OPTIONS[m.group(1)], name.strip())
+        else:
+            self.warning(f"no roll call for {action} at {url}")
 
         yield vote
