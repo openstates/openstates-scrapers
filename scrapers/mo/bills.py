@@ -334,6 +334,10 @@ class MOBillScraper(Scraper, LXMLMixin):
                 bill.add_version_link(
                     link_text,
                     link_url,
+                    # "SA 1 to SS for SCS S offered" is an amendment; "SS ..." substitutes are full text
+                    classification=(
+                        "amendment" if re.search(r"\bSA \d", link_text) else ""
+                    ),
                     media_type="application/pdf",
                     on_duplicate="ignore",
                 )
@@ -661,7 +665,11 @@ class MOBillScraper(Scraper, LXMLMixin):
             else:
                 mimetype = "text/html"
             bill.add_version_link(
-                summary_name, path, media_type=mimetype, on_duplicate="ignore"
+                summary_name,
+                path,
+                classification="amendment",
+                media_type=mimetype,
+                on_duplicate="ignore",
             )
 
         # house fiscal notes
