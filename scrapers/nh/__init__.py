@@ -116,7 +116,7 @@ class NewHampshire(State):
             "name": "2026 Regular Session",
             "start_date": "2026-01-08",
             "end_date": "2026-06-30",
-            "active": True,
+            "active": False,
         },
         {
             "identifier": "2027",
@@ -124,7 +124,7 @@ class NewHampshire(State):
             "name": "2027 Regular Session",
             "start_date": "2027-01-06",
             "end_date": "2027-06-30",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
