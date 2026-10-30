@@ -42,7 +42,7 @@ class OKEventScraper(Scraper):
     _tz = pytz.timezone("CST6CDT")
 
     # usage:
-    # poetry run os-update ne \
+    # uv run os-update ne \
     # events --scrape start=2022-02-01 end=2022-03-02
     def scrape(self, start=None, end=None):
         found = False

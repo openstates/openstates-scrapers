@@ -36,8 +36,6 @@ class MPBillScraper(Scraper):
         "HCR": "concurrent resolution",
         "HLI": "bill",
         "SLI": "bill",
-        "HLB": "bill",
-        "SLB": "bill",
         "HCommRes": "resolution",
         "SCommRes": "resolution",
     }

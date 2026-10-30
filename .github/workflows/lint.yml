@@ -13,16 +13,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: setup Python 3.13
-      uses: actions/setup-python@v4
+    - uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
+    - name: ruff check
+      uses: astral-sh/ruff-action@4919ec5cf1f49eff0871dbcea0da843445b837e6 # v3.6.1
       with:
-        python-version: "3.13"
-    - name: install poetry
-      run: pip install poetry wheel
-    - name: install dependencies
-      run: poetry install --only=dev --no-root
-    - name: flake8 check
-      run: poetry run flake8 scrapers scrapers_next
-    - name: black check
-      run: poetry run black --check --diff scrapers scrapers_next
+        args: check scrapers scrapers_next
+    - name: ruff format check
+      uses: astral-sh/ruff-action@4919ec5cf1f49eff0871dbcea0da843445b837e6 # v3.6.1
+      with:
+        args: format --check --diff scrapers scrapers_next

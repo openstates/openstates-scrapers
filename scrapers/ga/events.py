@@ -11,7 +11,7 @@ from spatula import URL, PdfPage
 
 class GAEventScraper(Scraper):
     # usage:
-    #  PYTHONPATH=scrapers poetry run os-update ga events --scrape start=YYYY-mm-dd
+    #  PYTHONPATH=scrapers uv run os-update ga events --scrape start=YYYY-mm-dd
     tz = pytz.timezone("US/Eastern")
 
     def scrape(self, start=None):

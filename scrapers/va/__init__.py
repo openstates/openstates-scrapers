@@ -88,7 +88,6 @@ class Virginia(State):
             "identifier": "2015",
             "name": "2015 Regular Session",
             "start_date": "2015-01-14",
-            "end_date": "2015-02-27",
         },
         {
             "_scraped_name": "2015 Special Session I",
