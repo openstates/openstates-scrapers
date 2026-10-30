@@ -275,6 +275,13 @@ class MIBillScraper(Scraper):
                     vote.set_count("yes", len(results["yes"]))
                     vote.set_count("no", len(results["no"]))
                     vote.set_count("other", len(results["other"]))
+                    # House journals don't name excused or non-voting members,
+                    # so take those counts from the action text
+                    if not results["other"]:
+                        for option in ("excused", "not voting"):
+                            count = re.search(rf"{option} (\d+)", action, re.I)
+                            if count:
+                                vote.set_count(option, int(count.group(1)))
                     possible_vote_results = ["yes", "no", "other"]
                     for pvr in possible_vote_results:
                         for name in results[pvr]:
