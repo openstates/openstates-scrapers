@@ -201,6 +201,9 @@ class KSVoteScraper(Scraper):
 
         vote = VoteEvent(
             bill=bill,
+            # without it the bill pseudo id's chamber is "legislature", which
+            # matches no KS bill, so the import rejects the vote
+            bill_chamber="upper" if bill and bill.startswith("S") else "lower",
             start_date=vote_date.strftime("%Y-%m-%d"),
             chamber=chamber,
             motion_text=motion_text,
