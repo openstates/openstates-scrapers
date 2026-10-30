@@ -115,6 +115,11 @@ class ORBillScraper(Scraper):
                     bill.add_version_link(
                         document["VersionDescription"],
                         document_url,
+                        classification=(
+                            "amendment"
+                            if "Amendments to" in document["VersionDescription"]
+                            else ""
+                        ),
                         media_type="application/pdf",
                     )
                 except ValueError:
@@ -130,6 +135,7 @@ class ORBillScraper(Scraper):
                         bill.add_version_link(
                             amd_name,
                             amendment_url,
+                            classification="amendment",
                             media_type="application/pdf",
                             on_duplicate="ignore",
                         )
