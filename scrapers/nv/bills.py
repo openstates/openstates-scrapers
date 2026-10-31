@@ -444,7 +444,7 @@ class ExhibitTabText(Utf8HtmlMixin, HtmlPage):
             bill.add_document_link(
                 title, link, media_type="application/pdf", on_duplicate="ignore"
             )
-        fn_url = self.source.url.replace("Text", "FiscalNotes")
+        fn_url = self.source.url.replace("Exhibits", "FiscalNotes")
         return FiscalTabText(bill, source=fn_url)
 
 
@@ -457,8 +457,7 @@ class FiscalTabText(Utf8HtmlMixin, HtmlPage):
     def process_page(self):
         bill = self.input
         for row in CSS("ul.list-unstyled li a").match(self.root, min_items=0):
-            title = row.text_content()
-            title = f"Fiscal Note: {title}"
+            title = f"Fiscal Note: {row.text_content().strip()}"
             link = row.get("href")
             bill.add_document_link(
                 title, link, media_type="application/pdf", on_duplicate="ignore"
