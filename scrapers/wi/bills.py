@@ -421,11 +421,16 @@ class WIBillScraper(Scraper):
         vote.set_count("no", int(vote_counts[0][1]))
         vote.set_count("not voting", int(vote_counts[0][2]))
 
+        # the roll lists the Speaker as "SPEAKER"; the header names them ("Speaker Vos")
+        speaker = doc.xpath('string(//strong[starts-with(., "Speaker ")])')[8:]
+
         yes_names_count = 0
         no_names_count = 0
 
         for td in doc.xpath("//tbody/tr/td[4]"):
             name = td.text_content()
+            if name == "SPEAKER" and speaker:
+                name = speaker.upper()
             for vote_td in td.xpath("./preceding-sibling::td"):
                 if vote_td.text_content() == "Y":
                     vote.vote("yes", name)
