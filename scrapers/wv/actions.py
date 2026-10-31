@@ -131,6 +131,9 @@ class Categorizer(BaseCategorizer):
         for committee in re.findall(committees_rgx, text, re.I):
             if committee not in committees:
                 committees.append(committee)
+        # rule matches are collected in sets; keep the order of the action text
+        for key in ("committees", "legislators"):
+            attrs[key].sort(key=lambda name: (text.find(name), name))
         return attrs
 
     def post_categorize(self, attrs):

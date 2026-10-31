@@ -513,11 +513,14 @@ class WVBillScraper(Scraper):
             version_name = row.xpath("string(.)").strip()
             version_url = row.xpath("@href")[0]
             version_url = version_url.replace(" ", "%20")
+            # roll call PDFs ("... adopted (Roll No. 386)") match the selector
+            # too; they're already scraped as votes
+            if "_amends/" not in version_url:
+                continue
             bill.add_version_link(
                 version_name,
                 version_url,
-                # vote PDFs ("... adopted (Roll No. 386)") match the selector too
-                classification="amendment" if "_amends/" in version_url else "",
+                classification="amendment",
                 media_type="text/html",
                 on_duplicate="ignore",
             )
