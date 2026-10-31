@@ -135,6 +135,14 @@ class RhodeIsland(State):
             "start_date": "2026-01-02",
             "end_date": "2026-06-30",
             "active": True,
+            # [start date, surname] terms of the presiding officers
+            "extras": {
+                "senate_president": [["2026-01-02", "Lawson"]],
+                "house_speaker": [
+                    ["2026-01-02", "Shekarchi"],
+                    ["2026-05-07", "Blazejewski"],
+                ],
+            },
         },
     ]
     ignored_scraped_sessions = [

@@ -306,6 +306,22 @@ class RIBillScraper(Scraper):
 
     def scrape(self, chamber=None, session=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
+        extras = next(
+            s.get("extras", {})
+            for s in self.jurisdiction.legislative_sessions
+            if s["identifier"] == session
+        )
+        # roll calls list the presiding officers by title, not by name
+        self.presiding_officers = {
+            "Madam President": extras.get("senate_president", []),
+            "Mr. Speaker": extras.get("house_speaker", []),
+        }
+        for title, officer in self.presiding_officers.items():
+            if not officer:
+                self.warning(
+                    f"No name for {title} in {session} session extras; "
+                    "roll calls will list the title"
+                )
 
         # NOTE: disabled by showerst 2024-01-04
         # this is making 350 POST requests because there are almost no subjects
@@ -366,8 +382,13 @@ class RIBillScraper(Scraper):
 
                     for vt in vote["votes"]:
                         key = {"Y": "yes", "N": "no"}.get(vt["vote"], "other")
-                        v.vote(key, vt["name"])
+                        v.vote(key, self.presiding_officer(vt["name"], vote["time"]))
                     yield v
+
+    def presiding_officer(self, name, when):
+        terms = self.presiding_officers.get(name, [])
+        names = [officer for start, officer in terms if start <= f"{when:%Y-%m-%d}"]
+        return names[-1] if names else name
 
     def post_to(self, url, vote):
         headers = {"votedate": vote}
