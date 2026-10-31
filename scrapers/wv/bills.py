@@ -152,7 +152,7 @@ class WVBillScraper(Scraper):
         )
         bill.add_source(url)
 
-        xpath = '//strong[contains(., "SUBJECT")]/../' "following-sibling::td/a/text()"
+        xpath = '//strong[contains(., "SUBJECT")]/../following-sibling::td/a/text()'
         bill.subject = page.xpath(xpath)
 
         for version in self.scrape_versions(session, chamber, page, bill_id):

@@ -195,7 +195,6 @@ class CAEventWebScraper(Scraper, LXMLMixin):
 
         elif measure_class:
             for measure in measure_class:
-
                 bill_type = (
                     measure.xpath('.//span[@class="MeasureType"]/text()')[0]
                     .replace(".", "")

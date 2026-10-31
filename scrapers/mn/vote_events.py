@@ -24,7 +24,6 @@ SESSION_SOURCE_IDS = {
 
 # Please note: this only supports the MN House, not the Senate. Senate votes are scraped in bills.py
 class MNVoteScraper(Scraper):
-
     bill_link_number_re = re.compile(r"([A-Z]+)0*([1-9]+[0-9]*)")
 
     def scrape(self, session=None):

@@ -44,10 +44,10 @@ class DEEventScraper(Scraper, LXMLMixin):
 
         event.add_committee(name=str(item["CommitteeName"]), id=item["CommitteeId"])
 
-        html_url = f'https://legis.delaware.gov/MeetingNotice?committeeMeetingId={item["CommitteeMeetingId"]}'
+        html_url = f"https://legis.delaware.gov/MeetingNotice?committeeMeetingId={item['CommitteeMeetingId']}"
         event.add_source(html_url)
 
-        page_url = f'https://legis.delaware.gov/json/MeetingNotice/GetCommitteeMeetingItems?committeeMeetingId={item["CommitteeMeetingId"]}'
+        page_url = f"https://legis.delaware.gov/json/MeetingNotice/GetCommitteeMeetingItems?committeeMeetingId={item['CommitteeMeetingId']}"
 
         page_data = []
         try:

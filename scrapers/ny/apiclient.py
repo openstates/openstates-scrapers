@@ -30,7 +30,7 @@ class OpenLegislationAPIClient(object):
             "bills/{session_year}?limit={limit}&offset={offset}&full={full}"
             "&sort={sort_order}"
         ),
-        bill=("bills/{session_year}/{bill_id}?summary={summary}&detail=" "{detail}"),
+        bill=("bills/{session_year}/{bill_id}?summary={summary}&detail={detail}"),
         bill_updates="bills/{session_year}/{bill_id}/updates?",
         updated_bills="bills/updates/{from_datetime}/{to_datetime}"
         "?summary={summary}&detail={detail}&limit={limit}&offset={offset}",

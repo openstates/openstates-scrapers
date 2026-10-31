@@ -13,7 +13,6 @@ tz = pytz.timezone("America/New_York")
 
 
 class VaCSVBillScraper(Scraper):
-
     _session_id: str
     categorizer = Categorizer()
 

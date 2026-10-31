@@ -82,7 +82,6 @@ class SDEventScraper(Scraper):
         coms = self.get(coms_url).json()
 
         for com in coms:
-
             # temporary store for the events,
             # because the state lists all the various bits separately
             events_by_date = {}

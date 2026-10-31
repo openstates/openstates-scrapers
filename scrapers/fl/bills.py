@@ -327,13 +327,13 @@ class BillDetail(HtmlPage):
     # http://flsenate.gov/Session/Bill/2020/230/?Tab=Amendments
     def process_amendments(self):
         commmittee_amend_table = self.root.xpath(
-            "//div[@id = 'tabBodyAmendments']" "//div[@id='CommitteeAmendment']//table"
+            "//div[@id = 'tabBodyAmendments']//div[@id='CommitteeAmendment']//table"
         )
         if commmittee_amend_table:
             self.process_amendments_table(commmittee_amend_table, "Committee")
 
         floor_amend_table = self.root.xpath(
-            "//div[@id = 'tabBodyAmendments']" "//div[@id='FloorAmendment']//table"
+            "//div[@id = 'tabBodyAmendments']//div[@id='FloorAmendment']//table"
         )
         if floor_amend_table:
             self.process_amendments_table(floor_amend_table, "Floor")

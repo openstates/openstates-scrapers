@@ -35,8 +35,7 @@ class KSVoteScraper(Scraper):
             # Vote listings are loaded via the HTMX fragment endpoint.
             # Paginate until no vote rows are returned.
             list_url = (
-                f"{self.BASE_URL}/{biennium}/votes/fragment/"
-                f"?page={page}&per_page=20"
+                f"{self.BASE_URL}/{biennium}/votes/fragment/?page={page}&per_page=20"
             )
 
             response = self.get(list_url)

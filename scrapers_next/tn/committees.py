@@ -36,7 +36,7 @@ class CommitteeDetail(HtmlPage):
         com = self.input
 
         officers = self.root.xpath(
-            ".//h2[contains(text(),'Committee Officers')]/" "following-sibling::div//a"
+            ".//h2[contains(text(),'Committee Officers')]/following-sibling::div//a"
         )
         for officer in officers:
             name_and_title = [

@@ -68,8 +68,7 @@ class CAEventScraper(Scraper):
 
             grouped_hearings[(location, date)].append(hearing)
 
-        for ((location, date), hearings) in grouped_hearings.items():
-
+        for (location, date), hearings in grouped_hearings.items():
             # Get list of bill_ids from the database.
             bill_ids = [hearing.bill_id for hearing in hearings]
             bills = [

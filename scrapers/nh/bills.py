@@ -470,7 +470,6 @@ class NHBillScraper(Scraper):
             self.info("Scraping from web.")
             self.bills = self.scrape_from_web(session)
         else:
-
             # Guardrail: NH's bulk data dump has been intermittently returning empty
             # files (e.g. LSRs.txt returning 0 bytes). Detect that upfront so the run
             # fails loudly rather than silently emitting an empty scrape.
@@ -769,7 +768,6 @@ class NHBillScraper(Scraper):
         lines = self.get_dump("RollCallSummary.txt").splitlines()
 
         for line in lines:
-
             if len(line) < 2:
                 continue
 

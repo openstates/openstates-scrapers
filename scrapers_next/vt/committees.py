@@ -97,8 +97,7 @@ class CommitteeList(JsonListPage):
             #   page link, given not present for many committees in JSON data.
             #   Below link is to HTML committee list page (not ideal).
             coms_link = (
-                f"https://legislature.vermont.gov/committee/list/"
-                f"{self.session_year}/"
+                f"https://legislature.vermont.gov/committee/list/{self.session_year}/"
             )
             com.add_link(coms_link, note="homepage")
 

@@ -73,7 +73,6 @@ class OKEventScraper(Scraper):
         page.make_links_absolute(url)
 
         for row in page.xpath("//div[contains(@class,'bTiles__items')]/span"):
-
             if row.xpath(
                 "//p[contains(text(), 'There are currently no live Committee Meetings in progress')]"
             ):

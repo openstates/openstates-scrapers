@@ -223,7 +223,6 @@ _actions = {
 def categorize_actions(act_desc):
     atype = []
     for action_key, data in _actions.items():
-
         # If the action requires regex to be correctly classified
         if data["type"] == "regex":
             if re.search(action_key, act_desc.lower()):

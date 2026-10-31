@@ -179,7 +179,6 @@ class IAVoteScraper(Scraper):
                 motion = motion.group(1)
 
             for word, letter in (("Senate", "S"), ("House", "H"), ("File", "F")):
-
                 if bill_id is None:
                     return
 

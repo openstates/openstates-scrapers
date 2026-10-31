@@ -203,7 +203,7 @@ class NEBillScraper(Scraper, LXMLMixin):
 
         # Grabs bill version documents.
         version_links = self.get_nodes(
-            bill_page, "/html/body/div[3]/div[2]/div[2]/div/" "div[3]/div[2]/ul/li/a"
+            bill_page, "/html/body/div[3]/div[2]/div[2]/div/div[3]/div[2]/ul/li/a"
         )
 
         for version_link in version_links:

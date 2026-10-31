@@ -171,7 +171,7 @@ class RepDetail(HtmlPage):
         party_map = {
             "PNP": "Partido Nuevo Progresista",
             "PPD": "Partido Popular Democr\xe1tico",
-            "PIP": "Partido Independentista Puertorrique\u00F1o",
+            "PIP": "Partido Independentista Puertorrique\u00f1o",
             "PD": "Proyecto Dignidad",
             "MVC": "Movimiento Victoria Ciudadana",
             "Independiente": "Independent",

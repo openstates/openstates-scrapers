@@ -53,7 +53,6 @@ class CommitteeDetail(JsonPage):
 
 
 class CommitteeList(JsonListPage):
-
     source = URL(
         "https://www.legis.ga.gov/api/committees/List/1031",
         headers={"Authorization": get_token()},

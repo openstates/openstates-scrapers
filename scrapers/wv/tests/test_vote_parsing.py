@@ -9,6 +9,7 @@ https://www.wvlegislature.gov/legisdocs/2026/RS/votes/senate/02-21-0179.pdf
 (SB 200, 2026: Yea 28, Nay 0, Absent 6).
 Run directly: `python3 -m scrapers.wv.tests.test_vote_parsing`
 """
+
 import datetime
 import os
 import tempfile

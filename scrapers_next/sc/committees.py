@@ -53,7 +53,6 @@ class CommitteeDetails(HtmlPage):
         member_info = XPath("//div[@id='contentsection']/div[1]/*").match(self.root)
         ex_officio = False
         for i in member_info:
-
             if i.get("style") == "clear: both;":
                 # Skip the clear div, found before h4
                 pass
@@ -256,7 +255,6 @@ class Joint(PdfPage):
 
             expected_members = 0
             for line in content:
-
                 # Detect expected number of members
                 member_count = re.match(r"^Members \((\d+)\)$", line)
                 if member_count:
@@ -360,7 +358,6 @@ class Joint(PdfPage):
 
         # Ste p3 - Create ScrapeCommittee and add members to it
         for name, members in zip(com_names, com_members):
-
             # Remove suffixes and prefixes from title
             prefixes = ["Joint ", "South Carolina ", "Committee On "]
             for prefix in prefixes:
