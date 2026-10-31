@@ -51,6 +51,7 @@ class NewYork(State):
             "name": "2017 Regular Session",
             "start_date": "2017-01-04",
             "end_date": "2018-12-31",
+            "extras": {"assembly_speaker": "Heastie"},
         },
         {
             "_scraped_name": "2019",
@@ -58,6 +59,7 @@ class NewYork(State):
             "name": "2019 Regular Session",
             "start_date": "2019-01-09",
             "end_date": "2020-01-08",
+            "extras": {"assembly_speaker": "Heastie"},
         },
         {
             "_scraped_name": "2021",
@@ -66,6 +68,7 @@ class NewYork(State):
             "start_date": "2021-01-06",
             "end_date": "2022-06-10",
             "active": False,
+            "extras": {"assembly_speaker": "Heastie"},
         },
         {
             "_scraped_name": "2023",
@@ -74,6 +77,7 @@ class NewYork(State):
             "start_date": "2023-01-04",
             "end_date": "2024-06-06",
             "active": False,
+            "extras": {"assembly_speaker": "Heastie"},
         },
         {
             "_scraped_name": "2025",
@@ -82,6 +86,7 @@ class NewYork(State):
             "start_date": "2025-01-08",
             "end_date": "2026-12-31",
             "active": True,
+            "extras": {"assembly_speaker": "Heastie"},
         },
     ]
     ignored_scraped_sessions = []

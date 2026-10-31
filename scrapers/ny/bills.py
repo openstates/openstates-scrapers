@@ -560,6 +560,8 @@ class NYBillScraper(Scraper):
 
                 for vote_pair in votes:
                     vote_val, name = vote_pair
+                    if name == "Mr. Speaker":
+                        name = self.speaker or name
                     vote.vote(vote_dictionary[vote_val], name)
                     if vote_val == "AB":
                         absent_count += 1
@@ -602,6 +604,17 @@ class NYBillScraper(Scraper):
     def scrape(self, session=None, bill_no=None, window=None):
         self.api_client = OpenLegislationAPIClient(self)
         self.term_start_year = session.split("-")[0]
+        # Assembly floor rolls list the Speaker as "Mr. Speaker"
+        self.speaker = next(
+            s.get("extras", {}).get("assembly_speaker")
+            for s in self.jurisdiction.legislative_sessions
+            if s["identifier"] == session
+        )
+        if not self.speaker:
+            self.warning(
+                f"No assembly_speaker in {session} session extras; "
+                "Assembly roll calls will list the title"
+            )
 
         for bill in self._generate_bills(session, window):
             if bill_no:
