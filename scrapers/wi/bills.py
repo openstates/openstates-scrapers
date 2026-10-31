@@ -23,10 +23,11 @@ TIMEZONE = pytz.timezone("US/Central")
 
 
 class WIBillScraper(Scraper):
-    subjects = defaultdict(list)
+    subjects = {}
     categorizer = Categorizer()
 
     def scrape_subjects(self, year, site_id):
+        subjects = defaultdict(list)
         last_url = None
         next_url = (
             f"https://docs.legis.wisconsin.gov/{year}/related/subject_index/index"
@@ -67,7 +68,7 @@ class WIBillScraper(Scraper):
                 preceding_subject = re.sub(
                     r",\s*see\b.*$", "", preceding_subject.strip()
                 )
-                self.subjects[bill_id].append(preceding_subject)
+                subjects[bill_id].append(preceding_subject)
 
             # last subject on the page, in case we get a bill_id on next page
             last_subject_div = doc.xpath(
@@ -75,6 +76,8 @@ class WIBillScraper(Scraper):
             )
             if last_subject_div:
                 last_subject = last_subject_div[0]
+
+        return subjects
 
     def scrape(self, chamber=None, session=None):
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
@@ -88,8 +91,8 @@ class WIBillScraper(Scraper):
         site_id = SESSION_SITE_IDS.get(session, "reg")
         chamber_slug = {"upper": "sen", "lower": "asm"}[chamber]
 
-        if not self.subjects:
-            self.scrape_subjects(year, site_id)
+        if session not in self.subjects:
+            self.subjects[session] = self.scrape_subjects(year, site_id)
 
         types = ("bill", "joint_resolution", "resolution")
 
@@ -137,7 +140,7 @@ class WIBillScraper(Scraper):
                 chamber=chamber,
                 classification=bill_type,
             )
-            bill.subject = list(set(self.subjects[bill_id]))
+            bill.subject = list(set(self.subjects[session][bill_id]))
             yield from self.scrape_bill_history(bill, bill_url, chamber)
 
             yield bill
