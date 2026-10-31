@@ -20,7 +20,6 @@ replace = {
     "Senate Resolution No.": "SR ",
     "Senate Bill No.": "SB ",
     "\xa0": " ",
-    "\u00a0": " ",
     "SUB A": "",
     "SUB A as amended": "",
     "PROPOSED SUBSTITUTE": "",

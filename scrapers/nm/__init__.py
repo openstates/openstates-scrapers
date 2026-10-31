@@ -278,5 +278,5 @@ class NewMexico(State):
     def get_session_list(self):
         return url_xpath(
             "https://www.nmlegis.gov/",
-            '//select[@name="ctl00$MainContent$ddlSessions"]' "/option/text()",
+            '//select[@name="ctl00$MainContent$ddlSessions"]/option/text()',
         )

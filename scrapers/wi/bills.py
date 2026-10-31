@@ -385,7 +385,6 @@ class WIBillScraper(Scraper):
         name_counts = {}
 
         for index, tr in enumerate(trs):
-
             vote_type = vote_types[index]
             names = tr.xpath(".//table//td/text()")
             vote_count = int(tr.xpath("./td/text()")[0].split("-")[1])

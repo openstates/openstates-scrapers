@@ -39,10 +39,15 @@ RUN sed -i "s/user                    = mysql/user                    = root/" /
     &&  mysql_install_db --user=root \
     && mkdir /run/mysqld \
     && printf "[client]\nskip-ssl\n" > /etc/mysql/conf.d/no-ssl.cnf
-RUN pip --no-cache-dir --disable-pip-version-check install wheel \
-    && pip --no-cache-dir --disable-pip-version-check install crcmod poetry
+RUN pip --no-cache-dir --disable-pip-version-check install crcmod
+COPY --from=ghcr.io/astral-sh/uv:0.13.6 /uv /uvx /bin/
 
-ADD poetry.lock /opt/openstates/openstates/
+# venv lives outside the workdir so docker-compose's source mount doesn't hide it
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv
+ENV UV_NO_CACHE=1
+ENV PATH="/opt/venv/bin:$PATH"
+
+ADD uv.lock /opt/openstates/openstates/
 ADD pyproject.toml /opt/openstates/openstates/
 ADD scrapers/ca/ca-entrypoint.sh /opt/openstates/openstates/ca-entrypoint.sh
 
@@ -54,13 +59,11 @@ RUN chmod ug+x /opt/openstates/openstates/non-ca-entrypoint.sh
 WORKDIR /opt/openstates/openstates/
 ENV PYTHONPATH=./scrapers
 
-RUN poetry install --no-root
+RUN uv sync --frozen --no-dev
 
 ADD . /opt/openstates/openstates/
 
-# the last step cleans out temporarily downloaded artifacts for poetry, shrinking our build
-RUN poetry install --no-root  --extras "california" \
-    && rm -r /root/.cache/pypoetry/cache /root/.cache/pypoetry/artifacts/ \
+RUN uv sync --frozen --no-dev --extra california \
     && apt-get remove -y -qq \
       build-essential \
       libpq-dev \

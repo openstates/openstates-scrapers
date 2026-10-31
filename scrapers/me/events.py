@@ -136,7 +136,6 @@ class MEEventScraper(Scraper, LXMLMixin):
                 event.add_source("https://legislature.maine.gov/Calendar/#Weekly")
 
             if row["AudioEvent"] is True or row["VideoEvent"] is True:
-
                 stream_type = "Video" if row["VideoEvent"] is True else "Audio"
 
                 room = re.search(r"Room (\d+)|$", row["Location"]).group(1)

@@ -49,7 +49,7 @@ class OregonLegislatorODataClient(object):
         skip=0,
         requests_args=None,
         requests_kwargs=None,
-        **url_format_args
+        **url_format_args,
     ):
         num_bad_packets_allowed = 10
         url = self._build_url(resource_name, **url_format_args)
@@ -86,7 +86,7 @@ class OregonLegislatorODataClient(object):
                     skip,
                     requests_args,
                     requests_kwargs,
-                    **url_format_args
+                    **url_format_args,
                 )
             )
         return response

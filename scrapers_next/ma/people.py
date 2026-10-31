@@ -8,7 +8,6 @@ def list_url():
 
 
 class LegDetail(JsonPage):
-
     example_source = (
         "http://malegislature.gov/api/GeneralCourts/193/LegislativeMembers/R_C1"
     )
@@ -75,7 +74,6 @@ class LegDetail(JsonPage):
 
 
 class LegList(JsonListPage):
-
     source = URL(list_url(), timeout=30, verify=False)
     selector = XPath("//LegislativeMemberSummary/Details")
 

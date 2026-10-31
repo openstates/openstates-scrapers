@@ -9,6 +9,7 @@ result value from the 136th GA actions API (HB 96, HR 1, HB 3, HB 2), trimmed
 to the fields the scraper reads.
 Run directly: `python3 -m scrapers.oh.tests.test_vote_results`
 """
+
 import json
 import os
 import tempfile

@@ -86,7 +86,7 @@ class WAEventScraper(Scraper, LXMLMixin):
                 xpath(row, "string(wa:Date)"), "%Y-%m-%dT%H:%M:%S"
             )
             event_date = self._tz.localize(event_date)
-            event_com = xpath(row, "string(wa:Committees/" "wa:Committee/wa:LongName)")
+            event_com = xpath(row, "string(wa:Committees/wa:Committee/wa:LongName)")
             agenda_id = xpath(row, "string(wa:AgendaId)")
             notes = xpath(row, "string(wa:Notes)")
             room = xpath(row, "string(wa:Room)")

@@ -166,7 +166,7 @@ class Senate(JsonListPage):
         )
 
         p.capitol_office.address = (
-            f"{item['address']} Building, " f"201 Townsend St, Lansing, MI 48933"
+            f"{item['address']} Building, 201 Townsend St, Lansing, MI 48933"
         )
         p.capitol_office.voice = item["phone"]
 

@@ -67,7 +67,7 @@ class INBillScraper(Scraper):
             url_segment = self._bill_prefix_map[bill_prefix]["url_segment"]
         except KeyError:
             raise AssertionError(
-                "Unknown bill type {}, don't know how to " "make url.".format(bill_id)
+                "Unknown bill type {}, don't know how to make url.".format(bill_id)
             )
 
         return url_template.format(session, url_segment, bill_number)

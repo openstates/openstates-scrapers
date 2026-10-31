@@ -26,9 +26,9 @@ def clean_title(s):
     s = s.replace("\xe2\u20ac\u201c", "-")
 
     # Cesar Chavez e
-    s = s.replace("\xc3\xa9", "\u00E9")
+    s = s.replace("\xc3\xa9", "\u00e9")
     # Cesar Chavez a
-    s = s.replace("\xc3\xa1", "\u00E1")
+    s = s.replace("\xc3\xa1", "\u00e1")
     s = s.replace("\xe2\u20ac\u201c", "\u2013")
 
     s = re.sub(r"[\u2018\u2019]", "'", s)
@@ -206,8 +206,7 @@ class CABillScraper(Scraper, LXMLMixin):
 
             # Construct a fake source url
             source_url = (
-                "http://leginfo.legislature.ca.gov/faces/"
-                "billNavClient.xhtml?bill_id=%s"
+                "http://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=%s"
             ) % bill.bill_id
 
             fsbill.add_source(source_url)

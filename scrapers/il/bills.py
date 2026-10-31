@@ -264,7 +264,6 @@ def _categorize_action(action):
     related_orgs = []
 
     for pattern, atype in _action_classifiers:
-
         if pattern.findall(action):
             if "referral-committee" in atype:
                 related_orgs = [pattern.sub("", action).strip()]
@@ -513,9 +512,9 @@ class IlBillScraper(SSLRetryMixin, Scraper):
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(url)
         except scrapelib.HTTPError as e:
-            assert (
-                "500" in e.args[0]
-            ), "Unexpected error when accessing page: {}".format(e)
+            assert "500" in e.args[0], (
+                "Unexpected error when accessing page: {}".format(e)
+            )
             self.warning("500 error for bill page; skipping bill")
             return
 

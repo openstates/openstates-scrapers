@@ -7,14 +7,8 @@ repos:
       - id: check-merge-conflict
       - id: debug-statements
 
--   repo: https://github.com/psf/black
-    rev: "22.10.0"
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.3
     hooks:
-      - id: black
-
--   repo: https://github.com/pycqa/flake8
-    rev: 5.0.4
-    hooks:
-      - id: flake8
-        args: ['--show-source', '--statistics']
-        exclude: scrapers/il/tests/
+      - id: ruff-check
+      - id: ruff-format

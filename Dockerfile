@@ -32,10 +32,15 @@ RUN apt-get update -qq \
     && apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/*
-RUN pip --no-cache-dir --disable-pip-version-check install wheel \
-    && pip --no-cache-dir --disable-pip-version-check install crcmod poetry
+RUN pip --no-cache-dir --disable-pip-version-check install crcmod
+COPY --from=ghcr.io/astral-sh/uv:0.13.6 /uv /uvx /bin/
 
-ADD poetry.lock /opt/openstates/openstates/
+# venv lives outside the workdir so docker-compose's source mount doesn't hide it
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv
+ENV UV_NO_CACHE=1
+ENV PATH="/opt/venv/bin:$PATH"
+
+ADD uv.lock /opt/openstates/openstates/
 ADD pyproject.toml /opt/openstates/openstates/
 WORKDIR /opt/openstates/openstates/
 ENV PYTHONPATH=./scrapers
@@ -45,8 +50,7 @@ RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
       build-essential \
       libpq-dev \
-    && poetry install --no-root \
-    && rm -r /root/.cache/pypoetry/cache /root/.cache/pypoetry/artifacts/ \
+    && uv sync --frozen --no-dev \
     && apt-get remove -y -qq \
       build-essential \
       libpq-dev \

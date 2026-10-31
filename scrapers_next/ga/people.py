@@ -121,7 +121,7 @@ class DirectoryListing(JsonListPage):
         )
         p.add_link(url, note="HTML member detail page")
         p.add_link(
-            "http://www.legis.ga.gov/members/" f"{self.chamber_names[chamber_id]}",
+            f"http://www.legis.ga.gov/members/{self.chamber_names[chamber_id]}",
             note="HTML members list page",
         )
 

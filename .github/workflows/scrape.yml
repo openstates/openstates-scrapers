@@ -11,37 +11,25 @@ jobs:
 
     steps:
     # checkouts
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
     - name: checkout results repo
-      uses: actions/checkout@v3
+      uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
       with:
         repository: openstates/scraper-artifacts
         path: artifacts
         token: ${{ secrets.GH_ACCESS_TOKEN }}
 
     # install python environment
-    - name: setup Python 3.13
-      uses: actions/setup-python@v4
+    - name: install uv
+      uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
       with:
-        python-version: 3.13
-    - name: install Poetry
-      uses: snok/install-poetry@v1.3.3
-    - name: cache Poetry virtualenv
-      uses: actions/cache@v2
-      id: poetry-cache
-      with:
-        path: ~/.virtualenvs/
-        key: poetry-${{ hashFiles('**/poetry.lock') }}
-        restore-keys: |
-          poetry-${{ hashFiles('**/poetry.lock') }}
-    - name: set poetry config path
-      run: poetry config virtualenvs.path ~/.virtualenvs
+        enable-cache: true
     - name: install python dependencies
-      run: poetry install --no-root
+      run: uv sync --frozen --no-dev
 
     # scout runs
     - name: run instrumented scout for people
-      run: poetry run scripts/instrumented_scout.py
+      run: uv run --frozen scripts/instrumented_scout.py
 
     - name: update remote git repo if necessary
       run: |-

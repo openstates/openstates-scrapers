@@ -21,7 +21,7 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 # Base URL for the details of a given bill.
 BILL_DETAIL_URL_BASE = "https://www.revisor.mn.gov/bills/"
-BILL_DETAIL_URL = "https://www.revisor.mn.gov/bills/bill.php" "?b=%s&f=%s&ssn=0&y=%s"
+BILL_DETAIL_URL = "https://www.revisor.mn.gov/bills/bill.php?b=%s&f=%s&ssn=0&y=%s"
 
 # The versions of a bill use a different base URL.
 VERSION_URL_BASE = "https://www.revisor.mn.gov/bills/"
@@ -366,7 +366,7 @@ class MNBillScraper(SSLRetryMixin, Scraper, LXMLMixin):
             )
             long_desc_page = self.lxmlize(long_desc_url, verify=False)
             long_desc_text = self.get_node(
-                long_desc_page, "//h1/" "following-sibling::p/text()"
+                long_desc_page, "//h1/following-sibling::p/text()"
             )
             if long_desc_text is not None:
                 bill_title = long_desc_text.strip()

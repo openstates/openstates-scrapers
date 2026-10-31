@@ -6,7 +6,7 @@
     <envs>
       <env name="PYTHONUNBUFFERED" value="1" />
     </envs>
-    <option name="SDK_HOME" value="$USER_HOME$/.cache/pypoetry/virtualenvs/openstates-scrapers-93BMrPXy-py3.9/bin/python" />
+    <option name="SDK_HOME" value="$PROJECT_DIR$/.venv/bin/python" />
     <option name="WORKING_DIRECTORY" value="" />
     <option name="IS_MODULE_SDK" value="false" />
     <option name="ADD_CONTENT_ROOTS" value="true" />

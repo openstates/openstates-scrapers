@@ -58,7 +58,6 @@ class HouseCommitteeDetail(HtmlPage):
         com.extras["meeting schedule"] = time.strip()
 
         for p in XPath('//div[@class="media pl-2 py-4"]').match(self.root):
-
             name = (
                 XPath(".//div[@class='media-body']/span/b/text()")
                 .match(p)[0]

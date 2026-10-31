@@ -56,7 +56,7 @@ def add_bill_to_agenda(agenda_item, bill_text):
 class MOEventScraper(Scraper, LXMLMixin):
     _TZ = pytz.timezone("America/Chicago")
     bill_link_xpath = (
-        './/a[contains(@href, "Bill.aspx") ' 'or contains(@href, "bill.aspx")]/text()'
+        './/a[contains(@href, "Bill.aspx") or contains(@href, "bill.aspx")]/text()'
     )
 
     def scrape(self, chamber=None):

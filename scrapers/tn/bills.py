@@ -128,7 +128,6 @@ class TNBillScraper(Scraper):
         xpath = '//td[contains(@class,"webindex")]/a'
 
         for bill_listing in index_list_page.xpath(xpath):
-
             bill_listing = bill_listing.attrib["href"]
 
             # This check was failing for the latest specials as they are just links to full
@@ -308,7 +307,7 @@ class TNBillScraper(Scraper):
             bill_parts = re.match(
                 r"(?P<prefix>[A-Z]+)(?P<number>\d+)", bill_name
             ).groupdict()
-            bill_id = f'{bill_parts["prefix"]} {bill_parts["number"]}'
+            bill_id = f"{bill_parts['prefix']} {bill_parts['number']}"
             if bill_id == bill.identifier:
                 raw_vote = raw_vote.split("\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0")
                 motion = raw_vote[0]

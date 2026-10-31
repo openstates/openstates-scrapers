@@ -29,7 +29,7 @@ rm -rf "${SCRIPT_DIR}/../_scrapes/${TODAY}"
 mkdir -p "${SCRIPT_DIR}/../_scrapes"
 
 echo "ensuring dependencies are up to date"
-poetry install
+uv sync
 
 echo "Cloning people repo..."
 REPO_FOLDER=/tmp/people-git
@@ -40,19 +40,19 @@ git checkout -b "${TODAY}-auto-people-merge"
 popd > /dev/null || exit 1
 
 for scraper in ${JURISDICTIONS}; do
-    poetry run spatula scrape "${scraper}" | tee "${SCRIPT_DIR}/../_scrapes/${TODAY}-scrape.tmp"
+    uv run spatula scrape "${scraper}" | tee "${SCRIPT_DIR}/../_scrapes/${TODAY}-scrape.tmp"
 	# last portion of the scraper name will be the jurisdiction abbreviation
 	ABBR=$(echo "${scraper}" | cut -d"." -f2)
 	# the last line of output in a scrape indicates the relative folder path where data lives
 	FOLDER="${SCRIPT_DIR}/../$(tail -1 "${SCRIPT_DIR}/../_scrapes/${TODAY}-scrape.tmp" | rev | cut -d" " -f1 | rev)"
 	rm -f "${SCRIPT_DIR}/../_scrapes/${TODAY}-scrape.tmp"
 	echo "Syncing from ${FOLDER} to ${REPO_FOLDER}..."
-	OS_PEOPLE_DIRECTORY="${REPO_FOLDER}" poetry run os-people merge "${ABBR}" "${FOLDER}" --reset-offices
+	OS_PEOPLE_DIRECTORY="${REPO_FOLDER}" uv run os-people merge "${ABBR}" "${FOLDER}" --reset-offices
 done
 
 rm -rf "${SCRIPT_DIR}/../_scrapes/${TODAY}"
 
-OS_PEOPLE_DIRECTORY="${REPO_FOLDER}" poetry run os-people lint --fix --save-all --municipal
+OS_PEOPLE_DIRECTORY="${REPO_FOLDER}" uv run os-people lint --fix --save-all --municipal
 
 # Show local changes
 pushd "${REPO_FOLDER}" > /dev/null || exit 1

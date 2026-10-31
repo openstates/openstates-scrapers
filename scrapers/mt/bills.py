@@ -269,9 +269,9 @@ class MTBillScraper(Scraper):
         if requester_type == "LEGISLATOR":
             for legislator in self.legislators:
                 if requester_id == legislator["id"]:
-                    bill.extras[
-                        "by_request_of"
-                    ] = f"{legislator['first_name']} {legislator['last_name']}"
+                    bill.extras["by_request_of"] = (
+                        f"{legislator['first_name']} {legislator['last_name']}"
+                    )
         elif requester_type == "AGENCY":
             for agency in self.requesting_agencies:
                 if requester_id == agency["id"]:
@@ -402,9 +402,9 @@ class MTBillScraper(Scraper):
             if requester["lawEntity"]:
                 bill.extras["by_request_of"] = requester["lawEntity"]["lastName"]
             elif requester["legislator"]:
-                bill.extras[
-                    "by_request_of"
-                ] = f"{requester['legislator']['firstName']} {requester['legislator']['lastName']}"
+                bill.extras["by_request_of"] = (
+                    f"{requester['legislator']['firstName']} {requester['legislator']['lastName']}"
+                )
 
         if row["sessionLawChapterNumber"]:
             cite = f"{self.session_year} Chapter {row['sessionLawChapterNumber']}, {bill.identifier}"
