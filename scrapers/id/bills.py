@@ -106,6 +106,17 @@ class IDBillScraper(Scraper):
                 self.warning("Unable to load subjects.")
                 self._subjects = defaultdict(list)
 
+        self.speaker = next(
+            s.get("extras", {}).get("house_speaker")
+            for s in self.jurisdiction.legislative_sessions
+            if s["identifier"] == session
+        )
+        if not self.speaker:
+            self.warning(
+                f"No house_speaker in {session} session extras; "
+                "roll calls will list the title"
+            )
+
         # if you need to scrape a single bill
         # yield from self.scrape_bill("lower", "2026", "H 0978")
         # return
@@ -301,7 +312,11 @@ class IDBillScraper(Scraper):
                 name if re.search(r"\(\d+\)$", name) else name.split("(")[0]
                 for name in name_list
             ]
-            return name_list
+            # House rolls list the Speaker by title
+            return [
+                self.speaker or name if name == "Mr. Speaker" else name
+                for name in name_list
+            ]
         return []
 
     def parse_vote(self, actor, date, row, session, bill_id, bill_chamber, source):

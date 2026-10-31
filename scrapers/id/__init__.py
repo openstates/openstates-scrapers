@@ -141,6 +141,7 @@ class Idaho(State):
             "start_date": "2023-01-09",
             "end_date": "2023-03-31",
             "active": False,
+            "extras": {"house_speaker": "Moyle"},
         },
         {
             "_scraped_name": "2024 Session",
@@ -150,6 +151,7 @@ class Idaho(State):
             "start_date": "2024-01-08",
             "end_date": "2024-03-29",
             "active": False,
+            "extras": {"house_speaker": "Moyle"},
         },
         {
             "_scraped_name": "2025 Session",
@@ -159,6 +161,7 @@ class Idaho(State):
             "start_date": "2025-01-06",
             "end_date": "2025-04-10",
             "active": False,
+            "extras": {"house_speaker": "Moyle"},
         },
         {
             "_scraped_name": "2026 Session",
@@ -169,6 +172,7 @@ class Idaho(State):
             # TODO: Update end data
             "end_date": "2026-04-10",
             "active": True,
+            "extras": {"house_speaker": "Moyle"},
         },
     ]
     ignored_scraped_sessions = [
