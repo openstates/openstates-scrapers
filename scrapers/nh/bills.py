@@ -190,7 +190,7 @@ class NHBillScraper(Scraper):
         tries = 3
         # we have to be prepared to retry, because sometimes NH responds with a basically empty HTML response
         # (contains only some inline Javascript snippet)
-        while try_num < tries and (
+        while try_num <= tries and (
             docket_content is None or "<head></head>" in docket_content
         ):
             if try_num > 1:
