@@ -1,3 +1,5 @@
+import datetime as dt
+import re
 import lxml
 from scrapelib import HTTPError
 
@@ -172,6 +174,56 @@ def get_short_codes(scraper):
                 "name": "Senate Committee on Water, Land, Culture and the Arts",
             },
         }
+
+
+def get_members(scraper, session, appointed):
+    # The roster page only shows the current session (it ignores ?year=), so
+    # it can't be used for any other session. Mid-session changes are noted
+    # as "Appointed MM/DD/YYYY" or "Term of Office Ended: MM/DD/YYYY".
+    members = {}
+    for chamber, code in (("lower", "H"), ("upper", "S")):
+        try:
+            html = scraper.get(
+                f"{HI_URL_BASE}/legislature/legislators.aspx?chamber={code}",
+                verify=False,
+            ).text
+        except HTTPError:
+            return {}
+        page = lxml.html.fromstring(html)
+        members[chamber] = []
+        for card in page.xpath("//div[contains(@class, 'legislator-list')]"):
+            link = card.xpath(".//a[contains(@href, 'memberpage')]")[0]
+            if f"year={session[:4]}" not in link.get("href"):
+                return {}
+            # "Ihara, Jr., Les (D)" -> ("Ihara", "Les")
+            parts = [p.strip() for p in link.text_content().split("(")[0].split(",")]
+            last = re.sub(r"\s+(I+|Jr\.?)$", "", parts[0])
+            text = card.text_content()
+            start = re.search(r"Appointed (\d+/\d+/\d+)", text)
+            start = _iso(start.group(1)) if start else appointed.get(last)
+            end = re.search(r"Term of Office Ended: (\d+/\d+/\d+)", text)
+            members[chamber].append(
+                (
+                    last,
+                    parts[-1][0],
+                    start or session[:4],
+                    _iso(end.group(1)) if end else "9999",
+                )
+            )
+    # vote text tells apart a surname shared across chambers by initial,
+    # e.g. "Lee, M." and "Lee, C."
+    shared = {m[0] for m in members["lower"]} & {m[0] for m in members["upper"]}
+    return {
+        chamber: [
+            (f"{last}, {first}" if last in shared else last, start, end)
+            for last, first, start, end in roster
+        ]
+        for chamber, roster in members.items()
+    }
+
+
+def _iso(date):
+    return dt.datetime.strptime(date, "%m/%d/%Y").strftime("%Y-%m-%d")
 
 
 def make_data_url(url: str) -> str:
