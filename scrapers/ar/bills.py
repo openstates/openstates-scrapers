@@ -1,4 +1,4 @@
-import csv
+import itertools
 import re
 import datetime
 import pytz
@@ -20,9 +20,6 @@ _AR_ORGANIZATION_ENTITY_NAME_KEYWORDS = [
 
 
 class ARBillScraper(Scraper):
-    ftp_user = ""
-    ftp_pass = ""
-    bills = {}
     sponsors_chamber_cache = {}
 
     def scrape(self, chamber=None, session=None):
@@ -34,148 +31,136 @@ class ARBillScraper(Scraper):
                 self.session_name = i["name"]
                 self.biennium = get_biennium_year(self.session_name)
 
-        leg_chambers = [chamber] if chamber else ["upper", "lower"]
+        session_year = int(self.slug[:4])
+        odd_year = session_year if session_year % 2 else session_year - 1
+        self.biennium_session = urllib.parse.quote_plus(f"{odd_year}/{self.slug}")
 
-        for leg_chamber in leg_chambers:
-            yield from self.scrape_bill(leg_chamber, session)
+        url = (
+            "https://www.arkleg.state.ar.us/Bills/SearchByRange"
+            f"?ddBienniumSession={self.biennium_session}"
+        )
+        page = lxml.html.fromstring(self.get(url).text)
+        page.make_links_absolute(url)
+        type_urls = sorted(
+            set(
+                page.xpath(
+                    "//a[contains(@href, '/Bills/ViewBills?type=') and "
+                    f"contains(@href, 'ddBienniumSession={self.biennium_session}')]/@href"
+                )
+            )
+        )
 
-        self.scrape_actions()
+        self.seen = set()
+        for type_url in type_urls:
+            bill_chamber = {"H": "lower", "S": "upper"}[
+                re.search(r"type=([HS])", type_url).group(1)
+            ]
+            if chamber and bill_chamber != chamber:
+                continue
+            yield from self.scrape_bill_list(type_url, bill_chamber, session)
 
-        if not self.bills:
+        if not self.seen:
             raise EmptyScrape
 
-        for bill_id, bill in self.bills.items():
-            yield bill
-
-    def scrape_bill(self, chamber, session):
-        url = "LegislativeMeasures.txt"
-
-        page = csv.reader(self.get_utf_16_ftp_content(url).splitlines(), delimiter="|")
-
-        for row in page:
-            bill_chamber = {"H": "lower", "S": "upper"}[row[0]]
-
-            if bill_chamber != chamber:
-                continue
-            bill_id = "%s%s %s" % (row[0], row[1], row[2])
-
-            type_spec = re.match(r"(H|S)([A-Z]+)\s", bill_id).group(2)
-            bill_type = {
-                "B": "bill",
-                "R": "resolution",
-                "JR": "joint resolution",
-                "CR": "concurrent resolution",
-                "MR": "memorial",
-                "CMR": "concurrent memorial",
-            }[type_spec]
-
-            if row[-1] != self.slug:
-                self.warning(
-                    f"Skipping row in session {row[-1]} because it does not match {self.slug}"
-                )
-                continue
-
-            bill = Bill(
-                bill_id,
-                legislative_session=session,
-                chamber=chamber,
-                title=row[3],
-                classification=bill_type,
-            )
-            bill.add_source(
-                f"https://www.arkleg.state.ar.us/Bills/FTPDocument/?path=%2fSessionInformation%2{url}"
-            )
-
-            # need year before if it's a fiscal or special session beyond first
-            year = session[0:4]
-            if len(session) > 4 and session[-1] != "1":
-                year = int(year) - 1
-            bill_url = bill_id.replace(" ", "")
-
-            # versions for special sessions have a different format
-            is_special = True if len(session) > 5 else False
-            if is_special:
-                version_url = f"https://www.arkleg.state.ar.us/Bills/FTPDocument?path=%2FBills%2F{self.slug}%2FPublic%2F{bill_url}.pdf"
-            else:
-                version_url = f"https://www.arkleg.state.ar.us/assembly/{year}/{self.slug}/Bills/{bill_url}.pdf"
-            bill.add_version_link(bill_id, version_url, media_type="application/pdf")
-
-            yield from self.scrape_bill_page(bill)
-
-            self.bills[bill_id] = bill
-
-    def scrape_actions(self):
-        url = "ChamberActions.txt"
-        page = csv.reader(self.get_utf_16_ftp_content(url).splitlines(), delimiter="|")
-
-        for row in page:
-            bill_id = "%s%s %s" % (row[1], row[2], row[3])
-
-            if bill_id not in self.bills:
-                continue
-
-            if len(row) < 11:
-                continue
-
-            # different term
-            if row[10] != self.slug:
-                continue
-
-            actor = {"H": "lower", "S": "upper"}[row[7].upper()]
-
-            date = TIMEZONE.localize(
-                datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S.%f").replace(
-                    microsecond=0
-                )
-            )
-
-            action = row[6]
-
-            action_type = []
-            if action.startswith("Filed"):
-                action_type.append("introduction")
-            elif action.startswith("Read first time") or action.startswith(
-                "Read the first time"
+    def scrape_bill_list(self, type_url, chamber, session):
+        for start in itertools.count(0, 20):
+            page = lxml.html.fromstring(self.get(f"{type_url}&start={start}").text)
+            new_rows = []
+            for row in page.xpath(
+                "//div[@role='row'][.//a[starts-with(@aria-label, 'Bill Number ')]]"
             ):
-                action_type.append("reading-1")
-            if re.match("Read the first time, .*, read the second time", action):
-                action_type.append("reading-2")
-            elif action.startswith("Read the third time and passed"):
-                action_type.append("passage")
-                action_type.append("reading-3")
-            elif action.startswith("Read the third time"):
-                action_type.append("reading-3")
-            elif action.startswith("DELIVERED TO GOVERNOR"):
-                action_type.append("executive-receipt")
-            elif action.startswith("Notification"):
-                action_type.append("executive-signature")
-            elif "vetoed by the Governor" in action or "Governor Vetoed" in action:
-                action_type.append("executive-veto")
-            elif "override" and "veto passed" in action.casefold():
-                action_type.append("veto-override-passage")
-                action_type.append("passage")
-            elif "override" and "veto failed" in action.casefold():
-                action_type.append("veto-override-failure")
-                action_type.append("failure")
+                measureno = row.xpath(
+                    "string(.//a[starts-with(@aria-label, 'Bill Number ')])"
+                ).strip()
+                if measureno not in self.seen:
+                    self.seen.add(measureno)
+                    new_rows.append((measureno, row.xpath("normalize-space(div[2])")))
+            if not new_rows:
+                break
+            for measureno, title in new_rows:
+                yield from self.scrape_bill(measureno, title, chamber, session)
 
-            if "referred to" in action:
-                action_type.append("referral-committee")
+    def scrape_bill(self, measureno, title, chamber, session):
+        bill_id = re.sub(r"^([A-Z]+)(\d+)$", r"\1 \2", measureno)
 
-            if "Returned by the Committee" in action:
-                if "recommendation that it Do Pass" in action:
-                    action_type.append("committee-passage-favorable")
-                else:
-                    action_type.append("committee-passage")
+        type_spec = re.match(r"(H|S)([A-Z]+)\s", bill_id).group(2)
+        bill_type = {
+            "B": "bill",
+            "R": "resolution",
+            "JR": "joint resolution",
+            "CR": "concurrent resolution",
+            "MR": "memorial",
+            "CMR": "concurrent memorial",
+        }[type_spec]
 
-            if re.match(r"Amendment No\. \d+ read and adopted", action):
-                action_type.append("amendment-introduction")
-                action_type.append("amendment-passage")
+        bill = Bill(
+            bill_id,
+            legislative_session=session,
+            chamber=chamber,
+            title=title,
+            classification=bill_type,
+        )
 
-            if not action:
-                action = "[No text provided]"
-            self.bills[bill_id].add_action(
-                action, date, chamber=actor, classification=action_type
-            )
+        # need year before if it's a fiscal or special session beyond first
+        year = session[0:4]
+        if len(session) > 4 and session[-1] != "1":
+            year = int(year) - 1
+        bill_url = bill_id.replace(" ", "")
+
+        # versions for special sessions have a different format
+        is_special = True if len(session) > 5 else False
+        if is_special:
+            version_url = f"https://www.arkleg.state.ar.us/Bills/FTPDocument?path=%2FBills%2F{self.slug}%2FPublic%2F{bill_url}.pdf"
+        else:
+            version_url = f"https://www.arkleg.state.ar.us/assembly/{year}/{self.slug}/Bills/{bill_url}.pdf"
+        bill.add_version_link(bill_id, version_url, media_type="application/pdf")
+
+        yield from self.scrape_bill_page(bill)
+
+        yield bill
+
+    def classify_action(self, action):
+        action_type = []
+        if action.startswith("Filed"):
+            action_type.append("introduction")
+        elif action.startswith("Read first time") or action.startswith(
+            "Read the first time"
+        ):
+            action_type.append("reading-1")
+        if re.match("Read the first time, .*, read the second time", action):
+            action_type.append("reading-2")
+        elif action.startswith("Read the third time and passed"):
+            action_type.append("passage")
+            action_type.append("reading-3")
+        elif action.startswith("Read the third time"):
+            action_type.append("reading-3")
+        elif action.startswith("DELIVERED TO GOVERNOR"):
+            action_type.append("executive-receipt")
+        elif action.startswith("Notification"):
+            action_type.append("executive-signature")
+        elif "vetoed by the Governor" in action or "Governor Vetoed" in action:
+            action_type.append("executive-veto")
+        elif "override" and "veto passed" in action.casefold():
+            action_type.append("veto-override-passage")
+            action_type.append("passage")
+        elif "override" and "veto failed" in action.casefold():
+            action_type.append("veto-override-failure")
+            action_type.append("failure")
+
+        if "referred to" in action:
+            action_type.append("referral-committee")
+
+        if "Returned by the Committee" in action:
+            if "recommendation that it Do Pass" in action:
+                action_type.append("committee-passage-favorable")
+            else:
+                action_type.append("committee-passage")
+
+        if re.match(r"Amendment No\. \d+ read and adopted", action):
+            action_type.append("amendment-introduction")
+            action_type.append("amendment-passage")
+
+        return action_type
 
     def get_entity_name(self, link):
         entity_type = "person"
@@ -194,21 +179,38 @@ class ARBillScraper(Scraper):
         return chamber
 
     def scrape_bill_page(self, bill):
-        # We need to scrape each bill page in order to grab associated votes.
-        # It's still more efficient to get the rest of the data we're
-        # interested in from the CSVs, though, because their site splits
-        # other info (e.g. actions) across many pages
-        session_year = int(self.slug[:4])
-        odd_year = session_year if session_year % 2 else session_year - 1
         measureno = bill.identifier.replace(" ", "")
         url = (
-            "https://www.arkleg.state.ar.us/assembly/%s/%s/"
-            "Pages/BillInformation.aspx?measureno=%s" % (odd_year, self.slug, measureno)
+            "https://www.arkleg.state.ar.us/Bills/Detail"
+            f"?id={measureno}&ddBienniumSession={self.biennium_session}"
         )
         page = self.get(url).text
         bill.add_source(url)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
+
+        history_rows = page.xpath(
+            "//h3[contains(., 'Bill Status History')]"
+            "/following::div[@id='tableDataWrapper'][1]"
+            "/div[contains(@class, 'tableRow')]"
+        )
+        # newest first on the page
+        for row in reversed(history_rows):
+            actor = {"House": "lower", "Senate": "upper"}[
+                row.xpath("normalize-space(div[1])")
+            ]
+            date = TIMEZONE.localize(
+                datetime.datetime.strptime(
+                    row.xpath("normalize-space(div[2])"), "%m/%d/%Y %I:%M:%S %p"
+                )
+            )
+            action = row.xpath("normalize-space(div[3])")
+            bill.add_action(
+                action or "[No text provided]",
+                date,
+                chamber=actor,
+                classification=self.classify_action(action),
+            )
 
         primary_sponsors_path = page.xpath(
             "//div[text()[contains(.,'Lead Sponsor:')]]/../div[2]/a"
@@ -461,15 +463,3 @@ class ARBillScraper(Scraper):
         self.sponsors_chamber_cache[url] = chamber
 
         return chamber
-
-    # the data is utf-16, with null bytes for empty cells.
-    def decode_ar_utf16(self, data) -> str:
-        data = data.decode("utf-16", errors="ignore")
-        data = data.replace("\x00", "")
-
-        return data
-
-    def get_utf_16_ftp_content(self, filename):
-        path = urllib.parse.quote_plus(f"/SessionInformation/{filename}")
-        url = f"https://arkleg.state.ar.us/Home/FTPDocument?path={path}"
-        return self.decode_ar_utf16(self.get(url).content)
