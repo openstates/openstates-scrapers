@@ -34,6 +34,7 @@ FL_ORGANIZATION_ENTITY_NAME_KEYWORDS = [
     "finance and tax",
     "governmental oversight",
     "health policy",
+    "judiciary",
     "regulated industries",
     "rules",
     "transportation",
@@ -279,9 +280,12 @@ class BillDetail(HtmlPage):
                 for csp in cosponsors.split("; "):
                     csp = csp.strip()
                     if csp:
-                        csp_type = (
-                            "organization" if "committee" in csp.lower() else "person"
-                        )
+                        csp_type = "person"
+                        if any(
+                            keyword in csp.lower()
+                            for keyword in FL_ORGANIZATION_ENTITY_NAME_KEYWORDS
+                        ):
+                            csp_type = "organization"
                         self.input.add_sponsorship(csp, "cosponsor", csp_type, False)
 
     def process_summary(self):
