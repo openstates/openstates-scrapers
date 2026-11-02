@@ -642,11 +642,12 @@ class MOBillScraper(Scraper, LXMLMixin):
         url = f"https://www.senate.mo.gov/journallist/?SelectedYear={year}"
         # e.g. /26info/Journals/RDay6205061522-1559.pdf: day 62, May 6, pages 1522-1559.
         # R is the regular session, V the veto session, T1/T2 extraordinary sessions.
+        # A few files are named "Rday" instead.
         return [
             (prefix, mmdd, int(start), int(end), f"https://www.senate.mo.gov{path}")
             for path, prefix, mmdd, start, end in set(
                 re.findall(
-                    r"(/\d\dinfo/Journals/([A-Z]\d?)Day\d\d(\d{4})(\d+)-(\d+)\.pdf)",
+                    r"(/\d\dinfo/Journals/([A-Z]\d?)[Dd]ay\d\d(\d{4})(\d+)-(\d+)\.pdf)",
                     self.get(url).text,
                 )
             )
