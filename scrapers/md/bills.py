@@ -53,7 +53,7 @@ def _classify_action(action):
 
 # sponsors are surnames, so offices, delegations and agencies are recognized by name
 ORG_SPONSOR_RE = re.compile(
-    r"^(Speaker|President)$|\b(Committee|Delegation|Senators|Administration"
+    r"\b(Committee|Delegation|Senators|Administration"
     r"|Department|Office|Commission|Conference|Board)\b"
 )
 
@@ -126,6 +126,11 @@ class MDBillScraper(Scraper):
         for sponsor in sponsors:
             sponsor = sponsor.text.strip()
             entity_type = "organization" if ORG_SPONSOR_RE.search(sponsor) else "person"
+            sponsor_chamber = chamber
+            # bills introduced by request list the presiding officer as "The Speaker"
+            # or "The President"
+            if sponsor in self.presiding_officers:
+                sponsor, sponsor_chamber = self.presiding_officers[sponsor]
             if not sponsor:
                 continue
             if sponsor == "Departmental":
@@ -134,13 +139,13 @@ class MDBillScraper(Scraper):
                 # sponsor the list is done
                 # (e.g. http://mgaleg.maryland.gov/mgawebsite/Legislation/Details/sb0125?ys=2021RS)
                 break
-            if chamber:
+            if sponsor_chamber:
                 bill.add_sponsorship(
                     sponsor,
                     sponsor_type,
                     primary=sponsor_type == "primary",
                     entity_type=entity_type,
-                    chamber=chamber,
+                    chamber=sponsor_chamber,
                 )
             else:
                 bill.add_sponsorship(
@@ -242,6 +247,19 @@ class MDBillScraper(Scraper):
         yield bill
 
     def scrape(self, chamber=None, session=None):
+        extras = next(
+            s.get("extras", {})
+            for s in self.jurisdiction.legislative_sessions
+            if s["identifier"] == session
+        )
+        self.presiding_officers = {
+            title: (extras[key], officer_chamber)
+            for title, key, officer_chamber in (
+                ("Speaker", "speaker", "lower"),
+                ("President", "senate_president", "upper"),
+            )
+            if extras.get(key)
+        }
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
