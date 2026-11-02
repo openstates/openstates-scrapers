@@ -1,4 +1,5 @@
 import re
+import collections
 import datetime
 import pytz
 
@@ -154,6 +155,40 @@ class MDBillScraper(Scraper):
                     primary=sponsor_type == "primary",
                     entity_type=entity_type,
                 )
+            # county groups ("Anne Arundel County Senators") sponsor local bills without
+            # naming members, so add the county's current members as cosponsors
+            for group in sponsor.split(" and "):
+                group = re.sub(r" County (Senators|Delegation)$", r" \1", group)
+                group_chamber = "upper" if group.endswith("Senators") else "lower"
+                for member in self.county_members.get(group, []):
+                    bill.add_sponsorship(
+                        member,
+                        "cosponsor",
+                        primary=False,
+                        entity_type="person",
+                        chamber=group_chamber,
+                    )
+
+    def scrape_county_members(self):
+        members = {}
+        for kind, chamber in (("Senators", "senate"), ("Delegation", "house")):
+            page = lxml.html.fromstring(
+                self.get(f"{self.BASE_URL}Members/Index/{chamber}/county").content
+            )
+            dds = page.xpath('//div[contains(@class, "member-index-cell")]//dd')
+            # "Washington, Mary" -> bill pages use the surname, plus an initial
+            # ("M. Washington") when two members of the chamber share it
+            names = [dd.xpath("./a/text()")[0].strip().split(", ") for dd in dds]
+            surnames = collections.Counter(name[0] for name in names)
+            for dd, (last, first, *_) in zip(dds, names):
+                if surnames[last] > 1:
+                    last = f"{first[0]}. {last}"
+                # e.g. "Kent, Queen Anne's, Cecil, and Caroline Counties"
+                counties = dd.xpath("./text()[normalize-space()]")[1].strip()
+                counties = re.sub(r" (County|Counties)$", "", counties)
+                for county in re.split(r",? and |, ", counties):
+                    members.setdefault(f"{county} {kind}", []).append(last)
+        return members
 
     def scrape_bill(self, chamber, session, url):
         html = self.get(url).content
@@ -247,10 +282,15 @@ class MDBillScraper(Scraper):
         yield bill
 
     def scrape(self, chamber=None, session=None):
-        extras = next(
-            s.get("extras", {})
+        session_info = next(
+            s
             for s in self.jurisdiction.legislative_sessions
             if s["identifier"] == session
+        )
+        extras = session_info.get("extras", {})
+        # the county rosters only list current members
+        self.county_members = (
+            self.scrape_county_members() if session_info.get("active") else {}
         )
         self.presiding_officers = {
             title: (extras[key], officer_chamber)
