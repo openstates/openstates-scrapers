@@ -51,6 +51,13 @@ def _classify_action(action):
     return (None, ctty)
 
 
+# sponsors are surnames, so offices, delegations and agencies are recognized by name
+ORG_SPONSOR_RE = re.compile(
+    r"^(Speaker|President)$|\b(Committee|Delegation|Senators|Administration"
+    r"|Department|Office|Commission|Conference|Board)\b"
+)
+
+
 class MDBillScraper(Scraper):
     _TZ = pytz.timezone("US/Eastern")
     BASE_URL = "http://mgaleg.maryland.gov/mgawebsite/"
@@ -118,7 +125,7 @@ class MDBillScraper(Scraper):
 
         for sponsor in sponsors:
             sponsor = sponsor.text.strip()
-            entity_type = "organization" if "Committee" in sponsor else "person"
+            entity_type = "organization" if ORG_SPONSOR_RE.search(sponsor) else "person"
             if not sponsor:
                 continue
             if sponsor == "Departmental":
