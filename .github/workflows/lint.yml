@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -19,6 +23,4 @@ jobs:
       with:
         args: check scrapers scrapers_next
     - name: ruff format check
-      uses: astral-sh/ruff-action@4919ec5cf1f49eff0871dbcea0da843445b837e6 # v3.6.1
-      with:
-        args: format --check --diff scrapers scrapers_next
+      run: ruff format --check --diff scrapers scrapers_next
