@@ -104,19 +104,7 @@ class NCBillScraper(Scraper):
                 version_name, version_url, media_type=media_type, on_duplicate="ignore"
             )
 
-        # rows with a 'adopted' in the text and an amendment link, skip failed amds
-        for row in doc.xpath(
-            '//div[@class="card-body"]/div[contains(., "Adopted")'
-            ' and contains(@class,"row")]//a[@title="Amendment"]'
-        ):
-            version_url = row.xpath("@href")[0]
-            version_name = row.xpath("string(.)").strip()
-            bill.add_version_link(
-                version_name,
-                version_url,
-                media_type="application/pdf",
-                on_duplicate="ignore",
-            )
+        self.add_version_documents(bill, doc)
 
         # sponsors
         try:
@@ -202,6 +190,8 @@ class NCBillScraper(Scraper):
             if act_date is not None:
                 bill.add_action(action, act_date, chamber=actor, classification=atype)
 
+            self.add_action_documents(bill, row, action)
+
         # TODO: Fix vote scraper
         for row in doc.xpath("//h6[@id='vote-header']"):
             yield from self.scrape_votes(bill, doc)
@@ -211,6 +201,93 @@ class NCBillScraper(Scraper):
             yield from self.add_archived_votes(bill, bill_id)
 
         yield bill
+
+    def add_version_documents(self, bill, doc):
+        """Add the supporting documents displayed beside each bill version."""
+        version_rows = doc.xpath(
+            '//div[contains(@class, "card-body")]'
+            '/div[contains(@class, "row")]'
+            '[div[1]//a[contains(@href, "/Bills/")]]'
+        )
+        for row in version_rows:
+            columns = row.xpath("./div")
+            if len(columns) < 2:
+                continue
+
+            version_links = columns[0].xpath(
+                ".//a[@href and not(contains("
+                'concat(" ", normalize-space(@class), " "), " sr-only "))]'
+            )
+            if not version_links:
+                continue
+            version_name = " ".join(version_links[0].text_content().split())
+
+            for link in columns[1].xpath(".//a[@href]"):
+                document_name = " ".join(link.text_content().split())
+                url = link.get("href")
+                media_type = (
+                    "application/pdf" if url.lower().endswith(".pdf") else "text/html"
+                )
+                bill.add_document_link(
+                    f"{version_name} {document_name}",
+                    url,
+                    media_type=media_type,
+                    on_duplicate="ignore",
+                )
+
+    def add_action_documents(self, bill, row, action):
+        """Add documents associated with an action and adopted amendments."""
+        document_links = row.xpath(
+            './div[normalize-space(.)="Documents:"]'
+            "/following-sibling::div[1]//a[@href]"
+        )
+        for link in document_links:
+            # The bold text is a document-type code (for example, "FD:").
+            # The remaining visible text is the document's name.
+            document_code = " ".join(link.xpath("string(.//b)").split()).upper()
+            document_name = " ".join(
+                " ".join(link.xpath(".//text()[not(ancestor::b)]")).split()
+            )
+            if not document_name:
+                document_name = document_code.rstrip(":")
+            if not document_name:
+                document_name = link.get("title") or "Document"
+
+            classification = ""
+            if document_code.startswith("FD:"):
+                classification = "fiscal-note"
+            elif document_code.startswith("CR"):
+                classification = "committee-report"
+
+            url = link.get("href")
+            bill.add_document_link(
+                f"{action} {document_name}",
+                url,
+                classification=classification,
+                media_type="application/pdf",
+                on_duplicate="ignore",
+            )
+
+            adopted_amendment = re.search(
+                r"\b(?:amend(?:ment)?\s+adopted|adopted\s+amend(?:ment)?)\b",
+                action,
+                re.I,
+            )
+            if adopted_amendment and link.get("title") == "Amendment":
+                amendment_id = re.search(r"\bA\d+\b", action)
+                if amendment_id and document_name == "Amendment":
+                    amendment_name = amendment_id.group(0)
+                elif amendment_id and document_name != amendment_id.group(0):
+                    amendment_name = f"{amendment_id.group(0)}: {document_name}"
+                else:
+                    amendment_name = document_name
+                bill.add_version_link(
+                    f"Adopted Amendment {amendment_name}",
+                    url,
+                    classification="amendment",
+                    media_type="application/pdf",
+                    on_duplicate="ignore",
+                )
 
     def scrape_votes(self, bill, doc):
         vote_tr_path = (
