@@ -55,6 +55,16 @@ def test_extract_names_caps_at_limit_not_line_contents():
     assert extract_names(line, 3) == ["Dobrinski", "Martinez", "Sims"]
 
 
+def test_extract_names_substitutes_speaker():
+    line = "Dobrinski Martinez Sims Mr.  Speaker"
+    assert extract_names(line, 4, "Hilbert") == [
+        "Dobrinski",
+        "Martinez",
+        "Sims",
+        "Hilbert",
+    ]
+
+
 if __name__ == "__main__":
     test_plain_names()
     test_parenthetical_disambiguator_stays_attached()
@@ -62,4 +72,5 @@ if __name__ == "__main__":
     test_apostrophe_and_hyphen_names()
     test_extract_names_stops_at_declared_limit()
     test_extract_names_caps_at_limit_not_line_contents()
+    test_extract_names_substitutes_speaker()
     print("ok")

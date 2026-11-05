@@ -35,6 +35,19 @@ class VTBillScraper(Scraper, LXMLMixin):
         resolutions_json = self.get(resolutions_url, verify=False).text
         bills.extend(json.loads(resolutions_json)["data"] or [])
 
+        # Roll calls only give "Surname of Town", so look up full names by PersonID;
+        # drop quoted nicknames (James "Jim" Casey) to match sponsor names
+        people_url = "http://legislature.vermont.gov/people/loadAll/{}".format(
+            year_slug
+        )
+        people = json.loads(self.get(people_url, verify=False).text)["data"] or []
+        full_names = {
+            p["PersonID"]: " ".join(
+                re.sub(r'"[^"]*"', "", p["FirstName"] + " " + p["LastName"]).split()
+            )
+            for p in people
+        }
+
         # Parse the information from each bill
         for info in bills:
             # Strip whitespace from strings
@@ -319,8 +332,10 @@ class VTBillScraper(Scraper, LXMLMixin):
                 roll_call_nay = []
                 roll_call_not_voting = []
                 for member in roll_call:
-                    (member_name, _district) = member["MemberName"].split(" of ")
-                    member_name = member_name.strip()
+                    member_name = full_names.get(
+                        member["PersonID"],
+                        member["MemberName"].split(" of ")[0].strip(),
+                    )
 
                     if member["MemberVote"] == "Yea":
                         roll_call_yea.append(member_name)

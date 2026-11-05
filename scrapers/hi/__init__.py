@@ -123,6 +123,8 @@ class Hawaii(State):
             "start_date": "2026-01-21",
             "end_date": "2026-05-08",
             "active": True,
+            # appointments the roster page shows without an "Appointed" date
+            "extras": {"appointed": {"Ratcliffe": "2026-04-14"}},
         },
     ]
     ignored_scraped_sessions = [

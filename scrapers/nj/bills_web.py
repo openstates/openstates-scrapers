@@ -4,6 +4,7 @@ import logging
 import dateutil.parser
 from openstates.scrape import Scraper, Bill
 from .actions import Categorizer as ActionCategorizer
+from .bills import NJBillScraper as MDBBillScraper
 
 TIMEZONE = pytz.timezone("US/Eastern")
 
@@ -17,6 +18,10 @@ class NJBillScraper(Scraper):
     }
 
     categorizer = ActionCategorizer()
+
+    # roll calls are only published in the bulk vote zips the MDB scraper reads
+    _com_vote_motions = MDBBillScraper._com_vote_motions
+    scrape_votes = MDBBillScraper.scrape_votes
 
     def process_versions(self, year, bill):
         url = f"https://www.njleg.state.nj.us/api/billDetail/billText/{bill.identifier}/{year}"
@@ -94,6 +99,7 @@ class NJBillScraper(Scraper):
 
         json_data = self.get(url).text
         bill_list = json.loads(json_data)[0]
+        bill_dict = {}
 
         for item in bill_list:
             title = item["Synopsis"].strip()
@@ -125,4 +131,7 @@ class NJBillScraper(Scraper):
             )
             bill.add_source(source_url)
 
+            bill_dict[bill_id] = bill
             yield bill
+
+        yield from self.scrape_votes(year_abr, bill_dict)

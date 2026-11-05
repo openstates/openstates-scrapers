@@ -189,6 +189,7 @@ class Oklahoma(State):
             "start_date": "2025-02-03",
             "end_date": "2025-05-30",
             "active": False,
+            "extras": {"house_speaker": "Hilbert"},
         },
         {
             "_scraped_name": "2026 Regular Session",
@@ -197,6 +198,7 @@ class Oklahoma(State):
             "start_date": "2026-02-02",
             "end_date": "2026-05-29",
             "active": True,
+            "extras": {"house_speaker": "Hilbert"},
         },
         {
             "_scraped_name": "2027 Regular Session",

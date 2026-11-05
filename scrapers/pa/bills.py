@@ -191,12 +191,13 @@ class PABillScraper(Scraper):
                 )
             ).strip()
             version_name = "{} Amendment {}".format(chamber_pretty, version_name)
-            for a in row.xpath('.//div[contains(@class, "position-md-absolute")]//a'):
+            for a in row.xpath('.//div[contains(@class, "position-lg-absolute")]//a'):
                 mimetype = self.mimetype_from_class(a)
                 version_link = a.attrib["href"]
                 bill.add_version_link(
                     version_name,
                     version_link,
+                    classification="amendment",
                     media_type=mimetype,
                     on_duplicate="ignore",
                 )

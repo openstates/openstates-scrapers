@@ -328,7 +328,10 @@ class IABillScraper(Scraper):
 
                         if amd_url not in version_urls:
                             bill.add_version_link(
-                                note=amd_name, url=amd_url, media_type="application/pdf"
+                                note=amd_name,
+                                url=amd_url,
+                                classification="amendment",
+                                media_type="application/pdf",
                             )
                             version_urls.append(amd_url)
                         else:

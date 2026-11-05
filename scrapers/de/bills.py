@@ -784,6 +784,7 @@ class DEBillScraper(Scraper, LXMLMixin):
                 bill.add_version_link(
                     row["AmendmentCode"],
                     pdf_url,
+                    classification="amendment",
                     media_type="application/pdf",
                     on_duplicate="ignore",
                 )
@@ -796,6 +797,7 @@ class DEBillScraper(Scraper, LXMLMixin):
                 bill.add_version_link(
                     row["AmendmentCode"],
                     html_url,
+                    classification="amendment",
                     media_type="text/html",
                     on_duplicate="ignore",
                 )

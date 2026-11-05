@@ -381,6 +381,60 @@ class NJBillScraper(Scraper, MDBMixin):
             else:
                 bill.add_document_link(doc_name, htm_url)
 
+        # Actions
+        bill_action_csv = self.to_csv("BILLHIST.TXT")
+        actor_map = {"A": "lower", "G": "executive", "S": "upper"}
+
+        for rec in bill_action_csv:
+            bill_type = rec["BillType"].strip()
+            bill_number = int(rec["BillNumber"])
+            bill_id = bill_type + str(bill_number)
+            if bill_id not in bill_dict:
+                self.warning("unknown bill %s in action database" % bill_id)
+                continue
+            bill = bill_dict[bill_id]
+            action = rec["Action"]
+            date = rec["DateAction"]
+            date = dateutil.parser.parse(date)
+            actor = actor_map[rec["House"]]
+            comment = rec["Comment"]
+            action, atype = self.categorize_action(action, bill_id)
+            if comment:
+                action += " " + comment
+            bill.add_action(
+                action,
+                date=TIMEZONE.localize(date),
+                classification=atype,
+                chamber=actor,
+            )
+
+            source_url = (
+                f"https://www.njleg.state.nj.us/bill-search/{year_abr}/{bill_id}"
+            )
+            bill.add_source(source_url)
+
+        # Subjects
+        subject_csv = self.to_csv("BILLSUBJ.TXT")
+        for rec in subject_csv:
+            bill_id = rec["BillType"].strip() + str(int(rec["BillNumber"]))
+            if bill_id not in bill_dict:
+                self.warning("unknown bill %s in subject database" % bill_id)
+                continue
+            bill = bill_dict.get(bill_id)
+            if bill:
+                bill.subject.append(rec["SubjectKey"])
+            else:
+                self.warning("invalid bill id in BillSubj: %s" % bill_id)
+
+        # save all bills at the end
+        for bill in bill_dict.values():
+            # add sources
+            bill.add_source("https://pub.njleg.state.nj.us/leg-databases/")
+            yield bill
+
+        yield from self.scrape_votes(year_abr, bill_dict)
+
+    def scrape_votes(self, year_abr, bill_dict):
         # Votes
         next_year = int(year_abr) + 1
         vote_info_list = [
@@ -517,54 +571,3 @@ class NJBillScraper(Scraper, MDBMixin):
 
             vote.add_source("https://www.njleg.state.nj.us/downloads.asp")
             yield vote
-
-        # Actions
-        bill_action_csv = self.to_csv("BILLHIST.TXT")
-        actor_map = {"A": "lower", "G": "executive", "S": "upper"}
-
-        for rec in bill_action_csv:
-            bill_type = rec["BillType"].strip()
-            bill_number = int(rec["BillNumber"])
-            bill_id = bill_type + str(bill_number)
-            if bill_id not in bill_dict:
-                self.warning("unknown bill %s in action database" % bill_id)
-                continue
-            bill = bill_dict[bill_id]
-            action = rec["Action"]
-            date = rec["DateAction"]
-            date = dateutil.parser.parse(date)
-            actor = actor_map[rec["House"]]
-            comment = rec["Comment"]
-            action, atype = self.categorize_action(action, bill_id)
-            if comment:
-                action += " " + comment
-            bill.add_action(
-                action,
-                date=TIMEZONE.localize(date),
-                classification=atype,
-                chamber=actor,
-            )
-
-            source_url = (
-                f"https://www.njleg.state.nj.us/bill-search/{year_abr}/{bill_id}"
-            )
-            bill.add_source(source_url)
-
-        # Subjects
-        subject_csv = self.to_csv("BILLSUBJ.TXT")
-        for rec in subject_csv:
-            bill_id = rec["BillType"].strip() + str(int(rec["BillNumber"]))
-            if bill_id not in bill_dict:
-                self.warning("unknown bill %s in subject database" % bill_id)
-                continue
-            bill = bill_dict.get(bill_id)
-            if bill:
-                bill.subject.append(rec["SubjectKey"])
-            else:
-                self.warning("invalid bill id in BillSubj: %s" % bill_id)
-
-        # save all bills at the end
-        for bill in bill_dict.values():
-            # add sources
-            bill.add_source("https://pub.njleg.state.nj.us/leg-databases/")
-            yield bill

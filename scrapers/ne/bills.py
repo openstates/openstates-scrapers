@@ -254,7 +254,10 @@ class NEBillScraper(Scraper, LXMLMixin):
             # adopted amendments get added as versions, everything else goes into documents
             if "adopted" in status.lower():
                 bill.add_version_link(
-                    amendment_name, amendment_url, media_type="application/pdf"
+                    amendment_name,
+                    amendment_url,
+                    classification="amendment",
+                    media_type="application/pdf",
                 )
             else:
                 amendment_name = f"{amendment_name} ({status})"

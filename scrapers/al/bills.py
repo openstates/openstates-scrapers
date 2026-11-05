@@ -16,7 +16,6 @@ class ALBillScraper(Scraper):
     bill_types = {"B": "bill", "R": "resolution"}
     vote_types = {"P": "not voting", "A": "abstain", "Y": "yes", "N": "no"}
     tz = pytz.timezone("US/Eastern")
-    chamber_map_short = {"S": "upper", "H": "lower"}
     gql_url = "https://alison.legislature.state.al.us/graphql"
     session_year = ""
     session_type = ""
@@ -162,8 +161,7 @@ class ALBillScraper(Scraper):
                 continue
 
             self.scrape_versions(bill, row)
-            # todo: hook up votes to actions and make this whole chain yield
-            self.scrape_rest(bill, row)
+            yield from self.scrape_rest(bill, row)
 
             bill.add_source("https://alison.legislature.state.al.us/bill-search")
             # AL removed instrumentUrl from API as of 1/20/25
@@ -313,7 +311,7 @@ class ALBillScraper(Scraper):
 
         data = page["data"]
         if "data" in data["histories"]:
-            self.scrape_actions(bill, data["histories"], bill_row)
+            yield from self.scrape_actions(bill, data["histories"], bill_row)
 
         for row in page["data"]["fiscalNotes"]["data"]:
             bill.add_document_link(
@@ -443,67 +441,74 @@ class ALBillScraper(Scraper):
                     on_duplicate="ignore",
                 )
 
-        #     if int(row["VoteNbr"]) > 0:
-        #         yield from self.scrape_vote(bill, row)
+            if row["rollCallNbr"]:
+                yield from self.scrape_vote(bill, row, bill_row["sessionAbbreviation"])
 
         # if bill_row["ViewEnacted"]:
         #     self.scrape_act(
         #         bill, bill_row["ViewEnacted"], bill_row["EffectiveDateCertain"]
         #     )
 
-    def scrape_vote(self, bill, action_row):
-        cal_date = self.transform_date(action_row["CalendarDate"])
+    def scrape_vote(self, bill, action_row, session_abbr):
+        # roll call numbers are only unique per chamber per session
+        vote_chamber = self.chamber_map[action_row["body"]]
+        vote_key = f"{bill.identifier}#{vote_chamber}#{action_row['rollCallNbr']}"
+        if vote_key in self.vote_keys:
+            return
+        self.vote_keys.add(vote_key)
+
         json_data = {
-            "query": f'{{\nrollCallVotesByRollNbr(\ninstrumentNbr: "{action_row["InstrumentNbr"]}"\nsessionAbbreviation: "{self.session_identifier}"\nsessionYear: "{self.session_year}"\nsessionType: "{self.session_type}"\ncalendarDate:"{cal_date}"\nrollNumber:"{action_row["VoteNbr"]}"\n) {{\nFullName\nVote\nYeas\nNays\nAbstains\nPass\n}}\n}}',
-            "variables": {},
+            "query": """query rollCallVotes($sessionAbbreviation: String!, $body: LegislativeBody!, $rollCallNbr: Int!) {
+                rollCallVotes(sessionAbbreviation: $sessionAbbreviation, body: $body, rollCallNbr: $rollCallNbr) {
+                    yeas
+                    nays
+                    abstains
+                    passes
+                    votes { memberName vote }
+                }
+            }""",
+            "variables": {
+                "sessionAbbreviation": session_abbr,
+                "body": action_row["body"],
+                "rollCallNbr": action_row["rollCallNbr"],
+            },
         }
 
         page = self.post(self.gql_url, headers=self.gql_headers, json=json_data)
-        page = json.loads(page.content)
-
-        # occasionally there's a vote number, but no data for it.
-        # ie 2023s1 SR5, vote number 4
-        if len(page["data"]["rollCallVotesByRollNbr"]) < 1:
+        roll = json.loads(page.content)["data"]["rollCallVotes"]
+        if not roll or not roll["votes"]:
+            self.warning(f"No roll call data for {vote_key}")
             return
 
-        first_vote = page["data"]["rollCallVotesByRollNbr"][0]
-        passed = first_vote["Yeas"] > (first_vote["Nays"] + first_vote["Abstains"])
-
-        vote_chamber = self.chamber_map_short[action_row["Body"]]
-        motion = f"Roll of the {action_row['Body']} for Vote {action_row['VoteNbr']} on {action_row['InstrumentNbr']} ({self.session_type})"
-
-        bill_action = action_row["Matter"]
-
-        vote_key = f"{cal_date}#{motion}#{bill_action}#{vote_chamber}"
-
-        # Duplication check
-        if vote_key in self.vote_keys:
-            return
-
-        self.vote_keys.add(vote_key)
+        # most motions end in "- Adopted/Lost Roll Call N"; abstentions don't count against passage
+        if re.search(r"\b(Lost|Failed)\b", action_row["matter"]):
+            passed = False
+        elif re.search(r"Adopted|Passed", action_row["matter"]):
+            passed = True
+        else:
+            passed = roll["yeas"] > roll["nays"]
 
         vote = VoteEvent(
-            start_date=cal_date,
-            motion_text=motion,
-            bill_action=bill_action,
+            start_date=self.transform_date(action_row["calendarDate"]),
+            motion_text=action_row["matter"],
+            bill_action=action_row["matter"],
             result="pass" if passed else "fail",
             chamber=vote_chamber,
             bill=bill,
             classification=[],
         )
-
         vote.dedupe_key = vote_key
 
-        vote.set_count("yes", int(first_vote["Yeas"]))
-        vote.set_count("no", int(first_vote["Nays"]))
-        vote.set_count("abstain", int(first_vote["Abstains"]))
+        vote.set_count("yes", roll["yeas"])
+        vote.set_count("no", roll["nays"])
+        vote.set_count("abstain", roll["abstains"])
         # Pass in AL is "i am passing on voting" not "i want the bill to pass"
-        vote.set_count("not voting", int(first_vote["Pass"]))
+        vote.set_count("not voting", roll["passes"])
 
         vote.add_source("https://alison.legislature.state.al.us/bill-search")
 
-        for row in page["data"]["rollCallVotesByRollNbr"]:
-            vote.vote(self.vote_types[row["Vote"]], row["FullName"])
+        for row in roll["votes"]:
+            vote.vote(self.vote_types[row["vote"]], row["memberName"])
 
         yield vote
 

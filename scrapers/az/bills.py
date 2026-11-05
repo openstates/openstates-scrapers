@@ -100,6 +100,7 @@ class AZBillScraper(Scraper):
                     if note in seen_version_notes:
                         note = "{} ({})".format(note, doc["Id"])
                     seen_version_notes.add(doc["DocumentName"])
+                    classification = "amendment" if "amend" in type_.lower() else ""
 
                     if media_type == "text/html":
                         pdf_url = re.sub("(.docx)?.htm(l)?$", ".pdf", url.lower())
@@ -107,8 +108,14 @@ class AZBillScraper(Scraper):
                             note=note,
                             url=pdf_url,
                             media_type="application/pdf",
+                            classification=classification,
                         )
-                    bill.add_version_link(note=note, url=url, media_type=media_type)
+                    bill.add_version_link(
+                        note=note,
+                        classification=classification,
+                        url=url,
+                        media_type=media_type,
+                    )
                 else:
                     bill.add_document_link(
                         note=doc["DocumentName"], url=url, media_type=media_type

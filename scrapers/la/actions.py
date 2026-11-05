@@ -17,6 +17,14 @@ rules = (
     Rule(r"passed to 3rd reading", "reading-3"),
     Rule(r"Finally passed", "passage"),
     Rule(r"passed by", "passage"),
+    Rule(
+        (
+            r"Read by title,? (rules suspended, )?(and )?adopted",
+            r"Read second time by title and adopted",
+            r"The resolution was adopted",
+        ),
+        "passage",
+    ),
     Rule(r"Sent to the Governor", "executive-receipt"),
     Rule(r"Reported with amendments", "committee-passage-favorable"),
     Rule(r"Reported favorably", "committee-passage-favorable"),

@@ -51,6 +51,13 @@ def _classify_action(action):
     return (None, ctty)
 
 
+# sponsors are surnames, so offices, delegations and agencies are recognized by name
+ORG_SPONSOR_RE = re.compile(
+    r"\b(Committee|Delegation|Senators|Administration"
+    r"|Department|Office|Commission|Conference|Board)\b"
+)
+
+
 class MDBillScraper(Scraper):
     _TZ = pytz.timezone("US/Eastern")
     BASE_URL = "http://mgaleg.maryland.gov/mgawebsite/"
@@ -89,12 +96,14 @@ class MDBillScraper(Scraper):
                     )
 
     def scrape_bill_subjects(self, bill, page):
-        # TODO: this xpath gets both 'subjects' and 'file codes'
-        # they both link to subjects on the site and seem to fit the definition of subject
+        # matches both the "File Code" and "Subjects" sections, which all link to the subject index
         for row in page.xpath(
-            '//a[contains(@href, "/Legislation/SubjectIndex/annotac")]/text()'
+            '//a[contains(@href, "/Legislation/SubjectIndex/")]/text()'
         ):
-            bill.add_subject(row[0])
+            # drop cross-references, e.g. "Hunting -see also- Trapping"
+            subject = re.split(r"\s*-\s*see also-", row)[0].strip()
+            if subject and subject not in bill.subject:
+                bill.add_subject(subject)
 
     def scrape_bill_sponsors(self, bill, page):
         sponsors_title = "".join(
@@ -116,7 +125,12 @@ class MDBillScraper(Scraper):
 
         for sponsor in sponsors:
             sponsor = sponsor.text.strip()
-            entity_type = "organization" if "Committee" in sponsor else "person"
+            entity_type = "organization" if ORG_SPONSOR_RE.search(sponsor) else "person"
+            sponsor_chamber = chamber
+            # bills introduced by request list the presiding officer as "The Speaker"
+            # or "The President"
+            if sponsor in self.presiding_officers:
+                sponsor, sponsor_chamber = self.presiding_officers[sponsor]
             if not sponsor:
                 continue
             if sponsor == "Departmental":
@@ -125,13 +139,13 @@ class MDBillScraper(Scraper):
                 # sponsor the list is done
                 # (e.g. http://mgaleg.maryland.gov/mgawebsite/Legislation/Details/sb0125?ys=2021RS)
                 break
-            if chamber:
+            if sponsor_chamber:
                 bill.add_sponsorship(
                     sponsor,
                     sponsor_type,
                     primary=sponsor_type == "primary",
                     entity_type=entity_type,
-                    chamber=chamber,
+                    chamber=sponsor_chamber,
                 )
             else:
                 bill.add_sponsorship(
@@ -233,6 +247,19 @@ class MDBillScraper(Scraper):
         yield bill
 
     def scrape(self, chamber=None, session=None):
+        extras = next(
+            s.get("extras", {})
+            for s in self.jurisdiction.legislative_sessions
+            if s["identifier"] == session
+        )
+        self.presiding_officers = {
+            title: (extras[key], officer_chamber)
+            for title, key, officer_chamber in (
+                ("Speaker", "speaker", "lower"),
+                ("President", "senate_president", "upper"),
+            )
+            if extras.get(key)
+        }
         chambers = [chamber] if chamber is not None else ["upper", "lower"]
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
