@@ -156,7 +156,6 @@ class RIBillScraper(Scraper):
         subjects = get_postable_subjects()
         self.info("getting subjects (total=%s)", len(subjects))
         for subject in subjects:
-
             default_headers = get_default_headers(SEARCH_URL)
 
             default_headers["ctl00$rilinContent$cbCategory"] = subjects[subject]
@@ -279,9 +278,9 @@ class RIBillScraper(Scraper):
                         b.add_abstract(abstract, "summary")
 
                     # keep bill ID around
-                    self._bill_id_by_type[
-                        (chamber, re.findall(r"\d+", billid)[0])
-                    ] = billid
+                    self._bill_id_by_type[(chamber, re.findall(r"\d+", billid)[0])] = (
+                        billid
+                    )
 
                     self.process_actions(bill["actions"], b)
                     sponsors = bill["sponsors"][len("BY") :].strip()

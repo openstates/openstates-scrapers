@@ -152,7 +152,6 @@ def categorize_action(action):
     attrs = {}
 
     for rule in rules:
-
         # Try to match the regex.
         m = re.search(rule.regex, action)
         if m or (rule.regex in action):

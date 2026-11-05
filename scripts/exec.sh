@@ -12,5 +12,5 @@ DB_PORT=${DB_PORT:-5432}
 DATABASE_URL="postgres://openstates:openstates@${DB_HOST}:${DB_PORT}/openstatesorg"
 export DATABASE_URL
 pushd "${SCRIPT_DIR}/../" > /dev/null 2>&1 || exit 1
-PYTHONPATH=scrapers/ poetry run os-update $@
+PYTHONPATH=scrapers/ uv run os-update $@
 popd > /dev/null 2>&1 || exit 1

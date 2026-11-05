@@ -42,7 +42,7 @@ class OKEventScraper(Scraper):
     _tz = pytz.timezone("CST6CDT")
 
     # usage:
-    # poetry run os-update ne \
+    # uv run os-update ne \
     # events --scrape start=2022-02-01 end=2022-03-02
     def scrape(self, start=None, end=None):
         found = False
@@ -73,7 +73,6 @@ class OKEventScraper(Scraper):
         page.make_links_absolute(url)
 
         for row in page.xpath("//div[contains(@class,'bTiles__items')]/span"):
-
             if row.xpath(
                 "//p[contains(text(), 'There are currently no live Committee Meetings in progress')]"
             ):

@@ -11,7 +11,7 @@ from spatula import URL, PdfPage
 
 class GAEventScraper(Scraper):
     # usage:
-    #  PYTHONPATH=scrapers poetry run os-update ga events --scrape start=YYYY-mm-dd
+    #  PYTHONPATH=scrapers uv run os-update ga events --scrape start=YYYY-mm-dd
     tz = pytz.timezone("US/Eastern")
 
     def scrape(self, start=None):
@@ -76,7 +76,7 @@ class GAEventScraper(Scraper):
                 event.add_document(
                     "Agenda", row["agendaUri"], media_type="application/pdf"
                 )
-                event.dedupe_key = f'{row["agendaUri"]}#{start}'
+                event.dedupe_key = f"{row['agendaUri']}#{start}"
                 # Scrape bill ids from agenda pdf
                 try:
                     for bill_id in Agenda(source=URL(row["agendaUri"])).do_scrape(

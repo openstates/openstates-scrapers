@@ -27,11 +27,9 @@ class CommitteeDetail(HtmlPage):
             role_list = XPath(role_path).match(self.root)
         except SelectorError:
             try:
-
                 name_list = XPath(role_path.replace("/text()", "")).match(self.root)
                 role_list = ["Member" for x in name_list]
             except SelectorError:
-
                 root = html.fromstring(self.root.text_content())
                 try:
                     name_list = XPath(name_path).match(root)

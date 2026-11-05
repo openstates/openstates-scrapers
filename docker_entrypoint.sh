@@ -22,8 +22,8 @@ fi
 ###
 ip="$(curl -s --insecure -m 5 https://ipecho.net/plain)"
 printf "OS-level external IP for this scraper run is: %s\n" "$ip"
-poetry run python scripts/log_external_ip.py
+python scripts/log_external_ip.py
 echo "Keep in mind IP may not be stable from request to request if using a proxy"
 
 # shellcheck disable=SC2048 disable=SC2086
-poetry run os-update $*
+os-update $*

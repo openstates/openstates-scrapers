@@ -102,9 +102,7 @@ class LegList(HtmlListPage):
         "sort=Type&by=desc&ddBienniumSession=2023%2F2023R#SearchResults"
     )
     selector = XPath(
-        "//div[@role='grid']"
-        "//div[contains(@class, 'row')]"
-        "//div[@class='col-md-6']"
+        "//div[@role='grid']//div[contains(@class, 'row')]//div[@class='col-md-6']"
     )
 
     def process_item(self, item):

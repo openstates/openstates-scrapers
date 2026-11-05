@@ -275,11 +275,9 @@ class DCBillScraper(Scraper):
                                         )
                                         v.add_source(leg_listing_url)
 
-                                        yes_count = (
-                                            no_count
-                                        ) = (
-                                            absent_count
-                                        ) = abstain_count = other_count = 0
+                                        yes_count = no_count = absent_count = (
+                                            abstain_count
+                                        ) = other_count = 0
                                         for leg_vote in act["voteDetails"]["votes"]:
                                             mem_name = leg_vote["councilMember"]
                                             if leg_vote["vote"] == "Yes":

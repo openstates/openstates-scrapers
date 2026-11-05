@@ -447,9 +447,9 @@ class AZBillScraper(Scraper):
         # but LXML gets really confused.
         page = page.replace(b"--!>", b"-->")
         page = html.fromstring(page)
-        assert (
-            len(page.xpath(f"//option[@value={session_id} and @selected]")) == 1
-        ), "Session ID not in bill list"
+        assert len(page.xpath(f"//option[@value={session_id} and @selected]")) == 1, (
+            "Session ID not in bill list"
+        )
 
         bill_rows = []
         chambers = [chamber] if chamber else ["upper", "lower"]

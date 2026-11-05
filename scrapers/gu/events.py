@@ -23,7 +23,6 @@ class GUEventScraper(Scraper):
         self.info("Parsing event feed. This may take a moment.")
         cal = Calendar(ical)
         for e in cal.events:
-
             if parse_older is None and e.begin < jan_first:
                 self.info(f"Skipping event from {str(e.begin)}")
                 continue

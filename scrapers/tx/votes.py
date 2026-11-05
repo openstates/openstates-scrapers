@@ -444,7 +444,6 @@ class MaybeViva(BaseVote):
 # seems to be the case when the opposite chamber passes a bunch of bills?
 # see record_votes_with_short_count_notation() for examples of ShortCount vote text
 class MaybeShortCount(BaseVote):
-
     nay_votes_pattern = re.compile(r"\(([^)]+)\s+-\s+no\)", re.IGNORECASE)
     nay_vote_request_pattern = re.compile(
         r"\(([^)]+)\s+requested to be recorded voting no", re.IGNORECASE

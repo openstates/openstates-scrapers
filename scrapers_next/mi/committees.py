@@ -16,7 +16,6 @@ class SenateCommitteeDetail(HtmlPage):
 
         members = CSS("a[id*='MainContent_RepMembers']").match(self.root)
         for member in members:
-
             member = member.text_content().strip().replace("(D)", "").replace("(R)", "")
             positions = ["Majority Vice Chair", "Minority Vice Chair", "Chair"]
 

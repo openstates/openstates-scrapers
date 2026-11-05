@@ -64,7 +64,7 @@ class NYBillScraper(Scraper):
             self.logger.warning(warning).format(bill_id)
 
         senate_url = (
-            "http://www.nysenate.gov/legislation/bills/{bill_session}/" "{bill_id}"
+            "http://www.nysenate.gov/legislation/bills/{bill_session}/{bill_id}"
         ).format(bill_session=bill["session"], bill_id=bill_id)
 
         # assembly_url = (
@@ -491,7 +491,6 @@ class NYBillScraper(Scraper):
             vote_motions = []
             additional_votes_on_motion = 2
             for table in doc.xpath("//table"):
-
                 date = table.xpath('caption/span[contains(., "DATE:")]')
                 if not date or len(date) == 0:
                     continue

@@ -3,7 +3,6 @@ from openstates.models import ScrapeCommittee
 
 
 class CommitteeList(JsonListPage):
-
     session_id = "128"
     source = URL(
         "https://apps.azleg.gov/api/Committee/"
@@ -29,7 +28,6 @@ class CommitteeList(JsonListPage):
             com = ScrapeCommittee(name=name, chamber=chamber)
 
         else:
-
             try:
                 parent, name = name.split(" Subcommittee on ")
             except ValueError:
@@ -44,7 +42,6 @@ class CommitteeList(JsonListPage):
 
         members = []
         for member in item["Members"]:
-
             name = member["FirstName"] + " " + member["LastName"]
             if member["IsChair"]:
                 position = "Chair"

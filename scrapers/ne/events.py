@@ -18,7 +18,7 @@ class NEEventScraper(Scraper):
     _tz = pytz.timezone("US/Central")
     # SSL bad as of 2024-11-18
 
-    # usage: PYTHONPATH=scrapers poetry run os-update ne
+    # usage: PYTHONPATH=scrapers uv run os-update ne
     # events --scrape start=2020-02-02 end=2020-03-02
     # or left empty it will default to the next 30 days
     def scrape(self, start=None, end=None):

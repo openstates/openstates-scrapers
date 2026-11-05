@@ -144,7 +144,6 @@ def clean_action(action):
 
     atype = []
     for action_key, data in _actions.items():
-
         # If regex is required to isolate bill action phrase
         if data["type"] == "regex":
             if re.search(action_key, action.lower()):

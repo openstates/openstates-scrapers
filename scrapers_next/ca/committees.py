@@ -65,20 +65,16 @@ class CommDetails(HtmlPage):
         committee = self.input
 
         members_staff_link = self.root.xpath(
-            ".//a[contains" "(text(), 'Members & Staff')]"
+            ".//a[contains(text(), 'Members & Staff')]"
         )
         members_link = self.root.xpath(
-            ".//div[@id='center_box1']//"
-            "li//a[contains("
-            "text(),'Committee Membership')]"
+            ".//div[@id='center_box1']//li//a[contains(text(),'Committee Membership')]"
         )
         members_table = self.root.xpath(
-            ".//table//thead//tr//th[contains" "(text(), 'Committee Members')]"
+            ".//table//thead//tr//th[contains(text(), 'Committee Members')]"
         )
         chairs = self.root.xpath(".//div[@class='chair']")
-        sen_page_check = self.root.xpath(
-            ".//div[@class=" "'banner senate-red col-xs-12']"
-        )
+        sen_page_check = self.root.xpath(".//div[@class='banner senate-red col-xs-12']")
 
         # Case 1: details page links to membership page in navigation div
         if members_staff_link:

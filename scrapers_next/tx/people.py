@@ -146,7 +146,7 @@ class HouseParties(HtmlListPage):
 
     def process_page(self):
         tds = self.root.xpath(
-            '//table[@id="tableToSort"]//td[contains(@class, ' '"results")]',
+            '//table[@id="tableToSort"]//td[contains(@class, "results")]',
         )
 
         party_map = {"D": "Democratic", "R": "Republican"}

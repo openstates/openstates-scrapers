@@ -14,8 +14,9 @@ class TestClassifyMotion(unittest.TestCase):
             "Shall the resolution be adopted?": ["passage"],
             "Shall the bill be moved to the Unfinished Business Calendar?": [],
             "Shall the rules be suspended to consider amendment H-8454?": [],
-            "Shall the bill pass, the objections of the Governor "
-            "notwithstanding?": ["veto-override"],
+            "Shall the bill pass, the objections of the Governor notwithstanding?": [
+                "veto-override"
+            ],
         }
         for motion, expected in cases.items():
             self.assertEqual(classify_motion(motion), expected, motion)

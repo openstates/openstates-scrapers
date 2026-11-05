@@ -54,7 +54,7 @@ class AssemblyList(HtmlListPage):
             if room_match:
                 cap_off_addr_part = "".join(room_match.groups())
 
-            p.capitol_office.address = f"{cap_off_addr_part}" ", Sacramento, CA 95814"
+            p.capitol_office.address = f"{cap_off_addr_part}, Sacramento, CA 95814"
 
             po_box_and_phone = XPath("./td[4]/text()").match(item)[1].strip()
             po_box, cap_phone = self.po_box_regex.search(po_box_and_phone).groups()

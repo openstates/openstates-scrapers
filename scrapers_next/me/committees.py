@@ -33,7 +33,6 @@ class SenatorTitleMissingPrefix(Exception):
 
 
 class SenateCommitteeList(HtmlPage):
-
     # This page lists committee names and members in a flat structure of
     # <p> tags. Committee names are distinguished by being further nested
     # within a <strong> tag.

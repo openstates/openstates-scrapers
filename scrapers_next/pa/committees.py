@@ -278,7 +278,6 @@ class CommissionOnSentencingSubcommList(HtmlPage):
             "//div[@data-widget_type='text-editor.default'][position()>1]"
         ).match(self.root)
         for subcom in subcoms:
-
             # Extract committee name and member lists
             name = XPath(".//h3/text()").match_one(subcom)
             chairs = XPath(".//ul[1]/li/text()").match(subcom)

@@ -56,8 +56,7 @@ class LegList(HtmlListPage):
         if len(_has_district_office) > 0:
             district_office = (
                 XPath(
-                    './/div[@class="memberColumnTitle" and'
-                    ' text()="District Office"]/..'
+                    './/div[@class="memberColumnTitle" and text()="District Office"]/..'
                 )
                 .match_one(item)
                 .text_content()

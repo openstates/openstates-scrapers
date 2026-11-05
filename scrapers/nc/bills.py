@@ -12,7 +12,6 @@ eastern = pytz.timezone("US/Eastern")
 
 
 class NCBillScraper(Scraper):
-
     archived_votes = defaultdict(lambda: defaultdict(list))
 
     _action_classifiers = {
@@ -238,8 +237,7 @@ class NCBillScraper(Scraper):
     def add_action_documents(self, bill, row, action):
         """Add documents associated with an action and adopted amendments."""
         document_links = row.xpath(
-            './div[normalize-space(.)="Documents:"]'
-            "/following-sibling::div[1]//a[@href]"
+            './div[normalize-space(.)="Documents:"]/following-sibling::div[1]//a[@href]'
         )
         for link in document_links:
             # The bold text is a document-type code (for example, "FD:").
@@ -389,7 +387,6 @@ class NCBillScraper(Scraper):
         bill_id = "".join(bill_id)
 
         if bill_id in self.archived_votes:
-
             for vote_key, legislator_votes in self.archived_votes[bill_id].items():
                 (
                     vote_date,
@@ -473,7 +470,6 @@ class NCBillScraper(Scraper):
                         if not re.match(r"[H, S]\d\d\d\d", vote_text[x + y]) and (
                             (x + y + 2) < len(vote_text)
                         ):
-
                             vote_details_line = vote_text[x + y]
                             vote_date = vote_details_line[2:20]
                             vote_date = dt.datetime.strptime(

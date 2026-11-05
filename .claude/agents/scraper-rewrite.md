@@ -35,7 +35,7 @@ to use bad or misleading data.
 * Our scrapers are divided into jurisdiction subfolders within the `scrapers` folder
 * Each jurisdiction has multiple scrapers divided by the primary entity of data it scrapes: bills, events, votes.
   (However, sometimes a bill scraper also yields other entities as well).
-* You can run a scraper with the command: `cd scrapers && poetry run python -m openstates.cli.update --scrape al bills`
+* You can run a scraper with the command: `cd scrapers && uv run python -m openstates.cli.update --scrape al bills`
   where `al` is
   the jurisdiction and `bills` represents the entity type. This will output data to the `scrapers/_data/al` subfolder
   (where `al` is jurisdiction, again)
@@ -71,6 +71,6 @@ You have permission to use the following command line tools without asking:
 
 * Web requests: `curl`, `wget`
 * Read data on disk: `grep`, `rg`, `jq`, `yq`, `duckdb`, `wc`
-* Run scraper: `cd scrapers && poetry run python -m openstates.cli.update --scrape al bills` where `al` is
+* Run scraper: `cd scrapers && uv run python -m openstates.cli.update --scrape al bills` where `al` is
   the jurisdiction and `bills` represents the entity type. This will output data to the `scrapers/_data/al` subfolder
   (where `al` is jurisdiction, again)

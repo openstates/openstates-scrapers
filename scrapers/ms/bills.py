@@ -124,7 +124,7 @@ class MSBillScraper(Scraper):
                 main_sponsor_link = details_root.xpath("string(//P_LINK)").replace(
                     " ", "_"
                 )
-                main_sponsor_url = ("http://billstatus.ls.state.ms.us/%s/" "pdf/%s") % (
+                main_sponsor_url = ("http://billstatus.ls.state.ms.us/%s/pdf/%s") % (
                     session,
                     main_sponsor_link.strip("../"),
                 )
@@ -141,8 +141,7 @@ class MSBillScraper(Scraper):
                 leg = author.xpath("string(CO_NAME)").replace(" ", "_")
                 if leg:
                     leg_url = (
-                        "http://billstatus.ls.state.ms.us/%s/"
-                        "pdf/House_authors/%s.xml"
+                        "http://billstatus.ls.state.ms.us/%s/pdf/House_authors/%s.xml"
                     ) % (session, leg)
                     type = "cosponsor"
                     bill.add_source(leg_url)
@@ -153,7 +152,7 @@ class MSBillScraper(Scraper):
                         primary=False,
                     )
             # Versions
-            curr_version = details_root.xpath("string(//CURRENT_OTHER" ")").replace(
+            curr_version = details_root.xpath("string(//CURRENT_OTHER)").replace(
                 "../../../../", ""
             )
             if curr_version != "":
@@ -191,7 +190,7 @@ class MSBillScraper(Scraper):
                     media_type="application/pdf",
                 )
 
-            comm_version = details_root.xpath("string(//CMTESUB_OTHER" ")").replace(
+            comm_version = details_root.xpath("string(//CMTESUB_OTHER)").replace(
                 "../../../../", ""
             )
             if comm_version.find("documents") != -1:
@@ -210,7 +209,7 @@ class MSBillScraper(Scraper):
                     media_type="application/pdf",
                 )
 
-            passed_version = details_root.xpath("string(//PASSED_OTHER" ")").replace(
+            passed_version = details_root.xpath("string(//PASSED_OTHER)").replace(
                 "../../../../", ""
             )
             if passed_version.find("documents") != -1:
@@ -259,22 +258,22 @@ class MSBillScraper(Scraper):
                     name = append_parens(amd, "HAM_DISP", name)
                     name = append_parens(amd, "HAM_VDESC", name)
 
-                    pdf_url = amd.xpath("string(HAM_PDF" ")").replace("../", "")
+                    pdf_url = amd.xpath("string(HAM_PDF)").replace("../", "")
 
-                    html_url = amd.xpath("string(HAM_OTHER" ")").replace("../", "")
+                    html_url = amd.xpath("string(HAM_OTHER)").replace("../", "")
                 elif amd.tag == "SAM":
                     name = amd.xpath("SAM_DESC[1]/text()")[0]
                     name = append_parens(amd, "SAM_DISP", name)
                     name = append_parens(amd, "SAM_VDESC", name)
 
-                    pdf_url = amd.xpath("string(SAM_PDF" ")").replace("../", "")
+                    pdf_url = amd.xpath("string(SAM_PDF)").replace("../", "")
 
-                    html_url = amd.xpath("string(SAM_OTHER" ")").replace("../", "")
+                    html_url = amd.xpath("string(SAM_OTHER)").replace("../", "")
                 elif amd.tag == "AMRPT":
                     name = amd.xpath("AMRPT_DESC[1]/text()")[0]
-                    pdf_url = amd.xpath("string(AMRPT_PDF" ")").replace("../", "")
+                    pdf_url = amd.xpath("string(AMRPT_PDF)").replace("../", "")
 
-                    html_url = amd.xpath("string(AMRPT_OTHER" ")").replace("../", "")
+                    html_url = amd.xpath("string(AMRPT_OTHER)").replace("../", "")
 
                 pdf_url = "http://billstatus.ls.state.ms.us/" + pdf_url
                 html_url = "http://billstatus.ls.state.ms.us/" + html_url

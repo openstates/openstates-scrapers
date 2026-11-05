@@ -60,8 +60,7 @@ class LABillScraper(Scraper, LXMLMixin):
 
     def _get_bill_abbreviations(self, session_id):
         page = self.lxmlize(
-            "https://www.legis.la.gov/legis/BillSearch.aspx?"
-            "sid={}".format(session_id)
+            "https://www.legis.la.gov/legis/BillSearch.aspx?sid={}".format(session_id)
         )
 
         if page.xpath("//span[contains(@id,'PageContent_labelNoBills')]"):
