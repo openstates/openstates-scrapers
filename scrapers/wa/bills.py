@@ -95,7 +95,7 @@ class WABillScraper(Scraper, LXMLMixin):
                     self._subjects[subjects_match.group()].append(subject)
 
     def _load_versions(self, chamber):
-        base_url = "http://lawfilesext.leg.wa.gov/Biennium/" "{}/Htm/Bills/".format(
+        base_url = "http://lawfilesext.leg.wa.gov/Biennium/{}/Htm/Bills/".format(
             self.biennium
         )
         bill_types = {
@@ -158,10 +158,8 @@ class WABillScraper(Scraper, LXMLMixin):
 
         document_types = ["Amendments", "Bill Reports", "Digests"]
         for doctype in document_types:
-            url = (
-                "http://lawfilesext.leg.wa.gov/Biennium/"
-                "{0}"
-                "/Htm/{1}/{2}/".format(self.biennium, doctype, chamber)
+            url = "http://lawfilesext.leg.wa.gov/Biennium/{0}/Htm/{1}/{2}/".format(
+                self.biennium, doctype, chamber
             )
 
             try:
@@ -171,7 +169,6 @@ class WABillScraper(Scraper, LXMLMixin):
 
             documents = doc.xpath("//a")[1:]
             for document in documents:
-
                 (link,) = document.xpath("@href")
                 (text,) = document.xpath("text()")
 
@@ -220,9 +217,7 @@ class WABillScraper(Scraper, LXMLMixin):
 
     def get_prefiles(self, chamber, session, year):
         try:
-            url = "http://apps.leg.wa.gov/billinfo/prefiled.aspx?" "year={}".format(
-                year
-            )
+            url = "http://apps.leg.wa.gov/billinfo/prefiled.aspx?year={}".format(year)
             page = self.lxmlize(url)
 
             bill_rows = page.xpath(
@@ -342,7 +337,7 @@ class WABillScraper(Scraper, LXMLMixin):
         page = self._legislation.get(bill_num)
         if page is None:
             # resolutions are not in the bulk list
-            url = "%s/GetLegislation?biennium=%s&billNumber" "=%s" % (
+            url = "%s/GetLegislation?biennium=%s&billNumber=%s" % (
                 self._base_url,
                 self.biennium,
                 bill_num,
@@ -465,14 +460,13 @@ class WABillScraper(Scraper, LXMLMixin):
 
             committee_name = xpath(
                 hearing,
-                "string(wa:CommitteeMeeting/wa:Committees/" "wa:Committee/wa:Name)",
+                "string(wa:CommitteeMeeting/wa:Committees/wa:Committee/wa:Name)",
             )
 
             # Scheduled for public hearing in the Senate Committee on Law & Justice
             # at 10:00 AM (Subject to change). (Committee Materials)
             action_name = (
-                "Scheduled for public hearing in the {}"
-                " Committee on {} at {}".format(
+                "Scheduled for public hearing in the {} Committee on {} at {}".format(
                     action_actor_str, committee_name, action_time
                 )
             )

@@ -6,6 +6,7 @@ The workflow is:
  - Inspect the site with regex and determine which files have been updated, if any.
  - For each such file, unzip it & call import.
 """
+
 import os
 import re
 import glob
@@ -199,12 +200,10 @@ def load(folder, sql_name=partial(re.compile(r"\.dat$").sub, ".sql")):
     filenames = glob.glob("*.dat")
 
     for filename in filenames:
-
         # The corresponding sql file is in data/ca/dbadmin
         _, filename = split(filename)
         sql_filename = join("../pubinfo_load", sql_name(filename).lower())
         with open(sql_filename) as f:
-
             # Swap out windows paths.
             script = f.read().replace(r"c:\\pubinfo\\", folder)
 

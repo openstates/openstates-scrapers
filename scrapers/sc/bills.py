@@ -550,7 +550,6 @@ class SCBillScraper(Scraper):
             # visit each day and extract bill ids
             days = doc.xpath("//div/b/a/@href")
             for day_url in days:
-
                 # If bill intro links are retrieved from archived page
                 web_archive_match = web_archive_re.match(day_url)
                 if web_archive_match:

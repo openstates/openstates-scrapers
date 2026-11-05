@@ -47,7 +47,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                 raise EmptyScrape
 
             for item in data:
-                bill_id = f'{item["BillType"]} {item["BillNumberOnly"]}'
+                bill_id = f"{item['BillType']} {item['BillNumberOnly']}"
                 title = item["Title"]
                 link = f"https://sdlegislature.gov/Session/Bill/{item['BillId']}"
                 api_link = f"https://sdlegislature.gov/api/Bills/{item['BillId']}"
@@ -182,7 +182,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                 or action_text == "Tabled"
                 or action["ShowCommitteeName"]
             ) and (action["ActionCommittee"] is not None):
-                full_action.insert(0, f'{action["ActionCommittee"]["Name"]}')
+                full_action.insert(0, f"{action['ActionCommittee']['Name']}")
 
             if action["ShowPassed"] or action["ShowFailed"]:
                 if action["ShowPassed"] and action["Result"] != "F":

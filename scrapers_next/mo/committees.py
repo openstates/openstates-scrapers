@@ -60,7 +60,6 @@ class SenateTypeCommitteeList(HtmlListPage):
             and name != "Appointees To Be Considered"
         ):
             if "Committee" in name:
-
                 comm_name = (
                     name.replace("Joint Committee on the ", "")
                     .replace("Joint Committee on ", "")
@@ -105,7 +104,6 @@ class SenateCommitteeList(HtmlListPage):
 
 
 class HouseCommitteeDetail(HtmlPage):
-
     example_source = (
         "https://www.house.mo.gov/MemberGridCluster.aspx?"
         "filter=compage&category=committee&Committees.aspx?"

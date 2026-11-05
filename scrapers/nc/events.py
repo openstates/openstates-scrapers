@@ -30,7 +30,6 @@ class NCEventScraper(Scraper, LXMLMixin):
         page.make_links_absolute(url)
         event_count = 0
         for day_row in page.xpath('//div[@class="row cal-event-day"]'):
-
             date = day_row.xpath(
                 './/div[contains(@class, "cal-event-day-full")]/text()'
             )[0].strip()

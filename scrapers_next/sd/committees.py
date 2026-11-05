@@ -3,7 +3,6 @@ from openstates.models import ScrapeCommittee
 
 
 class CommitteeList(JsonListPage):
-
     source_string = "https://sdlegislature.gov/api/SessionCommittees/Session/69"
     source = URL(source_string)
 

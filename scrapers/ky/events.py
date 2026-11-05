@@ -14,9 +14,9 @@ class KYEventScraper(Scraper):
     _tz = pytz.timezone("US/Eastern")
 
     def scrape(self):
-        self.headers[
-            "User-Agent"
-        ] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36"
+        self.headers["User-Agent"] = (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36"
+        )
         url = "https://apps.legislature.ky.gov/legislativecalendar"
 
         page = self.get(url, verify=False).content

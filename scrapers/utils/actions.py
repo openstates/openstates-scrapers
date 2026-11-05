@@ -90,7 +90,6 @@ class BaseCategorizer(object):
         return_val = defaultdict(set)
 
         for rule in self.rules:
-
             attrs = rule.match(text)
 
             # matched if attrs is not None - empty attr dict means a match
@@ -127,7 +126,6 @@ class BaseCategorizer(object):
 
         # Get rid of defaultdict.
         for k, v in attrs.items():
-
             # Skip empties.
             if not isinstance(v, Iterable):
                 continue

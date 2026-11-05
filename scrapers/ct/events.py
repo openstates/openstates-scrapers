@@ -47,8 +47,7 @@ class CTEventScraper(Scraper):
 
     def scrape_committee_events(self, code, name):
         events_url = (
-            "http://www.cga.ct.gov/basin/fullcalendar/commevents.php?"
-            f"comm_code={code}"
+            f"http://www.cga.ct.gov/basin/fullcalendar/commevents.php?comm_code={code}"
         )
         event_objects = set()
         events_data = self.get(events_url, verify=False).text
@@ -57,8 +56,7 @@ class CTEventScraper(Scraper):
             # commevents.php returns an empty body for some committees (e.g. FIN).
             # The site's calendar API returns the same JSON format for them.
             events_url = (
-                "https://www.cga.ct.gov/basin/api/v1/calendar-events/?"
-                f"comm_code={code}"
+                f"https://www.cga.ct.gov/basin/api/v1/calendar-events/?comm_code={code}"
             )
             self.info(f"No events from {code} from normal source, trying {events_url}")
             events_data = self.get(events_url, verify=False).text

@@ -14,6 +14,7 @@ Both are exercised here against real vote-history PDFs fetched from
 apps.legislature.ky.gov (2025RS, HB1 and HB90) which reproduce each bug.
 Run directly: `python3 -m scrapers.ky.tests.test_vote_parsing`
 """
+
 import os
 import shutil
 import tempfile

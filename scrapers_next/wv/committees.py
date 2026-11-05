@@ -84,7 +84,6 @@ class CommitteeList(HtmlListPage):
 
     def process_item(self, item):
         if self.comm_url_signifier in item.get("href"):
-
             # As of last scrape, no subcommittees were found in upper or lower
             # chambers, but the custom exception should be raised if they are.
             if "Subcommittee" in item.text:

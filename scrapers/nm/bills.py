@@ -106,7 +106,7 @@ class NMBillScraper(Scraper):
             csvfile = csv.DictReader([line.decode("utf8") for line in pipe.readlines()])
             return csvfile
         except OSError:
-            self.warning("Failed to read mdb file. Have you installed " "'mdbtools' ?")
+            self.warning("Failed to read mdb file. Have you installed 'mdbtools' ?")
             raise
 
     def scrape(self, chamber=None, session=None):

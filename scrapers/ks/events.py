@@ -15,9 +15,9 @@ class KSEventScraper(Scraper):
     date_range = 30
 
     def scrape(self, session, start=None):
-        self.headers[
-            "User-Agent"
-        ] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36"
+        self.headers["User-Agent"] = (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36"
+        )
 
         # By default only scrape recent and future events, ignoring older
         # past events. Default the start date to 30 days ago, matching the
@@ -165,7 +165,6 @@ class KSEventScraper(Scraper):
             committee,
             room,
         ), bills in grouped_events.items():
-
             event_name = (f"{chamber}#{committee}#{room}#{when}")[:500]
 
             if event_name in seen:

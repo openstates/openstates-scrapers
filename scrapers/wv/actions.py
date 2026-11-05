@@ -1,6 +1,5 @@
-"""
+""" """
 
-"""
 import re
 from utils.actions import Rule, BaseCategorizer
 
@@ -97,7 +96,7 @@ rules = (
     Rule(["To .+? then (?P<committees>.+)"], []),
     Rule(["^Filed for intro"], ["filing"]),
     Rule(["referred to (?P<committees>.+)"], ["referral-committee"]),
-    Rule("Senator (?P<legislators>.+? )requests " "to be removed as sponsor of bill"),
+    Rule("Senator (?P<legislators>.+? )requests to be removed as sponsor of bill"),
     Rule(["To House (?P<committees>[A-Z].+)"], ["referral-committee"]),
     Rule(["Passed Senate"], ["passage"]),
     Rule(["committed to (?P<committees>.+?) on"], []),
@@ -149,7 +148,6 @@ class Categorizer(BaseCategorizer):
         res = set()
         if "committees" in attrs:
             for text in attrs["committees"]:
-
                 # Strip stuff like "Rules on 1st reading"
                 for text in text.split("then"):
                     text = re.sub(r" on .+", "", text)

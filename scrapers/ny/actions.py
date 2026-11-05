@@ -2,6 +2,7 @@
 NY needs an @after_categorize function to expand committee names
 and help the importer figure out which committees are being mentioned.
 """
+
 import re
 from functools import partial
 from collections import namedtuple, defaultdict
@@ -74,9 +75,7 @@ class BaseCategorizer(object):
         types = set()
         attrs = defaultdict(set)
         for rule in self.rules:
-
             for regex in rule.regexes:
-
                 # Try to match the regex.
                 m = re.search(whitespace(regex), text)
                 if m or (regex in text):
@@ -125,7 +124,6 @@ class BaseCategorizer(object):
 
         # Get rid of defaultdict.
         for k, v in attrs.items():
-
             # Skip empties.
             if not v:
                 continue

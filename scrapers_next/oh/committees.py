@@ -33,7 +33,7 @@ class JointCommittee(HtmlPage):
         com.add_source(self.source.url, note="Committee details page")
         com.add_link(self.source.url, note="homepage")
 
-        for (name, role) in self.get_members():
+        for name, role in self.get_members():
             com.add_member(name=remove_title_prefix(name), role=role)
 
         if len(com.members) == 0:
@@ -116,7 +116,6 @@ class Ethics(JointCommittee):
         # Member titles are in this format: "Senator/Representative <name>, <role>"
         # Roles (and the comma before them) may be omitted
         for title in member_titles:
-
             unprefixed_title = remove_title_prefix(title)
             # Every name is prefixed with a title
             # If nothing changed after trying to remove the prefix then
@@ -149,7 +148,6 @@ class MedicaidOversight(JointCommittee):
         member_selector = XPath("//table//tr/td/a/img/../..")
         member_elements = member_selector.match(self.root)
         for member_element in member_elements:
-
             # Title contains name and role like: "<name><role>" with no space between
             title = member_element.text_content().strip()
 
@@ -173,7 +171,6 @@ class ServiceCommission(JointCommittee):
         selector = XPath("//div[@data-name='Commission Members']//ul/li")
         titles = selector.match(self.root)
         for title in titles:
-
             # Remove whitespace
             title = title.text_content().strip()
 

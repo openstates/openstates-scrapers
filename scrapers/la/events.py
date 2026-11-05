@@ -124,7 +124,7 @@ class LAEventScraper(Scraper, LXMLMixin):
         for meeting in valid_meetings:
             try:
                 guid = meeting.xpath(
-                    "./td/a[descendant::img[contains(@src," '"PDF-AGENDA.png")]]/@href'
+                    './td/a[descendant::img[contains(@src,"PDF-AGENDA.png")]]/@href'
                 )[0]
                 # self.logger.debug(guid)
                 self.warning("logger.debug" + guid)

@@ -151,8 +151,9 @@ class SCEventScraper(Scraper):
             self.info("no chamber specified, using Joint Committee Meeting Schedule")
             events_url = "https://www.scstatehouse.gov/meetings.php"
         else:
-            events_url = "https://www.scstatehouse.gov/meetings.php?chamber=%s" % (
-                chambers[chamber].upper()[0]
+            events_url = (
+                "https://www.scstatehouse.gov/meetings.php?chamber=%s"
+                % (chambers[chamber].upper()[0])
             )
         page = self.get_page_from_url(events_url)
 

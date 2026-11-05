@@ -415,7 +415,7 @@ class ALBillScraper(Scraper):
                 continue
 
             if row["committee"]:
-                action_text = f'{row["matter"]} ({row["committee"]})'
+                action_text = f"{row['matter']} ({row['committee']})"
 
             action_date = dateutil.parser.parse(row["calendarDate"])
             action_date = self.tz.localize(action_date)

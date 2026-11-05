@@ -42,7 +42,6 @@ class CommitteeList(HtmlListPage):
 
 
 class CommitteeDetail(HtmlPage):
-
     # Matches names with misplaced suffixes
     jr_sr_regex = re.compile(r"(.*)\s+(Jr|Jr\.|Sr|Sr\.)\s+(.*)")
 

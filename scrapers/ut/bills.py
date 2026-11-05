@@ -198,7 +198,6 @@ class UTBillScraper(Scraper, LXMLMixin):
             'a[text() and not(text()=" ")]'
         )
         for version in versions:
-
             # sometimes the href is on the following <a> tag and the tag we
             # have has an onclick
             url = version.get("href")
@@ -273,7 +272,6 @@ class UTBillScraper(Scraper, LXMLMixin):
         # Versions, subjects, code citations
         subjects = set()
         if "billVersionList" in data:
-
             for version_data in data["billVersionList"]:
                 # subjects associated with each version, so dedupe
                 for subject_data in version_data["subjectList"]:
@@ -576,7 +574,7 @@ class UTBillScraper(Scraper, LXMLMixin):
         votes = page.xpath("//table")
         sets = zip(headings, votes)
         vdict = {}
-        for (typ, votes) in sets:
+        for typ, votes in sets:
             txt = typ.text_content()
             arr = [x.strip() for x in txt.split("-", 1)]
             if len(arr) != 2:
