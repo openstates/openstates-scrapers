@@ -42,3 +42,6 @@ extend-exclude = ["scrapers/il/tests"]
 # flake8's default checks, minus the codes setup.cfg used to ignore
 select = ["E", "W", "F"]
 ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["scrapers", "scrapers_next"]

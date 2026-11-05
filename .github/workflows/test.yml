@@ -1,0 +1,32 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
+    - name: install pdftotext
+      run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends poppler-utils
+    - name: install uv
+      uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+      with:
+        enable-cache: true
+    - name: install python dependencies
+      run: uv sync --frozen
+    - name: pytest
+      run: uv run --frozen pytest
+      env:
+        PYTHONPATH: scrapers
