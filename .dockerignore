@@ -11,3 +11,11 @@ pubinfo_*
 openstates-postgres/
 vm_data/
 
+.env
+.venv
+.github
+.claude
+.devcontainer
+.run
+.pytest_cache
+_scrapes
