@@ -35,9 +35,6 @@ dev = [
 [tool.uv]
 package = false
 
-[tool.ruff]
-extend-exclude = ["scrapers/il/tests"]
-
 [tool.ruff.lint]
 # flake8's default checks, minus the codes setup.cfg used to ignore
 select = ["E", "W", "F"]
