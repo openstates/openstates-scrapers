@@ -25,7 +25,7 @@ Why the scraper produced that: the function, and what on the page it misreads
 
 ## Fix
 
-<!-- One bullet per behavior change. Mention tests added or updated. -->
+<!-- One bullet per behavior change. -->
 
 ## Bug example / Resolution example
 
@@ -73,4 +73,5 @@ post-data: https://REPLACE-ME/after.zip
 
 - [ ] Scraper runs cleanly end to end
 - [ ] Both links above are filled in, and every difference in the report is explained (or say below why there's no scrape)
-- [ ] Parser changes have a test (`pytest scrapers/<jurisdiction>/tests`), and flake8 and black are clean
+- [ ] A test only if this changes code shared by more than one state or a pure text parser (see the README's Tests section)
+- [ ] `ruff check` and `ruff format --check` are clean
