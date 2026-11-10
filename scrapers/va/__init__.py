@@ -324,6 +324,7 @@ class Virginia(State):
                 "https://lis.virginia.gov/Session/api/GetSessionListAsync/",
                 headers=headers,
                 timeout=60,
+                verify=False,
             )
             .json()
         )
