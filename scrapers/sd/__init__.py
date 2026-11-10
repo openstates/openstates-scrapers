@@ -199,6 +199,14 @@ class SouthDakota(State):
             "end_date": "2026-03-31",
             "active": True,
         },
+        {
+            "_scraped_name": "2027",
+            "identifier": "2027",
+            "name": "2027 Regular Session",
+            "start_date": "2027-01-12",
+            "end_date": "2027-03-31",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = []
 
