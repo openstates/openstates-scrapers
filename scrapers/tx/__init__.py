@@ -228,7 +228,7 @@ class Texas(State):
             "name": "89th Legislature, 2nd Called Session (2025)",
             "start_date": "2025-08-18",
             "end_date": "2025-09-18",  # Estimated
-            "active": True,
+            "active": False,
             "extras": {"house_speaker": "Burrows"},
         },
         {
