@@ -238,7 +238,7 @@ class Texas(State):
             "name": "90th Legislature (2027)",
             "start_date": "2027-01-12",
             "end_date": "2027-05-31",
-            "active": False,
+            "active": True,
             "extras": {"house_speaker": ""},
         },
         # TODO: Re-enable vote scraper when adding next regular session
