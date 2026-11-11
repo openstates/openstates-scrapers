@@ -458,7 +458,15 @@ class ARBillScraper(Scraper):
 
         page = self.get(url).text
         page = lxml.html.fromstring(page)
-        title = page.xpath("//h1")[0].text_content().strip()
+        headers = page.xpath("//h1")
+        if not headers:
+            # Some legislator detail pages occasionally load without an <h1>
+            # (transient errors/blocks). Fall back to an empty chamber rather
+            # than failing the entire scrape.
+            self.warning(f"No <h1> found on legislator page, skipping chamber: {url}")
+            self.sponsors_chamber_cache[url] = ""
+            return ""
+        title = headers[0].text_content().strip()
         chamber = self.get_chamber(title)
         self.sponsors_chamber_cache[url] = chamber
 
