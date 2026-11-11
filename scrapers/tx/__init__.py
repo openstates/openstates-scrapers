@@ -228,8 +228,18 @@ class Texas(State):
             "name": "89th Legislature, 2nd Called Session (2025)",
             "start_date": "2025-08-18",
             "end_date": "2025-09-18",  # Estimated
-            "active": True,
+            "active": False,
             "extras": {"house_speaker": "Burrows"},
+        },
+        {
+            "_scraped_name": "90(R) - 2027",
+            "classification": "regular",
+            "identifier": "90R",
+            "name": "90th Legislature (2027)",
+            "start_date": "2027-01-12",
+            "end_date": "2027-05-31",
+            "active": True,
+            "extras": {"house_speaker": ""},
         },
         # TODO: Re-enable vote scraper when adding next regular session
     ]
