@@ -2,6 +2,7 @@ import itertools
 import re
 import datetime
 import pytz
+import time
 import urllib.parse
 
 from openstates.scrape import Scraper, Bill, VoteEvent
@@ -456,12 +457,24 @@ class ARBillScraper(Scraper):
         if url in self.sponsors_chamber_cache:
             return self.sponsors_chamber_cache[url]
 
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        headers = page.xpath("//h1")
+        # Legislator detail pages occasionally load without an <h1> due to
+        # transient errors/blocks. Retry a couple of times with a short backoff
+        # before giving up, so a momentary blip does not leave the chamber blank.
+        headers = []
+        for attempt in range(3):
+            page = lxml.html.fromstring(self.get(url).text)
+            headers = page.xpath("//h1")
+            if headers:
+                break
+            if attempt < 2:
+                self.warning(
+                    f"No <h1> on legislator page (attempt {attempt + 1}/3), "
+                    f"retrying: {url}"
+                )
+                time.sleep(2**attempt)
+
         if not headers:
-            # Some legislator detail pages occasionally load without an <h1>
-            # (transient errors/blocks). Fall back to an empty chamber rather
+            # Still no <h1> after retries; fall back to an empty chamber rather
             # than failing the entire scrape.
             self.warning(f"No <h1> found on legislator page, skipping chamber: {url}")
             self.sponsors_chamber_cache[url] = ""
