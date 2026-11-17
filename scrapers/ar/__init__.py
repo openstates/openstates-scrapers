@@ -268,6 +268,15 @@ class Arkansas(State):
             "name": "2026 First Extraordinary Session",
             "start_date": "2026-05-04",
             "end_date": "2026-08-15",
+            "active": False,
+        },
+        {
+            "_scraped_name": "Regular Session, 2027",
+            "classification": "primary",
+            "identifier": "2027",
+            "name": "2027 Regular Session",
+            "start_date": "2027-01-11",
+            "end_date": "2027-04-28",
             "active": True,
         },
     ]
