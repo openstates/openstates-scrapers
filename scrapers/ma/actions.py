@@ -2,6 +2,10 @@ from utils.actions import Rule, BaseCategorizer
 
 # These are regex patterns that map to action categories.
 _categorizer_rules = (
+    # Conference committee — non-concurrence must be first AND use stop=True so it
+    # wins over referral-committee rules that also match "...referred to the committee on..."
+    # in descriptions like "House NON-concurred in the reference to the committee on...".
+    Rule(["(?i)NON-concurred"], ["non-concurrence"], stop=True),
     Rule(
         ["Amendment #\\S+ \\((?P<legislator>.+?)\\) bundle YES adopted"],
         ["amendment-passage"],
@@ -104,9 +108,6 @@ _categorizer_rules = (
     Rule(["Amendment #\\d+ rejected"], ["amendment-failure"]),
     Rule(["Amendment \\d+ adopted"], ["amendment-passage"]),
     Rule(["Committee of Conference appointed \\((?P<legislator>.+?)\\)"], []),
-    # Conference committee — non-concurrence
-    # Matches House/Senate non-concurrence actions.
-    Rule(["(?i)NON-concurred"], ["non-concurrence"]),
     # Conference committee — concurrence / resolution
     # Match conference appointment or report-accepted actions
     # that include "in concurrence".
