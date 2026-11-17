@@ -172,11 +172,6 @@ class Indiana(State):
             "classification": "primary",
             "identifier": "2027",
             "name": "2027 Regular Session",
-            # Organization Day 2026-11-17; House reconvenes 2027-01-11,
-            # Senate 2027-01-19; statutory adjournment no later than 2027-04-29.
-            # Kept inactive until bills are actually prefiled (the API currently
-            # returns only an empty placeholder entry for this session, which
-            # would otherwise cause a "no objects returned" ScrapeError).
             "start_date": "2026-11-17",
             "end_date": "2027-04-29",
             "active": False,
