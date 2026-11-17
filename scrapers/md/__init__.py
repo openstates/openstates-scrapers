@@ -215,8 +215,26 @@ class Maryland(State):
             "name": "2026 Regular Session",
             "start_date": "2026-01-14",
             "end_date": "2026-04-13",
-            "active": True,
+            "active": False,
             "extras": {"speaker": "Peña-Melnyk", "senate_president": "Ferguson"},
+        },
+        {
+            "_scraped_name": "2026 Special Session",
+            "classification": "special",
+            "identifier": "2026s1",
+            "name": "2026, 1st Special Session",
+            "start_date": "2026-08-03",
+            "end_date": "2026-08-05",
+            "active": True,
+        },
+        {
+            "_scraped_name": "2027 Regular Session",
+            "classification": "primary",
+            "identifier": "2027",
+            "name": "2027 Regular Session",
+            "start_date": "2027-01-13",
+            "end_date": "2027-04-12",
+            "active": False,
         },
     ]
     ignored_scraped_sessions = [
