@@ -323,6 +323,13 @@ class USBillScraper(Scraper):
 
         # list for deduping
         actions = []
+        # BILLSTATUS lists a bill's actions newest first, including the steps within one day.
+        # The dedupe below runs in the feed's order, so it keeps the same copy of a repeated
+        # action as before; the kept actions are then added oldest first (a plain reverse, not a
+        # date sort: House steps carry a time, Senate steps only a date). Without this, a day's
+        # first step is stored last and becomes the bill's latest action, e.g. HR 1 (119th)
+        # ended on "Signed by President." instead of "Became Public Law No: 119-21."
+        kept = []
         for row in xml.findall("bill/actions/item"):
             action_text = self.get_xpath(row, "text")
             if action_text not in actions:
@@ -375,13 +382,16 @@ class USBillScraper(Scraper):
                 if not action_text:
                     action_text = "No action text provided by the source"
 
-                bill.add_action(
-                    action_text,
-                    action_date,
-                    chamber=actor,
-                    classification=classification,
-                )
+                kept.append((action_text, action_date, actor, classification))
                 actions.append(action_text)
+
+        for action_text, action_date, actor, classification in reversed(kept):
+            bill.add_action(
+                action_text,
+                action_date,
+                chamber=actor,
+                classification=classification,
+            )
 
     # Hearing By
     def scrape_hearing_by(self, bill, xml, url):
