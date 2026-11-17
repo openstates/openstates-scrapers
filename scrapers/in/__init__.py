@@ -167,6 +167,15 @@ class Indiana(State):
             "end_date": "2026-04-29",
             "active": True,
         },
+        {
+            "_scraped_name": "First Regular Session 125th General Assembly (2027)",
+            "classification": "primary",
+            "identifier": "2027",
+            "name": "2027 Regular Session",
+            "start_date": "2026-11-17",
+            "end_date": "2027-04-29",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "First Regular Session 124th General Assembly (2025)",
