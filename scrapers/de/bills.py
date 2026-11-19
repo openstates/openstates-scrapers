@@ -283,7 +283,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             sponsor_id, sponsor_key = self.parse_sponsor_link(sponsor_link)
             if sponsor_id is not None:
                 self.add_sponsor_by_legislator_id(
-                    bill, sponsor_id, "primary", sponsor_key
+                    bill, sponsor_id, "cosponsor", sponsor_key
                 )
 
         cosponsors = html.xpath(
