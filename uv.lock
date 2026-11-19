@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.13, <4"
 
 [[package]]
@@ -870,7 +870,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorclass" },
     { name = "easygui" },
-    { name = "msoffcrypto-tool", marker = "platform_python_implementation != 'PyPy' or (sys_platform != 'darwin' and sys_platform != 'win32')" },
+    { name = "msoffcrypto-tool", marker = "(platform_python_implementation != 'PyPy' and sys_platform == 'darwin') or (platform_python_implementation != 'PyPy' and sys_platform == 'win32') or (sys_platform != 'darwin' and sys_platform != 'win32')" },
     { name = "olefile" },
     { name = "pcodedmp" },
     { name = "pyparsing" },
@@ -894,7 +894,7 @@ wheels = [
 
 [[package]]
 name = "openstates"
-version = "6.26.4"
+version = "6.26.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -921,9 +921,9 @@ dependencies = [
     { name = "urllib3" },
     { name = "us" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e8/a5/28f9a9ef0ebca2feb9f4fd7dde730f9361dd287e9030f1a978e27752771a/openstates-6.26.4.tar.gz", hash = "sha256:4087cfbf7dd38e21783d10a4d84468f83ddac7be485545ea380e4b098e76f954", size = 420148, upload-time = "2026-10-24T02:03:08.244Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f7/a5/fb3d19dcde4cef750257efcdb596d1f6236bc0017c7aad5895cf351d8698/openstates-6.26.6.tar.gz", hash = "sha256:059c9736b002eab29d051b3735acf401dd734033423dc7930d6206e3e60ffac2", size = 420164, upload-time = "2026-11-17T17:00:39.154Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3e/1c/2753ea0560426781292460c9c6f0fb5ffcf554970cd65838ad3a0de9a968/openstates-6.26.4-py3-none-any.whl", hash = "sha256:17b9ba12d6bf8de828f6eaad2a69ace0838d3df7740ae2f6adf1f744bbb2b792", size = 541240, upload-time = "2026-10-24T02:03:09.789Z" },
+    { url = "https://files.pythonhosted.org/packages/de/46/5a8a94d7a38c05615f5ecaa3474f28e6e8ac4aeb355f5194c922ac1e83c5/openstates-6.26.6-py3-none-any.whl", hash = "sha256:70812f7b5202224e041f4d216468391d36035147f0aae04ff51d3ea1b475bec1", size = 541250, upload-time = "2026-11-17T17:00:40.776Z" },
 ]
 
 [[package]]
