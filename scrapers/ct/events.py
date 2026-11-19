@@ -5,7 +5,7 @@ from openstates.scrape import Scraper, Event
 
 import pytz
 
-from .utils import open_csv
+from .utils import fetch_csv
 
 
 from spatula import PdfPage, URL
@@ -113,6 +113,9 @@ class CTEventScraper(Scraper):
 
     def get_comm_codes(self):
         url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
-        page = self.get(url)
-        page = open_csv(page)
+        page = fetch_csv(
+            self,
+            url,
+            expected_fields=["comm_code", "comm_name"],
+        )
         return [(row["comm_code"].strip(), row["comm_name"].strip()) for row in page]

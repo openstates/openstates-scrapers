@@ -11,7 +11,7 @@ from operator import itemgetter
 import lxml.html
 
 from openstates.scrape import Scraper, Bill
-from .utils import parse_directory_listing, open_csv
+from .utils import parse_directory_listing, fetch_csv
 from .actions import Categorizer
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -39,8 +39,11 @@ class CTBillScraper(Scraper):
 
     def scrape_bill_info(self, session, chambers):
         info_url = "ftp://ftp.cga.ct.gov/pub/data/bill_info.csv"
-        data = self.get(info_url)
-        page = open_csv(data)
+        page = fetch_csv(
+            self,
+            info_url,
+            expected_fields=["sess_year", "bill_num", "bill_title"],
+        )
 
         # # For local dev -- bill_info.csv can get to mulitple megabytes and CT's
         # # ftp server is not super fast, so uncomment this to use a local copy.
@@ -49,7 +52,7 @@ class CTBillScraper(Scraper):
         #     file_content = file.read()
         #     test = types.SimpleNamespace()
         #     test.content = file_content
-        #     page = open_csv(test)
+        #     page = open_csv(test)  # from .utils import open_csv for local dev
 
         chamber_map = {"H": "lower", "S": "upper"}
 
@@ -137,8 +140,11 @@ class CTBillScraper(Scraper):
 
     def scrape_bill_history(self):
         history_url = "ftp://ftp.cga.ct.gov/pub/data/bill_history.csv"
-        page = self.get(history_url)
-        page = open_csv(page)
+        page = fetch_csv(
+            self,
+            history_url,
+            expected_fields=["bill_num"],
+        )
 
         for row in page:
             bill_id = row["bill_num"]
@@ -232,16 +238,22 @@ class CTBillScraper(Scraper):
 
     def scrape_subjects(self):
         info_url = "ftp://ftp.cga.ct.gov/pub/data/subject.csv"
-        data = self.get(info_url)
-        page = open_csv(data)
+        page = fetch_csv(
+            self,
+            info_url,
+            expected_fields=["bill_num", "subj_desc"],
+        )
 
         for row in page:
             self._subjects[row["bill_num"]].append(row["subj_desc"])
 
     def scrape_committee_names(self):
         comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
-        page = self.get(comm_url)
-        page = open_csv(page)
+        page = fetch_csv(
+            self,
+            comm_url,
+            expected_fields=["comm_code", "comm_name"],
+        )
 
         for row in page:
             comm_code = row["comm_code"].strip()
