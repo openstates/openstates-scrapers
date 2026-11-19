@@ -98,7 +98,7 @@ class OKBillScraper(Scraper):
         self.scrape_subjects(chamber, session)
 
         url = "https://webapps.oklegislature.gov/WebApplication3/WebForm1.aspx"
-        form_page = html.fromstring(self.get(url).text)
+        form_page = html.fromstring(self.get(url, verify=False).text)
 
         if chamber == "upper":
             chamber_letter = "S"
@@ -130,7 +130,7 @@ class OKBillScraper(Scraper):
             "Cookie": f"ASP.NET_SessionId={session_cookie}",
             "x-oxylabs-force-headers": "1",
         }
-        response = self.post(url, data=values, headers=headers)
+        response = self.post(url, data=values, headers=headers, verify=False)
         page = response.text
         page = html.fromstring(page)
         page.make_links_absolute(url)
