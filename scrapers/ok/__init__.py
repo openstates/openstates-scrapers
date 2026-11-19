@@ -197,7 +197,7 @@ class Oklahoma(State):
             "name": "2026 Regular Session",
             "start_date": "2026-02-02",
             "end_date": "2026-05-29",
-            "active": True,
+            "active": False,
             "extras": {"house_speaker": "Hilbert"},
         },
         {
@@ -207,7 +207,7 @@ class Oklahoma(State):
             # TODO real dates
             "start_date": "2027-02-02",
             "end_date": "2027-05-29",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
