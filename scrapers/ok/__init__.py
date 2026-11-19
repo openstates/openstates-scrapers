@@ -205,8 +205,8 @@ class Oklahoma(State):
             "identifier": "2027",
             "name": "2027 Regular Session",
             # TODO real dates
-            "start_date": "2027-02-02",
-            "end_date": "2027-05-29",
+            "start_date": "2027-02-01",
+            "end_date": "2027-05-28",
             "active": True,
         },
     ]
