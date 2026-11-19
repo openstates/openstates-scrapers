@@ -319,7 +319,11 @@ class COBillScraper(Scraper, LXMLMixin):
                     motion_text=motion,
                     result="pass" if "passed" in result_text else "fail",
                     bill=bill,
-                    classification="passage",
+                    classification=(
+                        "amendment"
+                        if re.match(r"Adopt amendment\b", motion, re.IGNORECASE)
+                        else "passage"
+                    ),
                 )
                 votes_url = row.xpath("td[3]/span/a/@href")[0]
                 votes_page = self.get(votes_url, headers=HEADERS).content
@@ -371,10 +375,9 @@ class COBillScraper(Scraper, LXMLMixin):
             for row in page.cssselect(f"div#{table} tbody tr"):
                 when = dateutil.parser.parse(self.clean(row.xpath("td[1]/span"))).date()
                 # the motion can be blank ("MISC" calendar, HB26-1410 2026-04-28)
+                motion_label = self.clean(row.xpath("td[3]/span"))
                 motion = (
-                    self.clean(row.xpath("td[3]/span"))
-                    or self.clean(row.xpath("td[2]/span"))
-                    or "Floor vote"
+                    motion_label or self.clean(row.xpath("td[2]/span")) or "Floor vote"
                 )
                 ct_yes = int(self.clean(row.cssselect(".bill-votes-count-yes")))
                 ct_no = int(self.clean(row.cssselect(".bill-votes-count-no")))
@@ -386,7 +389,11 @@ class COBillScraper(Scraper, LXMLMixin):
                     motion_text=motion,
                     result="pass" if ct_yes > (ct_no + ct_other) else "fail",
                     bill=bill,
-                    classification="passage",
+                    classification=(
+                        "amendment"
+                        if re.match(r"AMD(?:\s|$)", motion_label, re.IGNORECASE)
+                        else "passage"
+                    ),
                 )
                 vote.set_count("yes", ct_yes)
                 vote.set_count("no", ct_no)
