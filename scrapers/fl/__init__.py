@@ -321,9 +321,10 @@ class Florida(State):
             "name": "2027 Regular Session",
             "identifier": "2027",
             "classification": "primary",
-            # TODO get real dates
-            "start_date": "2027-01-13",
-            "end_date": "2027-03-13",
+            # flsenate.gov: "The Regular Session convenes on Tuesday, March 2, 2027"
+            # (odd years start in March); a regular session lasts at most 60 consecutive days
+            "start_date": "2027-03-02",
+            "end_date": "2027-04-30",
             "active": True,
             "extras": {"session_number": "126"},
         },
