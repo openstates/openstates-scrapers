@@ -165,7 +165,7 @@ class Indiana(State):
             # TODO correct dates
             "start_date": "2026-01-09",
             "end_date": "2026-04-29",
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "First Regular Session 125th General Assembly (2027)",
@@ -174,7 +174,7 @@ class Indiana(State):
             "name": "2027 Regular Session",
             "start_date": "2026-11-17",
             "end_date": "2027-04-29",
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
