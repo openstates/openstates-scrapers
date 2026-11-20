@@ -34,11 +34,14 @@ dev = [
 
 [tool.uv]
 package = false
-
-[tool.ruff]
-extend-exclude = ["scrapers/il/tests"]
+# openstates pins pytest<7, which emits hundreds of DeprecationWarnings on
+# Python 3.13. openstates only uses pytest in its own tests.
+override-dependencies = ["pytest>=8"]
 
 [tool.ruff.lint]
 # flake8's default checks, minus the codes setup.cfg used to ignore
 select = ["E", "W", "F"]
 ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["scrapers", "scrapers_next"]
