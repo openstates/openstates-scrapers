@@ -1,0 +1,157 @@
+name: Compare pre/post scrape
+
+on:
+  # pull_request_target so that forks get a token that can comment. The PR's own
+  # code is never checked out or executed here -- only scripts/compare_scrapes.py
+  # from the base branch runs, against data downloaded from the URLs in the PR.
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize]
+  issue_comment:
+    types: [created, edited]
+  workflow_dispatch:
+    inputs:
+      post_url:
+        description: "URL to the post-change scrape output (attached zip, fork release asset, any .zip URL)"
+        required: true
+      pre_url:
+        description: "URL to the pre-change bulk data, from https://open.pluralpolicy.com/data/session-json/"
+        required: true
+      pr_number:
+        description: "Optional: PR number to post the report as a comment on"
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: compare-scrape-${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    # Comment runs only apply to pull requests that actually name a zip.
+    if: >-
+      github.event_name != 'issue_comment' ||
+      (github.event.issue.pull_request &&
+       contains(github.event.comment.body, '.zip'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: find scrape data URLs
+        id: find
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          INPUT_POST_URL: ${{ inputs.post_url }}
+          INPUT_PRE_URL: ${{ inputs.pre_url }}
+        run: |
+          set -euo pipefail
+
+          # Any http(s) URL ending in .zip, ignoring markdown/HTML delimiters.
+          ZIP_RE='https?://[^][ )"'"'"'<>]+\.zip'
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            post_url="$INPUT_POST_URL"
+            pre_url="$INPUT_PRE_URL"
+          else
+            # Newest wins, and a comment outranks the PR description.
+            body="$PR_BODY"
+            if [ "$EVENT_NAME" = "issue_comment" ]; then
+              body="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json body -q .body)
+          $COMMENT_BODY"
+            fi
+            # Strip HTML comments so the template's own instructions are not parsed.
+            body="$(printf '%s' "$body" | perl -0777 -pe 's/<!--.*?-->//gs')"
+
+            # Labelled lines are authoritative; fall back to bare .zip URLs, which
+            # covers drag-and-drop attachments and fork release assets alike.
+            pre_url="$(printf '%s' "$body" \
+              | grep -oiE "^[[:space:]]*pre-data:[[:space:]]*$ZIP_RE" | tail -1 \
+              | grep -oE "$ZIP_RE" || true)"
+            post_url="$(printf '%s' "$body" \
+              | grep -oiE "^[[:space:]]*post-data:[[:space:]]*$ZIP_RE" | tail -1 \
+              | grep -oE "$ZIP_RE" || true)"
+            if [ -z "$post_url" ]; then
+              post_url="$(printf '%s' "$body" | grep -oE "$ZIP_RE" \
+                | grep -vxF "${pre_url:-/dev/null}" | tail -1 || true)"
+            fi
+          fi
+
+          # Untouched template placeholders count as not filled in.
+          case "$pre_url" in *REPLACE-ME*) pre_url="" ;; esac
+          case "$post_url" in *REPLACE-ME*) post_url="" ;; esac
+
+          if [ -z "$post_url" ]; then
+            echo "No scrape zip linked from this PR -- nothing to compare."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "post-change data: $post_url"
+          echo "pre-change data: ${pre_url:-<missing>}"
+          {
+            echo "found=true"
+            echo "post_url=$post_url"
+            echo "pre_url=$pre_url"
+            echo "pr_number=$PR_NUMBER"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: setup Python 3.9
+        if: steps.find.outputs.found == 'true' && steps.find.outputs.pre_url != ''
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: run comparison
+        if: steps.find.outputs.found == 'true' && steps.find.outputs.pre_url != ''
+        env:
+          POST_URL: ${{ steps.find.outputs.post_url }}
+          PRE_URL: ${{ steps.find.outputs.pre_url }}
+        run: |
+          set -euo pipefail
+          python scripts/compare_scrapes.py --pre "$PRE_URL" --post "$POST_URL" -o report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: comment on PR
+        if: steps.find.outputs.found == 'true' && steps.find.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.find.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          MARKER='<!-- compare-scrapes-report -->'
+          {
+            echo "$MARKER"
+            echo "### Scrape comparison"
+            if [ -f report.md ]; then
+              echo
+              echo "Diff of the pre-data and post-data scrapes linked in this PR, from \`scripts/compare_scrapes.py\`."
+              echo
+              # The report is markdown; GitHub caps a comment at 65,536 characters.
+              head -c 60000 report.md
+            else
+              echo
+              echo "A post-change zip was found, but no pre-change data to compare it against."
+              echo "Add a line to the PR description linking the base branch's scrape: \`before.zip\`"
+              echo "from \`scripts/scrape_before_after.sh\`, or failing that the matching bulk data archive"
+              echo "from <https://open.pluralpolicy.com/data/session-json/> (login required to see the links):"
+              echo
+              echo '```'
+              echo "pre-data: https://.../before.zip"
+              echo '```'
+            fi
+          } > comment.md
+
+          # Update the existing report in place so re-runs do not pile up comments.
+          existing="$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --paginate \
+            --jq "[.[] | select(.body | contains(\"$MARKER\"))] | last | .id // empty")"
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -F body=@comment.md
+          else
+            gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file comment.md
+          fi
