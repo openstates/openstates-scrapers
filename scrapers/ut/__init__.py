@@ -412,9 +412,10 @@ class Utah(State):
             "classification": "primary",
             "identifier": "2027",
             "name": "2027 General Session",
-            # TODO: correct dates when published
-            "start_date": "2027-01-20",
-            "end_date": "2027-03-06",
+            # le.utah.gov: "2027 General Session of the 67th Legislature
+            # January 19, 2027 to March 5, 2027"
+            "start_date": "2027-01-19",
+            "end_date": "2027-03-05",
             "active": False,
         },
     ]
