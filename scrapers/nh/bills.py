@@ -261,6 +261,19 @@ class NHBillScraper(Scraper):
                     url=f"https://gc.nh.gov/bill_status/legacy/bs2016/{pdf_version_url}",
                     media_type="application/pdf",
                 )
+            elif "txtFormat=report" in version_url:
+                # Senate hearing reports (testimony summaries) and committee reports
+                date, body = [
+                    cell.text_content().strip()
+                    for cell in version_elem.xpath("./ancestor::tr[1]/td")[:2]
+                ]
+                kind = version_text.rstrip(":").replace("Hearing", "Hearing Report")
+                bill.add_document_link(
+                    note=f"{body} {kind}",
+                    date=dt.datetime.strptime(date, "%m/%d/%Y").strftime("%Y-%m-%d"),
+                    url=f"https://gc.nh.gov/bill_status/legacy/bs2016/{version_url}",
+                    media_type="text/html",
+                )
             else:
                 self.logger.warning(
                     f"Found an unexpected version URL on {docket_url}, version URL: {version_url}"
