@@ -168,4 +168,4 @@ def categorize_action(action):
                 break
 
     # Returns types, attrs
-    return list(types), attrs
+    return sorted(types), attrs

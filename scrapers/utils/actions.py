@@ -109,7 +109,7 @@ class BaseCategorizer(object):
                     break
 
         # set type
-        return_val["classification"] = list(types)
+        return_val["classification"] = sorted(types)
 
         # run post-categorize hook
         return_val = self.post_categorize(return_val)
@@ -130,12 +130,11 @@ class BaseCategorizer(object):
             if not isinstance(v, Iterable):
                 continue
 
-            if not isinstance(v, str):
-                v = list(filter(None, v))
-
             # Get rid of sets.
             if isinstance(v, set):
-                v = list(v)
+                v = sorted(filter(None, v))
+            elif not isinstance(v, str):
+                v = list(filter(None, v))
 
             # Some vals should be strings, not seqs.
             if k == "actor" and len(v) == 1:
