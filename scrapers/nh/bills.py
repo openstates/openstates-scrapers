@@ -343,16 +343,17 @@ class NHBillScraper(Scraper):
         if added == 0:
             self.warning(f"No sponsors found on bill page for {bill.identifier}")
 
-    def scrape_sponsors_from_legacy_page(self, bill, lsr, session):
+    def scrape_sponsors_from_legacy_page(self, bill, lsr, session, page=None):
         """
         Some bill pages list no sponsors, e.g. when the prime sponsor has left
         the House and dropped out of legislators.txt. The legacy bill status
         page still names them.
         """
-        url = f"https://gc.nh.gov/bill_status/legacy/bs2016/bill_status.aspx?lsr={lsr}&sy={session}&sortoption=&txtsessionyear={session}"
-        page = lxml.html.fromstring(self.get(url, verify=False).content)
+        if page is None:
+            url = f"https://gc.nh.gov/bill_status/legacy/bs2016/bill_status.aspx?lsr={lsr}&sy={session}&sortoption=&txtsessionyear={session}"
+            page = lxml.html.fromstring(self.get(url, verify=False).content)
         for sponsor in page.xpath("//ul[@class='sponsor-list']/li"):
-            name = sponsor.xpath("./span[1]")[0].text_content().strip()
+            name = sponsor.xpath("./*[1]")[0].text_content().strip()
             is_primary = bool(sponsor.xpath(".//*[contains(@class, 'prime')]"))
             bill.add_sponsorship(
                 classification="primary" if is_primary else "cosponsor",
@@ -716,7 +717,7 @@ class NHBillScraper(Scraper):
 
         # save all bills
         for bill in self.bills:
-            if not self.bills[bill].sponsorships:
+            if not self.bills[bill].sponsorships and not self.from_legacy_pages:
                 try:
                     self.scrape_sponsors_from_legacy_page(
                         self.bills[bill], bill, session
@@ -788,8 +789,6 @@ class NHBillScraper(Scraper):
             line = line.replace("\ufeff", "").split("|")
             if len(line) == 7 and line[0] == session:
                 bill_ids[line[1]] = line[3].strip()
-                if re.search(r"\b(RC|Roll Call)\b", line[5], re.I):
-                    self.lsrs_with_roll_calls.add(line[1])
 
         for lsr, bill_id in bill_ids.items():
             # CACRs can start in either chamber, so check the page
@@ -817,19 +816,21 @@ class NHBillScraper(Scraper):
                 classification=extended_type_map[self.extract_until_number(bill_id)],
             )
             bill.extras["LSR"] = lsr
+            if page.xpath("//a[contains(@href, 'Billstatus_billrollcalls')]"):
+                self.lsrs_with_roll_calls.add(lsr)
 
+            # billinfo.aspx drops sponsors who have since left; this page keeps them
+            self.scrape_sponsors_from_legacy_page(bill, lsr, session, page)
             version_id = self.scrape_versions_from_docket(bill, lsr, session)
             if version_id:
                 self.add_source(bill, version_id)
-                self.scrape_sponsors_from_bill_page(
-                    bill, self.get_bill_page(version_id)
-                )
             else:
                 bill.add_source(url)
 
     def scrape_votes_from_legacy_pages(self, session):
         for lsr, bill in self.bills.items():
-            # most bills have no roll calls; the docket marks the ones that do
+            # most bills have no roll calls; the status page links the ones
+            # that do (the docket also tags committee votes "RC", and misses some)
             if lsr not in self.lsrs_with_roll_calls:
                 continue
             _, page = self.get_legacy_page(
