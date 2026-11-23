@@ -95,7 +95,7 @@ class BaseCategorizer(object):
                         break
 
         # Returns types, attrs
-        return_val = (list(types), attrs)
+        return_val = (sorted(types), attrs)
         return_val = self.after_categorize(return_val)
         for func in self._after_funcs:
             return_val = func(*return_val)

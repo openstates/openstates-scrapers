@@ -323,7 +323,7 @@ class BillTabDetail(Utf8HtmlMixin, HtmlPage):
         if not action_type:
             action_type = None
         else:
-            action_type = list(set(action_type))
+            action_type = sorted(set(action_type))
 
         act = bill.add_action(
             description=action,
