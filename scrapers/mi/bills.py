@@ -3,6 +3,7 @@ import re
 import lxml.html
 import scrapelib
 import collections
+import functools
 from datetime import date
 from utils.media import get_media_type
 
@@ -324,9 +325,15 @@ class MIBillScraper(Scraper):
         objectname = f"{year}-{journal_prefix}-{date_formatted}-{journal_num}"
         return f"{base_url}/documents/{legislative_session}/Journal/{chamber}/htm/{objectname}.htm"
 
+    # A journal holds a whole day's roll calls, so consecutive bills and
+    # votes keep asking for the same few; keep the recent ones
+    @functools.lru_cache(maxsize=64)
+    def get_journal(self, url):
+        return self.get(url, headers=self.headers, verify=False).content
+
     def parse_roll_call(self, url, rc_num, session):
         try:
-            resp = self.get(url, headers=self.headers, verify=False)
+            content = self.get_journal(url)
         except scrapelib.HTTPError:
             self.warning(
                 f"Could not fetch roll call document at {url}, unable to extract vote"
@@ -334,7 +341,7 @@ class MIBillScraper(Scraper):
             return
         # journals are UTF-8 but don't say so in the response headers, so parse
         # the bytes and let lxml use the charset the document itself declares
-        vote_doc = lxml.html.fromstring(resp.content)
+        vote_doc = lxml.html.fromstring(content)
         vote_doc_textonly = vote_doc.text_content()
 
         if re.search("In\\s+The\\s+Chair", vote_doc_textonly) is None:
