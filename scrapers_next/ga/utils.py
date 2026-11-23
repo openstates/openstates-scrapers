@@ -24,10 +24,17 @@ def get_key(timestamp):
     return sha512(key.encode()).hexdigest()
 
 
+_token = (0.0, "")
+
+
 def get_token():
-    timestamp = str(int(time.time() * 1000))
-    key = get_key(timestamp)
-    token_url = (
-        f"https://www.legis.ga.gov/api/authentication/token?key={key}&ms={timestamp}"
-    )
-    return "Bearer " + requests.get(token_url).json()
+    # tokens expire 5 minutes after issue; refresh every minute so retries stay inside that
+    global _token
+    issued, token = _token
+    if time.time() - issued > 60:
+        timestamp = str(int(time.time() * 1000))
+        key = get_key(timestamp)
+        token_url = f"https://www.legis.ga.gov/api/authentication/token?key={key}&ms={timestamp}"
+        token = "Bearer " + requests.get(token_url).json()
+        _token = (time.time(), token)
+    return token
