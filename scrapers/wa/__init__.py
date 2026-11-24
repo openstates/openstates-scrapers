@@ -80,6 +80,15 @@ class Washington(State):
             "end_date": "2026-03-06",
             "active": True,
         },
+        {
+            "_scraped_name": "2027-28",
+            "classification": "primary",
+            "identifier": "2027-2028",
+            "name": "2027-2028 Regular Session",
+            "start_date": "2027-01-11",
+            "end_date": "2028-04-26",
+            "active": False,
+        },
     ]
     ignored_scraped_sessions = [
         "2007-08",
