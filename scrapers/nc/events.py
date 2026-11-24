@@ -35,18 +35,23 @@ class NCEventScraper(Scraper, LXMLMixin):
             )[0].strip()
             for row in day_row.xpath('.//div[contains(@class, "cal-event row")]'):
                 status = "tentative"
-                # first cal-event-row sometimes contains full date, skip that
-                time = (
-                    row.xpath(
-                        'div[contains(@class,"col-12 text-left col-sm-3 text-sm-right")]'
-                    )[0]
-                    .text_content()
-                    .strip()
+                # first cal-event-row sometimes contains full date, and other
+                # rows can omit the time column entirely; skip any row that
+                # doesn't have the expected time cell instead of crashing on [0]
+                time_cell = row.xpath(
+                    'div[contains(@class,"col-12 text-left col-sm-3 text-sm-right")]'
                 )
+                if not time_cell:
+                    continue
+                time = time_cell[0].text_content().strip()
 
-                event_row = row.xpath(
+                # similarly, skip rows missing the main event column
+                event_rows = row.xpath(
                     'div[contains(@class,"col-12 col-sm-9 col-md-12 ")]'
-                )[0]
+                )
+                if not event_rows:
+                    continue
+                event_row = event_rows[0]
 
                 # skip floor sessions
                 if event_row.xpath('.//a[contains(text(), "Session Convenes")]'):
@@ -70,11 +75,8 @@ class NCEventScraper(Scraper, LXMLMixin):
                 com_name = f"{chamber} {com_name}".strip()
                 com_url = com_link.xpath("@href")[0]
 
-                where = (
-                    row.xpath('div[contains(@class,"col-12 offset-sm-3")]')[0]
-                    .text_content()
-                    .strip()
-                )
+                where_cell = row.xpath('div[contains(@class,"col-12 offset-sm-3")]')
+                where = where_cell[0].text_content().strip() if where_cell else ""
                 where = where.replace("STREAM", "").replace("Stream", "")
                 where = where.replace("Ended", "").strip()
 
