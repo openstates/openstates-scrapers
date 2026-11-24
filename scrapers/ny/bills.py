@@ -1,7 +1,9 @@
 import re
 import datetime
+import lxml.etree
 import lxml.html
 import pytz
+import requests
 from collections import defaultdict
 
 from openstates.scrape import Scraper, Bill, VoteEvent
@@ -411,7 +413,20 @@ class NYBillScraper(Scraper):
         for vote_data in bill_data["votes"]["items"]:
             yield self._parse_senate_votes(vote_data, bill, api_url)
 
-        yield from self.scrape_assembly_votes(session, bill, assembly_url, bill_id)
+        # catches votes cast after the index was built
+        assembly_rollcall = any(
+            action["chamber"] == "ASSEMBLY"
+            and action["text"].startswith(
+                ("PASSED ASSEMBLY", "DEFEATED IN ASSEMBLY", "MOTION TO DISCHARGE")
+            )
+            for action in bill_data["actions"]["items"]
+        )
+        if (
+            self.assembly_voted is None
+            or bill_id in self.assembly_voted
+            or assembly_rollcall
+        ):
+            yield from self.scrape_assembly_votes(session, bill, assembly_url, bill_id)
 
         # A little strange the way it works out, but the Assembly
         # provides the HTML version documents and the Senate provides
@@ -474,6 +489,44 @@ class NYBillScraper(Scraper):
             )
 
         yield bill
+
+    def _assembly_floor_voted_bills(self):
+        # Assembly advanced search can list the bills voted on each floor
+        # vote date. Returns None (fetch every bill's vote page) on any doubt.
+        url = "https://nyassembly.gov/leg/?sh=advanced"
+        form = dict(term=self.term_start_year, leg_type="A", house="", by="a")
+        voted = set()
+        try:
+            doc = lxml.html.fromstring(
+                self.post(url, data={**form, "evt_fld": "Term"}, verify=False).content
+            )
+            dates = doc.xpath('//select[@name="floor_vote"]/option/@value')
+            dates = [d for d in dates if d]
+            if not dates:
+                self.warning("No Assembly floor vote dates found")
+                return None
+            for date in dates:
+                doc = lxml.html.fromstring(
+                    self.post(
+                        url,
+                        data={**form, "floor_vote": date, "evt_fld": "Search"},
+                        verify=False,
+                    ).content
+                )
+                count = doc.xpath('string(//div[@id="bill_count_div"]/span)')
+                bills = doc.xpath('//div[@id="vcontent_div"]//li/a/text()')
+                if count != str(len(bills)):
+                    self.warning(
+                        f"Assembly floor votes {date}: {count} != {len(bills)}"
+                    )
+                    return None
+                # A00112 -> A112, to match basePrintNo
+                voted.update(re.sub(r"^([A-Z])0+", r"\1", b.strip()) for b in bills)
+        except (requests.exceptions.RequestException, lxml.etree.ParserError) as e:
+            self.warning(f"Assembly floor vote index failed: {e}")
+            return None
+        self.info(f"{len(voted)} bills have Assembly floor votes on {len(dates)} dates")
+        return voted
 
     def scrape_assembly_votes(self, session, bill, assembly_url, bill_id):
         # parse the bill data page, finding the latest html text
@@ -614,6 +667,9 @@ class NYBillScraper(Scraper):
                 f"No assembly_speaker in {session} session extras; "
                 "Assembly roll calls will list the title"
             )
+        self.assembly_voted = (
+            None if bill_no or window else self._assembly_floor_voted_bills()
+        )
 
         for bill in self._generate_bills(session, window):
             if bill_no:
