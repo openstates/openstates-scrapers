@@ -1,7 +1,10 @@
+import re
 import pytz
 import json
 import logging
+import collections
 import dateutil.parser
+import requests
 from openstates.scrape import Scraper, Bill
 from .actions import Categorizer as ActionCategorizer
 from .bills import NJBillScraper as MDBBillScraper
@@ -92,6 +95,40 @@ class NJBillScraper(Scraper):
                 primary=False,
             )
 
+    def bulk_sponsors(self, year):
+        # billSponsors has no bulk form, so rebuild it from one search per
+        # legislator: active rows only, primaries first, each in Sponsor_Key order
+        sponsors = collections.defaultdict(list)
+        try:
+            page = self.get("https://www.njleg.state.nj.us/bill-search").text
+            data = re.search(r'id="__NEXT_DATA__"[^>]*>(.*?)</script>', page, re.S)
+            roster = {
+                s["Roster_Key"]: re.sub(r" \(As \w+\)$", "", s["Full_Name"])
+                for s in json.loads(data.group(1))["props"]["pageProps"]["sponsors"]
+                if s["SessionYear"] == year
+            }
+            for key, name in roster.items():
+                url = (
+                    "https://www.njleg.state.nj.us/api/billSearch/combinedSponsorSearch/"
+                    f"empty/{key}/empty/empty/empty/empty/empty/{year}"
+                )
+                for row in self.get(url).json()[0]:
+                    if row["Sponsor_Status"] == "A":
+                        sponsors[row["Bill"].strip()].append(
+                            (row["Type_of_Sponsor"] != "P", row["Sponsor_Key"], name)
+                        )
+        except (
+            requests.exceptions.RequestException,
+            ValueError,
+            KeyError,
+            AttributeError,
+        ) as e:
+            # a partial result would drop sponsors silently, so fall back fully
+            self.warning(f"bulk sponsor fetch failed, using per-bill calls: {e}")
+            return {}
+        self.info(f"bulk sponsors found for {len(sponsors)} bills")
+        return sponsors
+
     def scrape(self, session=None):
         logging.getLogger("scrapelib").setLevel(logging.WARNING)
         year_abr = ((int(session) - 209) * 2) + 2000
@@ -100,6 +137,7 @@ class NJBillScraper(Scraper):
         json_data = self.get(url).text
         bill_list = json.loads(json_data)[0]
         bill_dict = {}
+        sponsors = self.bulk_sponsors(year_abr)
 
         for item in bill_list:
             title = item["Synopsis"].strip()
@@ -124,7 +162,16 @@ class NJBillScraper(Scraper):
 
             self.process_versions(year_abr, bill)
             self.process_actions(year_abr, bill)
-            self.process_sponsors(year_abr, bill)
+            if bill_id in sponsors:
+                for cosponsor, _, name in sorted(sponsors[bill_id]):
+                    bill.add_sponsorship(
+                        name,
+                        entity_type="person",
+                        classification="cosponsor" if cosponsor else "primary",
+                        primary=not cosponsor,
+                    )
+            else:
+                self.process_sponsors(year_abr, bill)
 
             source_url = (
                 f"https://www.njleg.state.nj.us/bill-search/{year_abr}/{bill_id}"
