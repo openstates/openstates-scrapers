@@ -387,7 +387,14 @@ class SCBillScraper(Scraper):
         doc = lxml.html.fromstring(page)
         doc.make_links_absolute(bill_detail_url)
 
-        bill_div = doc.xpath('//div[@style="margin:0 0 40px 0;"]')[0]
+        bill_divs = doc.xpath('//div[@style="margin:0 0 40px 0;"]')
+        if not bill_divs:
+            # Some bill pages don't render the expected detail container
+            # (page variant, placeholder, or layout change); skip rather
+            # than crashing the whole run on an empty xpath result.
+            self.warning("No bill detail container found for %s" % bill_detail_url)
+            return
+        bill_div = bill_divs[0]
 
         bill_type = bill_div.xpath("span/text()")[0]
 
@@ -486,9 +493,14 @@ class SCBillScraper(Scraper):
             date_td, chamber_td, action_td = row.xpath("td")
 
             date = datetime.datetime.strptime(date_td.text, "%m/%d/%y")
-            action_chamber = {"Senate": "upper", "House": "lower", None: "legislature"}[
-                chamber_td.text
-            ]
+            # The chamber cell can carry surrounding whitespace (e.g.
+            # " Senate ") and occasionally an unexpected/blank value;
+            # normalize it and fall back to "legislature" instead of
+            # raising a KeyError that kills the whole run.
+            chamber_text = (chamber_td.text or "").strip()
+            action_chamber = {"Senate": "upper", "House": "lower"}.get(
+                chamber_text, "legislature"
+            )
 
             action = action_td.text_content()
             action = action.split("(House Journal")[0]
