@@ -307,7 +307,7 @@ class Arizona(State):
             "extras": {
                 "session_id": 130,
             },
-            "active": True,
+            "active": False,
         },
         {
             "_scraped_name": "2027 - Fifty-eighth Legislature - First Regular Session",
@@ -319,7 +319,7 @@ class Arizona(State):
             "extras": {
                 "session_id": 131,
             },
-            "active": False,
+            "active": True,
         },
     ]
     ignored_scraped_sessions = [
