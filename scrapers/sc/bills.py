@@ -430,7 +430,39 @@ class SCBillScraper(Scraper):
                 else:
                     current_vfunc(option=option, voter=name)
 
-    def scrape_details(self, bill_detail_url, session, chamber, bill_id):
+    def scrape_bill_divs(self, bill_links):
+        """
+        Fetch the detail divs of up to 20 bills at once: billsearch.php takes
+        a comma-separated billnumbers list, but returns only the first 20.
+        :param bill_links: list of (bill_id, bill_detail_url)
+        :return: dict of bill_id to its detail div
+        """
+        queries = [parse_qs(urlparse(url).query) for _, url in bill_links]
+        # some day pages link a bill to an older session's page; those bills
+        # are left out of the batch and fetched from their own page
+        session = queries[0]["session"][0]
+        numbers = [q["billnumbers"][0] for q in queries if q["session"][0] == session]
+        url = (
+            "https://www.scstatehouse.gov/billsearch.php?billnumbers=%s"
+            "&session=%s&summary=B" % (",".join(numbers), session)
+        )
+        try:
+            page = self.get(url).text
+        except requests.exceptions.RequestException as e:
+            self.warning(f"bill batch {url} failed: {e}")
+            return {}
+        doc = lxml.html.fromstring(page)
+        doc.make_links_absolute(url)
+        divs = {}
+        for div in doc.xpath('//div[@style="margin:0 0 40px 0;"]'):
+            match = re.match(r"([HS])\W*0*(\d+)", div.xpath("string(span)"))
+            if match:
+                divs["%s %s" % match.groups()] = div
+        if len(divs) < len(bill_links):
+            self.info(f"bill batch: {len(divs)} of {len(bill_links)} bills")
+        return divs
+
+    def scrape_details(self, bill_detail_url, session, chamber, bill_id, bill_div=None):
         """
         Create the Bill and add the information obtained from the provided bill_detail_url.
         and then yield the bill object.
@@ -438,25 +470,27 @@ class SCBillScraper(Scraper):
         :param session:
         :param chamber:
         :param bill_id:
+        :param bill_div: the bill's detail div, if already fetched
         :return:
         """
-        page = self.get(bill_detail_url).text
+        if bill_div is None:
+            page = self.get(bill_detail_url).text
 
-        if "INVALID BILL NUMBER" in page:
-            self.warning("INVALID BILL %s" % bill_detail_url)
-            return
+            if "INVALID BILL NUMBER" in page:
+                self.warning("INVALID BILL %s" % bill_detail_url)
+                return
 
-        doc = lxml.html.fromstring(page)
-        doc.make_links_absolute(bill_detail_url)
+            doc = lxml.html.fromstring(page)
+            doc.make_links_absolute(bill_detail_url)
 
-        bill_divs = doc.xpath('//div[@style="margin:0 0 40px 0;"]')
-        if not bill_divs:
-            # Some bill pages don't render the expected detail container
-            # (page variant, placeholder, or layout change); skip rather
-            # than crashing the whole run on an empty xpath result.
-            self.warning("No bill detail container found for %s" % bill_detail_url)
-            return
-        bill_div = bill_divs[0]
+            bill_divs = doc.xpath('//div[@style="margin:0 0 40px 0;"]')
+            if not bill_divs:
+                # Some bill pages don't render the expected detail container
+                # (page variant, placeholder, or layout change); skip rather
+                # than crashing the whole run on an empty xpath result.
+                self.warning("No bill detail container found for %s" % bill_detail_url)
+                return
+            bill_div = bill_divs[0]
 
         bill_type = bill_div.xpath("span/text()")[0]
 
@@ -501,7 +535,7 @@ class SCBillScraper(Scraper):
             bill.add_subject(subject)
 
         # sponsors
-        for sponsor in doc.xpath('//a[contains(@href, "member.php")]'):
+        for sponsor in bill_div.xpath('.//a[contains(@href, "member.php")]'):
             sp_chamber = _get_sponsor_chamber(sponsor)
             sponsor = sponsor.text.strip()
             bill.add_sponsorship(
@@ -511,7 +545,7 @@ class SCBillScraper(Scraper):
                 entity_type="person",
                 chamber=sp_chamber,
             )
-        for sponsor in doc.xpath('//a[contains(@href, "committee.php")]'):
+        for sponsor in bill_div.xpath('.//a[contains(@href, "committee.php")]'):
             sp_chamber = _get_sponsor_chamber(sponsor)
             sponsor = sponsor.text_content().replace("\xa0", " ").strip()
             bill.add_sponsorship(
@@ -523,7 +557,7 @@ class SCBillScraper(Scraper):
             )
 
         # find versions
-        version_url = doc.xpath('//a[text()="View full text"]/@href')[0]
+        version_url = bill_div.xpath('.//a[text()="View full text"]/@href')[0]
         version_html = self.get(version_url).text
         version_doc = lxml.html.fromstring(version_html)
         version_doc.make_links_absolute(version_url)
@@ -578,7 +612,7 @@ class SCBillScraper(Scraper):
             )
 
         # votes
-        vurl = doc.xpath('//a[text()="View Vote History"]/@href')
+        vurl = bill_div.xpath('.//a[text()="View Vote History"]/@href')
         if vurl:
             vurl = vurl[0]
             yield from self.scrape_vote_history(bill, vurl)
@@ -638,6 +672,15 @@ class SCBillScraper(Scraper):
                     )
         return bills
 
+    def scrape_in_batches(self, bill_links, session, chamber):
+        for i in range(0, len(bill_links), 20):
+            batch = bill_links[i : i + 20]
+            bill_divs = self.scrape_bill_divs(batch)
+            for bill_id, url in batch:
+                yield from self.scrape_details(
+                    url, session, chamber, bill_id, bill_divs.get(bill_id)
+                )
+
     def scrape(self, chamber=None, session=None):
         """
          Obtain the bill urls containing the bill information which will be used
@@ -666,13 +709,15 @@ class SCBillScraper(Scraper):
 
         for chamber in chambers:
             chamber_letter = "s" if chamber == "upper" else "h"
+            bill_links = []
 
             if bill_list:
-                for bill_id, bill_url in bill_list.items():
-                    if bill_id.lower().startswith(chamber_letter):
-                        yield from self.scrape_details(
-                            bill_url, session, chamber, bill_id
-                        )
+                bill_links = [
+                    (bill_id, bill_url)
+                    for bill_id, bill_url in bill_list.items()
+                    if bill_id.lower().startswith(chamber_letter)
+                ]
+                yield from self.scrape_in_batches(bill_links, session, chamber)
                 continue
 
             # Uses helper function to get current session bill index page url,
@@ -708,9 +753,7 @@ class SCBillScraper(Scraper):
                         and bill_id not in seen_bill_ids
                     ):
                         seen_bill_ids.add(bill_id)
-                        yield from self.scrape_details(
-                            bill_a.get("href"), session, chamber, bill_id
-                        )
+                        bill_links.append((bill_id, bill_a.get("href")))
 
             prefile_url = (
                 f"https://www.scstatehouse.gov/sessphp/prefil{session[2:4]}.php"
@@ -741,6 +784,6 @@ class SCBillScraper(Scraper):
                         and bill_id not in seen_bill_ids
                     ):
                         seen_bill_ids.add(bill_id)
-                        yield from self.scrape_details(
-                            bill_a.get("href"), session, chamber, bill_id
-                        )
+                        bill_links.append((bill_id, bill_a.get("href")))
+
+            yield from self.scrape_in_batches(bill_links, session, chamber)
