@@ -155,16 +155,22 @@ class DCBillScraper(Scraper):
                             primary=True,
                         )
 
-                    # Co-sponsor
-                    if leg_details["coSponsors"]:
-                        for cs in leg_details["coSponsors"]:
-                            name = cs["memberName"]
-                            bill.add_sponsorship(
-                                name,
-                                classification="cosponsor",
-                                entity_type="person",
-                                primary=False,
-                            )
+                    # Co-sponsors - the LIMS API tracks two distinct groups as
+                    # cosponsors on the bill's page ("Co-Introduced by" and
+                    # "Co-Sponsored by"): "coIntroducers" (added at introduction)
+                    # and "coSponsors" (added after introduction). The scraper
+                    # previously only read "coSponsors", which is empty for most
+                    # bills, so co-introducers (the common case) were dropped.
+                    for cs in (leg_details.get("coIntroducers") or []) + (
+                        leg_details.get("coSponsors") or []
+                    ):
+                        name = cs["memberName"]
+                        bill.add_sponsorship(
+                            name,
+                            classification="cosponsor",
+                            entity_type="person",
+                            primary=False,
+                        )
 
                     # Committee Hearing Doc
                     for commHearing in leg_details["committeeHearing"]:
