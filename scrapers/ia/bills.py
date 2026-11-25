@@ -2,7 +2,6 @@ import re
 import datetime
 import lxml.html
 import requests
-import time
 from openstates.scrape import Scraper, Bill
 from .actions import Categorizer
 
@@ -41,7 +40,6 @@ class IABillScraper(Scraper):
         session_id = self.get_session_id(session)
         url = f"https://www.legis.iowa.gov/legislation/findLegislation/allbills?ga={session_id}"
         page = lxml.html.fromstring(req_session.get(url).text)
-        start_time = time.time()
         for option in page.xpath("//*[@id='sortableTable']/tbody/tr"):
             bill_id = option.xpath("td[2]/a/text()")[0]
             title = option.xpath("td[3]/text()")[0].split("(")[0]
@@ -74,9 +72,6 @@ class IABillScraper(Scraper):
                 other_bill_ids += values
 
         for bill_id in other_bill_ids:
-            if (time.time() - start_time) >= 600:
-                time.sleep(420)
-                start_time = time.time()
             bill_url = (
                 "https://www.legis.iowa.gov/"
                 f"legislation/BillBook?ga={session_id}&ba={bill_id}"
