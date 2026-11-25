@@ -4,6 +4,7 @@ import lxml.html
 import scrapelib
 import collections
 import functools
+import zlib
 from datetime import date
 from utils.media import get_media_type
 
@@ -352,15 +353,16 @@ class MIBillScraper(Scraper):
         objectname = f"{year}-{journal_prefix}-{date_formatted}-{journal_num}"
         return f"{base_url}/documents/{legislative_session}/Journal/{chamber}/htm/{objectname}.htm"
 
-    # A journal holds a whole day's roll calls, so consecutive bills and
-    # votes keep asking for the same few; keep the recent ones
-    @functools.lru_cache(maxsize=64)
+    # A journal holds a whole day's roll calls, and bills far apart in the
+    # list point back to the same journal, so keep every journal fetched,
+    # compressed (about 10x smaller)
+    @functools.cache
     def get_journal(self, url):
-        return self.get(url, headers=self.headers, verify=False).content
+        return zlib.compress(self.get(url, headers=self.headers, verify=False).content)
 
     def parse_roll_call(self, url, rc_num, session):
         try:
-            content = self.get_journal(url)
+            content = zlib.decompress(self.get_journal(url))
         except scrapelib.HTTPError:
             self.warning(
                 f"Could not fetch roll call document at {url}, unable to extract vote"
