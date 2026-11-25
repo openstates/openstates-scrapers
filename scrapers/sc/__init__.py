@@ -115,5 +115,6 @@ class SouthCarolina(State):
         """Get session list from billsearch page using xpath"""
         url = "https://www.scstatehouse.gov/billsearch.php"
         path = "//select[@id='session']/option/text()"
-        doc = lxml.html.fromstring(scrapelib.Scraper().get(url, timeout=30).text)
+        scraper = scrapelib.Scraper(retry_attempts=3, retry_wait_seconds=10)
+        doc = lxml.html.fromstring(scraper.get(url, timeout=30).text)
         return doc.xpath(path)

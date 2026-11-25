@@ -10,7 +10,9 @@ from functools import wraps
 from openstates.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import convert_pdf
 import lxml.html
+import requests
 import urllib
+from urllib.parse import parse_qs, urlparse
 
 # Workaround to prevent chunking error (thanks @showerst)
 #
@@ -248,6 +250,47 @@ class SCBillScraper(Scraper):
                     bill_id = re.sub(" 0*", " ", bill_id)
                     self._subjects[bill_id].add(subject)
 
+    def scrape_vote_report(self, session_code):
+        """
+        Map each bill id to its vote rows, from the session-wide vote report
+        of each chamber, with the cells in the order of a bill's vote history.
+        """
+        url = "https://www.scstatehouse.gov/votehistory.php"
+        rows = defaultdict(list)
+        for chamber_letter in ("H", "S"):
+            try:
+                html = self.post(
+                    url,
+                    data={
+                        "op": "votehistorysearch",
+                        "session": session_code,
+                        "chamber": chamber_letter,
+                        "headerfooter": "1",
+                    },
+                ).text
+            except requests.exceptions.RequestException as e:
+                self.warning(f"vote report {chamber_letter} {session_code} failed: {e}")
+                continue
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(url)
+            for row in doc.xpath("//table/tr"):
+                tds = row.getchildren()
+                bill_link = (
+                    tds[1].xpath("a[contains(@href, 'billsearch')]")
+                    if len(tds) == 13
+                    else None
+                )
+                if not bill_link:
+                    continue
+                bill_id = re.sub(" 0*", " ", bill_link[0].text.strip())
+                # unlike a bill's vote history, the motion follows the bill
+                # summary and the result is wrapped, each in a span
+                motion = tds[2].xpath("span")[-1]
+                result = tds[12].xpath("span")[0]
+                rows[bill_id].append([tds[3], motion, tds[0], *tds[5:12], result])
+        self.info(f"vote report {session_code}: {len(rows)} bills")
+        return rows
+
     def scrape_vote_history(self, bill, vurl):
         """
          Obtain the information on a vote and link it to the related Bill
@@ -255,13 +298,18 @@ class SCBillScraper(Scraper):
         :param vurl: source for the voteEvent information.
         :return: voteEvent object
         """
-        html = self.get(vurl).text
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(vurl)
+        session_code = parse_qs(urlparse(vurl).query)["session"][0]
+        if session_code not in self._vote_reports:
+            self._vote_reports[session_code] = self.scrape_vote_report(session_code)
+        rows = self._vote_reports[session_code].get(bill.identifier)
+        if rows is None:
+            html = self.get(vurl).text
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(vurl)
+            # skip first two rows
+            rows = [row.getchildren() for row in doc.xpath("//table/tr")[2:]]
 
-        # skip first two rows
-        for row in doc.xpath("//table/tr")[2:]:
-            tds = row.getchildren()
+        for tds in rows:
             if len(tds) != 11:
                 self.warning("irregular vote row: %s" % vurl)
                 continue
@@ -593,6 +641,7 @@ class SCBillScraper(Scraper):
         :param session:
         """
         self._seen_vote_ids = set()
+        self._vote_reports = {}
         # prefiled bills are listed on both the prefile and intro day pages
         seen_bill_ids = set()
 
