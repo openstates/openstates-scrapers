@@ -239,8 +239,8 @@ class OKBillScraper(Scraper):
             )
             for item in sorted(attrs["committees"]):
                 act.add_related_entity(item, "organization")
-            # for item in sorted(attrs["legislators"]):
-            #     act.add_related_entity(item, "person")
+            for item in sorted(attrs["legislators"]):
+                act.add_related_entity(item, "person")
 
         version_table = page.xpath("//table[contains(@id, 'Versions')]")[0]
         # Keep track of already seen versions to prevent processing duplicates.
