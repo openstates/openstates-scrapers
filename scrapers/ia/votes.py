@@ -5,8 +5,9 @@ import collections
 import lxml.etree
 
 from openstates.utils import convert_pdf
-from openstates.scrape import Scraper, VoteEvent
+from openstates.scrape import VoteEvent
 from openstates.exceptions import EmptyScrape
+from .utils import IAScraper
 
 # https://www.legis.iowa.gov/legislation/findLegislation/allbills?ga=91
 SITE_IDS = {
@@ -34,7 +35,7 @@ def classify_motion(motion):
     return []
 
 
-class IAVoteScraper(Scraper):
+class IAVoteScraper(IAScraper):
     def scrape(self, chamber=None, session=None):
         event_count = 0
         if chamber:
