@@ -555,11 +555,18 @@ class SCBillScraper(Scraper):
                     "headerfooter": "1",
                 },
             )
-            if response.status_code != 200:
+            doc = lxml.html.fromstring(response.text)
+            labels = doc.xpath("//div[@data-bhmastkey]/span[1]/text()[1]")
+            # error and empty pages say "No bills found"; treat both as failure
+            found = re.search(r"(\d+) bills? found", response.text)
+            if (
+                response.status_code != 200
+                or not found
+                or int(found.group(1)) != len(labels)
+            ):
                 self.warning(f"action search {action_code} failed, using day pages")
                 return None
-            doc = lxml.html.fromstring(response.text)
-            for label in doc.xpath("//div[@data-bhmastkey]/span[1]/text()[1]"):
+            for label in labels:
                 # "S 0003 General Bill, By" or "S*0002 (Rat #0010, ...)"
                 match = re.match(r"([HS])[ *](\d+)", label)
                 if match:
