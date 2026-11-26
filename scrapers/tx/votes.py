@@ -290,9 +290,46 @@ class MaybeVote(BaseVote):
     motion_text_pattern = re.compile(r"moved (?:that|to|the) (.+)$", re.IGNORECASE)
     # e.g. "The bill was read third time and was passed by the following
     # vote: ..." or "... read second time and was passed to engrossment ..."
+    # "The bill was again read third time and was again finally passed ..."
     reading_motion_pattern = re.compile(
-        r"read (second|third) time and was (passed to engrossment|passed|adopted)",
+        r"read (second|third) time and was (?:again )?(?:finally )?"
+        r"(passed to engrossment|passed|adopted)",
         re.IGNORECASE,
+    )
+    # The bill (or resolution, or conference committee report) is the subject
+    # of the vote sentence, e.g. "CSHB 4, as amended, was passed to
+    # engrossment by (Record 25): ...", "SJR 35 failed of adoption ...",
+    # "SB 1 as again amended was finally passed by the following vote: ...",
+    # or "On motion of Senator Perry ..., the resolution was considered
+    # immediately and was adopted by the following vote: ..."
+    bill_result_pattern = re.compile(
+        r"(?:\b(?:CS)?[HS][JC]?[BR][\s\xa0]+\d+|\bthe (?:bill|resolution"
+        r"|conference committee report))(?:,? as (?:again )?amended,?)?"
+        r"(?: was read and| was considered immediately and"
+        r"| was laid before the house on committee report and)?"
+        r" (?:was )?(?:again )?(?:finally )?(passed to engrossment"
+        r"|passed to third reading|passed|adopted|failed to pass|failed of adoption)\b",
+        re.IGNORECASE,
+    )
+    # e.g. "The vote of the house was taken on final passage of HB 3326 and
+    # the vote was announced yeas 69, nays 70."
+    vote_taken_pattern = re.compile(
+        r"vote of the house was taken on (final passage|passage to engrossment"
+        r"|passage to third reading|adoption) of",
+        re.IGNORECASE,
+    )
+    # A verification of a close vote: "The vote of the house was taken on
+    # final passage of HB 3326 and the vote was announced yeas 69, nays 70.",
+    # "A verification of the vote was requested and was granted.", then
+    # "The roll of those voting yea and nay was again called and the verified
+    # vote resulted, as follows (Record 1276): ..."
+    verified_vote_pattern = re.compile(
+        r"^\s*the roll of those voting yea and nay was again called", re.IGNORECASE
+    )
+    verified_lookbehind = 4
+    # e.g. "The motion to table prevailed by (Record 30): ..."
+    motion_sentence_pattern = re.compile(
+        r"^\s*the motion to (.+?) (?:prevailed|was lost|failed)\b", re.IGNORECASE
     )
     # A journal's MESSAGE FROM THE HOUSE/SENATE section reports the other
     # chamber's actions as bare "HB 1620 (129 Yeas, 9 Nays, 2 Present, not
@@ -384,12 +421,37 @@ class MaybeVote(BaseVote):
         if self.is_amendment:
             return "adoption of amendment"
 
+        result = self.bill_result_pattern.search(
+            self.text
+        ) or self.vote_taken_pattern.search(self.text)
+        if result:
+            action = result.group(1).lower()
+            if action.endswith("engrossment"):
+                return "passage to engrossment"
+            return "adoption" if "adopt" in action else "passage"
+
+        if self.verified_vote_pattern.match(self.text):
+            # the verified roll call is on the motion of the vote it verifies
+            el, checked = self.el, 0
+            while checked < self.verified_lookbehind:
+                el = el.getprevious()
+                if el is None:
+                    break
+                if el.tag == "br":
+                    continue
+                checked += 1
+                if "vote of the house was taken on" in el.text_content().lower():
+                    return MaybeVote(el).motion_text
+
         previous_text = self.previous.text_content()
         match = self.motion_text_pattern.search(previous_text)
         if match:
             return match.groups()[0]
-        else:
-            return None
+
+        motion = self.motion_sentence_pattern.search(self.text)
+        if motion:
+            return motion.group(1)
+        return None
 
 
 # Some votes are recorded as voice votes
@@ -669,12 +731,10 @@ def record_votes_with_yeas(root, session, chamber, claimed_paragraphs, speaker=N
         if key in claimed_paragraphs:
             continue
 
-        if mv.motion_text:
-            motion_text = mv.motion_text
-        elif mv.passed:
-            motion_text = "passage"
-        else:
-            motion_text = "other"
+        # A vote whose motion can't be named (e.g. "The request was granted
+        # by (Record 8)", a request to extend speaking time) is not a vote on
+        # the bill, even when it passed.
+        motion_text = mv.motion_text or "other"
 
         v = VoteEvent(
             chamber=chamber,
