@@ -1,6 +1,7 @@
 import scrapelib
 
 import datetime
+import time
 import os
 import re
 from collections import defaultdict
@@ -114,8 +115,9 @@ def action_type(action):
     return None
 
 
-# actionsearch.php codes for "Prefiled" and every "Introduced..." action
-INTRO_ACTION_CODES = (153, 137, 138, 139, 141, 185, 205, 103, 104, 136)
+# actionsearch.php codes for "Prefiled" and every "Introduced..." action; 142 is
+# missing from the search form's dropdown but still works
+INTRO_ACTION_CODES = (153, 137, 138, 139, 141, 142, 185, 205, 103, 104, 136)
 
 
 def get_index_url(session, chamber, chamber_letter):
@@ -535,8 +537,8 @@ class SCBillScraper(Scraper):
         """
         Every bill with an introduction or prefile action in the session, via
         action search. Unlike sessphp/{s,h}intros.php, it still works after the
-        site rolls over to the next session. Returns None if a search fails, so
-        the caller can fall back to the intro day pages.
+        site rolls over to the next session. Empty if nothing is found, so the
+        caller can fall back to the intro day pages.
         """
         session_code = next(
             s["_scraped_name"].split()[0]
@@ -545,27 +547,33 @@ class SCBillScraper(Scraper):
         )
         bills = {}
         for action_code in INTRO_ACTION_CODES:
-            response = self.post(
-                "https://www.scstatehouse.gov/actionsearch.php",
-                data={
-                    "op": "actionsearch",
-                    "session": session_code,
-                    "actioncode": action_code,
-                    "summary": "T",
-                    "headerfooter": "1",
-                },
-            )
-            doc = lxml.html.fromstring(response.text)
-            labels = doc.xpath("//div[@data-bhmastkey]/span[1]/text()[1]")
-            # error and empty pages say "No bills found"; treat both as failure
-            found = re.search(r"(\d+) bills? found", response.text)
-            if (
-                response.status_code != 200
-                or not found
-                or int(found.group(1)) != len(labels)
-            ):
-                self.warning(f"action search {action_code} failed, using day pages")
-                return None
+            # The site sometimes returns, in bursts, a 200 with an empty results
+            # page, identical to a real zero-result page. Retry, then treat as 0.
+            for attempt in range(8):
+                if attempt:
+                    time.sleep(2)
+                response = self.post(
+                    "https://www.scstatehouse.gov/actionsearch.php",
+                    data={
+                        "op": "actionsearch",
+                        "session": session_code,
+                        "actioncode": action_code,
+                        "summary": "T",
+                        "headerfooter": "1",
+                    },
+                )
+                doc = lxml.html.fromstring(response.text)
+                labels = doc.xpath("//div[@data-bhmastkey]/span[1]/text()[1]")
+                found = re.search(r"(\d+) bills? found", response.text)
+                if (
+                    response.status_code == 200
+                    and found
+                    and int(found.group(1)) == len(labels)
+                ):
+                    break
+            else:
+                self.warning(f"action search {action_code}: no results")
+                continue
             for label in labels:
                 # "S 0003 General Bill, By" or "S*0002 (Rat #0010, ...)"
                 match = re.match(r"([HS])[ *](\d+)", label)
