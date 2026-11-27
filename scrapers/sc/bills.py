@@ -308,6 +308,11 @@ class SCBillScraper(Scraper):
             doc.make_links_absolute(vurl)
             # skip first two rows
             rows = [row.getchildren() for row in doc.xpath("//table/tr")[2:]]
+            # motion and result are wrapped in a span, as in the vote report
+            for tds in rows:
+                for i in (1, 10):
+                    if len(tds) == 11 and tds[i].xpath("span"):
+                        tds[i] = tds[i].xpath("span")[0]
 
         for tds in rows:
             if len(tds) != 11:
