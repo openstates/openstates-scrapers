@@ -1,6 +1,8 @@
+import lxml.html
+import requests
+
 from .bills import IDBillScraper
 from .events import IDEventScraper
-from utils import url_xpath
 from openstates.scrape import State
 
 
@@ -174,6 +176,16 @@ class Idaho(State):
             "active": True,
             "extras": {"house_speaker": "Moyle"},
         },
+        {
+            "_scraped_name": "2027 Session",
+            "classification": "primary",
+            "identifier": "2027",
+            "name": "69th Legislature, 1st Regular Session (2027)",
+            "start_date": "2027-01-11",
+            "end_date": "2027-04-02",
+            "active": False,
+            "extras": {"house_speaker": "Moyle"},
+        },
     ]
     ignored_scraped_sessions = [
         "2010 Session",
@@ -195,7 +207,33 @@ class Idaho(State):
     ]
 
     def get_session_list(self):
-        return url_xpath(
-            "https://legislature.idaho.gov/sessioninfo/",
-            '//select[@id="ddlsessions"]/option/text()',
+        # The sessioninfo page was redesigned (the old
+        # <select id="ddlsessions"> dropdown is gone). Sessions are now listed
+        # as <article class="session-card"> blocks. We reconstruct the same
+        # scraped-name strings the old dropdown produced
+        # (e.g. "2026 Session", "2015  First Extraordinary Session") so they
+        # keep matching legislative_sessions / ignored_scraped_sessions.
+        response = requests.get(
+            "https://legislature.idaho.gov/sessioninfo/", timeout=60
         )
+        response.raise_for_status()
+        doc = lxml.html.fromstring(response.text)
+
+        sessions = []
+        for card in doc.xpath('//article[contains(@class, "session-card")]'):
+            years = card.xpath('.//h2[contains(@class, "partial-underline")]/text()')
+            if not years:
+                continue
+            year = years[0].strip()
+
+            detail_text = card.xpath(
+                './/div[contains(@class, "session-details")]/p/text()'
+            )
+            session_type = detail_text[-1].strip() if detail_text else ""
+
+            if "Extraordinary" in session_type:
+                sessions.append(f"{year}  First Extraordinary Session")
+            else:
+                sessions.append(f"{year} Session")
+
+        return sessions
