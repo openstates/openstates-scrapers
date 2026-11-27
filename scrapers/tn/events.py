@@ -11,7 +11,7 @@ import pytz
 import re
 
 
-cal_weekly_events = "http://wapp.capitol.tn.gov/apps/schedule/WeeklyView.aspx"
+cal_weekly_events = "https://wapp.capitol.tn.gov/apps/schedule/WeeklyView.aspx"
 cal_chamber_text = {"upper": "Senate", "lower": "House", "other": "Joint"}
 
 bill_id_re = re.compile(r"(SJR|HB|HR|SB|HJR|SR)\s{0,3}0*(\d+)")
