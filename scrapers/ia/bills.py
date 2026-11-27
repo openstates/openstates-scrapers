@@ -2,8 +2,10 @@ import re
 import datetime
 import lxml.html
 import requests
-from openstates.scrape import Scraper, Bill
+import scrapelib
+from openstates.scrape import Bill
 from .actions import Categorizer
+from .utils import IAScraper, is_bot_check
 
 _IA_ORGANIZATION_ENTITY_NAME_KEYWORDS = ["COMMITTEE", "RULES AND ADMINISTRATION"]
 _VERSION_HTML_URL_TEMPLATE = (
@@ -23,7 +25,7 @@ def version_folder_code(version_abbrev):
 
 
 # FYI: as of 2025 this should be run with --http-resilience
-class IABillScraper(Scraper):
+class IABillScraper(IAScraper):
     categorizer = Categorizer()
 
     def scrape(self, session=None, chamber=None, prefiles=None):
@@ -155,7 +157,13 @@ class IABillScraper(Scraper):
             cookies = self.session.cookies
         else:
             cookies = None
-        html = self.get(subject_url, cookies=cookies).text
+        try:
+            html = self.get(subject_url, cookies=cookies).text
+        except scrapelib.HTTPError as e:
+            if not is_bot_check(e.response):
+                raise
+            self.warning(f"No subjects for {bill_number}: bot check at {subject_url}")
+            return
         page = lxml.html.fromstring(html)
 
         subjects = page.xpath('//div[@class="taggedTopics"]/a/text()')
@@ -177,12 +185,23 @@ class IABillScraper(Scraper):
         except requests.exceptions.ConnectionError:
             self.warning("Connection closed without response, skipping")
             return
+        except scrapelib.HTTPError as e:
+            if not is_bot_check(e.response):
+                raise
+            self.warning(f"Skipping {bill_id}: bot check at {url}")
+            return
 
         hist_url = (
             f"https://www.legis.iowa.gov/legislation/billTracking/"
             f"billHistory?billName={bill_id}&ga={session_id}"
         )
-        req = self.get(hist_url)
+        try:
+            req = self.get(hist_url)
+        except scrapelib.HTTPError as e:
+            if not is_bot_check(e.response):
+                raise
+            self.warning(f"Skipping {bill_id}: bot check at {hist_url}")
+            return
         if req.status_code == 500:
             self.warning("500 error on {}, skipping".format(hist_url))
             return

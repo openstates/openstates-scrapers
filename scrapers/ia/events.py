@@ -3,10 +3,11 @@ import datetime
 import lxml.html
 import pytz
 
-from openstates.scrape import Scraper, Event
+from openstates.scrape import Event
+from .utils import IAScraper
 
 
-class IAEventScraper(Scraper):
+class IAEventScraper(IAScraper):
     _tz = pytz.timezone("US/Central")
     chambers = {"upper": "Senate", "lower": "House"}
 
