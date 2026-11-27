@@ -624,8 +624,8 @@ class SCBillScraper(Scraper):
         """
         Every bill with an introduction or prefile action in the session, via
         action search. Unlike sessphp/{s,h}intros.php, it still works after the
-        site rolls over to the next session. Empty if nothing is found, so the
-        caller can fall back to the intro day pages.
+        site rolls over to the next session. Empty if any action search fails,
+        so the caller can fall back to the intro day pages.
         """
         session_code = next(
             s["_scraped_name"].split()[0]
@@ -659,8 +659,10 @@ class SCBillScraper(Scraper):
                 ):
                     break
             else:
-                self.warning(f"action search {action_code}: no results")
-                continue
+                self.warning(
+                    f"action search {action_code} failed, using intro day pages"
+                )
+                return {}
             for label in labels:
                 # "S 0003 General Bill, By" or "S*0002 (Rat #0010, ...)"
                 match = re.match(r"([HS])[ *](\d+)", label)
