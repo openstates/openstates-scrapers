@@ -458,7 +458,14 @@ class ARBillScraper(Scraper):
 
         page = self.get(url).text
         page = lxml.html.fromstring(page)
-        title = page.xpath("//h1")[0].text_content().strip()
+        headings = page.xpath("//h1")
+        if not headings:
+            # Some sponsor links lead to an empty profile page (e.g. 2025 HB1049's
+            # "Andrews"); leave the chamber blank rather than abort the whole scrape.
+            self.warning(f"no <h1> on sponsor page {url}; chamber left blank")
+            self.sponsors_chamber_cache[url] = ""
+            return ""
+        title = headings[0].text_content().strip()
         chamber = self.get_chamber(title)
         self.sponsors_chamber_cache[url] = chamber
 
