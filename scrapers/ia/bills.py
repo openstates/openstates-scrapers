@@ -40,6 +40,7 @@ class IABillScraper(IAScraper):
             return
 
         session_id = self.get_session_id(session)
+        self.subjects = self.scrape_all_subjects(session_id)
         url = f"https://www.legis.iowa.gov/legislation/findLegislation/allbills?ga={session_id}"
         page = lxml.html.fromstring(req_session.get(url).text)
         for option in page.xpath("//*[@id='sortableTable']/tbody/tr"):
@@ -137,6 +138,37 @@ class IABillScraper(IAScraper):
     def extract_doc_id(self, title):
         doc_id = re.findall(r"\((\d{4}\w{2})\)", title)
         return doc_id[0]
+
+    def scrape_all_subjects(self, session_id):
+        # Site search lists every introduced bill's tagged topics, so a few
+        # pages replace one getTaggedTopics request per bill.
+        subjects = {}
+        start = 0
+        while True:
+            try:
+                resp = self.get(
+                    "https://www.legis.iowa.gov/publications/search",
+                    params={
+                        "q": "*",
+                        "fq": [f"ga:{session_id}", "dt:LGI", 'status:"Introduced"'],
+                        "rows": 1000,
+                        "start": start,
+                    },
+                )
+            except requests.exceptions.RequestException as e:
+                # bills missing here fall back to per-bill topic requests
+                self.warning(f"Topic search failed at start={start}: {e}")
+                return subjects
+            page = lxml.html.fromstring(resp.text)
+            docs = page.xpath('//div[@class="result-document"]')
+            for doc in docs:
+                subjects[doc.get("data-name")] = [
+                    t.strip() for t in doc.xpath('div[@class="terms"]/a/text()')
+                ]
+            if len(docs) < 1000:
+                self.info(f"Found tagged topics for {len(subjects)} bills in search")
+                return subjects
+            start += 1000
 
     def scrape_subjects(self, bill, bill_number, session):
 
@@ -399,7 +431,13 @@ class IABillScraper(IAScraper):
                     description=action, date=date, chamber=actor, classification=atype
                 )
 
-        self.scrape_subjects(bill, bill_id, session)
+        subjects = self.subjects.get(bill_id.replace(" ", ""))
+        if subjects is None:
+            # not in the search index yet
+            self.scrape_subjects(bill, bill_id, session)
+        else:
+            for subject in subjects:
+                bill.add_subject(subject)
 
         yield bill
 
